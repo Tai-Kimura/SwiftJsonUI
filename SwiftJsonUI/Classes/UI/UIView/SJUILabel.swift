@@ -227,7 +227,7 @@ open class SJUILabel: UILabel {
         }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue :1.0
-        let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
+        let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
         let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         var attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font]

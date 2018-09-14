@@ -48,7 +48,7 @@ open class SJUITextField: UITextField {
         if let tintColor = UIColor.findColorByJSON(attr: attr["tintColor"]) {
             t.tintColor = tintColor
         }
-        let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
+        let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         t.font = font

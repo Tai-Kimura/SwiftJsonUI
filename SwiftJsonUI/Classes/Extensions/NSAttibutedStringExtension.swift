@@ -7,7 +7,7 @@
 import UIKit
 
 public extension NSAttributedString {
-    public func heightForAttributedString(_ inWidth: CGFloat, lineHeightMultiple: CGFloat) -> CGFloat {
+    public func heightForAttributedString(_ inWidth: CGFloat, lineHeightMultiple: CGFloat, fontSize: CGFloat = SJUIViewCreator.defaultFontSize) -> CGFloat {
         var H: CGFloat = 0
         
         // Create the framesetter with the attributed string.
@@ -89,7 +89,7 @@ public extension NSAttributedString {
                 paragraphStyle.lineSpacing = lineSpacing
             }
             paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue :1.4
-            let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
+            let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
             let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
             let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
             var attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font]

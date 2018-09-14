@@ -51,7 +51,7 @@ open class SJUILabelWithIcon: SJUIView {
         label = SJUILabel()
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = 1.0
-        let size:CGFloat = fontSize == nil ? 14.0 : fontSize
+        let size:CGFloat = fontSize ?? SJUIViewCreator.defaultFontSize
         let name = fontName == nil ? SJUIViewCreator.defaultFont : fontName!
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         label.font = font

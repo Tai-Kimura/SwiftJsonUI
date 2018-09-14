@@ -194,7 +194,7 @@ open class SJUITextView: UITextView {
         t.hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) ?? SJUIViewCreator.defaultHintColor
         t.delegate = target as? UITextViewDelegate
         t.sjuiDelegate = target as? SJUITextViewDelegate
-        let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
+        let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         t.hintFont = attr["hintFont"].string ?? name
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)

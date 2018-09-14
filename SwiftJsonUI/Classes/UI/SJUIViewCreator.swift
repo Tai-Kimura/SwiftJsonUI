@@ -30,6 +30,7 @@ open class SJUIViewCreator:NSObject {
     public static var defaultFont = SJUIViewCreator.systemFontString
     public static var defaultFontColor = UIColor.black
     public static var defaultHintColor = UIColor.lightGray
+    public static var defaultFontSize: CGFloat = 14.0
     
     @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
         let url = getURL(path: path)
