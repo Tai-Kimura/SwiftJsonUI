@@ -10,9 +10,23 @@ import UIKit
 
 open class SJUICollectionView: UICollectionView {
     
+    open class var viewClass: SJUICollectionView.Type {
+        get {
+            return SJUICollectionView.self
+        }
+    }
+    
+   required public override init(frame: CGRect, collectionViewLayout layout: UICollectionViewLayout) {
+        super.init(frame: frame, collectionViewLayout: layout)
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICollectionView {
         let collectionViewLayout = getCollectionViewLayout(attr: attr)
-        let c = SJUICollectionView(frame: CGRect.zero, collectionViewLayout: collectionViewLayout)
+        let c = viewClass.init(frame: CGRect.zero, collectionViewLayout: collectionViewLayout)
         c.showsHorizontalScrollIndicator = attr["showsHorizontalScrollIndicator"].boolValue
         c.showsVerticalScrollIndicator = attr["showsVerticalScrollIndicator"].boolValue
         if let paging = attr["paging"].bool {

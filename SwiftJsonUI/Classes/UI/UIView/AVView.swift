@@ -8,7 +8,13 @@ import UIKit
 
 import AVFoundation
 
-public class AVView: SJUIView {
+open class AVView: SJUIView {
+    
+    override open class var viewClass: SJUIView.Type {
+        get {
+            return AVView.self
+        }
+    }
     
     public var player: AVPlayer? {
         get {
@@ -21,7 +27,7 @@ public class AVView: SJUIView {
         }
     }
 
-    override public class var layerClass : AnyClass {
+    override open class var layerClass : AnyClass {
         return AVPlayerLayer.self
     }
 

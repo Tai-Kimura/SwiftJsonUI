@@ -26,6 +26,13 @@ import UIKit
 
 open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
+    override open class var viewClass: SJUIView.Type {
+        get {
+            return SJUISelectBox.self
+        }
+    }
+    
+    
     static let defaultCaretWidth: CGFloat = 39.0
     public static var defaultCaretImageName = "Triangle"
     
@@ -122,7 +129,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     public weak var referenceView: UIScrollView?
     
     
-    public init(attr: JSON) {
+    required public init(attr: JSON) {
         super.init(frame: CGRect.zero)
         self.clipsToBounds = true
         self._type = SelectItemType(rawValue: attr["selectItemType"].stringValue) ?? .normal
@@ -379,7 +386,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     }
     
     override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISelectBox {
-        let s = SJUISelectBox(attr: attr)
+        let s = (viewClass as! SJUISelectBox.Type).init(attr: attr)
         s.selectBoxDelegate = target as? UISelectBoxDelegate
         return s
     }

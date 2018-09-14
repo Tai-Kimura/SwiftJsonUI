@@ -31,13 +31,19 @@ import UIKit
 
 open class SJUICheckBox: UIButton {
     
+    open class var viewClass: SJUICheckBox.Type {
+        get {
+            return SJUICheckBox.self
+        }
+    }
+    
     static let checkBoxSize = CGSize(width: 20.0, height: 20.0)
     
     public weak var targetModel: SJUIModel?
     
     public weak var checkBoxDelegate: SJUICheckBoxDelegate?
     
-    public init(withLabel label:UIView!, imagePath: String!, onImagePath: String!) {
+    required public init(withLabel label:UIView!, imagePath: String!, onImagePath: String!) {
         super.init(frame: CGRect(x: 0, y: 0, width: SJUICheckBox.checkBoxSize.width, height: SJUICheckBox.checkBoxSize.height))
         if let ipath = imagePath {
             let offImage = UIImage(named: ipath)!
@@ -75,7 +81,7 @@ open class SJUICheckBox: UIButton {
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICheckBox {
         
-        let c = SJUICheckBox(withLabel: views[attr["label"].stringValue], imagePath: attr["src"].string, onImagePath: attr["onSrc"].string)
+        let c = viewClass.init(withLabel: views[attr["label"].stringValue], imagePath: attr["src"].string, onImagePath: attr["onSrc"].string)
         c.checkBoxDelegate = target as? SJUICheckBoxDelegate
         return c
     }

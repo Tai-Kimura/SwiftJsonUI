@@ -26,6 +26,12 @@ import UIKit
 
 open class SJUIView: UIView, UIGestureRecognizerDelegate {
     
+    open class var viewClass: SJUIView.Type {
+        get {
+            return SJUIView.self
+        }
+    }
+    
     public var bottomContentView:UIView!
     
     public var highlightBackgroundColor: UIColor?
@@ -83,7 +89,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate {
         case "GradientView":
             v = GradientView()
         default:
-            v = SJUIView()
+            v = viewClass.init()
         }
         if let background = UIColor.findColorByJSON(attr: attr["highlightBackground"]) {
             v.highlightBackgroundColor = background

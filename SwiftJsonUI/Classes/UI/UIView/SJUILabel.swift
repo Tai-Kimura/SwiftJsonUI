@@ -25,6 +25,13 @@
 import UIKit
 
 open class SJUILabel: UILabel {
+    
+    open class var viewClass: SJUILabel.Type {
+        get {
+            return SJUILabel.self
+        }
+    }
+    
     public static var defaultLinkColor = UIColor.blue
     
     public var hint: String?
@@ -202,7 +209,7 @@ open class SJUILabel: UILabel {
     
     public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUILabel {
         
-        let l = SJUILabel()
+        let l = viewClass.init()
         if let edgeInsetStr = attr["edgeInset"].string {
             let edgeInsetStrs = edgeInsetStr.components(separatedBy: "|")
             var edgeInsets = Array<CGFloat>()

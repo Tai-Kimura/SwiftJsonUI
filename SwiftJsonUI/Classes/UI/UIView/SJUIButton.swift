@@ -24,6 +24,12 @@
 import UIKit
 
 open class SJUIButton: UIButton {
+    open class var viewClass: SJUIButton.Type {
+        get {
+            return SJUIButton.self
+        }
+    }
+    
     public var defaultFontColor: UIColor?
     public var disabledBackgroundColor: UIColor?
     public var disabledFontColor: UIColor?
@@ -46,7 +52,7 @@ open class SJUIButton: UIButton {
     }
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIButton {
-        let b = SJUIButton()
+        let b = viewClass.init()
         b.isUserInteractionEnabled = true
         b.setTitle(NSLocalizedString(attr["text"].stringValue, comment: ""), for: UIControlState())
         if let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) {

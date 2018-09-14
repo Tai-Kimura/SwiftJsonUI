@@ -8,6 +8,12 @@ import UIKit
 
 open class GradientView: SJUIView {
     
+    override open class var viewClass: SJUIView.Type {
+        get {
+            return GradientView.self
+        }
+    }
+    
     override open class var layerClass : AnyClass {
         return CAGradientLayer.self
     }

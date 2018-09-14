@@ -14,6 +14,12 @@ import UIKit
 
 open class SJUITextField: UITextField {
     
+    open class var viewClass: SJUITextField.Type {
+        get {
+            return SJUITextField.self
+        }
+    }
+    
     public static var accessoryBackgroundColor = UIColor.gray
     
     public static var accessoryTextColor = UIColor.blue
@@ -35,7 +41,7 @@ open class SJUITextField: UITextField {
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITextField {
         
-        let t = SJUITextField()
+        let t = viewClass.init()
         switch attr["textVerticalAlign"].string ?? "" {
         case "Center":
             t.contentVerticalAlignment = .center

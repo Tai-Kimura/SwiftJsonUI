@@ -9,9 +9,15 @@
 import UIKit
 
 open class SJUIScrollView: UIScrollView {
+    
+    open class var viewClass: SJUIScrollView.Type {
+        get {
+            return SJUIScrollView.self
+        }
+    }
 
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIScrollView {
-        let s = SJUIScrollView()
+        let s = viewClass.init()
         s.showsHorizontalScrollIndicator = attr["showsHorizontalScrollIndicator"].boolValue
         s.showsVerticalScrollIndicator = attr["showsVerticalScrollIndicator"].boolValue
         s.delegate = target as? UIScrollViewDelegate

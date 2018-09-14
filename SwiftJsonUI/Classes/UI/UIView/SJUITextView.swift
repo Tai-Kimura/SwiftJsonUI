@@ -30,6 +30,13 @@ import UIKit
 
 open class SJUITextView: UITextView {
     
+    open class var viewClass: SJUITextView.Type {
+        get {
+            return SJUITextView.self
+        }
+    }
+    
+    
     public var maxHeight: CGFloat = 0
     
     public var minHeight: CGFloat = 21.0
@@ -190,7 +197,7 @@ open class SJUITextView: UITextView {
     }
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITextView {
-        let t = SJUITextView()
+        let t = viewClass.init()
         t.hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) ?? SJUIViewCreator.defaultHintColor
         t.delegate = target as? UITextViewDelegate
         t.sjuiDelegate = target as? SJUITextViewDelegate

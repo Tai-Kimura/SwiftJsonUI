@@ -9,8 +9,23 @@
 import UIKit
 
 open class SJUISegmentedControl: UISegmentedControl {
+    
+    open class var viewClass: SJUISegmentedControl.Type {
+        get {
+            return SJUISegmentedControl.self
+        }
+    }
+    
     public static var defaultTintColor = UIColor.gray
     public static var defaultSelectedColor = UIColor.white
+    
+    required public override init(items: [Any]?) {
+        super.init(items: items)
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISegmentedControl {
         
@@ -26,7 +41,7 @@ open class SJUISegmentedControl: UISegmentedControl {
         for itemName in itemNames {
             items.append(NSLocalizedString(itemName, comment: ""))
         }
-        let s = SJUISegmentedControl(items: items)
+        let s = viewClass.init(items: items)
         s.selectedSegmentIndex = 0
         s.tintColor = UIColor.findColorByJSON(attr: attr["tintColor"]) ?? SJUISegmentedControl.defaultTintColor
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 16.0

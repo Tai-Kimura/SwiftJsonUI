@@ -30,6 +30,12 @@ import UIKit
 
 open class SJUIRadioButton: UIView {
     
+    open class var viewClass: SJUIRadioButton.Type {
+        get {
+            return SJUIRadioButton.self
+        }
+    }
+    
     public static var defaultOffColor = UIColor.gray
     
     public static var defaultOnColor = UIColor.red
@@ -49,7 +55,7 @@ open class SJUIRadioButton: UIView {
     public weak var ragioGroup: NSRadioGroup?
     
     
-    public init(text: String, font: UIFont, fontColor: UIColor, iconImage icon:UIImage?, selectedIconImage selectedIcon: UIImage?, inRadioGroup group: NSRadioGroup? = nil) {
+    required public init(text: String, font: UIFont, fontColor: UIColor, iconImage icon:UIImage?, selectedIconImage selectedIcon: UIImage?, inRadioGroup group: NSRadioGroup? = nil) {
         iconImage = icon
         selectedIconImage = selectedIcon
         label = UILabel()
@@ -138,7 +144,7 @@ open class SJUIRadioButton: UIView {
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
-        let r = SJUIRadioButton(text: text, font: font, fontColor: fontColor, iconImage: UIImage(named: attr["icon"].stringValue), selectedIconImage: UIImage(named: attr["selected_icon"].stringValue))
+        let r = viewClass.init(text: text, font: font, fontColor: fontColor, iconImage: UIImage(named: attr["icon"].stringValue), selectedIconImage: UIImage(named: attr["selected_icon"].stringValue))
         return r
     }
     

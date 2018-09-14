@@ -9,6 +9,12 @@ import UIKit
 
 open class SJUIImageView: UIImageView {
     
+    open class var viewClass: SJUIImageView.Type {
+        get {
+            return SJUIImageView.self
+        }
+    }
+    
     public var canTap = false
     
     internal var filter: SJUIView?
@@ -71,7 +77,7 @@ open class SJUIImageView: UIImageView {
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIImageView {
         
-        let i = SJUIImageView()
+        let i = viewClass.init()
         i.setMask()
         i.clipsToBounds = true
         if let imgSrc = attr["src"].string {

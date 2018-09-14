@@ -27,7 +27,13 @@ import UIKit
 
 open class SJUICircleView: UIView {
     
-    override public init(frame: CGRect) {
+    open class var viewClass: SJUICircleView.Type {
+        get {
+            return SJUICircleView.self
+        }
+    }
+    
+    override required public init(frame: CGRect) {
         super.init(frame: frame)
         self.layer.masksToBounds = false
         self.layer.cornerRadius = self.frame.size.width/2.0
@@ -70,7 +76,7 @@ open class SJUICircleView: UIView {
             rect = CGRect.zero
         }
         
-        let c = SJUICircleView(frame: rect)
+        let c = viewClass.init(frame: rect)
         if let onclick = attr["onclick"].string {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))
             c.addGestureRecognizer(gr)

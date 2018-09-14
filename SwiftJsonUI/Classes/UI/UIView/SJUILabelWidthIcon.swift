@@ -26,6 +26,12 @@ import UIKit
 
 open class SJUILabelWithIcon: SJUIView {
     
+    override open class var viewClass: SJUIView.Type {
+        get {
+            return SJUILabelWithIcon.self
+        }
+    }
+    
     public var label: SJUILabel!
     
     public var iconView: UIImageView!
@@ -47,7 +53,7 @@ open class SJUILabelWithIcon: SJUIView {
         }
     }
     
-    public init(labelText text: String!, onIcon: String?, offIcon: String?, fontColor: UIColor!, selectedFontColor: UIColor!, fontName:String!, fontSize:CGFloat!, position: NSTextAlignment, shadow: JSON, iconMargin: CGFloat) {
+    required public init(labelText text: String!, onIcon: String?, offIcon: String?, fontColor: UIColor!, selectedFontColor: UIColor!, fontName:String!, fontSize:CGFloat!, position: NSTextAlignment, shadow: JSON, iconMargin: CGFloat) {
         label = SJUILabel()
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = 1.0
@@ -196,7 +202,7 @@ open class SJUILabelWithIcon: SJUIView {
         default:
             position = .left
         }
-        let l = SJUILabelWithIcon(labelText:  NSLocalizedString(attr["text"].stringValue, comment: "") , onIcon: attr["icon_on"].string , offIcon: attr["icon_off"].string , fontColor: fontColor, selectedFontColor: selectedFontColor, fontName: attr["font"].string, fontSize: attr["fontSize"].cgFloat, position: position, shadow: attr["textShadow"], iconMargin: attr["iconMargin"].cgFloat ?? 5.0)
+        let l = (viewClass as! SJUILabelWithIcon.Type).init(labelText:  NSLocalizedString(attr["text"].stringValue, comment: "") , onIcon: attr["icon_on"].string , offIcon: attr["icon_off"].string , fontColor: fontColor, selectedFontColor: selectedFontColor, fontName: attr["font"].string, fontSize: attr["fontSize"].cgFloat, position: position, shadow: attr["textShadow"], iconMargin: attr["iconMargin"].cgFloat ?? 5.0)
         
         if let onclick = attr["onclick"].string {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))

@@ -10,6 +10,20 @@ import UIKit
 
 open class SJUIVisualEffectView: UIVisualEffectView {
     
+    open class var viewClass: SJUIVisualEffectView.Type {
+        get {
+            return SJUIVisualEffectView.self
+        }
+    }
+    
+    required public override init(effect: UIVisualEffect?) {
+        super.init(effect: effect)
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)
+    }
+    
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIVisualEffectView {
         var effectStyle: UIBlurEffectStyle = UIBlurEffectStyle.light
         if let style = attr["effectStyle"].string {
@@ -25,7 +39,7 @@ open class SJUIVisualEffectView: UIVisualEffectView {
             }
         }
         let effect = UIBlurEffect(style: effectStyle)
-        let v = SJUIVisualEffectView(effect: effect)
+        let v = viewClass.init(effect: effect)
         v.layer.masksToBounds = true
         
         if let onclick = attr["onclick"].string {
