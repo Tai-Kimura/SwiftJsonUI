@@ -24,7 +24,7 @@
 
 import UIKit
 
-public class SJUIView: UIView, UIGestureRecognizerDelegate {
+open class SJUIView: UIView, UIGestureRecognizerDelegate {
     
     public var bottomContentView:UIView!
     
@@ -34,7 +34,7 @@ public class SJUIView: UIView, UIGestureRecognizerDelegate {
     
    public  var canTap = false
     
-    override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let location = touches.first?.location(in: self) {
             if location.x >= 0 && location.x <= self.frame.size.width && location.y >= 0 && location.y <= self.frame.size.height {
                 onBeginTap()
@@ -44,12 +44,12 @@ public class SJUIView: UIView, UIGestureRecognizerDelegate {
         
     }
     
-    override public func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         super.touchesCancelled(touches, with: event)
     }
     
-    override public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         super.touchesEnded(touches, with: event)
     }

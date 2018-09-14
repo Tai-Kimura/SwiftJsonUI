@@ -8,8 +8,8 @@
 
 import UIKit
 
-public class SJUISwitch: UISwitch {
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISwitch {
+open class SJUISwitch: UISwitch {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISwitch {
         let s = SJUISwitch()
         if let onclick = attr["onValueChange"].string {
             s.addTarget(target, action: Selector(onclick), for: UIControlEvents.valueChanged)

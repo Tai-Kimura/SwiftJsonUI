@@ -8,9 +8,9 @@
 
 import UIKit
 
-public class SJUICollectionView: UICollectionView {
+open class SJUICollectionView: UICollectionView {
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICollectionView {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICollectionView {
         let collectionViewLayout = getCollectionViewLayout(attr: attr)
         let c = SJUICollectionView(frame: CGRect.zero, collectionViewLayout: collectionViewLayout)
         c.showsHorizontalScrollIndicator = attr["showsHorizontalScrollIndicator"].boolValue
@@ -21,7 +21,7 @@ public class SJUICollectionView: UICollectionView {
         return c
     }
     
-    public class func getCollectionViewLayout(attr: JSON) -> UICollectionViewLayout {
+    open class func getCollectionViewLayout(attr: JSON) -> UICollectionViewLayout {
         let collectionViewLayout = getCollectionViewFlowLayout(attr: attr)
         let weight = attr["itemWeight"].cgFloat != nil ? attr["itemWeight"].cgFloat! : 1.0
         collectionViewLayout.itemSize = CGSize(width: UIScreen.main.bounds.size.width*weight, height: 300)
@@ -67,7 +67,7 @@ public class SJUICollectionView: UICollectionView {
         return collectionViewLayout
     }
     
-    public class func getCollectionViewFlowLayout(attr: JSON) -> UICollectionViewFlowLayout {
+    open class func getCollectionViewFlowLayout(attr: JSON) -> UICollectionViewFlowLayout {
         let collectionViewLayout: UICollectionViewFlowLayout
         let layoutType = attr["layout"].string ?? "Flow"
         switch(layoutType) {

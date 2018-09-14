@@ -23,12 +23,12 @@
 
 import UIKit
 
-public class SJUIButton: UIButton {
+open class SJUIButton: UIButton {
     public var defaultFontColor: UIColor?
     public var disabledBackgroundColor: UIColor?
     public var disabledFontColor: UIColor?
     
-    override public var isEnabled: Bool {
+    override open var isEnabled: Bool {
         didSet {
             if self.isEnabled {
                 self.setTitleColor(defaultFontColor, for: UIControlState())
@@ -40,12 +40,12 @@ public class SJUIButton: UIButton {
         }
     }
     
-    override public func setTitleColor(_ color: UIColor?, for state: UIControlState) {
+    override open func setTitleColor(_ color: UIColor?, for state: UIControlState) {
         defaultFontColor = color
         super.setTitleColor(color, for: state)
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIButton {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIButton {
         let b = SJUIButton()
         b.isUserInteractionEnabled = true
         b.setTitle(NSLocalizedString(attr["text"].stringValue, comment: ""), for: UIControlState())

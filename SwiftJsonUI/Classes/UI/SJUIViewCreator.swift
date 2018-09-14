@@ -25,13 +25,13 @@
 import UIKit
 import WebKit
 
-public class SJUIViewCreator:NSObject {
+open class SJUIViewCreator:NSObject {
     private static let systemFontString = "SJUI_System_Font"
     public static var defaultFont = SJUIViewCreator.systemFontString
     public static var defaultFontColor = UIColor.black
     public static var defaultHintColor = UIColor.lightGray
     
-    @discardableResult class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
+    @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
         let url = getURL(path: path)
         
         do {
@@ -54,11 +54,11 @@ public class SJUIViewCreator:NSObject {
         
     }
     
-    public class func getOnView(target: ViewHolder) -> UIView? {
+    open class func getOnView(target: ViewHolder) -> UIView? {
         return nil
     }
     
-    public class func createErrorView(_ text:String = "JSONの形式が正しくありません") -> UIView {
+    open class func createErrorView(_ text:String = "JSONの形式が正しくありません") -> UIView {
         let view = UIView(frame: UIScreen.main.bounds)
         let label = UILabel(frame: CGRect(x: 0,y: 0,width: 100,height: 20.0))
         label.translatesAutoresizingMaskIntoConstraints = false
@@ -74,7 +74,7 @@ public class SJUIViewCreator:NSObject {
         return view
     }
     
-    public class func getURL(path: String) -> String {
+    open class func getURL(path: String) -> String {
         #if DEBUG
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
@@ -85,7 +85,7 @@ public class SJUIViewCreator:NSObject {
         #endif
     }
     
-    @discardableResult public class func createView(_ attr: JSON, parentView: UIView!, target: Any, views: inout [String: UIView]) -> UIView! {
+    @discardableResult open class func createView(_ attr: JSON, parentView: UIView!, target: Any, views: inout [String: UIView]) -> UIView! {
         guard let view = getViewFromJSON(attr: attr, target: target, views: &views) else {
             return createErrorView()
         }
@@ -273,7 +273,7 @@ public class SJUIViewCreator:NSObject {
         return view
     }
     
-    public class func copyResourcesToDocuments() {
+    open class func copyResourcesToDocuments() {
         #if DEBUG
         let fm = FileManager.default
         let bundlePath = Bundle.main.bundlePath
@@ -301,7 +301,7 @@ public class SJUIViewCreator:NSObject {
         #endif
     }
     
-    public class func getViewFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> UIView? {
+    open class func getViewFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> UIView? {
         let view: UIView
         switch(attr["type"].stringValue) {
         case "View", "GradientView":
@@ -383,7 +383,7 @@ public class SJUIViewCreator:NSObject {
         return view
     }
     
-    public class func getLayoutFileDirPath() -> String {
+    open class func getLayoutFileDirPath() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         return "\(cachesDirPath)/Layouts"

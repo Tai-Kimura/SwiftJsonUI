@@ -87,8 +87,8 @@
 		B692FB7A214B4564008E9631 /* SJUICollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2F214B4563008E9631 /* SJUICollectionView.swift */; };
 		B692FB7B214B4564008E9631 /* SJUIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB30214B4563008E9631 /* SJUIButton.swift */; };
 		B692FB7C214B4564008E9631 /* SJUIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB30214B4563008E9631 /* SJUIButton.swift */; };
-		B692FB7D214B4564008E9631 /* UIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* UIViewCreator.swift */; };
-		B692FB7E214B4564008E9631 /* UIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* UIViewCreator.swift */; };
+		B692FB7D214B4564008E9631 /* SJUIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* SJUIViewCreator.swift */; };
+		B692FB7E214B4564008E9631 /* SJUIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* SJUIViewCreator.swift */; };
 		B692FB7F214B4564008E9631 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB32214B4563008E9631 /* SheetView.swift */; };
 		B692FB80214B4564008E9631 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB32214B4563008E9631 /* SheetView.swift */; };
 /* End PBXBuildFile section */
@@ -161,7 +161,7 @@
 		B692FB2E214B4563008E9631 /* SJUISegmentedControl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUISegmentedControl.swift; sourceTree = "<group>"; };
 		B692FB2F214B4563008E9631 /* SJUICollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUICollectionView.swift; sourceTree = "<group>"; };
 		B692FB30214B4563008E9631 /* SJUIButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIButton.swift; sourceTree = "<group>"; };
-		B692FB31214B4563008E9631 /* UIViewCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewCreator.swift; sourceTree = "<group>"; };
+		B692FB31214B4563008E9631 /* SJUIViewCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIViewCreator.swift; sourceTree = "<group>"; };
 		B692FB32214B4563008E9631 /* SheetView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SheetView.swift; sourceTree = "<group>"; };
 		CEE56F4CE140A3A0BF01B6E0AB3DE765 /* Pods-SwiftJsonUI_Tests-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-SwiftJsonUI_Tests-frameworks.sh"; sourceTree = "<group>"; };
 		D70600220BFF3ADF9600916D3653C3A7 /* Pods_SwiftJsonUI_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftJsonUI_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -270,7 +270,7 @@
 			children = (
 				B692FB1C214B4563008E9631 /* UIViewDisposure.swift */,
 				B692FB1D214B4563008E9631 /* UIView */,
-				B692FB31214B4563008E9631 /* UIViewCreator.swift */,
+				B692FB31214B4563008E9631 /* SJUIViewCreator.swift */,
 				B692FB32214B4563008E9631 /* SheetView.swift */,
 			);
 			name = UI;
@@ -470,7 +470,7 @@
 				B692FB50214B4564008E9631 /* NetworkImageCache.swift in Sources */,
 				501D52AED52E6DFE35C9486DDDFFA779 /* SwiftJsonUI-dummy.m in Sources */,
 				B692FB48214B4564008E9631 /* SwiftyJSON.swift in Sources */,
-				B692FB7E214B4564008E9631 /* UIViewCreator.swift in Sources */,
+				B692FB7E214B4564008E9631 /* SJUIViewCreator.swift in Sources */,
 				B692FB66214B4564008E9631 /* SJUICircleView.swift in Sources */,
 				B692FB6E214B4564008E9631 /* SJUIRadioButton.swift in Sources */,
 				B692FB64214B4564008E9631 /* SJUILabel.swift in Sources */,
@@ -517,7 +517,7 @@
 				B692FB4F214B4564008E9631 /* NetworkImageCache.swift in Sources */,
 				2A2BE2A80C581D995F8B857B92924D9F /* Pods-SwiftJsonUI_Tests-dummy.m in Sources */,
 				B692FB47214B4564008E9631 /* SwiftyJSON.swift in Sources */,
-				B692FB7D214B4564008E9631 /* UIViewCreator.swift in Sources */,
+				B692FB7D214B4564008E9631 /* SJUIViewCreator.swift in Sources */,
 				B692FB65214B4564008E9631 /* SJUICircleView.swift in Sources */,
 				B692FB6D214B4564008E9631 /* SJUIRadioButton.swift in Sources */,
 				B692FB63214B4564008E9631 /* SJUILabel.swift in Sources */,

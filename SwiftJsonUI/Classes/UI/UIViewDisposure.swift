@@ -44,11 +44,11 @@ fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 }
 
 
-public class UIViewDisposure {
+open class UIViewDisposure {
     
     static let screenSize = UIScreen.main.bounds.size
     
-    public class func applyConstraint(onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo) {
+    open class func applyConstraint(onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo) {
         var constraints = Array<NSLayoutConstraint>()
         
         //親ビューに対して

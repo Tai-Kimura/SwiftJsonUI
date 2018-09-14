@@ -7,7 +7,7 @@
 
 import UIKit
 
-public class NetworkImageCache: NSObject {
+open class NetworkImageCache: NSObject {
     
     public static let instance = NetworkImageCache()
     
@@ -17,7 +17,7 @@ public class NetworkImageCache: NSObject {
     
     public var maxCount = 40
     
-    public class func sharedInstance() -> NetworkImageCache {
+    open class func sharedInstance() -> NetworkImageCache {
         return instance
     }
     
@@ -27,18 +27,18 @@ public class NetworkImageCache: NSObject {
         cache.countLimit = maxCount
     }
     
-    public func cacheImage(_ image: UIImage, forKey key:String) {
+    open func cacheImage(_ image: UIImage, forKey key:String) {
         self.cache.setObject(image, forKey: key as AnyObject)
     }
     
-    public func cacheImage(_ image: UIImage, forURL url:String) {
+    open func cacheImage(_ image: UIImage, forURL url:String) {
         if let URL = URL(string: url) {
             let key = Downloader.getCachePath() + "/" + URL.absoluteString.replacingOccurrences(of: "/", with: "_")
             self.cacheImage(image, forKey: key)
         }
     }
     
-    public func getImage(_ key: String) -> UIImage? {
+    open func getImage(_ key: String) -> UIImage? {
         return self.cache.object(forKey: key as AnyObject) as? UIImage
     }
 }

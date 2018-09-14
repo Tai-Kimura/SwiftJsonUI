@@ -24,7 +24,7 @@
 
 import UIKit
 
-public class SJUISelectBox: SJUIView, SheetViewDelegate {
+open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     static let defaultCaretWidth: CGFloat = 39.0
     public static var defaultCaretImageName = "Triangle"
@@ -54,7 +54,7 @@ public class SJUISelectBox: SJUIView, SheetViewDelegate {
         }
     }
     
-    public var items = [String]() {
+    open var items = [String]() {
         didSet {
             if self.hasPrompt {
                 items.insert(prompt!, at: 0)
@@ -64,7 +64,7 @@ public class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     private var _selectedIndex: Int?
     
-    public var selectedIndex: Int? {
+    open var selectedIndex: Int? {
         get {
             return _selectedIndex
         }
@@ -84,7 +84,7 @@ public class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     private var _selectedDate: Date?
     
-    public var selectedDate: Date? {
+    open var selectedDate: Date? {
         get {
             return _selectedDate
         }
@@ -302,7 +302,7 @@ public class SJUISelectBox: SJUIView, SheetViewDelegate {
         self._label = l
     }
     
-    @objc public func showSheet() {
+    @objc open func showSheet() {
         guard let viewController = (selectBoxDelegate as? SJUIViewController) else {
             return
         }
@@ -317,7 +317,7 @@ public class SJUISelectBox: SJUIView, SheetViewDelegate {
         setScrollOffset()
     }
     
-    public func setScrollOffset() {
+    open func setScrollOffset() {
         guard let referenceView = referenceView  else {
             return
         }
@@ -341,44 +341,44 @@ public class SJUISelectBox: SJUIView, SheetViewDelegate {
         })
     }
     
-    public func didPickItem(row: Int, inComponent component: Int) {
+    open func didPickItem(row: Int, inComponent component: Int) {
         _selectedIndex = row
         let text = items[row]
         label.selected = !hasPrompt || row != 0
         label.applyAttributedText(text)
     }
     
-    public func backWithPick(row: Int, forComponent component: Int) {
+    open func backWithPick(row: Int, forComponent component: Int) {
         resetScrollViewInset()
         didPickItem(row: row, inComponent: component)
         selectBoxDelegate?.didItemSelected(view: self, isBack: true)
     }
     
-    public func dismissWithPick(row: Int, forComponent component: Int) {
+    open func dismissWithPick(row: Int, forComponent component: Int) {
         resetScrollViewInset()
         didPickItem(row: row, inComponent: component)
         selectBoxDelegate?.didItemSelected(view: self, isBack: false)
     }
     
-    public func didPickDate(_ date: Date) {
+    open func didPickDate(_ date: Date) {
         _selectedDate = date
         label.selected = true
         label.applyAttributedText(date.timeIntervalSince1970.toDateString(format: dateStringFormat))
     }
     
-    public func backWithPickDate(_ date: Date) {
+    open func backWithPickDate(_ date: Date) {
         resetScrollViewInset()
         didPickDate(date)
         selectBoxDelegate?.didItemSelected(view: self, isBack: true)
     }
     
-    public func dismissWithPickDate(_ date: Date) {
+    open func dismissWithPickDate(_ date: Date) {
         resetScrollViewInset()
         didPickDate(date)
         selectBoxDelegate?.didItemSelected(view: self, isBack: false)
     }
     
-    override public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISelectBox {
+    override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISelectBox {
         let s = SJUISelectBox(attr: attr)
         s.selectBoxDelegate = target as? UISelectBoxDelegate
         return s

@@ -8,9 +8,9 @@
 
 import UIKit
 
-public class SJUISegmentedControl: UISegmentedControl {
+open class SJUISegmentedControl: UISegmentedControl {
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISegmentedControl {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISegmentedControl {
         
         let itemNames:[String]
         if let names = attr["items"].arrayObject as? [String] {

@@ -39,7 +39,7 @@ import UIKit
     @objc optional func backWithPickDate(_ date: Date)
 }
 
-public class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
+open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     
     public static var backgroundColor = UIColor.colorWithHexString("000000", alpha: 0.2)
     
@@ -256,7 +256,7 @@ public class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         dismiss(isBack: true)
     }
     
-    func getCalendar() -> Calendar {
+    open func getCalendar() -> Calendar {
         return Calendar(identifier: Calendar.Identifier.gregorian)
     }
 }

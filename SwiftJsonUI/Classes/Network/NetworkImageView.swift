@@ -24,7 +24,7 @@
 
 import UIKit
 
-public class NetworkImageView: SJUIImageView {
+open class NetworkImageView: SJUIImageView {
     
     static let animationKey = "network_image_view_animation_key"
     
@@ -45,7 +45,7 @@ public class NetworkImageView: SJUIImageView {
         self.image = nil
     }
     
-    public func setImageResource(_ image: UIImage?) {
+    open func setImageResource(_ image: UIImage?) {
         self.layer.removeAllAnimations()
         self.layer.opacity = 1
         downloader?.completionHandler = nil
@@ -53,7 +53,7 @@ public class NetworkImageView: SJUIImageView {
         self.image = image
     }
     
-    public func setImageURL(string: String!) {
+    open func setImageURL(string: String!) {
         if let string = string, let url = URL(string: string) {
             self.setImageURL(url: url)
         } else {
@@ -61,7 +61,7 @@ public class NetworkImageView: SJUIImageView {
         }
     }
     
-    public func setImageURL(url: URL) {
+    open func setImageURL(url: URL) {
         downloader?.completionHandler = nil
         downloader?.cancel()
         downloader = nil
@@ -131,12 +131,12 @@ public class NetworkImageView: SJUIImageView {
         downloader?.start()
     }
     
-    override public func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
+    override open func animationDidStop(_ anim: CAAnimation, finished flag: Bool) {
         self.layer.removeAllAnimations()
         self.layer.opacity = 1
     }
     
-    public class func deleteCaheForPath(url: URL!) -> Bool {
+    open class func deleteCaheForPath(url: URL!) -> Bool {
         if url == nil {
             return false
         }
@@ -152,7 +152,7 @@ public class NetworkImageView: SJUIImageView {
         }
     }
     
-    override public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> NetworkImageView {
+    override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> NetworkImageView {
         let i = NetworkImageView()
         i.setMask()
         if let contentMode = attr["contentMode"].string {

@@ -24,7 +24,7 @@
 
 import UIKit
 
-public class SJUILabel: UILabel {
+open class SJUILabel: UILabel {
     public static var defaultLinkColor = UIColor.blue
     
     public var hint: String?
@@ -51,19 +51,19 @@ public class SJUILabel: UILabel {
     // paddingの値
     public var padding = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     
-    override public func drawText(in rect: CGRect) {
+    override open func drawText(in rect: CGRect) {
         let newRect = UIEdgeInsetsInsetRect(rect, padding)
         super.drawText(in: newRect)
     }
     
-    override public var intrinsicContentSize : CGSize {
+    override open var intrinsicContentSize : CGSize {
         var intrinsicContentSize = super.intrinsicContentSize
         intrinsicContentSize.height += padding.top + padding.bottom
         intrinsicContentSize.width += padding.left + padding.right
         return intrinsicContentSize
     }
     
-    public func applyAttributedText(_ text: String!) {
+    open func applyAttributedText(_ text: String!) {
         self.linkable = false
         let string = text ?? ""
         let attr = selected ? highlightAttributes : attributes
@@ -71,7 +71,7 @@ public class SJUILabel: UILabel {
     }
     
     
-    public func applyLinkableAttributedText(_ text: String!, withColor color: UIColor = defaultLinkColor) {
+    open func applyLinkableAttributedText(_ text: String!, withColor color: UIColor = defaultLinkColor) {
         let attrText = NSMutableAttributedString(string: text, attributes: self.attributes)
         let detector = try! NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
         let matches = detector.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
@@ -83,7 +83,7 @@ public class SJUILabel: UILabel {
         self.attributedText = attrText
     }
     
-    override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if touches.count == 1 && self.linkable {
             if let location = touches.first?.location(in: self) {
                 if let characterIndex = self.characterIndexAtPoint(location) {
@@ -105,34 +105,34 @@ public class SJUILabel: UILabel {
         super.touchesBegan(touches, with: event)
     }
     
-    override public func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         self.touchedURL = nil
         super.touchesCancelled(touches, with: event)
     }
     
-    override public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         self.touchedURL = nil
         super.touchesMoved(touches, with: event)
     }
     
-    override public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         self.touchedURL = nil
         super.touchesEnded(touches, with: event)
     }
     
-    override public func onBeginTap() {
+    override open func onBeginTap() {
         super.onBeginTap()
         self.touchDelegate?.touchBegin(self)
     }
     
-    override public func onEndTap() {
+    override open func onEndTap() {
         super.onEndTap()
         self.touchDelegate?.touchEnd(self)
     }
     
-    @objc public func onLinkTap(_ sender: UITapGestureRecognizer) {
+    @objc open func onLinkTap(_ sender: UITapGestureRecognizer) {
         if let linkHandleDelegate = self.linkHandleDelegate, !linkedRanges.isEmpty {
             let location = sender.location(in: self)
             if let characterIndex = self.characterIndexAtPoint(location) {
@@ -148,7 +148,7 @@ public class SJUILabel: UILabel {
         }
     }
     
-    public func characterIndexAtPoint(_ p: CGPoint) -> Int? {
+    open func characterIndexAtPoint(_ p: CGPoint) -> Int? {
         if (!self.bounds.contains(p) || self.attributedText == nil) {
             return nil;
         }

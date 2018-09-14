@@ -28,7 +28,7 @@ import UIKit
     func textViewDidChangeFrame(textView: SJUITextView)
 }
 
-public class SJUITextView: UITextView {
+open class SJUITextView: UITextView {
     
     public var maxHeight: CGFloat = 0
     
@@ -50,7 +50,7 @@ public class SJUITextView: UITextView {
     
     public weak var sjuiDelegate: SJUITextViewDelegate?
     
-    override public var text:String! {
+    override open var text:String! {
         get { return super.text; }
         set (val) {
             super.text = val;
@@ -58,7 +58,7 @@ public class SJUITextView: UITextView {
         }
     }
     
-    override public var attributedText:NSAttributedString! {
+    override open var attributedText:NSAttributedString! {
         get { return super.attributedText; }
         set (val) {
             super.attributedText = val;
@@ -67,7 +67,7 @@ public class SJUITextView: UITextView {
     }
     
     
-    public var hint: String! {
+    open var hint: String! {
         willSet {
             if self.placeHolder == nil {
                 self.placeHolder = UILabel()
@@ -109,12 +109,12 @@ public class SJUITextView: UITextView {
         NotificationCenter.default.removeObserver(self)
     }
     
-    override public func draw(_ rect: CGRect) {
+    override open func draw(_ rect: CGRect) {
         super.draw(rect)
         
     }
     
-    override public func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
+    override open func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if keyPath != nil && keyPath == "contentSize" {
             if !flexible {
                 return
@@ -161,13 +161,13 @@ public class SJUITextView: UITextView {
         self.sjuiDelegate?.textViewDidChangeFrame(textView: self)
     }
     
-    @objc public func textChanged() {
+    @objc open func textChanged() {
         if self.isFirstResponder {
             setPlaceHolderIfNeeded()
         }
     }
     
-    public func setPlaceHolderIfNeeded() {
+    open func setPlaceHolderIfNeeded() {
         if self.text.count == 0 {
             self.placeHolder?.isHidden = hideOnFocused
         } else {
@@ -175,13 +175,13 @@ public class SJUITextView: UITextView {
         }
     }
     
-    @objc public func textBeginEditing() {
+    @objc open func textBeginEditing() {
         if self.isFirstResponder {
             self.placeHolder?.isHidden = true
         }
     }
     
-    @objc public func textEndEditing() {
+    @objc open func textEndEditing() {
         if self.text.count == 0 {
             self.placeHolder?.isHidden = false
         } else {
@@ -189,7 +189,7 @@ public class SJUITextView: UITextView {
         }
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITextView {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITextView {
         let t = SJUITextView()
         t.hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) ?? SJUIViewCreator.defaultHintColor
         t.delegate = target as? UITextViewDelegate

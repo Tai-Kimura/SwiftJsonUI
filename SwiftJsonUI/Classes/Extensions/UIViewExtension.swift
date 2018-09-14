@@ -75,13 +75,13 @@ public extension UIView {
     }
     
     @objc
-    public func onBeginTap() {
+    open func onBeginTap() {
         if tapBackgroundColor != nil {
             self.backgroundColor = tapBackgroundColor
         }
     }
     @objc
-    public func onEndTap() {
+    open func onEndTap() {
         if defaultBackgroundColor != nil {
             self.backgroundColor = defaultBackgroundColor
         }

@@ -24,7 +24,7 @@
 
 import UIKit
 
-public class SJUILabelWithIcon: SJUIView {
+open class SJUILabelWithIcon: SJUIView {
     
     public var label: SJUILabel!
     
@@ -136,7 +136,7 @@ public class SJUILabelWithIcon: SJUIView {
         super.init(coder: aDecoder)
     }
     
-    override public func onBeginTap() {
+    override open func onBeginTap() {
         if canTap {
             if effectView == nil {
                 let frame = self.frame
@@ -163,7 +163,7 @@ public class SJUILabelWithIcon: SJUIView {
         }
     }
     
-    override public func onEndTap() {
+    override open func onEndTap() {
         if canTap {
             if effectView.superview == nil {
                 self.insertSubview(effectView, at: 0)
@@ -181,7 +181,7 @@ public class SJUILabelWithIcon: SJUIView {
         }
     }
     
-    override public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUILabelWithIcon {
+    override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUILabelWithIcon {
         let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
         let selectedFontColor =  UIColor.findColorByJSON(attr: attr["selectedFontColor"]) ?? fontColor
         let positionStr = attr["position"].string ?? "Left"

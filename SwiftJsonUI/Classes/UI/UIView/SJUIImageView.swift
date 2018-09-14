@@ -7,13 +7,13 @@
 
 import UIKit
 
-public class SJUIImageView: UIImageView {
+open class SJUIImageView: UIImageView {
     
     public var canTap = false
     
     internal var filter: SJUIView?
     
-    public func setMask() {
+    open func setMask() {
         let filter = SJUIView()
         
         filter.defaultBackgroundColor = UIColor.clear
@@ -32,7 +32,7 @@ public class SJUIImageView: UIImageView {
     }
     
     
-    override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let location = touches.first?.location(in: self) {
             if location.x >= 0 && location.x <= self.frame.size.width && location.y >= 0 && location.y <= self.frame.size.height {
                 onBeginTap()
@@ -42,34 +42,34 @@ public class SJUIImageView: UIImageView {
         
     }
     
-    override public func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         super.touchesCancelled(touches, with: event)
     }
     
-    override public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
         onEndTap()
     }
     
-    override public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         super.touchesEnded(touches, with: event)
     }
     
-    @objc override public func onBeginTap() {
+    @objc override open func onBeginTap() {
         if canTap {
             self.filter?.onBeginTap()
         }
     }
     
-    @objc override public func onEndTap() {
+    @objc override open func onEndTap() {
         if canTap {
             self.filter?.onEndTap()
         }
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIImageView {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIImageView {
         
         let i = SJUIImageView()
         i.setMask()

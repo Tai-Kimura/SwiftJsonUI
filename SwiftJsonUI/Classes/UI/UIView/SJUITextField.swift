@@ -12,7 +12,7 @@ import UIKit
     @objc optional func textFieldDidDeleteBackward(textField: UITextField)
 }
 
-public class SJUITextField: UITextField {
+open class SJUITextField: UITextField {
     
     public static var accessoryBackgroundColor = UIColor.gray
     
@@ -20,18 +20,18 @@ public class SJUITextField: UITextField {
     
     private var _sjUiDelegate: SJUITextFieldDelegate?
     
-    override public var delegate: UITextFieldDelegate? {
+    override open var delegate: UITextFieldDelegate? {
         didSet {
             self._sjUiDelegate = self.delegate as? SJUITextFieldDelegate
         }
     }
     
-    override public func deleteBackward() {
+    override open func deleteBackward() {
         super.deleteBackward()
         self._sjUiDelegate?.textFieldDidDeleteBackward?(textField: self)
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITextField {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITextField {
         
         let t = SJUITextField()
         switch attr["textVerticalAlign"].string ?? "" {

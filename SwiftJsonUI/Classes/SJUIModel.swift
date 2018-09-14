@@ -8,9 +8,9 @@
 
 import UIKit
 
-public class SJUIModel: NSObject {
+open class SJUIModel: NSObject {
     
-    public var _json: JSON
+    open var _json: JSON
     
     public var selected: Bool = false
     

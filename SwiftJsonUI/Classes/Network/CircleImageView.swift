@@ -23,7 +23,7 @@
 
 import UIKit
 
-public class CircleImageView: NetworkImageView {
+open class CircleImageView: NetworkImageView {
     
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
@@ -33,7 +33,7 @@ public class CircleImageView: NetworkImageView {
         super.init(frame:frame)
     }
     
-    override public func setImageURL(url: URL) {
+    override open func setImageURL(url: URL) {
         downloader?.completionHandler = nil
         downloader?.cancel()
         downloader = nil
@@ -160,7 +160,7 @@ public class CircleImageView: NetworkImageView {
         return newImage;
     }
     
-    override public class func deleteCaheForPath(url: URL!) -> Bool {
+    override open class func deleteCaheForPath(url: URL!) -> Bool {
         if url == nil {
             return false
         }
@@ -176,7 +176,7 @@ public class CircleImageView: NetworkImageView {
         return super.deleteCaheForPath(url: url)
     }
     
-    override public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> CircleImageView {
+    override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> CircleImageView {
         let rect: CGRect
         
         if let width = attr["width"].cgFloat, let height = attr["height"].cgFloat {

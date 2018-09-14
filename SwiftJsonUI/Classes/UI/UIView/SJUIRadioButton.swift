@@ -28,7 +28,7 @@ import UIKit
     func radioGroupCheckChanged(_ radiogroup: NSRadioGroup)
 }
 
-public class SJUIRadioButton: UIView {
+open class SJUIRadioButton: UIView {
     
     public static var defaultOffColor = UIColor.gray
     
@@ -127,11 +127,11 @@ public class SJUIRadioButton: UIView {
         super.init(coder: aDecoder)
     }
     
-    @objc public func onCheck() {
+    @objc open func onCheck() {
         self.ragioGroup?.check(self)
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIRadioButton {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIRadioButton {
         
         let text = NSLocalizedString(attr["text"].stringValue, comment: "")
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0

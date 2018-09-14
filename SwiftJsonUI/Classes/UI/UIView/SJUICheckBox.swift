@@ -29,7 +29,7 @@ import UIKit
 }
 
 
-public class SJUICheckBox: UIButton {
+open class SJUICheckBox: UIButton {
     
     static let checkBoxSize = CGSize(width: 20.0, height: 20.0)
     
@@ -56,24 +56,24 @@ public class SJUICheckBox: UIButton {
         super.init(coder: aDecoder)
     }
     
-    public func addLabel(_ label: UIView!) {
+    open func addLabel(_ label: UIView!) {
         let gr = UITapGestureRecognizer(target: self, action: #selector(SJUICheckBox.onCheck))
         label?.addGestureRecognizer(gr)
         label?.isUserInteractionEnabled = true
     }
     
-    @objc public func onCheck() {
+    @objc open func onCheck() {
         self.isSelected = !self.isSelected
         self.targetModel?.selected = self.isSelected
         self.checkBoxDelegate?.checkBoxOnCheck(self)
     }
     
-    public func setCheck(_ check: Bool) {
+    open func setCheck(_ check: Bool) {
         self.isSelected = check
         self.targetModel?.selected = self.isSelected
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICheckBox {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICheckBox {
         
         let c = SJUICheckBox(withLabel: views[attr["label"].stringValue], imagePath: attr["src"].string, onImagePath: attr["onSrc"].string)
         c.checkBoxDelegate = target as? SJUICheckBoxDelegate

@@ -10,11 +10,11 @@ import UIKit
 import SafariServices
 
 @objcMembers
-public class SJUIViewController: UIViewController, UITextFieldDelegate, UITextViewDelegate, SJUITextViewDelegate, ViewHolder {
+open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextViewDelegate, SJUITextViewDelegate, ViewHolder {
     
     public var _views = [String:UIView]()
     
-    public func hideKeyboard() {
+    open func hideKeyboard() {
         for view in _views.values {
             if view.isFirstResponder {
                 view.resignFirstResponder()
@@ -33,20 +33,20 @@ public class SJUIViewController: UIViewController, UITextFieldDelegate, UITextVi
         }
     }
     
-    public func returnNumberPad() {
+    open func returnNumberPad() {
         hideKeyboard()
     }
     
-    public func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+    open func textFieldShouldReturn(_ textField: UITextField) -> Bool {
         textField.resignFirstResponder()
         return true
     }
     
-    public func textViewDidChange(_ textView: UITextView) {
+    open func textViewDidChange(_ textView: UITextView) {
         
     }
     
-    public func textViewDidChangeFrame(textView: SJUITextView) {
+    open func textViewDidChangeFrame(textView: SJUITextView) {
         
     }
 }

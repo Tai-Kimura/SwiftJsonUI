@@ -25,7 +25,7 @@
 
 import UIKit
 
-public class SJUICircleView: UIView {
+open class SJUICircleView: UIView {
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -41,27 +41,27 @@ public class SJUICircleView: UIView {
         self.layer.cornerRadius = self.frame.size.width/2.0
     }
     
-    override public func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         onBeginTap()
         super.touchesBegan(touches, with: event)
     }
     
-    override public func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesCancelled(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         super.touchesCancelled(touches, with: event)
     }
     
-    override public func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
         onEndTap()
     }
     
-    override public func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+    override open func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         onEndTap()
         super.touchesEnded(touches, with: event)
     }
     
-    public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICircleView {
+    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICircleView {
         let rect: CGRect
         
         if let width = attr["width"].cgFloat, let height = attr["height"].cgFloat {

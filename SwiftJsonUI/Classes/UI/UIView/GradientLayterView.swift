@@ -6,9 +6,9 @@
 
 import UIKit
 
-class GradientView: SJUIView {
+open class GradientView: SJUIView {
     
-    override public class var layerClass : AnyClass {
+    override open class var layerClass : AnyClass {
         return CAGradientLayer.self
     }
 }
