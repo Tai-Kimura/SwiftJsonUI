@@ -27,6 +27,10 @@ open class SJUISegmentedControl: UISegmentedControl {
         super.init(coder: aDecoder)
     }
     
+    required public override init(frame: CGRect) {
+        super.init(frame: frame)
+    }
+    
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISegmentedControl {
         
         let itemNames:[String]
