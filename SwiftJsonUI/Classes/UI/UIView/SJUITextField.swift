@@ -18,6 +18,8 @@ open class SJUITextField: UITextField {
     
     public static var accessoryTextColor = UIColor.blue
     
+    public static var defaultBorderColor = UIColor.lightGray
+    
     private var _sjUiDelegate: SJUITextFieldDelegate?
     
     override open var delegate: UITextFieldDelegate? {
@@ -54,7 +56,7 @@ open class SJUITextField: UITextField {
         t.font = font
         t.textColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
         t.layer.cornerRadius = attr["cornerRadius"].cgFloat == nil ? 0 : attr["cornerRadius"].cgFloat!
-        t.layer.borderColor = (UIColor.findColorByJSON(attr: attr["borderColor"]) ?? UIColor.lightGray).cgColor
+        t.layer.borderColor = (UIColor.findColorByJSON(attr: attr["borderColor"]) ?? SJUITextField.defaultBorderColor).cgColor
         t.layer.borderWidth = attr["borderWidth"].cgFloat == nil ? 0.3 : attr["borderWidth"].cgFloat!
         let leftPaddingView = UIView(frame:CGRect(x: 0, y: 0, width: attr["textPaddingLeft"].cgFloat ?? 10.0, height: attr["textPaddingRight"].cgFloat ?? 5.0))
         leftPaddingView.isOpaque = false
