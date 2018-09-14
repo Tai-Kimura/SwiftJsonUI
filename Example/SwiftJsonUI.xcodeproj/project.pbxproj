@@ -7,20 +7,20 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0A7484108235C01977D41264 /* Pods_SwiftJsonUI_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3B8318328F576C49412DB741 /* Pods_SwiftJsonUI_Tests.framework */; };
 		607FACEC1AFB9204008FA782 /* Tests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 607FACEB1AFB9204008FA782 /* Tests.swift */; };
-		6256B40F72B9F3999E88D6D7 /* Pods_SwiftJsonUI_Tests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7C16E8B01AB30208A5E58DD0 /* Pods_SwiftJsonUI_Tests.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		11989D1ABF301E4CE969D157 /* Pods-SwiftJsonUI_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftJsonUI_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests.release.xcconfig"; sourceTree = "<group>"; };
-		3C61AE65DDCF444135892A52 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
-		5FFE9A4FE1ED5FE545CC4524 /* SwiftJsonUI.podspec */ = {isa = PBXFileReference; includeInIndex = 1; name = SwiftJsonUI.podspec; path = ../SwiftJsonUI.podspec; sourceTree = "<group>"; };
+		1EBA3F9E0848EF4801DFAF22 /* Pods-SwiftJsonUI_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftJsonUI_Tests.release.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests.release.xcconfig"; sourceTree = "<group>"; };
+		3B8318328F576C49412DB741 /* Pods_SwiftJsonUI_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftJsonUI_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACE51AFB9204008FA782 /* SwiftJsonUI_Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SwiftJsonUI_Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		607FACEA1AFB9204008FA782 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		607FACEB1AFB9204008FA782 /* Tests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tests.swift; sourceTree = "<group>"; };
-		645E5173E77563C6E39F212A /* Pods-SwiftJsonUI_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftJsonUI_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests.debug.xcconfig"; sourceTree = "<group>"; };
-		7C16E8B01AB30208A5E58DD0 /* Pods_SwiftJsonUI_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftJsonUI_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		817E1CAA575E35C2662F3237 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		616C7F32E3FE5BFF857A4DD7 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
+		7F61F9342670EB12D16FC3CD /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; name = README.md; path = ../README.md; sourceTree = "<group>"; };
+		C0DB35D44169A1CC1B673C21 /* Pods-SwiftJsonUI_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-SwiftJsonUI_Tests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		DD40BFF62D129DF3EC0D5755 /* SwiftJsonUI.podspec */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = SwiftJsonUI.podspec; path = ../SwiftJsonUI.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -28,7 +28,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6256B40F72B9F3999E88D6D7 /* Pods_SwiftJsonUI_Tests.framework in Frameworks */,
+				0A7484108235C01977D41264 /* Pods_SwiftJsonUI_Tests.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -41,8 +41,8 @@
 				607FACF51AFB993E008FA782 /* Podspec Metadata */,
 				607FACE81AFB9204008FA782 /* Tests */,
 				607FACD11AFB9204008FA782 /* Products */,
-				A221F8D8149A9005E0656578 /* Pods */,
-				BB7A9994887678A5B52AFF9F /* Frameworks */,
+				FE4CD35F4161E835A3724C2F /* Pods */,
+				EFE0D7A6B7D7A1ABB91A0DF6 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,28 +74,28 @@
 		607FACF51AFB993E008FA782 /* Podspec Metadata */ = {
 			isa = PBXGroup;
 			children = (
-				5FFE9A4FE1ED5FE545CC4524 /* SwiftJsonUI.podspec */,
-				817E1CAA575E35C2662F3237 /* README.md */,
-				3C61AE65DDCF444135892A52 /* LICENSE */,
+				DD40BFF62D129DF3EC0D5755 /* SwiftJsonUI.podspec */,
+				7F61F9342670EB12D16FC3CD /* README.md */,
+				616C7F32E3FE5BFF857A4DD7 /* LICENSE */,
 			);
 			name = "Podspec Metadata";
 			sourceTree = "<group>";
 		};
-		A221F8D8149A9005E0656578 /* Pods */ = {
+		EFE0D7A6B7D7A1ABB91A0DF6 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				645E5173E77563C6E39F212A /* Pods-SwiftJsonUI_Tests.debug.xcconfig */,
-				11989D1ABF301E4CE969D157 /* Pods-SwiftJsonUI_Tests.release.xcconfig */,
-			);
-			name = Pods;
-			sourceTree = "<group>";
-		};
-		BB7A9994887678A5B52AFF9F /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				7C16E8B01AB30208A5E58DD0 /* Pods_SwiftJsonUI_Tests.framework */,
+				3B8318328F576C49412DB741 /* Pods_SwiftJsonUI_Tests.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		FE4CD35F4161E835A3724C2F /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				C0DB35D44169A1CC1B673C21 /* Pods-SwiftJsonUI_Tests.debug.xcconfig */,
+				1EBA3F9E0848EF4801DFAF22 /* Pods-SwiftJsonUI_Tests.release.xcconfig */,
+			);
+			name = Pods;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -105,11 +105,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 607FACF21AFB9204008FA782 /* Build configuration list for PBXNativeTarget "SwiftJsonUI_Tests" */;
 			buildPhases = (
-				8DE2A4C2194A822601767366 /* [CP] Check Pods Manifest.lock */,
+				C40F45E3AFCC7DAB7811BD26 /* [CP] Check Pods Manifest.lock */,
 				607FACE11AFB9204008FA782 /* Sources */,
 				607FACE21AFB9204008FA782 /* Frameworks */,
 				607FACE31AFB9204008FA782 /* Resources */,
-				6EF2D31ED3AF4BAFF351E797 /* [CP] Embed Pods Frameworks */,
+				54C6108A36FD76B1AD80BEBE /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -130,10 +130,6 @@
 				LastUpgradeCheck = 0830;
 				ORGANIZATIONNAME = CocoaPods;
 				TargetAttributes = {
-					607FACCF1AFB9204008FA782 = {
-						CreatedOnToolsVersion = 6.3.1;
-						LastSwiftMigration = 0900;
-					};
 					607FACE41AFB9204008FA782 = {
 						CreatedOnToolsVersion = 6.3.1;
 						LastSwiftMigration = 0900;
@@ -170,21 +166,17 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		6EF2D31ED3AF4BAFF351E797 /* [CP] Embed Pods Frameworks */ = {
+		54C6108A36FD76B1AD80BEBE /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/Nimble/Nimble.framework",
-				"${BUILT_PRODUCTS_DIR}/Quick/Quick.framework",
 				"${BUILT_PRODUCTS_DIR}/SwiftJsonUI/SwiftJsonUI.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Nimble.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Quick.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/SwiftJsonUI.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -192,7 +184,7 @@
 			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		8DE2A4C2194A822601767366 /* [CP] Check Pods Manifest.lock */ = {
+		C40F45E3AFCC7DAB7811BD26 /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -325,7 +317,7 @@
 		};
 		607FACF31AFB9204008FA782 /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 645E5173E77563C6E39F212A /* Pods-SwiftJsonUI_Tests.debug.xcconfig */;
+			baseConfigurationReference = C0DB35D44169A1CC1B673C21 /* Pods-SwiftJsonUI_Tests.debug.xcconfig */;
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",
@@ -347,7 +339,7 @@
 		};
 		607FACF41AFB9204008FA782 /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 11989D1ABF301E4CE969D157 /* Pods-SwiftJsonUI_Tests.release.xcconfig */;
+			baseConfigurationReference = 1EBA3F9E0848EF4801DFAF22 /* Pods-SwiftJsonUI_Tests.release.xcconfig */;
 			buildSettings = {
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(SDKROOT)/Developer/Library/Frameworks",

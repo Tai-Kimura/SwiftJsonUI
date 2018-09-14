@@ -1,0 +1,16 @@
+PODS:
+  - SwiftJsonUI (0.0.1)
+
+DEPENDENCIES:
+  - SwiftJsonUI (from `../`)
+
+EXTERNAL SOURCES:
+  SwiftJsonUI:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  SwiftJsonUI: 6b2f53a936b09625fead8557ec942000909bcd74
+
+PODFILE CHECKSUM: 75eaee9837d9db21914e4e177dbfd9b0879e4292
+
+COCOAPODS: 1.5.2

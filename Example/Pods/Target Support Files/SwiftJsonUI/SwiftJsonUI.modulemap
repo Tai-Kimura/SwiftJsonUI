@@ -1,0 +1,6 @@
+framework module SwiftJsonUI {
+  umbrella header "SwiftJsonUI-umbrella.h"
+
+  export *
+  module * { export * }
+}

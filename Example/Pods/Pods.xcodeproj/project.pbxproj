@@ -1,0 +1,863 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		149BA2CB181405BB836602F9AA62D4E1 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6604A7D69453B4569E4E4827FB9155A9 /* Foundation.framework */; };
+		2A2BE2A80C581D995F8B857B92924D9F /* Pods-SwiftJsonUI_Tests-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 9F9D9D5F9B89EA8DE26958F1AD501AD9 /* Pods-SwiftJsonUI_Tests-dummy.m */; };
+		501D52AED52E6DFE35C9486DDDFFA779 /* SwiftJsonUI-dummy.m in Sources */ = {isa = PBXBuildFile; fileRef = 9AC3AC97ED72EA099451F4867637EF20 /* SwiftJsonUI-dummy.m */; };
+		7AA1DDF3246B2283F24378997C51A67C /* Pods-SwiftJsonUI_Tests-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 07C6F1772F3D831E47FA49D9CD506A1D /* Pods-SwiftJsonUI_Tests-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		7DA174DD05DE515CB398CA264F5A7550 /* SwiftJsonUI-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = 95DF8406AE2B244BE36442695A55115E /* SwiftJsonUI-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		97001C9432FED986711ACB6E182D6B72 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6604A7D69453B4569E4E4827FB9155A9 /* Foundation.framework */; };
+		B692FB33214B4564008E9631 /* UIButtonExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB09214B4563008E9631 /* UIButtonExtension.swift */; };
+		B692FB34214B4564008E9631 /* UIButtonExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB09214B4563008E9631 /* UIButtonExtension.swift */; };
+		B692FB35214B4564008E9631 /* UIColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0A214B4563008E9631 /* UIColorExtension.swift */; };
+		B692FB36214B4564008E9631 /* UIColorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0A214B4563008E9631 /* UIColorExtension.swift */; };
+		B692FB37214B4564008E9631 /* NSAttibutedStringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0B214B4563008E9631 /* NSAttibutedStringExtension.swift */; };
+		B692FB38214B4564008E9631 /* NSAttibutedStringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0B214B4563008E9631 /* NSAttibutedStringExtension.swift */; };
+		B692FB39214B4564008E9631 /* UILabelExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0C214B4563008E9631 /* UILabelExtension.swift */; };
+		B692FB3A214B4564008E9631 /* UILabelExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0C214B4563008E9631 /* UILabelExtension.swift */; };
+		B692FB3B214B4564008E9631 /* IntExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0D214B4563008E9631 /* IntExtension.swift */; };
+		B692FB3C214B4564008E9631 /* IntExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0D214B4563008E9631 /* IntExtension.swift */; };
+		B692FB3D214B4564008E9631 /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0E214B4563008E9631 /* UIViewExtension.swift */; };
+		B692FB3E214B4564008E9631 /* UIViewExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0E214B4563008E9631 /* UIViewExtension.swift */; };
+		B692FB3F214B4564008E9631 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0F214B4563008E9631 /* StringExtension.swift */; };
+		B692FB40214B4564008E9631 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB0F214B4563008E9631 /* StringExtension.swift */; };
+		B692FB41214B4564008E9631 /* UIImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB10214B4563008E9631 /* UIImageExtension.swift */; };
+		B692FB42214B4564008E9631 /* UIImageExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB10214B4563008E9631 /* UIImageExtension.swift */; };
+		B692FB43214B4564008E9631 /* DoubleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB11214B4563008E9631 /* DoubleExtension.swift */; };
+		B692FB44214B4564008E9631 /* DoubleExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB11214B4563008E9631 /* DoubleExtension.swift */; };
+		B692FB45214B4564008E9631 /* SJUIModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB12214B4563008E9631 /* SJUIModel.swift */; };
+		B692FB46214B4564008E9631 /* SJUIModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB12214B4563008E9631 /* SJUIModel.swift */; };
+		B692FB47214B4564008E9631 /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB14214B4563008E9631 /* SwiftyJSON.swift */; };
+		B692FB48214B4564008E9631 /* SwiftyJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB14214B4563008E9631 /* SwiftyJSON.swift */; };
+		B692FB49214B4564008E9631 /* Downloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB15214B4563008E9631 /* Downloader.swift */; };
+		B692FB4A214B4564008E9631 /* Downloader.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB15214B4563008E9631 /* Downloader.swift */; };
+		B692FB4B214B4564008E9631 /* NSObjectExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB16214B4563008E9631 /* NSObjectExtension.swift */; };
+		B692FB4C214B4564008E9631 /* NSObjectExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB16214B4563008E9631 /* NSObjectExtension.swift */; };
+		B692FB4D214B4564008E9631 /* NetworkImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB17214B4563008E9631 /* NetworkImageView.swift */; };
+		B692FB4E214B4564008E9631 /* NetworkImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB17214B4563008E9631 /* NetworkImageView.swift */; };
+		B692FB4F214B4564008E9631 /* NetworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB18214B4563008E9631 /* NetworkImageCache.swift */; };
+		B692FB50214B4564008E9631 /* NetworkImageCache.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB18214B4563008E9631 /* NetworkImageCache.swift */; };
+		B692FB51214B4564008E9631 /* CircleImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB19214B4563008E9631 /* CircleImageView.swift */; };
+		B692FB52214B4564008E9631 /* CircleImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB19214B4563008E9631 /* CircleImageView.swift */; };
+		B692FB53214B4564008E9631 /* SJUIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1A214B4563008E9631 /* SJUIViewController.swift */; };
+		B692FB54214B4564008E9631 /* SJUIViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1A214B4563008E9631 /* SJUIViewController.swift */; };
+		B692FB55214B4564008E9631 /* UIViewDisposure.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1C214B4563008E9631 /* UIViewDisposure.swift */; };
+		B692FB56214B4564008E9631 /* UIViewDisposure.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1C214B4563008E9631 /* UIViewDisposure.swift */; };
+		B692FB57214B4564008E9631 /* SJUILabelWidthIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1E214B4563008E9631 /* SJUILabelWidthIcon.swift */; };
+		B692FB58214B4564008E9631 /* SJUILabelWidthIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1E214B4563008E9631 /* SJUILabelWidthIcon.swift */; };
+		B692FB59214B4564008E9631 /* SJUICheckBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1F214B4563008E9631 /* SJUICheckBox.swift */; };
+		B692FB5A214B4564008E9631 /* SJUICheckBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB1F214B4563008E9631 /* SJUICheckBox.swift */; };
+		B692FB5B214B4564008E9631 /* SJUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB20214B4563008E9631 /* SJUIView.swift */; };
+		B692FB5C214B4564008E9631 /* SJUIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB20214B4563008E9631 /* SJUIView.swift */; };
+		B692FB5D214B4564008E9631 /* AVView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB21214B4563008E9631 /* AVView.swift */; };
+		B692FB5E214B4564008E9631 /* AVView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB21214B4563008E9631 /* AVView.swift */; };
+		B692FB5F214B4564008E9631 /* SJUITableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB22214B4563008E9631 /* SJUITableView.swift */; };
+		B692FB60214B4564008E9631 /* SJUITableView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB22214B4563008E9631 /* SJUITableView.swift */; };
+		B692FB61214B4564008E9631 /* SJUITextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB23214B4563008E9631 /* SJUITextField.swift */; };
+		B692FB62214B4564008E9631 /* SJUITextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB23214B4563008E9631 /* SJUITextField.swift */; };
+		B692FB63214B4564008E9631 /* SJUILabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB24214B4563008E9631 /* SJUILabel.swift */; };
+		B692FB64214B4564008E9631 /* SJUILabel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB24214B4563008E9631 /* SJUILabel.swift */; };
+		B692FB65214B4564008E9631 /* SJUICircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB25214B4563008E9631 /* SJUICircleView.swift */; };
+		B692FB66214B4564008E9631 /* SJUICircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB25214B4563008E9631 /* SJUICircleView.swift */; };
+		B692FB67214B4564008E9631 /* SJUIVisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB26214B4563008E9631 /* SJUIVisualEffectView.swift */; };
+		B692FB68214B4564008E9631 /* SJUIVisualEffectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB26214B4563008E9631 /* SJUIVisualEffectView.swift */; };
+		B692FB69214B4564008E9631 /* SJUITextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB27214B4563008E9631 /* SJUITextView.swift */; };
+		B692FB6A214B4564008E9631 /* SJUITextView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB27214B4563008E9631 /* SJUITextView.swift */; };
+		B692FB6B214B4564008E9631 /* GradientLayterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB28214B4563008E9631 /* GradientLayterView.swift */; };
+		B692FB6C214B4564008E9631 /* GradientLayterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB28214B4563008E9631 /* GradientLayterView.swift */; };
+		B692FB6D214B4564008E9631 /* SJUIRadioButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB29214B4563008E9631 /* SJUIRadioButton.swift */; };
+		B692FB6E214B4564008E9631 /* SJUIRadioButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB29214B4563008E9631 /* SJUIRadioButton.swift */; };
+		B692FB6F214B4564008E9631 /* SJUIScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2A214B4563008E9631 /* SJUIScrollView.swift */; };
+		B692FB70214B4564008E9631 /* SJUIScrollView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2A214B4563008E9631 /* SJUIScrollView.swift */; };
+		B692FB71214B4564008E9631 /* SJUIImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2B214B4563008E9631 /* SJUIImageView.swift */; };
+		B692FB72214B4564008E9631 /* SJUIImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2B214B4563008E9631 /* SJUIImageView.swift */; };
+		B692FB73214B4564008E9631 /* SJUISwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2C214B4563008E9631 /* SJUISwitch.swift */; };
+		B692FB74214B4564008E9631 /* SJUISwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2C214B4563008E9631 /* SJUISwitch.swift */; };
+		B692FB75214B4564008E9631 /* SJUISelectBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2D214B4563008E9631 /* SJUISelectBox.swift */; };
+		B692FB76214B4564008E9631 /* SJUISelectBox.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2D214B4563008E9631 /* SJUISelectBox.swift */; };
+		B692FB77214B4564008E9631 /* SJUISegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2E214B4563008E9631 /* SJUISegmentedControl.swift */; };
+		B692FB78214B4564008E9631 /* SJUISegmentedControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2E214B4563008E9631 /* SJUISegmentedControl.swift */; };
+		B692FB79214B4564008E9631 /* SJUICollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2F214B4563008E9631 /* SJUICollectionView.swift */; };
+		B692FB7A214B4564008E9631 /* SJUICollectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB2F214B4563008E9631 /* SJUICollectionView.swift */; };
+		B692FB7B214B4564008E9631 /* SJUIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB30214B4563008E9631 /* SJUIButton.swift */; };
+		B692FB7C214B4564008E9631 /* SJUIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB30214B4563008E9631 /* SJUIButton.swift */; };
+		B692FB7D214B4564008E9631 /* UIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* UIViewCreator.swift */; };
+		B692FB7E214B4564008E9631 /* UIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* UIViewCreator.swift */; };
+		B692FB7F214B4564008E9631 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB32214B4563008E9631 /* SheetView.swift */; };
+		B692FB80214B4564008E9631 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB32214B4563008E9631 /* SheetView.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		8660AA19162E822F9566A4C4FACB15DD /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D41D8CD98F00B204E9800998ECF8427E /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = EFDD08F4915C92465B406CB22FBBCDF4;
+			remoteInfo = SwiftJsonUI;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		07C6F1772F3D831E47FA49D9CD506A1D /* Pods-SwiftJsonUI_Tests-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Pods-SwiftJsonUI_Tests-umbrella.h"; sourceTree = "<group>"; };
+		0CEC1A351364D56EACA4097F92B4FECA /* Pods-SwiftJsonUI_Tests-acknowledgements.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = "Pods-SwiftJsonUI_Tests-acknowledgements.plist"; sourceTree = "<group>"; };
+		1F1565A74917EAD3A1A09CD620657500 /* Pods-SwiftJsonUI_Tests-acknowledgements.markdown */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = "Pods-SwiftJsonUI_Tests-acknowledgements.markdown"; sourceTree = "<group>"; };
+		2965D35B3361748D2D2140CD25FAD421 /* SwiftJsonUI.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = SwiftJsonUI.modulemap; sourceTree = "<group>"; };
+		338357B5B094690900400639933F8DB8 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		598CD3073F430486E00D3029D9BE9804 /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		5B792B070CC97D1E07559BFEB0267540 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		6604A7D69453B4569E4E4827FB9155A9 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS10.3.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		6E7D47CB5D50F11C3C3F77C8CD49AA1E /* Pods-SwiftJsonUI_Tests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-SwiftJsonUI_Tests.debug.xcconfig"; sourceTree = "<group>"; };
+		72C630554777B357312E6A8A87BF4B16 /* SwiftJsonUI.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = SwiftJsonUI.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		8C022D15684B7FD924F1B23820140877 /* Pods-SwiftJsonUI_Tests.modulemap */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.module; path = "Pods-SwiftJsonUI_Tests.modulemap"; sourceTree = "<group>"; };
+		8D78CA1B349C846863684E3D4AD2295F /* SwiftJsonUI.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = SwiftJsonUI.xcconfig; sourceTree = "<group>"; };
+		93A4A3777CF96A4AAC1D13BA6DCCEA73 /* Podfile */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; name = Podfile; path = ../Podfile; sourceTree = SOURCE_ROOT; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		95DF8406AE2B244BE36442695A55115E /* SwiftJsonUI-umbrella.h */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "SwiftJsonUI-umbrella.h"; sourceTree = "<group>"; };
+		9AC3AC97ED72EA099451F4867637EF20 /* SwiftJsonUI-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "SwiftJsonUI-dummy.m"; sourceTree = "<group>"; };
+		9CC05B7884B04C8588D9F4CB10A69FD7 /* Pods-SwiftJsonUI_Tests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Pods-SwiftJsonUI_Tests.release.xcconfig"; sourceTree = "<group>"; };
+		9E05DA84EB4ED50D9718FE829E5E7304 /* SwiftJsonUI-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "SwiftJsonUI-prefix.pch"; sourceTree = "<group>"; };
+		9F9D9D5F9B89EA8DE26958F1AD501AD9 /* Pods-SwiftJsonUI_Tests-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-SwiftJsonUI_Tests-dummy.m"; sourceTree = "<group>"; };
+		A95BEB47CB96E6700FAB967F0E25AEE7 /* SwiftJsonUI.podspec */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; path = SwiftJsonUI.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		AF04BBD07C8F4C2BE897C4F0C07EC35E /* Pods-SwiftJsonUI_Tests-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-SwiftJsonUI_Tests-resources.sh"; sourceTree = "<group>"; };
+		B692FB09214B4563008E9631 /* UIButtonExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIButtonExtension.swift; sourceTree = "<group>"; };
+		B692FB0A214B4563008E9631 /* UIColorExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIColorExtension.swift; sourceTree = "<group>"; };
+		B692FB0B214B4563008E9631 /* NSAttibutedStringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSAttibutedStringExtension.swift; sourceTree = "<group>"; };
+		B692FB0C214B4563008E9631 /* UILabelExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UILabelExtension.swift; sourceTree = "<group>"; };
+		B692FB0D214B4563008E9631 /* IntExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = IntExtension.swift; sourceTree = "<group>"; };
+		B692FB0E214B4563008E9631 /* UIViewExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewExtension.swift; sourceTree = "<group>"; };
+		B692FB0F214B4563008E9631 /* StringExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = StringExtension.swift; sourceTree = "<group>"; };
+		B692FB10214B4563008E9631 /* UIImageExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIImageExtension.swift; sourceTree = "<group>"; };
+		B692FB11214B4563008E9631 /* DoubleExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DoubleExtension.swift; sourceTree = "<group>"; };
+		B692FB12214B4563008E9631 /* SJUIModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SJUIModel.swift; path = SwiftJsonUI/Classes/SJUIModel.swift; sourceTree = "<group>"; };
+		B692FB14214B4563008E9631 /* SwiftyJSON.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SwiftyJSON.swift; sourceTree = "<group>"; };
+		B692FB15214B4563008E9631 /* Downloader.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Downloader.swift; sourceTree = "<group>"; };
+		B692FB16214B4563008E9631 /* NSObjectExtension.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NSObjectExtension.swift; sourceTree = "<group>"; };
+		B692FB17214B4563008E9631 /* NetworkImageView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkImageView.swift; sourceTree = "<group>"; };
+		B692FB18214B4563008E9631 /* NetworkImageCache.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NetworkImageCache.swift; sourceTree = "<group>"; };
+		B692FB19214B4563008E9631 /* CircleImageView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CircleImageView.swift; sourceTree = "<group>"; };
+		B692FB1A214B4563008E9631 /* SJUIViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; name = SJUIViewController.swift; path = SwiftJsonUI/Classes/SJUIViewController.swift; sourceTree = "<group>"; };
+		B692FB1C214B4563008E9631 /* UIViewDisposure.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewDisposure.swift; sourceTree = "<group>"; };
+		B692FB1E214B4563008E9631 /* SJUILabelWidthIcon.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUILabelWidthIcon.swift; sourceTree = "<group>"; };
+		B692FB1F214B4563008E9631 /* SJUICheckBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUICheckBox.swift; sourceTree = "<group>"; };
+		B692FB20214B4563008E9631 /* SJUIView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIView.swift; sourceTree = "<group>"; };
+		B692FB21214B4563008E9631 /* AVView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = AVView.swift; sourceTree = "<group>"; };
+		B692FB22214B4563008E9631 /* SJUITableView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUITableView.swift; sourceTree = "<group>"; };
+		B692FB23214B4563008E9631 /* SJUITextField.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUITextField.swift; sourceTree = "<group>"; };
+		B692FB24214B4563008E9631 /* SJUILabel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUILabel.swift; sourceTree = "<group>"; };
+		B692FB25214B4563008E9631 /* SJUICircleView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUICircleView.swift; sourceTree = "<group>"; };
+		B692FB26214B4563008E9631 /* SJUIVisualEffectView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIVisualEffectView.swift; sourceTree = "<group>"; };
+		B692FB27214B4563008E9631 /* SJUITextView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUITextView.swift; sourceTree = "<group>"; };
+		B692FB28214B4563008E9631 /* GradientLayterView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GradientLayterView.swift; sourceTree = "<group>"; };
+		B692FB29214B4563008E9631 /* SJUIRadioButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIRadioButton.swift; sourceTree = "<group>"; };
+		B692FB2A214B4563008E9631 /* SJUIScrollView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIScrollView.swift; sourceTree = "<group>"; };
+		B692FB2B214B4563008E9631 /* SJUIImageView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIImageView.swift; sourceTree = "<group>"; };
+		B692FB2C214B4563008E9631 /* SJUISwitch.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUISwitch.swift; sourceTree = "<group>"; };
+		B692FB2D214B4563008E9631 /* SJUISelectBox.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUISelectBox.swift; sourceTree = "<group>"; };
+		B692FB2E214B4563008E9631 /* SJUISegmentedControl.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUISegmentedControl.swift; sourceTree = "<group>"; };
+		B692FB2F214B4563008E9631 /* SJUICollectionView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUICollectionView.swift; sourceTree = "<group>"; };
+		B692FB30214B4563008E9631 /* SJUIButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIButton.swift; sourceTree = "<group>"; };
+		B692FB31214B4563008E9631 /* UIViewCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = UIViewCreator.swift; sourceTree = "<group>"; };
+		B692FB32214B4563008E9631 /* SheetView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SheetView.swift; sourceTree = "<group>"; };
+		CEE56F4CE140A3A0BF01B6E0AB3DE765 /* Pods-SwiftJsonUI_Tests-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-SwiftJsonUI_Tests-frameworks.sh"; sourceTree = "<group>"; };
+		D70600220BFF3ADF9600916D3653C3A7 /* Pods_SwiftJsonUI_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftJsonUI_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E9A7334C90A6FB58253ED2C9675D7B67 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		68176FC1460942AD761BC177DA6CB9B6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				97001C9432FED986711ACB6E182D6B72 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		8C9DE494E36731F5EB3848CA908FBC45 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				149BA2CB181405BB836602F9AA62D4E1 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		47273EFD6BEB4A39047001481BE43525 /* Targets Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				5D94618BD8DA81E478227A99EC55A2D6 /* Pods-SwiftJsonUI_Tests */,
+			);
+			name = "Targets Support Files";
+			sourceTree = "<group>";
+		};
+		5D94618BD8DA81E478227A99EC55A2D6 /* Pods-SwiftJsonUI_Tests */ = {
+			isa = PBXGroup;
+			children = (
+				338357B5B094690900400639933F8DB8 /* Info.plist */,
+				8C022D15684B7FD924F1B23820140877 /* Pods-SwiftJsonUI_Tests.modulemap */,
+				1F1565A74917EAD3A1A09CD620657500 /* Pods-SwiftJsonUI_Tests-acknowledgements.markdown */,
+				0CEC1A351364D56EACA4097F92B4FECA /* Pods-SwiftJsonUI_Tests-acknowledgements.plist */,
+				9F9D9D5F9B89EA8DE26958F1AD501AD9 /* Pods-SwiftJsonUI_Tests-dummy.m */,
+				CEE56F4CE140A3A0BF01B6E0AB3DE765 /* Pods-SwiftJsonUI_Tests-frameworks.sh */,
+				AF04BBD07C8F4C2BE897C4F0C07EC35E /* Pods-SwiftJsonUI_Tests-resources.sh */,
+				07C6F1772F3D831E47FA49D9CD506A1D /* Pods-SwiftJsonUI_Tests-umbrella.h */,
+				6E7D47CB5D50F11C3C3F77C8CD49AA1E /* Pods-SwiftJsonUI_Tests.debug.xcconfig */,
+				9CC05B7884B04C8588D9F4CB10A69FD7 /* Pods-SwiftJsonUI_Tests.release.xcconfig */,
+			);
+			name = "Pods-SwiftJsonUI_Tests";
+			path = "Target Support Files/Pods-SwiftJsonUI_Tests";
+			sourceTree = "<group>";
+		};
+		7DB346D0F39D3F0E887471402A8071AB = {
+			isa = PBXGroup;
+			children = (
+				93A4A3777CF96A4AAC1D13BA6DCCEA73 /* Podfile */,
+				FF963E73172D64962A2A433645CB08ED /* Development Pods */,
+				BC3CA7F9E30CC8F7E2DD044DD34432FC /* Frameworks */,
+				B5B2744059169E7E58E266DD388038C2 /* Products */,
+				47273EFD6BEB4A39047001481BE43525 /* Targets Support Files */,
+			);
+			sourceTree = "<group>";
+		};
+		B5B2744059169E7E58E266DD388038C2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D70600220BFF3ADF9600916D3653C3A7 /* Pods_SwiftJsonUI_Tests.framework */,
+				72C630554777B357312E6A8A87BF4B16 /* SwiftJsonUI.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		B692FB08214B4563008E9631 /* Extensions */ = {
+			isa = PBXGroup;
+			children = (
+				B692FB09214B4563008E9631 /* UIButtonExtension.swift */,
+				B692FB0A214B4563008E9631 /* UIColorExtension.swift */,
+				B692FB0B214B4563008E9631 /* NSAttibutedStringExtension.swift */,
+				B692FB0C214B4563008E9631 /* UILabelExtension.swift */,
+				B692FB0D214B4563008E9631 /* IntExtension.swift */,
+				B692FB0E214B4563008E9631 /* UIViewExtension.swift */,
+				B692FB0F214B4563008E9631 /* StringExtension.swift */,
+				B692FB10214B4563008E9631 /* UIImageExtension.swift */,
+				B692FB11214B4563008E9631 /* DoubleExtension.swift */,
+			);
+			name = Extensions;
+			path = SwiftJsonUI/Classes/Extensions;
+			sourceTree = "<group>";
+		};
+		B692FB13214B4563008E9631 /* Network */ = {
+			isa = PBXGroup;
+			children = (
+				B692FB14214B4563008E9631 /* SwiftyJSON.swift */,
+				B692FB15214B4563008E9631 /* Downloader.swift */,
+				B692FB16214B4563008E9631 /* NSObjectExtension.swift */,
+				B692FB17214B4563008E9631 /* NetworkImageView.swift */,
+				B692FB18214B4563008E9631 /* NetworkImageCache.swift */,
+				B692FB19214B4563008E9631 /* CircleImageView.swift */,
+			);
+			name = Network;
+			path = SwiftJsonUI/Classes/Network;
+			sourceTree = "<group>";
+		};
+		B692FB1B214B4563008E9631 /* UI */ = {
+			isa = PBXGroup;
+			children = (
+				B692FB1C214B4563008E9631 /* UIViewDisposure.swift */,
+				B692FB1D214B4563008E9631 /* UIView */,
+				B692FB31214B4563008E9631 /* UIViewCreator.swift */,
+				B692FB32214B4563008E9631 /* SheetView.swift */,
+			);
+			name = UI;
+			path = SwiftJsonUI/Classes/UI;
+			sourceTree = "<group>";
+		};
+		B692FB1D214B4563008E9631 /* UIView */ = {
+			isa = PBXGroup;
+			children = (
+				B692FB1E214B4563008E9631 /* SJUILabelWidthIcon.swift */,
+				B692FB1F214B4563008E9631 /* SJUICheckBox.swift */,
+				B692FB20214B4563008E9631 /* SJUIView.swift */,
+				B692FB21214B4563008E9631 /* AVView.swift */,
+				B692FB22214B4563008E9631 /* SJUITableView.swift */,
+				B692FB23214B4563008E9631 /* SJUITextField.swift */,
+				B692FB24214B4563008E9631 /* SJUILabel.swift */,
+				B692FB25214B4563008E9631 /* SJUICircleView.swift */,
+				B692FB26214B4563008E9631 /* SJUIVisualEffectView.swift */,
+				B692FB27214B4563008E9631 /* SJUITextView.swift */,
+				B692FB28214B4563008E9631 /* GradientLayterView.swift */,
+				B692FB29214B4563008E9631 /* SJUIRadioButton.swift */,
+				B692FB2A214B4563008E9631 /* SJUIScrollView.swift */,
+				B692FB2B214B4563008E9631 /* SJUIImageView.swift */,
+				B692FB2C214B4563008E9631 /* SJUISwitch.swift */,
+				B692FB2D214B4563008E9631 /* SJUISelectBox.swift */,
+				B692FB2E214B4563008E9631 /* SJUISegmentedControl.swift */,
+				B692FB2F214B4563008E9631 /* SJUICollectionView.swift */,
+				B692FB30214B4563008E9631 /* SJUIButton.swift */,
+			);
+			path = UIView;
+			sourceTree = "<group>";
+		};
+		BC3CA7F9E30CC8F7E2DD044DD34432FC /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				D35AF013A5F0BAD4F32504907A52519E /* iOS */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		C1659E2ED69D5017C1C4F943839BC2D0 /* SwiftJsonUI */ = {
+			isa = PBXGroup;
+			children = (
+				B692FB08214B4563008E9631 /* Extensions */,
+				B692FB13214B4563008E9631 /* Network */,
+				B692FB12214B4563008E9631 /* SJUIModel.swift */,
+				B692FB1A214B4563008E9631 /* SJUIViewController.swift */,
+				B692FB1B214B4563008E9631 /* UI */,
+				C8A3DD0FDF23E0AA53A08DEEDADA872D /* Pod */,
+				E05C630CF80DE7ED99CF68C07A95C8C0 /* Support Files */,
+			);
+			name = SwiftJsonUI;
+			path = ../..;
+			sourceTree = "<group>";
+		};
+		C8A3DD0FDF23E0AA53A08DEEDADA872D /* Pod */ = {
+			isa = PBXGroup;
+			children = (
+				598CD3073F430486E00D3029D9BE9804 /* LICENSE */,
+				E9A7334C90A6FB58253ED2C9675D7B67 /* README.md */,
+				A95BEB47CB96E6700FAB967F0E25AEE7 /* SwiftJsonUI.podspec */,
+			);
+			name = Pod;
+			sourceTree = "<group>";
+		};
+		D35AF013A5F0BAD4F32504907A52519E /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				6604A7D69453B4569E4E4827FB9155A9 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		E05C630CF80DE7ED99CF68C07A95C8C0 /* Support Files */ = {
+			isa = PBXGroup;
+			children = (
+				5B792B070CC97D1E07559BFEB0267540 /* Info.plist */,
+				2965D35B3361748D2D2140CD25FAD421 /* SwiftJsonUI.modulemap */,
+				8D78CA1B349C846863684E3D4AD2295F /* SwiftJsonUI.xcconfig */,
+				9AC3AC97ED72EA099451F4867637EF20 /* SwiftJsonUI-dummy.m */,
+				9E05DA84EB4ED50D9718FE829E5E7304 /* SwiftJsonUI-prefix.pch */,
+				95DF8406AE2B244BE36442695A55115E /* SwiftJsonUI-umbrella.h */,
+			);
+			name = "Support Files";
+			path = "Example/Pods/Target Support Files/SwiftJsonUI";
+			sourceTree = "<group>";
+		};
+		FF963E73172D64962A2A433645CB08ED /* Development Pods */ = {
+			isa = PBXGroup;
+			children = (
+				C1659E2ED69D5017C1C4F943839BC2D0 /* SwiftJsonUI */,
+			);
+			name = "Development Pods";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		0EC4ED753AD97BEC3054CBD8C122D537 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7DA174DD05DE515CB398CA264F5A7550 /* SwiftJsonUI-umbrella.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		6937708450BA0184F28FDA177B9BE478 /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				7AA1DDF3246B2283F24378997C51A67C /* Pods-SwiftJsonUI_Tests-umbrella.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		C85AE248FF05A6A7876DD0E7D1533124 /* Pods-SwiftJsonUI_Tests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 02220B7A105FB39F40125870BF7418DB /* Build configuration list for PBXNativeTarget "Pods-SwiftJsonUI_Tests" */;
+			buildPhases = (
+				D2B1094560840EBB9FCFDF1DFA496DD6 /* Sources */,
+				68176FC1460942AD761BC177DA6CB9B6 /* Frameworks */,
+				6937708450BA0184F28FDA177B9BE478 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				757280A0515DF9EFBF295018B9FDF1EB /* PBXTargetDependency */,
+			);
+			name = "Pods-SwiftJsonUI_Tests";
+			productName = "Pods-SwiftJsonUI_Tests";
+			productReference = D70600220BFF3ADF9600916D3653C3A7 /* Pods_SwiftJsonUI_Tests.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+		EFDD08F4915C92465B406CB22FBBCDF4 /* SwiftJsonUI */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0384D60EBCCB4287DAE1F04DEDC27429 /* Build configuration list for PBXNativeTarget "SwiftJsonUI" */;
+			buildPhases = (
+				768F3923C533ED02DE566FDA4937999F /* Sources */,
+				8C9DE494E36731F5EB3848CA908FBC45 /* Frameworks */,
+				0EC4ED753AD97BEC3054CBD8C122D537 /* Headers */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = SwiftJsonUI;
+			productName = SwiftJsonUI;
+			productReference = 72C630554777B357312E6A8A87BF4B16 /* SwiftJsonUI.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D41D8CD98F00B204E9800998ECF8427E /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 0930;
+				LastUpgradeCheck = 0930;
+				TargetAttributes = {
+					C85AE248FF05A6A7876DD0E7D1533124 = {
+						LastSwiftMigration = 0940;
+					};
+					EFDD08F4915C92465B406CB22FBBCDF4 = {
+						LastSwiftMigration = 0940;
+					};
+				};
+			};
+			buildConfigurationList = 2D8E8EC45A3A1A1D94AE762CB5028504 /* Build configuration list for PBXProject "Pods" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = 7DB346D0F39D3F0E887471402A8071AB;
+			productRefGroup = B5B2744059169E7E58E266DD388038C2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				C85AE248FF05A6A7876DD0E7D1533124 /* Pods-SwiftJsonUI_Tests */,
+				EFDD08F4915C92465B406CB22FBBCDF4 /* SwiftJsonUI */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXSourcesBuildPhase section */
+		768F3923C533ED02DE566FDA4937999F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B692FB5A214B4564008E9631 /* SJUICheckBox.swift in Sources */,
+				B692FB44214B4564008E9631 /* DoubleExtension.swift in Sources */,
+				B692FB4E214B4564008E9631 /* NetworkImageView.swift in Sources */,
+				B692FB38214B4564008E9631 /* NSAttibutedStringExtension.swift in Sources */,
+				B692FB50214B4564008E9631 /* NetworkImageCache.swift in Sources */,
+				501D52AED52E6DFE35C9486DDDFFA779 /* SwiftJsonUI-dummy.m in Sources */,
+				B692FB48214B4564008E9631 /* SwiftyJSON.swift in Sources */,
+				B692FB7E214B4564008E9631 /* UIViewCreator.swift in Sources */,
+				B692FB66214B4564008E9631 /* SJUICircleView.swift in Sources */,
+				B692FB6E214B4564008E9631 /* SJUIRadioButton.swift in Sources */,
+				B692FB64214B4564008E9631 /* SJUILabel.swift in Sources */,
+				B692FB5E214B4564008E9631 /* AVView.swift in Sources */,
+				B692FB46214B4564008E9631 /* SJUIModel.swift in Sources */,
+				B692FB76214B4564008E9631 /* SJUISelectBox.swift in Sources */,
+				B692FB3A214B4564008E9631 /* UILabelExtension.swift in Sources */,
+				B692FB7C214B4564008E9631 /* SJUIButton.swift in Sources */,
+				B692FB6A214B4564008E9631 /* SJUITextView.swift in Sources */,
+				B692FB52214B4564008E9631 /* CircleImageView.swift in Sources */,
+				B692FB34214B4564008E9631 /* UIButtonExtension.swift in Sources */,
+				B692FB60214B4564008E9631 /* SJUITableView.swift in Sources */,
+				B692FB5C214B4564008E9631 /* SJUIView.swift in Sources */,
+				B692FB74214B4564008E9631 /* SJUISwitch.swift in Sources */,
+				B692FB80214B4564008E9631 /* SheetView.swift in Sources */,
+				B692FB68214B4564008E9631 /* SJUIVisualEffectView.swift in Sources */,
+				B692FB4C214B4564008E9631 /* NSObjectExtension.swift in Sources */,
+				B692FB70214B4564008E9631 /* SJUIScrollView.swift in Sources */,
+				B692FB72214B4564008E9631 /* SJUIImageView.swift in Sources */,
+				B692FB56214B4564008E9631 /* UIViewDisposure.swift in Sources */,
+				B692FB40214B4564008E9631 /* StringExtension.swift in Sources */,
+				B692FB4A214B4564008E9631 /* Downloader.swift in Sources */,
+				B692FB62214B4564008E9631 /* SJUITextField.swift in Sources */,
+				B692FB42214B4564008E9631 /* UIImageExtension.swift in Sources */,
+				B692FB58214B4564008E9631 /* SJUILabelWidthIcon.swift in Sources */,
+				B692FB3E214B4564008E9631 /* UIViewExtension.swift in Sources */,
+				B692FB54214B4564008E9631 /* SJUIViewController.swift in Sources */,
+				B692FB7A214B4564008E9631 /* SJUICollectionView.swift in Sources */,
+				B692FB6C214B4564008E9631 /* GradientLayterView.swift in Sources */,
+				B692FB78214B4564008E9631 /* SJUISegmentedControl.swift in Sources */,
+				B692FB36214B4564008E9631 /* UIColorExtension.swift in Sources */,
+				B692FB3C214B4564008E9631 /* IntExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D2B1094560840EBB9FCFDF1DFA496DD6 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B692FB59214B4564008E9631 /* SJUICheckBox.swift in Sources */,
+				B692FB43214B4564008E9631 /* DoubleExtension.swift in Sources */,
+				B692FB4D214B4564008E9631 /* NetworkImageView.swift in Sources */,
+				B692FB37214B4564008E9631 /* NSAttibutedStringExtension.swift in Sources */,
+				B692FB4F214B4564008E9631 /* NetworkImageCache.swift in Sources */,
+				2A2BE2A80C581D995F8B857B92924D9F /* Pods-SwiftJsonUI_Tests-dummy.m in Sources */,
+				B692FB47214B4564008E9631 /* SwiftyJSON.swift in Sources */,
+				B692FB7D214B4564008E9631 /* UIViewCreator.swift in Sources */,
+				B692FB65214B4564008E9631 /* SJUICircleView.swift in Sources */,
+				B692FB6D214B4564008E9631 /* SJUIRadioButton.swift in Sources */,
+				B692FB63214B4564008E9631 /* SJUILabel.swift in Sources */,
+				B692FB5D214B4564008E9631 /* AVView.swift in Sources */,
+				B692FB45214B4564008E9631 /* SJUIModel.swift in Sources */,
+				B692FB75214B4564008E9631 /* SJUISelectBox.swift in Sources */,
+				B692FB39214B4564008E9631 /* UILabelExtension.swift in Sources */,
+				B692FB7B214B4564008E9631 /* SJUIButton.swift in Sources */,
+				B692FB69214B4564008E9631 /* SJUITextView.swift in Sources */,
+				B692FB51214B4564008E9631 /* CircleImageView.swift in Sources */,
+				B692FB33214B4564008E9631 /* UIButtonExtension.swift in Sources */,
+				B692FB5F214B4564008E9631 /* SJUITableView.swift in Sources */,
+				B692FB5B214B4564008E9631 /* SJUIView.swift in Sources */,
+				B692FB73214B4564008E9631 /* SJUISwitch.swift in Sources */,
+				B692FB7F214B4564008E9631 /* SheetView.swift in Sources */,
+				B692FB67214B4564008E9631 /* SJUIVisualEffectView.swift in Sources */,
+				B692FB4B214B4564008E9631 /* NSObjectExtension.swift in Sources */,
+				B692FB6F214B4564008E9631 /* SJUIScrollView.swift in Sources */,
+				B692FB71214B4564008E9631 /* SJUIImageView.swift in Sources */,
+				B692FB55214B4564008E9631 /* UIViewDisposure.swift in Sources */,
+				B692FB3F214B4564008E9631 /* StringExtension.swift in Sources */,
+				B692FB49214B4564008E9631 /* Downloader.swift in Sources */,
+				B692FB61214B4564008E9631 /* SJUITextField.swift in Sources */,
+				B692FB41214B4564008E9631 /* UIImageExtension.swift in Sources */,
+				B692FB57214B4564008E9631 /* SJUILabelWidthIcon.swift in Sources */,
+				B692FB3D214B4564008E9631 /* UIViewExtension.swift in Sources */,
+				B692FB53214B4564008E9631 /* SJUIViewController.swift in Sources */,
+				B692FB79214B4564008E9631 /* SJUICollectionView.swift in Sources */,
+				B692FB6B214B4564008E9631 /* GradientLayterView.swift in Sources */,
+				B692FB77214B4564008E9631 /* SJUISegmentedControl.swift in Sources */,
+				B692FB35214B4564008E9631 /* UIColorExtension.swift in Sources */,
+				B692FB3B214B4564008E9631 /* IntExtension.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		757280A0515DF9EFBF295018B9FDF1EB /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = SwiftJsonUI;
+			target = EFDD08F4915C92465B406CB22FBBCDF4 /* SwiftJsonUI */;
+			targetProxy = 8660AA19162E822F9566A4C4FACB15DD /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		3980B0BA1F99EFA8F65E3D3584DD6CCB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 6E7D47CB5D50F11C3C3F77C8CD49AA1E /* Pods-SwiftJsonUI_Tests.debug.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Target Support Files/Pods-SwiftJsonUI_Tests/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		8B33C5230DE4A9DFA6D8F46505DD7AF7 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_DEBUG=1",
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SYMROOT = "${SRCROOT}/../build";
+			};
+			name = Debug;
+		};
+		B42B54097A876E8A982CBF5DAA91B1AB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGNING_REQUIRED = NO;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"POD_CONFIGURATION_RELEASE=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				STRIP_INSTALLED_PRODUCT = NO;
+				SYMROOT = "${SRCROOT}/../build";
+			};
+			name = Release;
+		};
+		C515B9F4E8F5F47BD0BCE53696779FA4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 9CC05B7884B04C8588D9F4CB10A69FD7 /* Pods-SwiftJsonUI_Tests.release.xcconfig */;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				INFOPLIST_FILE = "Target Support Files/Pods-SwiftJsonUI_Tests/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 9.3;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MACH_O_TYPE = staticlib;
+				MODULEMAP_FILE = "Target Support Files/Pods-SwiftJsonUI_Tests/Pods-SwiftJsonUI_Tests.modulemap";
+				OTHER_LDFLAGS = "";
+				OTHER_LIBTOOLFLAGS = "";
+				PODS_ROOT = "$(SRCROOT)";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.cocoapods.${PRODUCT_NAME:rfc1034identifier}";
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 3.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		CA191B85D3450FFC800F44B8B957A26A /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8D78CA1B349C846863684E3D4AD2295F /* SwiftJsonUI.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_PREFIX_HEADER = "Target Support Files/SwiftJsonUI/SwiftJsonUI-prefix.pch";
+				INFOPLIST_FILE = "Target Support Files/SwiftJsonUI/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MODULEMAP_FILE = "Target Support Files/SwiftJsonUI/SwiftJsonUI.modulemap";
+				PRODUCT_MODULE_NAME = SwiftJsonUI;
+				PRODUCT_NAME = SwiftJsonUI;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
+				SWIFT_OPTIMIZATION_LEVEL = "-Owholemodule";
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		D0AFEE741E52E1FE9455584D81303DE2 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 8D78CA1B349C846863684E3D4AD2295F /* SwiftJsonUI.xcconfig */;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				"CODE_SIGN_IDENTITY[sdk=appletvos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "";
+				"CODE_SIGN_IDENTITY[sdk=watchos*]" = "";
+				CURRENT_PROJECT_VERSION = 1;
+				DEFINES_MODULE = YES;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_PREFIX_HEADER = "Target Support Files/SwiftJsonUI/SwiftJsonUI-prefix.pch";
+				INFOPLIST_FILE = "Target Support Files/SwiftJsonUI/Info.plist";
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				IPHONEOS_DEPLOYMENT_TARGET = 8.0;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MODULEMAP_FILE = "Target Support Files/SwiftJsonUI/SwiftJsonUI.modulemap";
+				PRODUCT_MODULE_NAME = SwiftJsonUI;
+				PRODUCT_NAME = SwiftJsonUI;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) ";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 4.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		02220B7A105FB39F40125870BF7418DB /* Build configuration list for PBXNativeTarget "Pods-SwiftJsonUI_Tests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3980B0BA1F99EFA8F65E3D3584DD6CCB /* Debug */,
+				C515B9F4E8F5F47BD0BCE53696779FA4 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		0384D60EBCCB4287DAE1F04DEDC27429 /* Build configuration list for PBXNativeTarget "SwiftJsonUI" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D0AFEE741E52E1FE9455584D81303DE2 /* Debug */,
+				CA191B85D3450FFC800F44B8B957A26A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		2D8E8EC45A3A1A1D94AE762CB5028504 /* Build configuration list for PBXProject "Pods" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8B33C5230DE4A9DFA6D8F46505DD7AF7 /* Debug */,
+				B42B54097A876E8A982CBF5DAA91B1AB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D41D8CD98F00B204E9800998ECF8427E /* Project object */;
+}
