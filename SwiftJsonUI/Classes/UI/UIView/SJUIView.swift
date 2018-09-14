@@ -120,7 +120,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate {
             for g in gradient {
                 if let g = g as? String, let color = UIColor.colorWithHexString(g)?.cgColor {
                     colors.append(color)
-                } else if let g = g as? Int, let color = UIColor.findColorById(g)?.cgColor {
+                } else if let g = g as? Int, let closure = SJUIViewCreator.findColorFunc, let color = closure(g)?.cgColor {
                     colors.append(color)
                 }
             }

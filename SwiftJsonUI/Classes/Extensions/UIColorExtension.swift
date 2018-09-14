@@ -78,15 +78,10 @@ public extension UIColor {
     public class func findColorByJSON(attr:JSON) -> UIColor? {
         if let background = attr.string {
             return UIColor.colorWithHexString(background)
-        } else if let background = attr.int {
-            return UIColor.findColorById(background)
+        } else if let closure = SJUIViewCreator.findColorFunc, let background = attr.int {
+            return closure(background)
         } else {
             return nil
         }
-    }
-    
-    public class func findColorById(_ colorId: Int) -> UIColor? {
-        print("Invalid Color Id")
-        return nil
     }
 }

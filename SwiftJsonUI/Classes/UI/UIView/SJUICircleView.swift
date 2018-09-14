@@ -27,7 +27,7 @@ import UIKit
 
 open class SJUICircleView: UIView {
     
-    override init(frame: CGRect) {
+    override public init(frame: CGRect) {
         super.init(frame: frame)
         self.layer.masksToBounds = false
         self.layer.cornerRadius = self.frame.size.width/2.0
