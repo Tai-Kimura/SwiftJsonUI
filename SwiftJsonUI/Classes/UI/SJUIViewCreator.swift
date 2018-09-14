@@ -88,6 +88,33 @@ open class SJUIViewCreator:NSObject {
     }
     
     @discardableResult open class func createView(_ attr: JSON, parentView: UIView!, target: Any, views: inout [String: UIView]) -> UIView! {
+        if let include = attr["include"].string {
+            let url = getURL(path: include)
+            do {
+                var jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
+                if let variables = attr["variables"].array {
+                    for variable in variables {
+                        if let key = variable["key"].string {
+                            if let value = variable["value"].string {
+                                jsonString = jsonString.replacingOccurrences(of: key, with: value)
+                            } else if let value = variable["value"].int {
+                                jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(value)")
+                            } else if let value = variable["value"].cgFloat {
+                                jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(value)")
+                            } else if let value = variable["value"].bool {
+                                jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(value)")
+                            }
+                        }
+                    }
+                }
+                
+                let enc:String.Encoding = String.Encoding.utf8
+                let json = JSON(data: jsonString.data(using: enc)!)
+                return createView(json, parentView: parentView, target: target, views: &views)
+            } catch let error {
+                return createErrorView("\(error)")
+            }
+        }
         guard let view = getViewFromJSON(attr: attr, target: target, views: &views) else {
             return createErrorView()
         }
