@@ -38,7 +38,11 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate {
     
     public var highlighted: Bool = false
     
-   public  var canTap = false
+    public  var canTap = false
+    
+    public var orientation: Orientation?
+    
+    public var direction: Direction = .none
     
     override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let location = touches.first?.location(in: self) {
@@ -91,6 +95,29 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate {
         default:
             v = viewClass.init()
         }
+        if let orientation = attr["orientation"].string {
+            v.orientation = Orientation(rawValue: orientation)
+            if let orientation = v.orientation {
+                switch orientation {
+                case .vertical:
+                    let d = Direction(rawValue: attr["direction"].stringValue) ?? .topToBottom
+                    switch d {
+                    case .bottomToTop:
+                        v.direction = d
+                    default:
+                        v.direction = .topToBottom
+                    }
+                case .horizontal:
+                    let d = Direction(rawValue: attr["direction"].stringValue) ?? .leftToRight
+                    switch d {
+                    case .rightToLeft:
+                        v.direction = d
+                    default:
+                        v.direction = .leftToRight
+                    }
+                }
+            }
+        }
         if let background = UIColor.findColorByJSON(attr: attr["highlightBackground"]) {
             v.highlightBackgroundColor = background
         }
@@ -142,5 +169,18 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate {
             }
         }
         return v
+    }
+    
+    public enum Orientation: String {
+        case vertical = "vertical"
+        case horizontal = "horizontal"
+    }
+    
+    public enum Direction: String {
+        case none = "none"
+        case topToBottom = "topToBottom"
+        case leftToRight = "leftToRight"
+        case bottomToTop = "bottomToTop"
+        case rightToLeft = "rightToLeft"
     }
 }

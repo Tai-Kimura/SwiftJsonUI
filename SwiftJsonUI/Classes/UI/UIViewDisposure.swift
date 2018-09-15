@@ -48,417 +48,590 @@ open class UIViewDisposure {
     
     static let screenSize = UIScreen.main.bounds.size
     
-    open class func applyConstraint(onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo) {
-        var constraints = Array<NSLayoutConstraint>()
-        
+    public class func applyConstraint(onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo) {
+        var constraints = [NSLayoutConstraint]()
         //親ビューに対して
         if let superview = view.superview {
-            
-            //縦の制約
-            if let _ = info.centerVertical {
-                var margin: CGFloat = 0
-                if let top = info.topMargin {
-                    margin = top
-                } else if let bottom = info.bottomMargin {
-                    margin = -bottom
-                }
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: 0 + margin))
+            if let linearView = superview as? SJUIView, let orientation = linearView.orientation {
+                applyConstraint(to: linearView, with: orientation, onView: view, toConstraintInfo: info, for: &constraints)
+            } else {
+                //縦の制約
+                applyVerticalConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                //横の制約
+                applyHorizontalConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                //上揃え
+                applyAlignParentTopConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                //下揃え
+                applyAlignParentBottomConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                //左揃え
+                applyAlignParentLeftConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                //右揃え
+                applyAlignParentRightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
-            
-            //横の制約
-            if let _ = info.centerHorizontal {
-                var margin: CGFloat = 0
-                if let left = info.leftMargin {
-                    margin = left
-                } else if let right = info.rightMargin {
-                    margin = -right
-                }
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: 0 + margin))
-            }
-            
-            //下揃え
-            if let _ = info.alignBottom {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
-            }
-            
-            //左揃え
-            if let _ = info.alignLeft {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-            }
-            
-            //右揃え
-            if let _ = info.alignRight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
-            }
-            
             //高さの制約
-            if let heightWeight = info.heightWeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
-                
-                if let _ = superview as? UIScrollView {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
-                } else if info.centerVertical == nil && info.topPadding == nil && info.bottomPadding == nil && info.alignBottom == nil && ((info.topMargin == nil && info.bottomMargin == nil && info.minTopMargin == nil && info.minBottomMargin == nil && info.maxTopMargin == nil && info.maxBottomMargin == nil && info.alignTopToView == nil && info.alignBottomToView == nil) || info.toView == nil) {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
-                }
-            }
-            
-            //高さの制約
-            if let heightWeight = info.maxHeightWeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
-            }
-            
-            if let heightWeight = info.minHeightWeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
-            }
-            
+            applyHeightWeightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             //幅の制約
-            if let widthWeight = info.widthWeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
-                
-                if let _ = superview as? UIScrollView {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
-                } else if info.centerHorizontal == nil && info.leftPadding == nil && info.rightPadding == nil && info.alignLeft == nil && info.alignRight == nil && ((info.leftMargin == nil && info.rightMargin == nil && info.minLeftMargin == nil && info.minRightMargin == nil && info.maxLeftMargin == nil && info.maxRightMargin == nil && info.alignLeftToView == nil && info.alignRightToView == nil) || info.toView == nil) && info.alignRightOfView == nil && info.alignLeftOfView == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-                }
-            }
-            
-            //幅の制約
-            if let widthWeight = info.maxWidthWeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
-            }
-            
-            if let widthWeight = info.minWidthWeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
-            }
-            
-            //高さのアスペクト
-            if let aspectHeight = info.aspectHeight {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.width, multiplier: aspectHeight, constant: 0))
-            }
-            
-            //幅のアスペクト
-            if let aspectWidth = info.aspectWidth {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.height, multiplier: aspectWidth, constant: 0))
-            }
-            
+            applyWidthWeightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            //アスペクト
+            applyAspectConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             //パディングの制約
-            if let topPadding = info.topPadding {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: topPadding))
-            } else {
-                if let topPadding = info.minTopPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: topPadding))
-                }
-                if let topPadding = info.maxTopPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: topPadding))
-                }
-            }
-            
-            if let bottomPadding = info.bottomPadding {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -bottomPadding))
-            } else {
-                if let bottomPadding = info.minBottomPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -bottomPadding))
-                }
-                
-                if let bottomPadding = info.maxBottomPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -bottomPadding))
-                }
-            }
-            
-            if let leftPadding = info.leftPadding {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: leftPadding))
-            } else {
-                if let leftPadding = info.minLeftPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: leftPadding))
-                }
-                if let leftPadding = info.maxLeftPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: leftPadding))
-                }
-            }
-            
-            if let rightPadding = info.rightPadding {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -rightPadding))
-            } else {
-                if let rightPadding = info.minRightPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -rightPadding))
-                }
-                if let rightPadding = info.maxRightPadding {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -rightPadding))
-                }
-            }
-            
-            if let _ = superview as? UIScrollView {
-                if info.heightWeight == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
-                }
-            }
-            
-            if let _ = superview as? UIScrollView {
-                if info.widthWeight == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
-                }
+            applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            if let superview = superview as? UIScrollView {
+                applyScrollViewConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         }
-        
         //任意のビューに対して
         if let toView = info.toView {
-            
             //中央揃え
             if let _ = info.alignCenterVerticalToView {
                 constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: 0))
             } else {
                 //上揃え
-                if let _ = info.alignTopToView {
-                    let topMargin = info.topMargin ?? 0
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
-                } else if let topMargin = info.topMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: topMargin))
-                } else {
-                    if let topMargin = info.minTopMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: topMargin))
-                    }
-                    
-                    if let topMargin = info.maxTopMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: topMargin))
-                    }
-                }
-                
+                applyToViewTopConstraint(to: toView, onView: view, toConstraintInfo: info, for: &constraints)
                 //下揃え
-                if let _ = info.alignBottomToView {
-                    let bottomMargin = info.bottomMargin ?? 0
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
-                } else if let bottomMargin = info.bottomMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -bottomMargin))
-                } else {
-                    if let bottomMargin = info.minBottomMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -bottomMargin))
-                    }
-                    if let bottomMargin = info.maxBottomMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -bottomMargin))
-                    }
-                }
-                
+                applyToViewBottomConstraint(to: toView, onView: view, toConstraintInfo: info, for: &constraints)
             }
-            
             //中央揃え
             if let _ = info.alignCenterHorizontalToView {
                 constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: 0))
             } else {
                 //左揃え
-                if let _ = info.alignLeftToView {
-                    let leftMargin = info.leftMargin ?? 0
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
-                } else if let leftMargin = info.leftMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: leftMargin))
-                } else {
-                    if let leftMargin = info.minLeftMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: leftMargin))
-                    }
-                    
-                    if let leftMargin = info.maxLeftMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: leftMargin))
-                    }
-                }
-                
+                applyToViewLeftConstraint(to: toView, onView: view, toConstraintInfo: info, for: &constraints)
                 //右揃え
-                if let _ = info.alignRightToView {
-                    let rightMargin = info.rightMargin ?? 0
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
-                } else if let rightMargin = info.rightMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: -rightMargin))
+                applyToViewRightConstraint(to: toView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+        }
+        if (view.superview as? SJUIView)?.orientation ?? .horizontal == .horizontal {
+            if let topOfView = info.alignTopOfView {
+                applyTopConstraint(of: topOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+            if let bottomOfView = info.alignBottomOfView {
+                applyBottomConstraint(of: bottomOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+            if let centerVerticalView = info.alignCenterVerticalView {
+                applyVerticalConstraint(align: centerVerticalView, onView: view, toConstraintInfo: info, for: &constraints)
+            } else {
+                if let topView = info.alignTopView {
+                    applyTopConstraint(align: topView, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+                if let bottomView = info.alignBottomView {
+                    applyBottomConstraint(align: bottomView, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+            }
+        }
+        if (view.superview as? SJUIView)?.orientation ?? .vertical == .vertical {
+            if let leftOfView = info.alignLeftOfView {
+                applyLeftConstraint(of: leftOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+            if let rightOfView = info.alignRightOfView {
+                applyRightConstraint(of: rightOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+            //中央揃え
+            if let centerHorizontalView = info.alignCenterHorizontalView {
+                applyHorizontalConstraint(align: centerHorizontalView, onView: view, toConstraintInfo: info, for: &constraints)
+            } else {
+                if let leftView = info.alignLeftView {
+                    applyLeftConstraint(align: leftView, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+                if let rightView = info.alignRightView {
+                    applyRightConstraint(align: rightView, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+            }
+        }
+        applyWidthConstraint(on: view, toConstraintInfo: info, for: &constraints)
+        applyHeightConstraint(on: view, toConstraintInfo: info, for: &constraints)
+        NSLayoutConstraint.activate(constraints)
+    }
+    
+    //MARK: Linear Layout
+    public class func applyConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        switch orientation {
+        case .vertical:
+            applyHorizontalConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyAlignParentLeftConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyAlignParentRightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyWidthWeightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyLinearVerticalConstraint(to: superview, with: orientation, onView: view, toConstraintInfo: info, for: &constraints)
+        case .horizontal:
+            applyVerticalConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyAlignParentTopConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyAlignParentBottomConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyHeightWeightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            applyLinearHorizontalConstraint(to: superview, with: orientation, onView: view, toConstraintInfo: info, for: &constraints)
+        }
+    }
+    
+    public class func applyLinearVerticalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
+            switch superview.direction {
+            case .topToBottom:
+                if superview.subviews.count <= 1 {
+                    if info.topPadding == nil && info.minTopPadding == nil && info.maxTopPadding == nil {
+                        applyAlignParentTopConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                    } else {
+                        applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                    }
                 } else {
-                    if let rightMargin = info.minRightMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: -rightMargin))
+                    let bottomOfView = superview.subviews[superview.subviews.count - 2]
+                    applyBottomConstraint(of: bottomOfView, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+            case .bottomToTop:
+                if superview.subviews.count <= 1 {
+                    if info.bottomPadding == nil && info.minBottomPadding == nil && info.maxBottomPadding == nil {
+                        applyAlignParentBottomConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                    } else {
+                        applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                     }
-                    if let rightMargin = info.maxRightMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: -rightMargin))
-                    }
+                } else {
+                    let topOfView = superview.subviews[superview.subviews.count - 2]
+                    applyTopConstraint(of: topOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
+            default:
+                break
+        }
+    }
+    
+    public class func applyLinearHorizontalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
+        switch superview.direction {
+        case .leftToRight:
+            if superview.subviews.count <= 1 {
+                if info.leftPadding == nil && info.minLeftPadding == nil && info.maxLeftPadding == nil {
+                    applyAlignParentLeftConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                } else {
+                    applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+            } else {
+                let rightOfView = superview.subviews[superview.subviews.count - 2]
+                applyRightConstraint(of: rightOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+        case .rightToLeft:
+            if superview.subviews.count <= 1 {
+                if info.rightPadding == nil && info.minRightPadding == nil && info.maxRightPadding == nil {
+                    applyAlignParentRightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                } else {
+                    applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+                }
+            } else {
+                let leftOfView = superview.subviews[superview.subviews.count - 2]
+                applyLeftConstraint(of: leftOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+        default:
+            break
+        }
+    }
+    
+    //MARK: Constraints for Parent
+    public class func applyVerticalConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //縦の制約
+        if let _ = info.centerVertical {
+            var margin: CGFloat = 0
+            if let top = info.topMargin {
+                margin = top
+            } else if let bottom = info.bottomMargin {
+                margin = -bottom
+            }
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: 0 + margin))
+        }
+    }
+    
+    public class func applyHorizontalConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //横の制約
+        if let _ = info.centerHorizontal {
+            var margin: CGFloat = 0
+            if let left = info.leftMargin {
+                margin = left
+            } else if let right = info.rightMargin {
+                margin = -right
+            }
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: 0 + margin))
+        }
+    }
+    
+    public class func applyAlignParentTopConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //上揃え
+        if let _ = info.alignTop {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
+        }
+    }
+    
+    public class func applyAlignParentBottomConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //下揃え
+        if let _ = info.alignBottom {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
+        }
+    }
+    
+    public class func applyAlignParentLeftConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //左揃え
+        if let _ = info.alignLeft {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
+        }
+    }
+    
+    public class func applyAlignParentRightConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //右揃え
+        if let _ = info.alignRight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+        }
+    }
+    
+    public class func applyHeightWeightConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //高さの制約
+        if let heightWeight = info.heightWeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
+            if let _ = superview as? UIScrollView {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
+            } else if info.centerVertical == nil && info.topPadding == nil && info.bottomPadding == nil && info.alignBottom == nil && ((info.topMargin == nil && info.bottomMargin == nil && info.minTopMargin == nil && info.minBottomMargin == nil && info.maxTopMargin == nil && info.maxBottomMargin == nil && info.alignTopToView == nil && info.alignBottomToView == nil) || info.toView == nil) {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
             }
         }
-        
-        
-        
-        if let topOfView = info.alignTopOfView {
-            if let bottomMargin = info.bottomMargin {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 - bottomMargin))
-            } else if info.maxBottomMargin == nil && info.minBottomMargin == nil {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
-            } else {
-                if let bottomMargin = info.minBottomMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 - bottomMargin))
-                }
-                if let bottomMargin = info.maxBottomMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 - bottomMargin))
-                }
+        //高さの制約
+        if let heightWeight = info.maxHeightWeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
+        }
+        if let heightWeight = info.minHeightWeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
+        }
+    }
+    
+    public class func applyWidthWeightConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //幅の制約
+        if let widthWeight = info.widthWeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
+            if let _ = superview as? UIScrollView {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+            } else if info.centerHorizontal == nil && info.leftPadding == nil && info.rightPadding == nil && info.alignLeft == nil && info.alignRight == nil && ((info.leftMargin == nil && info.rightMargin == nil && info.minLeftMargin == nil && info.minRightMargin == nil && info.maxLeftMargin == nil && info.maxRightMargin == nil && info.alignLeftToView == nil && info.alignRightToView == nil) || info.toView == nil) && info.alignRightOfView == nil && info.alignLeftOfView == nil {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
             }
         }
-        
-        if let bottomOfView = info.alignBottomOfView {
-            if let topMargin = info.topMargin {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 + topMargin))
-            } else if info.minTopMargin == nil && info.minBottomMargin == nil {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
-            } else {
-                if let topMargin = info.minTopMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 + topMargin))
-                }
-                if let topMargin = info.maxTopMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 + topMargin))
-                }
-            }
+        //幅の制約
+        if let widthWeight = info.maxWidthWeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
+        }
+        if let widthWeight = info.minWidthWeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
+        }
+    }
+    
+    public class func applyAspectConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //高さのアスペクト
+        if let aspectHeight = info.aspectHeight {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.width, multiplier: aspectHeight, constant: 0))
         }
         
-        if let leftOfView = info.alignLeftOfView {
-            if let rightMargin = info.rightMargin {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 - rightMargin))
-            } else if info.minRightMargin == nil && info.maxRightMargin == nil {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-            } else {
-                if let rightMargin = info.minRightMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 - rightMargin))
-                }
-                if let rightMargin = info.maxRightMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 - rightMargin))
-                }
-            }
+        //幅のアスペクト
+        if let aspectWidth = info.aspectWidth {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.height, multiplier: aspectWidth, constant: 0))
         }
-        
-        if let rightOfView = info.alignRightOfView {
-            if let leftMargin = info.leftMargin {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 + leftMargin))
-            } else if info.minLeftMargin == nil && info.maxLeftMargin == nil {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
-            } else {
-                if let leftMargin = info.minLeftMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 + leftMargin))
-                }
-                if let leftMargin = info.maxLeftMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 + leftMargin))
-                }
-            }
-        }
-        
-        //中央揃え
-        if let centerVerticalView = info.alignCenterVerticalView {
-            let constant: CGFloat
-            if let topMargin = info.topMargin {
-                constant = topMargin
-            } else if let bottomMargin = info.bottomMargin {
-                constant = -bottomMargin
-            } else {
-                constant = 0
-            }
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: centerVerticalView, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: constant))
+    }
+    
+    public class func applyTopPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let topPadding = info.topPadding {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: topPadding))
         } else {
-            
-            if let topView = info.alignTopView {
-                if let topMargin = info.topMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
-                } else if info.minTopMargin == nil && info.minBottomMargin == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
-                } else {
-                    if let topMargin = info.minTopMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
-                    }
-                    if let topMargin = info.maxTopMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
-                    }
-                }
-                
+            if let topPadding = info.minTopPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: topPadding))
             }
-            
-            if let bottomView = info.alignBottomView {
-                if let bottomMargin = info.bottomMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
-                } else if info.maxBottomMargin == nil && info.minBottomMargin == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
-                } else {
-                    if let bottomMargin = info.minBottomMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
-                    }
-                    if let bottomMargin = info.maxBottomMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
-                    }
-                }
+            if let topPadding = info.maxTopPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: topPadding))
             }
         }
-        
-        //中央揃え
-        if let centerHorizontalView = info.alignCenterHorizontalView {
-            let constant: CGFloat
-            if let leftMargin = info.leftMargin {
-                constant = leftMargin
-            } else if let rightMargin = info.rightMargin {
-                constant = -rightMargin
-            } else {
-                constant = 0
-            }
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: centerHorizontalView, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: constant))
+    }
+    
+    public class func applyBottomPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let bottomPadding = info.bottomPadding {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -bottomPadding))
         } else {
-            
-            if let leftView = info.alignLeftView {
-                if let leftMargin = info.leftMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
-                } else if info.minLeftMargin == nil && info.maxLeftMargin == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-                } else {
-                    if let leftMargin = info.minLeftMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
-                    }
-                    if let leftMargin = info.maxLeftMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
-                    }
-                }
+            if let bottomPadding = info.minBottomPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -bottomPadding))
             }
             
-            if let rightView = info.alignRightView {
-                if let rightMargin = info.rightMargin {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
-                } else if info.minRightMargin == nil && info.maxRightMargin == nil {
-                    constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
-                } else {
-                    if let rightMargin = info.minRightMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
-                    }
-                    if let rightMargin = info.maxRightMargin {
-                        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
-                    }
-                }
+            if let bottomPadding = info.maxBottomPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -bottomPadding))
             }
         }
-        
-        if let minWidth = info.minWidth {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: minWidth))
+    }
+    
+    public class func applyLeftPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let leftPadding = info.leftPadding {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: leftPadding))
+        } else {
+            if let leftPadding = info.minLeftPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: leftPadding))
+            }
+            if let leftPadding = info.maxLeftPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: leftPadding))
+            }
+        }
+    }
+    
+    public class func applyRightPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let rightPadding = info.rightPadding {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -rightPadding))
+        } else {
+            if let rightPadding = info.minRightPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -rightPadding))
+            }
+            if let rightPadding = info.maxRightPadding {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -rightPadding))
+            }
+        }
+    }
+    
+    public class func applyScrollViewConstraint(to superview: UIScrollView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if info.heightWeight == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
         }
         
+        if info.widthWeight == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+        }
+    }
+    
+    //MARK: Constraints for 'ToView'
+    public class func applyToViewTopConstraint(to toView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        //上揃え
+        if let _ = info.alignTopToView {
+            let topMargin = info.topMargin ?? 0
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
+        } else if let topMargin = info.topMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: topMargin))
+        } else {
+            if let topMargin = info.minTopMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: topMargin))
+            }
+            
+            if let topMargin = info.maxTopMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: topMargin))
+            }
+        }
+    }
+    
+    public class func applyToViewBottomConstraint(to toView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let _ = info.alignBottomToView {
+            let bottomMargin = info.bottomMargin ?? 0
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
+        } else if let bottomMargin = info.bottomMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -bottomMargin))
+        } else {
+            if let bottomMargin = info.minBottomMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -bottomMargin))
+            }
+            if let bottomMargin = info.maxBottomMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: -bottomMargin))
+            }
+        }
+    }
+    
+    public class func applyToViewLeftConstraint(to toView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let _ = info.alignLeftToView {
+            let leftMargin = info.leftMargin ?? 0
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
+        } else if let leftMargin = info.leftMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: leftMargin))
+        } else {
+            if let leftMargin = info.minLeftMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: leftMargin))
+            }
+            
+            if let leftMargin = info.maxLeftMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: leftMargin))
+            }
+        }
+    }
+    
+    public class func applyToViewRightConstraint(to toView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let _ = info.alignRightToView {
+            let rightMargin = info.rightMargin ?? 0
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
+        } else if let rightMargin = info.rightMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: -rightMargin))
+        } else {
+            if let rightMargin = info.minRightMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: -rightMargin))
+            }
+            if let rightMargin = info.maxRightMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: toView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: -rightMargin))
+            }
+        }
+    }
+    
+    //MARK: Constraints for Related Views
+    public class func applyTopConstraint(of topOfView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let bottomMargin = info.bottomMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 - bottomMargin))
+        } else if info.maxBottomMargin == nil && info.minBottomMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
+        } else {
+            if let bottomMargin = info.minBottomMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 - bottomMargin))
+            }
+            if let bottomMargin = info.maxBottomMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: topOfView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 - bottomMargin))
+            }
+        }
+    }
+    
+    public class func applyBottomConstraint(of bottomOfView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let topMargin = info.topMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 + topMargin))
+        } else if info.minTopMargin == nil && info.minBottomMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
+        } else {
+            if let topMargin = info.minTopMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 + topMargin))
+            }
+            if let topMargin = info.maxTopMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: bottomOfView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 + topMargin))
+            }
+        }
+    }
+    
+    public class func applyLeftConstraint(of leftOfView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let rightMargin = info.rightMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 - rightMargin))
+        } else if info.minRightMargin == nil && info.maxRightMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
+        } else {
+            if let rightMargin = info.minRightMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 - rightMargin))
+            }
+            if let rightMargin = info.maxRightMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: leftOfView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 - rightMargin))
+            }
+        }
+    }
+    
+    public class func applyRightConstraint(of rightOfView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let leftMargin = info.leftMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 + leftMargin))
+        } else if info.minLeftMargin == nil && info.maxLeftMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+        } else {
+            if let leftMargin = info.minLeftMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 + leftMargin))
+            }
+            if let leftMargin = info.maxLeftMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: rightOfView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 + leftMargin))
+            }
+        }
+    }
+    
+    //MARK: Constraints for align
+    public class func applyVerticalConstraint(align centerVerticalView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        let constant: CGFloat
+        if let topMargin = info.topMargin {
+            constant = topMargin
+        } else if let bottomMargin = info.bottomMargin {
+            constant = -bottomMargin
+        } else {
+            constant = 0
+        }
+        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: centerVerticalView, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: constant))
+    }
+    
+    public class func applyHorizontalConstraint(align centerHorizontalView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        let constant: CGFloat
+        if let leftMargin = info.leftMargin {
+            constant = leftMargin
+        } else if let rightMargin = info.rightMargin {
+            constant = -rightMargin
+        } else {
+            constant = 0
+        }
+        constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: centerHorizontalView, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: constant))
+    }
+    
+    
+    public class func applyTopConstraint(align topView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let topMargin = info.topMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
+        } else if info.minTopMargin == nil && info.minBottomMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
+        } else {
+            if let topMargin = info.minTopMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
+            }
+            if let topMargin = info.maxTopMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: topView, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0 + topMargin))
+            }
+        }
+    }
+    
+    public class func applyBottomConstraint(align bottomView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let bottomMargin = info.bottomMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
+        } else if info.maxBottomMargin == nil && info.minBottomMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
+        } else {
+            if let bottomMargin = info.minBottomMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
+            }
+            if let bottomMargin = info.maxBottomMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: bottomView, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0 - bottomMargin))
+            }
+        }
+    }
+    
+    public class func applyLeftConstraint(align leftView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let leftMargin = info.leftMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
+        } else if info.minLeftMargin == nil && info.maxLeftMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
+        } else {
+            if let leftMargin = info.minLeftMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
+            }
+            if let leftMargin = info.maxLeftMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: leftView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0 + leftMargin))
+            }
+        }
+    }
+    
+    public class func applyRightConstraint(align rightView: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let rightMargin = info.rightMargin {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
+        } else if info.minRightMargin == nil && info.maxRightMargin == nil {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+        } else {
+            if let rightMargin = info.minRightMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
+            }
+            if let rightMargin = info.maxRightMargin {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: rightView, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0 - rightMargin))
+            }
+        }
+    }
+    
+    //MARK: Constraints for Size
+    public class func applyHeightConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
         if let minHeight = info.minHeight {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: minHeight))
         }
-        
-        if let maxWidth = info.maxWidth {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: maxWidth))
-        }
-        
         if let maxHeight = info.maxHeight {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: maxHeight))
         }
-        
-        
-        if let width = info.width {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: width))
-        }
-        
         if let height = info.height {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: height))
         }
-        
-        NSLayoutConstraint.activate(constraints)
-        
+    }
+    
+    public class func applyWidthConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let minWidth = info.minWidth {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: minWidth))
+        }
+        if let maxWidth = info.maxWidth {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: maxWidth))
+        }
+        if let width = info.width {
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: width))
+        }
     }
 }
 
@@ -490,6 +663,7 @@ public class UILayoutConstraintInfo {
     var maxBottomMargin: CGFloat!
     var centerVertical: Bool!
     var centerHorizontal: Bool!
+    var alignTop: Bool!
     var alignBottom: Bool!
     var alignLeft: Bool!
     var alignRight: Bool!
@@ -524,7 +698,7 @@ public class UILayoutConstraintInfo {
     var minWidthWeight: CGFloat!
     var minHeightWeight: CGFloat!
     
-    public init(toView: UIView?, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil) {
+    public init(toView: UIView?, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignTop: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil) {
         self.toView = toView
         self.leftPadding = leftPadding
         self.rightPadding = rightPadding
@@ -552,6 +726,7 @@ public class UILayoutConstraintInfo {
         self.maxBottomMargin = maxBottomMargin
         self.centerHorizontal = centerHorizontal
         self.centerVertical = centerVertical
+        self.alignTop = alignTop
         self.alignBottom = alignBottom
         self.alignLeft = alignLeft
         self.alignRight = alignRight

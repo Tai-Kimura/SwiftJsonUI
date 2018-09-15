@@ -268,10 +268,10 @@
 		B692FB1B214B4563008E9631 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				B692FB32214B4563008E9631 /* SheetView.swift */,
+				B692FB31214B4563008E9631 /* SJUIViewCreator.swift */,
 				B692FB1C214B4563008E9631 /* UIViewDisposure.swift */,
 				B692FB1D214B4563008E9631 /* UIView */,
-				B692FB31214B4563008E9631 /* SJUIViewCreator.swift */,
-				B692FB32214B4563008E9631 /* SheetView.swift */,
 			);
 			name = UI;
 			path = SwiftJsonUI/Classes/UI;

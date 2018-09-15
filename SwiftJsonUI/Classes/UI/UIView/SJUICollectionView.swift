@@ -41,15 +41,12 @@ open class SJUICollectionView: UICollectionView {
         collectionViewLayout.itemSize = CGSize(width: UIScreen.main.bounds.size.width*weight, height: 300)
         var edgeInsets = Array<CGFloat>()
         if let insetStr = attr["insets"].string {
-            
             let paddingStars = insetStr.components(separatedBy: "|")
-            
             for p in paddingStars {
                 if let n = NumberFormatter().number(from: p) {
                     edgeInsets.append(CGFloat(truncating:n))
                 }
             }
-
         } else if let insets = attr["insets"].arrayObject as? [CGFloat] {
             edgeInsets = insets
         }

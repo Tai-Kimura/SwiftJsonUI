@@ -199,7 +199,7 @@ open class SJUIViewCreator:NSObject {
             }
         }
         
-        let constraintInfo = UILayoutConstraintInfo(toView:views[attr["toView"].stringValue], leftPadding: attr["leftPadding"].cgFloat, rightPadding: attr["rightPadding"].cgFloat, topPadding: attr["topPadding"].cgFloat, bottomPadding: attr["bottomPadding"].cgFloat, minLeftPadding: attr["minLeftPadding"].cgFloat, minRightPadding: attr["minRightPadding"].cgFloat, minTopPadding: attr["minTopPadding"].cgFloat, minBottomPadding: attr["minBottomPadding"].cgFloat, maxLeftPadding: attr["maxLeftPadding"].cgFloat, maxRightPadding: attr["maxRightPadding"].cgFloat, maxTopPadding: attr["maxTopPadding"].cgFloat, maxBottomPadding: attr["maxBottomPadding"].cgFloat, leftMargin: attr["leftMargin"].cgFloat, rightMargin: attr["rightMargin"].cgFloat, topMargin: attr["topMargin"].cgFloat, bottomMargin: attr["bottomMargin"].cgFloat, minLeftMargin: attr["minLeftMargin"].cgFloat, minRightMargin: attr["minRightMargin"].cgFloat, minTopMargin: attr["minTopMargin"].cgFloat, minBottomMargin: attr["minBottomMargin"].cgFloat, maxLeftMargin: attr["maxLeftMargin"].cgFloat, maxRightMargin: attr["maxRightMargin"].cgFloat, maxTopMargin: attr["maxTopMargin"].cgFloat, maxBottomMargin: attr["maxBottomMargin"].cgFloat, centerVertical: attr["centerVertical"].bool, centerHorizontal: attr["centerHorizontal"].bool, alignBottom: attr["alignBottom"].bool, alignLeft: attr["alignLeft"].bool, alignRight: attr["alignRight"].bool, alignTopToView: attr["alignTopToView"].bool,alignBottomToView: attr["alignBottomToView"].bool, alignLeftToView: attr["alignLeftToView"].bool, alignRightToView: attr["alignRightToView"].bool, alignCenterVerticalToView: attr["alignCenterVerticalToView"].bool, alignCenterHorizontalToView: attr["alignCenterHorizontalToView"].bool, alignTopOfView: views[attr["alignTopOfView"].stringValue], alignBottomOfView: views[attr["alignBottomOfView"].stringValue], alignLeftOfView: views[attr["alignLeftOfView"].stringValue], alignRightOfView: views[attr["alignRightOfView"].stringValue], alignTopView: views[attr["alignTopView"].stringValue], alignBottomView: views[attr["alignBottomView"].stringValue], alignLeftView: views[attr["alignLeftView"].stringValue], alignRightView: views[attr["alignRightView"].stringValue], alignCenterVerticalView: views[attr["alignCenterVerticalView"].stringValue], alignCenterHorizontalView: views[attr["alignCenterHorizontalView"].stringValue], width: attr["width"].cgFloat, height: attr["height"].cgFloat, minWidth: attr["minWidth"].cgFloat, minHeight: attr["minHeight"].cgFloat, maxWidth: attr["maxWidth"].cgFloat, maxHeight: attr["maxHeight"].cgFloat, widthWeight: attr["widthWeight"].cgFloat, heightWeight: attr["heightWeight"].cgFloat, aspectWidth: attr["aspectWidth"].cgFloat, aspectHeight: attr["aspectHeight"].cgFloat, maxWidthWeight: attr["maxWidthWeight"].cgFloat, maxHeightWeight: attr["maxHeightWeight"].cgFloat, minWidthWeight: attr["minWidthWeight"].cgFloat, minHeightWeight: attr["minHeightWeight"].cgFloat)
+        let constraintInfo = UILayoutConstraintInfo(toView:views[attr["toView"].stringValue], leftPadding: attr["leftPadding"].cgFloat, rightPadding: attr["rightPadding"].cgFloat, topPadding: attr["topPadding"].cgFloat, bottomPadding: attr["bottomPadding"].cgFloat, minLeftPadding: attr["minLeftPadding"].cgFloat, minRightPadding: attr["minRightPadding"].cgFloat, minTopPadding: attr["minTopPadding"].cgFloat, minBottomPadding: attr["minBottomPadding"].cgFloat, maxLeftPadding: attr["maxLeftPadding"].cgFloat, maxRightPadding: attr["maxRightPadding"].cgFloat, maxTopPadding: attr["maxTopPadding"].cgFloat, maxBottomPadding: attr["maxBottomPadding"].cgFloat, leftMargin: attr["leftMargin"].cgFloat, rightMargin: attr["rightMargin"].cgFloat, topMargin: attr["topMargin"].cgFloat, bottomMargin: attr["bottomMargin"].cgFloat, minLeftMargin: attr["minLeftMargin"].cgFloat, minRightMargin: attr["minRightMargin"].cgFloat, minTopMargin: attr["minTopMargin"].cgFloat, minBottomMargin: attr["minBottomMargin"].cgFloat, maxLeftMargin: attr["maxLeftMargin"].cgFloat, maxRightMargin: attr["maxRightMargin"].cgFloat, maxTopMargin: attr["maxTopMargin"].cgFloat, maxBottomMargin: attr["maxBottomMargin"].cgFloat, centerVertical: attr["centerVertical"].bool, centerHorizontal: attr["centerHorizontal"].bool, alignTop: attr["alignTop"].bool, alignBottom: attr["alignBottom"].bool, alignLeft: attr["alignLeft"].bool, alignRight: attr["alignRight"].bool, alignTopToView: attr["alignTopToView"].bool,alignBottomToView: attr["alignBottomToView"].bool, alignLeftToView: attr["alignLeftToView"].bool, alignRightToView: attr["alignRightToView"].bool, alignCenterVerticalToView: attr["alignCenterVerticalToView"].bool, alignCenterHorizontalToView: attr["alignCenterHorizontalToView"].bool, alignTopOfView: views[attr["alignTopOfView"].stringValue], alignBottomOfView: views[attr["alignBottomOfView"].stringValue], alignLeftOfView: views[attr["alignLeftOfView"].stringValue], alignRightOfView: views[attr["alignRightOfView"].stringValue], alignTopView: views[attr["alignTopView"].stringValue], alignBottomView: views[attr["alignBottomView"].stringValue], alignLeftView: views[attr["alignLeftView"].stringValue], alignRightView: views[attr["alignRightView"].stringValue], alignCenterVerticalView: views[attr["alignCenterVerticalView"].stringValue], alignCenterHorizontalView: views[attr["alignCenterHorizontalView"].stringValue], width: attr["width"].cgFloat, height: attr["height"].cgFloat, minWidth: attr["minWidth"].cgFloat, minHeight: attr["minHeight"].cgFloat, maxWidth: attr["maxWidth"].cgFloat, maxHeight: attr["maxHeight"].cgFloat, widthWeight: attr["widthWeight"].cgFloat, heightWeight: attr["heightWeight"].cgFloat, aspectWidth: attr["aspectWidth"].cgFloat, aspectHeight: attr["aspectHeight"].cgFloat, maxWidthWeight: attr["maxWidthWeight"].cgFloat, maxHeightWeight: attr["maxHeightWeight"].cgFloat, minWidthWeight: attr["minWidthWeight"].cgFloat, minHeightWeight: attr["minHeightWeight"].cgFloat)
         
         UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: constraintInfo)
         
@@ -216,26 +216,29 @@ open class SJUIViewCreator:NSObject {
         if let wrapContent = attr["wrapContent"].bool {
             if wrapContent {
                 var paddings:[CGFloat] = [0,0,25.0,0]
+                var edgeInsets = [CGFloat]()
                 if let paddingStr = attr["innerPadding"].string {
                     let paddingStars = paddingStr.components(separatedBy: "|")
-                    var edgeInsets = Array<CGFloat>()
                     for p in paddingStars {
                         if let n = NumberFormatter().number(from: p) {
                             edgeInsets.append(CGFloat(truncating: n))
                         }
                     }
-                    switch (edgeInsets.count) {
-                    case 0:
-                        break
-                    case 1:
-                        paddings = [edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0]]
-                    case 2:
-                        paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1]]
-                    case 3:
-                        paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1]]
-                    default:
-                        paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3]]
-                    }
+                } else if let padding = attr["innerPadding"].arrayObject as? [CGFloat] {
+                    edgeInsets = padding
+                }
+                
+                switch (edgeInsets.count) {
+                case 0:
+                    break
+                case 1:
+                    paddings = [edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0]]
+                case 2:
+                    paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1]]
+                case 3:
+                    paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1]]
+                default:
+                    paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3]]
                 }
                 
                 if let keyBottomView = attr["keyBottomView"].string {
@@ -416,6 +419,35 @@ open class SJUIViewCreator:NSObject {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         return "\(cachesDirPath)/Layouts"
+    }
+    
+    public class func getViewJSON(path: String) -> JSON? {
+        let url = getURL(path: path)
+        do {
+            let jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
+            let enc:String.Encoding = String.Encoding.utf8
+            let json = JSON(data: jsonString.data(using: enc)!)
+            return json
+        } catch let error {
+            print("JSON encoding error \(error)")
+            return nil
+        }
+    }
+    
+    public class func findViewJSON(byId viewId: String, inJSON json: JSON) -> JSON? {
+        if let vId = json["id"].string {
+            if viewId == vId {
+                return json
+            }
+        }
+        if let children = json["child"].array {
+            for child in children {
+                if let json = findViewJSON(byId: viewId, inJSON: child) {
+                    return json
+                }
+            }
+        }
+        return nil
     }
 }
 
