@@ -102,8 +102,8 @@ open class SJUIImageView: UIImageView {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))
             i.addGestureRecognizer(gr)
             i.isUserInteractionEnabled = true
-            i.canTap = attr["canTap"].bool ?? true
         }
+        i.canTap = attr["canTap"].bool ?? true
         return i
     }
     

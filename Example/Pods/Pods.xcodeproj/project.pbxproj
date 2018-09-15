@@ -91,6 +91,8 @@
 		B692FB7E214B4564008E9631 /* SJUIViewCreator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB31214B4563008E9631 /* SJUIViewCreator.swift */; };
 		B692FB7F214B4564008E9631 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB32214B4563008E9631 /* SheetView.swift */; };
 		B692FB80214B4564008E9631 /* SheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B692FB32214B4563008E9631 /* SheetView.swift */; };
+		B6FD23B3214DCAF1001B62AD /* Binding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FD23B2214DCAF1001B62AD /* Binding.swift */; };
+		B6FD23B4214DCAF1001B62AD /* Binding.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6FD23B2214DCAF1001B62AD /* Binding.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -163,6 +165,7 @@
 		B692FB30214B4563008E9631 /* SJUIButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIButton.swift; sourceTree = "<group>"; };
 		B692FB31214B4563008E9631 /* SJUIViewCreator.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SJUIViewCreator.swift; sourceTree = "<group>"; };
 		B692FB32214B4563008E9631 /* SheetView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SheetView.swift; sourceTree = "<group>"; };
+		B6FD23B2214DCAF1001B62AD /* Binding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Binding.swift; sourceTree = "<group>"; };
 		CEE56F4CE140A3A0BF01B6E0AB3DE765 /* Pods-SwiftJsonUI_Tests-frameworks.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-SwiftJsonUI_Tests-frameworks.sh"; sourceTree = "<group>"; };
 		D70600220BFF3ADF9600916D3653C3A7 /* Pods_SwiftJsonUI_Tests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_SwiftJsonUI_Tests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		E9A7334C90A6FB58253ED2C9675D7B67 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
@@ -314,13 +317,14 @@
 		C1659E2ED69D5017C1C4F943839BC2D0 /* SwiftJsonUI */ = {
 			isa = PBXGroup;
 			children = (
-				B692FB08214B4563008E9631 /* Extensions */,
-				B692FB13214B4563008E9631 /* Network */,
+				B6FD23B2214DCAF1001B62AD /* Binding.swift */,
 				B692FB12214B4563008E9631 /* SJUIModel.swift */,
 				B692FB1A214B4563008E9631 /* SJUIViewController.swift */,
-				B692FB1B214B4563008E9631 /* UI */,
+				B692FB08214B4563008E9631 /* Extensions */,
+				B692FB13214B4563008E9631 /* Network */,
 				C8A3DD0FDF23E0AA53A08DEEDADA872D /* Pod */,
 				E05C630CF80DE7ED99CF68C07A95C8C0 /* Support Files */,
+				B692FB1B214B4563008E9631 /* UI */,
 			);
 			name = SwiftJsonUI;
 			path = ../..;
@@ -486,6 +490,7 @@
 				B692FB5C214B4564008E9631 /* SJUIView.swift in Sources */,
 				B692FB74214B4564008E9631 /* SJUISwitch.swift in Sources */,
 				B692FB80214B4564008E9631 /* SheetView.swift in Sources */,
+				B6FD23B4214DCAF1001B62AD /* Binding.swift in Sources */,
 				B692FB68214B4564008E9631 /* SJUIVisualEffectView.swift in Sources */,
 				B692FB4C214B4564008E9631 /* NSObjectExtension.swift in Sources */,
 				B692FB70214B4564008E9631 /* SJUIScrollView.swift in Sources */,
@@ -533,6 +538,7 @@
 				B692FB5B214B4564008E9631 /* SJUIView.swift in Sources */,
 				B692FB73214B4564008E9631 /* SJUISwitch.swift in Sources */,
 				B692FB7F214B4564008E9631 /* SheetView.swift in Sources */,
+				B6FD23B3214DCAF1001B62AD /* Binding.swift in Sources */,
 				B692FB67214B4564008E9631 /* SJUIVisualEffectView.swift in Sources */,
 				B692FB4B214B4564008E9631 /* NSObjectExtension.swift in Sources */,
 				B692FB6F214B4564008E9631 /* SJUIScrollView.swift in Sources */,

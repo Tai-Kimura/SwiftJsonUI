@@ -80,4 +80,32 @@ public extension String {
         formatter.dateFormat = format
         return formatter.date(from: self)
     }
+    
+    public func toCamel(lower: Bool = true) -> String {
+        guard self != "" else { return self }
+        let words = lowercased().split(separator: "_").map({ String($0) })
+        let firstWord: String = words.first ?? ""
+        let camel: String = lower ? firstWord : String(firstWord.prefix(1).capitalized) + String(firstWord.suffix(from: index(after: startIndex)))
+        return words.dropFirst().reduce(into: camel, { camel, word in
+            camel.append(String(word.prefix(1).capitalized) + String(word.suffix(from: index(after: startIndex))))
+        })
+    }
+    
+    public func toSnake() -> String {
+        let head = String(prefix(1))
+        let tail = String(suffix(count - 1))
+        let upperCased = head.uppercased() + tail
+        let input = upperCased
+        let pattern = "[A-Z]+[a-z,\\d]*"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else {
+            return ""
+        }
+        var words:[String] = []
+        regex.matches(in: input, options: [], range: NSRange.init(location: 0, length: count)).forEach { match in
+            if let range = Range(match.range(at: 0), in: self) {
+                words.append(String(self[range]).lowercased())
+            }
+        }
+        return words.joined(separator: "_")
+    }
 }

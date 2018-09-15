@@ -28,6 +28,8 @@ var DefaultBackgroundColorKey: UInt8 = 0
 
 var TapBackgroundColorKey: UInt8 = 1
 
+var PropertyNameKey: UInt8 = 2
+
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
     func touchEnd(_ view: UIView)
@@ -71,6 +73,18 @@ public extension UIView {
         }
         set {
             objc_setAssociatedObject(self, &TapBackgroundColorKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+    
+    public var propertyName: String? {
+        get {
+            guard let object = objc_getAssociatedObject(self, &PropertyNameKey) as? String else {
+                return nil
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &PropertyNameKey, newValue, .OBJC_ASSOCIATION_RETAIN)
         }
     }
     

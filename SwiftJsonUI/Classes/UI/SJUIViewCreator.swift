@@ -205,6 +205,10 @@ open class SJUIViewCreator:NSObject {
         
         if let id = attr["id"].string {
             views[id] = view
+            view.propertyName = id.toCamel()
+        }
+        if let propertyName = attr["propertyName"].string {
+            view.propertyName = propertyName
         }
         
         if let children = attr["child"].array {
@@ -459,6 +463,7 @@ open class SJUIViewCreator:NSObject {
         }
         return nil
     }
+    
 }
 
 public protocol ViewHolder: class {
