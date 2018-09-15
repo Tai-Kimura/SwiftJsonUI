@@ -66,7 +66,7 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
         if Downloader.operationQueue == nil {
             Downloader.operationQueue = OperationQueue()
             Downloader.operationQueue.qualityOfService = QualityOfService.userInitiated
-            Downloader.operationQueue.name = "jp.warrantee.download"
+            Downloader.operationQueue.name = "jp.sjui.download"
             Downloader.operationQueue.maxConcurrentOperationCount = 6
         }
         

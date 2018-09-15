@@ -1,9 +1,7 @@
 //
 //  SJUITextField.swift
-//  WarranteeNow
 //
 //  Created by 木村太一朗 on 2017/07/22.
-//  Copyright © 2017年 WARRANTEE.INC,. All rights reserved.
 //
 
 import UIKit
