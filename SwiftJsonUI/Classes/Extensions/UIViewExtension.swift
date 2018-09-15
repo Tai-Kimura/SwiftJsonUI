@@ -86,6 +86,4 @@ public extension UIView {
             self.backgroundColor = defaultBackgroundColor
         }
     }
-    
-    
 }

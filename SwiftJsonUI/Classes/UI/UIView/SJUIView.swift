@@ -24,7 +24,8 @@
 
 import UIKit
 
-open class SJUIView: UIView, UIGestureRecognizerDelegate {
+open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
+    public var _views: [String:UIView] = [String:UIView]()
     
     open class var viewClass: SJUIView.Type {
         get {
@@ -85,6 +86,10 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate {
                 }
             }
         }
+    }
+    
+    public func addSubViewWith(json: JSON, target: Any, withCreatorClass creator: SJUIViewCreator.Type = SJUIViewCreator.self) {
+        creator.createView(json, parentView: self, target: target, views: &_views)
     }
     
     public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIView {
