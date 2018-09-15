@@ -254,6 +254,8 @@ open class SJUIViewCreator:NSObject {
                             NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
                         }
                     }
+                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .topToBottom {
+                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: lastView, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
                 }
                 
                 if let keyTopView = attr["keyTopView"].string {
@@ -269,6 +271,8 @@ open class SJUIViewCreator:NSObject {
                             NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                         }
                     }
+                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .bottomToTop {
+                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                 }
                 
                 if let keyLeftView = attr["keyLeftView"].string {
@@ -284,6 +288,8 @@ open class SJUIViewCreator:NSObject {
                             NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
                         }
                     }
+                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .leftToRight {
+                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
                 }
                 
                 if let keyRightView = attr["keyRightView"].string {
@@ -299,6 +305,8 @@ open class SJUIViewCreator:NSObject {
                             NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .right, multiplier: 1.0, constant: paddings[3])])
                         }
                     }
+                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .rightToLeft {
+                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .right, multiplier: 1.0, constant: paddings[3])])
                 }
             }
         }
