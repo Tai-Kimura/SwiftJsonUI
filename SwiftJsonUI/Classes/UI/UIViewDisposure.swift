@@ -167,24 +167,30 @@ open class UIViewDisposure {
     public class func applyLinearVerticalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
             switch superview.direction {
             case .topToBottom:
+                print("direction topToBottom")
                 if superview.subviews.count <= 1 {
+                    print("first view in parent")
                     if info.topPadding == nil && info.minTopPadding == nil && info.maxTopPadding == nil {
                         applyAlignParentTopConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                     } else {
                         applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                     }
                 } else {
+                    print("second or more view in parent")
                     let bottomOfView = superview.subviews[superview.subviews.count - 2]
                     applyBottomConstraint(of: bottomOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
             case .bottomToTop:
+                print("direction bottomToTop")
                 if superview.subviews.count <= 1 {
+                    print("first view in parent")
                     if info.bottomPadding == nil && info.minBottomPadding == nil && info.maxBottomPadding == nil {
                         applyAlignParentBottomConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                     } else {
                         applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                     }
                 } else {
+                    print("second or more view in parent")
                     let topOfView = superview.subviews[superview.subviews.count - 2]
                     applyTopConstraint(of: topOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
@@ -196,24 +202,30 @@ open class UIViewDisposure {
     public class func applyLinearHorizontalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
         switch superview.direction {
         case .leftToRight:
+            print("direction leftToRight")
             if superview.subviews.count <= 1 {
+                print("first view in parent")
                 if info.leftPadding == nil && info.minLeftPadding == nil && info.maxLeftPadding == nil {
                     applyAlignParentLeftConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                 } else {
                     applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                 }
             } else {
+                print("second or more view in parent")
                 let rightOfView = superview.subviews[superview.subviews.count - 2]
                 applyRightConstraint(of: rightOfView, onView: view, toConstraintInfo: info, for: &constraints)
             }
         case .rightToLeft:
+            print("direction rightToLeft")
             if superview.subviews.count <= 1 {
+                print("first view in parent")
                 if info.rightPadding == nil && info.minRightPadding == nil && info.maxRightPadding == nil {
                     applyAlignParentRightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                 } else {
                     applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                 }
             } else {
+                print("second or more view in parent")
                 let leftOfView = superview.subviews[superview.subviews.count - 2]
                 applyLeftConstraint(of: leftOfView, onView: view, toConstraintInfo: info, for: &constraints)
             }
