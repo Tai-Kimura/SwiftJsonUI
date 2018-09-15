@@ -136,7 +136,7 @@ open class NetworkImageView: SJUIImageView {
         self.layer.opacity = 1
     }
     
-    open class func deleteCaheForPath(url: URL!) -> Bool {
+    @discardableResult open class func deleteCaheForPath(url: URL!) -> Bool {
         if url == nil {
             return false
         }
