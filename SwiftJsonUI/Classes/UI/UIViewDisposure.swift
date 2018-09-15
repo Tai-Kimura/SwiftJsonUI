@@ -179,7 +179,6 @@ open class UIViewDisposure {
                     applyBottomConstraint(of: bottomOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
             case .bottomToTop:
-                print("direction bottomToTop")
                 if superview.subviews.count <= 1 {
                     if info.bottomPadding == nil && info.minBottomPadding == nil && info.maxBottomPadding == nil {
                         info.alignBottom = true
@@ -188,7 +187,6 @@ open class UIViewDisposure {
                         applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                     }
                 } else {
-                    print("second or more view in parent")
                     let topOfView = superview.subviews[superview.subviews.count - 2]
                     applyTopConstraint(of: topOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
@@ -200,9 +198,7 @@ open class UIViewDisposure {
     public class func applyLinearHorizontalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
         switch superview.direction {
         case .leftToRight:
-            print("direction leftToRight")
             if superview.subviews.count <= 1 {
-                print("first view in parent")
                 if info.leftPadding == nil && info.minLeftPadding == nil && info.maxLeftPadding == nil {
                     info.alignLeft = true
                     applyAlignParentLeftConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
@@ -210,7 +206,6 @@ open class UIViewDisposure {
                     applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
                 }
             } else {
-                print("second or more view in parent")
                 let rightOfView = superview.subviews[superview.subviews.count - 2]
                 applyRightConstraint(of: rightOfView, onView: view, toConstraintInfo: info, for: &constraints)
             }
