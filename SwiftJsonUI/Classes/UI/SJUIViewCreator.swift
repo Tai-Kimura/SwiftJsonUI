@@ -336,8 +336,10 @@ open class SJUIViewCreator:NSObject {
     open class func getViewFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> UIView? {
         let view: UIView
         switch(attr["type"].stringValue) {
-        case "View", "GradientView":
+        case "View"
             view = SJUIView.createFromJSON(attr: attr, target: target, views: &views)
+        case "GradientView":
+            view = GradientView.createFromJSON(attr: attr, target: target, views: &views)
         case "Blur":
             view = SJUIVisualEffectView.createFromJSON(attr: attr, target: target, views: &views)
         case "CircleView":

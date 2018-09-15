@@ -1,5 +1,5 @@
 //
-//  UISelectBox.swift
+//  SJUISelectBox.swift
 //
 //  Created by 木村太一朗 on 2018/05/29.
 //  Copyright © 2018年 木村太一朗 All rights reserved.

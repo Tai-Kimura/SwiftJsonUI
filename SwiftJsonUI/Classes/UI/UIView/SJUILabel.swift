@@ -1,5 +1,5 @@
 //
-//  CustomUILabel.swift
+//  SJUILabel.swift
 //
 //  Created by 木村太一朗 on 2016/01/28.
 //  Copyright © 2016年 木村太一朗 All rights reserved.

@@ -1,5 +1,5 @@
 //
-//  CustomUIButton.swift
+//  SJUIButton.swift
 //
 //  Created by 木村太一朗 on 2016/02/02.
 //  Permission is hereby granted, free of charge, to any person obtaining a copy

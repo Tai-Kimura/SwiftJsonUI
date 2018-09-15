@@ -1,5 +1,5 @@
 //
-//  CustomTextField.swift
+//  SJUITextField.swift
 //  WarranteeNow
 //
 //  Created by 木村太一朗 on 2017/07/22.

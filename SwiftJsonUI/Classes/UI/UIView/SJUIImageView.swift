@@ -1,5 +1,5 @@
 //
-//  CustomUIImageView.swift
+//  SJUIImageView.swift
 //
 //  Created by 木村太一朗 on 2016/05/11.
 //  Copyright © 2016年 TANOSYS. All rights reserved.

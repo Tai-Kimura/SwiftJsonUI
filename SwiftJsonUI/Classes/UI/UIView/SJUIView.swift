@@ -1,5 +1,5 @@
 //
-//  CustomUIView.swift
+//  SJUIView.swift
 //
 //  Created by 木村太一朗 on 2016/01/25.
 //  Copyright © 2016年 木村太一朗 All rights reserved.
