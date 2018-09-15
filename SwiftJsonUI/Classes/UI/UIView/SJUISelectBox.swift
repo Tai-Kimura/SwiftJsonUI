@@ -35,6 +35,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     static let defaultCaretWidth: CGFloat = 39.0
     public static var defaultCaretImageName = "Triangle"
+    public static var defaultLabelPadding = UIEdgeInsetsMake(0, 10.0, 0, 10.0)
     
     private var _type: SelectItemType = .normal
     public var type: SelectItemType {
@@ -204,29 +205,28 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     private func initializeLabel(attr: JSON) {
         let l = SJUILabel()
+        var edgeInsets = [CGFloat]()
         if let edgeInsetStr = attr["edgeInset"].string {
             let edgeInsetStrs = edgeInsetStr.components(separatedBy: "|")
-            var edgeInsets = Array<CGFloat>()
             for e in edgeInsetStrs {
                 if let n = NumberFormatter().number(from: e) {
                     edgeInsets.append(CGFloat(truncating: n))
                 }
             }
-            
-            switch (edgeInsets.count) {
-            case 0:
-                break
-            case 1:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0])
-            case 2:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1])
-            case 3:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1])
-            default:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3])
-            }
-        } else {
-            l.padding = UIEdgeInsetsMake(0, 10.0, 0, 10.0)
+        } else if let insets = attr["edgeInset"].arrayObject as? [CGFloat] {
+            edgeInsets = insets
+        }
+        switch (edgeInsets.count) {
+        case 0:
+            l.padding = SJUISelectBox.defaultLabelPadding
+        case 1:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0])
+        case 2:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1])
+        case 3:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1])
+        default:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3])
         }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue : attr["lines"].int ?? 1 == 1 ? 1.0 : 1.4
