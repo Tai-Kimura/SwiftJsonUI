@@ -670,7 +670,7 @@ open class UIViewDisposure {
             }
         }
         
-        if let orientation = (view as? SJUIView)?.orientation, orientation == .vertical, info.height == nil, info.maxHeight == nil, info.widthWeight == nil, info.maxWidthWeight == nil {
+        if let orientation = (view as? SJUIView)?.orientation, orientation == .vertical, info.height == nil, info.maxHeight == nil, info.heightWeight == nil, info.maxHeightWeight == nil {
             info.height = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
         }
     }
@@ -702,7 +702,7 @@ open class UIViewDisposure {
                 }
             }
         }
-        if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, info.width == nil, info.maxWidth == nil, info.heightWeight == nil, info.maxHeightWeight == nil {
+        if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, info.width == nil, info.maxWidth == nil, info.widthWeight == nil, info.maxWidthWeight == nil {
             info.width = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
         }
     }
