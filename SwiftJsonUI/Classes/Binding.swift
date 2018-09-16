@@ -16,6 +16,30 @@ open class Binding: NSObject {
         self._viewHolder = viewHolder
     }
     
+    public var data: NSObject? = nil {
+        didSet {
+            if let data = data, let views = _viewHolder?._views {
+                for v in views.values {
+                    if let binding = v.binding {
+                        if let text = data.value(forKey: binding) as? String {
+                            if let label = v as? SJUILabel {
+                                label.applyAttributedText(text)
+                            } else if let textField = v as? UITextField {
+                                textField.text = text
+                            } else if let textView = v as? UITextView {
+                                textView.text = text
+                            } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
+                                selectBox.selectedIndex = index
+                            }
+                        } else if let date = data.value(forKey: binding) as? Date, let selectBox = v as? SJUISelectBox {
+                            selectBox.selectedDate = date
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     public func bindView() {
         let properties = getProperties()
         if let views = _viewHolder?._views {

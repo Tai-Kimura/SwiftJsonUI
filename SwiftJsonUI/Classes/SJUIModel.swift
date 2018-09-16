@@ -8,6 +8,7 @@
 
 import UIKit
 
+@objcMembers
 open class SJUIModel: NSObject {
     
     open var _json: JSON

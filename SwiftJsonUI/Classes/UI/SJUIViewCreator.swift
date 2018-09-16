@@ -210,6 +210,9 @@ open class SJUIViewCreator:NSObject {
         if let propertyName = attr["propertyName"].string {
             view.propertyName = propertyName
         }
+        if let binding = attr["binding"].string {
+            view.binding = binding
+        }
         
         if let children = attr["child"].array {
             for child in children {
