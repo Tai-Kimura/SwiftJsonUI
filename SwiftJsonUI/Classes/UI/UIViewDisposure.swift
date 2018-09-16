@@ -690,6 +690,27 @@ public class UILayoutConstraintInfo {
             self.maxHeightWeight = self.minHeightWeight
         }
         
+        if let centerVertical = centerVertical, centerVertical {
+            if topMargin != nil && bottomMargin != nil {
+                self.centerVertical = nil
+            }
+        }
+        if self.alignCenterVerticalView != nil {
+            if topMargin != nil && bottomMargin != nil {
+                self.alignCenterVerticalView = nil
+            }
+        }
+        if let centerHorizontal = centerHorizontal, centerHorizontal {
+            if leftMargin != nil && rightMargin != nil {
+                self.centerHorizontal = nil
+            }
+        }
+        if self.alignCenterHorizontalView != nil {
+            if leftMargin != nil && rightMargin != nil {
+                self.alignCenterHorizontalView = nil
+            }
+        }
+        
         if let toView = toView {
             if alignCenterVerticalToView ?? false {
                 self.alignCenterVerticalView = toView
