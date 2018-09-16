@@ -405,7 +405,7 @@ public protocol UISelectBoxDelegate: class {
     func didItemSelected(view: SJUISelectBox, isBack: Bool)
 }
 
-extension UISelectBoxDelegate {
+public extension UISelectBoxDelegate {
     func willShowSheet(view: SJUISelectBox) {
     }
     func didItemSelected(view: SJUISelectBox, isBack: Bool) {
