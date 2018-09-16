@@ -198,10 +198,38 @@ open class SJUIViewCreator:NSObject {
                 parentView.addSubview(view)
             }
         }
+        let width: CGFloat?
+        if let w = attr["width"].cgFloat {
+            width = w
+        } else if let w = attr["width"].string {
+            if w == "matchParent" {
+                width = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+            } else if w == "wrapContent" {
+                width = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
+            } else {
+                width = nil
+            }
+        } else {
+            width = nil
+        }
+        let height: CGFloat?
+        if let h = attr["height"].cgFloat {
+            height = h
+        } else if let h = attr["height"].string {
+            if h == "matchParent" {
+                height = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+            } else if h == "wrapContent" {
+                height = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
+            } else {
+                height = nil
+            }
+        } else {
+            height = nil
+        }
         
-        let constraintInfo = UILayoutConstraintInfo(toView:views[attr["toView"].stringValue], leftPadding: attr["leftPadding"].cgFloat, rightPadding: attr["rightPadding"].cgFloat, topPadding: attr["topPadding"].cgFloat, bottomPadding: attr["bottomPadding"].cgFloat, minLeftPadding: attr["minLeftPadding"].cgFloat, minRightPadding: attr["minRightPadding"].cgFloat, minTopPadding: attr["minTopPadding"].cgFloat, minBottomPadding: attr["minBottomPadding"].cgFloat, maxLeftPadding: attr["maxLeftPadding"].cgFloat, maxRightPadding: attr["maxRightPadding"].cgFloat, maxTopPadding: attr["maxTopPadding"].cgFloat, maxBottomPadding: attr["maxBottomPadding"].cgFloat, leftMargin: attr["leftMargin"].cgFloat, rightMargin: attr["rightMargin"].cgFloat, topMargin: attr["topMargin"].cgFloat, bottomMargin: attr["bottomMargin"].cgFloat, minLeftMargin: attr["minLeftMargin"].cgFloat, minRightMargin: attr["minRightMargin"].cgFloat, minTopMargin: attr["minTopMargin"].cgFloat, minBottomMargin: attr["minBottomMargin"].cgFloat, maxLeftMargin: attr["maxLeftMargin"].cgFloat, maxRightMargin: attr["maxRightMargin"].cgFloat, maxTopMargin: attr["maxTopMargin"].cgFloat, maxBottomMargin: attr["maxBottomMargin"].cgFloat, centerVertical: attr["centerVertical"].bool, centerHorizontal: attr["centerHorizontal"].bool, alignTop: attr["alignTop"].bool, alignBottom: attr["alignBottom"].bool, alignLeft: attr["alignLeft"].bool, alignRight: attr["alignRight"].bool, alignTopToView: attr["alignTopToView"].bool,alignBottomToView: attr["alignBottomToView"].bool, alignLeftToView: attr["alignLeftToView"].bool, alignRightToView: attr["alignRightToView"].bool, alignCenterVerticalToView: attr["alignCenterVerticalToView"].bool, alignCenterHorizontalToView: attr["alignCenterHorizontalToView"].bool, alignTopOfView: views[attr["alignTopOfView"].stringValue], alignBottomOfView: views[attr["alignBottomOfView"].stringValue], alignLeftOfView: views[attr["alignLeftOfView"].stringValue], alignRightOfView: views[attr["alignRightOfView"].stringValue], alignTopView: views[attr["alignTopView"].stringValue], alignBottomView: views[attr["alignBottomView"].stringValue], alignLeftView: views[attr["alignLeftView"].stringValue], alignRightView: views[attr["alignRightView"].stringValue], alignCenterVerticalView: views[attr["alignCenterVerticalView"].stringValue], alignCenterHorizontalView: views[attr["alignCenterHorizontalView"].stringValue], width: attr["width"].cgFloat, height: attr["height"].cgFloat, minWidth: attr["minWidth"].cgFloat, minHeight: attr["minHeight"].cgFloat, maxWidth: attr["maxWidth"].cgFloat, maxHeight: attr["maxHeight"].cgFloat, widthWeight: attr["widthWeight"].cgFloat, heightWeight: attr["heightWeight"].cgFloat, aspectWidth: attr["aspectWidth"].cgFloat, aspectHeight: attr["aspectHeight"].cgFloat, maxWidthWeight: attr["maxWidthWeight"].cgFloat, maxHeightWeight: attr["maxHeightWeight"].cgFloat, minWidthWeight: attr["minWidthWeight"].cgFloat, minHeightWeight: attr["minHeightWeight"].cgFloat)
-        
-        UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: constraintInfo)
+        let constraintInfo = UILayoutConstraintInfo(toView:views[attr["toView"].stringValue], paddingLeft: attr["paddingLeft"].cgFloat, paddingRight: attr["paddingRight"].cgFloat, paddingTop: attr["paddingTop"].cgFloat, paddingBottom: attr["paddingBottom"].cgFloat, leftPadding: attr["leftPadding"].cgFloat, rightPadding: attr["rightPadding"].cgFloat, topPadding: attr["topPadding"].cgFloat, bottomPadding: attr["bottomPadding"].cgFloat, minLeftPadding: attr["minLeftPadding"].cgFloat, minRightPadding: attr["minRightPadding"].cgFloat, minTopPadding: attr["minTopPadding"].cgFloat, minBottomPadding: attr["minBottomPadding"].cgFloat, maxLeftPadding: attr["maxLeftPadding"].cgFloat, maxRightPadding: attr["maxRightPadding"].cgFloat, maxTopPadding: attr["maxTopPadding"].cgFloat, maxBottomPadding: attr["maxBottomPadding"].cgFloat, leftMargin: attr["leftMargin"].cgFloat, rightMargin: attr["rightMargin"].cgFloat, topMargin: attr["topMargin"].cgFloat, bottomMargin: attr["bottomMargin"].cgFloat, minLeftMargin: attr["minLeftMargin"].cgFloat, minRightMargin: attr["minRightMargin"].cgFloat, minTopMargin: attr["minTopMargin"].cgFloat, minBottomMargin: attr["minBottomMargin"].cgFloat, maxLeftMargin: attr["maxLeftMargin"].cgFloat, maxRightMargin: attr["maxRightMargin"].cgFloat, maxTopMargin: attr["maxTopMargin"].cgFloat, maxBottomMargin: attr["maxBottomMargin"].cgFloat, centerVertical: attr["centerVertical"].bool, centerHorizontal: attr["centerHorizontal"].bool, alignTop: attr["alignTop"].bool, alignBottom: attr["alignBottom"].bool, alignLeft: attr["alignLeft"].bool, alignRight: attr["alignRight"].bool, alignTopToView: attr["alignTopToView"].bool,alignBottomToView: attr["alignBottomToView"].bool, alignLeftToView: attr["alignLeftToView"].bool, alignRightToView: attr["alignRightToView"].bool, alignCenterVerticalToView: attr["alignCenterVerticalToView"].bool, alignCenterHorizontalToView: attr["alignCenterHorizontalToView"].bool, alignTopOfView: views[attr["alignTopOfView"].stringValue], alignBottomOfView: views[attr["alignBottomOfView"].stringValue], alignLeftOfView: views[attr["alignLeftOfView"].stringValue], alignRightOfView: views[attr["alignRightOfView"].stringValue], alignTopView: views[attr["alignTopView"].stringValue], alignBottomView: views[attr["alignBottomView"].stringValue], alignLeftView: views[attr["alignLeftView"].stringValue], alignRightView: views[attr["alignRightView"].stringValue], alignCenterVerticalView: views[attr["alignCenterVerticalView"].stringValue], alignCenterHorizontalView: views[attr["alignCenterHorizontalView"].stringValue], width: width, height: height, minWidth: attr["minWidth"].cgFloat, minHeight: attr["minHeight"].cgFloat, maxWidth: attr["maxWidth"].cgFloat, maxHeight: attr["maxHeight"].cgFloat, widthWeight: attr["widthWeight"].cgFloat, heightWeight: attr["heightWeight"].cgFloat, aspectWidth: attr["aspectWidth"].cgFloat, aspectHeight: attr["aspectHeight"].cgFloat, maxWidthWeight: attr["maxWidthWeight"].cgFloat, maxHeightWeight: attr["maxHeightWeight"].cgFloat, minWidthWeight: attr["minWidthWeight"].cgFloat, minHeightWeight: attr["minHeightWeight"].cgFloat)
+        view.constraintInfo = constraintInfo
+        UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
         
         if let id = attr["id"].string {
             views[id] = view
@@ -220,101 +248,99 @@ open class SJUIViewCreator:NSObject {
             }
         }
         
-        if let wrapContent = attr["wrapContent"].bool {
-            if wrapContent {
-                var paddings:[CGFloat] = [0,0,25.0,0]
-                var edgeInsets = [CGFloat]()
-                if let paddingStr = attr["innerPadding"].string {
-                    let paddingStars = paddingStr.components(separatedBy: "|")
-                    for p in paddingStars {
-                        if let n = NumberFormatter().number(from: p) {
-                            edgeInsets.append(CGFloat(truncating: n))
-                        }
+        if attr["wrapContent"].boolValue || view.constraintInfo!.width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue || view.constraintInfo!.height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            var paddings:[CGFloat] = attr["wrapContent"].boolValue ? [0,0,25.0,0] : [view.constraintInfo?.paddingTop ?? 0,view.constraintInfo?.paddingLeft ?? 0,view.constraintInfo?.paddingBottom ?? 0,view.constraintInfo?.paddingRight ?? 0]
+            var edgeInsets = [CGFloat]()
+            if let paddingStr = attr["innerPadding"].string {
+                let paddingStars = paddingStr.components(separatedBy: "|")
+                for p in paddingStars {
+                    if let n = NumberFormatter().number(from: p) {
+                        edgeInsets.append(CGFloat(truncating: n))
                     }
-                } else if let padding = attr["innerPadding"].arrayObject as? [CGFloat] {
-                    edgeInsets = padding
                 }
-                
-                switch (edgeInsets.count) {
-                case 0:
-                    break
-                case 1:
-                    paddings = [edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0]]
-                case 2:
-                    paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1]]
-                case 3:
-                    paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1]]
-                default:
-                    paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3]]
+            } else if let padding = attr["innerPadding"].arrayObject as? [CGFloat] {
+                edgeInsets = padding
+            }
+            
+            switch (edgeInsets.count) {
+            case 0:
+                break
+            case 1:
+                paddings = [edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0]]
+            case 2:
+                paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1]]
+            case 3:
+                paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1]]
+            default:
+                paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3]]
+            }
+            
+            if let keyBottomView = attr["keyBottomView"].string {
+                let keyViews = keyBottomView.components(separatedBy: ",")
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
+                    }
                 }
-                
-                if let keyBottomView = attr["keyBottomView"].string {
-                    let keyViews = keyBottomView.components(separatedBy: ",")
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
-                        }
+            } else if let keyViews = attr["keyBottomView"].arrayObject as? [String] {
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
                     }
-                } else if let keyViews = attr["keyBottomView"].arrayObject as? [String] {
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
-                        }
-                    }
-                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .topToBottom {
-                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: lastView, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
                 }
-                
-                if let keyTopView = attr["keyTopView"].string {
-                    let keyViews = keyTopView.components(separatedBy: ",")
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
-                        }
+            } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .topToBottom {
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: lastView, attribute: .bottom, multiplier: 1.0, constant: paddings[2])])
+            }
+            
+            if let keyTopView = attr["keyTopView"].string {
+                let keyViews = keyTopView.components(separatedBy: ",")
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                     }
-                } else if let keyViews = attr["keyTopView"].arrayObject as? [String] {
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
-                        }
-                    }
-                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .bottomToTop {
-                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                 }
-                
-                if let keyLeftView = attr["keyLeftView"].string {
-                    let keyViews = keyLeftView.components(separatedBy: ",")
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
-                        }
+            } else if let keyViews = attr["keyTopView"].arrayObject as? [String] {
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                     }
-                } else if let keyViews = attr["keyLeftView"].arrayObject as? [String] {
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
-                        }
-                    }
-                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .rightToLeft {
-                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
                 }
-                
-                if let keyRightView = attr["keyRightView"].string {
-                    let keyViews = keyRightView.components(separatedBy: ",")
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .right, multiplier: 1.0, constant: paddings[3])])
-                        }
+            } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .bottomToTop {
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
+            }
+            
+            if let keyLeftView = attr["keyLeftView"].string {
+                let keyViews = keyLeftView.components(separatedBy: ",")
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
                     }
-                } else if let keyViews = attr["keyRightView"].arrayObject as? [String] {
-                    for keyView in keyViews {
-                        if let v = views[keyView] {
-                            NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .right, multiplier: 1.0, constant: paddings[3])])
-                        }
-                    }
-                } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .leftToRight {
-                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .right, multiplier: 1.0, constant: paddings[3])])
                 }
+            } else if let keyViews = attr["keyLeftView"].arrayObject as? [String] {
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
+                    }
+                }
+            } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .rightToLeft {
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .left, multiplier: 1.0, constant: -paddings[1])])
+            }
+            
+            if let keyRightView = attr["keyRightView"].string {
+                let keyViews = keyRightView.components(separatedBy: ",")
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .right, multiplier: 1.0, constant: paddings[3])])
+                    }
+                }
+            } else if let keyViews = attr["keyRightView"].arrayObject as? [String] {
+                for keyView in keyViews {
+                    if let v = views[keyView] {
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .right, multiplier: 1.0, constant: paddings[3])])
+                    }
+                }
+            } else if let lastView = view.subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .leftToRight {
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .right, multiplier: 1.0, constant: paddings[3])])
             }
         }
         return view

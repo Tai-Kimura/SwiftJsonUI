@@ -30,7 +30,9 @@ var TapBackgroundColorKey: UInt8 = 1
 
 var PropertyNameKey: UInt8 = 2
 
-var BindingKey: UInt8 = 2
+var BindingKey: UInt8 = 3
+
+var ConstraintInfoKey: UInt8 = 4
 
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
@@ -99,6 +101,18 @@ public extension UIView {
         }
         set {
             objc_setAssociatedObject(self, &BindingKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+    
+    public var constraintInfo: UILayoutConstraintInfo? {
+        get {
+            guard let object = objc_getAssociatedObject(self, &ConstraintInfoKey) as? UILayoutConstraintInfo else {
+                return nil
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &ConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
         }
     }
     
