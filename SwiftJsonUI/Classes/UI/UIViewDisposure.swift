@@ -300,7 +300,7 @@ open class UIViewDisposure {
         if let paddingLeft = info.leftPadding {
             constant+=paddingLeft
         }
-        if let marginLeft = info.topMargin {
+        if let marginLeft = info.leftMargin {
             constant+=marginLeft
         }
         constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: constant))
@@ -315,7 +315,7 @@ open class UIViewDisposure {
         if let paddingRight = info.paddingRight {
             constant+=paddingRight
         }
-        if let marginRight = info.topMargin {
+        if let marginRight = info.rightMargin {
             constant+=marginRight
         }
         constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -constant))
@@ -419,7 +419,7 @@ open class UIViewDisposure {
         if let constraintInfo = superview.constraintInfo, let paddingLeft = constraintInfo.paddingLeft {
             constant+=paddingLeft
         }
-        if let marginLeft = info.topMargin {
+        if let marginLeft = info.leftMargin {
             constant+=marginLeft
         }
         if let leftPadding = info.leftPadding {
@@ -439,7 +439,7 @@ open class UIViewDisposure {
         if let constraintInfo = superview.constraintInfo, let paddingRight = constraintInfo.paddingRight {
             constant+=paddingRight
         }
-        if let marginRight = info.topMargin {
+        if let marginRight = info.rightMargin {
             constant+=marginRight
         }
         if let rightPadding = info.rightPadding {
