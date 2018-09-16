@@ -16,7 +16,7 @@ open class Binding: NSObject {
         self._viewHolder = viewHolder
     }
     
-    func bindView() {
+    public func bindView() {
         let mirror = Mirror(reflecting: self)
         let properties = mirror.children.filter{$0.label != nil}.map{$0.label}
         if let views = _viewHolder?._views {
