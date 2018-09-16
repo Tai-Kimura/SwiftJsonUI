@@ -206,6 +206,9 @@ open class UIViewDisposure {
     
     //MARK: Constraints for Parent
     public class func applyVerticalConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            return
+        }
         //縦の制約
         if let _ = info.centerVertical {
             var margin: CGFloat = 0
@@ -219,6 +222,9 @@ open class UIViewDisposure {
     }
     
     public class func applyHorizontalConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            return
+        }
         //横の制約
         if let _ = info.centerHorizontal {
             var margin: CGFloat = 0
