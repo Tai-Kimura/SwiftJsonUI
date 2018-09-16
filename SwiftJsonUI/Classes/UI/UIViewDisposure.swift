@@ -683,7 +683,7 @@ public class UILayoutConstraintInfo {
         }
         
         if let toView = toView {
-            if alignCenterVerticalToView {
+            if alignCenterVerticalToView ?? false {
                 self.alignCenterVerticalView = toView
             } else {
                 if alignTopToView ?? false {
@@ -697,7 +697,7 @@ public class UILayoutConstraintInfo {
                     self.alignTopOfView = toView
                 }
             }
-            if alignCenterHorizontalToView {
+            if alignCenterHorizontalToView ?? false {
                 self.alignCenterHorizontalView = toView
             } else {
                 if alignLeftToView ?? false {
