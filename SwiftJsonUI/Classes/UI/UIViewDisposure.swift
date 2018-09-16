@@ -345,7 +345,7 @@ open class UIViewDisposure {
     }
     
     private class func hasNoConstraintForRight(info: UILayoutConstraintInfo) -> Bool {
-        return !(info.alignRight ?? false) && info.alignLeftOfView == nil && info.alignRightView == nil && info.rightMargin == nil || info.minRightMargin == nil || info.maxRightMargin == nil && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+        return !(info.alignRight ?? false) && info.alignLeftOfView == nil && info.alignRightView == nil && info.rightMargin == nil && info.minRightMargin == nil && info.maxRightMargin == nil && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
     }
     
     public class func applyRightPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
