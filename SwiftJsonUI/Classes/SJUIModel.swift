@@ -19,4 +19,8 @@ open class SJUIModel: NSObject {
         _json = json
     }
     
+    open override func value(forUndefinedKey key: String) -> Any? {
+        print("key（\(key)）is undefined.")
+        return nil
+    }
 }
