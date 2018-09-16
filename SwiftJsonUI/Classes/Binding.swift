@@ -30,9 +30,19 @@ open class Binding: NSObject {
                                 textView.text = text
                             } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
                                 selectBox.selectedIndex = index
+                            } else if let networkImageView = v as? NetworkImageView {
+                                networkImageView.setImageURL(string: text)
                             }
                         } else if let date = data.value(forKey: binding) as? Date, let selectBox = v as? SJUISelectBox {
                             selectBox.selectedDate = date
+                        } else if let image = data.value(forKey: binding) as? UIImage, let imageView = v as? UIImageView {
+                            if let circleImageView = imageView as? CircleImageView {
+                                circleImageView.setImageResource(image.circularScaleAndCropImage())
+                            } else if let networkImageView = imageView as? NetworkImageView {
+                                networkImageView.setImageResource(image)
+                            } else {
+                                imageView.image = image
+                            }
                         }
                     }
                 }
