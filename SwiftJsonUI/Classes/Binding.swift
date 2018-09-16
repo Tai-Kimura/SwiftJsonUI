@@ -36,7 +36,7 @@ open class Binding: NSObject {
                         } else if let date = data.value(forKey: binding) as? Date, let selectBox = v as? SJUISelectBox {
                             selectBox.selectedDate = date
                         } else if let index = data.value(forKey: binding) as? Int, let selectBox = v as? SJUISelectBox {
-                            selectBox.selectedIndex = index
+                            selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
                         } else if let image = data.value(forKey: binding) as? UIImage, let imageView = v as? UIImageView {
                             if let circleImageView = imageView as? CircleImageView {
                                 circleImageView.setImageResource(image.circularScaleAndCropImage())

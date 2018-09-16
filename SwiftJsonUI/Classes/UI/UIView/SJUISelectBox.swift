@@ -121,6 +121,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         }
     }
     
+    public var includePromptWhenDataBinding = false
+    
     public var dateStringFormat: String = "yyyy/MM/dd"
     
     private var canBack = false
