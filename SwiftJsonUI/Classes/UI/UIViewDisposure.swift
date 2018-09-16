@@ -691,22 +691,22 @@ public class UILayoutConstraintInfo {
         }
         
         if let centerVertical = centerVertical, centerVertical {
-            if topMargin != nil && bottomMargin != nil {
+            if self.topMargin != nil && self.bottomMargin != nil {
                 self.centerVertical = nil
             }
         }
         if self.alignCenterVerticalView != nil {
-            if topMargin != nil && bottomMargin != nil {
+            if self.topMargin != nil && self.bottomMargin != nil {
                 self.alignCenterVerticalView = nil
             }
         }
         if let centerHorizontal = centerHorizontal, centerHorizontal {
-            if leftMargin != nil && rightMargin != nil {
+            if self.leftMargin != nil && self.rightMargin != nil {
                 self.centerHorizontal = nil
             }
         }
         if self.alignCenterHorizontalView != nil {
-            if leftMargin != nil && rightMargin != nil {
+            if self.leftMargin != nil && self.rightMargin != nil {
                 self.alignCenterHorizontalView = nil
             }
         }
