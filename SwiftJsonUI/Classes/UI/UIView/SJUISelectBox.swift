@@ -131,6 +131,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     public weak var referenceView: UIScrollView?
     
+    public weak var inView: UIView?
+    
     
     required public init(attr: JSON) {
         super.init(frame: CGRect.zero)
@@ -313,15 +315,18 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     }
     
     @objc open func showSheet() {
-        guard let viewController = (selectBoxDelegate as? SJUIViewController) else {
+        guard let inView = inView else {
             return
         }
-        viewController.hideKeyboard()
+        self.selectBoxDelegate?.willShowSheet(view: self)
+        if let viewController = (selectBoxDelegate as? SJUIViewController) {
+            viewController.hideKeyboard()
+        }
         switch self.type {
         case .normal:
-            SheetView.sharedInstance().showPicker([_selectedIndex ?? 0], withDataSource: [items], forItem: items, inView: viewController.view, canBack: canBack)
+            SheetView.sharedInstance().showPicker([_selectedIndex ?? 0], withDataSource: [items], forItem: items, inView: inView, canBack: canBack)
         case .date:
-            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: viewController.view, minimumDate: minimumDate, maximumDate: maximumDate ?? Date(), canBack: false)
+            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate ?? Date(), canBack: false)
         }
         SheetView.sharedInstance().delegate = self
         setScrollOffset()
@@ -391,6 +396,11 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISelectBox {
         let s = (viewClass as! SJUISelectBox.Type).init(attr: attr)
         s.selectBoxDelegate = target as? UISelectBoxDelegate
+        if let inViewId = attr["inView"].string, let inView = views[inViewId] {
+            s.inView = inView
+        } else if let viewController = target as? UIViewController {
+            s.inView = viewController.view
+        }
         return s
     }
     
