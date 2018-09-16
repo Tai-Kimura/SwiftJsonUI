@@ -290,7 +290,7 @@ open class UIViewDisposure {
     }
     
     private class func hasNoConstraintForBottom(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignTopOfView == nil && info.alignBottomView == nil && info.bottomMargin == nil && info.minBottomMargin == nil && info.maxBottomMargin == nil && (info.height ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+        return !(info.alignBottom ?? false) && info.alignTopOfView == nil && info.alignBottomView == nil && info.bottomMargin == nil && info.minBottomMargin == nil && info.maxBottomMargin == nil && (info.height ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
     }
     
     public class func applyBottomPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
@@ -345,7 +345,7 @@ open class UIViewDisposure {
     }
     
     private class func hasNoConstraintForRight(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignLeftOfView == nil && info.alignRightView == nil && info.rightMargin == nil || info.minRightMargin == nil || info.maxRightMargin == nil && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+        return !(info.alignRight ?? false) && info.alignLeftOfView == nil && info.alignRightView == nil && info.rightMargin == nil || info.minRightMargin == nil || info.maxRightMargin == nil && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
     }
     
     public class func applyRightPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
