@@ -151,6 +151,10 @@ open class UIViewDisposure {
                 let bottomOfView = superview.subviews[superview.subviews.count - 2]
                 applyBottomConstraint(of: bottomOfView, onView: view, toConstraintInfo: info, for: &constraints)
             }
+            if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                info.alignBottom = true
+                applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            }
         case .bottomToTop:
             if superview.subviews.count <= 1 {
                 info.alignBottom = true
@@ -159,26 +163,41 @@ open class UIViewDisposure {
                 let topOfView = superview.subviews[superview.subviews.count - 2]
                 applyTopConstraint(of: topOfView, onView: view, toConstraintInfo: info, for: &constraints)
             }
+            if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                info.alignTop = true
+                applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            }
         default:
             break
         }
+
     }
     
     public class func applyLinearHorizontalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
         switch superview.direction {
         case .leftToRight:
             if superview.subviews.count <= 1 {
+                info.alignLeft = true
                 applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
                 let rightOfView = superview.subviews[superview.subviews.count - 2]
                 applyRightConstraint(of: rightOfView, onView: view, toConstraintInfo: info, for: &constraints)
             }
+            if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                info.alignRight = true
+                applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            }
         case .rightToLeft:
             if superview.subviews.count <= 1 {
+                info.alignRight = true
                 applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
                 let leftOfView = superview.subviews[superview.subviews.count - 2]
                 applyLeftConstraint(of: leftOfView, onView: view, toConstraintInfo: info, for: &constraints)
+            }
+            if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                info.alignLeft = true
+                applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         default:
             break
@@ -213,6 +232,9 @@ open class UIViewDisposure {
     }
     
     public class func applyHeightWeightConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if (info.height ?? 0) == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            return
+        }
         //高さの制約
         if let heightWeight = info.heightWeight {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: heightWeight, constant: 0))
@@ -233,6 +255,9 @@ open class UIViewDisposure {
     }
     
     public class func applyWidthWeightConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if (info.width ?? 0) == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            return
+        }
         //幅の制約
         if let widthWeight = info.widthWeight {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: widthWeight, constant: 0))
@@ -286,11 +311,11 @@ open class UIViewDisposure {
     }
     
     private class func topPaddingNeedsToBeApplied(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignTop ?? false || (!(info.centerVertical ?? false) && info.alignCenterVerticalView == nil && info.alignBottomOfView == nil && info.alignTopView == nil && ((info.topMargin != nil || info.minTopMargin != nil || info.maxTopMargin != nil) || hasNoConstraintForBottom(info: info)) && (info.height ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue)
+        return info.alignTop ?? false || (!(info.centerVertical ?? false) && info.alignCenterVerticalView == nil && info.alignBottomOfView == nil && info.alignTopView == nil && ((info.topMargin != nil || info.minTopMargin != nil || info.maxTopMargin != nil) || hasNoConstraintForBottom(info: info)))
     }
     
     private class func hasNoConstraintForBottom(info: UILayoutConstraintInfo) -> Bool {
-        return !(info.alignBottom ?? false) && info.alignTopOfView == nil && info.alignBottomView == nil && info.bottomMargin == nil && info.minBottomMargin == nil && info.maxBottomMargin == nil && (info.height ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+        return !(info.alignBottom ?? false) && info.alignTopOfView == nil && info.alignBottomView == nil && info.bottomMargin == nil && info.minBottomMargin == nil && info.maxBottomMargin == nil
     }
     
     public class func applyBottomPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
@@ -316,7 +341,7 @@ open class UIViewDisposure {
     }
     
     private class func bottomPaddingNeedsToBeApplied(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignBottom ?? false || (!(info.centerVertical ?? false) && info.alignCenterVerticalView == nil && info.alignTopOfView == nil && info.alignBottomView == nil && (info.bottomMargin != nil || info.minBottomMargin != nil || info.maxBottomMargin != nil) && (info.height ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue)
+        return info.alignBottom ?? false || (!(info.centerVertical ?? false) && info.alignCenterVerticalView == nil && info.alignTopOfView == nil && info.alignBottomView == nil && (info.bottomMargin != nil || info.minBottomMargin != nil || info.maxBottomMargin != nil))
     }
     
     public class func applyLeftPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
@@ -341,11 +366,11 @@ open class UIViewDisposure {
     }
     
     private class func leftPaddingNeedsToBeApplied(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignLeft ?? false || (!(info.centerHorizontal ?? false) && info.alignCenterHorizontalView == nil && info.alignRightOfView == nil && info.alignLeftView == nil && ((info.leftMargin != nil || info.minLeftMargin != nil || info.maxLeftMargin != nil) || hasNoConstraintForRight(info: info)) && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue)
+        return info.alignLeft ?? false || (!(info.centerHorizontal ?? false) && info.alignCenterHorizontalView == nil && info.alignRightOfView == nil && info.alignLeftView == nil && ((info.leftMargin != nil || info.minLeftMargin != nil || info.maxLeftMargin != nil) || hasNoConstraintForRight(info: info)))
     }
     
     private class func hasNoConstraintForRight(info: UILayoutConstraintInfo) -> Bool {
-        return !(info.alignRight ?? false) && info.alignLeftOfView == nil && info.alignRightView == nil && info.rightMargin == nil && info.minRightMargin == nil && info.maxRightMargin == nil && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+        return !(info.alignRight ?? false) && info.alignLeftOfView == nil && info.alignRightView == nil && info.rightMargin == nil && info.minRightMargin == nil && info.maxRightMargin == nil
     }
     
     public class func applyRightPaddingConstraint(to superview: UIView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
@@ -370,7 +395,7 @@ open class UIViewDisposure {
     }
     
     private class func rightPaddingNeedsToBeApplied(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignRight ?? false || (!(info.centerHorizontal ?? false) && info.alignCenterHorizontalView == nil && info.alignLeftOfView == nil && info.alignRightView == nil && (info.rightMargin != nil || info.minRightMargin != nil || info.maxRightMargin != nil) && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue)
+        return info.alignRight ?? false || (!(info.centerHorizontal ?? false) && info.alignCenterHorizontalView == nil && info.alignLeftOfView == nil && info.alignRightView == nil && (info.rightMargin != nil || info.minRightMargin != nil || info.maxRightMargin != nil))
     }
     
     public class func applyScrollViewConstraint(to superview: UIScrollView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
@@ -534,6 +559,9 @@ open class UIViewDisposure {
     
     //MARK: Constraints for Size
     public class func applyHeightConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            return
+        }
         if let minHeight = info.minHeight {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: minHeight))
         }
@@ -541,9 +569,7 @@ open class UIViewDisposure {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: maxHeight))
         }
         if let height = info.height {
-            if height != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: height))
-            }
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: height))
         }
         
         if let orientation = (view as? SJUIView)?.orientation, orientation == .vertical, info.height == nil, info.maxHeight == nil, info.heightWeight == nil, info.maxHeightWeight == nil {
@@ -552,6 +578,9 @@ open class UIViewDisposure {
     }
     
     public class func applyWidthConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            return
+        }
         if let minWidth = info.minWidth {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: minWidth))
         }
@@ -559,9 +588,7 @@ open class UIViewDisposure {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: maxWidth))
         }
         if let width = info.width {
-            if width != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
-                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: width))
-            }
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: width))
         }
         if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, info.width == nil, info.maxWidth == nil, info.widthWeight == nil, info.maxWidthWeight == nil {
             info.width = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
