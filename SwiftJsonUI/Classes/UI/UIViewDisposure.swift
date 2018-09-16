@@ -341,7 +341,7 @@ open class UIViewDisposure {
     }
     
     private class func leftPaddingNeedsToBeApplied(info: UILayoutConstraintInfo) -> Bool {
-        return info.alignLeft ?? false || (!(info.centerHorizontal ?? false) && info.alignCenterHorizontalView == nil && info.alignRightOfView == nil && info.alignLeftView == nil && ((info.leftMargin != nil || info.minLeftMargin != nil || info.maxLeftMargin != nil) || hasNoConstraintForBottom(info: info)) && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue)
+        return info.alignLeft ?? false || (!(info.centerHorizontal ?? false) && info.alignCenterHorizontalView == nil && info.alignRightOfView == nil && info.alignLeftView == nil && ((info.leftMargin != nil || info.minLeftMargin != nil || info.maxLeftMargin != nil) || hasNoConstraintForRight(info: info)) && (info.width ?? 0) != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue)
     }
     
     private class func hasNoConstraintForRight(info: UILayoutConstraintInfo) -> Bool {
