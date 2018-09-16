@@ -147,6 +147,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         self.addGestureRecognizer(gr)
         self.canTap = true
         self.isUserInteractionEnabled = true
+        self.includePromptWhenDataBinding = attr["includePromptWhenDataBinding"].boolValue
         setInitialValues(attr: attr)
     }
     
