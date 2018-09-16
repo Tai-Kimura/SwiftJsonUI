@@ -401,6 +401,14 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
 }
 
 public protocol UISelectBoxDelegate: class {
+    func willShowSheet(view: SJUISelectBox)
     func didItemSelected(view: SJUISelectBox, isBack: Bool)
+}
+
+extension UISelectBoxDelegate {
+    func willShowSheet(view: SJUISelectBox) {
+    }
+    func didItemSelected(view: SJUISelectBox, isBack: Bool) {
+    }
 }
 
