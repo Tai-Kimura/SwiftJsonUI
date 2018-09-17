@@ -582,6 +582,10 @@ open class SJUIViewCreator:NSObject {
         return nil
     }
     
+    public class func cleanStyleCache() {
+        styleCache = [String:JSON]()
+    }
+    
 }
 
 public protocol ViewHolder: class {
