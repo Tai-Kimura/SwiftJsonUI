@@ -266,12 +266,11 @@ open class SJUIViewCreator:NSObject {
                 UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
             }
         }
-        UIViewDisposure.setWrapContentIfNeeded(view: view)
         if isRootView {
             UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
         }
         
-        if attr["wrapContent"].boolValue || view.constraintInfo!.width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue || view.constraintInfo!.height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+        if attr["wrapContent"].boolValue || view.shouldWrapContent() {
             var paddings:[CGFloat] = attr["wrapContent"].boolValue ? [0,0,25.0,0] : [view.constraintInfo?.paddingTop ?? 0,view.constraintInfo?.paddingLeft ?? 0,view.constraintInfo?.paddingBottom ?? 0,view.constraintInfo?.paddingRight ?? 0]
             var edgeInsets = [CGFloat]()
             if let paddingStr = attr["innerPadding"].string {

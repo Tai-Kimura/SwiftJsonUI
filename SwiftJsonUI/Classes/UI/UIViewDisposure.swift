@@ -199,7 +199,7 @@ open class UIViewDisposure {
                 applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
                 if let index = superview.subviews.index(of: view), index > 0 {
-                    let leftOfView = superview.subviews[index - 1]
+                let leftOfView = superview.subviews[index - 1]
                     applyLeftConstraint(of: leftOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
             }
@@ -649,6 +649,9 @@ open class UIViewDisposure {
         if let height = info.height {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: height))
         }
+        if let orientation = (view as? SJUIView)?.orientation, orientation == .vertical, info.height == nil, info.maxHeight == nil, info.heightWeight == nil, info.maxHeightWeight == nil {
+            info.height = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
+        }
     }
     
     public class func applyWidthConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
@@ -664,16 +667,8 @@ open class UIViewDisposure {
         if let width = info.width {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: width))
         }
-    }
-    
-    class func setWrapContentIfNeeded(view: UIView) {
-        if let info = view.constraintInfo {
-            if let orientation = (view as? SJUIView)?.orientation, orientation == .vertical, info.height == nil, info.maxHeight == nil, info.heightWeight == nil, info.maxHeightWeight == nil {
-                info.height = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
-            }
-            if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, info.width == nil, info.maxWidth == nil, info.widthWeight == nil, info.maxWidthWeight == nil {
-                info.width = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
-            }
+        if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, info.width == nil, info.maxWidth == nil, info.widthWeight == nil, info.maxWidthWeight == nil {
+            info.width = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
         }
     }
 }
