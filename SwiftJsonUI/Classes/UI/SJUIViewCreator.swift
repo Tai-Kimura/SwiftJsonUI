@@ -256,6 +256,8 @@ open class SJUIViewCreator:NSObject {
         }
         if let binding = attr["binding"].string {
             view.binding = binding
+        } else if let bindingSet = attr["binding"].dictionaryObject as? [String:String] {
+            view.bindingSet = bindingSet
         }
         
         if let children = attr["child"].array {

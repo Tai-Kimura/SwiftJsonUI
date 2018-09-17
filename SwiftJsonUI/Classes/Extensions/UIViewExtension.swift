@@ -32,7 +32,9 @@ var PropertyNameKey: UInt8 = 2
 
 var BindingKey: UInt8 = 3
 
-var ConstraintInfoKey: UInt8 = 4
+var BindingSetKey: UInt8 = 4
+
+var ConstraintInfoKey: UInt8 = 5
 
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
@@ -101,6 +103,18 @@ public extension UIView {
         }
         set {
             objc_setAssociatedObject(self, &BindingKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+    
+    public var bindingSet: [String:String]? {
+        get {
+            guard let object = objc_getAssociatedObject(self, &BindingSetKey) as? [String:String] else {
+                return nil
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &BindingSetKey, newValue, .OBJC_ASSOCIATION_RETAIN)
         }
     }
     

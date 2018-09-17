@@ -16,37 +16,15 @@ open class Binding: NSObject {
         self._viewHolder = viewHolder
     }
     
-    public var data: NSObject? = nil {
+    public var data: Any? = nil {
         didSet {
             if let data = data {
                 for property in getProperties() {
                     if let v = value(forKey: property) as? UIView {
                         if let binding = v.binding {
-                            if let text = data.value(forKey: binding) as? String {
-                                if let label = v as? SJUILabel {
-                                    label.applyAttributedText(text)
-                                } else if let textField = v as? UITextField {
-                                    textField.text = text
-                                } else if let textView = v as? UITextView {
-                                    textView.text = text
-                                } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
-                                    selectBox.selectedIndex = index
-                                } else if let networkImageView = v as? NetworkImageView {
-                                    networkImageView.setImageURL(string: text)
-                                }
-                            } else if let date = data.value(forKey: binding) as? Date, let selectBox = v as? SJUISelectBox {
-                                selectBox.selectedDate = date
-                            } else if let index = data.value(forKey: binding) as? Int, let selectBox = v as? SJUISelectBox {
-                                selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
-                            } else if let image = data.value(forKey: binding) as? UIImage, let imageView = v as? UIImageView {
-                                if let circleImageView = imageView as? CircleImageView {
-                                    circleImageView.setImageResource(image.circularScaleAndCropImage())
-                                } else if let networkImageView = imageView as? NetworkImageView {
-                                    networkImageView.setImageResource(image)
-                                } else {
-                                    imageView.image = image
-                                }
-                            }
+                            bindData(data: data, view: v, binding: binding)
+                        } else if let bindingSet = v.bindingSet, let binding = bindingSet[String(describing: type(of: data)).toSnake()] {
+                            bindData(data: data, view: v, binding: binding)
                         }
                     }
                 }
@@ -64,6 +42,47 @@ open class Binding: NSObject {
                 }
             }
         }
+    }
+    
+    private func bindData(data: Any, view v: UIView, binding: String) {
+        if let text = fetchValue(data: data, binding: binding) as? String {
+            if let label = v as? SJUILabel {
+                label.applyAttributedText(text)
+            } else if let textField = v as? UITextField {
+                textField.text = text
+            } else if let textView = v as? UITextView {
+                textView.text = text
+            } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
+                selectBox.selectedIndex = index
+            } else if let networkImageView = v as? NetworkImageView {
+                networkImageView.setImageURL(string: text)
+            }
+        } else if let date = fetchValue(data: data, binding: binding) as? Date, let selectBox = v as? SJUISelectBox {
+            selectBox.selectedDate = date
+        } else if let index = fetchValue(data: data, binding: binding) as? Int, let selectBox = v as? SJUISelectBox {
+            selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
+        } else if let image = fetchValue(data: data, binding: binding) as? UIImage, let imageView = v as? UIImageView {
+            if let circleImageView = imageView as? CircleImageView {
+                circleImageView.setImageResource(image.circularScaleAndCropImage())
+            } else if let networkImageView = imageView as? NetworkImageView {
+                networkImageView.setImageResource(image)
+            } else {
+                imageView.image = image
+            }
+        }
+    }
+    
+    private func fetchValue(data: Any, binding: String) -> Any? {
+        if let dictionary = data as? [String:Any] {
+            return dictionary[binding]
+        } else if let array = data as? [Any], let index = Int(binding) {
+            return array[index]
+        } else if let array = data as? [String], let index = array.index(of: binding) {
+            return array[index]
+        } else if let object = data as? NSObject {
+            return object.value(forKey: binding)
+        }
+        return nil
     }
     
     private func getProperties() -> [String] {
