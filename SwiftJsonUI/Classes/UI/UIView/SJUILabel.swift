@@ -40,6 +40,8 @@ open class SJUILabel: UILabel {
     
     public var highlightAttributes:[NSAttributedStringKey:NSObject]!
     
+    public var hintAttributes:[NSAttributedStringKey:NSObject]?
+    
     public var selected: Bool = false {
         didSet {
             self.applyAttributedText(self.attributedText?.string)
@@ -73,8 +75,12 @@ open class SJUILabel: UILabel {
     open func applyAttributedText(_ text: String!) {
         self.linkable = false
         let string = text ?? ""
-        let attr = selected ? highlightAttributes : attributes
-        self.attributedText = NSAttributedString(string: string, attributes: attr)
+        if let hint = hint, let hintAttributes = hintAttributes, string.isEmpty {
+            self.attributedText = NSAttributedString(string: hint, attributes: hintAttributes)
+        } else {
+            let attr = selected ? highlightAttributes : attributes
+            self.attributedText = NSAttributedString(string: string, attributes: attr)
+        }
     }
     
     
@@ -342,6 +348,25 @@ open class SJUILabel: UILabel {
             l.highlightAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: highlightColor]
         } else {
             l.highlightAttributes = attributes
+        }
+        
+        if let hint = attr["hint"].string {
+            l.hint = hint
+            l.hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: SJUIViewCreator.defaultHintColor]
+        }
+        
+        if !attr["hintAttributes"].isEmpty {
+            let hintAttr = attr["hintAttributes"]
+            let hintSize = hintAttr["fontSize"].cgFloat != nil ? hintAttr["fontSize"].cgFloatValue : size
+            let hintName = hintAttr["font"].string != nil ? hintAttr["font"].stringValue : name
+            let hintFont = UIFont(name: hintName, size: hintSize) ?? UIFont.systemFont(ofSize: hintSize)
+            var hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: hintFont, NSAttributedStringKey.foregroundColor: color]
+            if let hintColor = UIColor.findColorByJSON(attr: hintAttr["fontColor"]) {
+                hintAttributes[NSAttributedStringKey.foregroundColor] = hintColor
+            }
+            l.hintAttributes = hintAttributes
+        } else if let hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) {
+            l.hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: hintColor]
         }
         
         if let onclick = attr["onclick"].string {
