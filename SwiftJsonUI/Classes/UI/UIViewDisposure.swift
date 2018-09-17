@@ -327,8 +327,8 @@ open class UIViewDisposure {
                         return false
                     }
                 }
-                return true
             }
+            return true
         }
         return false
     }
@@ -370,8 +370,8 @@ open class UIViewDisposure {
                         return false
                     }
                 }
-                return true
             }
+            return true
         }
         return false
     }
@@ -408,8 +408,8 @@ open class UIViewDisposure {
                         return false
                     }
                 }
-                return true
             }
+            return true
         }
         return false
     }
@@ -450,8 +450,8 @@ open class UIViewDisposure {
                         return false
                     }
                 }
-                return true
             }
+            return true
         }
         return false
     }
