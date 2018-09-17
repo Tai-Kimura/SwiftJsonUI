@@ -47,9 +47,9 @@ open class SJUIViewCreator:NSObject {
             } else if let v = getOnView(target: target) {
                 parentView = v
             } else {
-                return createView(json, parentView: nil, target: target, views: &target._views)
+                return createView(json, parentView: nil, target: target, views: &target._views, isRootView: true)
             }
-            return createView(json, parentView: parentView, target: target, views: &target._views)
+            return createView(json, parentView: parentView, target: target, views: &target._views, isRootView: true)
         } catch let error {
             return createErrorView("\(error)")
         }
@@ -87,7 +87,7 @@ open class SJUIViewCreator:NSObject {
         #endif
     }
     
-    @discardableResult open class func createView(_ attr: JSON, parentView: UIView!, target: Any, views: inout [String: UIView]) -> UIView! {
+    @discardableResult open class func createView(_ attr: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView! {
         if let include = attr["include"].string {
             let url = getURL(path: include)
             do {
@@ -110,7 +110,7 @@ open class SJUIViewCreator:NSObject {
                 
                 let enc:String.Encoding = String.Encoding.utf8
                 let json = JSON(data: jsonString.data(using: enc)!)
-                return createView(json, parentView: parentView, target: target, views: &views)
+                return createView(json, parentView: parentView, target: target, views: &views, isRootView: false)
             } catch let error {
                 return createErrorView("\(error)")
             }
@@ -189,6 +189,19 @@ open class SJUIViewCreator:NSObject {
             view.alpha = alpha
         }
         
+        if let id = attr["id"].string {
+            views[id] = view
+            view.propertyName = id.toCamel()
+        }
+        if let propertyName = attr["propertyName"].string {
+            view.propertyName = propertyName
+        }
+        if let binding = attr["binding"].string {
+            view.binding = binding
+        } else if let bindingSet = attr["binding"].dictionaryObject as? [String:String] {
+            view.bindingSet = bindingSet
+        }
+        
         if parentView != nil {
             if let indexBelow = attr["indexBelow"].string, let aboveView = views[indexBelow] {
                 parentView.insertSubview(view, belowSubview: aboveView)
@@ -245,25 +258,16 @@ open class SJUIViewCreator:NSObject {
         }
         let constraintInfo = UILayoutConstraintInfo(toView:views[attr["toView"].stringValue], paddingLeft: viewPaddings[1], paddingRight: viewPaddings[3], paddingTop: viewPaddings[0], paddingBottom: viewPaddings[2], leftPadding: attr["leftPadding"].cgFloat, rightPadding: attr["rightPadding"].cgFloat, topPadding: attr["topPadding"].cgFloat, bottomPadding: attr["bottomPadding"].cgFloat, minLeftPadding: attr["minLeftPadding"].cgFloat, minRightPadding: attr["minRightPadding"].cgFloat, minTopPadding: attr["minTopPadding"].cgFloat, minBottomPadding: attr["minBottomPadding"].cgFloat, maxLeftPadding: attr["maxLeftPadding"].cgFloat, maxRightPadding: attr["maxRightPadding"].cgFloat, maxTopPadding: attr["maxTopPadding"].cgFloat, maxBottomPadding: attr["maxBottomPadding"].cgFloat, leftMargin: attr["leftMargin"].cgFloat, rightMargin: attr["rightMargin"].cgFloat, topMargin: attr["topMargin"].cgFloat, bottomMargin: attr["bottomMargin"].cgFloat, minLeftMargin: attr["minLeftMargin"].cgFloat, minRightMargin: attr["minRightMargin"].cgFloat, minTopMargin: attr["minTopMargin"].cgFloat, minBottomMargin: attr["minBottomMargin"].cgFloat, maxLeftMargin: attr["maxLeftMargin"].cgFloat, maxRightMargin: attr["maxRightMargin"].cgFloat, maxTopMargin: attr["maxTopMargin"].cgFloat, maxBottomMargin: attr["maxBottomMargin"].cgFloat, centerVertical: attr["centerVertical"].bool, centerHorizontal: attr["centerHorizontal"].bool, alignTop: attr["alignTop"].bool, alignBottom: attr["alignBottom"].bool, alignLeft: attr["alignLeft"].bool, alignRight: attr["alignRight"].bool, alignTopToView: attr["alignTopToView"].bool,alignBottomToView: attr["alignBottomToView"].bool, alignLeftToView: attr["alignLeftToView"].bool, alignRightToView: attr["alignRightToView"].bool, alignCenterVerticalToView: attr["alignCenterVerticalToView"].bool, alignCenterHorizontalToView: attr["alignCenterHorizontalToView"].bool, alignTopOfView: views[attr["alignTopOfView"].stringValue], alignBottomOfView: views[attr["alignBottomOfView"].stringValue], alignLeftOfView: views[attr["alignLeftOfView"].stringValue], alignRightOfView: views[attr["alignRightOfView"].stringValue], alignTopView: views[attr["alignTopView"].stringValue], alignBottomView: views[attr["alignBottomView"].stringValue], alignLeftView: views[attr["alignLeftView"].stringValue], alignRightView: views[attr["alignRightView"].stringValue], alignCenterVerticalView: views[attr["alignCenterVerticalView"].stringValue], alignCenterHorizontalView: views[attr["alignCenterHorizontalView"].stringValue], width: width, height: height, minWidth: attr["minWidth"].cgFloat, minHeight: attr["minHeight"].cgFloat, maxWidth: attr["maxWidth"].cgFloat, maxHeight: attr["maxHeight"].cgFloat, widthWeight: attr["widthWeight"].cgFloat, heightWeight: attr["heightWeight"].cgFloat, aspectWidth: attr["aspectWidth"].cgFloat, aspectHeight: attr["aspectHeight"].cgFloat, maxWidthWeight: attr["maxWidthWeight"].cgFloat, maxHeightWeight: attr["maxHeightWeight"].cgFloat, minWidthWeight: attr["minWidthWeight"].cgFloat, minHeightWeight: attr["minHeightWeight"].cgFloat)
         view.constraintInfo = constraintInfo
-        UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
-        
-        if let id = attr["id"].string {
-            views[id] = view
-            view.propertyName = id.toCamel()
-        }
-        if let propertyName = attr["propertyName"].string {
-            view.propertyName = propertyName
-        }
-        if let binding = attr["binding"].string {
-            view.binding = binding
-        } else if let bindingSet = attr["binding"].dictionaryObject as? [String:String] {
-            view.bindingSet = bindingSet
-        }
-        
         if let children = attr["child"].array {
             for child in children {
-                createView(child, parentView: view, target: target, views: &views)
+                createView(child, parentView: view, target: target, views: &views, isRootView: false)
             }
+            for subview in view.subviews {
+                UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
+            }
+        }
+        if isRootView {
+            UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
         }
         
         if attr["wrapContent"].boolValue || view.constraintInfo!.width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue || view.constraintInfo!.height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {

@@ -89,7 +89,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
     }
     
     public func addSubViewWith(json: JSON, target: Any, withCreatorClass creator: SJUIViewCreator.Type = SJUIViewCreator.self) {
-        creator.createView(json, parentView: self, target: target, views: &_views)
+        creator.createView(json, parentView: self, target: target, views: &_views, isRootView: true)
     }
     
     public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIView {
