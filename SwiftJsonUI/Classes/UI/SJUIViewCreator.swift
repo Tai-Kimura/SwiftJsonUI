@@ -523,7 +523,7 @@ open class SJUIViewCreator:NSObject {
             view = SJUISelectBox.createFromJSON(attr: attr, target: target, views: &views)
         case "Indicator":
             let style: UIActivityIndicatorViewStyle
-            switch attr["style"].stringValue {
+            switch attr["indicatorStyle"].stringValue {
             case "White":
                 style = .white
             case "WhiteLarge":
