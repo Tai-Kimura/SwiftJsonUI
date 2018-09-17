@@ -144,7 +144,7 @@ open class UIViewDisposure {
     public class func applyLinearVerticalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
         switch superview.direction {
         case .topToBottom:
-            if superview.subviews.count <= 1 {
+            if superview.subviews.first == view {
                 info.alignTop = true
                 applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
@@ -156,7 +156,7 @@ open class UIViewDisposure {
                 applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         case .bottomToTop:
-            if superview.subviews.count <= 1 {
+            if superview.subviews.first == view {
                 info.alignBottom = true
                 applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
@@ -176,7 +176,7 @@ open class UIViewDisposure {
     public class func applyLinearHorizontalConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
         switch superview.direction {
         case .leftToRight:
-            if superview.subviews.count <= 1 {
+            if superview.subviews.first == view {
                 info.alignLeft = true
                 applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
@@ -188,7 +188,7 @@ open class UIViewDisposure {
                 applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         case .rightToLeft:
-            if superview.subviews.count <= 1 {
+            if superview.subviews.first == view {
                 info.alignRight = true
                 applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             } else {
