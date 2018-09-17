@@ -157,6 +157,9 @@ open class UIViewDisposure {
             if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
                 info.alignBottom = true
                 applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            } else if shouldBeLastView(view, in: superview) {
+                info.alignBottom = true
+                applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         case .bottomToTop:
             if superview.subviews.first == view {
@@ -169,6 +172,9 @@ open class UIViewDisposure {
                 }
             }
             if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                info.alignTop = true
+                applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            } else if shouldBeLastView(view, in: superview) {
                 info.alignTop = true
                 applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
@@ -193,6 +199,9 @@ open class UIViewDisposure {
             if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
                 info.alignRight = true
                 applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            } else if shouldBeLastView(view, in: superview) {
+                info.alignRight = true
+                applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         case .rightToLeft:
             if superview.subviews.first == view {
@@ -207,6 +216,9 @@ open class UIViewDisposure {
             if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
                 info.alignLeft = true
                 applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
+            } else if shouldBeLastView(view, in: superview) {
+                info.alignLeft = true
+                applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             }
         default:
             break
@@ -217,18 +229,36 @@ open class UIViewDisposure {
         guard var weightReferencedView = superview.subviews.first, let weight = info.weight else {
             return
         }
+        var baseWeight = weight
         for subview in superview.subviews {
-            if let constraintInfo = subview.constraintInfo, constraintInfo.weight != nil {
+            if let constraintInfo = subview.constraintInfo, let bWeight = constraintInfo.weight {
                 weightReferencedView = subview
+                baseWeight = bWeight
                 break
             }
         }
+        let weightInView = weight/baseWeight
         switch orientation {
         case .vertical:
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: weightReferencedView, attribute: NSLayoutAttribute.height, multiplier: weight, constant: 0))
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: weightReferencedView, attribute: NSLayoutAttribute.height, multiplier: weightInView, constant: 0))
         case .horizontal:
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: weightReferencedView, attribute: NSLayoutAttribute.width, multiplier: weight, constant: 0))
+            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: weightReferencedView, attribute: NSLayoutAttribute.width, multiplier: weightInView, constant: 0))
         }
+    }
+    
+    public class func shouldBeLastView(_ view: UIView, in superview: SJUIView) -> Bool  {
+        return view == superview.subviews.last && !superview.shouldWrapContent() && shouldApplyWeight(in: superview)
+    }
+    
+    public class func shouldApplyWeight(in superview: SJUIView) -> Bool  {
+        if superview.orientation != nil {
+            for subview in superview.subviews {
+                if subview.constraintInfo?.weight != nil {
+                    return true
+                }
+            }
+        }
+        return false
     }
     
     //MARK: Constraints for Parent
