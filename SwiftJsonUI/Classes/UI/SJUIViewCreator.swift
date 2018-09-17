@@ -33,13 +33,15 @@ open class SJUIViewCreator:NSObject {
     public static var defaultFontSize: CGFloat = 14.0
     public static var findColorFunc: (((Any)) -> UIColor?)?
     
+    private static var styleCache = [String:JSON]()
+    
     @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
         let url = getURL(path: path)
         
         do {
             let jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
             let enc:String.Encoding = String.Encoding.utf8
-            let json = JSON(data: jsonString.data(using: enc)!)
+            let json = try JSON(data: jsonString.data(using: enc)!)
             
             let parentView:UIView
             if view != nil {
@@ -78,16 +80,22 @@ open class SJUIViewCreator:NSObject {
     
     open class func getURL(path: String) -> String {
         #if DEBUG
-        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-        let cachesDirPath = paths[0]
-        let layoutFileDirPath = "\(cachesDirPath)/Layouts"
-        return layoutFileDirPath + "/\(path).json"
+        return getLayoutFileDirPath() + "/\(path).json"
         #else
         return Bundle.main.path(forResource: path, ofType: "json")!
         #endif
     }
     
-    @discardableResult open class func createView(_ attr: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView! {
+    open class func getStyleURL(path: String) -> String {
+        #if DEBUG
+        return getStyleFileDirPath() + "/\(path).json"
+        #else
+        return Bundle.main.path(forResource: path, ofType: "json")!
+        #endif
+    }
+    
+    @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView! {
+        var attr = json
         if let include = attr["include"].string {
             let url = getURL(path: include)
             do {
@@ -109,12 +117,30 @@ open class SJUIViewCreator:NSObject {
                 }
                 
                 let enc:String.Encoding = String.Encoding.utf8
-                let json = JSON(data: jsonString.data(using: enc)!)
+                let json = try JSON(data: jsonString.data(using: enc)!)
                 return createView(json, parentView: parentView, target: target, views: &views, isRootView: false)
             } catch let error {
                 return createErrorView("\(error)")
             }
         }
+        
+        if let style = attr["style"].string {
+            do {
+                if let cachedStyle = styleCache[style] {
+                    attr = try cachedStyle.merged(with: attr)
+                } else {
+                    let url = getStyleURL(path: style)
+                    let jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
+                    let enc:String.Encoding = String.Encoding.utf8
+                    let jsonStyle = try JSON(data: jsonString.data(using: enc)!)
+                    styleCache[style] = jsonStyle
+                    attr = try jsonStyle.merged(with: attr)
+                }
+            } catch let error {
+                return createErrorView("\(error)")
+            }
+        }
+        
         guard let view = getViewFromJSON(attr: attr, target: target, views: &views) else {
             return createErrorView()
         }
@@ -409,6 +435,25 @@ open class SJUIViewCreator:NSObject {
         } catch let error {
             print("\(error)")
         }
+        let styleFileDirPath = "\(cachesDirPath)/Styles"
+        do {
+            if (!fm.fileExists(atPath: layoutFileDirPath)) {
+                try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
+            }
+            
+            let contents = try fm.contentsOfDirectory(atPath: bundlePath)
+            for content:String in contents {
+                if (content.hasSuffix("json")) {
+                    let toPath = "\(styleFileDirPath)/\(content)"
+                    if (fm.fileExists(atPath: toPath)) {
+                        try fm.removeItem(atPath: toPath)
+                    }
+                    try fm.copyItem(atPath: "\(bundlePath)/\(content)", toPath:toPath)
+                }
+            }
+        } catch let error {
+            print("\(error)")
+        }
         #endif
     }
     
@@ -502,12 +547,18 @@ open class SJUIViewCreator:NSObject {
         return "\(cachesDirPath)/Layouts"
     }
     
+    open class func getStyleFileDirPath() -> String {
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let cachesDirPath = paths[0]
+        return "\(cachesDirPath)/Styles"
+    }
+    
     public class func getViewJSON(path: String) -> JSON? {
         let url = getURL(path: path)
         do {
             let jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
             let enc:String.Encoding = String.Encoding.utf8
-            let json = JSON(data: jsonString.data(using: enc)!)
+            let json = try JSON(data: jsonString.data(using: enc)!)
             return json
         } catch let error {
             print("JSON encoding error \(error)")
