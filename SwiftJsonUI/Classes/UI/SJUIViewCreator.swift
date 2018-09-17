@@ -437,7 +437,7 @@ open class SJUIViewCreator:NSObject {
         }
         let styleFileDirPath = "\(cachesDirPath)/Styles"
         do {
-            if (!fm.fileExists(atPath: layoutFileDirPath)) {
+            if (!fm.fileExists(atPath: styleFileDirPath)) {
                 try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
