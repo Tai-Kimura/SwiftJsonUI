@@ -266,6 +266,7 @@ open class SJUIViewCreator:NSObject {
                 UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
             }
         }
+        UIViewDisposure.setWrapContentIfNeeded(view: view)
         if isRootView {
             UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
         }
