@@ -90,7 +90,7 @@ open class SJUIViewCreator:NSObject {
         #if DEBUG
         return getStyleFileDirPath() + "/\(path).json"
         #else
-        return Bundle.main.path(forResource: path, ofType: "json", inDirectory: "Styles")
+        return Bundle.main.path(forResource: path, ofType: "json", inDirectory: "Styles")!
         #endif
     }
     
