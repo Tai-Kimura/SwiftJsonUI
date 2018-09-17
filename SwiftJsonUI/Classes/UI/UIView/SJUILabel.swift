@@ -351,7 +351,7 @@ open class SJUILabel: UILabel {
         }
         
         if let hint = attr["hint"].string {
-            l.hint = hint
+            l.hint = NSLocalizedString(hint, comment: "")
             l.hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: SJUIViewCreator.defaultHintColor]
         }
         
