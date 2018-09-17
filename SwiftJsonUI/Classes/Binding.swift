@@ -18,32 +18,34 @@ open class Binding: NSObject {
     
     public var data: NSObject? = nil {
         didSet {
-            if let data = data, let views = _viewHolder?._views {
-                for v in views.values {
-                    if let binding = v.binding {
-                        if let text = data.value(forKey: binding) as? String {
-                            if let label = v as? SJUILabel {
-                                label.applyAttributedText(text)
-                            } else if let textField = v as? UITextField {
-                                textField.text = text
-                            } else if let textView = v as? UITextView {
-                                textView.text = text
-                            } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
-                                selectBox.selectedIndex = index
-                            } else if let networkImageView = v as? NetworkImageView {
-                                networkImageView.setImageURL(string: text)
-                            }
-                        } else if let date = data.value(forKey: binding) as? Date, let selectBox = v as? SJUISelectBox {
-                            selectBox.selectedDate = date
-                        } else if let index = data.value(forKey: binding) as? Int, let selectBox = v as? SJUISelectBox {
-                            selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
-                        } else if let image = data.value(forKey: binding) as? UIImage, let imageView = v as? UIImageView {
-                            if let circleImageView = imageView as? CircleImageView {
-                                circleImageView.setImageResource(image.circularScaleAndCropImage())
-                            } else if let networkImageView = imageView as? NetworkImageView {
-                                networkImageView.setImageResource(image)
-                            } else {
-                                imageView.image = image
+            if let data = data {
+                for property in getProperties() {
+                    if let v = value(forKey: property) as? UIView {
+                        if let binding = v.binding {
+                            if let text = data.value(forKey: binding) as? String {
+                                if let label = v as? SJUILabel {
+                                    label.applyAttributedText(text)
+                                } else if let textField = v as? UITextField {
+                                    textField.text = text
+                                } else if let textView = v as? UITextView {
+                                    textView.text = text
+                                } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
+                                    selectBox.selectedIndex = index
+                                } else if let networkImageView = v as? NetworkImageView {
+                                    networkImageView.setImageURL(string: text)
+                                }
+                            } else if let date = data.value(forKey: binding) as? Date, let selectBox = v as? SJUISelectBox {
+                                selectBox.selectedDate = date
+                            } else if let index = data.value(forKey: binding) as? Int, let selectBox = v as? SJUISelectBox {
+                                selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
+                            } else if let image = data.value(forKey: binding) as? UIImage, let imageView = v as? UIImageView {
+                                if let circleImageView = imageView as? CircleImageView {
+                                    circleImageView.setImageResource(image.circularScaleAndCropImage())
+                                } else if let networkImageView = imageView as? NetworkImageView {
+                                    networkImageView.setImageResource(image)
+                                } else {
+                                    imageView.image = image
+                                }
                             }
                         }
                     }
@@ -76,5 +78,10 @@ open class Binding: NSObject {
     
     override open func setValue(_ value: Any?, forUndefinedKey key: String) {
         print("key not found \(key)")
+    }
+    
+    open override func value(forUndefinedKey key: String) -> Any? {
+        print("key not found \(key)")
+        return nil
     }
 }
