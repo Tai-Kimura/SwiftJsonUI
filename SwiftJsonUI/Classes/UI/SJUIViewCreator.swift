@@ -90,7 +90,7 @@ open class SJUIViewCreator:NSObject {
         #if DEBUG
         return getStyleFileDirPath() + "/\(path).json"
         #else
-        return Bundle.main.path(forResource: path, ofType: "json")!
+        return Bundle.main.path(forResource: path, ofType: "json", inDirectory: "Styles")
         #endif
     }
     
@@ -441,14 +441,14 @@ open class SJUIViewCreator:NSObject {
                 try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
-            let contents = try fm.contentsOfDirectory(atPath: bundlePath)
-            for content:String in contents {
+            let contents = Bundle.main.paths(forResourcesOfType: "json", inDirectory: "Styles")
+            for content in contents {
                 if (content.hasSuffix("json")) {
-                    let toPath = "\(styleFileDirPath)/\(content)"
+                    let toPath = "\(styleFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
                     if (fm.fileExists(atPath: toPath)) {
                         try fm.removeItem(atPath: toPath)
                     }
-                    try fm.copyItem(atPath: "\(bundlePath)/\(content)", toPath:toPath)
+                    try fm.copyItem(atPath: "\(content)", toPath:toPath)
                 }
             }
         } catch let error {
