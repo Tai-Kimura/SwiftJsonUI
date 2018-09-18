@@ -359,7 +359,7 @@ open class UIViewDisposure {
                 constant+=paddingTop
             }
             if let topPadding = info.topMargin {
-                let relation = info.alignBottom ?? false ? NSLayoutRelation.greaterThanOrEqual : NSLayoutRelation.equal
+                let relation = (info.alignBottom ?? false) || (info.centerVertical ?? false) ? NSLayoutRelation.greaterThanOrEqual : NSLayoutRelation.equal
                 constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: relation, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: constant + topPadding))
             } else if info.minTopMargin != nil || info.maxTopMargin != nil {
                 if let topPadding = info.minTopMargin {
@@ -401,7 +401,7 @@ open class UIViewDisposure {
                 constant+=paddingBottom
             }
             if let bottomPadding = info.bottomMargin {
-                let relation = info.alignBottom ?? false ? NSLayoutRelation.equal : NSLayoutRelation.lessThanOrEqual
+                let relation = (info.alignBottom ?? false) && !(info.centerVertical ?? false) ? NSLayoutRelation.equal : NSLayoutRelation.lessThanOrEqual
                 constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: relation, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -(constant + bottomPadding)))
             } else if info.minBottomMargin != nil || info.maxBottomMargin != nil {
                 if let bottomPadding = info.minBottomMargin {
@@ -440,7 +440,7 @@ open class UIViewDisposure {
                 constant+=paddingLeft
             }
             if let leftPadding = info.leftMargin {
-                let relation = info.alignRight ?? false ? NSLayoutRelation.greaterThanOrEqual : NSLayoutRelation.equal
+                let relation = (info.alignRight ?? false) || (info.centerHorizontal ?? false) ? NSLayoutRelation.greaterThanOrEqual : NSLayoutRelation.equal
                 constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: relation, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: constant + leftPadding))
             } else if info.minLeftMargin != nil && info.maxLeftMargin != nil {
                 if let leftPadding = info.minLeftMargin {
@@ -482,7 +482,7 @@ open class UIViewDisposure {
                 constant+=paddingRight
             }
             if let rightPadding = info.rightMargin {
-                let relation = info.alignRight ?? false ? NSLayoutRelation.equal : NSLayoutRelation.lessThanOrEqual
+                let relation = (info.alignRight ?? false) && !(info.centerHorizontal ?? false) ? NSLayoutRelation.equal : NSLayoutRelation.lessThanOrEqual
                 constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: relation, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -(constant + rightPadding)))
             } else if info.minRightMargin != nil || info.maxRightMargin != nil {
                 if let rightPadding = info.minRightMargin {
