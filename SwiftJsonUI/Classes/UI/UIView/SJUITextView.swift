@@ -180,7 +180,7 @@ open class SJUITextView: UITextView {
     
     open func setPlaceHolderIfNeeded() {
         if self.text.count == 0 {
-            self.placeHolder?.isHidden = hideOnFocused
+            self.placeHolder?.isHidden = hideOnFocused && self.isFirstResponder
         } else {
             self.placeHolder?.isHidden = true
         }
@@ -252,6 +252,10 @@ open class SJUITextView: UITextView {
         
         if let isFlexible = attr["flexible"].bool {
             t.flexible = isFlexible
+        }
+        
+        if let hideOnFocused = attr["hideOnFocused"].bool {
+            t.hideOnFocused = hideOnFocused
         }
         
         if let hint = attr["hint"].string {
