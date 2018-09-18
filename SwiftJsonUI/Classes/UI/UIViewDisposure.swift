@@ -695,6 +695,9 @@ open class UIViewDisposure {
         if let maxHeight = info.maxHeight {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: maxHeight))
         }
+        if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            return
+        }
         if let height = info.height {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: height))
         }
@@ -712,6 +715,9 @@ open class UIViewDisposure {
         }
         if let maxWidth = info.maxWidth {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: maxWidth))
+        }
+        if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            return
         }
         if let width = info.width {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: nil, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: width))
