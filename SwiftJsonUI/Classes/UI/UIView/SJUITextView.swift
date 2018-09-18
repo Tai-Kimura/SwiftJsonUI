@@ -43,7 +43,7 @@ open class SJUITextView: UITextView {
     
     public var flexible: Bool = false
     
-    public var placeHolder: UILabel!
+    public var placeHolder: SJUILabel!
     
     public var hasContainer = false
     
@@ -75,9 +75,9 @@ open class SJUITextView: UITextView {
     
     
     open var hint: String! {
-        willSet {
+        didSet {
             if self.placeHolder == nil {
-                self.placeHolder = UILabel()
+                self.placeHolder = SJUILabel()
                 self.placeHolder.numberOfLines = 0
                 self.placeHolder.lineBreakMode = NSLineBreakMode.byWordWrapping
                 self.placeHolder.translatesAutoresizingMaskIntoConstraints = false
@@ -88,17 +88,18 @@ open class SJUITextView: UITextView {
                 self.addSubview(placeHolder)
                 let inset = self.textContainerInset
                 NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: inset.left)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: inset.right)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: self, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: inset.right)])
                 NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: inset.top-5.0)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: self, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -inset.bottom)])
             }
-            self.placeHolder.preferredMaxLayoutWidth = self.frame.size.width
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineHeightMultiple = 1.4
             let size:CGFloat = fontSize
             let font = UIFont(name: hintFont, size: size) ?? UIFont.systemFont(ofSize: size)
-            let attrText = NSMutableAttributedString(string: newValue, attributes: [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: hintColor])
-            placeHolder.attributedText = attrText
-            placeHolder.sizeToFit()
+            placeHolder.attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: hintColor]
+            placeHolder.applyAttributedText(hint)
+            placeHolder.setNeedsLayout()
+            placeHolder.layoutIfNeeded()
         }
     }
     
