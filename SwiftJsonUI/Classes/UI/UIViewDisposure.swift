@@ -121,6 +121,7 @@ open class UIViewDisposure {
         applyWidthConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyHeightConstraint(on: view, toConstraintInfo: info, for: &constraints)
         NSLayoutConstraint.activate(constraints)
+        info.constraints = constraints
     }
     
     //MARK: Linear Layout
@@ -733,6 +734,7 @@ open class UIViewDisposure {
 }
 
 public class UILayoutConstraintInfo {
+    var constraints = [NSLayoutConstraint]()
     weak var toView: UIView?
     var paddingLeft:CGFloat!
     var paddingRight:CGFloat!
@@ -781,8 +783,16 @@ public class UILayoutConstraintInfo {
     var minWidthWeight: CGFloat!
     var minHeightWeight: CGFloat!
     var weight: CGFloat!
+    var gravities = [SJUIView.Gravity: Bool]()
     
-    public init(toView: UIView?, paddingLeft:CGFloat! = nil, paddingRight:CGFloat! = nil, paddingTop: CGFloat! = nil, paddingBottom: CGFloat! = nil, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignTop: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil,weight: CGFloat! = nil) {
+    public init(toView: UIView?, paddingLeft:CGFloat! = nil, paddingRight:CGFloat! = nil, paddingTop: CGFloat! = nil, paddingBottom: CGFloat! = nil, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignTop: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil,weight: CGFloat! = nil, gravities: [String]?, superview: UIView?) {
+        
+        if let layoutGravities = superview?.constraintInfo?.gravities, (superview as? SJUIView)?.orientation != nil {
+            self.alignTop = layoutGravities[.top]
+            self.alignLeft = layoutGravities[.left]
+            self.alignBottom = layoutGravities[.bottom]
+            self.alignRight = layoutGravities[.right]
+        }
         self.paddingLeft = paddingLeft
         self.paddingRight = paddingRight
         self.paddingTop = paddingTop
@@ -830,7 +840,6 @@ public class UILayoutConstraintInfo {
         self.minWidthWeight = minWidthWeight
         self.minHeightWeight = minHeightWeight
         self.weight = weight
-        
         
         if self.maxWidth != nil && self.minWidth != nil && self.maxWidth < self.minWidth {
             self.maxWidth = self.minWidth
@@ -904,6 +913,14 @@ public class UILayoutConstraintInfo {
                     self.alignRightView = toView
                 } else if rightMargin != nil || maxRightMargin != nil || minRightMargin != nil {
                     self.alignLeftOfView = toView
+                }
+            }
+        }
+        
+        if let gravities = gravities {
+            for gravity in gravities {
+                if let g = SJUIView.Gravity(rawValue: gravity) {
+                    self.gravities[g] = true
                 }
             }
         }

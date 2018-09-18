@@ -188,4 +188,11 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         case bottomToTop = "bottomToTop"
         case rightToLeft = "rightToLeft"
     }
+    
+    public enum Gravity: String {
+        case top = "top"
+        case left = "left"
+        case bottom = "bottom"
+        case right = "right"
+    }
 }
