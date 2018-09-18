@@ -81,13 +81,16 @@ open class SJUITextView: UITextView {
                 self.placeHolder.numberOfLines = 0
                 self.placeHolder.lineBreakMode = NSLineBreakMode.byWordWrapping
                 self.placeHolder.translatesAutoresizingMaskIntoConstraints = false
+                self.placeHolder.setContentCompressionResistancePriority(UILayoutPriority.required, for: .horizontal)
+                self.placeHolder.setContentCompressionResistancePriority(UILayoutPriority.required, for: .vertical)
+                self.placeHolder.setContentHuggingPriority(UILayoutPriority.required, for: .horizontal)
+                self.placeHolder.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
                 self.addSubview(placeHolder)
                 let inset = self.textContainerInset
                 NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: inset.left)])
                 NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: inset.right)])
                 NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: inset.top-5.0)])
             }
-            
             self.placeHolder.preferredMaxLayoutWidth = self.frame.size.width
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineHeightMultiple = 1.4
