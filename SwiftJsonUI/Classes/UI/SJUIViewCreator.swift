@@ -361,7 +361,7 @@ open class SJUIViewCreator:NSObject {
                 NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
             } else if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, (view.constraintInfo?.height ?? 0) == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
                 for v in view.subviews {
-                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
+                    NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                 }
             }
             
