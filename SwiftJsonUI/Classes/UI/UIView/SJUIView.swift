@@ -50,7 +50,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
             return self.constraintInfo?.gravities
         }
         set {
-            if let gravity = newValue, self.orientation != nil {
+            if let gravity = newValue, let orientaiton = orientation {
                 self.constraintInfo?.gravities = gravity
                 for subview in self.subviews {
                     if let info = subview.constraintInfo {
@@ -65,6 +65,17 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
                         }
                         if info.alignRight == nil {
                             info.alignRight = gravity[.right]
+                        }
+                        
+                        switch orientaiton {
+                        case .vertical:
+                            if info.centerHorizontal == nil {
+                                info.centerHorizontal = gravity[.centerHorizontal]
+                            }
+                        case .horizontal:
+                            if info.centerVertical == nil {
+                                info.centerVertical = gravity[.centerVertical]
+                            }
                         }
                     }
                 }
@@ -221,5 +232,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         case left = "left"
         case bottom = "bottom"
         case right = "right"
+        case centerVertical = "centerVertical"
+        case centerHorizontal = "centerHorizontal"
     }
 }

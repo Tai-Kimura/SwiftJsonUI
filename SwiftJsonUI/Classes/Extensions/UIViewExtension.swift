@@ -160,4 +160,21 @@ public extension UIView {
         }
         return false
     }
+    
+    public func animateWithConstraintInfo(duration: TimeInterval, completion: ((Bool) -> Void)? = nil) {
+        if var constraintInfo = self.constraintInfo {
+            for subview in self.subviews {
+                if var info = subview.constraintInfo {
+                    NSLayoutConstraint.deactivate(info.constraints)
+                    UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &info)
+                }
+            }
+            NSLayoutConstraint.deactivate(constraintInfo.constraints)
+            UIViewDisposure.applyConstraint(onView: self, toConstraintInfo: &constraintInfo)
+        }
+        (self.superview ?? self).setNeedsLayout()
+        UIView.animate(withDuration: duration, animations: {
+            (self.superview ?? self).layoutIfNeeded()
+        }, completion: completion)
+    }
 }
