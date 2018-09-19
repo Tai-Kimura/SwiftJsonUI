@@ -5,11 +5,9 @@
 [![License](https://img.shields.io/cocoapods/l/SwiftJsonUI.svg?style=flat)](https://cocoapods.org/pods/SwiftJsonUI)
 [![Platform](https://img.shields.io/cocoapods/p/SwiftJsonUI.svg?style=flat)](https://cocoapods.org/pods/SwiftJsonUI)
 
-## Example
-
-To run the example project, clone the repo, and run `pod install` from the Example directory first.
-
 ## Requirements
+iOS8 or later<br>
+Swift4+
 
 ## Installation
 
