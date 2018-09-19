@@ -161,7 +161,7 @@ public extension UIView {
         return false
     }
     
-    public func resetConstraintInfo(duration: TimeInterval, completion: ((Bool) -> Void)? = nil) {
+    public func resetConstraintInfo() {
         if var constraintInfo = self.constraintInfo {
             for subview in self.subviews {
                 if var info = subview.constraintInfo {
