@@ -34,7 +34,13 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
     
     static let minDiscSize: Double = 1000.0
     
-    fileprivate var url: URL
+    fileprivate var _url: URL
+    
+    public var url: URL {
+        get {
+            return _url
+        }
+    }
     
     fileprivate var task: URLSessionDownloadTask?
     
@@ -53,7 +59,7 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
     public var progressHandler:  ((_ bytesWritten: Int64, _ totalBytesWritten: Int64, _ totalBytesExpectedToWrite: Int64) -> Void)?
     
     public init(url: URL) {
-        self.url = url
+        self._url = url
         super.init()
     }
     

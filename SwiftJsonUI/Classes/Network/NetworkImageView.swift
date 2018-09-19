@@ -88,17 +88,18 @@ open class NetworkImageView: SJUIImageView {
             self.image = self.loadingImage == nil ? defaultImage : self.loadingImage
         }
         
-        weak var d = Downloader(url: url)
-        d?.completionHandler = { data, exist in
+        let d = Downloader(url: url)
+        let urlStr = d.url.absoluteString
+        d.completionHandler = { [weak self] (data, exist) in
             if let data = data {
                 if let image = UIImage(data: data) {
                     DispatchQueue.main.async(execute: {
-                        self.layer.removeAllAnimations()
-                        if d == self.downloader {
-                            self.layer.opacity = exist ? 1.0 : 0
-                            self.image = self.renderingMode != nil ? image.withRenderingMode(self.renderingMode!) : image
-                            self.setNeedsLayout()
-                            self.previousPath = path
+                        self?.layer.removeAllAnimations()
+                        if urlStr == self?.downloader?.url.absoluteString {
+                            self?.layer.opacity = exist ? 1.0 : 0
+                            self?.image = self?.renderingMode != nil ? image.withRenderingMode(self!.renderingMode!) : image
+                            self?.setNeedsLayout()
+                            self?.previousPath = path
                             if !exist {
                                 let anim = CABasicAnimation(keyPath: "opacity")
                                 anim.toValue = 1
@@ -109,7 +110,7 @@ open class NetworkImageView: SJUIImageView {
                                 anim.isRemovedOnCompletion = false
                                 anim.fillMode = kCAFillModeForwards
                                 anim.delegate = self
-                                self.layer.add(anim, forKey: NetworkImageView.animationKey)
+                                self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                             }
                         } else {
                             print("Not Same")
@@ -121,12 +122,12 @@ open class NetworkImageView: SJUIImageView {
             }
             
             DispatchQueue.main.async(execute: {
-                self.layer.removeAllAnimations()
-                if d == self.downloader {
-                    self.image = self.errorImage != nil ? self.errorImage : self.defaultImage
+                self?.layer.removeAllAnimations()
+                if urlStr == self?.downloader?.url.absoluteString {
+                    self?.image = self?.errorImage != nil ? self?.errorImage : self?.defaultImage
                 }
             })
-            self.downloader = nil
+            self?.downloader = nil
         }
         downloader = d
         downloader?.start()

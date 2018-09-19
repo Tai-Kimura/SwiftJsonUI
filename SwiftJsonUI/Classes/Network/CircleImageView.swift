@@ -58,8 +58,9 @@ open class CircleImageView: NetworkImageView {
         } else if previousPath == nil || path != previousPath  {
             self.image = self.loadingImage == nil ? defaultImage : self.loadingImage
         }
-        weak var d = Downloader(url: url)
-        d?.completionHandler = { data, exist in
+        let d = Downloader(url: url)
+        let urlStr = d.url.absoluteString
+        d.completionHandler = {[weak self] (data, exist) in
             if let data = data {
                 if let image = UIImage(data: data) {
                     
@@ -78,11 +79,11 @@ open class CircleImageView: NetworkImageView {
                         }
                         
                         DispatchQueue.main.async(execute: {
-                            if d == self.downloader {
-                                self.layer.removeAllAnimations()
-                                self.layer.opacity = exist ? 1.0 : 0
-                                self.image = circleImage
-                                self.previousPath = path
+                            if urlStr == self?.downloader?.url.absoluteString {
+                                self?.layer.removeAllAnimations()
+                                self?.layer.opacity = exist ? 1.0 : 0
+                                self?.image = circleImage
+                                self?.previousPath = path
                                 if !exist {
                                     let anim = CABasicAnimation(keyPath: "opacity")
                                     anim.toValue = 1
@@ -93,7 +94,7 @@ open class CircleImageView: NetworkImageView {
                                     anim.isRemovedOnCompletion = false
                                     anim.delegate = self
                                     anim.fillMode = kCAFillModeForwards
-                                    self.layer.add(anim, forKey: NetworkImageView.animationKey)
+                                    self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                                 }
                             } else {
                                 print("Not Same")
@@ -108,11 +109,11 @@ open class CircleImageView: NetworkImageView {
             }
             
             DispatchQueue.main.async(execute: {
-                if d == self.downloader {
-                    self.image = self.errorImage != nil ? self.errorImage : self.defaultImage
+                if urlStr == self?.downloader?.url.absoluteString {
+                    self?.image = self?.errorImage != nil ? self?.errorImage : self?.defaultImage
                 }
             })
-            self.downloader = nil
+            self?.downloader = nil
         }
         downloader = d
         downloader?.start()
