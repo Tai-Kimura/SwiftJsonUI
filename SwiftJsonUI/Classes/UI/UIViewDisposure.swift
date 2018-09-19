@@ -121,7 +121,7 @@ open class UIViewDisposure {
         applyWidthConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyHeightConstraint(on: view, toConstraintInfo: info, for: &constraints)
         NSLayoutConstraint.activate(constraints)
-        info.constraints = constraints
+        info._constraints = constraints
     }
     
     //MARK: Linear Layout
@@ -734,55 +734,60 @@ open class UIViewDisposure {
 }
 
 public class UILayoutConstraintInfo {
-    var constraints = [NSLayoutConstraint]()
-    weak var toView: UIView?
-    var paddingLeft:CGFloat!
-    var paddingRight:CGFloat!
-    var paddingTop: CGFloat!
-    var paddingBottom: CGFloat!
-    var leftMargin:CGFloat!
-    var rightMargin:CGFloat!
-    var topMargin: CGFloat!
-    var bottomMargin: CGFloat!
-    var minLeftMargin:CGFloat!
-    var minRightMargin:CGFloat!
-    var minTopMargin: CGFloat!
-    var minBottomMargin: CGFloat!
-    var maxLeftMargin:CGFloat!
-    var maxRightMargin:CGFloat!
-    var maxTopMargin: CGFloat!
-    var maxBottomMargin: CGFloat!
-    var centerVertical: Bool!
-    var centerHorizontal: Bool!
-    var alignTop: Bool!
-    var alignBottom: Bool!
-    var alignLeft: Bool!
-    var alignRight: Bool!
-    weak var alignTopOfView:UIView?
-    weak var alignBottomOfView:UIView?
-    weak var alignLeftOfView:UIView?
-    weak var alignRightOfView:UIView?
-    weak var alignTopView: UIView?
-    weak var alignBottomView: UIView?
-    weak var alignLeftView: UIView?
-    weak var alignRightView: UIView?
-    weak var alignCenterVerticalView: UIView?
-    weak var alignCenterHorizontalView: UIView?
-    var width: CGFloat!
-    var height: CGFloat!
-    var minWidth: CGFloat!
-    var minHeight: CGFloat!
-    var maxWidth: CGFloat!
-    var maxHeight: CGFloat!
-    var widthWeight: CGFloat!
-    var heightWeight: CGFloat!
-    var aspectWidth: CGFloat!
-    var aspectHeight: CGFloat!
-    var maxWidthWeight: CGFloat!
-    var maxHeightWeight: CGFloat!
-    var minWidthWeight: CGFloat!
-    var minHeightWeight: CGFloat!
-    var weight: CGFloat!
+    private var _constraints = [NSLayoutConstraint]()
+    public var constraints: [NSLayoutConstraint] {
+        get {
+            return _constraints
+        }
+    }
+    public weak var toView: UIView?
+    public var paddingLeft:CGFloat!
+    public var paddingRight:CGFloat!
+    public var paddingTop: CGFloat!
+    public var paddingBottom: CGFloat!
+    public var leftMargin:CGFloat!
+    public var rightMargin:CGFloat!
+    public var topMargin: CGFloat!
+    public var bottomMargin: CGFloat!
+    public var minLeftMargin:CGFloat!
+    public var minRightMargin:CGFloat!
+    public var minTopMargin: CGFloat!
+    public var minBottomMargin: CGFloat!
+    public var maxLeftMargin:CGFloat!
+    public var maxRightMargin:CGFloat!
+    public var maxTopMargin: CGFloat!
+    public var maxBottomMargin: CGFloat!
+    public var centerVertical: Bool!
+    public var centerHorizontal: Bool!
+    public var alignTop: Bool!
+    public var alignBottom: Bool!
+    public var alignLeft: Bool!
+    public var alignRight: Bool!
+    public weak var alignTopOfView:UIView?
+    public weak var alignBottomOfView:UIView?
+    public weak var alignLeftOfView:UIView?
+    public weak var alignRightOfView:UIView?
+    public weak var alignTopView: UIView?
+    public weak var alignBottomView: UIView?
+    public weak var alignLeftView: UIView?
+    public weak var alignRightView: UIView?
+    public weak var alignCenterVerticalView: UIView?
+    public weak var alignCenterHorizontalView: UIView?
+    public var width: CGFloat!
+    public var height: CGFloat!
+    public var minWidth: CGFloat!
+    public var minHeight: CGFloat!
+    public var maxWidth: CGFloat!
+    public var maxHeight: CGFloat!
+    public var widthWeight: CGFloat!
+    public var heightWeight: CGFloat!
+    public var aspectWidth: CGFloat!
+    public var aspectHeight: CGFloat!
+    public var maxWidthWeight: CGFloat!
+    public var maxHeightWeight: CGFloat!
+    public var minWidthWeight: CGFloat!
+    public var minHeightWeight: CGFloat!
+    public var weight: CGFloat!
     var gravities = [SJUIView.Gravity: Bool]()
     
     public init(toView: UIView?, paddingLeft:CGFloat! = nil, paddingRight:CGFloat! = nil, paddingTop: CGFloat! = nil, paddingBottom: CGFloat! = nil, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignTop: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil,weight: CGFloat! = nil, gravities: [String]?, superview: UIView?) {

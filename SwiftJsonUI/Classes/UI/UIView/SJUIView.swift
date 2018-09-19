@@ -45,6 +45,33 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
     
     public var direction: Direction = .none
     
+    public var gravity: [SJUIView.Gravity:Bool]? {
+        get {
+            return self.constraintInfo?.gravities
+        }
+        set {
+            if let gravity = newValue, self.orientation != nil {
+                self.constraintInfo?.gravities = gravity
+                for subview in self.subviews {
+                    if let info = subview.constraintInfo {
+                        if info.alignTop == nil {
+                            info.alignTop = gravity[.top]
+                        }
+                        if info.alignLeft == nil {
+                            info.alignLeft = gravity[.left]
+                        }
+                        if info.alignBottom == nil {
+                            info.alignBottom = gravity[.bottom]
+                        }
+                        if info.alignRight == nil {
+                            info.alignRight = gravity[.right]
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
     override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let location = touches.first?.location(in: self) {
             if location.x >= 0 && location.x <= self.frame.size.width && location.y >= 0 && location.y <= self.frame.size.height {
