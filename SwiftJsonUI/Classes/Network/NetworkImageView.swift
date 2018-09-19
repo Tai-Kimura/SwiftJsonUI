@@ -88,8 +88,8 @@ open class NetworkImageView: SJUIImageView {
             self.image = self.loadingImage == nil ? defaultImage : self.loadingImage
         }
         
-        let d = Downloader(url: url)
-        d.completionHandler = { data, exist in
+        weak var d = Downloader(url: url)
+        d?.completionHandler = { data, exist in
             if let data = data {
                 if let image = UIImage(data: data) {
                     DispatchQueue.main.async(execute: {
@@ -126,6 +126,7 @@ open class NetworkImageView: SJUIImageView {
                     self.image = self.errorImage != nil ? self.errorImage : self.defaultImage
                 }
             })
+            self.downloader = nil
         }
         downloader = d
         downloader?.start()

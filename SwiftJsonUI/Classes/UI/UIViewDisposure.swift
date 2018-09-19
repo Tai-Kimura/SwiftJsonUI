@@ -121,7 +121,7 @@ open class UIViewDisposure {
         applyWidthConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyHeightConstraint(on: view, toConstraintInfo: info, for: &constraints)
         NSLayoutConstraint.activate(constraints)
-        info._constraints = constraints
+        info._constraints = WeakConstraint.constraints(with: constraints)
     }
     
     //MARK: Linear Layout
@@ -734,10 +734,16 @@ open class UIViewDisposure {
 }
 
 public class UILayoutConstraintInfo {
-    fileprivate var _constraints = [NSLayoutConstraint]()
+    fileprivate var _constraints = [WeakConstraint]()
     public var constraints: [NSLayoutConstraint] {
         get {
-            return _constraints
+            var constraints = [NSLayoutConstraint]()
+            for weakConstraint in _constraints {
+                if let constraint = weakConstraint.constraint {
+                    constraints.append(constraint)
+                }
+            }
+            return constraints
         }
     }
     public weak var toView: UIView?
@@ -952,5 +958,30 @@ public class UILayoutConstraintInfo {
     public enum LayoutParams: CGFloat {
         case matchParent = -1
         case wrapContent = -2
+    }
+}
+
+class WeakConstraint {
+    private weak var _constraint: NSLayoutConstraint?
+    var constraint: NSLayoutConstraint? {
+        set {
+            self._constraint = constraint
+        }
+        get {
+            return self._constraint
+        }
+    }
+    
+    required init(constraint: NSLayoutConstraint) {
+        _constraint = constraint
+    }
+    
+    class func constraints(with constraints: [NSLayoutConstraint]) -> [WeakConstraint] {
+        var weakConstraints = [WeakConstraint]()
+        for constraint in constraints {
+            let weakConstraint = WeakConstraint.init(constraint: constraint)
+            weakConstraints.append(weakConstraint)
+        }
+        return weakConstraints
     }
 }
