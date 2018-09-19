@@ -18,6 +18,9 @@ it, simply add the following line to your Podfile:
 pod 'SwiftJsonUI'
 ```
 
+## Usage
+Documents are [here](https://github.com/Tai-Kimura/SwiftJsonUI/wiki)
+
 ## Author
 
 kimura@tanosys.com, kimura@tanosys.com
