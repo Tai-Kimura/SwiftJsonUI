@@ -930,25 +930,21 @@ public class UILayoutConstraintInfo {
         }
         
         if let layoutGravities = superview?.constraintInfo?.gravities, let orientation = (superview as? SJUIView)?.orientation {
-            if self.alignTop == nil {
+            if self.alignTop == nil && self.alignBottom == nil {
                 self.alignTop = layoutGravities[.top]
-            }
-            if self.alignLeft == nil {
-                self.alignLeft = layoutGravities[.left]
-            }
-            if self.alignBottom == nil {
                 self.alignBottom = layoutGravities[.bottom]
             }
-            if self.alignRight == nil {
+            if self.alignLeft == nil && self.alignRight == nil {
+                self.alignLeft = layoutGravities[.left]
                 self.alignRight = layoutGravities[.right]
             }
             switch orientation {
             case .vertical:
-                if self.centerHorizontal == nil {
+                if self.centerHorizontal == nil && self.alignLeft == nil && self.alignRight == nil {
                     self.centerHorizontal = layoutGravities[.centerHorizontal]
                 }
             case .horizontal:
-                if self.centerVertical == nil {
+                if self.centerVertical == nil && self.alignTop == nil && self.alignBottom == nil {
                     self.centerVertical = layoutGravities[.centerVertical]
                 }
             }
