@@ -734,7 +734,7 @@ open class UIViewDisposure {
 }
 
 public class UILayoutConstraintInfo {
-    private var _constraints = [NSLayoutConstraint]()
+    fileprivate var _constraints = [NSLayoutConstraint]()
     public var constraints: [NSLayoutConstraint] {
         get {
             return _constraints
