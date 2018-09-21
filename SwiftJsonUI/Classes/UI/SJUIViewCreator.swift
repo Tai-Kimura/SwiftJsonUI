@@ -35,7 +35,7 @@ open class SJUIViewCreator:NSObject {
     
     private static var styleCache = [String:JSON]()
     
-    @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView {
+    @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
         let url = getURL(path: path)
         
         do {
