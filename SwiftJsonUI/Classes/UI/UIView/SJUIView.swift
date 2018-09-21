@@ -77,6 +77,12 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
             }
         }
     }
+    open override func didAddSubview(_ subview: UIView) {
+        if self.isActiveForConstraint {
+            print("Update Constraint")
+            self.resetConstraintInfo()
+        }
+    }
     
     override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         if let location = touches.first?.location(in: self) {
@@ -231,3 +237,4 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         case centerHorizontal = "centerHorizontal"
     }
 }
+

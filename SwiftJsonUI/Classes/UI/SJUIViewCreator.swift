@@ -35,7 +35,7 @@ open class SJUIViewCreator:NSObject {
     
     private static var styleCache = [String:JSON]()
     
-    @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
+    @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView {
         let url = getURL(path: path)
         
         do {
@@ -59,6 +59,9 @@ open class SJUIViewCreator:NSObject {
     }
     
     open class func getOnView(target: ViewHolder) -> UIView? {
+        if let viewController = target as? UIViewController {
+            return viewController.view
+        }
         return nil
     }
     
@@ -94,7 +97,7 @@ open class SJUIViewCreator:NSObject {
         #endif
     }
     
-    @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView! {
+    @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
         if let include = attr["include"].string {
             let url = getURL(path: include)
@@ -290,10 +293,12 @@ open class SJUIViewCreator:NSObject {
             }
             for subview in view.subviews {
                 UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
+                subview.isActiveForConstraint = true
             }
         }
         if isRootView {
             UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
+            view.isActiveForConstraint = true
         }
         
         if attr["wrapContent"].boolValue || view.shouldWrapContent() {
@@ -595,5 +600,6 @@ public protocol ViewHolder: class {
         set
     }
 }
+
 
 

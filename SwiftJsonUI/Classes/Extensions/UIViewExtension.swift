@@ -36,6 +36,8 @@ var BindingSetKey: UInt8 = 4
 
 var ConstraintInfoKey: UInt8 = 5
 
+var ActivatedConstraintInfoKey: UInt8 = 6
+
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
     func touchEnd(_ view: UIView)
@@ -130,6 +132,18 @@ public extension UIView {
         }
     }
     
+    public var isActiveForConstraint: Bool {
+        get {
+            guard let object = objc_getAssociatedObject(self, &ActivatedConstraintInfoKey) as? Bool else {
+                return false
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &ActivatedConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+    
     @objc
     public func onBeginTap() {
         if tapBackgroundColor != nil {
@@ -161,35 +175,55 @@ public extension UIView {
         return false
     }
     
-    public func resetConstraintInfo() {
-        if var constraintInfo = self.constraintInfo {
-            for subview in self.subviews {
-                if var info = subview.constraintInfo {
-                    NSLayoutConstraint.deactivate(info.constraints)
-                    UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &info)
+    public func hasEffectiveRelatedConstraintWith(view: UIView) -> Bool {
+        if let superview = view.superview as? SJUIView, superview.orientation != nil  {
+            if let myIndex = superview.subviews.index(of: self), let viewIndex = superview.subviews.index(of: view) {
+                if viewIndex == myIndex + 1 {
+                    return true
                 }
             }
+        }
+        if let constraintInfo = view.constraintInfo {
+            return constraintInfo.alignTopOfView == self || constraintInfo.alignBottomOfView == self || constraintInfo.alignLeftOfView == self || constraintInfo.alignRightOfView == self
+        }
+        return false
+    }
+    
+    
+    public func updateConstraintInfo() {
+        if var constraintInfo = self.constraintInfo {
             NSLayoutConstraint.deactivate(constraintInfo.constraints)
             UIViewDisposure.applyConstraint(onView: self, toConstraintInfo: &constraintInfo)
         }
+        for subview in self.subviews {
+            if var info = subview.constraintInfo {
+                NSLayoutConstraint.deactivate(info.constraints)
+                UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &info)
+            }
+        }
+        if let superview = superview {
+            for subview in superview.subviews {
+                if var info = subview.constraintInfo, subview != self {
+                    if self.hasEffectiveRelatedConstraintWith(view: subview) {
+                        NSLayoutConstraint.deactivate(info.constraints)
+                        UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &info)
+                    }
+                }
+            }
+        }
         (self.superview ?? self).setNeedsLayout()
+    }
+    
+    public func resetConstraintInfo() {
+        updateConstraintInfo()
         (self.superview ?? self).layoutIfNeeded()
     }
     
     public func animateWithConstraintInfo(duration: TimeInterval, completion: ((Bool) -> Void)? = nil) {
-        if var constraintInfo = self.constraintInfo {
-            for subview in self.subviews {
-                if var info = subview.constraintInfo {
-                    NSLayoutConstraint.deactivate(info.constraints)
-                    UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &info)
-                }
-            }
-            NSLayoutConstraint.deactivate(constraintInfo.constraints)
-            UIViewDisposure.applyConstraint(onView: self, toConstraintInfo: &constraintInfo)
-        }
-        (self.superview ?? self).setNeedsLayout()
+        updateConstraintInfo()
         UIView.animate(withDuration: duration, animations: {
             (self.superview ?? self).layoutIfNeeded()
         }, completion: completion)
     }
 }
+

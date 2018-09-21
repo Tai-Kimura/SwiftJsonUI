@@ -45,29 +45,38 @@ open class Binding: NSObject {
     }
     
     private func bindData(data: Any, view v: UIView, binding: String) {
-        if let text = fetchValue(data: data, binding: binding) as? String {
-            if let label = v as? SJUILabel {
-                label.applyAttributedText(text)
-            } else if let textField = v as? UITextField {
-                textField.text = text
-            } else if let textView = v as? UITextView {
-                textView.text = text
-            } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
-                selectBox.selectedIndex = index
-            } else if let networkImageView = v as? NetworkImageView {
-                networkImageView.setImageURL(string: text)
-            }
-        } else if let date = fetchValue(data: data, binding: binding) as? Date, let selectBox = v as? SJUISelectBox {
-            selectBox.selectedDate = date
-        } else if let index = fetchValue(data: data, binding: binding) as? Int, let selectBox = v as? SJUISelectBox {
-            selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
-        } else if let image = fetchValue(data: data, binding: binding) as? UIImage, let imageView = v as? UIImageView {
-            if let circleImageView = imageView as? CircleImageView {
-                circleImageView.setImageResource(image.circularScaleAndCropImage())
-            } else if let networkImageView = imageView as? NetworkImageView {
-                networkImageView.setImageResource(image)
-            } else {
-                imageView.image = image
+        let bindings = binding.components(separatedBy: ".")
+        if let b = bindings.first {
+            let fetchedValue = fetchValue(data: data, binding: b)
+            if let text = fetchedValue as? String {
+                if let label = v as? SJUILabel {
+                    label.applyAttributedText(text)
+                } else if let textField = v as? UITextField {
+                    textField.text = text
+                } else if let textView = v as? UITextView {
+                    textView.text = text
+                } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
+                    selectBox.selectedIndex = index
+                } else if let networkImageView = v as? NetworkImageView {
+                    networkImageView.setImageURL(string: text)
+                }
+            } else if let date = fetchedValue as? Date, let selectBox = v as? SJUISelectBox {
+                selectBox.selectedDate = date
+            } else if let index = fetchedValue as? Int, let selectBox = v as? SJUISelectBox {
+                selectBox.selectedIndex = selectBox.hasPrompt && !selectBox.includePromptWhenDataBinding ? index + 1 : index
+            } else if let image = fetchedValue as? UIImage, let imageView = v as? UIImageView {
+                if let circleImageView = imageView as? CircleImageView {
+                    circleImageView.setImageResource(image.circularScaleAndCropImage())
+                } else if let networkImageView = imageView as? NetworkImageView {
+                    networkImageView.setImageResource(image)
+                } else {
+                    imageView.image = image
+                }
+            } else if let boolValue = fetchedValue as? Bool, let checkbox = v as? SJUICheckBox {
+                checkbox.isSelected = boolValue
+            } else if let object = fetchedValue, bindings.count > 1 {
+                let nextBinding = binding.replacingOccurrences(of: "^\(b)\\.", with: "", options: .regularExpression, range: nil)
+                bindData(data: object, view: v, binding: nextBinding)
             }
         }
     }
