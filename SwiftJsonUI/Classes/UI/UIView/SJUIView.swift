@@ -236,5 +236,9 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         case centerVertical = "centerVertical"
         case centerHorizontal = "centerHorizontal"
     }
+    public enum Visibility: String {
+        case visible = "visible"
+        case invisible = "invisible"
+        case gone = "gone"
+    }
 }
-

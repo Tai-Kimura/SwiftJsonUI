@@ -33,6 +33,26 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
         }
     }
     
+    open override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        #if DEBUG
+        NotificationCenter.default.addObserver(self, selector: #selector(SJUIViewController.layoutFileDidChanged), name: NSNotification.Name(rawValue: "layoutFileDidChanged"), object: nil)
+        #endif
+    }
+    #if DEBUG
+    deinit {
+        NotificationCenter.default.removeObserver(self)
+    }
+    #endif
+    
+    #if DEBUG
+    open func layoutFileDidChanged() {
+        print("View Did Changed")
+    }
+    #endif
+    
+    
+    
     open func returnNumberPad() {
         hideKeyboard()
     }

@@ -1,6 +1,6 @@
 {
   "name": "SwiftJsonUI",
-  "version": "0.0.1",
+  "version": "1.0.2",
   "summary": "A short description of SwiftJsonUI.",
   "description": "TODO: Add long description of the pod here.",
   "homepage": "https://github.com/Tai-Kimura/SwiftJsonUI",
@@ -12,11 +12,17 @@
     "kimura@tanosys.com": "kimura@tanosys.com"
   },
   "source": {
-    "git": "https://github.com/kimura@tanosys.com/SwiftJsonUI.git",
-    "tag": "0.0.1"
+    "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+    "tag": "1.0.2"
   },
   "platforms": {
     "ios": "8.0"
   },
-  "source_files": "SwiftJsonUI/Classes/**/*"
+  "swift_version": "4.0",
+  "source_files": "SwiftJsonUI/Classes/**/*",
+  "dependencies": {
+    "Socket.IO-Client-Swift": [
+      "~> 13.3.0"
+    ]
+  }
 }
