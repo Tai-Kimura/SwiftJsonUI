@@ -69,7 +69,15 @@ public class HotLoader {
             let downloader = Downloader(url: url)
             downloader.completionHandler = { data, exist in
                 let fm = FileManager.default
-                let dir = dirName == "styles" ? SJUIViewCreator.getStyleFileDirPath() : SJUIViewCreator.getLayoutFileDirPath()
+                let dir: String
+                switch dirName {
+                case "styles":
+                    dir = SJUIViewCreator.getStyleFileDirPath()
+                case "scripts":
+                    dir = SJUIViewCreator.getScriptFileDirPath()
+                default:
+                    dir = SJUIViewCreator.getLayoutFileDirPath()
+                }
                 let toPath = "\(dir)/\(fileName).json";
                 do {
                     if (fm.fileExists(atPath: toPath)) {

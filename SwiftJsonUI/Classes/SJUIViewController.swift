@@ -48,6 +48,7 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
     #if DEBUG
     open func layoutFileDidChanged() {
         print("View Did Changed")
+        SJUIViewCreator.cleanStyleCache()
     }
     #endif
     

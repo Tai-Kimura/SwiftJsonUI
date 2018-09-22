@@ -17,8 +17,9 @@ var server = app.listen(3000, function(){
 app.get("/layout_loader", function(req, res, next){
     console.log(req.query);
     var filePath = path.join(__dirname, 'public', req.query.folder);
-    if (req.query.dirName == "styles") {
-      filePath = path.join(filePath, req.query.dirName, req.query.folder,req.query.file_path + ".json");
+
+    if (req.query.dir_name == "styles") {
+      filePath = path.join(filePath, req.query.dir_name, req.query.file_path + ".json");
     } else {
       filePath = path.join(filePath, req.query.file_path + ".json");
     }
