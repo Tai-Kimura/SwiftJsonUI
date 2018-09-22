@@ -81,10 +81,6 @@ open class UIViewDisposure {
             applyWidthWeightConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
             //アスペクト
             applyAspectConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
-            
-            if let superview = superview as? UIScrollView {
-                applyScrollViewConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints)
-            }
         }
         //任意のビューに対して
         if (view.superview as? SJUIView)?.orientation ?? .horizontal == .horizontal {
@@ -127,6 +123,7 @@ open class UIViewDisposure {
         applyWidthConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyHeightConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyWrapContentConstraint(on: view, toConstraintInfo: info, for: &constraints)
+        applyScrollViewConstraint(onView: view, toConstraintInfo: info, for: &constraints)
         NSLayoutConstraint.activate(constraints)
         info._constraints = WeakConstraint.constraints(with: constraints)
     }
@@ -524,15 +521,51 @@ open class UIViewDisposure {
         return false
     }
     
-    public class func applyScrollViewConstraint(to superview: UIScrollView, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
-        if info.heightWeight == nil {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
-        }
-        
-        if info.widthWeight == nil {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+    public class func applyScrollViewConstraint(onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
+        if let view = view as? SJUIScrollView, let lastView = view.subviews.last, let lastViewInfo = lastView.constraintInfo {
+            if lastViewInfo.height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
+            } else if lastViewInfo.height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                var constant: CGFloat = 0
+                if let paddingLeft =  info.paddingLeft {
+                    constant+=paddingLeft
+                }
+                if let paddingRight =  info.paddingRight {
+                    constant+=paddingRight
+                }
+                if let leftMargin =  lastViewInfo.leftMargin {
+                    constant+=leftMargin
+                }
+                if let rightMargin =  info.rightMargin {
+                    constant+=rightMargin
+                }
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: -constant))
+            } else if lastViewInfo.heightWeight == nil {
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0))
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0))
+            }
+            
+            if lastViewInfo.width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+            } else if lastViewInfo.width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+                var constant: CGFloat = 0
+                if let paddingTop =  info.paddingTop {
+                    constant+=paddingTop
+                }
+                if let paddingBottom =  info.paddingBottom {
+                    constant+=paddingBottom
+                }
+                if let topMargin =  lastViewInfo.topMargin {
+                    constant+=topMargin
+                }
+                if let bottomMargin =  info.bottomMargin {
+                    constant+=bottomMargin
+                }
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: -constant))
+            } else if info.widthWeight == nil {
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0))
+                constraints.append(NSLayoutConstraint(item: lastView, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: view, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+            }
         }
     }
     
@@ -1159,4 +1192,5 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
 
