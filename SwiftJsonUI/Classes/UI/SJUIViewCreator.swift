@@ -97,6 +97,14 @@ open class SJUIViewCreator:NSObject {
         #endif
     }
     
+    open class func getScriptURL(path: String) -> String {
+        #if DEBUG
+        return getScriptFileDirPath() + "/\(path).js"
+        #else
+        return Bundle.main.path(forResource: path, ofType: "js", inDirectory: "Scripts") ?? ""
+        #endif
+    }
+    
     @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
         if let include = attr["include"].string {
@@ -536,6 +544,12 @@ open class SJUIViewCreator:NSObject {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         return "\(cachesDirPath)/Styles"
+    }
+    
+    open class func getScriptFileDirPath() -> String {
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let cachesDirPath = paths[0]
+        return "\(cachesDirPath)/Scripts"
     }
     
     public class func getViewJSON(path: String) -> JSON? {

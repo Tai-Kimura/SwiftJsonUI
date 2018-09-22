@@ -64,7 +64,7 @@ public class HotLoader {
     }
     
     private func downloadLayout(layoutPath: String, dirName: String, fileName: String) {
-        if let url = URL(string: "http://\((Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String) ?? ""):3000/\(layoutPath)?file_path=\(fileName)&\(additionalRequestParameter)") {
+        if let url = URL(string: "http://\((Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String) ?? ""):3000/\(layoutPath)?file_path=\(fileName)&dir_name=\(dirName)&\(additionalRequestParameter)") {
             print("\(url.absoluteString)")
             let downloader = Downloader(url: url)
             downloader.completionHandler = { data, exist in

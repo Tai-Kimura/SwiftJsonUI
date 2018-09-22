@@ -16,7 +16,13 @@ var server = app.listen(3000, function(){
 // 写真リストを取得するAPI
 app.get("/layout_loader", function(req, res, next){
     console.log(req.query);
-    var filePath = path.join(__dirname, 'public', req.query.folder, req.query.file_path + ".json");
+    var filePath = path.join(__dirname, 'public', req.query.folder);
+    if (req.query.dirName == "styles") {
+      filePath = path.join(filePath, req.query.dirName, req.query.folder,req.query.file_path + ".json");
+    } else {
+      filePath = path.join(filePath, req.query.file_path + ".json");
+    }
+    console.log(filePath);
     var buf = fs.readFileSync(filePath);
     res.send(buf, { 'Content-Type': 'application/json' }, 200);
 });
