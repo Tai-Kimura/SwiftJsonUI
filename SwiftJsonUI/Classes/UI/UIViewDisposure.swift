@@ -811,9 +811,9 @@ open class UIViewDisposure {
             if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .topToBottom {
                 let constraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (lastView.constraintInfo?.bottomMargin ?? 0))
                 constraints.append(constraint)
-            } else {
+            } else if (view as? SJUIView)?.orientation ?? .horizontal != .vertical {
                 for v in subviews {
-                    let constraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
+                    let constraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
                     constraints.append(constraint)
                 }
             }
@@ -821,7 +821,7 @@ open class UIViewDisposure {
             if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .bottomToTop {
                 let constraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .top, multiplier: 1.0, constant: -((info.paddingTop ?? 0) + (lastView.constraintInfo?.topMargin ?? 0)))
                 constraints.append(constraint)
-            } else {
+            } else if (view as? SJUIView)?.orientation ?? .horizontal != .vertical  {
                 for v in subviews {
                     let constraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
                     constraints.append(constraint)
@@ -833,7 +833,7 @@ open class UIViewDisposure {
             if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .rightToLeft {
                 let constraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (lastView.constraintInfo?.leftMargin ?? 0)))
                 constraints.append(constraint)
-            } else {
+            } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal  {
                 for v in subviews {
                     let constraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
                     constraints.append(constraint)
@@ -843,7 +843,7 @@ open class UIViewDisposure {
             if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .leftToRight {
                 let constraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (lastView.constraintInfo?.rightMargin ?? 0)))
                 constraints.append(constraint)
-            } else {
+            } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal {
                 for v in subviews {
                     let constraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
                     constraints.append(constraint)
@@ -1192,5 +1192,6 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
 
 
