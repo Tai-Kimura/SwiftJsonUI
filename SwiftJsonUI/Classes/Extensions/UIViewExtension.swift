@@ -199,15 +199,12 @@ public extension UIView {
         guard let info = self.constraintInfo else {
             return false
         }
-        if info.width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue || info.height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
-            return true
-        }
         if let orientation = (self as? SJUIView)?.orientation {
             switch orientation {
             case .vertical:
-                return info.height == nil && info.maxHeight == nil && info.heightWeight == nil && info.maxHeightWeight == nil
+                return info.height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue || (info.height == nil && info.maxHeight == nil && info.heightWeight == nil && info.maxHeightWeight == nil)
             case .horizontal:
-                return info.width == nil && info.maxWidth == nil && info.widthWeight == nil && info.maxWidthWeight == nil
+                return info.width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue || (info.width == nil && info.maxWidth == nil && info.widthWeight == nil && info.maxWidthWeight == nil)
             }
         }
         return false
