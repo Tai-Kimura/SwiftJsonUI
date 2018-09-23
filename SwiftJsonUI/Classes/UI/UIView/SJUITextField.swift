@@ -113,8 +113,8 @@ open class SJUITextField: UITextField {
                 t.keyboardType = UIKeyboardType.asciiCapable
                 t.isSecureTextEntry = true
                 break
-            case "number":
-                t.keyboardType = UIKeyboardType.numberPad
+            case "number", "decimal":
+                t.keyboardType = input == "decimal" ? UIKeyboardType.decimalPad : UIKeyboardType.numberPad
                 t.isSecureTextEntry = attr["secure"].boolValue
                 let accessory = UIView(frame: CGRect(x: 0,y: 0,width: UIScreen.main.bounds.size.width, height: 50.0))
                 accessory.backgroundColor = UIColor.findColorByJSON(attr: attr["accessoryBackground"]) ?? SJUITextField.accessoryBackgroundColor
