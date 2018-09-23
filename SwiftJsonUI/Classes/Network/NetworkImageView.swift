@@ -41,7 +41,7 @@ open class NetworkImageView: SJUIImageView {
     public var renderingMode: UIImageRenderingMode?
     
     deinit {
-        print("NetworkImage Deinit")
+        Logger.debug("NetworkImage Deinit")
         self.image = nil
     }
     
@@ -113,7 +113,7 @@ open class NetworkImageView: SJUIImageView {
                                 self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                             }
                         } else {
-                            print("Not Same")
+                            Logger.debug("Not Same")
                         }
                     })
                     NetworkImageCache.sharedInstance().cacheImage(image, forKey: path)

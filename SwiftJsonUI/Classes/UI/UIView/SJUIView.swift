@@ -79,7 +79,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
     }
     open override func didAddSubview(_ subview: UIView) {
         if self.isActiveForConstraint {
-            print("Update Constraint")
+            Logger.debug("Update Constraint")
             self.resetConstraintInfo()
         }
     }

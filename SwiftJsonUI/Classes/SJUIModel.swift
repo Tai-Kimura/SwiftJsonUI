@@ -20,7 +20,7 @@ open class SJUIModel: NSObject {
     }
     
     open override func value(forUndefinedKey key: String) -> Any? {
-        print("key（\(key)）is undefined.")
+        Logger.debug("key（\(key)）is undefined.")
         return nil
     }
 }

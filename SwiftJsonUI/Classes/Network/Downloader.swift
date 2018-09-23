@@ -138,7 +138,7 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
             if !fm.fileExists(atPath: cacheDir, isDirectory: &directory) || !directory.boolValue {
                 do {
                     try fm.createDirectory(atPath: cacheDir, withIntermediateDirectories: true, attributes: nil)
-                    print("Directory Created")
+                    Logger.debug("Directory Created")
                 } catch {
                     
                 }
@@ -177,19 +177,19 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
                         cacheSize+=Double(fileSize)
                     }
                     cacheSize = cacheSize.megaByte
-                    print("File size: \(totalSpace)")
-                    print("space: \(freeSpace)")
-                    print("Cache space: \(cacheSize)")
+                    Logger.debug("File size: \(totalSpace)")
+                    Logger.debug("space: \(freeSpace)")
+                    Logger.debug("Cache space: \(cacheSize)")
                 }
             } catch {
-                print("Exception Occurred \(error)")
+                Logger.debug("Exception Occurred \(error)")
                 return
             }
             
             
             if(freeSpace < Downloader.minDiscSize || cacheSize > Downloader.maxCacheSize){
                 //空き容量が不十分な際またはキャッシュが最大サイズを超えた際に行う処理
-                print("Cache Dir Clean");
+                Logger.debug("Cache Dir Clean");
                 if let path = paths.first {
                     let cacheDir = path + "/" + Downloader.cachePath
                     if (fm.fileExists(atPath: cacheDir)) {
@@ -209,7 +209,7 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
     public static func clearnUpCachePath() {
         let fm = FileManager.default
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
-        print("Cache Dir Clean");
+        Logger.debug("Cache Dir Clean");
         if let path = paths.first {
             let cacheDir = path + "/" + Downloader.cachePath
             if (fm.fileExists(atPath: cacheDir)) {

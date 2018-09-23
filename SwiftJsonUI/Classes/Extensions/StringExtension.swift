@@ -18,7 +18,7 @@ public extension String {
                 str.append(String(c))
             }
         }
-        print("str: \(str), Self: \(self)")
+        Logger.debug("str: \(str), Self: \(self)")
         return str
     }
     
@@ -47,7 +47,7 @@ public extension String {
             return regex.numberOfMatches(in: self, options: [], range: targetStringRange)
             
         } catch {
-            print("error: getMatchCount")
+            Logger.debug("error: getMatchCount")
         }
         return 0
     }

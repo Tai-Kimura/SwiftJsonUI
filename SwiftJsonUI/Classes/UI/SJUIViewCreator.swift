@@ -426,7 +426,7 @@ open class SJUIViewCreator:NSObject {
                 }
             }
         } catch let error {
-            print("\(error)")
+            Logger.debug("\(error)")
         }
         let styleFileDirPath = "\(cachesDirPath)/Styles"
         do {
@@ -445,7 +445,7 @@ open class SJUIViewCreator:NSObject {
                 }
             }
         } catch let error {
-            print("\(error)")
+            Logger.debug("\(error)")
         }
         #endif
     }
@@ -560,7 +560,7 @@ open class SJUIViewCreator:NSObject {
             let json = try JSON(data: jsonString.data(using: enc)!)
             return json
         } catch let error {
-            print("JSON encoding error \(error)")
+            Logger.debug("JSON encoding error \(error)")
             return nil
         }
     }

@@ -105,11 +105,11 @@ open class Binding: NSObject {
     }
     
     override open func setValue(_ value: Any?, forUndefinedKey key: String) {
-        print("key not found \(key)")
+        Logger.debug("key not found \(key)")
     }
     
     open override func value(forUndefinedKey key: String) -> Any? {
-        print("key not found \(key)")
+        Logger.debug("key not found \(key)")
         return nil
     }
 }

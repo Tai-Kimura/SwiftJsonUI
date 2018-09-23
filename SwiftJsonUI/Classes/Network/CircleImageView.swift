@@ -97,7 +97,7 @@ open class CircleImageView: NetworkImageView {
                                     self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                                 }
                             } else {
-                                print("Not Same")
+                                Logger.debug("Not Same")
                             }
                         })
                         if circleImage != nil {

@@ -37,12 +37,12 @@ public class HotLoader {
         socketManager.handleQueue.async(execute: {
             let socket = socketManager.defaultSocket
             socket.on(clientEvent: .connect) {data, ack in
-                print("socket connected")
+                Logger.debug("socket connected")
             }
             socket.on("layoutChanged") {data, ack in
-                print("\(data[0])")
-                print("\(data[1])")
-                print("\(data[2])")
+                Logger.debug("\(data[0])")
+                Logger.debug("\(data[1])")
+                Logger.debug("\(data[2])")
                 if let strs = data as? [String], strs.count >= 3 {
                     self.downloadLayout(layoutPath: strs[0], dirName: strs[1], fileName: strs[2])
                 }
@@ -65,7 +65,7 @@ public class HotLoader {
     
     private func downloadLayout(layoutPath: String, dirName: String, fileName: String) {
         if let url = URL(string: "http://\((Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String) ?? ""):3000/\(layoutPath)?file_path=\(fileName)&dir_name=\(dirName)&\(additionalRequestParameter)") {
-            print("\(url.absoluteString)")
+            Logger.debug("\(url.absoluteString)")
             let downloader = Downloader(url: url)
             downloader.completionHandler = { data, exist in
                 let fm = FileManager.default
@@ -84,13 +84,13 @@ public class HotLoader {
                         try fm.removeItem(atPath: toPath)
                     }
                     fm.createFile(atPath: toPath, contents:data, attributes:nil)
-                    print("Layout Updated")
+                    Logger.debug("Layout Updated")
                     DispatchQueue.main.async(execute: {
                         let notification = NSNotification.Name("layoutFileDidChanged")
                         NotificationCenter.default.post(name: notification, object: nil)
                     })
                 } catch let error {
-                    print("Error: \(error)")
+                    Logger.debug("Error: \(error)")
                 }
             }
             downloader.start(true)
