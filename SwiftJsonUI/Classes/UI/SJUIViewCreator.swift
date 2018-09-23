@@ -301,8 +301,10 @@ open class SJUIViewCreator:NSObject {
                 createView(child, parentView: view, target: target, views: &views, isRootView: false)
             }
             for subview in view.subviews {
-                UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
-                subview.isActiveForConstraint = true
+                if subview.constraintInfo != nil {
+                    UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
+                    subview.isActiveForConstraint = true
+                }
             }
         }
         if isRootView {
