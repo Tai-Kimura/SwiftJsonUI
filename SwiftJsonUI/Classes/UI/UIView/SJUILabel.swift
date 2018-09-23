@@ -375,49 +375,6 @@ open class SJUILabel: UILabel {
             l.isUserInteractionEnabled = true
         }
         
-        if let compressHorizontal = attr["compressHorizontal"].string {
-            switch compressHorizontal {
-            case "High":
-                l.setContentCompressionResistancePriority(UILayoutPriority.required, for: .horizontal)
-            case "Low":
-                l.setContentCompressionResistancePriority(UILayoutPriority.fittingSizeLevel, for: .horizontal)
-            default:
-                break
-            }
-        }
-        
-        if let compressVertical = attr["compressVertical"].string {
-            switch compressVertical {
-            case "High":
-                l.setContentCompressionResistancePriority(UILayoutPriority.required, for: .vertical)
-            case "Low":
-                l.setContentCompressionResistancePriority(UILayoutPriority.fittingSizeLevel, for: .vertical)
-            default:
-                break
-            }
-        }
-        
-        if let hugHorizontal = attr["hugHorizontal"].string {
-            switch hugHorizontal {
-            case "High":
-                l.setContentHuggingPriority(UILayoutPriority.required, for: .horizontal)
-            case "Low":
-                l.setContentHuggingPriority(UILayoutPriority.fittingSizeLevel, for: .horizontal)
-            default:
-                break
-            }
-        }
-        
-        if let hugVertical = attr["hugVertical"].string {
-            switch hugVertical {
-            case "High":
-                l.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
-            case "Low":
-                l.setContentHuggingPriority(UILayoutPriority.fittingSizeLevel, for: .vertical)
-            default:
-                break
-            }
-        }
         return l
     }
 }

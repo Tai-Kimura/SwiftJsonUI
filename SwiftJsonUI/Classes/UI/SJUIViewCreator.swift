@@ -156,6 +156,65 @@ open class SJUIViewCreator:NSObject {
             return createErrorView()
         }
         
+        if let compressHorizontal = attr["compressHorizontal"].string {
+            switch compressHorizontal {
+            case "Required":
+                view.setContentCompressionResistancePriority(UILayoutPriority.required, for: .horizontal)
+            case "High":
+                view.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .horizontal)
+            case "Low":
+                view.setContentCompressionResistancePriority(UILayoutPriority.defaultLow, for: .horizontal)
+            case "Fit":
+                view.setContentCompressionResistancePriority(UILayoutPriority.fittingSizeLevel, for: .horizontal)
+            default:
+                break
+            }
+        }
+        
+        if let compressVertical = attr["compressVertical"].string {
+            switch compressVertical {
+            case "Required":
+                view.setContentCompressionResistancePriority(UILayoutPriority.required, for: .vertical)
+            case "High":
+                view.setContentCompressionResistancePriority(UILayoutPriority.defaultHigh, for: .vertical)
+            case "Low":
+                view.setContentCompressionResistancePriority(UILayoutPriority.defaultLow, for: .vertical)
+            case "Fit":
+                view.setContentCompressionResistancePriority(UILayoutPriority.fittingSizeLevel, for: .vertical)
+            default:
+                break
+            }
+        }
+        
+        if let hugHorizontal = attr["hugHorizontal"].string {
+            switch hugHorizontal {
+            case "Required":
+                view.setContentHuggingPriority(UILayoutPriority.required, for: .horizontal)
+            case "High":
+                view.setContentHuggingPriority(UILayoutPriority.defaultHigh, for: .horizontal)
+            case "Low":
+                view.setContentHuggingPriority(UILayoutPriority.defaultLow, for: .horizontal)
+            case "Fit":
+                view.setContentHuggingPriority(UILayoutPriority.fittingSizeLevel, for: .horizontal)
+            default:
+                break
+            }
+        }
+        
+        if let hugVertical = attr["hugVertical"].string {
+            switch hugVertical {
+            case "Required":
+                view.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
+            case "High":
+                view.setContentHuggingPriority(UILayoutPriority.defaultHigh, for: .vertical)
+            case "Low":
+                view.setContentHuggingPriority(UILayoutPriority.defaultLow, for: .vertical)
+            case "Fit":
+                view.setContentHuggingPriority(UILayoutPriority.fittingSizeLevel, for: .vertical)
+            default:
+                break
+            }
+        }
         if let tag = attr["tag"].int {
             view.tag = tag
         }
