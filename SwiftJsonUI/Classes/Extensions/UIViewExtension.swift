@@ -219,6 +219,8 @@ public extension UIView {
             if let myIndex = superview.subviews.index(of: self), let viewIndex = superview.subviews.index(of: view) {
                 if viewIndex == myIndex + 1 {
                     return true
+                } else if superview.subviews.count <= 2 {
+                    return true
                 }
             }
         }
@@ -232,7 +234,9 @@ public extension UIView {
     public func updateConstraintInfo(resetAllSubviews: Bool = false) {
         if var constraintInfo = self.constraintInfo {
             UIViewDisposure.removeConstraint(constraintInfo: constraintInfo)
-            UIViewDisposure.applyConstraint(onView: self, toConstraintInfo: &constraintInfo)
+            if self.visibility != .gone {
+                UIViewDisposure.applyConstraint(onView: self, toConstraintInfo: &constraintInfo)
+            }
         }
         resetSubviews(resetAllSubviews: resetAllSubviews)
         if let superview = superview {
@@ -243,6 +247,10 @@ public extension UIView {
                         UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &info)
                     }
                 }
+            }
+            if var constraintInfo = superview.constraintInfo {
+                UIViewDisposure.removeConstraint(constraintInfo: constraintInfo)
+                UIViewDisposure.applyConstraint(onView: superview, toConstraintInfo: &constraintInfo)
             }
         }
         (self.superview ?? self).setNeedsLayout()
@@ -272,5 +280,8 @@ public extension UIView {
         }, completion: completion)
     }
 }
+
+
+
 
 

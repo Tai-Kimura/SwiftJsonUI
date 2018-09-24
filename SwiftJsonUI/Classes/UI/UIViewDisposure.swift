@@ -233,11 +233,12 @@ open class UIViewDisposure {
     }
     
     public class func applyLinearWeightConstraint(to superview: SJUIView, with orientation: SJUIView.Orientation, onView view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] )  {
-        guard var weightReferencedView = superview.subviews.first, let weight = info.weight else {
+        let subviews = superview.subviews.filter{$0.visibility != .gone}
+        guard var weightReferencedView = subviews.first, let weight = info.weight else {
             return
         }
         var baseWeight = weight
-        for subview in superview.subviews {
+        for subview in subviews {
             if let constraintInfo = subview.constraintInfo, let bWeight = constraintInfo.weight {
                 weightReferencedView = subview
                 baseWeight = bWeight
@@ -259,7 +260,6 @@ open class UIViewDisposure {
     
     public class func shouldApplyWeight(in superview: SJUIView, subviews: [UIView]) -> Bool  {
         if superview.orientation != nil {
-            let subviews = superview.subviews.filter {$0.visibility != .gone}
             for subview in subviews {
                 if subview.constraintInfo?.weight != nil {
                     return true
@@ -765,6 +765,11 @@ open class UIViewDisposure {
     //MARK: Constraints for Size
     public class func applyHeightConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
         if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            if let superview = view.superview {
+                let constraint = NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.height, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.height, multiplier: 1.0, constant: 0)
+                constraint.priority = .fittingSizeLevel
+                constraints.append(constraint)
+            }
             return
         }
         if let minHeight = info.minHeight {
@@ -786,6 +791,11 @@ open class UIViewDisposure {
     
     public class func applyWidthConstraint(on view: UIView, toConstraintInfo info: UILayoutConstraintInfo, for constraints: inout [NSLayoutConstraint] ) {
         if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.matchParent.rawValue {
+            if let superview = view.superview {
+                let constraint = NSLayoutConstraint(item: view, attribute: NSLayoutAttribute.width, relatedBy: NSLayoutRelation.equal, toItem: superview, attribute: NSLayoutAttribute.width, multiplier: 1.0, constant: 0)
+                constraint.priority = .fittingSizeLevel
+                constraints.append(constraint)
+            }
             return
         }
         if let minWidth = info.minWidth {
@@ -811,22 +821,17 @@ open class UIViewDisposure {
             if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .topToBottom {
                 let constraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (lastView.constraintInfo?.bottomMargin ?? 0))
                 constraints.append(constraint)
-            } else if (view as? SJUIView)?.orientation ?? .horizontal != .vertical {
-                for v in subviews {
-                    let relation: NSLayoutRelation = subviews.count == 1 ? .equal : .greaterThanOrEqual
-                    let constraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: relation, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
-                    constraints.append(constraint)
-                }
-            }
-            
-            if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .bottomToTop {
+            } else if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .vertical, view.direction == .bottomToTop {
                 let constraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .top, multiplier: 1.0, constant: -((info.paddingTop ?? 0) + (lastView.constraintInfo?.topMargin ?? 0)))
                 constraints.append(constraint)
             } else if (view as? SJUIView)?.orientation ?? .horizontal != .vertical  {
                 for v in subviews {
-                    let relation: NSLayoutRelation = subviews.count == 1 ? .equal : .lessThanOrEqual
-                    let constraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: relation, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
-                    constraints.append(constraint)
+                    let bottomRelation: NSLayoutRelation = subviews.count == 1 ? .equal : .greaterThanOrEqual
+                    let bottomConstraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: bottomRelation, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
+                    constraints.append(bottomConstraint)
+                    let topRelation: NSLayoutRelation = subviews.count == 1 ? .equal : .lessThanOrEqual
+                    let topConstraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: topRelation, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
+                    constraints.append(topConstraint)
                 }
             }
         }
@@ -835,22 +840,17 @@ open class UIViewDisposure {
             if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .rightToLeft {
                 let constraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (lastView.constraintInfo?.leftMargin ?? 0)))
                 constraints.append(constraint)
-            } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal  {
-                for v in subviews {
-                    let relation: NSLayoutRelation = subviews.count == 1 ? .equal : .lessThanOrEqual
-                    let constraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: relation, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
-                    constraints.append(constraint)
-                }
-            }
-            
-            if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .leftToRight {
+            } else if let lastView = subviews.last, let view = (view as? SJUIView), let orientation = view.orientation, orientation == .horizontal, view.direction == .leftToRight {
                 let constraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.equal, toItem: lastView, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (lastView.constraintInfo?.rightMargin ?? 0)))
                 constraints.append(constraint)
-            } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal {
+            } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal  {
                 for v in subviews {
-                    let relation: NSLayoutRelation = subviews.count == 1 ? .equal : .greaterThanOrEqual
-                    let constraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: relation, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
-                    constraints.append(constraint)
+                    let leftRelation: NSLayoutRelation = subviews.count == 1 ? .equal : .lessThanOrEqual
+                    let leftConstraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: leftRelation, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
+                    constraints.append(leftConstraint)
+                    let rightRelation: NSLayoutRelation = subviews.count == 1 ? .equal : .greaterThanOrEqual
+                    let rightConstraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: rightRelation, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
+                    constraints.append(rightConstraint)
                 }
             }
         }
@@ -1196,6 +1196,8 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
+
 
 
 
