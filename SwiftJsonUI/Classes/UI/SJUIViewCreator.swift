@@ -375,7 +375,7 @@ open class SJUIViewCreator:NSObject {
         }
         
         if attr["wrapContent"].boolValue {
-            var paddings:[CGFloat] = attr["wrapContent"].boolValue ? [0,0,25.0,0] : [view.constraintInfo?.paddingTop ?? 0,view.constraintInfo?.paddingLeft ?? 0,view.constraintInfo?.paddingBottom ?? 0,view.constraintInfo?.paddingRight ?? 0]
+            var paddings:[CGFloat] = [0,0,25.0,0]
             var edgeInsets = [CGFloat]()
             if let paddingStr = attr["innerPadding"].string {
                 let paddingStars = paddingStr.components(separatedBy: "|")
