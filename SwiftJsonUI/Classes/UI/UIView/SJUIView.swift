@@ -212,6 +212,43 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
                 layer.colors = colors
             }
         }
+        if let events = attr["events"].array {
+            for event in events {
+                if let eventType = event["eventType"].string, let selectorForEvent = attr["selector"].string {
+                    switch eventType {
+                    case "onclick":
+                        let gr = UITapGestureRecognizer(target: target, action: Selector(selectorForEvent))
+                        v.addGestureRecognizer(gr)
+                        gr.delegate = v
+                        v.isUserInteractionEnabled = true
+                        v.canTap = true
+                    case "onlongtap":
+                        let gr = UILongPressGestureRecognizer(target: target, action: Selector(selectorForEvent))
+                        v.addGestureRecognizer(gr)
+                        gr.delegate = v
+                        v.isUserInteractionEnabled = true
+                        v.canTap = true
+                    case "pan":
+                        let gr = UIPanGestureRecognizer(target: target, action: Selector(selectorForEvent))
+                        v.addGestureRecognizer(gr)
+                        gr.delegate = v
+                        v.isUserInteractionEnabled = true
+                    case "swipe":
+                        let gr = UISwipeGestureRecognizer(target: target, action: Selector(selectorForEvent))
+                        v.addGestureRecognizer(gr)
+                        gr.delegate = v
+                        v.isUserInteractionEnabled = true
+                    case "rotation":
+                        let gr = UIRotationGestureRecognizer(target: target, action: Selector(selectorForEvent))
+                        v.addGestureRecognizer(gr)
+                        gr.delegate = v
+                        v.isUserInteractionEnabled = true
+                    default:
+                        break
+                    }
+                }
+            }
+        }
         return v
     }
     

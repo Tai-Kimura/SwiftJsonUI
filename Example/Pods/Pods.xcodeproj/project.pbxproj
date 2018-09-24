@@ -59,7 +59,7 @@
 		9640B7AAA63E298C8611FAD464AD38AA /* SJUICircleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51DB4CBC5DF212FEC20E9F2A4D087E24 /* SJUICircleView.swift */; };
 		9707D2FB05C378AF358882DC789E97A1 /* IntExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = D871D583B67BE174F9CE9AC8870220AB /* IntExtension.swift */; };
 		9734BEE721788BF769885AAF71BAE71C /* SJUISwitch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 001D2F124871A447B9C334528522DB13 /* SJUISwitch.swift */; };
-		973BE07146944173DC9C87A569A94E3B /* GradientLayterView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B38392D0B119633CD85CC687C82733 /* GradientLayterView.swift */; };
+		973BE07146944173DC9C87A569A94E3B /* GradientView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35B38392D0B119633CD85CC687C82733 /* GradientView.swift */; };
 		9B1A879351AFB4A358776E2E13DD7B89 /* SocketEngineWebsocket.swift in Sources */ = {isa = PBXBuildFile; fileRef = 455C4E44BCEAF9C89660D02F28735D2D /* SocketEngineWebsocket.swift */; };
 		9BDB902F03F0497D0D57DDEE6A21D477 /* Socket.IO-Client-Swift-umbrella.h in Headers */ = {isa = PBXBuildFile; fileRef = D6DDA5F673BE25E92BA7F5140B1FB676 /* Socket.IO-Client-Swift-umbrella.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		9D34C71ECC41FDA47340D963F1F72B7B /* SocketEnginePacketType.swift in Sources */ = {isa = PBXBuildFile; fileRef = 46ADE6D9FF1B316978BA893663D34189 /* SocketEnginePacketType.swift */; };
@@ -164,7 +164,7 @@
 		30FEEEB0A3EF719B1CF6286BE722802A /* SocketStringReader.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SocketStringReader.swift; path = Source/SocketIO/Util/SocketStringReader.swift; sourceTree = "<group>"; };
 		338357B5B094690900400639933F8DB8 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		3569A42F85868B9C91F94DC93B731EC8 /* NetworkImageView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NetworkImageView.swift; sourceTree = "<group>"; };
-		35B38392D0B119633CD85CC687C82733 /* GradientLayterView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GradientLayterView.swift; sourceTree = "<group>"; };
+		35B38392D0B119633CD85CC687C82733 /* GradientView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = GradientView.swift; sourceTree = "<group>"; };
 		37D16B759227743E10985AC3355671E7 /* README.md */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		3B5D350A487001BBDE5A394BEFE17133 /* Starscream.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Starscream.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3C4D406D7FE8D7F66081263B17B90F4C /* SJUILabel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SJUILabel.swift; sourceTree = "<group>"; };
@@ -370,7 +370,7 @@
 			isa = PBXGroup;
 			children = (
 				EBBE7E007D9FEE2DE1F8D8EDEEDE793C /* AVView.swift */,
-				35B38392D0B119633CD85CC687C82733 /* GradientLayterView.swift */,
+				35B38392D0B119633CD85CC687C82733 /* GradientView.swift */,
 				609B999F571027CD93F7C744EBF6131F /* SJUIButton.swift */,
 				A9C9CE7D45450CA88E37168AFB6EB564 /* SJUICheckBox.swift */,
 				51DB4CBC5DF212FEC20E9F2A4D087E24 /* SJUICircleView.swift */,
@@ -756,7 +756,7 @@
 				5D669591C3B1DA2F225A7A8D4944AB5E /* CircleImageView.swift in Sources */,
 				AA41B21D9E5DCB2C473FC01476D52147 /* DoubleExtension.swift in Sources */,
 				2DB5F25AE93179EB916B4F5AF89BA717 /* Downloader.swift in Sources */,
-				973BE07146944173DC9C87A569A94E3B /* GradientLayterView.swift in Sources */,
+				973BE07146944173DC9C87A569A94E3B /* GradientView.swift in Sources */,
 				79D5C3ECA0A2164D242EDD5EE285E881 /* HotLoader.swift in Sources */,
 				9707D2FB05C378AF358882DC789E97A1 /* IntExtension.swift in Sources */,
 				A239C54953B1EA7103645075D0BF3247 /* NetworkImageCache.swift in Sources */,

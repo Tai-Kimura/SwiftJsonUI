@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SwiftJsonUI'
-  s.version          = '1.2.5'
+  s.version          = '1.2.6'
   s.summary          = 'A short description of SwiftJsonUI.'
 
 # This description is used to generate tags and improve search results.
