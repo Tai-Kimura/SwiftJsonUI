@@ -63,20 +63,20 @@ open class SJUILabelWithIcon: SJUIView {
         label.font = font
         label.textColor = fontColor
         label.padding = UIEdgeInsets.zero
-        var attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font]
-        attributes[NSAttributedStringKey.foregroundColor] = fontColor
+        var attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font]
+        attributes[NSAttributedString.Key.foregroundColor] = fontColor
         
         if !shadow.isEmpty, let shadowColor = UIColor.findColorByJSON(attr: shadow["color"]), let shadowBlur = shadow["blur"].cgFloat, let shadowOffset = shadow["offset"].arrayObject as? [CGFloat] {
             let s = NSShadow()
             s.shadowColor = shadowColor;
             s.shadowBlurRadius = shadowBlur
             s.shadowOffset = CGSize(width: shadowOffset[0], height: shadowOffset[1]);
-            attributes[NSAttributedStringKey.shadow] = s
+            attributes[NSAttributedString.Key.shadow] = s
         }
         
         label.attributes = attributes
         label.highlightAttributes = attributes
-        label.highlightAttributes[NSAttributedStringKey.foregroundColor] = selectedFontColor
+        label.highlightAttributes[NSAttributedString.Key.foregroundColor] = selectedFontColor
         
         label.applyAttributedText(text)
         

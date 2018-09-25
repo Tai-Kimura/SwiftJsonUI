@@ -59,7 +59,11 @@ open class SJUILabel: UILabel {
     
     // paddingの値
     public var padding = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
-    
+    {
+        didSet {
+            self.invalidateIntrinsicContentSize()
+        }
+    }
     override open func drawText(in rect: CGRect) {
         let newRect = UIEdgeInsetsInsetRect(rect, padding)
         super.drawText(in: newRect)
@@ -68,7 +72,9 @@ open class SJUILabel: UILabel {
     override open var intrinsicContentSize : CGSize {
         var intrinsicContentSize = super.intrinsicContentSize
         intrinsicContentSize.height += padding.top + padding.bottom
-        intrinsicContentSize.width += padding.left + padding.right
+        if intrinsicContentSize.width + (padding.left + padding.right) < 2777777.0 {
+            intrinsicContentSize.width += padding.left + padding.right
+        }
         return intrinsicContentSize
     }
     
@@ -216,27 +222,28 @@ open class SJUILabel: UILabel {
     public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUILabel {
         
         let l = viewClass.init()
+        var edgeInsets = Array<CGFloat>()
         if let edgeInsetStr = attr["edgeInset"].string {
             let edgeInsetStrs = edgeInsetStr.components(separatedBy: "|")
-            var edgeInsets = Array<CGFloat>()
             for e in edgeInsetStrs {
                 if let n = NumberFormatter().number(from: e) {
                     edgeInsets.append(CGFloat(truncating: n))
                 }
             }
-            
-            switch (edgeInsets.count) {
-            case 0:
-                break
-            case 1:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0])
-            case 2:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1])
-            case 3:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1])
-            default:
-                l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3])
-            }
+        } else if let insets = attr["edgeInset"].arrayObject as? [CGFloat] {
+            edgeInsets = insets
+        }
+        switch (edgeInsets.count) {
+        case 0:
+            break
+        case 1:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0])
+        case 2:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1])
+        case 3:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1])
+        default:
+            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3])
         }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue :1.0
@@ -378,4 +385,5 @@ open class SJUILabel: UILabel {
         return l
     }
 }
+
 

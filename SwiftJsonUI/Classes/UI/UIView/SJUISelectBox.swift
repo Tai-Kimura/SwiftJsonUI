@@ -238,7 +238,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 16.0
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
-        var attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font]
+        var attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font]
         l.font = font
         l.numberOfLines = attr["lines"].int ?? 1 == 1 ? 1 : attr["lines"].intValue
         l.lineBreakMode = NSLineBreakMode.byWordWrapping
@@ -282,20 +282,20 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
             }
         }
         let color = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
-        attributes[NSAttributedStringKey.foregroundColor] = color
+        attributes[NSAttributedString.Key.foregroundColor] = color
         l.highlightAttributes = attributes
         if !attr["hintAttributes"].isEmpty {
             let hintAttr = attr["hintAttributes"]
             let hintSize = hintAttr["fontSize"].cgFloat != nil ? hintAttr["fontSize"].cgFloatValue : size
             let hintName = hintAttr["font"].string != nil ? hintAttr["font"].stringValue : name
             let hintFont = UIFont(name: hintName, size: hintSize) ?? UIFont.systemFont(ofSize: hintSize)
-            var hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: hintFont, NSAttributedStringKey.foregroundColor: color]
+            var hintAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: color]
             if let hintColor = UIColor.findColorByJSON(attr: hintAttr["fontColor"]) {
-                hintAttributes[NSAttributedStringKey.foregroundColor] = hintColor
+                hintAttributes[NSAttributedString.Key.foregroundColor] = hintColor
             }
             l.attributes = hintAttributes
         } else if let hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) {
-            l.attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: hintColor]
+            l.attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: hintColor]
         } else {
             l.attributes = attributes
         }

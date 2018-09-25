@@ -124,7 +124,7 @@ open class SJUIRadioButton: UIView {
         
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = 1.1
-        label.attributedText = NSMutableAttributedString(string: text, attributes: [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: fontColor])
+        label.attributedText = NSMutableAttributedString(string: text, attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: fontColor])
         
         group?.radioBtns.append(self)
     }

@@ -53,8 +53,8 @@ open class SJUISegmentedControl: UISegmentedControl {
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         let normalColor = UIColor.findColorByJSON(attr: attr["normalColor"]) ?? SJUIViewCreator.defaultFontColor
         let selectedColor = UIColor.findColorByJSON(attr: attr["selectedColor"]) ?? SJUISegmentedControl.defaultSelectedColor
-        let normalAttributes: [NSAttributedStringKey: NSObject] = [NSAttributedStringKey.foregroundColor: normalColor, NSAttributedStringKey.font: font]
-        let selectedAttributes: [NSAttributedStringKey: NSObject] = [NSAttributedStringKey.foregroundColor: selectedColor, NSAttributedStringKey.font: font]
+        let normalAttributes: [NSAttributedString.Key: NSObject] = [NSAttributedString.Key.foregroundColor: normalColor, NSAttributedString.Key.font: font]
+        let selectedAttributes: [NSAttributedString.Key: NSObject] = [NSAttributedString.Key.foregroundColor: selectedColor, NSAttributedString.Key.font: font]
         s.setTitleTextAttributes(normalAttributes, for: UIControlState.normal)
         s.setTitleTextAttributes(selectedAttributes, for: UIControlState.selected)
         if let valueChange = attr["valueChange"].string {

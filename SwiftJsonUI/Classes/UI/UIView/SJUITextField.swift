@@ -98,7 +98,7 @@ open class SJUITextField: UITextField {
             } else {
                 hintFont = font
             }
-            t.attributedPlaceholder = NSMutableAttributedString(string:  placeholder, attributes: [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: hintFont, NSAttributedStringKey.foregroundColor: hintColor])
+            t.attributedPlaceholder = NSMutableAttributedString(string:  placeholder, attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: hintColor])
         }
         
         if let input = attr["input"].string {

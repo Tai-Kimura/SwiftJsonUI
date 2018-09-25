@@ -92,7 +92,7 @@ public extension NSAttributedString {
             let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
             let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
             let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
-            var attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font]
+            var attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font]
             if let lineBreakMode = attr["lineBreakMode"].string {
                 switch (lineBreakMode) {
                 case "Char":
@@ -127,21 +127,21 @@ public extension NSAttributedString {
                 let underline = attr["underline"]
                 switch underline["lineStyle"].stringValue {
                 case "Single":
-                    attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
                 case "Double":
-                    attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleDouble.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleDouble.rawValue as NSObject?
                 case "Thick":
-                    attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleThick.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleThick.rawValue as NSObject?
                 case "None":
-                    attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleNone.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleNone.rawValue as NSObject?
                 default:
-                    attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
                 }
-                attributes[NSAttributedStringKey.underlineColor] = UIColor.findColorByJSON(attr: underline["color"])
-                attributes[NSAttributedStringKey.baselineOffset] = underline["lineOffset"].cgFloatValue as NSObject?
+                attributes[NSAttributedString.Key.underlineColor] = UIColor.findColorByJSON(attr: underline["color"])
+                attributes[NSAttributedString.Key.baselineOffset] = underline["lineOffset"].cgFloatValue as NSObject?
             }
             let color = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
-            attributes[NSAttributedStringKey.foregroundColor] = color
+            attributes[NSAttributedString.Key.foregroundColor] = color
             
             let shadow = attr["textShadow"]
             if !shadow.isEmpty, let shadowColor = UIColor.findColorByJSON(attr: shadow["color"]), let shadowBlur = shadow["blur"].cgFloat, let shadowOffset = shadow["offset"].arrayObject as? [CGFloat] {
@@ -149,7 +149,7 @@ public extension NSAttributedString {
                 s.shadowColor = shadowColor;
                 s.shadowBlurRadius = shadowBlur
                 s.shadowOffset = CGSize(width: shadowOffset[0], height: shadowOffset[1]);
-                attributes[NSAttributedStringKey.shadow] = s
+                attributes[NSAttributedString.Key.shadow] = s
             }
             
             if let ranges = attr["range"].arrayObject {

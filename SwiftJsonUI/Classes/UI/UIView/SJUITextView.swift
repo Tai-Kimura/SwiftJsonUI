@@ -96,7 +96,7 @@ open class SJUITextView: UITextView {
             paragraphStyle.lineHeightMultiple = 1.4
             let size:CGFloat = fontSize
             let font = UIFont(name: hintFont, size: size) ?? UIFont.systemFont(ofSize: size)
-            placeHolder.attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: hintColor]
+            placeHolder.attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: hintColor]
             placeHolder.applyAttributedText(hint)
             placeHolder.setNeedsLayout()
             placeHolder.layoutIfNeeded()
