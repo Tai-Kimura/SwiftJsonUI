@@ -19,7 +19,7 @@ open class Binding: NSObject {
     public var data: Any? = nil {
         didSet {
             if let data = data {
-                for property in getProperties() {
+                for property in properties {
                     if let v = value(forKey: property) as? UIView {
                         if let binding = v.binding {
                             bindData(data: data, view: v, binding: binding)
@@ -33,7 +33,6 @@ open class Binding: NSObject {
     }
     
     public func bindView() {
-        let properties = getProperties()
         if let views = _viewHolder?._views {
             for v in views.values {
                 if let propertyName = v.propertyName, let index = properties.index(of: propertyName) {
@@ -94,15 +93,27 @@ open class Binding: NSObject {
         return nil
     }
     
-    private func getProperties() -> [String] {
-        var mirror = Mirror(reflecting: self)
-        var properties = mirror.children.filter{$0.label != nil}.map{$0.label}
-        while let sMirror = mirror.superclassMirror, sMirror.subjectType is Binding.Type {
-            properties.append(contentsOf: sMirror.children.filter{$0.label != nil}.map{$0.label})
-            mirror = sMirror
+    private lazy var properties: [String] = {[weak self, weak _viewHolder] in
+        var properties = [String]()
+        let viewHolder = _viewHolder
+        if let weakSelf = self {
+            weakSelf._viewHolder = nil
+            var mirror = Mirror(reflecting: weakSelf)
+            while mirror.subjectType is Binding.Type {
+                for child in mirror.children {
+                    if let label = child.label {
+                        properties.append( label)
+                    }
+                }
+                guard let sMirror = mirror.superclassMirror, let t = sMirror.subjectType as? Binding.Type else {
+                    break
+                }
+                mirror = sMirror
+            }
+            weakSelf._viewHolder = viewHolder
         }
-        return properties as! [String]
-    }
+        return properties
+        }()
     
     override open func setValue(_ value: Any?, forUndefinedKey key: String) {
         Logger.debug("key not found \(key)")
@@ -112,4 +123,9 @@ open class Binding: NSObject {
         Logger.debug("key not found \(key)")
         return nil
     }
+    
+    private class DummyViewHolder: ViewHolder {
+        var _views =  [String : UIView]()
+    }
 }
+
