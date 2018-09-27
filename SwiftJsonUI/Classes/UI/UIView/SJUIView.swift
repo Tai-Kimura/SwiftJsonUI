@@ -41,7 +41,9 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
     
     public  var canTap = false
     
-    public  var isTouchDisabledOnlyMe: Bool = false
+    public  var touchDisabledState: TouchDisabledState = .none
+    
+    public  lazy var touchEnabledViewIds =  [String]()
     
     public var orientation: Orientation?
     
@@ -87,13 +89,22 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
     }
     
     open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
-        let view = super.hitTest(point, with: event)
-        if isTouchDisabledOnlyMe {
-            if let view = view, view == self {
-                return nil
-            }
+        guard let view = super.hitTest(point, with: event) else {
+            return nil
         }
-        return view
+        switch self.touchDisabledState {
+        case .none:
+            return view
+        case .onlyMe:
+            return view == self ? nil : view
+        case .viewsWithoutTouchEnabled:
+            return view != self && view.isUserInteractionEnabled ? view : nil
+        case .viewsWithoutInList:
+            if let viewId = view.viewId, view != self, touchEnabledViewIds.firstIndex(of: viewId) != nil {
+                return view
+            }
+            return nil
+        }
     }
     
     override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -191,8 +202,11 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         if let canTap = attr["canTap"].bool {
             v.canTap = canTap
         }
-        if let touchDisabledOnlyMe = attr["touchDisabledOnlyMe"].bool {
-            v.isTouchDisabledOnlyMe = touchDisabledOnlyMe
+        if let state = TouchDisabledState(rawValue: attr["touchDisabledState"].stringValue) {
+            v.touchDisabledState = state
+            if let viewIds = attr["touchEnabledViewIds"].arrayObject as? [String], state == .viewsWithoutInList {
+                v.touchEnabledViewIds = viewIds
+            }
         }
         if let v = v as? GradientView, let gradient = attr["gradient"].arrayObject, let layer = v.layer as? CAGradientLayer {
             switch attr["gradientDirection"].stringValue {
@@ -311,5 +325,13 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         case invisible = "invisible"
         case gone = "gone"
     }
+    
+    public enum TouchDisabledState: String {
+        case none = "none"
+        case onlyMe = "onlyMe"
+        case viewsWithoutTouchEnabled = "viewsWithoutTouchEnabled"
+        case viewsWithoutInList = "viewsWithoutInList"
+    }
 }
+
 

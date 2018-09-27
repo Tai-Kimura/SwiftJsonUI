@@ -155,7 +155,9 @@ open class SJUIViewCreator:NSObject {
         guard let view = getViewFromJSON(attr: attr, target: target, views: &views) else {
             return createErrorView()
         }
-        
+        if let userInteractionEnabled = attr["userInteractionEnabled"].bool {
+            view.isUserInteractionEnabled = userInteractionEnabled
+        }
         if let compressHorizontal = attr["compressHorizontal"].string {
             switch compressHorizontal {
             case "Required":
@@ -287,6 +289,7 @@ open class SJUIViewCreator:NSObject {
         
         if let id = attr["id"].string {
             views[id] = view
+            view.viewId = id
             view.propertyName = id.toCamel()
         }
         if let propertyName = attr["propertyName"].string {
@@ -655,3 +658,4 @@ public protocol ViewHolder: class {
         set
     }
 }
+

@@ -39,6 +39,7 @@ var ConstraintInfoKey: UInt8 = 5
 var ActivatedConstraintInfoKey: UInt8 = 6
 
 var VisibilityKey: UInt8 = 7
+var ViewIdKey: UInt8 = 8
 
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
@@ -46,6 +47,18 @@ var VisibilityKey: UInt8 = 7
 }
 
 public extension UIView {
+    
+    public var viewId: String? {
+        get {
+            guard let object = objc_getAssociatedObject(self, &ViewIdKey) as? String else {
+                return nil
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &ViewIdKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
     
     public var defaultBackgroundColor: UIColor! {
         get {
