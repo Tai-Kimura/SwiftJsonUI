@@ -41,6 +41,8 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
     
     public  var canTap = false
     
+    public  var isTouchDisabledOnlyMe: Bool = false
+    
     public var orientation: Orientation?
     
     public var direction: Direction = .none
@@ -82,6 +84,16 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
             Logger.debug("Update Constraint")
             self.resetConstraintInfo()
         }
+    }
+    
+    open override func hitTest(_ point: CGPoint, with event: UIEvent?) -> UIView? {
+        let view = super.hitTest(point, with: event)
+        if isTouchDisabledOnlyMe {
+            if let view = view, view == self {
+                return nil
+            }
+        }
+        return view
     }
     
     override open func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
@@ -178,6 +190,9 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         }
         if let canTap = attr["canTap"].bool {
             v.canTap = canTap
+        }
+        if let touchDisabledOnlyMe = attr["touchDisabledOnlyMe"].bool {
+            v.isTouchDisabledOnlyMe = touchDisabledOnlyMe
         }
         if let v = v as? GradientView, let gradient = attr["gradient"].arrayObject, let layer = v.layer as? CAGradientLayer {
             switch attr["gradientDirection"].stringValue {
