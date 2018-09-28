@@ -7,6 +7,6 @@
 
 import UIKit
 
-protocol  DataBindingModel {
+public protocol  DataBindingModel {
     subscript(key: String) -> Any? { get set }
 }
