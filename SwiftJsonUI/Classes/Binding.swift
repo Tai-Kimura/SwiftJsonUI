@@ -83,6 +83,8 @@ open class Binding: NSObject {
     private func fetchValue(data: Any, binding: String) -> Any? {
         if let dictionary = data as? [String:Any] {
             return dictionary[binding]
+        } else if let model = data as? DataBindingModel, let value = model[binding] {
+            return value
         } else if let array = data as? [Any], let index = Int(binding) {
             return array[index]
         } else if let array = data as? [String], let index = array.index(of: binding) {

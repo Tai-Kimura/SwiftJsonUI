@@ -71,6 +71,9 @@
 		B10F8876A107654DF584974E0152AB4C /* SJUIButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 609B999F571027CD93F7C744EBF6131F /* SJUIButton.swift */; };
 		B4DBB848389A6C2BFC08E359CDEF8F70 /* StringExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 628F29246AE04C0A25E52CF6DF52A7F2 /* StringExtension.swift */; };
 		B5A5A8BEFE296B7A01AC645F8563AC3F /* SJUITextField.swift in Sources */ = {isa = PBXBuildFile; fileRef = C10B17548B0749C6237A86725A27725F /* SJUITextField.swift */; };
+		B628CC29215DB644006530D6 /* DataBindingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B628CC28215DB644006530D6 /* DataBindingModel.swift */; };
+		B628CC2A215DB644006530D6 /* DataBindingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B628CC28215DB644006530D6 /* DataBindingModel.swift */; };
+		B628CC2B215DB648006530D6 /* SJUIModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1423AB7359C03E1D96D0F78BBF47C55 /* SJUIModel.swift */; };
 		B62A9D3C21570F1D008ECBA4 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B62A9D3B21570F1D008ECBA4 /* Logger.swift */; };
 		B62A9D3D21570F1D008ECBA4 /* Logger.swift in Sources */ = {isa = PBXBuildFile; fileRef = B62A9D3B21570F1D008ECBA4 /* Logger.swift */; };
 		B9DE8F7826E9CC849193E322B59E6E3E /* SocketEventHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06993A323D2E507FA63A1D2D33F1AAB5 /* SocketEventHandler.swift */; };
@@ -218,13 +221,14 @@
 		9F3E8423F43577DC082D4E6B00CB6B27 /* Socket.IO-Client-Swift-prefix.pch */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.h; path = "Socket.IO-Client-Swift-prefix.pch"; sourceTree = "<group>"; };
 		9F9D9D5F9B89EA8DE26958F1AD501AD9 /* Pods-SwiftJsonUI_Tests-dummy.m */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.c.objc; path = "Pods-SwiftJsonUI_Tests-dummy.m"; sourceTree = "<group>"; };
 		9FA1BAC93B4F8588AE40D4B9BBCA12A2 /* SJUICollectionView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SJUICollectionView.swift; sourceTree = "<group>"; };
-		A1423AB7359C03E1D96D0F78BBF47C55 /* SJUIModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SJUIModel.swift; path = SwiftJsonUI/Classes/SJUIModel.swift; sourceTree = "<group>"; };
+		A1423AB7359C03E1D96D0F78BBF47C55 /* SJUIModel.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SJUIModel.swift; sourceTree = "<group>"; };
 		A45E2B96B7DF22F02684DA8EC27BEC8D /* SocketTypes.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SocketTypes.swift; path = Source/SocketIO/Util/SocketTypes.swift; sourceTree = "<group>"; };
 		A4C8571466A29780B9F00814802751F3 /* Socket.IO-Client-Swift.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; path = "Socket.IO-Client-Swift.xcconfig"; sourceTree = "<group>"; };
 		A726AD9DD269E0F49D62E0102BBCCD79 /* NSAttibutedStringExtension.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = NSAttibutedStringExtension.swift; sourceTree = "<group>"; };
 		A9C9CE7D45450CA88E37168AFB6EB564 /* SJUICheckBox.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = SJUICheckBox.swift; sourceTree = "<group>"; };
 		AF04BBD07C8F4C2BE897C4F0C07EC35E /* Pods-SwiftJsonUI_Tests-resources.sh */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.script.sh; path = "Pods-SwiftJsonUI_Tests-resources.sh"; sourceTree = "<group>"; };
 		AF6B367ECDB68C34A321551BDF759C31 /* SwiftJsonUI.podspec */ = {isa = PBXFileReference; explicitFileType = text.script.ruby; includeInIndex = 1; path = SwiftJsonUI.podspec; sourceTree = "<group>"; xcLanguageSpecificationIdentifier = xcode.lang.ruby; };
+		B628CC28215DB644006530D6 /* DataBindingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataBindingModel.swift; sourceTree = "<group>"; };
 		B62A9D3B21570F1D008ECBA4 /* Logger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = Logger.swift; path = SwiftJsonUI/Classes/Logger.swift; sourceTree = "<group>"; };
 		B6EB60A53C6910656989A69024C8B922 /* SocketRawView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SocketRawView.swift; path = Source/SocketIO/Client/SocketRawView.swift; sourceTree = "<group>"; };
 		B957D70CCE9A4F1806B6379827CB8E23 /* SocketManager.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = SocketManager.swift; path = Source/SocketIO/Manager/SocketManager.swift; sourceTree = "<group>"; };
@@ -429,8 +433,8 @@
 			children = (
 				BBBBB69906D8D849C6747F823C802D14 /* Binding.swift */,
 				5D82516011A2C91E467523CDDBC5B8DD /* HotLoader.swift */,
-				A1423AB7359C03E1D96D0F78BBF47C55 /* SJUIModel.swift */,
 				5850B37334349C2A5FA8C0F6601F82B1 /* SJUIViewController.swift */,
+				B628CC27215DB60D006530D6 /* Model */,
 				AA3F0B4E2EBAECA352AA3EAC5CFB9144 /* Extensions */,
 				205643D370DCD4C384F8EFDA8E11CFF6 /* Network */,
 				DD24536920D24E317BB59C1319E913A2 /* Pod */,
@@ -516,6 +520,15 @@
 			);
 			name = Extensions;
 			path = SwiftJsonUI/Classes/Extensions;
+			sourceTree = "<group>";
+		};
+		B628CC27215DB60D006530D6 /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				A1423AB7359C03E1D96D0F78BBF47C55 /* SJUIModel.swift */,
+				B628CC28215DB644006530D6 /* DataBindingModel.swift */,
+			);
+			path = Model;
 			sourceTree = "<group>";
 		};
 		B74E92D69AE239810476769149276156 /* iOS */ = {
@@ -710,6 +723,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				91558D1A9E44701A642CADD06AD08C66 /* Pods-SwiftJsonUI_Tests-dummy.m in Sources */,
+				B628CC29215DB644006530D6 /* DataBindingModel.swift in Sources */,
+				B628CC2B215DB648006530D6 /* SJUIModel.swift in Sources */,
 				B62A9D3C21570F1D008ECBA4 /* Logger.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -786,6 +801,7 @@
 				DDB4B7DED474241C1DB4017DC66920BA /* SJUIViewCreator.swift in Sources */,
 				4F5306DE0AE0309931616E4711AA4DC6 /* SJUIVisualEffectView.swift in Sources */,
 				B4DBB848389A6C2BFC08E359CDEF8F70 /* StringExtension.swift in Sources */,
+				B628CC2A215DB644006530D6 /* DataBindingModel.swift in Sources */,
 				3969DEBBE19B84798FD9D74DF9D4CF15 /* SwiftJsonUI-dummy.m in Sources */,
 				5D7842B42EE9F202A928DDECE3D04243 /* SwiftyJSON.swift in Sources */,
 				851FBF26879BEF8A4A14345B8F594820 /* UIButtonExtension.swift in Sources */,
