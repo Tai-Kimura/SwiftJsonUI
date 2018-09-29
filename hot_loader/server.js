@@ -43,16 +43,23 @@ watcher.on('ready',function(){
     });
 
     watcher.on('change',function(path){
-        try {
-            JSON.parse(fs.readFileSync(path, 'utf8'));
-                    console.log(path + " changed.");
-            var stars = path.split("/");
-            var layoutPath = "layout_loader";
-            var dirName = stars[stars.length - 2];
-            var filePath = stars[stars.length - 1].replace(/\.json$/g, '');
+        var stars = path.split("/");
+        var layoutPath = "layout_loader";
+        var dirName = stars[stars.length - 2].toLowerCase();
+        var filePath = stars[stars.length - 1];
+        if (filePath.endsWith("json")) {
+            filePath = stars[stars.length - 1].replace(/\.json$/g, '');
+            try {
+                JSON.parse(fs.readFileSync(path, 'utf8'));
+                        console.log(path + " changed.");
+                io.emit("layoutChanged", layoutPath, dirName, filePath);
+            } catch(err) {
+                console.log(err);
+            }
+        } else if (filePath.endsWith("js")) {
+            filePath = stars[stars.length - 1].replace(/\.js$/g, '');
+            console.log(path + " changed.");
             io.emit("layoutChanged", layoutPath, dirName, filePath);
-        } catch(err) {
-            console.log(err);
         }
     });
 });

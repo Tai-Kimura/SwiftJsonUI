@@ -310,52 +310,9 @@ open class SJUIViewCreator:NSObject {
                 parentView.addSubview(view)
             }
         }
-        let width: CGFloat?
-        if let w = attr["width"].cgFloat {
-            width = w
-        } else if let w = attr["width"].string {
-            if w == "matchParent" {
-                width = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
-            } else if w == "wrapContent" {
-                width = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
-            } else {
-                width = nil
-            }
-        } else {
-            width = nil
-        }
-        let height: CGFloat?
-        if let h = attr["height"].cgFloat {
-            height = h
-        } else if let h = attr["height"].string {
-            if h == "matchParent" {
-                height = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
-            } else if h == "wrapContent" {
-                height = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
-            } else {
-                height = nil
-            }
-        } else {
-            height = nil
-        }
-        let viewPaddings: [CGFloat?]
-        if let paddings = attr["paddings"].arrayObject as? [CGFloat] {
-            switch (paddings.count) {
-            case 0:
-                viewPaddings = [nil, nil, nil, nil]
-            case 1:
-                viewPaddings = [paddings[0], paddings[0], paddings[0], paddings[0]]
-            case 2:
-                viewPaddings = [paddings[0], paddings[1], paddings[0], paddings[1]]
-            case 3:
-                viewPaddings = [paddings[0], paddings[1], paddings[2], paddings[1]]
-            default:
-                viewPaddings = [paddings[0], paddings[1], paddings[2], paddings[3]]
-            }
-        } else {
-            viewPaddings = [attr["paddingTop"].cgFloat,attr["paddingLeft"].cgFloat,attr["paddingBottom"].cgFloat,attr["paddingRight"].cgFloat]
-        }
-        
+        let width: CGFloat? = UILayoutConstraintInfo.sizeFrom(attr: attr["width"])
+        let height: CGFloat? = UILayoutConstraintInfo.sizeFrom(attr: attr["height"])
+        let viewPaddings: [CGFloat?] = UILayoutConstraintInfo.paddingsFrom(attr: attr)
         let constraintInfo = UILayoutConstraintInfo(toView:views[attr["toView"].stringValue], paddingLeft: viewPaddings[1], paddingRight: viewPaddings[3], paddingTop: viewPaddings[0], paddingBottom: viewPaddings[2], leftPadding: attr["leftPadding"].cgFloat, rightPadding: attr["rightPadding"].cgFloat, topPadding: attr["topPadding"].cgFloat, bottomPadding: attr["bottomPadding"].cgFloat, minLeftPadding: attr["minLeftPadding"].cgFloat, minRightPadding: attr["minRightPadding"].cgFloat, minTopPadding: attr["minTopPadding"].cgFloat, minBottomPadding: attr["minBottomPadding"].cgFloat, maxLeftPadding: attr["maxLeftPadding"].cgFloat, maxRightPadding: attr["maxRightPadding"].cgFloat, maxTopPadding: attr["maxTopPadding"].cgFloat, maxBottomPadding: attr["maxBottomPadding"].cgFloat, leftMargin: attr["leftMargin"].cgFloat, rightMargin: attr["rightMargin"].cgFloat, topMargin: attr["topMargin"].cgFloat, bottomMargin: attr["bottomMargin"].cgFloat, minLeftMargin: attr["minLeftMargin"].cgFloat, minRightMargin: attr["minRightMargin"].cgFloat, minTopMargin: attr["minTopMargin"].cgFloat, minBottomMargin: attr["minBottomMargin"].cgFloat, maxLeftMargin: attr["maxLeftMargin"].cgFloat, maxRightMargin: attr["maxRightMargin"].cgFloat, maxTopMargin: attr["maxTopMargin"].cgFloat, maxBottomMargin: attr["maxBottomMargin"].cgFloat, centerVertical: attr["centerVertical"].bool, centerHorizontal: attr["centerHorizontal"].bool, alignTop: attr["alignTop"].bool, alignBottom: attr["alignBottom"].bool, alignLeft: attr["alignLeft"].bool, alignRight: attr["alignRight"].bool, alignTopToView: attr["alignTopToView"].bool,alignBottomToView: attr["alignBottomToView"].bool, alignLeftToView: attr["alignLeftToView"].bool, alignRightToView: attr["alignRightToView"].bool, alignCenterVerticalToView: attr["alignCenterVerticalToView"].bool, alignCenterHorizontalToView: attr["alignCenterHorizontalToView"].bool, alignTopOfView: views[attr["alignTopOfView"].stringValue], alignBottomOfView: views[attr["alignBottomOfView"].stringValue], alignLeftOfView: views[attr["alignLeftOfView"].stringValue], alignRightOfView: views[attr["alignRightOfView"].stringValue], alignTopView: views[attr["alignTopView"].stringValue], alignBottomView: views[attr["alignBottomView"].stringValue], alignLeftView: views[attr["alignLeftView"].stringValue], alignRightView: views[attr["alignRightView"].stringValue], alignCenterVerticalView: views[attr["alignCenterVerticalView"].stringValue], alignCenterHorizontalView: views[attr["alignCenterHorizontalView"].stringValue], width: width, height: height, minWidth: attr["minWidth"].cgFloat, minHeight: attr["minHeight"].cgFloat, maxWidth: attr["maxWidth"].cgFloat, maxHeight: attr["maxHeight"].cgFloat, widthWeight: attr["widthWeight"].cgFloat, heightWeight: attr["heightWeight"].cgFloat, aspectWidth: attr["aspectWidth"].cgFloat, aspectHeight: attr["aspectHeight"].cgFloat, maxWidthWeight: attr["maxWidthWeight"].cgFloat, maxHeightWeight: attr["maxHeightWeight"].cgFloat, minWidthWeight: attr["minWidthWeight"].cgFloat, minHeightWeight: attr["minHeightWeight"].cgFloat, weight: attr["weight"].cgFloat, gravities: attr["gravity"].arrayObject as? [String], superview: view.superview)
         view.constraintInfo = constraintInfo
         if let children = attr["child"].array {
@@ -376,7 +333,12 @@ open class SJUIViewCreator:NSObject {
         if let v = attr["visibility"].string, let visibility = SJUIView.Visibility(rawValue: v) {
             view.visibility = visibility
         }
-        
+        setLegacyWrapContent(on: view, attr: attr, views: views)
+        setScripts(view: view, attr:  attr, target: target)
+        return view
+    }
+    
+    private class func setLegacyWrapContent(on view: UIView, attr: JSON, views: [String:UIView]) {
         if attr["wrapContent"].boolValue {
             var paddings:[CGFloat] = [0,0,25.0,0]
             var edgeInsets = [CGFloat]()
@@ -464,7 +426,55 @@ open class SJUIViewCreator:NSObject {
                 }
             }
         }
-        return view
+    }
+    
+    private class func setScripts(view: UIView, attr: JSON, target: Any) {
+        if let scripts = attr["scripts"].array {
+            for script in scripts {
+                if let event = ScriptModel.EventType(rawValue: script["event"].stringValue), let type = ScriptModel.ScriptType(rawValue: script["type"].stringValue), let value = script["value"].string {
+                    view.scripts[event] = ScriptModel(type: type, value: value)
+                    switch event {
+                    case .onclick:
+                        if let button = view as? UIButton {
+                            button.addTarget(target, action:  Selector(("onTap:")), for: .touchUpInside)
+                        } else {
+                            let gr = UITapGestureRecognizer(target: target, action: Selector(("onTap:")))
+                            view.addGestureRecognizer(gr)
+                            gr.delegate = target as? UIGestureRecognizerDelegate
+                            ( view as? SJUIView)?.canTap = true
+                        }
+                        view.isUserInteractionEnabled = true
+                    case .onlongtap:
+                        let gr = UILongPressGestureRecognizer(target: target, action: Selector(("onLongTap:")))
+                        view.addGestureRecognizer(gr)
+                        gr.delegate = target as? UIGestureRecognizerDelegate
+                        view.isUserInteractionEnabled = true
+                        ( view as? SJUIView)?.canTap = true
+                    case .pan:
+                        let gr = UIPanGestureRecognizer(target: target, action: Selector(("pan:")))
+                        view.addGestureRecognizer(gr)
+                        gr.delegate = target as? UIGestureRecognizerDelegate
+                        view.isUserInteractionEnabled = true
+                    case .swipe:
+                        for direction in [.left,.right,.up,.down] as [UISwipeGestureRecognizerDirection] {
+                            let d: UISwipeGestureRecognizerDirection
+                            let gr = UISwipeGestureRecognizer(target: target, action: Selector(("swipe:")))
+                            view.addGestureRecognizer(gr)
+                            gr.delegate = target as? UIGestureRecognizerDelegate
+                            gr.direction = direction
+                        }
+                        view.isUserInteractionEnabled = true
+                    case .rotate:
+                        let gr = UIRotationGestureRecognizer(target: target, action: Selector(("rotate:")))
+                        view.addGestureRecognizer(gr)
+                        gr.delegate = target as? UIGestureRecognizerDelegate
+                        view.isUserInteractionEnabled = true
+                    default:
+                        break
+                    }
+                }
+            }
+        }
     }
     
     open class func copyResourcesToDocuments() {
@@ -502,6 +512,25 @@ open class SJUIViewCreator:NSObject {
             for content in contents {
                 if (content.hasSuffix("json")) {
                     let toPath = "\(styleFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
+                    if (fm.fileExists(atPath: toPath)) {
+                        try fm.removeItem(atPath: toPath)
+                    }
+                    try fm.copyItem(atPath: "\(content)", toPath:toPath)
+                }
+            }
+        } catch let error {
+            Logger.debug("\(error)")
+        }
+        let scriptFileDirPath = "\(cachesDirPath)/Scripts"
+        do {
+            if (!fm.fileExists(atPath: scriptFileDirPath)) {
+                try fm.createDirectory(atPath: scriptFileDirPath, withIntermediateDirectories: false, attributes: nil)
+            }
+            
+            let contents = Bundle.main.paths(forResourcesOfType: "js", inDirectory: "Scripts")
+            for content in contents {
+                if (content.hasSuffix("js")) {
+                    let toPath = "\(scriptFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
                     if (fm.fileExists(atPath: toPath)) {
                         try fm.removeItem(atPath: toPath)
                     }
@@ -658,4 +687,6 @@ public protocol ViewHolder: class {
         set
     }
 }
+
+
 

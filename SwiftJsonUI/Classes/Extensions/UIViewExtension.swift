@@ -25,21 +25,15 @@
 import UIKit
 
 var DefaultBackgroundColorKey: UInt8 = 0
-
 var TapBackgroundColorKey: UInt8 = 1
-
 var PropertyNameKey: UInt8 = 2
-
 var BindingKey: UInt8 = 3
-
 var BindingSetKey: UInt8 = 4
-
 var ConstraintInfoKey: UInt8 = 5
-
 var ActivatedConstraintInfoKey: UInt8 = 6
-
 var VisibilityKey: UInt8 = 7
 var ViewIdKey: UInt8 = 8
+var ScriptsKey: UInt8 = 9
 
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
@@ -47,7 +41,6 @@ var ViewIdKey: UInt8 = 8
 }
 
 public extension UIView {
-    
     public var viewId: String? {
         get {
             guard let object = objc_getAssociatedObject(self, &ViewIdKey) as? String else {
@@ -57,6 +50,20 @@ public extension UIView {
         }
         set {
             objc_setAssociatedObject(self, &ViewIdKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+    
+    public var scripts: [ScriptModel.EventType:ScriptModel] {
+        get {
+            guard let object = objc_getAssociatedObject(self, &ScriptsKey) as? [ScriptModel.EventType:ScriptModel] else {
+                let s = [ScriptModel.EventType:ScriptModel]()
+                self.scripts = s
+                return s
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &ScriptsKey, newValue, .OBJC_ASSOCIATION_RETAIN)
         }
     }
     
@@ -293,6 +300,7 @@ public extension UIView {
         }, completion: completion)
     }
 }
+
 
 
 

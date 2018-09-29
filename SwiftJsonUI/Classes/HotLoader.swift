@@ -70,15 +70,18 @@ public class HotLoader {
             downloader.completionHandler = { data, exist in
                 let fm = FileManager.default
                 let dir: String
+                let toPath: String
                 switch dirName {
                 case "styles":
                     dir = SJUIViewCreator.getStyleFileDirPath()
+                    toPath = "\(dir)/\(fileName).json";
                 case "scripts":
                     dir = SJUIViewCreator.getScriptFileDirPath()
+                    toPath = "\(dir)/\(fileName).js";
                 default:
                     dir = SJUIViewCreator.getLayoutFileDirPath()
+                    toPath = "\(dir)/\(fileName).json";
                 }
-                let toPath = "\(dir)/\(fileName).json";
                 do {
                     if (fm.fileExists(atPath: toPath)) {
                         try fm.removeItem(atPath: toPath)
@@ -98,3 +101,4 @@ public class HotLoader {
     }
 }
 #endif
+

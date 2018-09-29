@@ -1057,7 +1057,39 @@ public class UILayoutConstraintInfo {
         self.minWidthWeight = minWidthWeight
         self.minHeightWeight = minHeightWeight
         self.weight = weight
-        
+        fixMaxAndMinSize()
+        if let centerVertical = centerVertical, centerVertical {
+            if self.topMargin != nil && self.bottomMargin != nil {
+                self.centerVertical = nil
+            }
+        }
+        if self.alignCenterVerticalView != nil {
+            if self.topMargin != nil && self.bottomMargin != nil {
+                self.alignCenterVerticalView = nil
+            }
+        }
+        if let centerHorizontal = centerHorizontal, centerHorizontal {
+            if self.leftMargin != nil && self.rightMargin != nil {
+                self.centerHorizontal = nil
+            }
+        }
+        if self.alignCenterHorizontalView != nil {
+            if self.leftMargin != nil && self.rightMargin != nil {
+                self.alignCenterHorizontalView = nil
+            }
+        }
+        fixLegacyAttributes(toView: toView, alignCenterVerticalToView: alignCenterVerticalToView, alignTopToView: alignTopToView, alignBottomToView: alignBottomToView, alignCenterHorizontalToView: alignCenterHorizontalToView, alignLeftToView: alignLeftToView, alignRightToView: alignRightToView)
+        if let gravities = gravities {
+            for gravity in gravities {
+                if let g = SJUIView.Gravity(rawValue: gravity) {
+                    self.gravities[g] = true
+                }
+            }
+        }
+        inheritGravityFrom(superview: superview)
+    }
+    
+    private func fixMaxAndMinSize() {
         if self.maxWidth != nil && self.minWidth != nil && self.maxWidth < self.minWidth {
             self.maxWidth = self.minWidth
         }
@@ -1081,28 +1113,9 @@ public class UILayoutConstraintInfo {
         if self.maxHeightWeight != nil && self.minHeightWeight != nil && self.maxHeightWeight < self.minHeightWeight {
             self.maxHeightWeight = self.minHeightWeight
         }
-        
-        if let centerVertical = centerVertical, centerVertical {
-            if self.topMargin != nil && self.bottomMargin != nil {
-                self.centerVertical = nil
-            }
-        }
-        if self.alignCenterVerticalView != nil {
-            if self.topMargin != nil && self.bottomMargin != nil {
-                self.alignCenterVerticalView = nil
-            }
-        }
-        if let centerHorizontal = centerHorizontal, centerHorizontal {
-            if self.leftMargin != nil && self.rightMargin != nil {
-                self.centerHorizontal = nil
-            }
-        }
-        if self.alignCenterHorizontalView != nil {
-            if self.leftMargin != nil && self.rightMargin != nil {
-                self.alignCenterHorizontalView = nil
-            }
-        }
-        
+    }
+    
+    private func fixLegacyAttributes(toView: UIView?, alignCenterVerticalToView: Bool?, alignTopToView: Bool?, alignBottomToView: Bool?, alignCenterHorizontalToView: Bool?, alignLeftToView: Bool?, alignRightToView: Bool?) {
         if let toView = toView {
             if alignCenterVerticalToView ?? false {
                 self.alignCenterVerticalView = toView
@@ -1133,15 +1146,9 @@ public class UILayoutConstraintInfo {
                 }
             }
         }
-        
-        if let gravities = gravities {
-            for gravity in gravities {
-                if let g = SJUIView.Gravity(rawValue: gravity) {
-                    self.gravities[g] = true
-                }
-            }
-        }
-        
+    }
+    
+    private  func inheritGravityFrom(superview: UIView?) {
         if let layoutGravities = superview?.constraintInfo?.gravities, let orientation = (superview as? SJUIView)?.orientation {
             if self.alignTop == nil && self.alignBottom == nil {
                 self.alignTop = layoutGravities[.top]
@@ -1162,6 +1169,45 @@ public class UILayoutConstraintInfo {
                 }
             }
         }
+    }
+    
+    public class func sizeFrom(attr: JSON) -> CGFloat? {
+        let size: CGFloat?
+        if let s = attr.cgFloat {
+            size = s
+        } else if let s = attr.string {
+            if s == "matchParent" {
+                size = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+            } else if s == "wrapContent" {
+                size = UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue
+            } else {
+                size = nil
+            }
+        } else {
+            size = nil
+        }
+        return size
+    }
+    
+    public class func paddingsFrom(attr: JSON) -> [CGFloat?] {
+        let viewPaddings: [CGFloat?]
+        if let paddings = attr["paddings"].arrayObject as? [CGFloat] {
+            switch (paddings.count) {
+            case 0:
+                viewPaddings = [nil, nil, nil, nil]
+            case 1:
+                viewPaddings = [paddings[0], paddings[0], paddings[0], paddings[0]]
+            case 2:
+                viewPaddings = [paddings[0], paddings[1], paddings[0], paddings[1]]
+            case 3:
+                viewPaddings = [paddings[0], paddings[1], paddings[2], paddings[1]]
+            default:
+                viewPaddings = [paddings[0], paddings[1], paddings[2], paddings[3]]
+            }
+        } else {
+            viewPaddings = [attr["paddingTop"].cgFloat,attr["paddingLeft"].cgFloat,attr["paddingBottom"].cgFloat,attr["paddingRight"].cgFloat]
+        }
+        return viewPaddings
     }
     
     public enum LayoutParams: CGFloat {
@@ -1194,6 +1240,7 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
 
 
 

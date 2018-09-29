@@ -243,26 +243,26 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         }
         if let events = attr["events"].array {
             for event in events {
-                if let eventType = event["eventType"].string, let selectorForEvent = event["selector"].string {
+                if let eventType = ScriptModel.EventType(rawValue: event["eventType"].stringValue), let selectorForEvent = event["selector"].string {
                     switch eventType {
-                    case "onclick":
+                    case .onclick:
                         let gr = UITapGestureRecognizer(target: target, action: Selector(selectorForEvent))
                         v.addGestureRecognizer(gr)
                         gr.delegate = v
                         v.isUserInteractionEnabled = true
                         v.canTap = true
-                    case "onlongtap":
+                    case .onlongtap:
                         let gr = UILongPressGestureRecognizer(target: target, action: Selector(selectorForEvent))
                         v.addGestureRecognizer(gr)
                         gr.delegate = v
                         v.isUserInteractionEnabled = true
                         v.canTap = true
-                    case "pan":
+                    case .pan:
                         let gr = UIPanGestureRecognizer(target: target, action: Selector(selectorForEvent))
                         v.addGestureRecognizer(gr)
                         gr.delegate = v
                         v.isUserInteractionEnabled = true
-                    case "swipe":
+                    case .swipe:
                         if let directions = event["directions"].arrayObject as? [String] {
                             for direction in directions {
                                 let d: UISwipeGestureRecognizerDirection
@@ -285,7 +285,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
                                 v.isUserInteractionEnabled = true
                             }
                         }
-                    case "rotation":
+                    case .rotate:
                         let gr = UIRotationGestureRecognizer(target: target, action: Selector(selectorForEvent))
                         v.addGestureRecognizer(gr)
                         gr.delegate = v
