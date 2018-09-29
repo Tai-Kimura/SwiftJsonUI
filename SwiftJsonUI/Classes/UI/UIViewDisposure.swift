@@ -1078,7 +1078,7 @@ public class UILayoutConstraintInfo {
                 self.alignCenterHorizontalView = nil
             }
         }
-        fixLegacyAttributes(toView: toView, alignCenterVerticalToView: alignCenterVerticalToView, alignTopToView: alignTopToView, alignBottomToView: alignBottomToView, alignCenterHorizontalToView: alignCenterHorizontalToView, alignLeftToView: alignLeftToView, alignRightToView: alignRightToView)
+        fixLegacyAttributes(toView: toView, alignCenterVerticalToView: alignCenterVerticalToView, alignTopToView: alignTopToView, alignBottomToView: alignBottomToView, alignCenterHorizontalToView: alignCenterHorizontalToView, alignLeftToView: alignLeftToView, alignRightToView: alignRightToView, topMargin: topMargin, leftMargin: leftMargin, bottomMargin: bottomMargin, rightMargin: rightMargin, maxTopMargin: maxTopMargin, maxLeftMargin: maxLeftMargin, maxBottomMargin: maxBottomMargin, maxRightMargin: maxRightMargin, minTopMargin: minTopMargin, minLeftMargin: minLeftMargin, minBottomMargin: minBottomMargin, minRightMargin: minRightMargin)
         if let gravities = gravities {
             for gravity in gravities {
                 if let g = SJUIView.Gravity(rawValue: gravity) {
@@ -1115,7 +1115,7 @@ public class UILayoutConstraintInfo {
         }
     }
     
-    private func fixLegacyAttributes(toView: UIView?, alignCenterVerticalToView: Bool?, alignTopToView: Bool?, alignBottomToView: Bool?, alignCenterHorizontalToView: Bool?, alignLeftToView: Bool?, alignRightToView: Bool?) {
+    private func fixLegacyAttributes(toView: UIView?, alignCenterVerticalToView: Bool?, alignTopToView: Bool?, alignBottomToView: Bool?, alignCenterHorizontalToView: Bool?, alignLeftToView: Bool?, alignRightToView: Bool?, topMargin: CGFloat?, leftMargin: CGFloat?, bottomMargin: CGFloat?, rightMargin: CGFloat?, maxTopMargin: CGFloat?, maxLeftMargin: CGFloat?, maxBottomMargin: CGFloat?, maxRightMargin: CGFloat?, minTopMargin: CGFloat?, minLeftMargin: CGFloat?, minBottomMargin: CGFloat?, minRightMargin: CGFloat?) {
         if let toView = toView {
             if alignCenterVerticalToView ?? false {
                 self.alignCenterVerticalView = toView
@@ -1240,6 +1240,7 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
 
 
 

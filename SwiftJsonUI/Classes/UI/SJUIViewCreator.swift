@@ -457,7 +457,6 @@ open class SJUIViewCreator:NSObject {
                         view.isUserInteractionEnabled = true
                     case .swipe:
                         for direction in [.left,.right,.up,.down] as [UISwipeGestureRecognizerDirection] {
-                            let d: UISwipeGestureRecognizerDirection
                             let gr = UISwipeGestureRecognizer(target: target, action: Selector(("swipe:")))
                             view.addGestureRecognizer(gr)
                             gr.delegate = target as? UIGestureRecognizerDelegate
