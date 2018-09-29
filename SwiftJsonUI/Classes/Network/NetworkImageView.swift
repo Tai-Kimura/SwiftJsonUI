@@ -112,6 +112,7 @@ open class NetworkImageView: SJUIImageView {
                                 anim.delegate = self
                                 self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                             }
+                            self?.downloader = nil
                         } else {
                             Logger.debug("Not Same")
                         }
@@ -190,4 +191,3 @@ open class NetworkImageView: SJUIImageView {
     }
     
 }
-

@@ -96,6 +96,7 @@ open class CircleImageView: NetworkImageView {
                                     anim.fillMode = kCAFillModeForwards
                                     self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                                 }
+                                self?.downloader = nil
                             } else {
                                 Logger.debug("Not Same")
                             }
