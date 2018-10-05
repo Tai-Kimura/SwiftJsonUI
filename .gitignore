@@ -20,6 +20,7 @@ DerivedData
 *.ipa
 hot_loader/public/*
 hot_loader/node_modules/*
+android_parser/results/*
 
 # Bundler
 .bundle
