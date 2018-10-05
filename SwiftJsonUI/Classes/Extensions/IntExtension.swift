@@ -1,7 +1,6 @@
 //
 //  IntExtension.swift
-//
-//  Created by 木村太一朗 on 2017/08/31.
+//  Created by Taichiro Kimura on 2017/08/31.
 //
 
 import UIKit

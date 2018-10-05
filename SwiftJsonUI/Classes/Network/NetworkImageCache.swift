@@ -1,8 +1,7 @@
 //
 //  NetworkImageCache.swift
-//  crjooy
-//
-//  Created by 木村太一朗 on 2016/07/13.
+//  SwiftJsonUI
+//  Created by Taichiro Kimura on 2016/07/13.
 //
 
 import UIKit

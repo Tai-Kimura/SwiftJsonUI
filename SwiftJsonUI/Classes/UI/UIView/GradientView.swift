@@ -1,7 +1,7 @@
 //
 //  GradientFilterView.swift
-//
-//  Created by 木村太一朗 on 2016/11/17.
+//  SwiftJsonUI
+//  Created by Taichiro Kimura on 2016/11/17.
 //
 
 import UIKit

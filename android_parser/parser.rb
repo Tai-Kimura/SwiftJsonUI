@@ -3,7 +3,7 @@ require 'rexml/document'
 require './mapping_table'
 require './string_module'
 class Parser
-  @@root_path = "../hot_loader/public/warrantee/"
+  @@root_path = "../hot_loader/public/cocoapodtest/"
   @@results_path = "results/"
 
   def self.root_path

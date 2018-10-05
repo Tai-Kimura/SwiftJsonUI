@@ -1,8 +1,7 @@
 //
 //  SJUITextField.swift
-//
-//  Created by 木村太一朗 on 2017/07/22.
-//
+//  SwiftJsonUI
+//  Created by Taichiro Kimura on 2017/07/22.
 
 import UIKit
 

@@ -1,7 +1,6 @@
 //
 //  StringExtension.swift
-//
-//  Created by 木村太一朗 on 2016/07/04.
+//  Created by Taichiro Kimura on 2016/07/04.
 //
 
 import Foundation

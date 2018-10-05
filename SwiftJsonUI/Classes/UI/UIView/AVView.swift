@@ -1,7 +1,7 @@
 //
 //  AVView.swift
-//
-//  Created by 木村太一朗 on 2015/04/21.
+//  SwiftJsonUI
+//  Created by Taichiro Kimura on 2015/04/21.
 //
 
 import UIKit

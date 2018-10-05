@@ -1,7 +1,7 @@
 //
 //  NSObjectExtension.swift
-//
-//  Created by 木村太一朗 on 2016/09/30.
+//  SwiftJsonUI
+//  Created by Taichiro Kimura on 2016/09/30.
 //
 
 import UIKit

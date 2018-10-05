@@ -1,7 +1,6 @@
 //
 //  DoubleExtension.swift
-//
-//  Created by 木村太一朗 on 2016/06/15.
+//  Created by Taichiro Kimura on 2016/06/15.
 //
 
 import UIKit
