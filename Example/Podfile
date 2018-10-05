@@ -1,6 +1,0 @@
-use_frameworks!
-target 'SwiftJsonUI_Tests' do
-  pod 'SwiftJsonUI', :path => '../'
-  
-  
-end
