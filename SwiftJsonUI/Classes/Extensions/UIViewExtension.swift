@@ -275,10 +275,11 @@ public extension UIView {
         (self.superview ?? self).layoutIfNeeded()
     }
     
-    public func animateWithConstraintInfo(duration: TimeInterval, resetAllSubviews: Bool = false, completion: ((Bool) -> Void)? = nil) {
+    public func animateWithConstraintInfo(duration: TimeInterval, resetAllSubviews: Bool = false, otherAnimations:( () -> Void)? = nil, completion: ((Bool) -> Void)? = nil) {
         updateConstraintInfo(resetAllSubviews: resetAllSubviews)
         UIView.animate(withDuration: duration, animations: {
             (self.superview ?? self).layoutIfNeeded()
+            otherAnimations?()
         }, completion: completion)
     }
 }
