@@ -106,8 +106,7 @@ open class SJUIRadioButton: UIView {
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = 1.1
         label.attributedText = NSMutableAttributedString(string: text, attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: fontColor])
-        
-        group?.radioBtns.append(self)
+        group?.add(self)
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -119,20 +118,43 @@ open class SJUIRadioButton: UIView {
     }
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIRadioButton {
-        
         let text = NSLocalizedString(attr["text"].stringValue, comment: "")
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         let r = viewClass.init(text: text, font: font, fontColor: fontColor, iconImage: UIImage(named: attr["icon"].stringValue), selectedIconImage: UIImage(named: attr["selected_icon"].stringValue))
+        if let groupName = attr["group"].string {
+            let group = NSRadioGroup.radiogroup(named: groupName) ?? NSRadioGroup()
+            group.add(r)
+            group.register(name: groupName)
+        }
         return r
     }
     
 }
 
 public class NSRadioGroup: NSObject {
-    fileprivate var radioBtns: [SJUIRadioButton] = Array<SJUIRadioButton>()
+    private static var radioGroups = [String:NSRadioGroup]()
+    private var weakRadioBtns: [WeakRadioBtn] = [WeakRadioBtn]()
+    
+    public static func radiogroup(named name: String) -> NSRadioGroup? {
+        return radioGroups[name]
+    }
+    
+    public func register(name: String) {
+       NSRadioGroup.radioGroups[name] = self
+    }
+    
+    var radioBtns: [SJUIRadioButton] {
+        var array = [SJUIRadioButton]()
+        for w in weakRadioBtns {
+            if let radioBtn = w.radioBtn {
+                array.append(radioBtn)
+            }
+        }
+        return array
+    }
     
     public weak var selectedBtn: SJUIRadioButton?
     
@@ -148,21 +170,21 @@ public class NSRadioGroup: NSObject {
     }
     
     public func add(_ radioBtn: SJUIRadioButton) {
-        self.radioBtns.append(radioBtn)
+        self.weakRadioBtns.append(WeakRadioBtn(radioBtn: radioBtn))
         radioBtn.ragioGroup = self
     }
     
     public func removeAll() {
-        self.radioBtns.removeAll()
+        self.weakRadioBtns.removeAll()
     }
     
     public func remove(index: Int) {
-        self.radioBtns.remove(at: index)
+        self.weakRadioBtns.remove(at: index)
     }
     
     public func remove(radioBtn btn: SJUIRadioButton) -> Bool {
         if let index = radioBtns.index(of: btn) {
-            self.radioBtns.remove(at: index)
+            self.weakRadioBtns.remove(at: index)
             return true
         }
         return false
@@ -189,6 +211,14 @@ public class NSRadioGroup: NSObject {
         if radioBtns.count > index {
             let btn = radioBtns[index]
             btn.onCheck()
+        }
+    }
+    
+    private class WeakRadioBtn {
+        weak var radioBtn: SJUIRadioButton?
+        
+        required init(radioBtn: SJUIRadioButton) {
+            self.radioBtn = radioBtn
         }
     }
 }

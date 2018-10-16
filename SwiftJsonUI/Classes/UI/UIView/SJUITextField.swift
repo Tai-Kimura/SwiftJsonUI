@@ -71,7 +71,7 @@ open class SJUITextField: UITextField {
             t.borderStyle = UITextBorderStyle.roundedRect
         case "Line":
             t.borderStyle = UITextBorderStyle.line
-        case "Bazel":
+        case "Bezel":
             t.borderStyle = UITextBorderStyle.bezel
         default:
             t.borderStyle = UITextBorderStyle.none

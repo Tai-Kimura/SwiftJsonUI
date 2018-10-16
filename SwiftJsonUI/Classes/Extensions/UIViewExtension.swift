@@ -73,6 +73,7 @@ public extension UIView {
                 alpha = 0.1
                 self.tapBackgroundColor = UIColor(red: red, green: green, blue: blue, alpha: alpha)
             }
+            self.backgroundColor = defaultBackgroundColor
         }
     }
     
