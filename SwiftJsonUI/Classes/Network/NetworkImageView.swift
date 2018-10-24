@@ -27,6 +27,7 @@ open class NetworkImageView: SJUIImageView {
     }
     
     open func setImageResource(_ image: UIImage?) {
+        self.previousPath = nil
         self.layer.removeAllAnimations()
         self.layer.opacity = 1
         downloader?.completionHandler = nil
