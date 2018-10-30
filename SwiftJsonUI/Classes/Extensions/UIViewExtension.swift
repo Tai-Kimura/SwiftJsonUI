@@ -16,6 +16,7 @@ var ActivatedConstraintInfoKey: UInt8 = 6
 var VisibilityKey: UInt8 = 7
 var ViewIdKey: UInt8 = 8
 var ScriptsKey: UInt8 = 9
+var UIControlStateKey: UInt8 = 10
 
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
@@ -73,7 +74,6 @@ public extension UIView {
                 alpha = 0.1
                 self.tapBackgroundColor = UIColor(red: red, green: green, blue: blue, alpha: alpha)
             }
-            self.backgroundColor = defaultBackgroundColor
         }
     }
     
@@ -86,6 +86,27 @@ public extension UIView {
         }
         set {
             objc_setAssociatedObject(self, &TapBackgroundColorKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+        }
+    }
+    
+    public var controlState: UIControlState {
+        get {
+            guard let object = objc_getAssociatedObject(self, &UIControlStateKey) as? UIControlState else {
+                return .normal
+            }
+            return object
+        }
+        set {
+            objc_setAssociatedObject(self, &UIControlStateKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+            if newValue == .highlighted {
+                if tapBackgroundColor != nil {
+                    self.backgroundColor = tapBackgroundColor
+                }
+            } else {
+                if defaultBackgroundColor != nil {
+                    self.backgroundColor = defaultBackgroundColor
+                }
+            }
         }
     }
     
@@ -185,17 +206,22 @@ public extension UIView {
         }
     }
     
+    public func setBackgroundColor(color: UIColor?, forState state: UIControlState = .normal) {
+        if state == .highlighted {
+            self.tapBackgroundColor = color
+        } else  {
+            self.defaultBackgroundColor = color
+        }
+        self.backgroundColor = color
+    }
+    
     @objc
     public func onBeginTap() {
-        if tapBackgroundColor != nil {
-            self.backgroundColor = tapBackgroundColor
-        }
+        controlState = .highlighted
     }
     @objc
     public func onEndTap() {
-        if defaultBackgroundColor != nil {
-            self.backgroundColor = defaultBackgroundColor
-        }
+        controlState = .normal
     }
     
     public func shouldWrapContent() -> Bool {
@@ -284,6 +310,7 @@ public extension UIView {
         }, completion: completion)
     }
 }
+
 
 
 
