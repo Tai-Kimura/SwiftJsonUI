@@ -148,10 +148,12 @@ open class SJUILabel: UILabel {
         }
     }
     
-    open func characterIndexAtPoint(_ p: CGPoint) -> Int? {
-        if (!self.bounds.contains(p) || self.attributedText == nil) {
+    open func characterIndexAtPoint(_ touchPoint: CGPoint) -> Int? {
+        if (!self.bounds.contains(touchPoint) || self.attributedText == nil) {
             return nil;
         }
+        let textRect = self.textRect(forBounds: self.bounds, limitedToNumberOfLines: 0)
+        let p = CGPoint(x: touchPoint.x - textRect.origin.x, y: touchPoint.y - ((self.bounds.size.height - textRect.size.height)/2.0))
         let attributedText = self.attributedText!
         var H: CGFloat = 0
         // Create the framesetter with the attributed string.
@@ -307,7 +309,7 @@ open class SJUILabel: UILabel {
             l.textColor = color
             var attrText = NSMutableAttributedString(string:  NSLocalizedString(text, comment: ""), attributes: attributes)
             if let partialAttributes = attr["partialAttributes"].array {
-                attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes)
+                attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: l)
                 if !l.linkedRanges.isEmpty {
                     l.linkHandleDelegate = target as? NSObject
                     l.addGestureRecognizer(UITapGestureRecognizer(target: l, action: #selector(SJUILabel.onLinkTap(_:))))
@@ -366,5 +368,3 @@ open class SJUILabel: UILabel {
         return l
     }
 }
-
-
