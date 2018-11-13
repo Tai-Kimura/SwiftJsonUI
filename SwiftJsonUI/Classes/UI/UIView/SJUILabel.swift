@@ -191,7 +191,7 @@ open class SJUILabel: UILabel {
             if p.y > H && p.y <= H + h {
                 let line: CTLine =  unsafeBitCast(CFArrayGetValueAtIndex(lineArray, i), to: CTLine.self)
                 let width = CGFloat(CTLineGetTypographicBounds(line, &ascent, &descent, &leading))
-                if p.x <= width {
+                if p.x <= width && p.x >= -(size ?? 0)/2.0 {
                     _ = CGPoint(x: p.x, y: p.y - H)
                     let idx = CTLineGetStringIndexForPosition(line, p)
                     return idx
