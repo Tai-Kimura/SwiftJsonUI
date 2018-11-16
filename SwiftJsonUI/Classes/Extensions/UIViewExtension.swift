@@ -184,20 +184,33 @@ public extension UIView {
                 case .visible:
                     self.isHidden = false
                     if let info = self.constraintInfo, let superview = info.superviewToAdd {
-                        superview.addSubview(self)
+                        if let nextToView = info.nextToView {
+                            superview.insertSubview(self, belowSubview: nextToView)
+                        } else {
+                            superview.addSubview(self)
+                        }
                         info.superviewToAdd = nil
+                        info.nextToView = nil
                         resetConstraintInfo(resetAllSubviews: true)
                     }
                 case .invisible:
                     self.isHidden = true
                     if let info = self.constraintInfo, let superview = info.superviewToAdd {
-                        superview.addSubview(self)
+                        if let nextToView = info.nextToView {
+                            superview.insertSubview(self, belowSubview: nextToView)
+                        } else {
+                            superview.addSubview(self)
+                        }
                         info.superviewToAdd = nil
+                        info.nextToView = nil
                         resetConstraintInfo(resetAllSubviews: true)
                     }
                 case .gone:
                     if let info = self.constraintInfo {
                         info.superviewToAdd = self.superview
+                        if let superview = self.superview, let index = superview.subviews.firstIndex(of: self), superview.subviews.last != self {
+                            info.nextToView = superview.subviews[index + 1]
+                        }
                         resetConstraintInfo()
                         self.removeFromSuperview()
                     }
@@ -310,6 +323,7 @@ public extension UIView {
         }, completion: completion)
     }
 }
+
 
 
 
