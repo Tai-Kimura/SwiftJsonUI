@@ -54,7 +54,6 @@ open class SJUIImageView: UIImageView {
     
     override open func touchesMoved(_ touches: Set<UITouch>, with event: UIEvent?) {
         super.touchesMoved(touches, with: event)
-        onEndTap()
     }
     
     override open func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
