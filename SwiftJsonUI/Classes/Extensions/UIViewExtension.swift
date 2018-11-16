@@ -185,9 +185,9 @@ public extension UIView {
                     self.isHidden = false
                     if let info = self.constraintInfo, let superview = info.superviewToAdd {
                         if let nextToView = info.nextToView {
-                            superview.insertSubview(self, belowSubview: nextToView)
+                            superview.insertSubview(self, aboveSubview: nextToView)
                         } else {
-                            superview.addSubview(self)
+                            superview.insertSubview(self, at: 0)
                         }
                         info.superviewToAdd = nil
                         info.nextToView = nil
@@ -197,9 +197,9 @@ public extension UIView {
                     self.isHidden = true
                     if let info = self.constraintInfo, let superview = info.superviewToAdd {
                         if let nextToView = info.nextToView {
-                            superview.insertSubview(self, belowSubview: nextToView)
+                            superview.insertSubview(self, aboveSubview: nextToView)
                         } else {
-                            superview.addSubview(self)
+                            superview.insertSubview(self, at: 0)
                         }
                         info.superviewToAdd = nil
                         info.nextToView = nil
@@ -208,8 +208,8 @@ public extension UIView {
                 case .gone:
                     if let info = self.constraintInfo {
                         info.superviewToAdd = self.superview
-                        if let superview = self.superview, let index = superview.subviews.firstIndex(of: self), superview.subviews.last != self {
-                            info.nextToView = superview.subviews[index + 1]
+                        if let superview = self.superview, let index = superview.subviews.firstIndex(of: self), superview.subviews.first != self {
+                            info.nextToView = superview.subviews[index - 1]
                         }
                         resetConstraintInfo()
                         self.removeFromSuperview()
