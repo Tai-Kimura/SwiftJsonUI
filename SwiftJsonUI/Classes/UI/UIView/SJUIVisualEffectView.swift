@@ -22,7 +22,7 @@ open class SJUIVisualEffectView: UIVisualEffectView {
     }
     
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIVisualEffectView {
-        var effectStyle: UIBlurEffectStyle = UIBlurEffectStyle.light
+        var effectStyle: UIBlurEffect.Style = UIBlurEffect.Style.light
         if let style = attr["effectStyle"].string {
             switch (style) {
             case "Light":

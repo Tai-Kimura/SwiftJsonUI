@@ -56,7 +56,7 @@ open class CircleImageView: NetworkImageView {
                         } else {
                             circleImage = CircleImageView.circularScaleAndCropImage(image)
                             if circleImage != nil {
-                                fm.createFile(atPath: path, contents: UIImagePNGRepresentation(circleImage!), attributes: nil)
+                                fm.createFile(atPath: path, contents: circleImage!.pngData(), attributes: nil)
                             }
                         }
                         
@@ -75,7 +75,7 @@ open class CircleImageView: NetworkImageView {
                                     anim.autoreverses = false
                                     anim.isRemovedOnCompletion = false
                                     anim.delegate = self
-                                    anim.fillMode = kCAFillModeForwards
+                                    anim.fillMode = CAMediaTimingFillMode.forwards
                                     self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                                 }
                                 self?.downloader = nil
@@ -183,7 +183,7 @@ open class CircleImageView: NetworkImageView {
             i.loadingImage = CircleImageView.circularScaleAndCropImage(UIImage(named: loadingImage))
         }
         
-        i.contentMode = UIViewContentMode.scaleAspectFill
+        i.contentMode = UIView.ContentMode.scaleAspectFill
         if let onclick = attr["onclick"].string {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))
             i.addGestureRecognizer(gr)

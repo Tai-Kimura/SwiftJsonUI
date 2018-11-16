@@ -115,7 +115,7 @@ public extension UIImage {
     }
     
     public func base64image() -> String {
-        let data = NSData(data: UIImagePNGRepresentation(self)!) as Data
+        let data = NSData(data: self.pngData()!) as Data
         return data.base64EncodedString(options: .lineLength64Characters)
     }
 }

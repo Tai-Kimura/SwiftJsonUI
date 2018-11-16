@@ -16,7 +16,7 @@ open class SJUISwitch: UISwitch {
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUISwitch {
         let s = viewClass.init()
         if let onclick = attr["onValueChange"].string {
-            s.addTarget(target, action: Selector(onclick), for: UIControlEvents.valueChanged)
+            s.addTarget(target, action: Selector(onclick), for: UIControl.Event.valueChanged)
         }
         
         if let tintColor = UIColor.findColorByJSON(attr: attr["tint"]) {

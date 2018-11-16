@@ -65,24 +65,24 @@ open class SJUITextField: UITextField {
         leftPaddingView.isOpaque = false
         leftPaddingView.backgroundColor = UIColor.clear
         t.leftView = leftPaddingView
-        t.leftViewMode = UITextFieldViewMode.always
+        t.leftViewMode = UITextField.ViewMode.always
         switch attr["borderStyle"].stringValue {
         case "RoundedRect":
-            t.borderStyle = UITextBorderStyle.roundedRect
+            t.borderStyle = UITextField.BorderStyle.roundedRect
         case "Line":
-            t.borderStyle = UITextBorderStyle.line
+            t.borderStyle = UITextField.BorderStyle.line
         case "Bezel":
-            t.borderStyle = UITextBorderStyle.bezel
+            t.borderStyle = UITextField.BorderStyle.bezel
         default:
-            t.borderStyle = UITextBorderStyle.none
+            t.borderStyle = UITextField.BorderStyle.none
         }
         let rightPaddingView = UIView(frame:CGRect(x: 0, y: 0, width: attr["fieldPadding"].cgFloat ?? 5, height: 5))
         rightPaddingView.isOpaque = false
         rightPaddingView.backgroundColor = UIColor.clear
         t.rightView = rightPaddingView
-        t.rightViewMode = UITextFieldViewMode.always
+        t.rightViewMode = UITextField.ViewMode.always
         if let onTextChange = attr["onTextChange"].string {
-            t.addTarget(target, action: Selector(onTextChange), for: UIControlEvents.editingChanged)
+            t.addTarget(target, action: Selector(onTextChange), for: UIControl.Event.editingChanged)
         }
         if let hint = attr["hint"].string {
             let hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) ?? SJUIViewCreator.defaultHintColor
@@ -165,13 +165,13 @@ open class SJUITextField: UITextField {
             switch (alignment) {
             case "Left":
                 t.textAlignment = NSTextAlignment.left
-                t.contentHorizontalAlignment = UIControlContentHorizontalAlignment.left
+                t.contentHorizontalAlignment = UIControl.ContentHorizontalAlignment.left
             case "Right":
                 t.textAlignment = NSTextAlignment.right
-                t.contentHorizontalAlignment = UIControlContentHorizontalAlignment.right
+                t.contentHorizontalAlignment = UIControl.ContentHorizontalAlignment.right
             case "Center":
                 t.textAlignment = NSTextAlignment.center
-                t.contentHorizontalAlignment = UIControlContentHorizontalAlignment.center
+                t.contentHorizontalAlignment = UIControl.ContentHorizontalAlignment.center
             default:
                 break
             }

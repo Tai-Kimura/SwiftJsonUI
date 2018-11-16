@@ -246,7 +246,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
                     case .swipe:
                         if let directions = event["directions"].arrayObject as? [String] {
                             for direction in directions {
-                                let d: UISwipeGestureRecognizerDirection
+                                let d: UISwipeGestureRecognizer.Direction
                                 switch direction {
                                 case "left":
                                     d = .left

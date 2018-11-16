@@ -53,10 +53,10 @@ open class SJUISegmentedControl: UISegmentedControl {
         let selectedColor = UIColor.findColorByJSON(attr: attr["selectedColor"]) ?? SJUISegmentedControl.defaultSelectedColor
         let normalAttributes: [NSAttributedString.Key: NSObject] = [NSAttributedString.Key.foregroundColor: normalColor, NSAttributedString.Key.font: font]
         let selectedAttributes: [NSAttributedString.Key: NSObject] = [NSAttributedString.Key.foregroundColor: selectedColor, NSAttributedString.Key.font: font]
-        s.setTitleTextAttributes(normalAttributes, for: UIControlState.normal)
-        s.setTitleTextAttributes(selectedAttributes, for: UIControlState.selected)
+        s.setTitleTextAttributes(normalAttributes, for: UIControl.State.normal)
+        s.setTitleTextAttributes(selectedAttributes, for: UIControl.State.selected)
         if let valueChange = attr["valueChange"].string {
-            s.addTarget(target, action: Selector(valueChange), for: UIControlEvents.valueChanged)
+            s.addTarget(target, action: Selector(valueChange), for: UIControl.Event.valueChanged)
         }
         s.isEnabled = attr["enabled"].bool ?? true
         return s

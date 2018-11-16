@@ -75,22 +75,22 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         
         _datePicker.calendar = getCalendar()
         
-        _datePicker.datePickerMode = UIDatePickerMode.date
+        _datePicker.datePickerMode = UIDatePicker.Mode.date
         
-        _datePicker.addTarget(self, action: #selector(SheetView.dateChanged), for: UIControlEvents.valueChanged)
+        _datePicker.addTarget(self, action: #selector(SheetView.dateChanged), for: UIControl.Event.valueChanged)
         
         let lineView = UIView(frame: CGRect(x: 0, y: 40.0, width: customView.frame.size.width, height: 1.0))
         lineView.backgroundColor = SheetView.lineColor
         
         _selectBtn = UIButton(frame: CGRect(x: customView.frame.size.width - 70.0, y: 0, width: 70.0, height: 40.0))
-        _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControlState())
-        _selectBtn.setTitle("選択", for: UIControlState())
-        _selectBtn.addTarget(self, action: #selector(SheetView.selected), for: UIControlEvents.touchDown)
+        _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
+        _selectBtn.setTitle("選択", for: UIControl.State())
+        _selectBtn.addTarget(self, action: #selector(SheetView.selected), for: UIControl.Event.touchDown)
         
         _backBtn = UIButton(frame: CGRect(x: 0, y: 0, width: 70.0, height: 40.0))
-        _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControlState())
-        _backBtn.setTitle("前へ", for: UIControlState())
-        _backBtn.addTarget(self, action: #selector(SheetView.back), for: UIControlEvents.touchDown)
+        _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
+        _backBtn.setTitle("前へ", for: UIControl.State())
+        _backBtn.addTarget(self, action: #selector(SheetView.back), for: UIControl.Event.touchDown)
         _backBtn.isHidden = true
         let bgView = UIView(frame: CGRect(x: 0, y: 0, width: customView.frame.size.width, height: 40.0))
         bgView.backgroundColor = UIColor.white
@@ -104,7 +104,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     }
     
     public func setSelectBtnTitle(_ title: String) {
-        _selectBtn.setTitle(title, for: UIControlState())
+        _selectBtn.setTitle(title, for: UIControl.State())
     }
     
     public func showPicker(_ selectRows:[Int], withDataSource datasource:[[Any]], forItem itemNames: [String], inView mainView: UIView, canBack: Bool = false, duration: TimeInterval = 0.3, completion: ((Bool) -> Void)? = nil) {

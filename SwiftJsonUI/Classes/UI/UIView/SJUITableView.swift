@@ -14,7 +14,7 @@ open class SJUITableView: UITableView {
 
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUITableView {
         let t = viewClass.init()
-        t.separatorStyle = UITableViewCellSeparatorStyle.none
+        t.separatorStyle = UITableViewCell.SeparatorStyle.none
         if let background = UIColor.findColorByJSON(attr: attr["background"]) {
             t.backgroundColor = background
         }

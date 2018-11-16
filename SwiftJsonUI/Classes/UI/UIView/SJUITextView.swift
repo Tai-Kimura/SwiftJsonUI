@@ -68,10 +68,10 @@ open class SJUITextView: UITextView {
                 self.placeHolder.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
                 self.addSubview(placeHolder)
                 let inset = self.textContainerInset
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: inset.left)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: self, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: inset.right)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: inset.top-5.0)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: self, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: -inset.bottom)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: inset.left)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: inset.right)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: inset.top-5.0)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: self, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -inset.bottom)])
             }
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineHeightMultiple = 1.4
@@ -87,9 +87,9 @@ open class SJUITextView: UITextView {
     override public init(frame: CGRect, textContainer: NSTextContainer?) {
         super.init(frame: frame, textContainer: textContainer)
         self.addObserver(self, forKeyPath: "contentSize", options: NSKeyValueObservingOptions.new, context: nil)
-        NotificationCenter.default.addObserver(self, selector:#selector(SJUITextView.textChanged), name:NSNotification.Name.UITextViewTextDidChange, object:nil)
-        NotificationCenter.default.addObserver(self, selector:#selector(SJUITextView.textBeginEditing), name:NSNotification.Name.UITextViewTextDidBeginEditing, object:nil)
-        NotificationCenter.default.addObserver(self, selector:#selector(SJUITextView.textEndEditing), name:NSNotification.Name.UITextViewTextDidEndEditing, object:nil)
+        NotificationCenter.default.addObserver(self, selector:#selector(SJUITextView.textChanged), name:UITextView.textDidChangeNotification, object:nil)
+        NotificationCenter.default.addObserver(self, selector:#selector(SJUITextView.textBeginEditing), name:UITextView.textDidBeginEditingNotification, object:nil)
+        NotificationCenter.default.addObserver(self, selector:#selector(SJUITextView.textEndEditing), name:UITextView.textDidEndEditingNotification, object:nil)
     }
     
     required public init?(coder aDecoder: NSCoder) {
@@ -122,7 +122,7 @@ open class SJUITextView: UITextView {
             let constraints = self.constraints
             var found = false
             for constraint in constraints {
-                if constraint.firstItem as? NSObject == self && constraint.firstAttribute == NSLayoutAttribute.height && constraint.relation == .equal {
+                if constraint.firstItem as? NSObject == self && constraint.firstAttribute == NSLayoutConstraint.Attribute.height && constraint.relation == .equal {
                     constraint.constant = height
                     found = true
                     break
@@ -220,7 +220,7 @@ open class SJUITextView: UITextView {
             default:
                 paddings = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3]]
             }
-            t.textContainerInset = UIEdgeInsetsMake(paddings[0], paddings[1], paddings[2], paddings[3])
+            t.textContainerInset = UIEdgeInsets.init(top: paddings[0], left: paddings[1], bottom: paddings[2], right: paddings[3])
         }
         
         if let minHeight = attr["minHeight"].cgFloat {

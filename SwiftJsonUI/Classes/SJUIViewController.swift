@@ -20,7 +20,7 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
                 break
             }
         }
-        for vc in self.childViewControllers {
+        for vc in self.children {
             if let vc = vc as? SJUIViewController {
                 for view in vc._views.values {
                     if view.isFirstResponder {

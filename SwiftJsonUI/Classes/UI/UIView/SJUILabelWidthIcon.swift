@@ -80,29 +80,29 @@ open class SJUILabelWithIcon: SJUIView {
             self.translatesAutoresizingMaskIntoConstraints = false
             var constraints = Array<NSLayoutConstraint>()
             
-            constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
             
-            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
             
             switch position {
             case .left, .natural, .justified:
-                constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: iconMargin))
+                constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconMargin))
                 
-                constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: iconView, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: iconView.frame.size.width + iconMargin))
+                constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconView, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconView.frame.size.width + iconMargin))
                 
-                constraints.append(NSLayoutConstraint(item: self, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: label, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0))
+                constraints.append(NSLayoutConstraint(item: self, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 0))
             case .center:
                 let totalWidth = label.frame.size.width + iconView.frame.size.width + iconMargin
                 if label.frame.size.width > iconView.frame.size.width {
-                    constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0)))
-                    constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0) - iconMargin))
+                    constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0)))
+                    constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0) - iconMargin))
                 } else {
                     
                 }
             case .right:
-                constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: -iconMargin))
+                constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -iconMargin))
                 
-                constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: label, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant:  -iconMargin))
+                constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant:  -iconMargin))
             }
             
             NSLayoutConstraint.activate(constraints)
@@ -111,8 +111,8 @@ open class SJUILabelWithIcon: SJUIView {
             self.addSubview(label)
             var constraints = Array<NSLayoutConstraint>()
             
-            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.centerY, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.centerY, multiplier: 1.0, constant: 0))
-            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutAttribute.centerX, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.centerX, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerX, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: 0))
             NSLayoutConstraint.activate(constraints)
         }
         self.clipsToBounds = true
@@ -139,12 +139,12 @@ open class SJUILabelWithIcon: SJUIView {
             }
             effectView.backgroundColor = self.defaultBackgroundColor
             self.backgroundColor = self.tapBackgroundColor
-            UIView.animate(withDuration: 0.1, delay: 0, options: UIViewAnimationOptions.allowUserInteraction, animations: {
+            UIView.animate(withDuration: 0.1, delay: 0, options: UIView.AnimationOptions.allowUserInteraction, animations: {
                 self.effectView.transform = CGAffineTransform(scaleX: 0.001, y: 0.001)
             }, completion: {finished in
                 self.effectView.removeFromSuperview()
             })
-            UIView.transition(with: label, duration: 0.17, options: UIViewAnimationOptions.transitionCrossDissolve, animations: {
+            UIView.transition(with: label, duration: 0.17, options: UIView.AnimationOptions.transitionCrossDissolve, animations: {
                 self.label.textColor = self.selectedFontColor
             }, completion: nil)
         }
@@ -156,13 +156,13 @@ open class SJUILabelWithIcon: SJUIView {
                 self.insertSubview(effectView, at: 0)
             }
             effectView.backgroundColor = self.defaultBackgroundColor
-            UIView.animate(withDuration: 0.1, delay: 0, options: UIViewAnimationOptions.allowUserInteraction, animations: {
+            UIView.animate(withDuration: 0.1, delay: 0, options: UIView.AnimationOptions.allowUserInteraction, animations: {
                 self.effectView.transform = CGAffineTransform.identity
             }, completion: {finished in
                 self.effectView.removeFromSuperview()
                 self.backgroundColor = self.defaultBackgroundColor
             })
-            UIView.transition(with: label, duration: 0.17, options: UIViewAnimationOptions.transitionCrossDissolve, animations: {
+            UIView.transition(with: label, duration: 0.17, options: UIView.AnimationOptions.transitionCrossDissolve, animations: {
                 self.label.textColor = self.fontColor
             }, completion: nil)
         }

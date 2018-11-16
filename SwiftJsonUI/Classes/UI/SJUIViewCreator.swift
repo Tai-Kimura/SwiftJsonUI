@@ -261,7 +261,7 @@ open class SJUIViewCreator:NSObject {
             view.frame = CGRect(x: rect[0], y: rect[1], width: rect[2], height: rect[3])
         } else {
             view.translatesAutoresizingMaskIntoConstraints = false
-            view.autoresizingMask = UIViewAutoresizing()
+            view.autoresizingMask = UIView.AutoresizingMask()
         }
         view.isHidden = attr["hidden"].boolValue
         if let alpha = attr["alpha"].cgFloat {
@@ -351,13 +351,13 @@ open class SJUIViewCreator:NSObject {
                 let keyViews = keyBottomView.components(separatedBy: ",")
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (paddings[2] + (v.constraintInfo?.bottomMargin ?? 0)))])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (paddings[2] + (v.constraintInfo?.bottomMargin ?? 0)))])
                     }
                 }
             } else if let keyViews = attr["keyBottomView"].arrayObject as? [String] {
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (paddings[2] + (v.constraintInfo?.bottomMargin ?? 0)))])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (paddings[2] + (v.constraintInfo?.bottomMargin ?? 0)))])
                     }
                 }
             }
@@ -366,13 +366,13 @@ open class SJUIViewCreator:NSObject {
                 let keyViews = keyTopView.components(separatedBy: ",")
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                     }
                 }
             } else if let keyViews = attr["keyTopView"].arrayObject as? [String] {
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutRelation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: v, attribute: .top, multiplier: 1.0, constant: -paddings[0])])
                     }
                 }
             }
@@ -381,13 +381,13 @@ open class SJUIViewCreator:NSObject {
                 let keyViews = keyLeftView.components(separatedBy: ",")
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: v, attribute: .left, multiplier: 1.0, constant: -(paddings[1] + (v.constraintInfo?.leftMargin ?? 0)))])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: v, attribute: .left, multiplier: 1.0, constant: -(paddings[1] + (v.constraintInfo?.leftMargin ?? 0)))])
                     }
                 }
             } else if let keyViews = attr["keyLeftView"].arrayObject as? [String] {
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutRelation.lessThanOrEqual, toItem: v, attribute: .left, multiplier: 1.0, constant: -(paddings[1] + (v.constraintInfo?.leftMargin ?? 0)))])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .left, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: v, attribute: .left, multiplier: 1.0, constant: -(paddings[1] + (v.constraintInfo?.leftMargin ?? 0)))])
                     }
                 }
             }
@@ -396,13 +396,13 @@ open class SJUIViewCreator:NSObject {
                 let keyViews = keyRightView.components(separatedBy: ",")
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .right, multiplier: 1.0, constant: (paddings[3] + (v.constraintInfo?.rightMargin ?? 0)))])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: v, attribute: .right, multiplier: 1.0, constant: (paddings[3] + (v.constraintInfo?.rightMargin ?? 0)))])
                     }
                 }
             } else if let keyViews = attr["keyRightView"].arrayObject as? [String] {
                 for keyView in keyViews {
                     if let v = views[keyView] {
-                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutRelation.greaterThanOrEqual, toItem: v, attribute: .right, multiplier: 1.0, constant: (paddings[3] + (v.constraintInfo?.rightMargin ?? 0)))])
+                        NSLayoutConstraint.activate([NSLayoutConstraint(item: view, attribute: .right, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: v, attribute: .right, multiplier: 1.0, constant: (paddings[3] + (v.constraintInfo?.rightMargin ?? 0)))])
                     }
                 }
             }
@@ -437,7 +437,7 @@ open class SJUIViewCreator:NSObject {
                         gr.delegate = target as? UIGestureRecognizerDelegate
                         view.isUserInteractionEnabled = true
                     case .swipe:
-                        for direction in [.left,.right,.up,.down] as [UISwipeGestureRecognizerDirection] {
+                        for direction in [.left,.right,.up,.down] as [UISwipeGestureRecognizer.Direction] {
                             let gr = UISwipeGestureRecognizer(target: target, action: Selector(("swipe:")))
                             view.addGestureRecognizer(gr)
                             gr.delegate = target as? UIGestureRecognizerDelegate
@@ -588,7 +588,7 @@ open class SJUIViewCreator:NSObject {
         case "SelectBox":
             view = SJUISelectBox.createFromJSON(attr: attr, target: target, views: &views)
         case "Indicator":
-            let style: UIActivityIndicatorViewStyle
+            let style: UIActivityIndicatorView.Style
             switch attr["indicatorStyle"].stringValue {
             case "White":
                 style = .white
@@ -599,7 +599,7 @@ open class SJUIViewCreator:NSObject {
             default:
                 style = .white
             }
-            let i = UIActivityIndicatorView(activityIndicatorStyle: style)
+            let i = UIActivityIndicatorView(style: style)
             view = i
         default:
             return nil

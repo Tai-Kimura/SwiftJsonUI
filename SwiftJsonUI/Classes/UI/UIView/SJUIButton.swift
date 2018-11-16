@@ -19,16 +19,16 @@ open class SJUIButton: UIButton {
     override open var isEnabled: Bool {
         didSet {
             if self.isEnabled {
-                self.setTitleColor(defaultFontColor, for: UIControlState())
+                self.setTitleColor(defaultFontColor, for: UIControl.State())
                 self.backgroundColor = defaultBackgroundColor
             } else {
-                self.setTitleColor(disabledFontColor == nil ? defaultFontColor : disabledFontColor, for: UIControlState())
+                self.setTitleColor(disabledFontColor == nil ? defaultFontColor : disabledFontColor, for: UIControl.State())
                 self.backgroundColor = disabledBackgroundColor == nil ? defaultBackgroundColor : disabledBackgroundColor
             }
         }
     }
     
-    override open func setTitleColor(_ color: UIColor?, for state: UIControlState) {
+    override open func setTitleColor(_ color: UIColor?, for state: UIControl.State) {
         defaultFontColor = color
         super.setTitleColor(color, for: state)
     }
@@ -36,26 +36,26 @@ open class SJUIButton: UIButton {
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIButton {
         let b = viewClass.init()
         b.isUserInteractionEnabled = true
-        b.setTitle(NSLocalizedString(attr["text"].stringValue, comment: ""), for: UIControlState())
+        b.setTitle(NSLocalizedString(attr["text"].stringValue, comment: ""), for: UIControl.State())
         if let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) {
-            b.setTitleColor(fontColor, for: UIControlState())
+            b.setTitleColor(fontColor, for: UIControl.State())
         }
         if let fontColor = UIColor.findColorByJSON(attr: attr["hilightColor"]) {
-            b.setTitleColor(fontColor, for: UIControlState.highlighted)
+            b.setTitleColor(fontColor, for: UIControl.State.highlighted)
         }
         if let image = attr["image"].string {
-            b.setBackgroundImage(UIImage(named: image), for: UIControlState())
+            b.setBackgroundImage(UIImage(named: image), for: UIControl.State())
         }
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 17.0
         let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         b.titleLabel?.font = font
         if let onclick = attr["onclick"].string {
-            b.addTarget(target, action: Selector(onclick), for: UIControlEvents.touchUpInside)
+            b.addTarget(target, action: Selector(onclick), for: UIControl.Event.touchUpInside)
         } else if let onclicks = attr["onclick"].array {
             for onclick in onclicks {
                 if let events = onclick["events"].arrayObject as? [String], let selector = onclick["selector"].string {
-                    var clickEvents = [UIControlEvents]()
+                    var clickEvents = [UIControl.Event]()
                     for e in events {
                         switch e {
                         case "Down":
@@ -83,7 +83,7 @@ open class SJUIButton: UIButton {
                         }
                     }
                     
-                    b.addTarget(target, action: Selector(selector), for: UIControlEvents(clickEvents))
+                    b.addTarget(target, action: Selector(selector), for: UIControl.Event(clickEvents))
                 }
             }
         }

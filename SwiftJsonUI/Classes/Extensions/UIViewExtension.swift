@@ -89,9 +89,9 @@ public extension UIView {
         }
     }
     
-    public var controlState: UIControlState {
+    public var controlState: UIControl.State {
         get {
-            guard let object = objc_getAssociatedObject(self, &UIControlStateKey) as? UIControlState else {
+            guard let object = objc_getAssociatedObject(self, &UIControlStateKey) as? UIControl.State else {
                 return .normal
             }
             return object
@@ -219,7 +219,7 @@ public extension UIView {
         }
     }
     
-    public func setBackgroundColor(color: UIColor?, forState state: UIControlState = .normal) {
+    public func setBackgroundColor(color: UIColor?, forState state: UIControl.State = .normal) {
         if state == .highlighted {
             self.tapBackgroundColor = color
         } else  {

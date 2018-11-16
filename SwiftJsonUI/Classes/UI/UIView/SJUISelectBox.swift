@@ -16,7 +16,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     static let defaultCaretWidth: CGFloat = 39.0
     public static var defaultCaretImageName = "Triangle"
-    public static var defaultLabelPadding = UIEdgeInsetsMake(0, 10.0, 0, 10.0)
+    public static var defaultLabelPadding = UIEdgeInsets.init(top: 0, left: 10.0, bottom: 0, right: 10.0)
     
     private var _type: SelectItemType = .normal
     public var type: SelectItemType {
@@ -206,13 +206,13 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         case 0:
             l.padding = SJUISelectBox.defaultLabelPadding
         case 1:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[0], bottom: edgeInsets[0], right: edgeInsets[0])
         case 2:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[1], bottom: edgeInsets[0], right: edgeInsets[1])
         case 3:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[1], bottom: edgeInsets[2], right: edgeInsets[1])
         default:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[1], bottom: edgeInsets[2], right: edgeInsets[3])
         }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue : attr["lines"].int ?? 1 == 1 ? 1.0 : 1.4

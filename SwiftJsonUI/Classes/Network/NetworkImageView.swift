@@ -19,7 +19,7 @@ open class NetworkImageView: SJUIImageView {
     
     public var previousPath: String?
     
-    public var renderingMode: UIImageRenderingMode?
+    public var renderingMode: UIImage.RenderingMode?
     
     deinit {
         Logger.debug("NetworkImage Deinit")
@@ -90,7 +90,7 @@ open class NetworkImageView: SJUIImageView {
                                 anim.repeatCount = 0
                                 anim.autoreverses = false
                                 anim.isRemovedOnCompletion = false
-                                anim.fillMode = kCAFillModeForwards
+                                anim.fillMode = CAMediaTimingFillMode.forwards
                                 anim.delegate = self
                                 self?.layer.add(anim, forKey: NetworkImageView.animationKey)
                             }
@@ -143,14 +143,14 @@ open class NetworkImageView: SJUIImageView {
         if let contentMode = attr["contentMode"].string {
             switch (contentMode) {
             case "AspectFill":
-                i.contentMode = UIViewContentMode.scaleAspectFill
+                i.contentMode = UIView.ContentMode.scaleAspectFill
             case "AspectFit":
-                i.contentMode = UIViewContentMode.scaleAspectFit
+                i.contentMode = UIView.ContentMode.scaleAspectFit
             default:
-                i.contentMode = UIViewContentMode.center
+                i.contentMode = UIView.ContentMode.center
             }
         } else {
-            i.contentMode = UIViewContentMode.scaleAspectFill
+            i.contentMode = UIView.ContentMode.scaleAspectFill
         }
         i.clipsToBounds = true
         if let onclick = attr["onclick"].string {

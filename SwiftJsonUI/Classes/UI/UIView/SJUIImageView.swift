@@ -24,13 +24,13 @@ open class SJUIImageView: UIImageView {
         filter.defaultBackgroundColor = UIColor.clear
         filter.canTap = true
         filter.translatesAutoresizingMaskIntoConstraints = false
-        filter.autoresizingMask = UIViewAutoresizing()
+        filter.autoresizingMask = UIView.AutoresizingMask()
         self.addSubview(filter)
         let constraints = [
-            NSLayoutConstraint(item: filter, attribute: NSLayoutAttribute.top, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.top, multiplier: 1.0, constant: 0),
-            NSLayoutConstraint(item: filter, attribute: NSLayoutAttribute.left, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.left, multiplier: 1.0, constant: 0),
-            NSLayoutConstraint(item: filter, attribute: NSLayoutAttribute.bottom, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.bottom, multiplier: 1.0, constant: 0),
-            NSLayoutConstraint(item: filter, attribute: NSLayoutAttribute.right, relatedBy: NSLayoutRelation.equal, toItem: self, attribute: NSLayoutAttribute.right, multiplier: 1.0, constant: 0)
+            NSLayoutConstraint(item: filter, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: 0),
+            NSLayoutConstraint(item: filter, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: 0),
+            NSLayoutConstraint(item: filter, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: 0),
+            NSLayoutConstraint(item: filter, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 0)
         ]
         NSLayoutConstraint.activate(constraints)
         self.filter = filter
@@ -87,14 +87,14 @@ open class SJUIImageView: UIImageView {
         if let contentMode = attr["contentMode"].string {
             switch (contentMode) {
             case "AspectFill":
-                i.contentMode = UIViewContentMode.scaleAspectFill
+                i.contentMode = UIView.ContentMode.scaleAspectFill
             case "AspectFit":
-                i.contentMode = UIViewContentMode.scaleAspectFit
+                i.contentMode = UIView.ContentMode.scaleAspectFit
             default:
-                i.contentMode = UIViewContentMode.center
+                i.contentMode = UIView.ContentMode.center
             }
         } else {
-            i.contentMode = UIViewContentMode.center
+            i.contentMode = UIView.ContentMode.center
         }
         if let onclick = attr["onclick"].string {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))

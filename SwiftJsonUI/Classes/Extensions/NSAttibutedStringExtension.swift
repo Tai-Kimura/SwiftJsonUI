@@ -126,15 +126,13 @@ public extension NSAttributedString {
                 let underline = attr["underline"]
                 switch underline["lineStyle"].stringValue {
                 case "Single":
-                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.single.rawValue as NSObject?
                 case "Double":
-                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleDouble.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.double.rawValue as NSObject?
                 case "Thick":
-                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleThick.rawValue as NSObject?
-                case "None":
-                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleNone.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.thick.rawValue as NSObject?
                 default:
-                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
+                    attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.single.rawValue as NSObject?
                 }
                 attributes[NSAttributedString.Key.underlineColor] = UIColor.findColorByJSON(attr: underline["color"])
                 attributes[NSAttributedString.Key.baselineOffset] = underline["lineOffset"].cgFloatValue as NSObject?

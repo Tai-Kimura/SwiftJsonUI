@@ -31,6 +31,32 @@ open class SJUICollectionView: UICollectionView {
         if let paging = attr["paging"].bool {
             c.isPagingEnabled = paging
         }
+        if let cellClasses = attr["cellClasses"].array {
+            for cellClass in cellClasses {
+                if let className = cellClass["name"].string, let classFromString = NSClassFromString(className) as? SJUICollectionViewCell.Type {
+                    let cellIdentifier = cellClass["identifier"].string ?? className
+                    c.register(classFromString, forCellWithReuseIdentifier: cellIdentifier)
+                }
+            }
+        }
+        if let headerClasses = attr["headerClasses"].array {
+            for headerClass in headerClasses {
+                if let className = headerClass["name"].string, let classFromString = NSClassFromString(className) as? SJUICollectionReusableView.Type {
+                    let headerIdentifier = headerClass["identifier"].string ?? className
+                    c.register(classFromString, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: headerIdentifier)
+                }
+            }
+        }
+        if let footerClasses = attr["footerClasses"].array {
+            for footerClass in footerClasses {
+                if let className = footerClass["name"].string, let classFromString = NSClassFromString(className) as? SJUICollectionReusableView.Type {
+                    let footerIdentifier = footerClass["identifier"].string ?? className
+                    c.register(classFromString, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: footerIdentifier)
+                }
+            }
+        }
+        c.delegate = target as? UICollectionViewDelegate
+        c.dataSource = target as? UICollectionViewDataSource
         return c
     }
     
@@ -53,7 +79,7 @@ open class SJUICollectionView: UICollectionView {
         if edgeInsets.isEmpty {
             let insetHorizontal = attr["insetHorizontal"].cgFloat != nil ? attr["insetHorizontal"].cgFloat! : 0
             let insetVertical = attr["insetVertical"].cgFloat != nil ? attr["insetVertical"].cgFloat! : 0
-            collectionViewLayout.sectionInset = UIEdgeInsetsMake(insetVertical, insetHorizontal, insetVertical, insetHorizontal)
+            collectionViewLayout.sectionInset = UIEdgeInsets.init(top: insetVertical, left: insetHorizontal, bottom: insetVertical, right: insetHorizontal)
         } else {
             var insets:[CGFloat] = [0,0,0,0]
             switch (edgeInsets.count) {
@@ -68,11 +94,11 @@ open class SJUICollectionView: UICollectionView {
             default:
                 insets = [edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3]]
             }
-            collectionViewLayout.sectionInset = UIEdgeInsetsMake(insets[0], insets[1], insets[2], insets[3])
+            collectionViewLayout.sectionInset = UIEdgeInsets.init(top: insets[0], left: insets[1], bottom: insets[2], right: insets[3])
         }
         
         if let _ = attr["horizontalScroll"].bool {
-            collectionViewLayout.scrollDirection = UICollectionViewScrollDirection.horizontal
+            collectionViewLayout.scrollDirection = UICollectionView.ScrollDirection.horizontal
         }
         return collectionViewLayout
     }

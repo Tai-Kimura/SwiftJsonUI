@@ -17,11 +17,11 @@ open class SJUILabel: UILabel {
     
     public var hint: String?
     
-    public var attributes:[NSAttributedStringKey:NSObject]!
+    public var attributes:[NSAttributedString.Key:NSObject]!
     
-    public var highlightAttributes:[NSAttributedStringKey:NSObject]!
+    public var highlightAttributes:[NSAttributedString.Key:NSObject]!
     
-    public var hintAttributes:[NSAttributedStringKey:NSObject]?
+    public var hintAttributes:[NSAttributedString.Key:NSObject]?
     
     public var selected: Bool = false {
         didSet {
@@ -46,7 +46,7 @@ open class SJUILabel: UILabel {
         }
     }
     override open func drawText(in rect: CGRect) {
-        let newRect = UIEdgeInsetsInsetRect(rect, padding)
+        let newRect = rect.inset(by: padding)
         super.drawText(in: newRect)
     }
     
@@ -78,7 +78,7 @@ open class SJUILabel: UILabel {
         linkable = matches.count > 0
         isUserInteractionEnabled = true
         for match in matches {
-            attrText.addAttributes([NSAttributedStringKey.foregroundColor: color], range: match.range)
+            attrText.addAttributes([NSAttributedString.Key.foregroundColor: color], range: match.range)
         }
         self.attributedText = attrText
     }
@@ -174,7 +174,7 @@ open class SJUILabel: UILabel {
         var size: CGFloat? = nil
         if attributedText.length > 0 {
             let attr = attributedText.attributes(at: 0, effectiveRange: nil)
-            if let font = attr[NSAttributedStringKey.font] as? UIFont {
+            if let font = attr[NSAttributedString.Key.font] as? UIFont {
                 size = font.pointSize
             }
         }
@@ -220,20 +220,20 @@ open class SJUILabel: UILabel {
         case 0:
             break
         case 1:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[0], edgeInsets[0], edgeInsets[0])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[0], bottom: edgeInsets[0], right: edgeInsets[0])
         case 2:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[0], edgeInsets[1])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[1], bottom: edgeInsets[0], right: edgeInsets[1])
         case 3:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[1])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[1], bottom: edgeInsets[2], right: edgeInsets[1])
         default:
-            l.padding = UIEdgeInsetsMake(edgeInsets[0], edgeInsets[1], edgeInsets[2], edgeInsets[3])
+            l.padding = UIEdgeInsets.init(top: edgeInsets[0], left: edgeInsets[1], bottom: edgeInsets[2], right: edgeInsets[3])
         }
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue :1.0
         let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
         let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
-        var attributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font]
+        var attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font]
         
         l.font = font
         l.numberOfLines = attr["lines"].int == nil ? 0 : attr["lines"].intValue
@@ -282,28 +282,26 @@ open class SJUILabel: UILabel {
             let underline = attr["underline"]
             switch underline["lineStyle"].stringValue {
             case "Single":
-                attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
+                attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.single.rawValue as NSObject?
             case "Double":
-                attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleDouble.rawValue as NSObject?
+                attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.double.rawValue as NSObject?
             case "Thick":
-                attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleThick.rawValue as NSObject?
-            case "None":
-                attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleNone.rawValue as NSObject?
+                attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.thick.rawValue as NSObject?
             default:
-                attributes[NSAttributedStringKey.underlineStyle] = NSUnderlineStyle.styleSingle.rawValue as NSObject?
+                attributes[NSAttributedString.Key.underlineStyle] = NSUnderlineStyle.single.rawValue as NSObject?
             }
-            attributes[NSAttributedStringKey.underlineColor] = UIColor.findColorByJSON(attr: underline["color"])
-            attributes[NSAttributedStringKey.baselineOffset] = underline["lineOffset"].cgFloatValue as NSObject?
+            attributes[NSAttributedString.Key.underlineColor] = UIColor.findColorByJSON(attr: underline["color"])
+            attributes[NSAttributedString.Key.baselineOffset] = underline["lineOffset"].cgFloatValue as NSObject?
         }
         let color = UIColor.findColorByJSON(attr: attr["fontColor"]) ??  SJUIViewCreator.defaultFontColor
-        attributes[NSAttributedStringKey.foregroundColor] = color
+        attributes[NSAttributedString.Key.foregroundColor] = color
         let shadow = attr["textShadow"]
         if !shadow.isEmpty, let shadowColor = UIColor.findColorByJSON(attr: shadow["color"]), let shadowBlur = shadow["blur"].cgFloat, let shadowOffset = shadow["offset"].arrayObject as? [CGFloat] {
             let s = NSShadow()
             s.shadowColor = shadowColor;
             s.shadowBlurRadius = shadowBlur
             s.shadowOffset = CGSize(width: shadowOffset[0], height: shadowOffset[1]);
-            attributes[NSAttributedStringKey.shadow] = s
+            attributes[NSAttributedString.Key.shadow] = s
         }
         if let text = attr["text"].string {
             l.textColor = color
@@ -329,20 +327,20 @@ open class SJUILabel: UILabel {
             let highlightSize = highlightAttr["fontSize"].cgFloat != nil ? highlightAttr["fontSize"].cgFloatValue : size
             let highlightName = highlightAttr["font"].string != nil ? highlightAttr["font"].stringValue : name
             let highlightFont = UIFont(name: highlightName, size: highlightSize) ?? UIFont.systemFont(ofSize: highlightSize)
-            var highlightAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: highlightFont, NSAttributedStringKey.foregroundColor: color]
+            var highlightAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: highlightFont, NSAttributedString.Key.foregroundColor: color]
             if let highlightColor = UIColor.findColorByJSON(attr: highlightAttr["fontColor"]) {
-                highlightAttributes[NSAttributedStringKey.foregroundColor] = highlightColor
+                highlightAttributes[NSAttributedString.Key.foregroundColor] = highlightColor
             }
             l.highlightAttributes = highlightAttributes
         } else if let highlightColor = UIColor.findColorByJSON(attr: attr["highlightColor"]) {
-            l.highlightAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: highlightColor]
+            l.highlightAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: highlightColor]
         } else {
             l.highlightAttributes = attributes
         }
         
         if let hint = attr["hint"].string {
             l.hint = NSLocalizedString(hint, comment: "")
-            l.hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: SJUIViewCreator.defaultHintColor]
+            l.hintAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: SJUIViewCreator.defaultHintColor]
         }
         
         if !attr["hintAttributes"].isEmpty {
@@ -350,13 +348,13 @@ open class SJUILabel: UILabel {
             let hintSize = hintAttr["fontSize"].cgFloat != nil ? hintAttr["fontSize"].cgFloatValue : size
             let hintName = hintAttr["font"].string != nil ? hintAttr["font"].stringValue : name
             let hintFont = UIFont(name: hintName, size: hintSize) ?? UIFont.systemFont(ofSize: hintSize)
-            var hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: hintFont, NSAttributedStringKey.foregroundColor: color]
+            var hintAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: color]
             if let hintColor = UIColor.findColorByJSON(attr: hintAttr["fontColor"]) {
-                hintAttributes[NSAttributedStringKey.foregroundColor] = hintColor
+                hintAttributes[NSAttributedString.Key.foregroundColor] = hintColor
             }
             l.hintAttributes = hintAttributes
         } else if let hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) {
-            l.hintAttributes = [NSAttributedStringKey.paragraphStyle: paragraphStyle, NSAttributedStringKey.font: font, NSAttributedStringKey.foregroundColor: hintColor]
+            l.hintAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: hintColor]
         }
         
         if let onclick = attr["onclick"].string {

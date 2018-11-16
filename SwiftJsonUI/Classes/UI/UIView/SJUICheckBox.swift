@@ -28,14 +28,14 @@ open class SJUICheckBox: UIButton {
         super.init(frame: CGRect(x: 0, y: 0, width: SJUICheckBox.checkBoxSize.width, height: SJUICheckBox.checkBoxSize.height))
         if let ipath = imagePath {
             let offImage = UIImage(named: ipath)!
-            self.setImage(offImage, for: UIControlState())
+            self.setImage(offImage, for: UIControl.State())
         }
         if let ipath = onImagePath {
             let onImage  = UIImage(named: ipath)!
-            self.setImage(onImage, for: UIControlState.selected)
+            self.setImage(onImage, for: UIControl.State.selected)
         }
-        self.imageView?.contentMode = UIViewContentMode.scaleAspectFit
-        self.addTarget(self, action: #selector(SJUICheckBox.onCheck), for: UIControlEvents.touchUpInside)
+        self.imageView?.contentMode = UIView.ContentMode.scaleAspectFit
+        self.addTarget(self, action: #selector(SJUICheckBox.onCheck), for: UIControl.Event.touchUpInside)
         self.addLabel(label)
     }
     
