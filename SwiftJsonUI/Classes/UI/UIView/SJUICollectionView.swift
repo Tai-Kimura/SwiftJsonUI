@@ -57,8 +57,12 @@ open class SJUICollectionView: UICollectionView {
                 }
             }
         }
-        c.delegate = target as? UICollectionViewDelegate
-        c.dataSource = target as? UICollectionViewDataSource
+        if attr["setTargetAsDelegate"].boolValue {
+            c.delegate = target as? UICollectionViewDelegate
+        }
+        if attr["setTargetAsDataSource"].boolValue {
+            c.dataSource = target as? UICollectionViewDataSource
+        }
         return c
     }
     
