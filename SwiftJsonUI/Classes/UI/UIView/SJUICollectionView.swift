@@ -15,7 +15,7 @@ open class SJUICollectionView: UICollectionView {
         }
     }
     
-   required public override init(frame: CGRect, collectionViewLayout layout: UICollectionViewLayout) {
+    required public override init(frame: CGRect, collectionViewLayout layout: UICollectionViewLayout) {
         super.init(frame: frame, collectionViewLayout: layout)
     }
     
@@ -31,27 +31,29 @@ open class SJUICollectionView: UICollectionView {
         if let paging = attr["paging"].bool {
             c.isPagingEnabled = paging
         }
-        if let cellClasses = attr["cellClasses"].array {
-            for cellClass in cellClasses {
-                if let className = cellClass["name"].string, let classFromString = NSClassFromString(className) as? SJUICollectionViewCell.Type {
-                    let cellIdentifier = cellClass["identifier"].string ?? className
-                    c.register(classFromString, forCellWithReuseIdentifier: cellIdentifier)
+        if let moduleName = Bundle.main.infoDictionary!["CFBundleName"] as? String {
+            if let cellClasses = attr["cellClasses"].array {
+                for cellClass in cellClasses {
+                    if let className = cellClass["className"].string, let classFromString = NSClassFromString("\(moduleName).\(className)") {
+                        let cellIdentifier = cellClass["identifier"].string ?? className
+                        c.register(classFromString, forCellWithReuseIdentifier: cellIdentifier)
+                    }
                 }
             }
-        }
-        if let headerClasses = attr["headerClasses"].array {
-            for headerClass in headerClasses {
-                if let className = headerClass["name"].string, let classFromString = NSClassFromString(className) as? SJUICollectionReusableView.Type {
-                    let headerIdentifier = headerClass["identifier"].string ?? className
-                    c.register(classFromString, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: headerIdentifier)
+            if let headerClasses = attr["headerClasses"].array {
+                for headerClass in headerClasses {
+                    if let className = headerClass["className"].string, let classFromString = NSClassFromString("\(moduleName).\(className)") {
+                        let headerIdentifier = headerClass["identifier"].string ?? className
+                        c.register(classFromString, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: headerIdentifier)
+                    }
                 }
             }
-        }
-        if let footerClasses = attr["footerClasses"].array {
-            for footerClass in footerClasses {
-                if let className = footerClass["name"].string, let classFromString = NSClassFromString(className) as? SJUICollectionReusableView.Type {
-                    let footerIdentifier = footerClass["identifier"].string ?? className
-                    c.register(classFromString, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: footerIdentifier)
+            if let footerClasses = attr["footerClasses"].array {
+                for footerClass in footerClasses {
+                    if let className = footerClass["className"].string, let classFromString = NSClassFromString("\(moduleName).\(className)") {
+                        let footerIdentifier = footerClass["identifier"].string ?? className
+                        c.register(classFromString, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: footerIdentifier)
+                    }
                 }
             }
         }
@@ -75,7 +77,7 @@ open class SJUICollectionView: UICollectionView {
         } else if let insets = attr["insets"].arrayObject as? [CGFloat] {
             edgeInsets = insets
         }
-            
+        
         if edgeInsets.isEmpty {
             let insetHorizontal = attr["insetHorizontal"].cgFloat != nil ? attr["insetHorizontal"].cgFloat! : 0
             let insetVertical = attr["insetVertical"].cgFloat != nil ? attr["insetVertical"].cgFloat! : 0
@@ -116,3 +118,4 @@ open class SJUICollectionView: UICollectionView {
     }
     
 }
+
