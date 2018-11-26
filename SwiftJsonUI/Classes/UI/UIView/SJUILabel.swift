@@ -310,7 +310,7 @@ open class SJUILabel: UILabel {
         if let autoShrink = attr["autoShrink"].bool {
             l.adjustsFontSizeToFitWidth = autoShrink
             if autoShrink {
-                l.minimumScaleFactor = attr["minimumScaleFactor"].cgFloat ?? 8.0
+                l.minimumScaleFactor = attr["minimumScaleFactor"].cgFloat ?? 8.0/size
             }
         }
         let color = UIColor.findColorByJSON(attr: attr["fontColor"]) ??  SJUIViewCreator.defaultFontColor
