@@ -351,6 +351,20 @@ open class SJUILabel: UILabel {
             if let highlightColor = UIColor.findColorByJSON(attr: highlightAttr["fontColor"]) {
                 highlightAttributes[NSAttributedString.Key.foregroundColor] = highlightColor
             }
+            if !highlightAttr["strikethrough"].isEmpty {
+                let strikethrough = highlightAttr["strikethrough"]
+                switch strikethrough["lineStyle"].stringValue {
+                case "Single":
+                    highlightAttributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.single.rawValue as NSObject?
+                case "Double":
+                    highlightAttributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.double.rawValue as NSObject?
+                case "Thick":
+                    highlightAttributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.thick.rawValue as NSObject?
+                default:
+                    highlightAttributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.single.rawValue as NSObject?
+                }
+                highlightAttributes[NSAttributedString.Key.strikethroughColor] = UIColor.findColorByJSON(attr: strikethrough["color"])
+            }
             l.highlightAttributes = highlightAttributes
         } else if let highlightColor = UIColor.findColorByJSON(attr: attr["highlightColor"]) {
             l.highlightAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: highlightColor]
