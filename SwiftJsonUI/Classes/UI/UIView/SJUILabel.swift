@@ -293,6 +293,26 @@ open class SJUILabel: UILabel {
             attributes[NSAttributedString.Key.underlineColor] = UIColor.findColorByJSON(attr: underline["color"])
             attributes[NSAttributedString.Key.baselineOffset] = underline["lineOffset"].cgFloatValue as NSObject?
         }
+        if !attr["strikethrough"].isEmpty {
+            let strikethrough = attr["strikethrough"]
+            switch strikethrough["lineStyle"].stringValue {
+            case "Single":
+                attributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.single.rawValue as NSObject?
+            case "Double":
+                attributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.double.rawValue as NSObject?
+            case "Thick":
+                attributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.thick.rawValue as NSObject?
+            default:
+                attributes[NSAttributedString.Key.strikethroughStyle] = NSUnderlineStyle.single.rawValue as NSObject?
+            }
+            attributes[NSAttributedString.Key.strikethroughColor] = UIColor.findColorByJSON(attr: strikethrough["color"])
+        }
+        if let autoShrink = attr["autoShrink"].bool {
+            l.adjustsFontSizeToFitWidth = autoShrink
+            if autoShrink {
+                l.minimumScaleFactor = attr["minimumScaleFactor"].cgFloat ?? 8.0
+            }
+        }
         let color = UIColor.findColorByJSON(attr: attr["fontColor"]) ??  SJUIViewCreator.defaultFontColor
         attributes[NSAttributedString.Key.foregroundColor] = color
         let shadow = attr["textShadow"]

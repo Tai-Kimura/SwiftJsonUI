@@ -1176,20 +1176,41 @@ public class UILayoutConstraintInfo {
         if let paddings = attr["paddings"].arrayObject as? [CGFloat] {
             switch (paddings.count) {
             case 0:
-                viewPaddings = [nil, nil, nil, nil]
+                viewPaddings = [attr["paddingTop"].cgFloat,attr["paddingLeft"].cgFloat,attr["paddingBottom"].cgFloat,attr["paddingRight"].cgFloat]
             case 1:
-                viewPaddings = [paddings[0], paddings[0], paddings[0], paddings[0]]
+                viewPaddings = [attr["paddingTop"].cgFloat ?? paddings[0], attr["paddingLeft"].cgFloat ?? paddings[0], attr["paddingBottom"].cgFloat ?? paddings[0], attr["paddingRight"].cgFloat ?? paddings[0]]
             case 2:
-                viewPaddings = [paddings[0], paddings[1], paddings[0], paddings[1]]
+                viewPaddings = [attr["paddingTop"].cgFloat ?? paddings[0], attr["paddingLeft"].cgFloat ?? paddings[1], attr["paddingBottom"].cgFloat ?? paddings[0], attr["paddingRight"].cgFloat ?? paddings[1]]
             case 3:
-                viewPaddings = [paddings[0], paddings[1], paddings[2], paddings[1]]
+                viewPaddings = [attr["paddingTop"].cgFloat ?? paddings[0], attr["paddingLeft"].cgFloat ?? paddings[1], attr["paddingBottom"].cgFloat ?? paddings[2], attr["paddingRight"].cgFloat ?? paddings[1]]
             default:
-                viewPaddings = [paddings[0], paddings[1], paddings[2], paddings[3]]
+                viewPaddings = [attr["paddingTop"].cgFloat ?? paddings[0], attr["paddingLeft"].cgFloat ?? paddings[1], attr["paddingBottom"].cgFloat ?? paddings[2], attr["paddingRight"].cgFloat ?? paddings[3]]
             }
         } else {
             viewPaddings = [attr["paddingTop"].cgFloat,attr["paddingLeft"].cgFloat,attr["paddingBottom"].cgFloat,attr["paddingRight"].cgFloat]
         }
         return viewPaddings
+    }
+    
+    public class func marginsFrom(attr: JSON) -> [CGFloat?] {
+        let viewMargins: [CGFloat?]
+        if let margins = attr["margins"].arrayObject as? [CGFloat] {
+            switch (margins.count) {
+            case 0:
+                viewMargins = [attr["topMargin"].cgFloat,attr["leftMargin"].cgFloat,attr["bottomMargin"].cgFloat,attr["rightMargin"].cgFloat]
+            case 1:
+                viewMargins = [attr["topMargin"].cgFloat ?? margins[0], attr["leftMargin"].cgFloat ?? margins[0], attr["bottomMargin"].cgFloat ?? margins[0], attr["rightMargin"].cgFloat ?? margins[0]]
+            case 2:
+                viewMargins = [attr["topMargin"].cgFloat ?? margins[0], attr["leftMargin"].cgFloat ?? margins[1], attr["bottomMargin"].cgFloat ?? margins[0], attr["rightMargin"].cgFloat ?? margins[1]]
+            case 3:
+                viewMargins = [attr["topMargin"].cgFloat ?? margins[0], attr["leftMargin"].cgFloat ?? margins[1], attr["bottomMargin"].cgFloat ?? margins[2], attr["rightMargin"].cgFloat ?? margins[1]]
+            default:
+                viewMargins = [attr["topMargin"].cgFloat ?? margins[0], attr["leftMargin"].cgFloat ?? margins[1], attr["bottomMargin"].cgFloat ?? margins[2], attr["rightMargin"].cgFloat ?? margins[3]]
+            }
+        } else {
+            viewMargins = [attr["topMargin"].cgFloat,attr["leftMargin"].cgFloat,attr["bottomMargin"].cgFloat,attr["rightMargin"].cgFloat]
+        }
+        return viewMargins
     }
     
     public enum LayoutParams: CGFloat {
