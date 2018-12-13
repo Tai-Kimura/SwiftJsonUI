@@ -11,7 +11,7 @@ open class CircleImageView: NetworkImageView {
         super.init(coder: aDecoder)
     }
     
-    override init(frame: CGRect) {
+    override public init(frame: CGRect) {
         super.init(frame:frame)
     }
     
