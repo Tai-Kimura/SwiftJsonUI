@@ -307,7 +307,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         case .normal:
             SheetView.sharedInstance().showPicker([_selectedIndex ?? 0], withDataSource: [items], forItem: items, inView: inView, canBack: canBack)
         case .date:
-            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate ?? Date(), canBack: false)
+            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false)
         }
         SheetView.sharedInstance().delegate = self
         setScrollOffset()
