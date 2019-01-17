@@ -31,7 +31,8 @@ open class SJUICollectionView: UICollectionView {
         if let paging = attr["paging"].bool {
             c.isPagingEnabled = paging
         }
-        if let moduleName = Bundle.main.infoDictionary!["CFBundleName"] as? String {
+        if var moduleName = Bundle.main.infoDictionary!["CFBundleName"] as? String {
+            moduleName = moduleName.replacingOccurrences(of: "[^0-9a-zA-Z_]", with: "_", options: .regularExpression, range: nil)
             if let cellClasses = attr["cellClasses"].array {
                 for cellClass in cellClasses {
                     if let className = cellClass["className"].string, let classFromString = NSClassFromString("\(moduleName).\(className)") {
