@@ -211,8 +211,8 @@ public extension UIView {
                         if let superview = self.superview, let index = superview.subviews.firstIndex(of: self), superview.subviews.first != self {
                             info.nextToView = superview.subviews[index - 1]
                         }
-                        resetConstraintInfo()
                         self.removeFromSuperview()
+                        info.superviewToAdd?.resetConstraintInfo()
                     }
                 }
             }
@@ -311,6 +311,9 @@ public extension UIView {
     }
     
     public func resetConstraintInfo(resetAllSubviews: Bool = false) {
+        guard self.isActiveForConstraint else {
+            return
+        }
         updateConstraintInfo(resetAllSubviews: resetAllSubviews)
         (self.superview ?? self).layoutIfNeeded()
     }
