@@ -184,7 +184,7 @@ public extension UIView {
                 case .visible:
                     self.isHidden = false
                     if let info = self.constraintInfo, let superview = info.superviewToAdd {
-                        if let nextToView = info.nextToView {
+                        if let nextToView = self.findNextVisibleView() {
                             superview.insertSubview(self, aboveSubview: nextToView)
                         } else {
                             superview.insertSubview(self, at: 0)
@@ -217,6 +217,16 @@ public extension UIView {
                 }
             }
         }
+    }
+    
+    private func findNextVisibleView() -> UIView? {
+        guard let nextToView = self.constraintInfo?.nextToView else {
+            return nil
+        }
+        if nextToView.visibility != .gone {
+            return nextToView
+        }
+        return nextToView.findNextVisibleView()
     }
     
     public func setBackgroundColor(color: UIColor?, forState state: UIControl.State = .normal) {
@@ -326,11 +336,3 @@ public extension UIView {
         }, completion: completion)
     }
 }
-
-
-
-
-
-
-
-
