@@ -196,7 +196,7 @@ public extension UIView {
                 case .invisible:
                     self.isHidden = true
                     if let info = self.constraintInfo, let superview = info.superviewToAdd {
-                        if let nextToView = info.nextToView {
+                        if let nextToView = self.findNextVisibleView() {
                             superview.insertSubview(self, aboveSubview: nextToView)
                         } else {
                             superview.insertSubview(self, at: 0)
