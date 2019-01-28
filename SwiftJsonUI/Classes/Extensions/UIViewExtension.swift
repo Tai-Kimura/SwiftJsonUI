@@ -167,9 +167,6 @@ public extension UIView {
         }
         set {
             if isActiveForConstraint != newValue {
-                if self.isHidden && self.visibility == .visible {
-                    self.visibility = .invisible
-                }
                 objc_setAssociatedObject(self, &ActivatedConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
                 setVisibility(oldValue: .visible, newValue: self.visibility)
             }

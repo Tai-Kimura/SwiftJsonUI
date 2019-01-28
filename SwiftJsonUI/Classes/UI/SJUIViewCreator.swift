@@ -318,6 +318,8 @@ open class SJUIViewCreator:NSObject {
         }
         if let v = attr["visibility"].string, let visibility = SJUIView.Visibility(rawValue: v) {
             view.visibility = visibility
+        } else if attr["hidden"].boolValue {
+            view.visibility = .invisible
         }
         setLegacyWrapContent(on: view, attr: attr, views: views)
         setScripts(view: view, attr:  attr, target: target)
