@@ -166,7 +166,10 @@ public extension UIView {
             return object
         }
         set {
-            objc_setAssociatedObject(self, &ActivatedConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+            if isActiveForConstraint != newValue {
+                objc_setAssociatedObject(self, &ActivatedConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
+                setVisibility(oldValue: .visible, newValue: self.visibility)
+            }
         }
     }
     
@@ -179,42 +182,48 @@ public extension UIView {
         }
         set {
             if visibility != newValue {
+                let oldValue = self.visibility
                 objc_setAssociatedObject(self, &VisibilityKey, newValue, .OBJC_ASSOCIATION_RETAIN)
-                switch newValue {
-                case .visible:
-                    self.isHidden = false
-                    if let info = self.constraintInfo, let superview = info.superviewToAdd {
-                        if let nextToView = self.findNextVisibleView() {
-                            superview.insertSubview(self, aboveSubview: nextToView)
-                        } else {
-                            superview.insertSubview(self, at: 0)
-                        }
-                        info.superviewToAdd = nil
-                        info.nextToView = nil
-                        resetConstraintInfo(resetAllSubviews: true)
-                    }
-                case .invisible:
-                    self.isHidden = true
-                    if let info = self.constraintInfo, let superview = info.superviewToAdd {
-                        if let nextToView = self.findNextVisibleView() {
-                            superview.insertSubview(self, aboveSubview: nextToView)
-                        } else {
-                            superview.insertSubview(self, at: 0)
-                        }
-                        info.superviewToAdd = nil
-                        info.nextToView = nil
-                        resetConstraintInfo(resetAllSubviews: true)
-                    }
-                case .gone:
-                    if let info = self.constraintInfo {
-                        info.superviewToAdd = self.superview
-                        if let superview = self.superview, let index = superview.subviews.firstIndex(of: self), superview.subviews.first != self {
-                            info.nextToView = superview.subviews[index - 1]
-                        }
-                        self.removeFromSuperview()
-                        info.superviewToAdd?.resetConstraintInfo()
-                    }
+                if self.isActiveForConstraint {
+                    setVisibility(oldValue: oldValue, newValue: newValue)
                 }
+            }
+        }
+    }
+    
+    private func setVisibility(oldValue: SJUIView.Visibility, newValue: SJUIView.Visibility) {
+        switch newValue {
+        case .visible:
+            self.isHidden = false
+            if oldValue == .gone {
+                if let info = self.constraintInfo, let superview = info.superviewToAdd {
+                    if let nextToView = self.findNextVisibleView() {
+                        superview.insertSubview(self, aboveSubview: nextToView)
+                    } else {
+                        superview.insertSubview(self, at: 0)
+                    }
+                    info.superviewToAdd = nil
+                    resetConstraintInfo(resetAllSubviews: true)
+                }
+            }
+        case .invisible:
+            self.isHidden = true
+            if oldValue == .gone {
+                if let info = self.constraintInfo, let superview = info.superviewToAdd {
+                    if let nextToView = self.findNextVisibleView() {
+                        superview.insertSubview(self, aboveSubview: nextToView)
+                    } else {
+                        superview.insertSubview(self, at: 0)
+                    }
+                    info.superviewToAdd = nil
+                    resetConstraintInfo(resetAllSubviews: true)
+                }
+            }
+        case .gone:
+            if let info = self.constraintInfo {
+                info.superviewToAdd = self.superview
+                self.removeFromSuperview()
+                info.superviewToAdd?.resetConstraintInfo()
             }
         }
     }
@@ -336,3 +345,5 @@ public extension UIView {
         }, completion: completion)
     }
 }
+
+

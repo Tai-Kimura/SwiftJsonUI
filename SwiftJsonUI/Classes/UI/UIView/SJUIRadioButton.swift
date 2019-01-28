@@ -9,9 +9,9 @@ import UIKit
     func radioGroupCheckChanged(_ radiogroup: NSRadioGroup)
 }
 
-open class SJUIRadioButton: UIView {
+open class SJUIRadioButton: SJUIView {
     
-    open class var viewClass: SJUIRadioButton.Type {
+    override open class var viewClass: SJUIView.Type {
         get {
             return SJUIRadioButton.self
         }
@@ -117,13 +117,13 @@ open class SJUIRadioButton: UIView {
         self.ragioGroup?.check(self)
     }
     
-    open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIRadioButton {
+    open override class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIRadioButton {
         let text = NSLocalizedString(attr["text"].stringValue, comment: "")
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
-        let r = viewClass.init(text: text, font: font, fontColor: fontColor, iconImage: UIImage(named: attr["icon"].stringValue), selectedIconImage: UIImage(named: attr["selected_icon"].stringValue))
+        let r = (viewClass as! SJUIRadioButton.Type).init(text: text, font: font, fontColor: fontColor, iconImage: UIImage(named: attr["icon"].stringValue), selectedIconImage: UIImage(named: attr["selected_icon"].stringValue))
         if let groupName = attr["group"].string {
             let group = NSRadioGroup.radiogroup(named: groupName) ?? NSRadioGroup()
             group.add(r)
