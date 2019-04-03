@@ -7,6 +7,7 @@
 
 import UIKit
 
+@objcMembers
 open class SJUICollectionViewCell: UICollectionViewCell, ViewHolder {
     
     public var _views = Dictionary<String, UIView>()
