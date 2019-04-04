@@ -18,6 +18,22 @@ open class SJUIScrollView: UIScrollView {
         s.showsHorizontalScrollIndicator = attr["showsHorizontalScrollIndicator"].boolValue
         s.showsVerticalScrollIndicator = attr["showsVerticalScrollIndicator"].boolValue
         s.delegate = target as? UIScrollViewDelegate
+        if #available(iOS 11.0, *) {
+            if let contentInsetAdjustmentBehavior = attr["contentInsetAdjustmentBehavior"].string {
+                switch contentInsetAdjustmentBehavior {
+                case "automatic":
+                    s.contentInsetAdjustmentBehavior = .automatic
+                case "always":
+                    s.contentInsetAdjustmentBehavior = .always
+                case "never":
+                    s.contentInsetAdjustmentBehavior = .never
+                case "scrollableAxes":
+                    s.contentInsetAdjustmentBehavior = .scrollableAxes
+                default:
+                    s.contentInsetAdjustmentBehavior = .never
+                }
+            }
+        }
         if let maximumZoomScale = attr["maxZoom"].cgFloat {
             s.maximumZoomScale = maximumZoomScale
         }

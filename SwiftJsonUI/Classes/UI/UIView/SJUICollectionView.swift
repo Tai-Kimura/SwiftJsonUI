@@ -26,6 +26,47 @@ open class SJUICollectionView: UICollectionView {
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUICollectionView {
         let collectionViewLayout = getCollectionViewLayout(attr: attr)
         let c = viewClass.init(frame: CGRect.zero, collectionViewLayout: collectionViewLayout)
+        if #available(iOS 11.0, *) {
+            if let contentInsetAdjustmentBehavior = attr["contentInsetAdjustmentBehavior"].string {
+                switch contentInsetAdjustmentBehavior {
+                case "automatic":
+                    c.contentInsetAdjustmentBehavior = .automatic
+                case "always":
+                    c.contentInsetAdjustmentBehavior = .always
+                case "never":
+                    c.contentInsetAdjustmentBehavior = .never
+                case "scrollableAxes":
+                    c.contentInsetAdjustmentBehavior = .scrollableAxes
+                default:
+                    c.contentInsetAdjustmentBehavior = .never
+                }
+            }
+        }
+        var contentInsets = Array<CGFloat>()
+        if let insetStr = attr["contentInsets"].string {
+            let paddingStars = insetStr.components(separatedBy: "|")
+            for p in paddingStars {
+                if let n = NumberFormatter().number(from: p) {
+                    contentInsets.append(CGFloat(truncating:n))
+                }
+            }
+        } else if let insets = attr["contentInsets"].arrayObject as? [CGFloat] {
+            contentInsets = insets
+        }
+        var insets:[CGFloat] = [0,0,0,0]
+        switch (contentInsets.count) {
+        case 0:
+            break
+        case 1:
+            insets = [contentInsets[0], contentInsets[0], contentInsets[0], contentInsets[0]]
+        case 2:
+            insets = [contentInsets[0], contentInsets[1], contentInsets[0], contentInsets[1]]
+        case 3:
+            insets = [contentInsets[0], contentInsets[1], contentInsets[2], contentInsets[1]]
+        default:
+            insets = [contentInsets[0], contentInsets[1], contentInsets[2], contentInsets[3]]
+        }
+        c.contentInset = UIEdgeInsets.init(top: insets[0], left: insets[1], bottom: insets[2], right: insets[3])
         c.showsHorizontalScrollIndicator = attr["showsHorizontalScrollIndicator"].boolValue
         c.showsVerticalScrollIndicator = attr["showsVerticalScrollIndicator"].boolValue
         if let paging = attr["paging"].bool {
