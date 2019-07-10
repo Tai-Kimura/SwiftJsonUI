@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SwiftJsonUI'
-  s.version          = '1.8.2'
+  s.version          = '1.8.3'
   s.summary          = 'A short description of SwiftJsonUI.'
 
 # This description is used to generate tags and improve search results.
@@ -39,5 +39,5 @@ TODO: Add long description of the pod here.
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.dependency 'Socket.IO-Client-Swift', '~> 13.3.0'
+  s.dependency 'Socket.IO-Client-Swift', '~> 15.1.0'
 end

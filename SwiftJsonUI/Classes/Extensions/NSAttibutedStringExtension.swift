@@ -6,7 +6,7 @@
 import UIKit
 
 public extension NSAttributedString {
-    public func heightForAttributedString(_ inWidth: CGFloat, lineHeightMultiple: CGFloat, fontSize: CGFloat = SJUIViewCreator.defaultFontSize) -> CGFloat {
+    func heightForAttributedString(_ inWidth: CGFloat, lineHeightMultiple: CGFloat, fontSize: CGFloat = SJUIViewCreator.defaultFontSize) -> CGFloat {
         var H: CGFloat = 0
         
         // Create the framesetter with the attributed string.
@@ -60,7 +60,7 @@ public extension NSAttributedString {
         return frame.width;
     }
     
-    public func lineCountForAttributedString(_ inWidth: CGFloat, lineHeightMultiple: CGFloat, fontSize: CGFloat) -> CGFloat {
+    func lineCountForAttributedString(_ inWidth: CGFloat, lineHeightMultiple: CGFloat, fontSize: CGFloat) -> CGFloat {
         
         // Create the framesetter with the attributed string.
         let framesetter = CTFramesetterCreateWithAttributedString(self)
@@ -79,7 +79,7 @@ public extension NSAttributedString {
         return CGFloat(lineCount);
     }
     
-    public func applyAttributesFromJSON(attrs: [JSON], toLabel label: SJUILabel? = nil) -> NSMutableAttributedString {
+    func applyAttributesFromJSON(attrs: [JSON], toLabel label: SJUILabel? = nil) -> NSMutableAttributedString {
         let attString = NSMutableAttributedString(attributedString: self)
         let text = self.string as NSString
         for attr in attrs {

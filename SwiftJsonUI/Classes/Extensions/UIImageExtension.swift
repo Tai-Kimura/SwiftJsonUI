@@ -7,7 +7,7 @@ import UIKit
 
 public extension UIImage {
     
-    public func resize(_ size: CGSize) -> UIImage {
+    func resize(_ size: CGSize) -> UIImage {
         if self.size.width > size.width || self.size.height > size.height {
             let widthRatio = size.width / self.size.width
             let heightRatio = size.height / self.size.height
@@ -24,7 +24,7 @@ public extension UIImage {
     }
     
     
-    public func fixOrientation () -> UIImage {
+    func fixOrientation () -> UIImage {
         if self.imageOrientation == .up {
             return self
         }
@@ -114,7 +114,7 @@ public extension UIImage {
         return newImage;
     }
     
-    public func base64image() -> String {
+    func base64image() -> String {
         let data = NSData(data: self.pngData()!) as Data
         return data.base64EncodedString(options: .lineLength64Characters)
     }

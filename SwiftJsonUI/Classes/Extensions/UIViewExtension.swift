@@ -24,7 +24,7 @@ var UIControlStateKey: UInt8 = 10
 }
 
 public extension UIView {
-    public var viewId: String? {
+    var viewId: String? {
         get {
             guard let object = objc_getAssociatedObject(self, &ViewIdKey) as? String else {
                 return nil
@@ -36,7 +36,7 @@ public extension UIView {
         }
     }
     
-    public var scripts: [ScriptModel.EventType:ScriptModel] {
+    var scripts: [ScriptModel.EventType:ScriptModel] {
         get {
             guard let object = objc_getAssociatedObject(self, &ScriptsKey) as? [ScriptModel.EventType:ScriptModel] else {
                 let s = [ScriptModel.EventType:ScriptModel]()
@@ -50,7 +50,7 @@ public extension UIView {
         }
     }
     
-    public var defaultBackgroundColor: UIColor! {
+    var defaultBackgroundColor: UIColor! {
         get {
             guard let object = objc_getAssociatedObject(self, &DefaultBackgroundColorKey) as? UIColor else {
                 return nil
@@ -77,7 +77,7 @@ public extension UIView {
         }
     }
     
-    public var tapBackgroundColor: UIColor! {
+    var tapBackgroundColor: UIColor! {
         get {
             guard let object = objc_getAssociatedObject(self, &TapBackgroundColorKey) as? UIColor else {
                 return nil
@@ -89,7 +89,7 @@ public extension UIView {
         }
     }
     
-    public var controlState: UIControl.State {
+    var controlState: UIControl.State {
         get {
             guard let object = objc_getAssociatedObject(self, &UIControlStateKey) as? UIControl.State else {
                 return .normal
@@ -110,7 +110,7 @@ public extension UIView {
         }
     }
     
-    public var propertyName: String? {
+    var propertyName: String? {
         get {
             guard let object = objc_getAssociatedObject(self, &PropertyNameKey) as? String else {
                 return nil
@@ -122,7 +122,7 @@ public extension UIView {
         }
     }
     
-    public var binding: String? {
+    var binding: String? {
         get {
             guard let object = objc_getAssociatedObject(self, &BindingKey) as? String else {
                 return nil
@@ -134,7 +134,7 @@ public extension UIView {
         }
     }
     
-    public var bindingSet: [String:String]? {
+    var bindingSet: [String:String]? {
         get {
             guard let object = objc_getAssociatedObject(self, &BindingSetKey) as? [String:String] else {
                 return nil
@@ -146,7 +146,7 @@ public extension UIView {
         }
     }
     
-    public var constraintInfo: UILayoutConstraintInfo? {
+    var constraintInfo: UILayoutConstraintInfo? {
         get {
             guard let object = objc_getAssociatedObject(self, &ConstraintInfoKey) as? UILayoutConstraintInfo else {
                 return nil
@@ -158,7 +158,7 @@ public extension UIView {
         }
     }
     
-    public var isActiveForConstraint: Bool {
+    var isActiveForConstraint: Bool {
         get {
             guard let object = objc_getAssociatedObject(self, &ActivatedConstraintInfoKey) as? Bool else {
                 return false
@@ -173,7 +173,7 @@ public extension UIView {
         }
     }
     
-    public var visibility: SJUIView.Visibility {
+    var visibility: SJUIView.Visibility {
         get {
             guard let object = objc_getAssociatedObject(self, &VisibilityKey) as? SJUIView.Visibility else {
                 return .visible
@@ -238,7 +238,7 @@ public extension UIView {
         return nextToView.findNextVisibleView()
     }
     
-    public func setBackgroundColor(color: UIColor?, forState state: UIControl.State = .normal) {
+    func setBackgroundColor(color: UIColor?, forState state: UIControl.State = .normal) {
         if state == .highlighted {
             self.tapBackgroundColor = color
         } else  {
@@ -248,15 +248,15 @@ public extension UIView {
     }
     
     @objc
-    public func onBeginTap() {
+    func onBeginTap() {
         controlState = .highlighted
     }
     @objc
-    public func onEndTap() {
+    func onEndTap() {
         controlState = .normal
     }
     
-    public func shouldWrapContent() -> Bool {
+    func shouldWrapContent() -> Bool {
         guard let info = self.constraintInfo else {
             return false
         }
@@ -271,11 +271,11 @@ public extension UIView {
         return false
     }
     
-    public func isExistsOnDisplay() -> Bool {
+    func isExistsOnDisplay() -> Bool {
         return self.visibility != .gone
     }
     
-    public func hasEffectiveRelatedConstraintWith(view: UIView) -> Bool {
+    func hasEffectiveRelatedConstraintWith(view: UIView) -> Bool {
         if let superview = view.superview as? SJUIView, superview.orientation != nil  {
             if let myIndex = superview.subviews.index(of: self), let viewIndex = superview.subviews.index(of: view) {
                 if viewIndex == myIndex + 1 {
@@ -292,7 +292,7 @@ public extension UIView {
     }
     
     
-    public func updateConstraintInfo(resetAllSubviews: Bool = false) {
+    func updateConstraintInfo(resetAllSubviews: Bool = false) {
         if var constraintInfo = self.constraintInfo {
             UIViewDisposure.removeConstraint(constraintInfo: constraintInfo)
             if self.visibility != .gone {
@@ -329,7 +329,7 @@ public extension UIView {
         }
     }
     
-    public func resetConstraintInfo(resetAllSubviews: Bool = false) {
+    func resetConstraintInfo(resetAllSubviews: Bool = false) {
         guard self.isActiveForConstraint else {
             return
         }
@@ -337,7 +337,7 @@ public extension UIView {
         (self.superview ?? self).layoutIfNeeded()
     }
     
-    public func animateWithConstraintInfo(duration: TimeInterval, resetAllSubviews: Bool = false, otherAnimations:( () -> Void)? = nil, completion: ((Bool) -> Void)? = nil) {
+    func animateWithConstraintInfo(duration: TimeInterval, resetAllSubviews: Bool = false, otherAnimations:( () -> Void)? = nil, completion: ((Bool) -> Void)? = nil) {
         updateConstraintInfo(resetAllSubviews: resetAllSubviews)
         UIView.animate(withDuration: duration, animations: {
             (self.superview ?? self).layoutIfNeeded()

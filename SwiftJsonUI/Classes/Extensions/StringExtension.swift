@@ -6,7 +6,7 @@
 import Foundation
 
 public extension String {
-    public func katakana() -> String {
+    func katakana() -> String {
         var str = ""
         
         // 文字列を表現するUInt32
@@ -21,7 +21,7 @@ public extension String {
         return str
     }
     
-    public func hiragana() -> String {
+    func hiragana() -> String {
         var str = ""
         for c in self.unicodeScalars {
             if c.value >= 0x30A1 && c.value <= 0x30F6 {
@@ -36,7 +36,7 @@ public extension String {
     }
     
     // マッチした数を返す
-    public func getMatchCount(pattern: String) -> Int {
+    func getMatchCount(pattern: String) -> Int {
         
         do {
             
@@ -55,7 +55,7 @@ public extension String {
         return getMatchCount(pattern: pattern) > 0
     }
     
-    public func getFormattedZipcode() -> String {
+    func getFormattedZipcode() -> String {
         var t = ""
         let text = self
         var substrStartIndex = text.index(text.startIndex, offsetBy: 0)
@@ -74,13 +74,13 @@ public extension String {
         return t
     }
     
-    public func toDate(format: String = "yyyy/MM/dd HH:mm:ss") -> Date? {
+    func toDate(format: String = "yyyy/MM/dd HH:mm:ss") -> Date? {
         let formatter = DateFormatter()
         formatter.dateFormat = format
         return formatter.date(from: self)
     }
     
-    public func toCamel(lower: Bool = true) -> String {
+    func toCamel(lower: Bool = true) -> String {
         guard self != "" else { return self }
         let words = lowercased().split(separator: "_").map({ String($0) })
         let firstWord: String = words.first ?? ""
@@ -90,7 +90,7 @@ public extension String {
         })
     }
     
-    public func toSnake() -> String {
+    func toSnake() -> String {
         let head = String(prefix(1))
         let tail = String(suffix(count - 1))
         let upperCased = head.uppercased() + tail

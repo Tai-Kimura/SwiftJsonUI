@@ -8,7 +8,7 @@ import UIKit
 
 public extension UIColor {
     
-    public class func colorWithHexString(_ hex: String, alpha: CGFloat) -> UIColor {
+    class func colorWithHexString(_ hex: String, alpha: CGFloat) -> UIColor {
         var cString = hex.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).uppercased() as NSString
         if (cString.hasPrefix("#")) {
             cString = cString.substring(from: 1) as NSString
@@ -24,7 +24,7 @@ public extension UIColor {
         return UIColor(red: CGFloat(r)/255.0, green: CGFloat(g)/255.0, blue: CGFloat(b)/255.0, alpha: alpha)
     }
     
-    public class func colorWithHexString(_ hex: String) -> UIColor! {
+    class func colorWithHexString(_ hex: String) -> UIColor! {
         var cString = hex.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).uppercased() as NSString
         if (cString.hasPrefix("#")) {
             cString = cString.substring(from: 1) as NSString
@@ -56,7 +56,7 @@ public extension UIColor {
         
     }
     
-    public class func findColorByJSON(attr:JSON) -> UIColor? {
+    class func findColorByJSON(attr:JSON) -> UIColor? {
         if let background = attr.string {
             return UIColor.colorWithHexString(background)
         } else if let closure = SJUIViewCreator.findColorFunc, let background = attr.int {
