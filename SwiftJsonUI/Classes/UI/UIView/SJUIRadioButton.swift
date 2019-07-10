@@ -64,13 +64,13 @@ open class SJUIRadioButton: SJUIView {
         self.addSubview(label)
         var constraints = Array<NSLayoutConstraint>()
         
-        constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconOut, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconOut, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
         
-        constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.centerX, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconOut, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.centerX, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconOut, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: 0))
         
-        constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: 14.0))
+        constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: 14.0))
         
-        constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 14.0))
+        constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 14.0))
         
         iconOut.addConstraints(constraints)
         
@@ -84,20 +84,20 @@ open class SJUIRadioButton: SJUIView {
         
         constraints.append(NSLayoutConstraint(item: iconOut, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 20.0))
         
-        constraints.append(NSLayoutConstraint(item: iconImageView, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: iconImageView as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
         
-        constraints.append(NSLayoutConstraint(item: iconImageView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: iconImageView as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: 0))
         
-        constraints.append(NSLayoutConstraint(item: iconImageView, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: 20.0))
+        constraints.append(NSLayoutConstraint(item: iconImageView as Any, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: 20.0))
         
-        constraints.append(NSLayoutConstraint(item: iconImageView, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 20.0))
+        constraints.append(NSLayoutConstraint(item: iconImageView as Any, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 20.0))
         
-        constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
         
-        constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconOut, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 10.0))
+        constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconOut, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 10.0))
         
-        constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 0))
-        constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 0))
+        constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: 0))
         
         self.addConstraints(constraints)
         

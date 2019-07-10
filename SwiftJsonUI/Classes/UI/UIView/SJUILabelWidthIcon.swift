@@ -80,29 +80,30 @@ open class SJUILabelWithIcon: SJUIView {
             self.translatesAutoresizingMaskIntoConstraints = false
             var constraints = Array<NSLayoutConstraint>()
             
-            constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
             
-            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
             
             switch position {
             case .left, .natural, .justified:
-                constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconMargin))
+                constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconMargin))
                 
-                constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconView, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconView.frame.size.width + iconMargin))
+                constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconView, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconView.frame.size.width + iconMargin))
                 
                 constraints.append(NSLayoutConstraint(item: self, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 0))
             case .center:
                 let totalWidth = label.frame.size.width + iconView.frame.size.width + iconMargin
                 if label.frame.size.width > iconView.frame.size.width {
-                    constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0)))
-                    constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0) - iconMargin))
+                    constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0)))
+                    constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0) - iconMargin))
                 } else {
                     
                 }
             case .right:
-                constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -iconMargin))
+                constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -iconMargin))
                 
-                constraints.append(NSLayoutConstraint(item: iconView, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant:  -iconMargin))
+                constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant:  -iconMargin))
+            @unknown default: break
             }
             
             NSLayoutConstraint.activate(constraints)
@@ -111,8 +112,8 @@ open class SJUILabelWithIcon: SJUIView {
             self.addSubview(label)
             var constraints = Array<NSLayoutConstraint>()
             
-            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
-            constraints.append(NSLayoutConstraint(item: label, attribute: NSLayoutConstraint.Attribute.centerX, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+            constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.centerX, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: 0))
             NSLayoutConstraint.activate(constraints)
         }
         self.clipsToBounds = true

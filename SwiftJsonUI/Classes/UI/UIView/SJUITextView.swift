@@ -68,10 +68,10 @@ open class SJUITextView: UITextView {
                 self.placeHolder.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
                 self.addSubview(placeHolder)
                 let inset = self.textContainerInset
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: inset.left)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: inset.right)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: inset.top-5.0)])
-                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: self, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -inset.bottom)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: inset.left)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: inset.right)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder as Any, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: inset.top-5.0)])
+                NSLayoutConstraint.activate([NSLayoutConstraint(item: self.placeHolder as Any, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: self, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -inset.bottom)])
             }
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineHeightMultiple = 1.4
