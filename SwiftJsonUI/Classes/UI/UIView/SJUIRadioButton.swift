@@ -163,7 +163,7 @@ public class NSRadioGroup: NSObject {
     public var selectedIndex: Int? {
         get {
             if let selectedBtn = self.selectedBtn {
-                return self.radioBtns.index(of: selectedBtn)
+                return self.radioBtns.firstIndex(of: selectedBtn)
             }
             return nil
         }
@@ -183,7 +183,7 @@ public class NSRadioGroup: NSObject {
     }
     
     public func remove(radioBtn btn: SJUIRadioButton) -> Bool {
-        if let index = radioBtns.index(of: btn) {
+        if let index = radioBtns.firstIndex(of: btn) {
             self.weakRadioBtns.remove(at: index)
             return true
         }

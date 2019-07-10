@@ -136,7 +136,7 @@ open class UIViewDisposure {
                 info.alignTop = true
                 applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
             } else {
-                if let index = subviews.index(of: view), index > 0 {
+                if let index = subviews.firstIndex(of: view), index > 0 {
                     let bottomOfView = subviews[index - 1]
                     applyBottomConstraint(of: bottomOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
@@ -153,7 +153,7 @@ open class UIViewDisposure {
                 info.alignBottom = true
                 applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
             } else {
-                if let index = subviews.index(of: view), index > 0 {
+                if let index = subviews.firstIndex(of: view), index > 0 {
                     let topOfView = subviews[index - 1]
                     applyTopConstraint(of: topOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
@@ -178,7 +178,7 @@ open class UIViewDisposure {
                 info.alignLeft = true
                 applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
             } else {
-                if let index = subviews.index(of: view), index > 0 {
+                if let index = subviews.firstIndex(of: view), index > 0 {
                     let rightOfView = subviews[index - 1]
                     applyRightConstraint(of: rightOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }
@@ -195,7 +195,7 @@ open class UIViewDisposure {
                 info.alignRight = true
                 applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
             } else {
-                if let index = subviews.index(of: view), index > 0 {
+                if let index = subviews.firstIndex(of: view), index > 0 {
                     let leftOfView = subviews[index - 1]
                     applyLeftConstraint(of: leftOfView, onView: view, toConstraintInfo: info, for: &constraints)
                 }

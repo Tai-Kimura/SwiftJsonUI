@@ -44,7 +44,7 @@ public extension NSAttributedString {
         return H;
     }
     
-    public func widthForAttributedString() -> CGFloat {
+    func widthForAttributedString() -> CGFloat {
         
         // Create the framesetter with the attributed string.
         let framesetter = CTFramesetterCreateWithAttributedString(self)

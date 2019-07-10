@@ -34,7 +34,7 @@ open class Binding: NSObject {
     public func bindView() {
         if let views = _viewHolder?._views {
             for v in views.values {
-                if let propertyName = v.propertyName, let index = properties.index(of: propertyName) {
+                if let propertyName = v.propertyName, let index = properties.firstIndex(of: propertyName) {
                     let property = properties[index]
                     self.setValue(v, forKeyPath: property)
                 }
@@ -53,7 +53,7 @@ open class Binding: NSObject {
                     textField.text = text
                 } else if let textView = v as? UITextView {
                     textView.text = text
-                } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.index(of: text) {
+                } else if let selectBox = v as? SJUISelectBox, let index = selectBox.items.firstIndex(of: text) {
                     selectBox.selectedIndex = index
                 } else if let networkImageView = v as? NetworkImageView {
                     networkImageView.setImageURL(string: text)
@@ -86,7 +86,7 @@ open class Binding: NSObject {
             return value
         } else if let array = data as? [Any], let index = Int(binding) {
             return array[index]
-        } else if let array = data as? [String], let index = array.index(of: binding) {
+        } else if let array = data as? [String], let index = array.firstIndex(of: binding) {
             return array[index]
         } else if let object = data as? NSObject {
             return object.value(forKey: binding)

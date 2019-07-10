@@ -277,7 +277,7 @@ public extension UIView {
     
     func hasEffectiveRelatedConstraintWith(view: UIView) -> Bool {
         if let superview = view.superview as? SJUIView, superview.orientation != nil  {
-            if let myIndex = superview.subviews.index(of: self), let viewIndex = superview.subviews.index(of: view) {
+            if let myIndex = superview.subviews.firstIndex(of: self), let viewIndex = superview.subviews.firstIndex(of: view) {
                 if viewIndex == myIndex + 1 {
                     return true
                 } else if superview.subviews.count <= 2 {
