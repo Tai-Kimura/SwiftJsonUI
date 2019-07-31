@@ -299,7 +299,9 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         guard let inView = inView else {
             return
         }
-        self.selectBoxDelegate?.willShowSheet(view: self)
+        guard self.selectBoxDelegate?.willShowSheet(view: self) ?? true else {
+            return
+        }
         if let viewController = (selectBoxDelegate as? SJUIViewController) {
             viewController.hideKeyboard()
         }
@@ -392,12 +394,13 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
 }
 
 public protocol UISelectBoxDelegate: class {
-    func willShowSheet(view: SJUISelectBox)
+    func willShowSheet(view: SJUISelectBox) -> Bool
     func didItemSelected(view: SJUISelectBox, isBack: Bool)
 }
 
 public extension UISelectBoxDelegate {
-    func willShowSheet(view: SJUISelectBox) {
+    func willShowSheet(view: SJUISelectBox) -> Bool {
+        return true
     }
     func didItemSelected(view: SJUISelectBox, isBack: Bool) {
     }
