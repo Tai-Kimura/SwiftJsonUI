@@ -758,6 +758,12 @@ open class UIViewDisposure {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: maxHeight))
         }
         if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            if let superview = view.superview {
+                let topConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: info.topMargin ?? 0)
+                constraints.append(topConstraint)
+                let bottomConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -(info.bottomMargin ?? 0))
+                constraints.append(bottomConstraint)
+            }
             return
         }
         if let height = info.height {
@@ -778,12 +784,20 @@ open class UIViewDisposure {
             return
         }
         if let minWidth = info.minWidth {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: minWidth))
+            let constraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: minWidth)
+            constraints.append(constraint)
         }
         if let maxWidth = info.maxWidth {
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: maxWidth))
+            let constraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: maxWidth)
+            constraints.append(constraint)
         }
         if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            if let superview = view.superview {
+                let leftConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: info.leftMargin ?? 0)
+                constraints.append(leftConstraint)
+                let rightConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -(info.rightMargin ?? 0))
+                constraints.append(rightConstraint)
+            }
             return
         }
         if let width = info.width {
@@ -1243,11 +1257,3 @@ class WeakConstraint {
         return weakConstraints
     }
 }
-
-
-
-
-
-
-
-
