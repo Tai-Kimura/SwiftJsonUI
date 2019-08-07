@@ -311,6 +311,16 @@ open class SJUIViewCreator:NSObject {
                     subview.isActiveForConstraint = true
                 }
             }
+        } else if let iconLabel = view as? SJUILabelWithIcon {
+            var prevView: UIView? = nil
+            for subview in iconLabel.subviews {
+                if subview.constraintInfo != nil {
+                    UIViewDisposure.applyConstraint(onView: subview, toConstraintInfo: &subview.constraintInfo!)
+                    subview.constraintInfo?.nextToView = prevView
+                    prevView = subview
+                    subview.isActiveForConstraint = true
+                }
+            }
         }
         if isRootView {
             UIViewDisposure.applyConstraint(onView: view, toConstraintInfo: &view.constraintInfo!)
@@ -674,6 +684,7 @@ public protocol ViewHolder: class {
         set
     }
 }
+
 
 
 

@@ -15,7 +15,7 @@ open class SJUILabelWithIcon: SJUIView {
     
     public var label: SJUILabel!
     
-    public var iconView: UIImageView!
+    public var iconView: SJUIImageView!
     
     public var iconOn: UIImage!
     
@@ -34,7 +34,7 @@ open class SJUILabelWithIcon: SJUIView {
         }
     }
     
-    required public init(labelText text: String!, onIcon: String?, offIcon: String?, fontColor: UIColor!, selectedFontColor: UIColor!, fontName:String!, fontSize:CGFloat!, position: NSTextAlignment, shadow: JSON, iconMargin: CGFloat) {
+    required public init(labelText text: String!, onIcon: String?, offIcon: String?, fontColor: UIColor!, selectedFontColor: UIColor!, fontName:String!, fontSize:CGFloat!, iconPosition: IconPosition, shadow: JSON, iconMargin: CGFloat) {
         label = SJUILabel()
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.lineHeightMultiple = 1.0
@@ -70,43 +70,55 @@ open class SJUILabelWithIcon: SJUIView {
         if let iconOn = onIcon, let iconOff = offIcon {
             self.iconOn = UIImage(named: iconOn)
             self.iconOff = UIImage(named: iconOff)
-            iconView = UIImageView(image: self.iconOff)
+            iconView = SJUIImageView(image: self.iconOff)
             iconView.translatesAutoresizingMaskIntoConstraints = false
-            let width = iconView.frame.size.width + iconMargin + label.frame.size.width
-            let height = iconView.frame.size.height > label.frame.size.height ? iconView.frame.size.height : label.frame.size.height
-            super.init(frame: CGRect(x: 0, y: 0, width: width, height: height))
-            self.addSubview(iconView)
-            self.addSubview(label)
+            super.init(frame: CGRect.zero)
             self.translatesAutoresizingMaskIntoConstraints = false
-            var constraints = Array<NSLayoutConstraint>()
             
-            constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+            let iconConstraintInfo = UILayoutConstraintInfo(width: UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue, height: UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue, superview: self)
             
-            constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.centerY, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerY, multiplier: 1.0, constant: 0))
+            iconView.constraintInfo = iconConstraintInfo
             
-            switch position {
-            case .left, .natural, .justified:
-                constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconMargin))
-                
-                constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: iconView, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: iconView.frame.size.width + iconMargin))
-                
-                constraints.append(NSLayoutConstraint(item: self, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: 0))
-            case .center:
-                let totalWidth = label.frame.size.width + iconView.frame.size.width + iconMargin
-                if label.frame.size.width > iconView.frame.size.width {
-                    constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0)))
-                    constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.centerX, multiplier: 1.0, constant: -(label.frame.size.width - totalWidth/2.0) - iconMargin))
-                } else {
-                    
-                }
+            let labelConstraintInfo = UILayoutConstraintInfo(width: UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue, height: UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue, superview: self)
+            
+            label.constraintInfo = labelConstraintInfo
+            
+            switch iconPosition {
+            case .top:
+                self.orientation = .vertical
+                self.direction = .topToBottom
+                label.constraintInfo?.topMargin = iconMargin
+                label?.constraintInfo?.centerHorizontal = true
+                iconView?.constraintInfo?.centerHorizontal = true
+                self.addSubview(iconView)
+                self.addSubview(label)
+            case .left:
+                self.orientation = .horizontal
+                self.direction = .leftToRight
+                label.constraintInfo?.leftMargin = iconMargin
+                label.constraintInfo?.topMargin = iconMargin
+                label?.constraintInfo?.centerVertical = true
+                iconView?.constraintInfo?.centerVertical = true
+                self.addSubview(iconView)
+                self.addSubview(label)
             case .right:
-                constraints.append(NSLayoutConstraint(item: label as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: self, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -iconMargin))
-                
-                constraints.append(NSLayoutConstraint(item: iconView as Any, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.equal, toItem: label, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant:  -iconMargin))
-            @unknown default: break
+                self.orientation = .horizontal
+                self.direction = .leftToRight
+                iconView.constraintInfo?.leftMargin = iconMargin
+                label?.constraintInfo?.centerVertical = true
+                iconView?.constraintInfo?.centerVertical = true
+                self.addSubview(label)
+                self.addSubview(iconView)
+            case .bottom:
+                self.orientation = .vertical
+                self.direction = .topToBottom
+                iconView.constraintInfo?.topMargin = iconMargin
+                label.constraintInfo?.topMargin = iconMargin
+                label?.constraintInfo?.centerHorizontal = true
+                iconView?.constraintInfo?.centerHorizontal = true
+                self.addSubview(label)
+                self.addSubview(iconView)
             }
-            
-            NSLayoutConstraint.activate(constraints)
         } else {
             super.init(frame: CGRect(x: 0, y: 0, width: label.frame.size.width, height: label.frame.size.height))
             self.addSubview(label)
@@ -124,67 +136,27 @@ open class SJUILabelWithIcon: SJUIView {
         super.init(coder: aDecoder)
     }
     
-    override open func onBeginTap() {
-        if canTap {
-            if effectView == nil {
-                let frame = self.frame
-                let size = frame.size.width > frame.size.height ? frame.size.width : frame.size.height
-                let x = frame.size.width > frame.size.height ? 0 : (frame.size.width - frame.size.height)/2.0
-                let y = frame.size.width < frame.size.height ? 0 : (frame.size.height - frame.size.width)/2.0
-                effectView = UIView(frame: CGRect(x: x,y: y,width: size,height: size))
-                effectView.layer.cornerRadius = size/2.0
-            }
-            self.effectView.layer.removeAllAnimations()
-            if effectView.superview == nil {
-                self.insertSubview(effectView, at: 0)
-            }
-            effectView.backgroundColor = self.defaultBackgroundColor
-            self.backgroundColor = self.tapBackgroundColor
-            UIView.animate(withDuration: 0.1, delay: 0, options: UIView.AnimationOptions.allowUserInteraction, animations: {
-                self.effectView.transform = CGAffineTransform(scaleX: 0.001, y: 0.001)
-            }, completion: {finished in
-                self.effectView.removeFromSuperview()
-            })
-            UIView.transition(with: label, duration: 0.17, options: UIView.AnimationOptions.transitionCrossDissolve, animations: {
-                self.label.textColor = self.selectedFontColor
-            }, completion: nil)
-        }
-    }
-    
-    override open func onEndTap() {
-        if canTap {
-            if effectView.superview == nil {
-                self.insertSubview(effectView, at: 0)
-            }
-            effectView.backgroundColor = self.defaultBackgroundColor
-            UIView.animate(withDuration: 0.1, delay: 0, options: UIView.AnimationOptions.allowUserInteraction, animations: {
-                self.effectView.transform = CGAffineTransform.identity
-            }, completion: {finished in
-                self.effectView.removeFromSuperview()
-                self.backgroundColor = self.defaultBackgroundColor
-            })
-            UIView.transition(with: label, duration: 0.17, options: UIView.AnimationOptions.transitionCrossDissolve, animations: {
-                self.label.textColor = self.fontColor
-            }, completion: nil)
-        }
-    }
-    
     override open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUILabelWithIcon {
         let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor
         let selectedFontColor =  UIColor.findColorByJSON(attr: attr["selectedFontColor"]) ?? fontColor
-        let positionStr = attr["position"].string ?? "Left"
-        let position: NSTextAlignment
-        switch positionStr {
+        
+        let iconPositionStr = attr["iconPosition"].string ?? "Left"
+        let iconPosition: IconPosition
+        switch iconPositionStr {
+        case "Top":
+            iconPosition = .top
         case "Left":
-            position = .left
-        case "Center":
-            position = .center
+            iconPosition = .left
         case "Right":
-            position = .right
+            iconPosition = .right
+        case "Bottom":
+            iconPosition = .bottom
         default:
-            position = .left
+            iconPosition = .left
         }
-        let l = (viewClass as! SJUILabelWithIcon.Type).init(labelText:  NSLocalizedString(attr["text"].stringValue, comment: "") , onIcon: attr["icon_on"].string , offIcon: attr["icon_off"].string , fontColor: fontColor, selectedFontColor: selectedFontColor, fontName: attr["font"].string, fontSize: attr["fontSize"].cgFloat, position: position, shadow: attr["textShadow"], iconMargin: attr["iconMargin"].cgFloat ?? 5.0)
+        
+        
+        let l = (viewClass as! SJUILabelWithIcon.Type).init(labelText:  NSLocalizedString(attr["text"].stringValue, comment: "") , onIcon: attr["icon_on"].string , offIcon: attr["icon_off"].string , fontColor: fontColor, selectedFontColor: selectedFontColor, fontName: attr["font"].string, fontSize: attr["fontSize"].cgFloat, iconPosition: iconPosition, shadow: attr["textShadow"], iconMargin: attr["iconMargin"].cgFloat ?? 5.0)
         
         if let onclick = attr["onclick"].string {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))
@@ -195,4 +167,13 @@ open class SJUILabelWithIcon: SJUIView {
         
         return l
     }
+    
+    public enum IconPosition {
+        case top
+        case left
+        case right
+        case bottom
+    }
 }
+
+

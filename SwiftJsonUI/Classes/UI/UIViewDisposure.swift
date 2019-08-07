@@ -1005,7 +1005,7 @@ public class UILayoutConstraintInfo {
     weak var nextToView: UIView?
     var gravities = [SJUIView.Gravity: Bool]()
     
-    public init(toView: UIView?, paddingLeft:CGFloat! = nil, paddingRight:CGFloat! = nil, paddingTop: CGFloat! = nil, paddingBottom: CGFloat! = nil, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignTop: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil,weight: CGFloat! = nil, gravities: [String]?, superview: UIView?) {
+    public init(toView: UIView? = nil, paddingLeft:CGFloat! = nil, paddingRight:CGFloat! = nil, paddingTop: CGFloat! = nil, paddingBottom: CGFloat! = nil, leftPadding:CGFloat! = nil, rightPadding:CGFloat! = nil, topPadding: CGFloat! = nil, bottomPadding: CGFloat! = nil, minLeftPadding:CGFloat! = nil, minRightPadding:CGFloat! = nil, minTopPadding: CGFloat! = nil, minBottomPadding: CGFloat! = nil, maxLeftPadding:CGFloat! = nil, maxRightPadding:CGFloat! = nil, maxTopPadding: CGFloat! = nil, maxBottomPadding: CGFloat! = nil, leftMargin:CGFloat! = nil, rightMargin:CGFloat! = nil, topMargin: CGFloat! = nil, bottomMargin: CGFloat! = nil, minLeftMargin:CGFloat! = nil, minRightMargin:CGFloat! = nil, minTopMargin: CGFloat! = nil, minBottomMargin: CGFloat! = nil, maxLeftMargin:CGFloat! = nil, maxRightMargin:CGFloat! = nil, maxTopMargin: CGFloat! = nil, maxBottomMargin: CGFloat! = nil, centerVertical: Bool! = nil, centerHorizontal: Bool! = nil, alignTop: Bool! = nil, alignBottom: Bool! = nil, alignLeft: Bool! = nil, alignRight: Bool! = nil, alignTopToView: Bool! = nil, alignBottomToView: Bool! = nil, alignLeftToView: Bool! = nil, alignRightToView: Bool! = nil ,alignCenterVerticalToView: Bool! = nil ,alignCenterHorizontalToView: Bool! = nil, alignTopOfView: UIView! = nil, alignBottomOfView: UIView! = nil, alignLeftOfView: UIView! = nil, alignRightOfView: UIView! = nil, alignTopView: UIView! = nil, alignBottomView: UIView! = nil, alignLeftView: UIView! = nil, alignRightView: UIView! = nil ,alignCenterVerticalView: UIView! = nil ,alignCenterHorizontalView: UIView! = nil, width:CGFloat! = nil, height:CGFloat! = nil, minWidth:CGFloat! = nil, minHeight:CGFloat! = nil, maxWidth:CGFloat! = nil, maxHeight:CGFloat! = nil, widthWeight:CGFloat! = nil, heightWeight:CGFloat! = nil, aspectWidth: CGFloat! = nil, aspectHeight: CGFloat! = nil, maxWidthWeight: CGFloat! = nil, maxHeightWeight: CGFloat! = nil, minWidthWeight: CGFloat! = nil, minHeightWeight: CGFloat! = nil,weight: CGFloat! = nil, gravities: [String]? = nil, superview: UIView? = nil) {
         self.paddingLeft = paddingLeft
         self.paddingRight = paddingRight
         self.paddingTop = paddingTop
@@ -1092,14 +1092,14 @@ public class UILayoutConstraintInfo {
         if self.maxHeight != nil && self.minHeight != nil && self.maxHeight < self.minHeight {
             self.maxHeight = self.minHeight
         }
-        if self.width != nil && self.minWidth != nil &&  self.width < self.minWidth {
+        if self.width != nil && self.minWidth != nil && self.width != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue &&  self.width != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue && self.width < self.minWidth {
             self.width = self.minWidth
-        } else if self.width != nil && self.maxWidth != nil && self.width > self.maxWidth {
+        } else if self.width != nil && self.maxWidth != nil && self.width != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue &&  self.width != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue && self.width > self.maxWidth {
             self.width = self.maxWidth
         }
-        if self.height != nil && self.minHeight != nil && self.height < self.minHeight {
+        if self.height != nil && self.minHeight != nil && self.height != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue &&  self.height != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue && self.height < self.minHeight {
             self.height = self.minHeight
-        } else if self.height != nil && self.maxHeight != nil && self.height > self.maxHeight {
+        } else if self.height != nil && self.maxHeight != nil && self.height != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue &&  self.height != UILayoutConstraintInfo.LayoutParams.matchParent.rawValue && self.height > self.maxHeight {
             self.height = self.maxHeight
         }
         
@@ -1257,4 +1257,6 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
+
 
