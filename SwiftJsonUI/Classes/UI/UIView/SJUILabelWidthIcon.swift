@@ -112,7 +112,6 @@ open class SJUILabelWithIcon: SJUIView {
                 self.orientation = .vertical
                 self.direction = .topToBottom
                 iconView.constraintInfo?.topMargin = iconMargin
-                label.constraintInfo?.topMargin = iconMargin
                 label?.constraintInfo?.centerHorizontal = true
                 iconView?.constraintInfo?.centerHorizontal = true
                 self.addSubview(label)
