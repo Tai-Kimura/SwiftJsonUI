@@ -30,7 +30,7 @@ open class SJUILabelWithIcon: SJUIView {
     public var isSelected: Bool = false {
         willSet {
             self.label.selected = newValue
-            self.iconView.image = newValue ? self.iconOn : self.iconOff
+            self.iconView?.image = newValue ? self.iconOn : self.iconOff
         }
     }
     
