@@ -759,9 +759,9 @@ open class UIViewDisposure {
         }
         if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
             if let superview = view.superview, superview.constraintInfo?.width ?? UILayoutConstraintInfo.LayoutParams.matchParent.rawValue != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
-                let topConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: info.topMargin ?? 0)
+                let topConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: (info.topMargin ?? 0) + (superview.constraintInfo?.paddingTop ?? 0))
                 constraints.append(topConstraint)
-                let bottomConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -(info.bottomMargin ?? 0))
+                let bottomConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -((info.bottomMargin ?? 0) + (superview.constraintInfo?.paddingBottom ?? 0)))
                 constraints.append(bottomConstraint)
             }
             return
@@ -793,9 +793,9 @@ open class UIViewDisposure {
         }
         if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
             if let superview = view.superview, superview.constraintInfo?.width ?? UILayoutConstraintInfo.LayoutParams.matchParent.rawValue != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
-                let leftConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: info.leftMargin ?? 0)
+                let leftConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: (info.leftMargin ?? 0) + (superview.constraintInfo?.paddingLeft ?? 0))
                 constraints.append(leftConstraint)
-                let rightConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -(info.rightMargin ?? 0))
+                let rightConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.right, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.right, multiplier: 1.0, constant: -((info.rightMargin ?? 0) + (superview.constraintInfo?.paddingRight ?? 0)))
                 constraints.append(rightConstraint)
             }
             return
