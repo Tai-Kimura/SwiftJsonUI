@@ -17,9 +17,9 @@ open class SJUILabelWithIcon: SJUIView {
     
     public var iconView: SJUIImageView!
     
-    public var iconOn: UIImage!
+    public var iconOn: UIImage?
     
-    public var iconOff: UIImage!
+    public var iconOff: UIImage?
     
     public var fontColor: UIColor!
     

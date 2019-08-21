@@ -169,7 +169,7 @@ open class SJUITextView: UITextView {
     
     @objc open func textBeginEditing() {
         if self.isFirstResponder {
-            self.placeHolder?.isHidden = true
+            setPlaceHolderIfNeeded()
         }
     }
     
