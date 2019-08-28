@@ -89,7 +89,10 @@ open class SJUIViewCreator:NSObject {
     @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
         if let include = attr["include"].string {
-            let url = getURL(path: include)
+            var url = getURL(path: "_\(include)")
+            if !FileManager.default.fileExists(atPath: url) {
+                url = getURL(path: include)
+            }
             do {
                 var jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
                 if let variables = attr["variables"].array {
