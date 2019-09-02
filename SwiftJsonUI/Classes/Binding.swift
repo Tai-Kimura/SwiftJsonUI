@@ -48,7 +48,7 @@ open class Binding: NSObject {
             let fetchedValue = fetchValue(data: data, binding: b)
             if let text = fetchedValue as? String {
                 if let label = v as? SJUILabel {
-                    label.applyAttributedText(text)
+                    label.linkable ? label.applyLinkableAttributedText(text) : label.applyAttributedText(text)
                 } else if let textField = v as? UITextField {
                     textField.text = text
                 } else if let textView = v as? UITextView {

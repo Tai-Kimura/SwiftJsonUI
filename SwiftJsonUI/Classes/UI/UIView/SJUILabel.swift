@@ -205,6 +205,10 @@ open class SJUILabel: UILabel {
     public class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUILabel {
         
         let l = viewClass.init()
+        l.linkable = attr["linkable"].boolValue
+        if l.linkable {
+            l.touchDelegate = target as? UIViewTapDelegate
+        }
         var edgeInsets = Array<CGFloat>()
         if let edgeInsetStr = attr["edgeInset"].string {
             let edgeInsetStrs = edgeInsetStr.components(separatedBy: "|")
