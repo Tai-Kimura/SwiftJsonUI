@@ -88,7 +88,7 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
         //        Log("Loacation \(location)")
         //        Downloader.clearnUpCachePathIfNeeded()
         let fm = FileManager.default
-        let path = Downloader.getCachePath() + url.absoluteString.replacingOccurrences(of: "/", with: "_")
+        let path = Downloader.getCachePath() + (url.withoutQuery()?.absoluteString ?? url.absoluteString).replacingOccurrences(of: "/", with: "_")
         fm.createFile(atPath: path, contents: try? Data(contentsOf: location), attributes: nil)
         //        Log("File Exist ? \(fm.fileExistsAtPath(Downloader.getCachePath() + url.absoluteString.stringByReplacingOccurrencesOfString("/", withString: "_"))) At Path \(Downloader.getCachePath() + url.absoluteString.stringByReplacingOccurrencesOfString("/", withString: "_"))")
         completionHandler?(try? Data(contentsOf: location), false)

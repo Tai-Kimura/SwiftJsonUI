@@ -54,7 +54,7 @@ open class NetworkImageView: SJUIImageView {
             return
         }
         
-        let path = Downloader.getCachePath() + "/" + url.absoluteString.replacingOccurrences(of: "/", with: "_")
+        let path = Downloader.getCachePath() + (url.withoutQuery()?.absoluteString ?? url.absoluteString).replacingOccurrences(of: "/", with: "_")
         
         if self.previousPath != nil && self.image != nil && self.image != self.errorImage && self.image != self.defaultImage {
             NetworkImageCache.sharedInstance().cacheImage(self.image!, forKey: previousPath! + (renderingMode != nil ? "\(renderingMode!.rawValue)" : ""))

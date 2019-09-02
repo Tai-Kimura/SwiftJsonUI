@@ -31,7 +31,7 @@ open class CircleImageView: NetworkImageView {
             NetworkImageCache.sharedInstance().cacheImage(self.image!, forKey: previousPath!)
         }
         
-        let path = Downloader.getCachePath() + "/" + "circle_" + url.absoluteString.replacingOccurrences(of: "/", with: "_")
+        let path = Downloader.getCachePath()  + "circle_" + (url.withoutQuery()?.absoluteString ?? url.absoluteString).replacingOccurrences(of: "/", with: "_")
         if let image = NetworkImageCache.sharedInstance().getImage(path) {
             self.layer.opacity = 1
             self.image = image
@@ -48,8 +48,6 @@ open class CircleImageView: NetworkImageView {
                     
                     do {
                         let fm = FileManager.default
-                        let path = Downloader.getCachePath() + "/" + "circle_" + url.absoluteString.replacingOccurrences(of: "/", with: "_")
-                        
                         let circleImage: UIImage?
                         if fm.fileExists(atPath: path) {
                             circleImage = UIImage(contentsOfFile: path)
