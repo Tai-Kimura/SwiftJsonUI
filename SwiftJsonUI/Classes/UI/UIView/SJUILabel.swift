@@ -172,21 +172,26 @@ open class SJUILabel: UILabel {
         let lineArray = CTFrameGetLines(frame)
         let lineCount = CFArrayGetCount(lineArray)
         var size: CGFloat? = nil
+        var multiple: CGFloat = 1.0
         if attributedText.length > 0 {
             let attr = attributedText.attributes(at: 0, effectiveRange: nil)
             if let font = attr[NSAttributedString.Key.font] as? UIFont {
                 size = font.pointSize
             }
+            if let paragraphStyle = attr[NSAttributedString.Key.paragraphStyle] as? NSParagraphStyle {
+                multiple = paragraphStyle.lineHeightMultiple
+            }
         }
+        
         
         var h:CGFloat = 0, ascent:CGFloat = 0, descent:CGFloat = 0, leading:CGFloat = 0
         for i in 0 ..< lineCount {
             let currentLine = CTLineCreateWithAttributedString(attributedText)
             CTLineGetTypographicBounds(currentLine, &ascent, &descent, &leading)
             if size != nil && (ascent + descent) - size! > 5.0 {
-                h = size! * 1.1
+                h = size! * multiple
             } else {
-                h = (ascent + descent) * 1.1
+                h = (ascent + descent) * multiple
             }
             if p.y > H && p.y <= H + h {
                 let line: CTLine =  unsafeBitCast(CFArrayGetValueAtIndex(lineArray, i), to: CTLine.self)
@@ -404,3 +409,4 @@ open class SJUILabel: UILabel {
         return l
     }
 }
+
