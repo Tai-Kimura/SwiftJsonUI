@@ -21,6 +21,10 @@ import UIKit
 
 open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     
+    public static var font: UIFont = UIFont.systemFont(ofSize: 20.0)
+    
+    public static var textColor: UIColor = UIColor.black
+    
     public static var backgroundColor = UIColor.colorWithHexString("000000", alpha: 0.2)
     
     public static var selectBtnColor = SJUIViewCreator.defaultFontColor
@@ -209,7 +213,8 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
             label = UILabel(frame: CGRect(x: 0,y: 0,width: pickerView.rowSize(forComponent: component).width, height: pickerView.rowSize(forComponent: component).height))
             label?.textAlignment = NSTextAlignment.center
         }
-        label?.font = UIFont.systemFont(ofSize: 20.0)
+        label?.font = SheetView.font
+        label?.textColor = SheetView.textColor
         
         if pickerSource.count > component && pickerSource[component].count > row {
             let dataSource = pickerSource[component][row]
