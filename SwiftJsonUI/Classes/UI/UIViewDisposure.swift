@@ -864,10 +864,66 @@ public class UILayoutConstraintInfo {
         }
     }
     public weak var toView: UIView?
-    public var paddingLeft:CGFloat!
-    public var paddingRight:CGFloat!
-    public var paddingTop: CGFloat!
-    public var paddingBottom: CGFloat!
+    public var safeAreaInsetLeft:CGFloat = 0
+    public var safeAreaInsetRight:CGFloat = 0
+    public var safeAreaInsetTop: CGFloat = 0
+    public var safeAreaInsetBottom: CGFloat = 0
+    public var originalPaddingLeft:CGFloat!
+    public var originalPaddingRight:CGFloat!
+    public var originalPaddingTop: CGFloat!
+    public var originalPaddingBottom: CGFloat!
+    public var paddingLeft:CGFloat! {
+        get {
+            if safeAreaInsetLeft != 0 {
+                return (originalPaddingLeft ?? 0) + safeAreaInsetLeft
+            } else {
+                return originalPaddingLeft
+            }
+        }
+        
+        set {
+            originalPaddingLeft = newValue
+        }
+    }
+    public var paddingRight:CGFloat! {
+        get {
+            if safeAreaInsetRight != 0 {
+                return (originalPaddingRight ?? 0) + safeAreaInsetRight
+            } else {
+                return originalPaddingRight
+            }
+        }
+        
+        set {
+            originalPaddingRight = newValue
+        }
+    }
+    public var paddingTop: CGFloat! {
+        get {
+            if safeAreaInsetTop != 0 {
+                return (originalPaddingTop ?? 0) + safeAreaInsetTop
+            } else {
+                return originalPaddingTop
+            }
+        }
+        
+        set {
+            originalPaddingTop = newValue
+        }
+    }
+    public var paddingBottom: CGFloat! {
+        get {
+            if safeAreaInsetBottom != 0 {
+                return (originalPaddingBottom ?? 0) + safeAreaInsetBottom
+            } else {
+                return originalPaddingBottom
+            }
+        }
+        
+        set {
+            originalPaddingBottom = newValue
+        }
+    }
     public var leftMargin:CGFloat!
     public var rightMargin:CGFloat!
     public var topMargin: CGFloat!

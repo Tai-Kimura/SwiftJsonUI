@@ -148,24 +148,24 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
                     for inset in insets {
                         switch inset {
                         case "top":
-                            v.constraintInfo?.paddingTop = (v.constraintInfo?.paddingTop ?? 0) + safeAreaInsets.top
+                            v.constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
                         case "left":
-                            v.constraintInfo?.paddingLeft = (v.constraintInfo?.paddingLeft ?? 0) + safeAreaInsets.left
+                            v.constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
                         case "bottom":
-                            v.constraintInfo?.paddingBottom = (v.constraintInfo?.paddingBottom ?? 0) + safeAreaInsets.bottom
+                            v.constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
                         case "right":
-                            v.constraintInfo?.paddingRight = (v.constraintInfo?.paddingRight ?? 0) + safeAreaInsets.right
+                            v.constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
                         case "vertical":
-                            v.constraintInfo?.paddingTop = (v.constraintInfo?.paddingTop ?? 0) + safeAreaInsets.top
-                            v.constraintInfo?.paddingBottom = (v.constraintInfo?.paddingBottom ?? 0) + safeAreaInsets.bottom
+                            v.constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
+                            v.constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
                         case "horizontal":
-                            v.constraintInfo?.paddingLeft = (v.constraintInfo?.paddingLeft ?? 0) + safeAreaInsets.left
-                            v.constraintInfo?.paddingRight = (v.constraintInfo?.paddingRight ?? 0) + safeAreaInsets.right
+                            v.constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
+                            v.constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
                         case "all":
-                            v.constraintInfo?.paddingTop = (v.constraintInfo?.paddingTop ?? 0) + safeAreaInsets.top
-                            v.constraintInfo?.paddingLeft = (v.constraintInfo?.paddingLeft ?? 0) + safeAreaInsets.left
-                            v.constraintInfo?.paddingBottom = (v.constraintInfo?.paddingBottom ?? 0) + safeAreaInsets.bottom
-                            v.constraintInfo?.paddingRight = (v.constraintInfo?.paddingRight ?? 0) + safeAreaInsets.right
+                            v.constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
+                            v.constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
+                            v.constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
+                            v.constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
                         default:
                             break
                         }
