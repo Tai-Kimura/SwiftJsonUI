@@ -68,7 +68,7 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
         super.viewDidLoad()
         if #available(iOS 11.0, *) {
             if _observers[.safeArea] == nil {
-                let o = self.view.observe(\.safeAreaInsets, options: [.initial], changeHandler: {[weak self] a, change in
+                let o = self.view.observe(\.safeAreaInsets, options: [.new], changeHandler: {[weak self] a, change in
                     if let safeAreaInsets = change.newValue, let safeAreaHandlers = self?._safeAreaHandlers {
                         DispatchQueue.main.async(execute: {
                             for safeAreaHandler in safeAreaHandlers {
@@ -120,4 +120,5 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
         case safeArea
     }
 }
+
 

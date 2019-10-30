@@ -145,31 +145,7 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
             if let viewController = target as? SJUIViewController {
                 let insets = (attr["safeAreaInsetPositions"].arrayObject as? [String]) ?? ["all"]
                 viewController.register(safeAreaHandler: {safeAreaInsets in
-                    for inset in insets {
-                        switch inset {
-                        case "top":
-                            v.constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
-                        case "left":
-                            v.constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
-                        case "bottom":
-                            v.constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
-                        case "right":
-                            v.constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
-                        case "vertical":
-                            v.constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
-                            v.constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
-                        case "horizontal":
-                            v.constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
-                            v.constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
-                        case "all":
-                            v.constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
-                            v.constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
-                            v.constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
-                            v.constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
-                        default:
-                            break
-                        }
-                    }
+                    v.applySafeAreaInsets(safeAreaInsets: safeAreaInsets, insets: insets)
                     v.resetConstraintInfo()
                 })
             }
@@ -313,6 +289,34 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         return v
     }
     
+    public func applySafeAreaInsets(safeAreaInsets: UIEdgeInsets, insets: [String]) {
+        for inset in insets {
+            switch inset {
+            case "top":
+                constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
+            case "left":
+                constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
+            case "bottom":
+                constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
+            case "right":
+                constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
+            case "vertical":
+                constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
+                constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
+            case "horizontal":
+                constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
+                constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
+            case "all":
+                constraintInfo?.safeAreaInsetTop = safeAreaInsets.top
+                constraintInfo?.safeAreaInsetLeft = safeAreaInsets.left
+                constraintInfo?.safeAreaInsetBottom = safeAreaInsets.bottom
+                constraintInfo?.safeAreaInsetRight = safeAreaInsets.right
+            default:
+                break
+            }
+        }
+    }
+    
     public enum Orientation: String {
         case vertical = "vertical"
         case horizontal = "horizontal"
@@ -347,5 +351,6 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         case viewsWithoutInList = "viewsWithoutInList"
     }
 }
+
 
 
