@@ -13,6 +13,38 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
     
     public var _views = [String:UIView]()
     
+    private var _safeAreaHandlers = [(UIEdgeInsets) -> Void]()
+    
+    public var safeAreaHandlers: [(UIEdgeInsets) -> Void] {
+        get {
+            return _safeAreaHandlers
+        }
+    }
+    
+    private var _observers = [ObserverKey:NSKeyValueObservation]()
+    
+    public var observers: [ObserverKey:NSKeyValueObservation] {
+        get {
+            return _observers
+        }
+    }
+    
+    deinit {
+        for observer in _observers.values {
+            observer.invalidate()
+        }
+        _observers.removeAll()
+        _safeAreaHandlers.removeAll()
+        _views.removeAll()
+        #if DEBUG
+        NotificationCenter.default.removeObserver(self)
+        #endif
+    }
+    
+    open func register(safeAreaHandler: @escaping (UIEdgeInsets) -> Void) {
+        _safeAreaHandlers.append(safeAreaHandler)
+    }
+    
     open func hideKeyboard() {
         for view in _views.values {
             if view.isFirstResponder {
@@ -32,17 +64,30 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
         }
     }
     
+    open override func viewDidLoad() {
+        super.viewDidLoad()
+        if #available(iOS 11.0, *) {
+            if _observers[.safeArea] == nil {
+                let o = self.view.observe(\.safeAreaInsets, options: [.initial], changeHandler: {[weak self] a, change in
+                    if let safeAreaInsets = change.newValue, let safeAreaHandlers = self?._safeAreaHandlers {
+                        DispatchQueue.main.async(execute: {
+                            for safeAreaHandler in safeAreaHandlers {
+                                safeAreaHandler(safeAreaInsets)
+                            }
+                        })
+                    }
+                })
+                _observers[.safeArea] = o
+            }
+        }
+    }
+    
     open override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         #if DEBUG
         NotificationCenter.default.addObserver(self, selector: #selector(SJUIViewController.layoutFileDidChanged), name: NSNotification.Name(rawValue: "layoutFileDidChanged"), object: nil)
         #endif
     }
-    #if DEBUG
-    deinit {
-        NotificationCenter.default.removeObserver(self)
-    }
-    #endif
     
     #if DEBUG
     open func layoutFileDidChanged() {
@@ -68,6 +113,11 @@ open class SJUIViewController: UIViewController, UITextFieldDelegate, UITextView
     
     open func textViewDidChangeFrame(textView: SJUITextView) {
         
+    }
+    
+    
+    public enum ObserverKey {
+        case safeArea
     }
 }
 

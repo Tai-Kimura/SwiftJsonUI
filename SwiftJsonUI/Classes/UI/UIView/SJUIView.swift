@@ -140,6 +140,39 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         switch attr["type"].stringValue {
         case "GradientView":
             v = GradientView()
+        case "SafeAreaView":
+            v = viewClass.init()
+            if let viewController = target as? SJUIViewController {
+                let insets = (attr["safeAreaInsetPositions"].arrayObject as? [String]) ?? ["all"]
+                viewController.register(safeAreaHandler: {safeAreaInsets in
+                    for inset in insets {
+                        switch inset {
+                        case "top":
+                            v.constraintInfo?.paddingTop = (v.constraintInfo?.paddingTop ?? 0) + safeAreaInsets.top
+                        case "left":
+                            v.constraintInfo?.paddingLeft = (v.constraintInfo?.paddingLeft ?? 0) + safeAreaInsets.left
+                        case "bottom":
+                            v.constraintInfo?.paddingBottom = (v.constraintInfo?.paddingBottom ?? 0) + safeAreaInsets.bottom
+                        case "right":
+                            v.constraintInfo?.paddingRight = (v.constraintInfo?.paddingRight ?? 0) + safeAreaInsets.right
+                        case "vertical":
+                            v.constraintInfo?.paddingTop = (v.constraintInfo?.paddingTop ?? 0) + safeAreaInsets.top
+                            v.constraintInfo?.paddingBottom = (v.constraintInfo?.paddingBottom ?? 0) + safeAreaInsets.bottom
+                        case "horizontal":
+                            v.constraintInfo?.paddingLeft = (v.constraintInfo?.paddingLeft ?? 0) + safeAreaInsets.left
+                            v.constraintInfo?.paddingRight = (v.constraintInfo?.paddingRight ?? 0) + safeAreaInsets.right
+                        case "all":
+                            v.constraintInfo?.paddingTop = (v.constraintInfo?.paddingTop ?? 0) + safeAreaInsets.top
+                            v.constraintInfo?.paddingLeft = (v.constraintInfo?.paddingLeft ?? 0) + safeAreaInsets.left
+                            v.constraintInfo?.paddingBottom = (v.constraintInfo?.paddingBottom ?? 0) + safeAreaInsets.bottom
+                            v.constraintInfo?.paddingRight = (v.constraintInfo?.paddingRight ?? 0) + safeAreaInsets.right
+                        default:
+                            break
+                        }
+                    }
+                    v.resetConstraintInfo()
+                })
+            }
         default:
             v = viewClass.init()
         }

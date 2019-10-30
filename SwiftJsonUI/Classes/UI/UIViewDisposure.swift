@@ -1237,7 +1237,7 @@ class WeakConstraint {
     private weak var _constraint: NSLayoutConstraint?
     var constraint: NSLayoutConstraint? {
         set {
-            self._constraint = constraint
+            self._constraint = newValue
         }
         get {
             return self._constraint
