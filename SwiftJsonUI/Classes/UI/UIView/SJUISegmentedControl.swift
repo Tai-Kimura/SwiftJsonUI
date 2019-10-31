@@ -45,7 +45,11 @@ open class SJUISegmentedControl: UISegmentedControl {
         }
         let s = viewClass.init(items: items)
         s.selectedSegmentIndex = 0
-        s.tintColor = UIColor.findColorByJSON(attr: attr["tintColor"]) ?? SJUISegmentedControl.defaultTintColor
+        if #available(iOS 13.0, *) {
+            s.selectedSegmentTintColor = UIColor.findColorByJSON(attr: attr["tintColor"]) ?? SJUISegmentedControl.defaultTintColor
+        } else {
+            s.tintColor = UIColor.findColorByJSON(attr: attr["tintColor"]) ?? SJUISegmentedControl.defaultTintColor
+        }
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 16.0
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
