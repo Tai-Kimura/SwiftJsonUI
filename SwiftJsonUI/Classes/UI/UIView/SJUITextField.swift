@@ -23,6 +23,8 @@ open class SJUITextField: UITextField {
     
     public static var defaultBorderColor = UIColor.lightGray
     
+    public var placeholderAttributes: [NSAttributedString.Key : Any]?
+    
     private var _sjUiDelegate: SJUITextFieldDelegate?
     
     override open var delegate: UITextFieldDelegate? {
@@ -84,20 +86,22 @@ open class SJUITextField: UITextField {
         if let onTextChange = attr["onTextChange"].string {
             t.addTarget(target, action: Selector(onTextChange), for: UIControl.Event.editingChanged)
         }
+        
+        let hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) ?? SJUIViewCreator.defaultHintColor
+        let paragraphStyle = NSMutableParagraphStyle()
+        let hintFont: UIFont
+        if let f = attr["hintFont"].string {
+            let s = attr["hintFontSize"].cgFloat ?? size
+            let n = f
+            hintFont = UIFont(name: n, size: s) ?? UIFont.systemFont(ofSize: size)
+            paragraphStyle.lineHeightMultiple = attr["hintLineHeightMultiple"].cgFloat ?? 1.0
+        } else {
+            hintFont = font
+        }
+        t.placeholderAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: hintColor]
         if let hint = attr["hint"].string {
-            let hintColor = UIColor.findColorByJSON(attr: attr["hintColor"]) ?? SJUIViewCreator.defaultHintColor
-            let paragraphStyle = NSMutableParagraphStyle()
             let placeholder = NSLocalizedString(hint, comment: "")
-            var hintFont: UIFont
-            if let f = attr["hintFont"].string {
-                let s = attr["hintFontSize"].cgFloat ?? size
-                let n = f
-                hintFont = UIFont(name: n, size: s) ?? UIFont.systemFont(ofSize: size)
-                paragraphStyle.lineHeightMultiple = attr["hintLineHeightMultiple"].cgFloat ?? 1.0
-            } else {
-                hintFont = font
-            }
-            t.attributedPlaceholder = NSMutableAttributedString(string:  placeholder, attributes: [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: hintColor])
+            t.attributedPlaceholder = NSMutableAttributedString(string:  placeholder, attributes: t.placeholderAttributes)
         }
         
         if let input = attr["input"].string {
