@@ -130,6 +130,10 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         _datePicker.alpha = 1.0
         _backBtn.isHidden = !canBack
         _datePicker.date = date
+        _datePicker.setValue(SheetView.textColor, forKeyPath: "textColor")
+        if #available(iOS 13.0, *) {
+            _datePicker.setValue(false, forKey: "highlightsToday")
+        }
         _datePicker.minimumDate = minimumDate
         _datePicker.maximumDate = maximumDate
         self.show(mainView, duration: duration, completion: completion)
@@ -149,7 +153,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
                 var frame = self._customView.frame
                 frame.origin.y = self._view.frame.height - frame.size.height
                 self._customView.frame = frame
-                }, completion: completion)
+            }, completion: completion)
         })
     }
     
@@ -183,9 +187,9 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
                 var frame = self._customView.frame
                 frame.origin.y = self._view.frame.height
                 self._customView.frame = frame
-                }, completion: { finish in
-                    self._view.removeFromSuperview()
-                    completion?()
+            }, completion: { finish in
+                self._view.removeFromSuperview()
+                completion?()
             })
         })
     }
@@ -245,4 +249,5 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         return Calendar(identifier: Calendar.Identifier.gregorian)
     }
 }
+
 

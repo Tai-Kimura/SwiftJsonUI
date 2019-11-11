@@ -17,6 +17,7 @@ open class SJUITextView: UITextView {
         }
     }
     
+    public static var textColor: UIColor = UIColor.black
     
     public var maxHeight: CGFloat = 0
     
@@ -192,6 +193,7 @@ open class SJUITextView: UITextView {
         let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
         t.fontSize = size
         t.font = font
+        t.textColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUITextView.textColor
         t.textContainer.lineFragmentPadding = 0
         t.textContainerInset = UIEdgeInsets.zero
         var edgeInsets = Array<CGFloat>()
@@ -273,3 +275,4 @@ open class SJUITextView: UITextView {
     }
     
 }
+
