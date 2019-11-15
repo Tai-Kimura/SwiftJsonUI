@@ -7,6 +7,8 @@ import UIKit
 
 open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
+    public static var defaultReferenceViewId: String?
+    
     override open class var viewClass: SJUIView.Type {
         get {
             return SJUISelectBox.self
@@ -383,6 +385,9 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
             s.inView = inView
         } else if let viewController = target as? UIViewController {
             s.inView = viewController.view
+        }
+        if let defaultReferenceViewId = SJUISelectBox.defaultReferenceViewId {
+            s.referenceView = views[defaultReferenceViewId] as? SJUIScrollView
         }
         return s
     }
