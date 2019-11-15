@@ -388,6 +388,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         }
         if let defaultReferenceViewId = SJUISelectBox.defaultReferenceViewId {
             s.referenceView = views[defaultReferenceViewId] as? SJUIScrollView
+        } else if let refereceViewId = attr["referenceView"].string {
+            s.referenceView = views[refereceViewId] as? SJUIScrollView
         }
         return s
     }
