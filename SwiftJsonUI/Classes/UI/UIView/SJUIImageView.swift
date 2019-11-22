@@ -102,6 +102,21 @@ open class SJUIImageView: UIImageView {
             i.isUserInteractionEnabled = true
         }
         i.canTap = attr["canTap"].bool ?? true
+        if let width = attr["width"].string, width == "wrapContent", attr["compressHorizontal"].string == nil {
+            i.setContentCompressionResistancePriority(UILayoutPriority.required, for: .horizontal)
+        }
+        
+        if let height = attr["height"].string, height == "wrapContent", attr["compressVertical"].string == nil {
+            i.setContentCompressionResistancePriority(UILayoutPriority.required, for: .vertical)
+        }
+        
+        if let width = attr["width"].string, width == "wrapContent", attr["hugHorizontal"].string == nil {
+            i.setContentHuggingPriority(UILayoutPriority.required, for: .horizontal)
+        }
+        
+        if let height = attr["height"].string, height == "wrapContent", attr["hugVertical"].string == nil {
+            i.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
+        }
         return i
     }
     

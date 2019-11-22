@@ -405,7 +405,21 @@ open class SJUILabel: UILabel {
             l.addGestureRecognizer(gr)
             l.isUserInteractionEnabled = true
         }
+        if let width = attr["width"].string, width == "wrapContent", attr["compressHorizontal"].string == nil {
+            l.setContentCompressionResistancePriority(UILayoutPriority.required, for: .horizontal)
+        }
         
+        if let height = attr["height"].string, height == "wrapContent", attr["compressVertical"].string == nil {
+            l.setContentCompressionResistancePriority(UILayoutPriority.required, for: .vertical)
+        }
+        
+        if let width = attr["width"].string, width == "wrapContent", attr["hugHorizontal"].string == nil {
+            l.setContentHuggingPriority(UILayoutPriority.required, for: .horizontal)
+        }
+        
+        if let height = attr["height"].string, height == "wrapContent", attr["hugVertical"].string == nil {
+            l.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
+        }
         return l
     }
 }
