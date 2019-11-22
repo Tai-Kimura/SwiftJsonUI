@@ -31,7 +31,7 @@ open class Binding: NSObject {
         }
     }
     
-    public func bindView() {
+    open func bindView() {
         if let views = _viewHolder?._views {
             for v in views.values {
                 if let propertyName = v.propertyName, let index = properties.firstIndex(of: propertyName) {
