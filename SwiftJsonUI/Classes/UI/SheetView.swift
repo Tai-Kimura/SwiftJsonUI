@@ -33,6 +33,10 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     
     public static var lineColor = UIColor.lightGray
     
+    public static var selectBtnTitle = "選択"
+    
+    public static var backBtnTitle = "前へ"
+    
     fileprivate static let instance = SheetView()
     
     fileprivate var _view: UIView!
@@ -88,12 +92,12 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         
         _selectBtn = UIButton(frame: CGRect(x: customView.frame.size.width - 70.0, y: 0, width: 70.0, height: 40.0))
         _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
-        _selectBtn.setTitle("選択", for: UIControl.State())
+        _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
         _selectBtn.addTarget(self, action: #selector(SheetView.selected), for: UIControl.Event.touchDown)
         
         _backBtn = UIButton(frame: CGRect(x: 0, y: 0, width: 70.0, height: 40.0))
         _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
-        _backBtn.setTitle("前へ", for: UIControl.State())
+        _backBtn.setTitle(SheetView.backBtnTitle, for: UIControl.State())
         _backBtn.addTarget(self, action: #selector(SheetView.back), for: UIControl.Event.touchDown)
         _backBtn.isHidden = true
         let bgView = UIView(frame: CGRect(x: 0, y: 0, width: customView.frame.size.width, height: 40.0))

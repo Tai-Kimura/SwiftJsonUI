@@ -7,8 +7,17 @@ import Foundation
 
 public extension String {
     
-    func localized() -> String {
-        return NSLocalizedString(self, comment: "")
+    static var currentLanguage: String?
+    
+    func localized(tableName: String? = nil, bundle: Bundle? = nil, value: String? = nil, comment: String = "") -> String {
+        if let bundle = bundle {
+            return NSLocalizedString(self, tableName: tableName, bundle: bundle, value: value ?? self, comment: comment)
+        }
+        if let currentLanguage = String.currentLanguage, let bundlePath = Bundle.main.path(forResource: currentLanguage, ofType: "lproj"), let bundle = Bundle(path: bundlePath) {
+            return NSLocalizedString(self, tableName: nil, bundle: bundle, value: value ?? self, comment: comment)
+        } else {
+            return NSLocalizedString(self, comment: comment)
+        }
     }
     
     func katakana() -> String {
