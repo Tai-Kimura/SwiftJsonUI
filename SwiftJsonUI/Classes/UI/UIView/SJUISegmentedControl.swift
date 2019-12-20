@@ -41,7 +41,7 @@ open class SJUISegmentedControl: UISegmentedControl {
         }
         var items = Array<String>()
         for itemName in itemNames {
-            items.append(NSLocalizedString(itemName, comment: ""))
+            items.append(itemName.localized())
         }
         let s = viewClass.init(items: items)
         s.selectedSegmentIndex = 0

@@ -100,7 +100,7 @@ open class SJUITextField: UITextField {
         }
         t.placeholderAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: hintColor]
         if let hint = attr["hint"].string {
-            let placeholder = NSLocalizedString(hint, comment: "")
+            let placeholder = hint.localized()
             t.attributedPlaceholder = NSMutableAttributedString(string:  placeholder, attributes: t.placeholderAttributes)
         }
         
@@ -125,7 +125,7 @@ open class SJUITextField: UITextField {
                 l.textAlignment = NSTextAlignment.center
                 l.font = UIFont(name: SJUIViewCreator.defaultFont, size: 15.0)
                 l.textColor = UIColor.findColorByJSON(attr: attr["accessoryTextColor"]) ?? SJUITextField.accessoryTextColor
-                l.text = attr["doneText"].string == nil ? NSLocalizedString("done", comment: "") : NSLocalizedString(attr["doneText"].stringValue, comment: "")
+                l.text = attr["doneText"].string == nil ? "done".localized() : attr["doneText"].stringValue.localized()
                 l.isUserInteractionEnabled = true
                 l.defaultBackgroundColor = UIColor.colorWithHexString("000000", alpha: 0)
                 l.addGestureRecognizer(UITapGestureRecognizer(target: target, action: #selector(SJUIViewController.returnNumberPad)))

@@ -123,7 +123,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         self._type = SelectItemType(rawValue: attr["selectItemType"].stringValue) ?? .normal
         self.canBack = attr["canBack"].boolValue
         if let prompt = attr["prompt"].string {
-            self._prompt = NSLocalizedString(prompt, comment: "")
+            self._prompt = prompt.localized()
         }
         initializeCaret(attr: attr["caretAttributes"])
         initializeDivider(attr: attr["dividerAttributes"])

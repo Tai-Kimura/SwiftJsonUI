@@ -334,7 +334,7 @@ open class SJUILabel: UILabel {
         }
         if let text = attr["text"].string {
             l.textColor = color
-            var attrText = NSMutableAttributedString(string:  NSLocalizedString(text, comment: ""), attributes: attributes)
+            var attrText = NSMutableAttributedString(string:  text.localized(), attributes: attributes)
             if let partialAttributes = attr["partialAttributes"].array {
                 attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: l)
                 if !l.linkedRanges.isEmpty {
@@ -344,7 +344,7 @@ open class SJUILabel: UILabel {
                 }
             }
             l.attributedText = attrText
-            l.hint = NSLocalizedString(text, comment: "")
+            l.hint = text.localized()
         } else {
             l.textColor = color
         }
@@ -382,7 +382,7 @@ open class SJUILabel: UILabel {
         }
         
         if let hint = attr["hint"].string {
-            l.hint = NSLocalizedString(hint, comment: "")
+            l.hint = hint.localized()
             l.hintAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: SJUIViewCreator.defaultHintColor]
         }
         

@@ -242,7 +242,7 @@ open class SJUITextView: UITextView {
         }
         
         if let hint = attr["hint"].string {
-            t.hint = NSLocalizedString(hint, comment: "")
+            t.hint = hint.localized()
         }
         
         if let hasContainer = attr["hasContainer"].bool {

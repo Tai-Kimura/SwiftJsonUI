@@ -36,7 +36,7 @@ open class SJUIButton: UIButton {
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIButton {
         let b = viewClass.init()
         b.isUserInteractionEnabled = true
-        b.setTitle(NSLocalizedString(attr["text"].stringValue, comment: ""), for: UIControl.State())
+        b.setTitle(attr["text"].stringValue.localized(), for: UIControl.State())
         if let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) {
             b.setTitleColor(fontColor, for: UIControl.State())
         }

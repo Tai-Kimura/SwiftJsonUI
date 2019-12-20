@@ -154,7 +154,7 @@ open class SJUILabelWithIcon: SJUIView {
         }
         
         
-        let l = (viewClass as! SJUILabelWithIcon.Type).init(labelText:  NSLocalizedString(attr["text"].stringValue, comment: "") , onIcon: attr["icon_on"].string , offIcon: attr["icon_off"].string , fontColor: fontColor, selectedFontColor: selectedFontColor, fontName: attr["font"].string, fontSize: attr["fontSize"].cgFloat, iconPosition: iconPosition, shadow: attr["textShadow"], iconMargin: attr["iconMargin"].cgFloat ?? 5.0)
+        let l = (viewClass as! SJUILabelWithIcon.Type).init(labelText:  attr["text"].stringValue.localized() , onIcon: attr["icon_on"].string , offIcon: attr["icon_off"].string , fontColor: fontColor, selectedFontColor: selectedFontColor, fontName: attr["font"].string, fontSize: attr["fontSize"].cgFloat, iconPosition: iconPosition, shadow: attr["textShadow"], iconMargin: attr["iconMargin"].cgFloat ?? 5.0)
         
         if let onclick = attr["onclick"].string {
             let gr = UITapGestureRecognizer(target: target, action: Selector(onclick))

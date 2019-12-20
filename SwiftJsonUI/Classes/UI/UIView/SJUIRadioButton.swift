@@ -118,7 +118,7 @@ open class SJUIRadioButton: SJUIView {
     }
     
     open override class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIRadioButton {
-        let text = NSLocalizedString(attr["text"].stringValue, comment: "")
+        let text = attr["text"].stringValue.localized()
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 14.0
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUIViewCreator.defaultFontColor

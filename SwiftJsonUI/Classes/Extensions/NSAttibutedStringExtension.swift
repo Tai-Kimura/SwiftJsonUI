@@ -160,7 +160,7 @@ public extension NSAttributedString {
                             }
                         }
                     } else if let range = range as? String {
-                        let textRange = text.range(of: NSLocalizedString(range, comment: ""))
+                        let textRange = text.range(of: range.localized())
                         attString.addAttributes(attributes, range: textRange)
                         if let onclick = attr["onclick"].string {
                             label?.linkedRanges.append(["start": textRange.lowerBound, "end": textRange.upperBound, "onclick": onclick])
