@@ -119,6 +119,10 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         _pickerView.alpha = 1.0
         _datePicker.alpha = 0
         _itemNames = itemNames
+        _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
+        _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
+        _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
+        _backBtn.setTitle(SheetView.backBtnTitle, for: UIControl.State())
         _backBtn.isHidden = !canBack
         self.pickerSource = datasource
         self._pickerView.reloadAllComponents()
