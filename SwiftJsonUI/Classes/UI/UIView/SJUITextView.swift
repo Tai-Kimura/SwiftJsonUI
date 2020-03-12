@@ -271,6 +271,9 @@ open class SJUITextView: UITextView {
                 break
             }
         }
+        if let enabled = attr["enabled"].bool {
+            t.isEditable = enabled
+        }
         return t
     }
     

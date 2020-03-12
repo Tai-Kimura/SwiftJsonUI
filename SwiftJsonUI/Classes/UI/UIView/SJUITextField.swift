@@ -181,6 +181,9 @@ open class SJUITextField: UITextField {
             }
         }
         
+        if let enabled = attr["enabled"].bool {
+            t.isEnabled = enabled
+        }
         return t
     }
     
