@@ -7,6 +7,8 @@ import UIKit
 
 open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
+    public static var currentLocale: Locale? = nil
+    
     public static var defaultReferenceViewId: String?
     
     override open class var viewClass: SJUIView.Type {
@@ -311,7 +313,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         case .normal:
             SheetView.sharedInstance().showPicker([_selectedIndex ?? 0], withDataSource: [items], forItem: items, inView: inView, canBack: canBack)
         case .date:
-            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false)
+            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
         }
         SheetView.sharedInstance().delegate = self
         setScrollOffset()
