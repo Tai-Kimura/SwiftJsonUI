@@ -133,7 +133,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         self.show(mainView, duration: duration, completion: completion)
     }
     
-    public func showDatePicker(_ date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil) {
+    public func showDatePicker(_ date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
         _pickerView.alpha = 0
         _datePicker.alpha = 1.0
         _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
@@ -146,6 +146,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         if #available(iOS 13.0, *) {
             _datePicker.setValue(false, forKey: "highlightsToday")
         }
+        self._datePicker.locale = locale
         _datePicker.minimumDate = minimumDate
         _datePicker.maximumDate = maximumDate
         self.show(mainView, duration: duration, completion: completion)
