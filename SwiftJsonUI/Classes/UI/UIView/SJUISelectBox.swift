@@ -110,6 +110,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     public var dateStringFormat: String = "yyyy/MM/dd"
     
+    public var locale: Locale? = nil
+    
     private var canBack = false
     
     public weak var selectBoxDelegate: UISelectBoxDelegate?
@@ -365,7 +367,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     open func didPickDate(_ date: Date) {
         _selectedDate = date
         label.selected = true
-        label.applyAttributedText(date.timeIntervalSince1970.toDateString(format: dateStringFormat))
+        label.applyAttributedText(date.timeIntervalSince1970.toDateString(format: dateStringFormat, locale: SJUISelectBox.currentLocale))
     }
     
     open func backWithPickDate(_ date: Date) {
@@ -392,6 +394,9 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
             s.referenceView = views[defaultReferenceViewId] as? SJUIScrollView
         } else if let refereceViewId = attr["referenceView"].string {
             s.referenceView = views[refereceViewId] as? SJUIScrollView
+        }
+        if let dateFormat = attr["dateFormat"].string {
+            s.dateStringFormat = dateFormat
         }
         return s
     }

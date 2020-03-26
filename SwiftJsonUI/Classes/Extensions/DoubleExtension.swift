@@ -31,17 +31,27 @@ public extension Double {
         }
     }
     
-    func toDateString(format: String = "yyyy/MM/dd") -> String {
+    func toDateString(format: String = "yyyy/MM/dd", locale: Locale? = nil) -> String {
         let date = Date(timeIntervalSince1970: self)
         let formatter = DateFormatter()
-        formatter.dateFormat = format
+        if let locale = locale {
+            formatter.locale = locale
+            formatter.setLocalizedDateFormatFromTemplate(format)
+        } else {
+            formatter.dateFormat = format
+        }
         return formatter.string(from: date)
     }
     
-    func toDateTimeString(format: String = "yyyy年MM月dd日 HH:mm:ss") -> String {
+    func toDateTimeString(format: String = "yyyy年MM月dd日 HH:mm:ss", locale: Locale? = nil) -> String {
         let date = Date(timeIntervalSince1970: self)
         let formatter = DateFormatter()
-        formatter.dateFormat = format
+        if let locale = locale {
+            formatter.locale = locale
+            formatter.setLocalizedDateFormatFromTemplate(format)
+        } else {
+            formatter.dateFormat = format
+        }
         return formatter.string(from: date)
     }
 
