@@ -396,7 +396,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
             s.referenceView = views[refereceViewId] as? SJUIScrollView
         }
         if let dateFormat = attr["dateFormat"].string {
-            s.dateStringFormat = dateFormat
+            s.dateStringFormat = dateFormat.localized()
         }
         return s
     }
