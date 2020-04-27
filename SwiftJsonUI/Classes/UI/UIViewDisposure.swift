@@ -758,7 +758,7 @@ open class UIViewDisposure {
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.height, multiplier: 1.0, constant: maxHeight))
         }
         if let height = info.height, height == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
-            if let superview = view.superview, superview.constraintInfo?.width ?? UILayoutConstraintInfo.LayoutParams.matchParent.rawValue != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            if let superview = view.superview, superview.constraintInfo?.height ?? UILayoutConstraintInfo.LayoutParams.matchParent.rawValue != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
                 let topConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.top, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.top, multiplier: 1.0, constant: (info.topMargin ?? 0) + (superview.constraintInfo?.paddingTop ?? 0))
                 constraints.append(topConstraint)
                 let bottomConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.bottom, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.bottom, multiplier: 1.0, constant: -((info.bottomMargin ?? 0) + (superview.constraintInfo?.paddingBottom ?? 0)))
