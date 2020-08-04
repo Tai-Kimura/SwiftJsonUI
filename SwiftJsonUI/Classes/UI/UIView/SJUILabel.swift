@@ -15,6 +15,8 @@ open class SJUILabel: UILabel {
     
     public static var defaultLinkColor = UIColor.blue
     
+    public static var verticalAdjustmentByFonts = [String:CGFloat]()
+    
     public var hint: String?
     
     public var attributes:[NSAttributedString.Key:NSObject]!
@@ -38,6 +40,24 @@ open class SJUILabel: UILabel {
     public weak var touchDelegate: UIViewTapDelegate?
     public weak var linkHandleDelegate: NSObject?
     
+    private var _verticalAdjustmentByFont: CGFloat?
+    
+    private var verticalAdjustmentByFont: CGFloat {
+        get {
+            if let a = _verticalAdjustmentByFont {
+                return a
+            }
+            let a = {() -> CGFloat in
+                guard let font = self.font, let adjustment = SJUILabel.verticalAdjustmentByFonts[font.fontName] else {
+                    return 0
+                }
+                return font.pointSize/adjustment
+            }()
+            _verticalAdjustmentByFont = a
+            return a
+        }
+    }
+    
     // paddingの値
     public var padding = UIEdgeInsets(top: 0, left: 0, bottom: 0, right: 0)
     {
@@ -46,13 +66,16 @@ open class SJUILabel: UILabel {
         }
     }
     override open func drawText(in rect: CGRect) {
-        let newRect = rect.inset(by: padding)
+        let newRect = rect.inset(by:  UIEdgeInsets(top: padding.top + verticalAdjustmentByFont,
+                                                   left: padding.left,
+                                                   bottom: padding.bottom + verticalAdjustmentByFont,
+                                                   right: padding.right))
         super.drawText(in: newRect)
     }
     
     override open var intrinsicContentSize : CGSize {
         var intrinsicContentSize = super.intrinsicContentSize
-        intrinsicContentSize.height += padding.top + padding.bottom
+        intrinsicContentSize.height += (padding.top + padding.bottom + (verticalAdjustmentByFont * 2))
         if intrinsicContentSize.width + (padding.left + padding.right) < 2777777.0 {
             intrinsicContentSize.width += padding.left + padding.right
         }
@@ -423,4 +446,3 @@ open class SJUILabel: UILabel {
         return l
     }
 }
-

@@ -81,6 +81,7 @@ open class SJUITextField: UITextField {
         let rightPaddingView = UIView(frame:CGRect(x: 0, y: 0, width: attr["fieldPadding"].cgFloat ?? 5, height: 5))
         rightPaddingView.isOpaque = false
         rightPaddingView.backgroundColor = UIColor.clear
+        rightPaddingView.isUserInteractionEnabled = false
         t.rightView = rightPaddingView
         t.rightViewMode = UITextField.ViewMode.always
         if let onTextChange = attr["onTextChange"].string {
