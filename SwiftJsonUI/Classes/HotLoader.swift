@@ -8,7 +8,7 @@ import UIKit
 
 #if DEBUG
 import SocketIO
-let socketManager = SocketManager(socketURL: URL(string: "http://\((Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String) ?? ""):8080")!)
+let socketManager = SocketManager(socketURL: URL(string: "http://\((Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String) ?? ""):\((Bundle.main.object(forInfoDictionaryKey: "HotLoader Port") as? String) ?? "8080")")!)
 public class HotLoader {
     
     private static var Instance = HotLoader()
