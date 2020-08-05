@@ -6,7 +6,7 @@
 import UIKit
 
 open class CircleImageView: NetworkImageView {
-    
+        
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
     }
@@ -15,7 +15,7 @@ open class CircleImageView: NetworkImageView {
         super.init(frame:frame)
     }
     
-    override open func setImageURL(url: URL) {
+    override open func setImageURL(url: URL, headers: [String:String]? = nil) {
         downloader?.completionHandler = nil
         downloader?.cancel()
         downloader = nil
@@ -40,7 +40,7 @@ open class CircleImageView: NetworkImageView {
         } else if previousPath == nil || path != previousPath  {
             self.image = self.loadingImage == nil ? defaultImage : self.loadingImage
         }
-        let d = Downloader(url: url)
+        let d = Downloader(url: url, headers: headers ?? NetworkImageView.defaultHttpHeaders)
         let urlStr = d.url.absoluteString
         d.completionHandler = {[weak self] (data, exist) in
             if let data = data {

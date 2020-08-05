@@ -24,6 +24,8 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
         }
     }
     
+    fileprivate var _headers = [String:String]()
+    
     fileprivate var task: URLSessionDownloadTask?
     
     fileprivate var statusCode: Int!
@@ -40,8 +42,9 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
     
     public var progressHandler:  ((_ bytesWritten: Int64, _ totalBytesWritten: Int64, _ totalBytesExpectedToWrite: Int64) -> Void)?
     
-    public init(url: URL) {
+    public init(url: URL, headers: [String:String] = [String:String]()) {
         self._url = url
+        self._headers = headers
         super.init()
     }
     
@@ -71,7 +74,11 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
         let config = URLSessionConfiguration.default
         let session = Foundation.URLSession(configuration: config,
                                             delegate: self, delegateQueue: Downloader.operationQueue);
-        task = session.downloadTask(with: url)
+        var request = URLRequest(url: url)
+        for (key,value) in _headers {
+            request.addValue(value, forHTTPHeaderField: key)
+        }
+        task = session.downloadTask(with: request)
         task?.resume()
     }
     

@@ -9,6 +9,8 @@ open class NetworkImageView: SJUIImageView {
     
     static let animationKey = "network_image_view_animation_key"
     
+    public static var defaultHttpHeaders = [String:String]()
+    
     public var defaultImage: UIImage? = nil
     
     public var loadingImage: UIImage? = nil
@@ -35,15 +37,15 @@ open class NetworkImageView: SJUIImageView {
         self.image = image
     }
     
-    open func setImageURL(string: String!) {
+    open func setImageURL(string: String!, headers: [String:String]? = nil) {
         if let string = string, let url = URL(string: string) {
-            self.setImageURL(url: url)
+            self.setImageURL(url: url, headers: headers)
         } else {
             self.setImageResource(nil)
         }
     }
     
-    open func setImageURL(url: URL) {
+    open func setImageURL(url: URL, headers: [String:String]? = nil) {
         downloader?.completionHandler = nil
         downloader?.cancel()
         downloader = nil
@@ -70,7 +72,7 @@ open class NetworkImageView: SJUIImageView {
             self.image = self.loadingImage == nil ? defaultImage : self.loadingImage
         }
         
-        let d = Downloader(url: url)
+        let d = Downloader(url: url, headers: headers ?? NetworkImageView.defaultHttpHeaders)
         let urlStr = d.url.absoluteString
         d.completionHandler = { [weak self] (data, exist) in
             if let data = data {
