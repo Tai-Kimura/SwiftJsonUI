@@ -41,7 +41,7 @@ open class NetworkImageView: SJUIImageView {
         if let string = string, let url = URL(string: string) {
             self.setImageURL(url: url, headers: headers)
         } else {
-            self.setImageResource(nil)
+            self.setImageResource(errorImage ?? defaultImage)
         }
     }
     
