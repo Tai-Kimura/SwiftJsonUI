@@ -95,18 +95,16 @@ open class SJUIViewCreator:NSObject {
             }
             do {
                 var jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
-                if let variables = attr["variables"].array {
-                    for variable in variables {
-                        if let key = variable["key"].string {
-                            if let value = variable["value"].string {
-                                jsonString = jsonString.replacingOccurrences(of: key, with: value)
-                            } else if let value = variable["value"].int {
-                                jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(value)")
-                            } else if let value = variable["value"].cgFloat {
-                                jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(value)")
-                            } else if let value = variable["value"].bool {
-                                jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(value)")
-                            }
+                if let variables = attr["variables"].dictionary {
+                    for (key, value) in variables {
+                        if let string = value.string {
+                            jsonString = jsonString.replacingOccurrences(of: key, with: string)
+                        } else if let int = value.int {
+                            jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(int)")
+                        } else if let float = value.cgFloat {
+                            jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(float)")
+                        } else if let bool = value.bool {
+                            jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(bool)")
                         }
                     }
                 }
