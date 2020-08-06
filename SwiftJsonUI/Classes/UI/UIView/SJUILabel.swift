@@ -357,16 +357,18 @@ open class SJUILabel: UILabel {
         }
         if let text = attr["text"].string {
             l.textColor = color
-            var attrText = NSMutableAttributedString(string:  text.localized(), attributes: attributes)
-            if let partialAttributes = attr["partialAttributes"].array {
-                attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: l)
-                if !l.linkedRanges.isEmpty {
-                    l.linkHandleDelegate = target as? NSObject
-                    l.addGestureRecognizer(UITapGestureRecognizer(target: l, action: #selector(SJUILabel.onLinkTap(_:))))
-                    l.isUserInteractionEnabled = true
+            if !text.isMatch(pattern: "^\\$\\{") {
+                var attrText = NSMutableAttributedString(string:  text.localized(), attributes: attributes)
+                if let partialAttributes = attr["partialAttributes"].array {
+                    attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: l)
+                    if !l.linkedRanges.isEmpty {
+                        l.linkHandleDelegate = target as? NSObject
+                        l.addGestureRecognizer(UITapGestureRecognizer(target: l, action: #selector(SJUILabel.onLinkTap(_:))))
+                        l.isUserInteractionEnabled = true
+                    }
                 }
+                l.attributedText = attrText
             }
-            l.attributedText = attrText
             l.hint = text.localized()
         } else {
             l.textColor = color
