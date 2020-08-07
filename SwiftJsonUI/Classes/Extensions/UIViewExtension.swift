@@ -346,4 +346,50 @@ public extension UIView {
     }
 }
 
+public extension UIView {
+    
+    func click(_ closure: @escaping (_ gesture: UITapGestureRecognizer)->()) {
+        let sleeve = GestureClosureSleeve<UITapGestureRecognizer>(closure)
+        let recognizer = UITapGestureRecognizer(target: sleeve, action: #selector(GestureClosureSleeve.invoke(_:)))
+        self.addGestureRecognizer(recognizer)
+        objc_setAssociatedObject(self, String(format: "[%d]", arc4random()), sleeve, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+    }
+    
+    func longPress(duration: CFTimeInterval, _ closure: @escaping (_ gesture: UILongPressGestureRecognizer)->()) {
+        let sleeve = GestureClosureSleeve<UILongPressGestureRecognizer>(closure)
+        let recognizer = UILongPressGestureRecognizer(target: sleeve, action: #selector(GestureClosureSleeve.invoke(_:)))
+        recognizer.minimumPressDuration = duration
+        self.addGestureRecognizer(recognizer)
+        objc_setAssociatedObject(self, String(format: "[%d]", arc4random()), sleeve, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+    }
+    
+    func pan(_ closure: @escaping (_ gesture: UIPanGestureRecognizer)->()) {
+        let sleeve = GestureClosureSleeve<UIPanGestureRecognizer>(closure)
+        let recognizer = UIPanGestureRecognizer(target: sleeve, action: #selector(GestureClosureSleeve.invoke(_:)))
+        self.addGestureRecognizer(recognizer)
+        objc_setAssociatedObject(self, String(format: "[%d]", arc4random()), sleeve, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+    }
+
+    func pinch(_ closure: @escaping (_ gesture: UIPinchGestureRecognizer)->()) {
+        let sleeve = GestureClosureSleeve<UIPinchGestureRecognizer>(closure)
+        let recognizer = UIPinchGestureRecognizer(target: sleeve, action: #selector(GestureClosureSleeve.invoke(_:)))
+        self.addGestureRecognizer(recognizer)
+        objc_setAssociatedObject(self, String(format: "[%d]", arc4random()), sleeve, objc_AssociationPolicy.OBJC_ASSOCIATION_RETAIN)
+    }
+}
+
+
+class GestureClosureSleeve<T: UIGestureRecognizer> {
+    let closure: (_ gesture: T)->()
+
+    init(_ closure: @escaping (_ gesture: T)->()) {
+        self.closure = closure
+    }
+
+    @objc func invoke(_ gesture: Any) {
+        guard let gesture = gesture as? T else { return }
+        closure(gesture)
+    }
+}
+
 

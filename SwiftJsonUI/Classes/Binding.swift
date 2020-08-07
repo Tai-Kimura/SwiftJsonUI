@@ -129,4 +129,3 @@ open class Binding: NSObject {
         var _views =  [String : UIView]()
     }
 }
-
