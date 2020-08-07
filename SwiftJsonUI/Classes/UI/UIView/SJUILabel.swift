@@ -357,7 +357,7 @@ open class SJUILabel: UILabel {
         }
         if let text = attr["text"].string {
             l.textColor = color
-            if !text.isMatch(pattern: "^\\$\\{") {
+            if !text.isMatch(pattern: "^@\\{") {
                 var attrText = NSMutableAttributedString(string:  text.localized(), attributes: attributes)
                 if let partialAttributes = attr["partialAttributes"].array {
                     attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: l)
