@@ -98,7 +98,7 @@ open class SJUIViewCreator:NSObject {
                 if let variables = attr["variables"].dictionary {
                     for (key, value) in variables {
                         if let string = value.string {
-                            jsonString = jsonString.replacingOccurrences(of: key, with: string)
+                            jsonString = jsonString.replacingOccurrences(of:"\"\(key)\"", with: "\"\(string)\"")
                         } else if let int = value.int {
                             jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(int)")
                         } else if let float = value.cgFloat {
