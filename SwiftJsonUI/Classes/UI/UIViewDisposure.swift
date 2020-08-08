@@ -835,12 +835,24 @@ open class UIViewDisposure {
                 constraints.append(constraint)
             } else if (view as? SJUIView)?.orientation ?? .horizontal != .vertical  {
                 for v in subviews {
-                    let bottomRelation: NSLayoutConstraint.Relation = subviews.count == 1 ? .equal : .greaterThanOrEqual
-                    let bottomConstraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: bottomRelation, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
-                    constraints.append(bottomConstraint)
-                    let topRelation: NSLayoutConstraint.Relation = subviews.count == 1 ? .equal : .lessThanOrEqual
-                    let topConstraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: topRelation, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
-                    constraints.append(topConstraint)
+                    if v.constraintInfo?.alignTopOfView?.visibility ?? .visible != .gone {
+                        let bottomConstraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: .equal, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
+                        bottomConstraint.priority = subviews.count == 1 ? .required : .defaultLow
+                        constraints.append(bottomConstraint)
+                        if subviews.count > 1 {
+                            let bottomRequiredConstraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: .greaterThanOrEqual, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
+                            constraints.append(bottomRequiredConstraint)
+                        }
+                    }
+                    if v.constraintInfo?.alignBottomOfView?.visibility ?? .visible != .gone {
+                        let topConstraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: .equal, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
+                        topConstraint.priority = subviews.count == 1 ? .required : .defaultLow
+                        constraints.append(topConstraint)
+                        if subviews.count > 1 {
+                            let topRequiredConstraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: .lessThanOrEqual, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
+                            constraints.append(topRequiredConstraint)
+                        }
+                    }
                 }
             }
         }
@@ -1349,3 +1361,4 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
