@@ -106,6 +106,22 @@ open class UIViewDisposure {
         applyHeightConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyWrapContentConstraint(on: view, toConstraintInfo: info, for: &constraints)
         applyScrollViewConstraint(onView: view, toConstraintInfo: info, for: &constraints)
+        if let label = view as? UILabel {
+            if let heightInfo = label.constraintInfo?.height, heightInfo == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+                label.setContentCompressionResistancePriority(.required, for: .vertical)
+                label.setContentHuggingPriority(.required, for: .vertical)
+            } else {
+                label.setContentCompressionResistancePriority(.defaultHigh, for: .vertical)
+                label.setContentHuggingPriority(.defaultLow, for: .vertical)
+            }
+            if let widthInfo = label.constraintInfo?.width, widthInfo == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+                label.setContentCompressionResistancePriority(.required, for: .horizontal)
+                label.setContentHuggingPriority(.required, for: .horizontal)
+            } else {
+                label.setContentCompressionResistancePriority(.defaultHigh, for: .horizontal)
+                label.setContentHuggingPriority(.defaultLow, for: .horizontal)
+            }
+        }
         NSLayoutConstraint.activate(constraints)
         info._constraints = WeakConstraint.constraints(with: constraints)
     }
@@ -838,12 +854,24 @@ open class UIViewDisposure {
                 constraints.append(constraint)
             } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal  {
                 for v in subviews {
-                    let leftRelation: NSLayoutConstraint.Relation = subviews.count == 1 ? .equal : .lessThanOrEqual
-                    let leftConstraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: leftRelation, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
-                    constraints.append(leftConstraint)
-                    let rightRelation: NSLayoutConstraint.Relation = subviews.count == 1 ? .equal : .greaterThanOrEqual
-                    let rightConstraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: rightRelation, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
-                    constraints.append(rightConstraint)
+                    if v.constraintInfo?.alignRightOfView?.visibility ?? .visible != .gone {
+                        let leftConstraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: .equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
+                        leftConstraint.priority = subviews.count == 1 ? .required : .defaultLow
+                        constraints.append(leftConstraint)
+                        if subviews.count > 1 {
+                            let leftRequiredConstraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: .lessThanOrEqual, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
+                            constraints.append(leftRequiredConstraint)
+                        }
+                    }
+                    if v.constraintInfo?.alignLeftOfView?.visibility ?? .visible != .gone {
+                        let rightConstraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: .equal, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
+                        rightConstraint.priority = subviews.count == 1 ? .required : .defaultLow
+                        constraints.append(rightConstraint)
+                        if subviews.count > 1 {
+                            let rightRequiredConstraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: .greaterThanOrEqual, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
+                            constraints.append(rightRequiredConstraint)
+                        }
+                    }
                 }
             }
         }
@@ -1082,8 +1110,12 @@ public class UILayoutConstraintInfo {
             self.centerVertical = centerInParent
             self.centerHorizontal = centerInParent
         }
-        self.centerHorizontal = centerHorizontal
-        self.centerVertical = centerVertical
+        if let centerHorizontal = centerHorizontal {
+            self.centerHorizontal = centerHorizontal
+        }
+        if let centerVertical = centerVertical {
+            self.centerVertical = centerVertical
+        }
         self.alignTop = alignTop
         self.alignBottom = alignBottom
         self.alignLeft = alignLeft
@@ -1317,6 +1349,3 @@ class WeakConstraint {
         return weakConstraints
     }
 }
-
-
-
