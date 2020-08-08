@@ -82,6 +82,22 @@ open class SJUILabel: UILabel {
         return intrinsicContentSize
     }
     
+    /// 描画領域を大きくした分の部分をAutoLayout上で加算されないように相殺する処理
+    override open var alignmentRectInsets: UIEdgeInsets {
+      let alignmentRectInsets = super.alignmentRectInsets
+      return UIEdgeInsets(top: alignmentRectInsets.top + verticalAdjustmentByFont,
+                          left: alignmentRectInsets.left,
+                          bottom: alignmentRectInsets.bottom + verticalAdjustmentByFont,
+                          right: alignmentRectInsets.right)
+    }
+
+    /// alignmentRectInsetsの影響でsizeThatFits(sizeToFit含む)が小さくなってしまうのを相殺する処理
+    override open func sizeThatFits(_ size: CGSize) -> CGSize {
+      var size = super.sizeThatFits(size)
+      size.height += (verticalAdjustmentByFont * 2)
+      return size
+    }
+    
     open func applyAttributedText(_ text: String!) {
         self.linkable = false
         let string = text ?? ""
