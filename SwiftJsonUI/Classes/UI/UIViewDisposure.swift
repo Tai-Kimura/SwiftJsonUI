@@ -835,7 +835,7 @@ open class UIViewDisposure {
                 constraints.append(constraint)
             } else if (view as? SJUIView)?.orientation ?? .horizontal != .vertical  {
                 for v in subviews {
-                    if v.constraintInfo?.alignTopOfView?.visibility ?? .visible != .gone {
+                    if v.constraintInfo?.alignTopOfView == nil || v.constraintInfo?.alignTopOfView?.visibility ?? .visible == .gone {
                         let bottomConstraint = NSLayoutConstraint(item: view, attribute: .bottom, relatedBy: .equal, toItem: v, attribute: .bottom, multiplier: 1.0, constant: (info.paddingBottom ?? 0) + (v.constraintInfo?.bottomMargin ?? 0))
                         bottomConstraint.priority = subviews.count == 1 ? .required : .defaultLow
                         constraints.append(bottomConstraint)
@@ -844,7 +844,7 @@ open class UIViewDisposure {
                             constraints.append(bottomRequiredConstraint)
                         }
                     }
-                    if v.constraintInfo?.alignBottomOfView?.visibility ?? .visible != .gone {
+                    if  v.constraintInfo?.alignBottomOfView == nil || v.constraintInfo?.alignBottomOfView?.visibility ?? .visible == .gone {
                         let topConstraint = NSLayoutConstraint(item: view, attribute: .top, relatedBy: .equal, toItem: v, attribute: .top, multiplier: 1.0, constant:  -((info.paddingTop ?? 0) + (v.constraintInfo?.topMargin ?? 0)))
                         topConstraint.priority = subviews.count == 1 ? .required : .defaultLow
                         constraints.append(topConstraint)
@@ -866,7 +866,7 @@ open class UIViewDisposure {
                 constraints.append(constraint)
             } else if (view as? SJUIView)?.orientation ?? .vertical != .horizontal  {
                 for v in subviews {
-                    if v.constraintInfo?.alignRightOfView?.visibility ?? .visible != .gone {
+                    if v.constraintInfo?.alignRightOfView == nil || v.constraintInfo?.alignRightOfView?.visibility ?? .visible == .gone {
                         let leftConstraint = NSLayoutConstraint(item: view, attribute: .left, relatedBy: .equal, toItem: v, attribute: .left, multiplier: 1.0, constant: -((info.paddingLeft ?? 0) + (v.constraintInfo?.leftMargin ?? 0)))
                         leftConstraint.priority = subviews.count == 1 ? .required : .defaultLow
                         constraints.append(leftConstraint)
@@ -875,7 +875,7 @@ open class UIViewDisposure {
                             constraints.append(leftRequiredConstraint)
                         }
                     }
-                    if v.constraintInfo?.alignLeftOfView?.visibility ?? .visible != .gone {
+                    if v.constraintInfo?.alignLeftOfView == nil || v.constraintInfo?.alignLeftOfView?.visibility ?? .visible == .gone {
                         let rightConstraint = NSLayoutConstraint(item: view, attribute: .right, relatedBy: .equal, toItem: v, attribute: .right, multiplier: 1.0, constant: ((info.paddingRight ?? 0) + (v.constraintInfo?.rightMargin ?? 0)))
                         rightConstraint.priority = subviews.count == 1 ? .required : .defaultLow
                         constraints.append(rightConstraint)
