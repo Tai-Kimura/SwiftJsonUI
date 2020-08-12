@@ -51,7 +51,7 @@ open class SJUILabel: UILabel {
                 guard let font = self.font, let adjustment = SJUILabel.verticalAdjustmentByFonts[font.fontName] else {
                     return 0
                 }
-                return font.pointSize/adjustment
+                return (font.pointSize/adjustment) * ((attributes?[NSAttributedString.Key.paragraphStyle] as? NSParagraphStyle)?.lineHeightMultiple ?? 1.0)
             }()
             _verticalAdjustmentByFont = a
             return a
