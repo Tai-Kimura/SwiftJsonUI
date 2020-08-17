@@ -251,7 +251,8 @@ open class SJUIViewCreator:NSObject {
         
         if let borderColor = UIColor.findColorByJSON(attr: attr["borderColor"]) {
             view.layer.borderColor = borderColor.cgColor
-            let borderWidth = attr["borderWidth"].cgFloat == nil ? 1.0 : attr["borderWidth"].cgFloat!
+            view.layer.borderWidth = attr["borderWidth"].cgFloatValue
+        } else if let borderWidth = attr["borderWidth"].cgFloat {
             view.layer.borderWidth = borderWidth
         }
         if let clip = attr["clipToBounds"].bool {
@@ -693,10 +694,3 @@ public protocol ViewHolder: class {
         set
     }
 }
-
-
-
-
-
-
-
