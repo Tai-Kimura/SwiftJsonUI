@@ -128,6 +128,9 @@ open class SJUIRadioButton: SJUIView {
             let group = NSRadioGroup.radiogroup(named: groupName) ?? NSRadioGroup()
             group.add(r)
             group.register(name: groupName)
+            if let delegate = target as? RadioGroupDelegate {
+                group.delegate = delegate
+            }
         }
         return r
     }
