@@ -108,18 +108,22 @@ open class SJUITextField: UITextField {
         if let input = attr["input"].string {
             switch (input) {
             case "alphabet":
-                t.keyboardType = UIKeyboardType.alphabet
-                break
+                t.keyboardType = .alphabet
             case "email":
-                t.keyboardType = UIKeyboardType.emailAddress
-                break
+                t.keyboardType = .emailAddress
             case "password":
-                t.keyboardType = UIKeyboardType.asciiCapable
+                t.keyboardType = .asciiCapable
                 t.isSecureTextEntry = true
-                break
+            case "twitter":
+                t.keyboardType = .twitter
+            case "webSearch":
+                t.keyboardType = .webSearch
+            case "URL":
+                t.keyboardType = .URL
+            case "namePhonePad":
+                t.keyboardType = .namePhonePad
             case "number", "decimal":
-                t.keyboardType = input == "decimal" ? UIKeyboardType.decimalPad : UIKeyboardType.numberPad
-                t.isSecureTextEntry = attr["secure"].boolValue
+                t.keyboardType = input == "decimal" ? .decimalPad : .numberPad
                 let accessory = UIView(frame: CGRect(x: 0,y: 0,width: UIScreen.main.bounds.size.width, height: 50.0))
                 accessory.backgroundColor = UIColor.findColorByJSON(attr: attr["accessoryBackground"]) ?? SJUITextField.accessoryBackgroundColor
                 let l  = SJUILabel(frame: CGRect(x: UIScreen.main.bounds.size.width - 100.0,y: 0, width: 100, height: 50))
@@ -136,6 +140,10 @@ open class SJUITextField: UITextField {
                 break
             }
             
+        }
+        
+        if let secure = attr["secure"].bool {
+            t.isSecureTextEntry = secure
         }
         
         if let delegate = target as? UITextFieldDelegate {
