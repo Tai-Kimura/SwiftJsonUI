@@ -142,6 +142,77 @@ open class SJUITextField: UITextField {
             
         }
         
+        if #available(iOS 10.0, *) {
+            if let contentType = attr["contentType"].string {
+                switch (contentType) {
+                case "name":
+                    t.textContentType = .name
+                case "namePrefix":
+                    t.textContentType = .namePrefix
+                case "givenName":
+                    t.textContentType = .givenName
+                case "middleName":
+                    t.textContentType = .middleName
+                case "familyName":
+                    t.textContentType = .familyName
+                case "nameSuffix":
+                    t.textContentType = .nameSuffix
+                case "nickname":
+                    t.textContentType = .nickname
+                case "jobTitle":
+                    t.textContentType = .jobTitle
+                case "organizationName":
+                    t.textContentType = .organizationName
+                case "location":
+                    t.textContentType = .location
+                case "fullStreetAddress":
+                    t.textContentType = .fullStreetAddress
+                case "streetAddressLine1":
+                    t.textContentType = .streetAddressLine1
+                case "streetAddressLine2":
+                    t.textContentType = .streetAddressLine2
+                case "addressCity":
+                    t.textContentType = .addressCity
+                case "addressState":
+                    t.textContentType = .addressState
+                case "addressCityAndState":
+                    t.textContentType = .addressCityAndState
+                case "sublocality":
+                    t.textContentType = .sublocality
+                case "countryName":
+                    t.textContentType = .countryName
+                case "postalCode":
+                    t.textContentType = .postalCode
+                case "telephoneNumber":
+                    t.textContentType = .telephoneNumber
+                case "emailAddress":
+                    t.textContentType = .emailAddress
+                case "URL":
+                    t.textContentType = .URL
+                case "creditCardNumber":
+                    t.textContentType = .creditCardNumber
+                case "username":
+                    if #available(iOS 11.0, *) {
+                        t.textContentType = .username
+                    }
+                case "password":
+                    if #available(iOS 11.0, *) {
+                        t.textContentType = .password
+                    }
+                case "newPassword":
+                    if #available(iOS 12.0, *) {
+                        t.textContentType = .newPassword
+                    }
+                case "oneTimeCode":
+                    if #available(iOS 12.0, *) {
+                        t.textContentType = .oneTimeCode
+                    }
+                default:
+                    break
+                }
+            }
+        }
+        
         if let secure = attr["secure"].bool {
             t.isSecureTextEntry = secure
         }
