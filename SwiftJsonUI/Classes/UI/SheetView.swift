@@ -107,9 +107,10 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         }
         self.show(mainView, duration: duration, completion: completion)
     }
-    public func showDatePicker(_ date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
+    public func showDatePicker(mode: UIDatePicker.Mode, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
         _pickerView.alpha = 0
         _datePicker.alpha = 1.0
+        _datePicker.datePickerMode = mode
         _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
         _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
         _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())

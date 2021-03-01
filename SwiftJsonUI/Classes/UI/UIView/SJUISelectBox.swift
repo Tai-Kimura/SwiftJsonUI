@@ -112,11 +112,14 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     public var locale: Locale? = nil
     
+    public var datePickerMode = UIDatePicker.Mode.date
+    
     private var canBack = false
     
     public weak var selectBoxDelegate: UISelectBoxDelegate?
     
     public weak var referenceView: UIScrollView?
+    
     
     public weak var inView: UIView?
     
@@ -125,6 +128,20 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         super.init(frame: CGRect.zero)
         self.clipsToBounds = true
         self._type = SelectItemType(rawValue: attr["selectItemType"].stringValue) ?? .normal
+        if let datePickerMode = attr["datePickerMode"].string {
+            switch datePickerMode {
+            case "date":
+                self.datePickerMode = .date
+            case "time":
+                self.datePickerMode = .time
+            case "datetime":
+                self.datePickerMode = .dateAndTime
+            case "countDown":
+                self.datePickerMode = .countDownTimer
+            default:
+                break
+            }
+        }
         self.canBack = attr["canBack"].boolValue
         if let prompt = attr["prompt"].string {
             self._prompt = prompt.localized()
@@ -315,7 +332,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         case .normal:
             SheetView.sharedInstance().showPicker([_selectedIndex ?? 0], withDataSource: [items], forItem: items, inView: inView, canBack: canBack)
         case .date:
-            SheetView.sharedInstance().showDatePicker(_selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
+            SheetView.sharedInstance().showDatePicker(mode: datePickerMode, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
         }
         SheetView.sharedInstance().delegate = self
         setScrollOffset()
