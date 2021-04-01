@@ -25,6 +25,8 @@ open class SJUILabel: UILabel {
     
     public var hintAttributes:[NSAttributedString.Key:NSObject]?
     
+    public var partialAttributesJSON: [JSON]?
+    
     public var selected: Bool = false {
         didSet {
             self.applyAttributedText(self.attributedText?.string)
@@ -99,21 +101,39 @@ open class SJUILabel: UILabel {
     }
     
     open func applyAttributedText(_ text: String!) {
+        self.linkedRanges.removeAll()
         self.linkable = false
         let string = text ?? ""
         if let hint = hint, let hintAttributes = hintAttributes, string.isEmpty {
             self.attributedText = NSAttributedString(string: hint, attributes: hintAttributes)
         } else {
             let attr = selected ? highlightAttributes : attributes
-            self.attributedText = NSAttributedString(string: string, attributes: attr)
+            if let partialAttributes = self.partialAttributesJSON {
+                var attrText = NSMutableAttributedString(string:  string, attributes: attr)
+                attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: self)
+                if !self.linkedRanges.isEmpty {
+                    self.isUserInteractionEnabled = true
+                }
+                self.attributedText = attrText
+            } else {
+                self.attributedText = NSAttributedString(string: string, attributes: attr)
+            }
         }
     }
     
     
     open func applyLinkableAttributedText(_ text: String!, withColor color: UIColor = defaultLinkColor) {
-        let attrText = NSMutableAttributedString(string: text, attributes: self.attributes)
+        self.linkedRanges.removeAll()
+        let string = text ?? ""
+        var attrText = NSMutableAttributedString(string: string, attributes: self.attributes)
+        if let partialAttributes = self.partialAttributesJSON {
+            attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: self)
+            if !self.linkedRanges.isEmpty {
+                self.isUserInteractionEnabled = true
+            }
+        }
         let detector = try! NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-        let matches = detector.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count))
+        let matches = detector.matches(in: string, options: [], range: NSRange(location: 0, length: string.utf16.count))
         linkable = matches.count > 0
         isUserInteractionEnabled = true
         for match in matches {
@@ -371,15 +391,15 @@ open class SJUILabel: UILabel {
             s.shadowOffset = CGSize(width: shadowOffset[0], height: shadowOffset[1]);
             attributes[NSAttributedString.Key.shadow] = s
         }
+        l.partialAttributesJSON = attr["partialAttributes"].array
         if let text = attr["text"].string {
             l.textColor = color
             if !text.isMatch(pattern: "^@\\{") {
                 var attrText = NSMutableAttributedString(string:  text.localized(), attributes: attributes)
-                if let partialAttributes = attr["partialAttributes"].array {
+                if let partialAttributes = l.partialAttributesJSON {
+                    l.partialAttributesJSON = partialAttributes
                     attrText = attrText.applyAttributesFromJSON(attrs: partialAttributes, toLabel: l)
                     if !l.linkedRanges.isEmpty {
-                        l.linkHandleDelegate = target as? NSObject
-                        l.addGestureRecognizer(UITapGestureRecognizer(target: l, action: #selector(SJUILabel.onLinkTap(_:))))
                         l.isUserInteractionEnabled = true
                     }
                 }
@@ -389,7 +409,8 @@ open class SJUILabel: UILabel {
         } else {
             l.textColor = color
         }
-        
+        l.linkHandleDelegate = target as? NSObject
+        l.addGestureRecognizer(UITapGestureRecognizer(target: l, action: #selector(SJUILabel.onLinkTap(_:))))
         l.attributes = attributes
         
         if !attr["highlightAttributes"].isEmpty {
@@ -464,3 +485,4 @@ open class SJUILabel: UILabel {
         return l
     }
 }
+
