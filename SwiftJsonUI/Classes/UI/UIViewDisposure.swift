@@ -243,9 +243,23 @@ open class UIViewDisposure {
         let weightInView = weight/baseWeight
         switch orientation {
         case .vertical:
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: weightReferencedView, attribute: NSLayoutConstraint.Attribute.height, multiplier: weightInView, constant: 0))
+            if subviews.count > 1 {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.height, relatedBy: NSLayoutConstraint.Relation.equal, toItem: weightReferencedView, attribute: NSLayoutConstraint.Attribute.height, multiplier: weightInView, constant: 0))
+            } else {
+                info.height = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+                applyTopPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
+                applyBottomPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
+                info.height = nil
+            }
         case .horizontal:
-            constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: weightReferencedView, attribute: NSLayoutConstraint.Attribute.width, multiplier: weightInView, constant: 0))
+            if subviews.count > 1 {
+                constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: weightReferencedView, attribute: NSLayoutConstraint.Attribute.width, multiplier: weightInView, constant: 0))
+            } else {
+                info.width = UILayoutConstraintInfo.LayoutParams.matchParent.rawValue
+                applyLeftPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
+                applyRightPaddingConstraint(to: superview, onView: view, toConstraintInfo: info, for: &constraints, subviews: subviews)
+                info.width = nil
+            }
         }
     }
     
@@ -1361,4 +1375,5 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
 
