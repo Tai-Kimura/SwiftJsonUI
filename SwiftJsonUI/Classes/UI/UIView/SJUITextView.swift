@@ -77,7 +77,7 @@ open class SJUITextView: UITextView {
             let paragraphStyle = NSMutableParagraphStyle()
             paragraphStyle.lineHeightMultiple = 1.4
             let size:CGFloat = fontSize
-            let font = UIFont(name: hintFont, size: size) ?? UIFont.systemFont(ofSize: size)
+            let font = UIFont(name: hintFont, size: size) ?? (hintFont == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
             placeHolder.attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font, NSAttributedString.Key.foregroundColor: hintColor]
             placeHolder.applyAttributedText(hint)
             placeHolder.setNeedsLayout()
@@ -190,7 +190,7 @@ open class SJUITextView: UITextView {
         let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
         let name = attr["font"].string ?? SJUIViewCreator.defaultFont
         t.hintFont = attr["hintFont"].string ?? name
-        let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
+        let font = UIFont(name: name, size: size) ?? (name == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
         t.fontSize = size
         t.font = font
         t.textColor = UIColor.findColorByJSON(attr: attr["fontColor"]) ?? SJUITextView.textColor

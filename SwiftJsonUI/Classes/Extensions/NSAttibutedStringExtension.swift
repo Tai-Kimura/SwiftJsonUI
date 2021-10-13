@@ -90,7 +90,7 @@ public extension NSAttributedString {
             paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue :1.4
             let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
             let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
-            let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
+            let font = UIFont(name: name, size: size) ?? (name == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
             var attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font]
             if let lineBreakMode = attr["lineBreakMode"].string {
                 switch (lineBreakMode) {

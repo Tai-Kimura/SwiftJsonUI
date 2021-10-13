@@ -48,7 +48,7 @@ open class SJUIButton: UIButton {
         }
         let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 17.0
         let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
-        let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
+        let font = UIFont(name: name, size: size) ?? (name == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
         b.titleLabel?.font = font
         if let onclick = attr["onclick"].string {
             b.addTarget(target, action: Selector(onclick), for: UIControl.Event.touchUpInside)

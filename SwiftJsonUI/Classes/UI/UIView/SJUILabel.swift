@@ -300,7 +300,7 @@ open class SJUILabel: UILabel {
         paragraphStyle.lineHeightMultiple = attr["lineHeightMultiple"].cgFloat != nil ? attr["lineHeightMultiple"].cgFloatValue :1.0
         let size = attr["fontSize"].cgFloat ?? SJUIViewCreator.defaultFontSize
         let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
-        let font = UIFont(name: name, size: size) ?? UIFont.systemFont(ofSize: size)
+        let font = UIFont(name: name, size: size) ?? (name == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
         var attributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: font]
         
         l.font = font
@@ -417,7 +417,7 @@ open class SJUILabel: UILabel {
             let highlightAttr = attr["highlightAttributes"]
             let highlightSize = highlightAttr["fontSize"].cgFloat != nil ? highlightAttr["fontSize"].cgFloatValue : size
             let highlightName = highlightAttr["font"].string != nil ? highlightAttr["font"].stringValue : name
-            let highlightFont = UIFont(name: highlightName, size: highlightSize) ?? UIFont.systemFont(ofSize: highlightSize)
+            let highlightFont = UIFont(name: highlightName, size: highlightSize) ?? (highlightName == "bold" ? UIFont.boldSystemFont(ofSize: highlightSize) : UIFont.systemFont(ofSize: highlightSize))
             var highlightAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: highlightFont, NSAttributedString.Key.foregroundColor: color]
             if let highlightColor = UIColor.findColorByJSON(attr: highlightAttr["fontColor"]) {
                 highlightAttributes[NSAttributedString.Key.foregroundColor] = highlightColor
@@ -452,7 +452,7 @@ open class SJUILabel: UILabel {
             let hintAttr = attr["hintAttributes"]
             let hintSize = hintAttr["fontSize"].cgFloat != nil ? hintAttr["fontSize"].cgFloatValue : size
             let hintName = hintAttr["font"].string != nil ? hintAttr["font"].stringValue : name
-            let hintFont = UIFont(name: hintName, size: hintSize) ?? UIFont.systemFont(ofSize: hintSize)
+            let hintFont = UIFont(name: hintName, size: hintSize) ?? (hintName == "bold" ? UIFont.boldSystemFont(ofSize: hintSize) : UIFont.systemFont(ofSize: hintSize))
             var hintAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: hintFont, NSAttributedString.Key.foregroundColor: color]
             if let hintColor = UIColor.findColorByJSON(attr: hintAttr["fontColor"]) {
                 hintAttributes[NSAttributedString.Key.foregroundColor] = hintColor
