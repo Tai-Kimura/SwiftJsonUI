@@ -424,7 +424,7 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     }
 }
 
-public protocol UISelectBoxDelegate: class {
+public protocol UISelectBoxDelegate: AnyObject {
     func willShowSheet(view: SJUISelectBox) -> Bool
     func didItemSelected(view: SJUISelectBox, isBack: Bool)
 }

@@ -36,20 +36,6 @@ open class SJUIButton: UIButton {
     open class func createFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> SJUIButton {
         let b = viewClass.init()
         b.isUserInteractionEnabled = true
-        b.setTitle(attr["text"].stringValue.localized(), for: UIControl.State())
-        if let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) {
-            b.setTitleColor(fontColor, for: UIControl.State())
-        }
-        if let fontColor = UIColor.findColorByJSON(attr: attr["hilightColor"]) {
-            b.setTitleColor(fontColor, for: UIControl.State.highlighted)
-        }
-        if let image = attr["image"].string {
-            b.setBackgroundImage(UIImage(named: image), for: UIControl.State())
-        }
-        let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 17.0
-        let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
-        let font = UIFont(name: name, size: size) ?? (name == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
-        b.titleLabel?.font = font
         if let onclick = attr["onclick"].string {
             b.addTarget(target, action: Selector(onclick), for: UIControl.Event.touchUpInside)
         } else if let onclicks = attr["onclick"].array {
@@ -90,6 +76,67 @@ open class SJUIButton: UIButton {
         b.disabledBackgroundColor = UIColor.findColorByJSON(attr: attr["disabledBackground"])
         b.disabledFontColor = UIColor.findColorByJSON(attr: attr["disabledFontColor"])
         b.isEnabled = attr["enabled"].bool ?? true
+        let size = attr["fontSize"].cgFloat != nil ? attr["fontSize"].cgFloatValue : 17.0
+        let name = attr["font"].string != nil ? attr["font"].stringValue : SJUIViewCreator.defaultFont
+        let font = UIFont(name: name, size: size) ?? (name == "bold" ? UIFont.boldSystemFont(ofSize: size) : UIFont.systemFont(ofSize: size))
+        if #available(iOS 15.0, *) {
+            let config = attr["config"]
+            if let style = config["style"].string {
+                switch style {
+                case "plain":
+                    b.configuration = UIButton.Configuration.plain()
+                case "tinted":
+                    b.configuration = UIButton.Configuration.tinted()
+                case "gray":
+                    b.configuration = UIButton.Configuration.gray()
+                case "filled":
+                    b.configuration = UIButton.Configuration.filled()
+                case "borderless":
+                    b.configuration = UIButton.Configuration.borderless()
+                case "bordered":
+                    b.configuration = UIButton.Configuration.bordered()
+                case "borderedTinted":
+                    b.configuration = UIButton.Configuration.borderedTinted()
+                case "borderedProminent":
+                    b.configuration = UIButton.Configuration.borderedProminent()
+                default:
+                    b.configuration = UIButton.Configuration.plain()
+                    break
+                }
+            } else {
+                b.configuration = UIButton.Configuration.plain()
+            }
+            if let showIndicator = config["showIndicator"].bool {
+                b.configuration?.showsActivityIndicator = showIndicator
+            }
+            if let image = attr["image"].string {
+                b.configuration?.image = UIImage(named: image)
+            }
+            b.configuration?.attributedTitle = AttributedString(attr["text"].stringValue.localized())
+            b.defaultFontColor = UIColor.findColorByJSON(attr: attr["fontColor"])
+            let highlightFontColor = UIColor.findColorByJSON(attr: attr["hilightColor"])
+            b.configurationUpdateHandler = { button in
+                guard let button = button as? SJUIButton else {
+                    return
+                }
+                button.backgroundColor = b.isHighlighted ? button.tapBackgroundColor : button.isEnabled || b.disabledBackgroundColor == nil ? button.defaultBackgroundColor : b.disabledBackgroundColor
+                button.configuration?.attributedTitle?.font = font
+                button.configuration?.attributedTitle?.foregroundColor =  button.isHighlighted && highlightFontColor != nil ? highlightFontColor : button.isEnabled || button.disabledFontColor == nil ? button.defaultFontColor : button.disabledFontColor
+            }
+        } else {
+            b.setTitle(attr["text"].stringValue.localized(), for: UIControl.State())
+            if let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) {
+                b.setTitleColor(fontColor, for: UIControl.State())
+            }
+            if let fontColor = UIColor.findColorByJSON(attr: attr["hilightColor"]) {
+                b.setTitleColor(fontColor, for: UIControl.State.highlighted)
+            }
+            if let image = attr["image"].string {
+                b.setBackgroundImage(UIImage(named: image), for: UIControl.State())
+            }
+            b.titleLabel?.font = font
+        }
         return b
     }
 }
+
