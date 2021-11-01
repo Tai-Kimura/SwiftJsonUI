@@ -36,6 +36,7 @@ open class UIViewDisposure {
     }
     
     public class func applyConstraint(onView view: UIView, toConstraintInfo info: inout UILayoutConstraintInfo) {
+        view.invalidateIntrinsicContentSize()
         var constraints = [NSLayoutConstraint]()
         //親ビューに対して
         if let superview = view.superview {
