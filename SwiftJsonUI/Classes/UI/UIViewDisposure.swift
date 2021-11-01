@@ -818,10 +818,16 @@ open class UIViewDisposure {
             constraints.append(constraint)
         }
         if let maxWidth = info.maxWidth {
+            if let label = view as? UILabel {
+                label.preferredMaxLayoutWidth = maxWidth
+            }
             let constraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.lessThanOrEqual, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: maxWidth)
             constraints.append(constraint)
         }
         if let width = info.width, width == UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
+            if let label = view as? UILabel {
+                label.preferredMaxLayoutWidth = CGFloat.greatestFiniteMagnitude
+            }
             if let superview = view.superview, superview.constraintInfo?.width ?? UILayoutConstraintInfo.LayoutParams.matchParent.rawValue != UILayoutConstraintInfo.LayoutParams.wrapContent.rawValue {
                 let leftConstraint = NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.left, relatedBy: NSLayoutConstraint.Relation.greaterThanOrEqual, toItem: superview, attribute: NSLayoutConstraint.Attribute.left, multiplier: 1.0, constant: (info.leftMargin ?? 0) + (superview.constraintInfo?.paddingLeft ?? 0))
                 constraints.append(leftConstraint)
@@ -831,6 +837,9 @@ open class UIViewDisposure {
             return
         }
         if let width = info.width {
+            if let label = view as? UILabel {
+                label.preferredMaxLayoutWidth = width
+            }
             constraints.append(NSLayoutConstraint(item: view, attribute: NSLayoutConstraint.Attribute.width, relatedBy: NSLayoutConstraint.Relation.equal, toItem: nil, attribute: NSLayoutConstraint.Attribute.width, multiplier: 1.0, constant: width))
         }
         if let orientation = (view as? SJUIView)?.orientation, orientation == .horizontal, info.width == nil, info.maxWidth == nil, info.widthWeight == nil, info.maxWidthWeight == nil {
@@ -905,6 +914,7 @@ open class UIViewDisposure {
 }
 
 public class UILayoutConstraintInfo {
+    var attr: JSON?
     fileprivate var _constraints = [WeakConstraint]()
     public var constraints: [NSLayoutConstraint] {
         get {
@@ -1345,6 +1355,46 @@ public class UILayoutConstraintInfo {
         return viewMargins
     }
     
+    public func findRelatedViews(views: [String: UIView]) {
+        guard let attr = attr else {
+            return
+        }
+        if let str = attr["toView"].string {
+            self.toView = views[str]
+        }
+        if let str = attr["alignTopOfView"].string {
+            self.alignTopOfView = views[str]
+        }
+        if let str = attr["alignBottomOfView"].string {
+            self.alignBottomOfView = views[str]
+        }
+        if let str = attr["alignLeftOfView"].string {
+            self.alignLeftOfView = views[str]
+        }
+        if let str = attr["alignRightOfView"].string {
+            self.alignRightOfView = views[str]
+        }
+        if let str = attr["alignTopView"].string {
+            self.alignTopView = views[str]
+        }
+        if let str = attr["alignBottomView"].string {
+            self.alignBottomView = views[str]
+        }
+        if let str = attr["alignLeftView"].string {
+            self.alignLeftView = views[str]
+        }
+        if let str = attr["alignRightView"].string {
+            self.alignRightView = views[str]
+        }
+        if let str = attr["alignCenterVerticalView"].string {
+            self.alignCenterVerticalView = views[str]
+        }
+        if let str = attr["alignCenterHorizontalView"].string {
+            self.alignCenterVerticalView = views[str]
+        }
+        
+    }
+    
     public enum LayoutParams: CGFloat {
         case matchParent = -1
         case wrapContent = -2
@@ -1375,5 +1425,6 @@ class WeakConstraint {
         return weakConstraints
     }
 }
+
 
 
