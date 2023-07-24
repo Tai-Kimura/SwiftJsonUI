@@ -32,6 +32,7 @@ TODO: Add long description of the pod here.
   s.swift_version = '5.8'
 
   s.source_files = 'SwiftJsonUI/Classes/**/*'
+  s.pod_target_xcconfig = { 'CODE_SIGN_ALLOWED' => 'NO', 'CODE_SIGN_REQIRED' => 'NO' }
   
   # s.resource_bundles = {
   #   'SwiftJsonUI' => ['SwiftJsonUI/Assets/*.png']
