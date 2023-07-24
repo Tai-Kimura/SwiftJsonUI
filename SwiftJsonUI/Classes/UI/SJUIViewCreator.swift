@@ -98,7 +98,11 @@ open class SJUIViewCreator:NSObject {
                 if let variables = attr["variables"].dictionary {
                     for (key, value) in variables {
                         if let string = value.string {
-                            jsonString = jsonString.replacingOccurrences(of:"\"\(key)\"", with: "\"\(string)\"")
+                            if key.starts(with: "@@") {
+                                jsonString = jsonString.replacingOccurrences(of:"\(key)", with: "\(string)")
+                            } else {
+                                jsonString = jsonString.replacingOccurrences(of:"\"\(key)\"", with: "\"\(string)\"")
+                            }
                         } else if let int = value.int {
                             jsonString = jsonString.replacingOccurrences(of: "\"\(key)\"", with: "\(int)")
                         } else if let float = value.cgFloat {
@@ -108,7 +112,6 @@ open class SJUIViewCreator:NSObject {
                         }
                     }
                 }
-                
                 let enc:String.Encoding = String.Encoding.utf8
                 let json = try JSON(data: jsonString.data(using: enc)!)
                 return createView(json, parentView: parentView, target: target, views: &views, isRootView: false)
