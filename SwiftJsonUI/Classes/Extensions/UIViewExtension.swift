@@ -58,12 +58,15 @@ public extension UIView {
             return object
         }
         set {
+            guard let defaultBackgroundColor = self.defaultBackgroundColor else {
+                return
+            }
             objc_setAssociatedObject(self, &DefaultBackgroundColorKey, newValue, .OBJC_ASSOCIATION_RETAIN)
             var red: CGFloat = 1.0
             var green: CGFloat = 1.0
             var blue: CGFloat = 1.0
             var alpha: CGFloat = 1.0
-            self.defaultBackgroundColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+            defaultBackgroundColor.getRed(&red, green: &green, blue: &blue, alpha: &alpha)
             if alpha == 1.0 {
                 let isWhite = red == 1.0 && green == 1.0 && blue == 1.0
                 red = red * (isWhite ? 0.95 : 0.8)
