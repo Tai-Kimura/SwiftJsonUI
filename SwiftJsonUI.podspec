@@ -28,7 +28,7 @@ TODO: Add long description of the pod here.
   s.source           = { :git => 'https://github.com/Tai-Kimura/SwiftJsonUI.git', :tag => s.version.to_s }
   # s.social_media_url = 'https://twitter.com/<TWITTER_USERNAME>'
 
-  s.ios.deployment_target = '11.0'
+  s.ios.deployment_target = '13.0'
   s.swift_version = '5.8'
   s.source_files = 'SwiftJsonUI/Classes/**/*'
   
@@ -39,6 +39,6 @@ TODO: Add long description of the pod here.
 
   # s.public_header_files = 'Pod/Classes/**/*.h'
   # s.frameworks = 'UIKit', 'MapKit'
-  s.platform = :ios, '11.0'
+  s.platform = :ios, '13.0'
   s.dependency 'Socket.IO-Client-Swift', '~> 16.0.1'
 end
