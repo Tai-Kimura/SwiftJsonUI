@@ -156,6 +156,8 @@ open class SJUIViewCreator:NSObject {
             default:
                 break
             }
+        } else if let compressHorizontal = attr["compressHorizontal"].float {
+            view.setContentCompressionResistancePriority(UILayoutPriority(rawValue: compressHorizontal), for: .horizontal)
         }
         
         if let compressVertical = attr["compressVertical"].string {
@@ -171,6 +173,8 @@ open class SJUIViewCreator:NSObject {
             default:
                 break
             }
+        } else if let compressVertical = attr["compressVertical"].float {
+            view.setContentCompressionResistancePriority(UILayoutPriority(rawValue: compressVertical), for: .vertical)
         }
         
         if let hugHorizontal = attr["hugHorizontal"].string {
@@ -186,6 +190,8 @@ open class SJUIViewCreator:NSObject {
             default:
                 break
             }
+        } else if let hugHorizontal = attr["hugHorizontal"].float {
+            view.setContentHuggingPriority(UILayoutPriority(rawValue: hugHorizontal), for: .horizontal)
         }
         
         if let hugVertical = attr["hugVertical"].string {
@@ -201,7 +207,10 @@ open class SJUIViewCreator:NSObject {
             default:
                 break
             }
+        } else if let hugVertical = attr["hugVertical"].float {
+            view.setContentHuggingPriority(UILayoutPriority(rawValue: hugVertical), for: .vertical)
         }
+        
         if let tag = attr["tag"].int {
             view.tag = tag
         }

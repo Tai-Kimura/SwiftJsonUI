@@ -467,19 +467,19 @@ open class SJUILabel: UILabel {
             l.addGestureRecognizer(gr)
             l.isUserInteractionEnabled = true
         }
-        if let width = attr["width"].string, width == "wrapContent", attr["compressHorizontal"].string == nil {
+        if let width = attr["width"].string, width == "wrapContent", attr["compressHorizontal"].string == nil, attr["compressHorizontal"].float == nil {
             l.setContentCompressionResistancePriority(UILayoutPriority.required, for: .horizontal)
         }
         
-        if let height = attr["height"].string, height == "wrapContent", attr["compressVertical"].string == nil {
+        if let height = attr["height"].string, height == "wrapContent", attr["compressVertical"].string == nil, attr["compressVertical"].float == nil {
             l.setContentCompressionResistancePriority(UILayoutPriority.required, for: .vertical)
         }
         
-        if let width = attr["width"].string, width == "wrapContent", attr["hugHorizontal"].string == nil {
+        if let width = attr["width"].string, width == "wrapContent", attr["hugHorizontal"].string == nil, attr["hugHorizontal"].float == nil {
             l.setContentHuggingPriority(UILayoutPriority.required, for: .horizontal)
         }
         
-        if let height = attr["height"].string, height == "wrapContent", attr["hugVertical"].string == nil {
+        if let height = attr["height"].string, height == "wrapContent", attr["hugVertical"].string == nil, attr["hugVertical"].float == nil {
             l.setContentHuggingPriority(UILayoutPriority.required, for: .vertical)
         }
         return l
