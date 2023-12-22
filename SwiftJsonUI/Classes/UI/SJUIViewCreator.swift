@@ -632,16 +632,20 @@ open class SJUIViewCreator:NSObject {
         case "Indicator":
             let style: UIActivityIndicatorView.Style
             switch attr["indicatorStyle"].stringValue {
-            case "White":
-                style = .white
-            case "WhiteLarge":
-                style = .whiteLarge
-            case "Gray":
-                style = .gray
+            case "medium":
+                style = .medium
+            case "large":
+                style = .large
             default:
-                style = .white
+                style = .medium
             }
             let i = UIActivityIndicatorView(style: style)
+            if let color = UIColor.findColorByJSON(attr: attr["color"]) {
+                i.color  = color
+            }
+            if let hidesWhenStopped = attr["hidesWhenStopped"].bool {
+                i.hidesWhenStopped  = hidesWhenStopped
+            }
             view = i
         default:
             return nil
