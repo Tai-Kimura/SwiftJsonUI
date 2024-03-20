@@ -1,65 +1,75 @@
-var express = require('express');
-var morgan = require('morgan');
-var path = require('path');
-var fs = require('fs');
+var express = require("express");
+var morgan = require("morgan");
+var path = require("path");
+var fs = require("fs");
 var app = express();
 
-app.use(morgan({ format: 'dev', immediate: true }));
-app.use(express.static(__dirname + '/public'));
+app.use(morgan({ format: "dev", immediate: true }));
+app.use(express.static(__dirname + "/public"));
 
-var http = require("http");
-var server = http.createServer(function(req,res) {
-    res.write("Hello World!!");
-    res.end();
-});
+const socket = require("ws");
 
-// socketioの準備
-var io = require('socket.io')(server);
+// WebSocketサーバーを作成
+const server = new socket.Server({ port: 8081 });
+
+let webSocket;
+
+// // socketioの準備
+// var io = require('socket.io')(server);
 
 // クライアント接続時の処理
-io.on('connection', function(socket) {
-    console.log("client connected!!")
-    socket.on('disconnect', function() {
-        console.log("client disconnected!!")
-    });
+server.on("connection", (ws) => {
+  webSocket = ws;
+  console.log("client connected!!");
+  webSocket.on("disconnect", () => {
+    console.log("client disconnect!!");
+  });
 });
 
-server.listen(8080);
+server.on("error", () => {
+  console.log("client error!!");
+});
+
+server.on("disconnect", () => {
+  console.log("client disconnect!!");
+});
+
+// server.listen(8081);
 
 var chokidar = require("chokidar");
 
 //chokidarの初期化
-var watcher = chokidar.watch('./public/',{
-    ignored:/[\/\\]\./,
-    persistent:true
+var watcher = chokidar.watch("../*/*.json", {
+  ignored: /[\/\\]\./,
+  persistent: true,
 });
 
 //イベント定義
-watcher.on('ready',function(){
-    console.log("ready watching...");
+watcher.on("ready", function () {
+  console.log("ready watching...");
 
-    watcher.on('add',function(path){
-        console.log(path + " added.");
-    });
+  watcher.on("add", function (path) {
+    console.log(path + " added.");
+  });
 
-    watcher.on('change',function(path){
-        var stars = path.split("/");
-        var layoutPath = "layout_loader";
-        var dirName = stars[stars.length - 2].toLowerCase();
-        var filePath = stars[stars.length - 1];
-        if (filePath.endsWith("json")) {
-            filePath = stars[stars.length - 1].replace(/\.json$/g, '');
-            try {
-                JSON.parse(fs.readFileSync(path, 'utf8'));
-                        console.log(path + " changed.");
-                io.emit("layoutChanged", layoutPath, dirName, filePath);
-            } catch(err) {
-                console.log(err);
-            }
-        } else if (filePath.endsWith("js")) {
-            filePath = stars[stars.length - 1].replace(/\.js$/g, '');
-            console.log(path + " changed.");
-            io.emit("layoutChanged", layoutPath, dirName, filePath);
-        }
-    });
+  watcher.on("change", function (path) {
+    var stars = path.split("/");
+    var layoutPath = "layout_loader";
+    var dirName = stars[stars.length - 2].toLowerCase();
+    var filePath = stars[stars.length - 1];
+    if (filePath.endsWith("json")) {
+      filePath = stars[stars.length - 1].replace(/\.json$/g, "");
+      try {
+        JSON.parse(fs.readFileSync(path, "utf8"));
+        console.log(path + " changed.");
+        webSocket?.send(JSON.stringify([layoutPath, dirName, filePath]));
+      } catch (err) {
+        console.log(err);
+      }
+    } else if (filePath.endsWith("js")) {
+      filePath = stars[stars.length - 1].replace(/\.js$/g, "");
+      console.log(path + " changed.");
+      webSocket?.send(JSON.stringify([layoutPath, dirName, filePath]));
+    }
+  });
 });
