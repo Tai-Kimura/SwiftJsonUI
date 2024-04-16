@@ -5,6 +5,7 @@
 
 import UIKit
 
+@MainActor
 @objc public protocol SJUITextViewDelegate {
     func textViewDidChangeFrame(textView: SJUITextView)
 }

@@ -9,7 +9,7 @@ open class NetworkImageView: SJUIImageView {
     
     static let animationKey = "network_image_view_animation_key"
     
-    public static var defaultHttpHeaders = [String:String]()
+    nonisolated(unsafe) public static var defaultHttpHeaders = [String:String]()
     
     public var defaultImage: UIImage? = nil
     

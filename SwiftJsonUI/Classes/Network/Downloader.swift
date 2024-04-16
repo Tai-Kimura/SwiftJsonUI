@@ -8,7 +8,7 @@ import UIKit
 
 public class Downloader: NSObject,  URLSessionDownloadDelegate {
     
-    public static var operationQueue: OperationQueue!
+    nonisolated(unsafe) public static var operationQueue: OperationQueue!
     
     public static let cachePath = "download_cache"
     
@@ -30,7 +30,7 @@ public class Downloader: NSObject,  URLSessionDownloadDelegate {
     
     fileprivate var statusCode: Int!
     
-    fileprivate static var cacheDir = ""
+    nonisolated(unsafe) fileprivate static var cacheDir = ""
     
     public var isDownloading: Bool {
         get {

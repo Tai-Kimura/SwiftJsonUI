@@ -5,6 +5,7 @@
 
 import UIKit
 
+@MainActor
 @objc public protocol RadioGroupDelegate {
     func radioGroupCheckChanged(_ radiogroup: NSRadioGroup)
 }
@@ -137,6 +138,7 @@ open class SJUIRadioButton: SJUIView {
     
 }
 
+@MainActor
 public class NSRadioGroup: NSObject {
     private static var radioGroups = [String:NSRadioGroup]()
     private var weakRadioBtns: [WeakRadioBtn] = [WeakRadioBtn]()

@@ -5,6 +5,7 @@
 
 import UIKit
 
+@MainActor
 @objc public protocol SJUICheckBoxDelegate {
     func checkBoxOnCheck(_ checkBox: SJUICheckBox)
 }

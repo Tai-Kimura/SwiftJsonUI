@@ -5,6 +5,7 @@
 
 import UIKit
 
+@MainActor
 @objc public protocol SJUITextFieldDelegate {
     @objc optional func textFieldDidDeleteBackward(textField: UITextField)
 }

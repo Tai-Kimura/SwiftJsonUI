@@ -7,9 +7,9 @@ import UIKit
 
 open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
-    public static var currentLocale: Locale? = nil
+    nonisolated(unsafe) public static var currentLocale: Locale? = nil
     
-    public static var defaultReferenceViewId: String?
+    nonisolated(unsafe) public static var defaultReferenceViewId: String?
     
     override open class var viewClass: SJUIView.Type {
         get {
@@ -19,8 +19,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     
     static let defaultCaretWidth: CGFloat = 39.0
-    public static var defaultCaretImageName = "Triangle"
-    public static var defaultLabelPadding = UIEdgeInsets.init(top: 0, left: 10.0, bottom: 0, right: 10.0)
+    nonisolated(unsafe) public static var defaultCaretImageName = "Triangle"
+    nonisolated(unsafe) public static var defaultLabelPadding = UIEdgeInsets.init(top: 0, left: 10.0, bottom: 0, right: 10.0)
     
     private var _type: SelectItemType = .normal
     public var type: SelectItemType {
@@ -424,11 +424,13 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     }
 }
 
+@MainActor
 public protocol UISelectBoxDelegate: AnyObject {
     func willShowSheet(view: SJUISelectBox) -> Bool
     func didItemSelected(view: SJUISelectBox, isBack: Bool)
 }
 
+@MainActor
 public extension UISelectBoxDelegate {
     func willShowSheet(view: SJUISelectBox) -> Bool {
         return true
