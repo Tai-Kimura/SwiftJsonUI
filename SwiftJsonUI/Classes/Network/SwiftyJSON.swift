@@ -74,7 +74,7 @@ public enum Type: Int {
 }
 
 // MARK: - JSON Base
-public struct JSON: Sendable {
+public struct JSON {
     
     /**
      Creates a JSON using the data.
