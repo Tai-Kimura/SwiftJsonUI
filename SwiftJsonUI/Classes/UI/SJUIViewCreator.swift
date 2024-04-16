@@ -707,6 +707,7 @@ open class SJUIViewCreator:NSObject {
     
 }
 
+@MainActor
 public protocol ViewHolder: AnyObject {
     var _views: [String:UIView]
     {
