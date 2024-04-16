@@ -40,6 +40,7 @@ open class SJUIViewCreator:NSObject {
         
     }
     
+    @MainActor
     open class func getOnView(target: ViewHolder) -> UIView? {
         if let viewController = target as? UIViewController {
             return viewController.view
@@ -47,6 +48,7 @@ open class SJUIViewCreator:NSObject {
         return nil
     }
     
+    @MainActor
     open class func createErrorView(_ text:String = "JSONの形式が正しくありません") -> UIView {
         let view = UIView(frame: UIScreen.main.bounds)
         let label = UILabel(frame: CGRect(x: 0,y: 0,width: 100,height: 20.0))
@@ -87,6 +89,7 @@ open class SJUIViewCreator:NSObject {
         #endif
     }
     
+    @MainActor
     @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
         if let include = attr["include"].string {
@@ -566,6 +569,7 @@ open class SJUIViewCreator:NSObject {
         #endif
     }
     
+    @MainActor
     open class func getViewFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> UIView? {
         let view: UIView
         switch(attr["type"].stringValue) {
