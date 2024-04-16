@@ -6,6 +6,7 @@
 
 import UIKit
 
+@MainActor
 @objcMembers
 open class Binding: NSObject {
     private weak var _viewHolder: ViewHolder?

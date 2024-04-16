@@ -8,14 +8,15 @@ import WebKit
 
 open class SJUIViewCreator:NSObject {
     private static let systemFontString = "SJUI_System_Font"
-    public static var defaultFont = SJUIViewCreator.systemFontString
-    public static var defaultFontColor = UIColor.black
-    public static var defaultHintColor = UIColor.lightGray
-    public static var defaultFontSize: CGFloat = 14.0
-    public static var findColorFunc: (((Any)) -> UIColor?)?
+    nonisolated(unsafe) public static var defaultFont = SJUIViewCreator.systemFontString
+    nonisolated(unsafe) public static var defaultFontColor = UIColor.black
+    nonisolated(unsafe) public static var defaultHintColor = UIColor.lightGray
+    nonisolated(unsafe) public static var defaultFontSize: CGFloat = 14.0
+    nonisolated(unsafe) public static var findColorFunc: (((Any)) -> UIColor?)?
     
-    private static var styleCache = [String:JSON]()
+    nonisolated(unsafe) private static var styleCache = [String:JSON]()
     
+    @MainActor
     @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
         let url = getURL(path: path)
         
