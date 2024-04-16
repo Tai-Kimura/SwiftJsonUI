@@ -18,6 +18,7 @@ var ViewIdKey: UInt8 = 8
 var ScriptsKey: UInt8 = 9
 var UIControlStateKey: UInt8 = 10
 
+@MainActor
 @objc public protocol UIViewTapDelegate {
     func touchBegin(_ view: UIView)
     func touchEnd(_ view: UIView)
