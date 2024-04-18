@@ -63,6 +63,12 @@ open class SJUIView: UIView, UIGestureRecognizerDelegate, ViewHolder {
         }
     }
     open override func didAddSubview(_ subview: UIView) {
+        super.didAddSubview(subview)
+        let cName = String(describing: type(of: subview))
+        guard !cName.starts(with: "_") else {
+            Logger.debug("Not gonna update constraint because subview is Apple Private Class")
+            return
+        }
         if self.isActiveForConstraint {
             Logger.debug("Update Constraint")
             self.resetConstraintInfo()
