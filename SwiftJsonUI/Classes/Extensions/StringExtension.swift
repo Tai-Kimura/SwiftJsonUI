@@ -7,7 +7,7 @@ import Foundation
 
 public extension String {
     
-    static var currentLanguage: String?
+    nonisolated(unsafe) static var currentLanguage: String?
     
     func localized(tableName: String? = nil, bundle: Bundle? = nil, value: String? = nil, comment: String = "") -> String {
         if let bundle = bundle {
