@@ -1,0 +1,160 @@
+---
+path:            '/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx/prebuilt-modules/14.4/AVFoundation.swiftmodule/x86_64-apple-macos.swiftmodule'
+dependencies:
+  - mtime:           1708391008000000000
+    path:            '/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx/prebuilt-modules/14.4/AVFoundation.swiftmodule/x86_64-apple-macos.swiftmodule'
+    size:            232036
+  - mtime:           1707025241000000000
+    path:            'usr/lib/swift/Swift.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            2076971
+    sdk_relative:    true
+  - mtime:           1707546236000000000
+    path:            'usr/include/Darwin.apinotes'
+    size:            1133
+    sdk_relative:    true
+  - mtime:           1707549790000000000
+    path:            'usr/include/objc/ObjectiveC.apinotes'
+    size:            11147
+    sdk_relative:    true
+  - mtime:           1707550259000000000
+    path:            'usr/include/dispatch/Dispatch.apinotes'
+    size:            19
+    sdk_relative:    true
+  - mtime:           1707975258000000000
+    path:            'System/Library/Frameworks/Security.framework/Headers/Security.apinotes'
+    size:            162
+    sdk_relative:    true
+  - mtime:           1707548154000000000
+    path:            'System/Library/Frameworks/Foundation.framework/Headers/Foundation.apinotes'
+    size:            81098
+    sdk_relative:    true
+  - mtime:           1707557454000000000
+    path:            'System/Library/Frameworks/CoreAudioTypes.framework/Headers/CoreAudioTypes.apinotes'
+    size:            1519
+    sdk_relative:    true
+  - mtime:           1707589622000000000
+    path:            'System/Library/Frameworks/CoreGraphics.framework/Headers/CoreGraphics.apinotes'
+    size:            51513
+    sdk_relative:    true
+  - mtime:           1707556910000000000
+    path:            'System/Library/Frameworks/CoreText.framework/Headers/CoreText.apinotes'
+    size:            1662
+    sdk_relative:    true
+  - mtime:           1707891060000000000
+    path:            'System/Library/Frameworks/ApplicationServices.framework/Headers/ApplicationServices.apinotes'
+    size:            2012
+    sdk_relative:    true
+  - mtime:           1706209906000000000
+    path:            'System/Library/Frameworks/Metal.framework/Headers/Metal.apinotes'
+    size:            77061
+    sdk_relative:    true
+  - mtime:           1707969915000000000
+    path:            'System/Library/Frameworks/CoreMedia.framework/Headers/CoreMedia.apinotes'
+    size:            65704
+    sdk_relative:    true
+  - mtime:           1707557154000000000
+    path:            'System/Library/Frameworks/UniformTypeIdentifiers.framework/Headers/UniformTypeIdentifiers.apinotes'
+    size:            1666
+    sdk_relative:    true
+  - mtime:           1707557474000000000
+    path:            'System/Library/Frameworks/AudioToolbox.framework/Headers/AudioToolbox.apinotes'
+    size:            114
+    sdk_relative:    true
+  - mtime:           1707973982000000000
+    path:            'System/Library/Frameworks/MediaToolbox.framework/Headers/MediaToolbox.apinotes'
+    size:            215
+    sdk_relative:    true
+  - mtime:           1707987230000000000
+    path:            'System/Library/Frameworks/QuartzCore.framework/Headers/QuartzCore.apinotes'
+    size:            7428
+    sdk_relative:    true
+  - mtime:           1707589590000000000
+    path:            'System/Library/Frameworks/AVFAudio.framework/Headers/AVFAudio.apinotes'
+    size:            8309
+    sdk_relative:    true
+  - mtime:           1707989683000000000
+    path:            'System/Library/Frameworks/AVFoundation.framework/Headers/AVFoundation.apinotes'
+    size:            97861
+    sdk_relative:    true
+  - mtime:           1707025729000000000
+    path:            'usr/lib/swift/Darwin.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            31000
+    sdk_relative:    true
+  - mtime:           1707025507000000000
+    path:            'usr/lib/swift/_Concurrency.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            154001
+    sdk_relative:    true
+  - mtime:           1707025607000000000
+    path:            'usr/lib/swift/_StringProcessing.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            21924
+    sdk_relative:    true
+  - mtime:           1707552001000000000
+    path:            'System/Library/Frameworks/Combine.framework/Modules/Combine.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            169318
+    sdk_relative:    true
+  - mtime:           1707551990000000000
+    path:            'usr/lib/swift/ObjectiveC.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            4544
+    sdk_relative:    true
+  - mtime:           1707553024000000000
+    path:            'usr/lib/swift/Dispatch.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            56311
+    sdk_relative:    true
+  - mtime:           1707552100000000000
+    path:            'usr/lib/swift/CoreFoundation.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            22260
+    sdk_relative:    true
+  - mtime:           1707552140000000000
+    path:            'usr/lib/swift/XPC.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            31421
+    sdk_relative:    true
+  - mtime:           1707554524000000000
+    path:            'usr/lib/swift/IOKit.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            3475
+    sdk_relative:    true
+  - mtime:           1707025612000000000
+    path:            'usr/lib/swift/Observation.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            3548
+    sdk_relative:    true
+  - mtime:           1707555100000000000
+    path:            'System/Library/Frameworks/Foundation.framework/Modules/Foundation.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            901720
+    sdk_relative:    true
+  - mtime:           1707552186000000000
+    path:            'usr/lib/swift/CoreMIDI.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            14012
+    sdk_relative:    true
+  - mtime:           1707552186000000000
+    path:            'usr/lib/swift/CoreAudio.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            9977
+    sdk_relative:    true
+  - mtime:           1707551950000000000
+    path:            'usr/lib/swift/CoreGraphics.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            42993
+    sdk_relative:    true
+  - mtime:           1707552203000000000
+    path:            'usr/lib/swift/Metal.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            24158
+    sdk_relative:    true
+  - mtime:           1707973578000000000
+    path:            'usr/lib/swift/CoreMedia.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            126093
+    sdk_relative:    true
+  - mtime:           1707552085000000000
+    path:            'usr/lib/swift/simd.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            218583
+    sdk_relative:    true
+  - mtime:           1707552081000000000
+    path:            'usr/lib/swift/QuartzCore.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            1608
+    sdk_relative:    true
+  - mtime:           1707552159000000000
+    path:            'usr/lib/swift/UniformTypeIdentifiers.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            19215
+    sdk_relative:    true
+  - mtime:           1707973579000000000
+    path:            'usr/lib/swift/AVFoundation.swiftmodule/x86_64-apple-macos.swiftinterface'
+    size:            45783
+    sdk_relative:    true
+version:         1
+...

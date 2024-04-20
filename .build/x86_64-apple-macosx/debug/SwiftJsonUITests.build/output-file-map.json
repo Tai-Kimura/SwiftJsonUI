@@ -1,0 +1,11 @@
+{
+  "": {
+    "swift-dependencies": "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/master.swiftdeps"
+  },
+  "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift": {
+    "dependencies": "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.d",
+    "object": "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swift.o",
+    "swiftmodule": "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests~partial.swiftmodule",
+    "swift-dependencies": "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swiftdeps"
+  }
+}

@@ -1,0 +1,1299 @@
+{
+  "builtTestProducts" : [
+    {
+      "binaryPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.xctest/Contents/MacOS/SwiftJsonUIPackageTests",
+      "packagePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI",
+      "productName" : "SwiftJsonUIPackageTests"
+    }
+  ],
+  "copyCommands" : {
+
+  },
+  "explicitTargetDependencyImportCheckingMode" : {
+    "none" : {
+
+    }
+  },
+  "generatedSourceTargetSet" : [
+
+  ],
+  "pluginDescriptions" : [
+
+  ],
+  "swiftCommands" : {
+    "C.SwiftJsonUI-debug.module" : {
+      "executable" : "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources",
+      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Binding.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/DoubleExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/IntExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/NSAttibutedStringExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/StringExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIButtonExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIColorExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIImageExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UILabelExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIViewExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/URLExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/HotLoader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Logger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/DataBindingModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/SJUIModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/ScriptModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/CircleImageView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/Downloader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NSObjectExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageCache.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/SwiftyJSON.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/SJUIViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SJUIViewCreator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SheetView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/AVView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/GradientView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIButton.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICheckBox.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICircleView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionReusableView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionViewCell.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIImageView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabelWidthIcon.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIRadioButton.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIScrollView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISegmentedControl.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISelectBox.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISwitch.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITableView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextField.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIVisualEffectView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIViewDisposure.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/SwiftJsonUI.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SwiftJsonUI",
+      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.swiftmodule",
+      "objects" : [
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Binding.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DoubleExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/IntExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NSAttibutedStringExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/StringExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIButtonExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIColorExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIImageExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UILabelExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIViewExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/URLExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/HotLoader.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Logger.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DataBindingModel.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIModel.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/ScriptModel.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/CircleImageView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Downloader.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NSObjectExtension.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NetworkImageCache.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NetworkImageView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftyJSON.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIViewController.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIViewCreator.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SheetView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/AVView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/GradientView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIButton.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICheckBox.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICircleView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionReusableView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionViewCell.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIImageView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUILabel.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUILabelWidthIcon.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIRadioButton.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIScrollView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISegmentedControl.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISelectBox.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISwitch.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITableView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITextField.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITextView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIVisualEffectView.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIViewDisposure.swift.o",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx10.13",
+        "-swift-version",
+        "5",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI-Swift.h",
+        "-color-diagnostics",
+        "-sdk",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "-F",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-sdk",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+        "-target",
+        "x86_64-apple-ios13.0-simulator",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swiftjsonui"
+      ],
+      "outputFileMapPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Binding.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DoubleExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/IntExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NSAttibutedStringExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/StringExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIButtonExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIColorExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIImageExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UILabelExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIViewExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/URLExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/HotLoader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Logger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DataBindingModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/ScriptModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/CircleImageView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Downloader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NSObjectExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NetworkImageCache.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NetworkImageView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftyJSON.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIViewController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIViewCreator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SheetView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/AVView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/GradientView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIButton.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICheckBox.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICircleView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionReusableView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionViewCell.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIImageView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUILabel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUILabelWidthIcon.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIRadioButton.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIScrollView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISegmentedControl.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISelectBox.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISwitch.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITableView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITextField.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITextView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIVisualEffectView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIViewDisposure.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.swiftmodule"
+        }
+      ],
+      "sources" : [
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Binding.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/DoubleExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/IntExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/NSAttibutedStringExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/StringExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIButtonExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIColorExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIImageExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UILabelExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIViewExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/URLExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/HotLoader.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Logger.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/DataBindingModel.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/SJUIModel.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/ScriptModel.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/CircleImageView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/Downloader.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NSObjectExtension.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageCache.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/SwiftyJSON.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/SJUIViewController.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SJUIViewCreator.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SheetView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/AVView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/GradientView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIButton.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICheckBox.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICircleView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionReusableView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionViewCell.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIImageView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabel.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabelWidthIcon.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIRadioButton.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIScrollView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISegmentedControl.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISelectBox.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISwitch.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITableView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextField.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIVisualEffectView.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIViewDisposure.swift",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/SwiftJsonUI.swift"
+      ],
+      "tempsPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SwiftJsonUITests-debug.module" : {
+      "executable" : "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/sources",
+      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SwiftJsonUITests",
+      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.swiftmodule",
+      "objects" : [
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx13.0",
+        "-swift-version",
+        "5",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-color-diagnostics",
+        "-sdk",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "-F",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-I",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-sdk",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+        "-target",
+        "x86_64-apple-ios13.0-simulator",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swiftjsonui"
+      ],
+      "outputFileMapPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.swiftmodule"
+        }
+      ],
+      "sources" : [
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift"
+      ],
+      "tempsPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build",
+      "wholeModuleOptimization" : false
+    }
+  },
+  "swiftFrontendCommands" : {
+
+  },
+  "swiftTargetScanArgs" : {
+    "SwiftJsonUI" : [
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "SwiftJsonUI",
+      "-package-name",
+      "swiftjsonui",
+      "-incremental",
+      "-c",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Binding.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/DoubleExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/IntExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/NSAttibutedStringExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/StringExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIButtonExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIColorExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIImageExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UILabelExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIViewExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/URLExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/HotLoader.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Logger.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/DataBindingModel.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/SJUIModel.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/ScriptModel.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/CircleImageView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/Downloader.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NSObjectExtension.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageCache.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/SwiftyJSON.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/SJUIViewController.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SJUIViewCreator.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SheetView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/AVView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/GradientView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIButton.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICheckBox.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICircleView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionReusableView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionViewCell.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIImageView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabel.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabelWidthIcon.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIRadioButton.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIScrollView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISegmentedControl.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISelectBox.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISwitch.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITableView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextField.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIVisualEffectView.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIViewDisposure.swift",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/SwiftJsonUI.swift",
+      "-I",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "-target",
+      "x86_64-apple-macosx10.13",
+      "-swift-version",
+      "5",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI-Swift.h",
+      "-color-diagnostics",
+      "-sdk",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "-F",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-sdk",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+      "-target",
+      "x86_64-apple-ios13.0-simulator",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swiftjsonui",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "SwiftJsonUITests" : [
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "SwiftJsonUITests",
+      "-package-name",
+      "swiftjsonui",
+      "-incremental",
+      "-c",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift",
+      "-I",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "-target",
+      "x86_64-apple-macosx13.0",
+      "-swift-version",
+      "5",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-color-diagnostics",
+      "-sdk",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "-F",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-I",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-sdk",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+      "-target",
+      "x86_64-apple-ios13.0-simulator",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swiftjsonui",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ]
+  },
+  "targetDependencyMap" : {
+    "SwiftJsonUI" : [
+
+    ],
+    "SwiftJsonUITests" : [
+      "SwiftJsonUI"
+    ]
+  },
+  "testDiscoveryCommands" : {
+
+  },
+  "testEntryPointCommands" : {
+
+  },
+  "writeCommands" : {
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt"
+    },
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Binding.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/DoubleExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/IntExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/NSAttibutedStringExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/StringExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIButtonExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIColorExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIImageExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UILabelExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/UIViewExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/URLExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/HotLoader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Logger.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/DataBindingModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/SJUIModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Model/ScriptModel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/CircleImageView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/Downloader.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NSObjectExtension.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageCache.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/NetworkImageView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Network/SwiftyJSON.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/SJUIViewController.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SJUIViewCreator.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/SheetView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/AVView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/GradientView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIButton.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICheckBox.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICircleView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionReusableView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUICollectionViewCell.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIImageView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabel.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUILabelWidthIcon.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIRadioButton.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIScrollView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISegmentedControl.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISelectBox.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUISwitch.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITableView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextField.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUITextView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIView/SJUIVisualEffectView.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIViewDisposure.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/SwiftJsonUI.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources"
+    },
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.product/Objects.LinkFileList" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<link-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/AVView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Binding.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/CircleImageView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DataBindingModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DoubleExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Downloader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/GradientView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/HotLoader.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/IntExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Logger.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NSAttibutedStringExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NSObjectExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NetworkImageCache.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/NetworkImageView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIButton.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICheckBox.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICircleView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionReusableView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUICollectionViewCell.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIImageView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUILabel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUILabelWidthIcon.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIRadioButton.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIScrollView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISegmentedControl.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISelectBox.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUISwitch.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITableView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITextField.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUITextView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIViewController.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIViewCreator.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SJUIVisualEffectView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/ScriptModel.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SheetView.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/StringExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftyJSON.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIButtonExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIColorExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIImageExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UILabelExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIViewDisposure.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/UIViewExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/URLExtension.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swift.o"
+        }
+      ],
+      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.product/Objects.LinkFileList"
+    },
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/sources"
+    }
+  }
+}

@@ -8,7 +8,7 @@
 
 Pod::Spec.new do |s|
   s.name             = 'SwiftJsonUI'
-  s.version          = '5.0.1'
+  s.version          = '5.1.0'
   s.summary          = 'A short description of SwiftJsonUI.'
 
 # This description is used to generate tags and improve search results.
@@ -30,7 +30,7 @@ TODO: Add long description of the pod here.
 
   s.ios.deployment_target = '13.0'
   s.swift_version = '5.8'
-  s.source_files = 'SwiftJsonUI/Classes/**/*'
+  s.source_files = 'Sources/SwiftJsonUI/Classes/**/*'
   
   
   # s.resource_bundles = {
