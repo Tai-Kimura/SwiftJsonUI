@@ -41,5 +41,5 @@ TODO: Add long description of the pod here.
   # s.frameworks = 'UIKit', 'MapKit'
   s.platform = :ios, '13.0'
   
-  s.privacy_manifest = 'Privacy.xcprivacy'
+  s.resource_bundles = {"SwiftJsonUI" => ["Privacy.xcprivacy"]}
 end
