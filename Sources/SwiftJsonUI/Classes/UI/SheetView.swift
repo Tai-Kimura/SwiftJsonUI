@@ -27,7 +27,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     fileprivate var _view: UIView!
     public var _customView: UIView!
     fileprivate var _pickerView: UIPickerView!
-    fileprivate var _datePicker: UIDatePicker!
+    public var _datePicker: UIDatePicker!
     fileprivate var _itemNames: [String] = Array<String>()
     fileprivate var _backBtn: UIButton!
     fileprivate var _selectBtn: UIButton!
