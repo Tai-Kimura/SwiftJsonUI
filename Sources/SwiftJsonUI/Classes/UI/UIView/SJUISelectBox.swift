@@ -114,6 +114,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     public var datePickerMode = UIDatePicker.Mode.date
     
+    public var datePickerStyle = PickerStyle.wheels
+    
     private var canBack = false
     
     public weak var selectBoxDelegate: UISelectBoxDelegate?
@@ -141,6 +143,9 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
             default:
                 break
             }
+        }
+        if let pickerStyleString = attr["datePickerStyle"].string, let pickerStyle = PickerStyle(rawValue: pickerStyleString) {
+            self.datePickerStyle = pickerStyle
         }
         self.canBack = attr["canBack"].boolValue
         if let prompt = attr["prompt"].string {
@@ -332,7 +337,22 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         case .normal:
             SheetView.sharedInstance().showPicker([_selectedIndex ?? 0], withDataSource: [items], forItem: items, inView: inView, canBack: canBack)
         case .date:
-            SheetView.sharedInstance().showDatePicker(mode: datePickerMode, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
+            if #available(iOS 14.0, *) {
+                let pickerStyle: UIDatePickerStyle
+                switch self.datePickerStyle {
+                case .automatic:
+                    pickerStyle = .automatic
+                case .wheels:
+                    pickerStyle = .wheels
+                case .compact:
+                    pickerStyle = .compact
+                case .inline:
+                    pickerStyle = .inline
+                }
+                SheetView.sharedInstance().showDatePicker(mode: datePickerMode, style: pickerStyle, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
+            } else {
+                SheetView.sharedInstance().showDatePicker(mode: datePickerMode, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
+            }
         }
         SheetView.sharedInstance().delegate = self
         setScrollOffset()
@@ -421,6 +441,13 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     public enum SelectItemType: String {
         case normal = "Normal"
         case date = "Date"
+    }
+    
+    public enum PickerStyle: String {
+        case automatic = "automatic"
+        case wheels = "wheels"
+        case compact = "compact"
+        case inline = "inline"
     }
 }
 

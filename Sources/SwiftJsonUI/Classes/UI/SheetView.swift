@@ -18,6 +18,9 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     public static var selectBtnColor = SJUIViewCreator.defaultFontColor
     public static var backBtnColor = SJUIViewCreator.defaultFontColor
     public static var lineColor = UIColor.lightGray
+    
+    public static let defaultHeight = 300.0
+    public static let datePickerInlineHeight = 450.0
     public static var selectBtnTitle = "選択"
     public static var backBtnTitle = "前へ"
     fileprivate static let instance = SheetView()
@@ -47,9 +50,9 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         return instance
     }
     public func createPickerView() -> UIView {
-        let customView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: 300.0))
+        let customView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: SheetView.defaultHeight))
         customView.backgroundColor = UIColor.white
-        _pickerView = UIPickerView(frame: CGRect(x: 0, y: 20.0, width: UIScreen.main.bounds.size.width, height: 280.0))
+        _pickerView = UIPickerView(frame: CGRect(x: 0, y: 20.0, width: UIScreen.main.bounds.size.width, height: SheetView.defaultHeight - 20.0))
         _pickerView.delegate = self
         _pickerView.dataSource = self
         _datePicker = UIDatePicker()
@@ -58,7 +61,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         if #available(iOS 14.0, *) {
             _datePicker.tintColor = SheetView.textColor
             _datePicker.preferredDatePickerStyle = .wheels
-            _datePicker.frame = CGRect(x: 0, y: 20.0, width: UIScreen.main.bounds.width, height: 280.0)
+            _datePicker.frame = CGRect(x: 0, y: 20.0, width: UIScreen.main.bounds.width, height: SheetView.defaultHeight - 20.0)
         } else {
             _datePicker.setValue(SheetView.textColor, forKeyPath: "textColor")
             if #available(iOS 13.0, *) {
@@ -91,6 +94,10 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         _selectBtn.setTitle(title, for: UIControl.State())
     }
     public func showPicker(_ selectRows:[Int], withDataSource datasource:[[Any]], forItem itemNames: [String], inView mainView: UIView, canBack: Bool = false, duration: TimeInterval = 0.3, completion: ((Bool) -> Void)? = nil) {
+        if #available(iOS 14.0, *) {
+            _customView.frame.size.height = SheetView.defaultHeight
+            _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
+        }
         _pickerView.alpha = 1.0
         _datePicker.alpha = 0
         _itemNames = itemNames
@@ -108,9 +115,47 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
         self.show(mainView, duration: duration, completion: completion)
     }
     public func showDatePicker(mode: UIDatePicker.Mode, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
+        if #available(iOS 14.0, *) {
+            _customView.frame.size.height = SheetView.defaultHeight
+            _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
+        }
         _pickerView.alpha = 0
         _datePicker.alpha = 1.0
         _datePicker.datePickerMode = mode
+        _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
+        _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
+        _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
+        _backBtn.setTitle(SheetView.backBtnTitle, for: UIControl.State())
+        _backBtn.isHidden = !canBack
+        _datePicker.date = date
+        self._datePicker.locale = locale
+        _datePicker.minimumDate = minimumDate
+        _datePicker.maximumDate = maximumDate
+        self.show(mainView, duration: duration, completion: completion)
+    }
+    @available(iOS 14.0, *)
+    public func showDatePicker(mode: UIDatePicker.Mode, style: UIDatePickerStyle, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
+            switch style {
+            case .automatic:
+                _customView.frame.size.height = SheetView.defaultHeight
+                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
+            case .wheels:
+                _customView.frame.size.height = SheetView.defaultHeight
+                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
+            case .compact:
+                _customView.frame.size.height = SheetView.defaultHeight
+                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
+            case .inline:
+                _customView.frame.size.height = SheetView.datePickerInlineHeight
+                _datePicker.frame.size.height = SheetView.datePickerInlineHeight - 20.0
+            @unknown default:
+                _customView.frame.size.height = SheetView.defaultHeight
+                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
+            }
+        _pickerView.alpha = 0
+        _datePicker.alpha = 1.0
+        _datePicker.datePickerMode = mode
+        _datePicker.preferredDatePickerStyle = style
         _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
         _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
         _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
@@ -127,6 +172,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
             return
         }
         DispatchQueue.main.async(execute: {
+            
             mainView.addSubview(self._view)
             UIView.animate(withDuration: duration, animations: {
                 var frame = self._customView.frame
