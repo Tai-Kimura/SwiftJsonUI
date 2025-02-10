@@ -218,8 +218,12 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
     }
     
     public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
-        if touch.view is UIDatePicker {
-            return false
+        var view = touch.view
+        while let superview = view?.superview {
+            if superview is UIDatePicker {
+                return false
+            }
+            view = superview
         }
         return true
     }
