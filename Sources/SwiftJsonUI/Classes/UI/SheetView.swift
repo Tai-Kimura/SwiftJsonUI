@@ -11,7 +11,7 @@ import UIKit
     @objc optional func dismissWithPickDate(_ date: Date)
     @objc optional func backWithPickDate(_ date: Date)
 }
-open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
+open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UIGestureRecognizerDelegate {
     public static var font: UIFont = UIFont.systemFont(ofSize: 20.0)
     public static var textColor: UIColor = UIColor.black
     public static var backgroundColor = UIColor.colorWithHexString("000000", alpha: 0.2)
@@ -27,7 +27,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     fileprivate var _view: UIView!
     public var _customView: UIView!
     fileprivate var _pickerView: UIPickerView!
-    public var _datePicker: UIDatePicker!
+    fileprivate var _datePicker: UIDatePicker!
     fileprivate var _itemNames: [String] = Array<String>()
     fileprivate var _backBtn: UIButton!
     fileprivate var _selectBtn: UIButton!
@@ -40,6 +40,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
             instance._view = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.size.height))
             instance._view!.backgroundColor = backgroundColor
             let r = UITapGestureRecognizer(target: self, action: #selector(SheetView.backgroundTapped))
+            r.delegate = instance
             instance._view.addGestureRecognizer(r)
             instance._customView = instance.createPickerView()
             var frame = instance._customView.frame
@@ -215,6 +216,14 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource {
     @objc public class func backgroundTapped() {
         instance.dismiss(isBack: true)
     }
+    
+    public func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        if touch.view is UIDatePicker {
+            return false
+        }
+        return true
+    }
+    
     //MARK: UIPickerViewDelegate
     public func numberOfComponents(in pickerView: UIPickerView) -> Int {
         return pickerSource.count
