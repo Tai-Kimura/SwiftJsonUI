@@ -41,7 +41,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
             instance._view!.backgroundColor = backgroundColor
             let r = UITapGestureRecognizer(target: self, action: #selector(SheetView.backgroundTapped))
             r.delegate = instance
-//            instance._view.addGestureRecognizer(r)
+            instance._view.addGestureRecognizer(r)
             instance._customView = instance.createPickerView()
             var frame = instance._customView.frame
             frame.origin.y = UIScreen.main.bounds.height + 100.0
