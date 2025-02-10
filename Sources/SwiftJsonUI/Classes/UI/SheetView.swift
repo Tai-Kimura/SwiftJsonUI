@@ -57,6 +57,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
         _pickerView.delegate = self
         _pickerView.dataSource = self
         _datePicker = UIDatePicker()
+        _datePicker.translatesAutoresizingMaskIntoConstraints = false
         _datePicker.calendar = getCalendar()
         _datePicker.datePickerMode = UIDatePicker.Mode.date
         if #available(iOS 14.0, *) {
@@ -87,6 +88,12 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
         bgView.addSubview(_backBtn)
         customView.addSubview(_pickerView)
         customView.addSubview(_datePicker)
+        NSLayoutConstraint.activate([
+            _datePicker.centerXAnchor.constraint(equalTo: customView.centerXAnchor),
+            _datePicker.bottomAnchor.constraint(equalTo: customView.bottomAnchor),
+            _datePicker.widthAnchor.constraint(equalTo: customView.widthAnchor),
+            _datePicker.heightAnchor.constraint(equalTo: customView.heightAnchor, constant: -20.0)
+        ])
         customView.addSubview(bgView)
         customView.addSubview(lineView)
         return customView
@@ -97,7 +104,6 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
     public func showPicker(_ selectRows:[Int], withDataSource datasource:[[Any]], forItem itemNames: [String], inView mainView: UIView, canBack: Bool = false, duration: TimeInterval = 0.3, completion: ((Bool) -> Void)? = nil) {
         if #available(iOS 14.0, *) {
             _customView.frame.size.height = SheetView.defaultHeight
-            _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
         }
         _pickerView.alpha = 1.0
         _datePicker.alpha = 0
@@ -118,7 +124,6 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
     public func showDatePicker(mode: UIDatePicker.Mode, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
         if #available(iOS 14.0, *) {
             _customView.frame.size.height = SheetView.defaultHeight
-            _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
         }
         _pickerView.alpha = 0
         _datePicker.alpha = 1.0
@@ -139,19 +144,14 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
             switch style {
             case .automatic:
                 _customView.frame.size.height = SheetView.defaultHeight
-                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
             case .wheels:
                 _customView.frame.size.height = SheetView.defaultHeight
-                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
             case .compact:
                 _customView.frame.size.height = SheetView.defaultHeight
-                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
             case .inline:
                 _customView.frame.size.height = SheetView.datePickerInlineHeight
-                _datePicker.frame.size.height = SheetView.datePickerInlineHeight - 20.0
             @unknown default:
                 _customView.frame.size.height = SheetView.defaultHeight
-                _datePicker.frame.size.height = SheetView.defaultHeight - 20.0
             }
         _pickerView.alpha = 0
         _datePicker.alpha = 1.0
