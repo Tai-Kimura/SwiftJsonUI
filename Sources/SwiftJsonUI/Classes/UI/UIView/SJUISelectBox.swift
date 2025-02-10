@@ -116,6 +116,8 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     
     public var datePickerStyle = PickerStyle.wheels
     
+    public var minuteInterval: Int? = nil
+    
     private var canBack = false
     
     public weak var selectBoxDelegate: UISelectBoxDelegate?
@@ -147,10 +149,12 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         if let pickerStyleString = attr["datePickerStyle"].string, let pickerStyle = PickerStyle(rawValue: pickerStyleString) {
             self.datePickerStyle = pickerStyle
         }
+        self.minuteInterval = attr["minuteInterval"].int
         self.canBack = attr["canBack"].boolValue
         if let prompt = attr["prompt"].string {
             self._prompt = prompt.localized()
         }
+        
         initializeCaret(attr: attr["caretAttributes"])
         initializeDivider(attr: attr["dividerAttributes"])
         initializeLabel(attr: attr["labelAttributes"])
@@ -349,9 +353,9 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
                 case .inline:
                     pickerStyle = .inline
                 }
-                SheetView.sharedInstance().showDatePicker(mode: datePickerMode, style: pickerStyle, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
+                SheetView.sharedInstance().showDatePicker(mode: datePickerMode, style: pickerStyle, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, minuteInterval: minuteInterval, canBack: false, locale: SJUISelectBox.currentLocale)
             } else {
-                SheetView.sharedInstance().showDatePicker(mode: datePickerMode, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, canBack: false, locale: SJUISelectBox.currentLocale)
+                SheetView.sharedInstance().showDatePicker(mode: datePickerMode, date: selectedDate ?? Date(), inView: inView, minimumDate: minimumDate, maximumDate: maximumDate, minuteInterval: minuteInterval, canBack: false, locale: SJUISelectBox.currentLocale)
             }
         }
         SheetView.sharedInstance().delegate = self

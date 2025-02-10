@@ -121,13 +121,14 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
         }
         self.show(mainView, duration: duration, completion: completion)
     }
-    public func showDatePicker(mode: UIDatePicker.Mode, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
+    public func showDatePicker(mode: UIDatePicker.Mode, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, minuteInterval: Int? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
         if #available(iOS 14.0, *) {
             _customView.frame.size.height = SheetView.defaultHeight
         }
         _pickerView.alpha = 0
         _datePicker.alpha = 1.0
         _datePicker.datePickerMode = mode
+        _datePicker.minuteInterval = minuteInterval ?? 1
         _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
         _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
         _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
@@ -140,7 +141,7 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
         self.show(mainView, duration: duration, completion: completion)
     }
     @available(iOS 14.0, *)
-    public func showDatePicker(mode: UIDatePicker.Mode, style: UIDatePickerStyle, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
+    public func showDatePicker(mode: UIDatePicker.Mode, style: UIDatePickerStyle, date: Date, inView mainView: UIView, minimumDate: Date? = nil, maximumDate: Date? = nil, minuteInterval: Int? = nil, duration: TimeInterval = 0.3, canBack: Bool = false, completion: ((Bool) -> Void)? = nil, locale: Locale? = nil) {
             switch style {
             case .automatic:
                 _customView.frame.size.height = SheetView.defaultHeight
@@ -153,20 +154,8 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
             @unknown default:
                 _customView.frame.size.height = SheetView.defaultHeight
             }
-        _pickerView.alpha = 0
-        _datePicker.alpha = 1.0
-        _datePicker.datePickerMode = mode
         _datePicker.preferredDatePickerStyle = style
-        _selectBtn.setTitleColor(SheetView.selectBtnColor, for: UIControl.State())
-        _selectBtn.setTitle(SheetView.selectBtnTitle, for: UIControl.State())
-        _backBtn.setTitleColor(SheetView.backBtnColor, for: UIControl.State())
-        _backBtn.setTitle(SheetView.backBtnTitle, for: UIControl.State())
-        _backBtn.isHidden = !canBack
-        _datePicker.date = date
-        self._datePicker.locale = locale
-        _datePicker.minimumDate = minimumDate
-        _datePicker.maximumDate = maximumDate
-        self.show(mainView, duration: duration, completion: completion)
+        showDatePicker(mode: mode, date: date, inView: mainView, minimumDate: minimumDate, maximumDate: maximumDate, minuteInterval: minuteInterval, duration: duration, canBack: canBack, completion: completion, locale: locale)
     }
     public func show(_ mainView: UIView, duration: TimeInterval = 0.3, completion: ((Bool) -> Void)? = nil) {
         if let _ = _view.superview {
