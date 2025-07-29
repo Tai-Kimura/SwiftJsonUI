@@ -11,7 +11,7 @@
   "dependencies": {
     "express": "^4.16.3",
     "morgan": "*",
-    "socket.io": "*",
+    "socket.io": "3.*",
     "chokidar": "*"
   }
 }

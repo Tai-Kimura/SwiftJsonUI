@@ -1,0 +1,11 @@
+Tue, 29 Jul 2025 06:26:11 GMT morgan deprecated morgan(options): use morgan("dev", options) instead at server.js:7:9
+ready watching...
+client connected!!
+../Layouts/splash.json changed.
+../binding_builder/including.json changed.
+../Layouts/main.json added.
+../Layouts/splash.json added.
+../binding_builder/including.json changed.
+../binding_builder/including.json changed.
+../Layouts/listitem_cell.json added.
+../Layouts/listitem_cell.json changed.
