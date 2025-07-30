@@ -36,7 +36,7 @@ class LibrarySetup < PbxprojManager
       packages_to_add << {
         name: "SwiftJsonUI",
         repo_url: "https://github.com/Tai-Kimura/SwiftJsonUI",
-        version: "5.3.0"
+        version: "6.0.0"
       }
     end
     
