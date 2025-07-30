@@ -36,6 +36,7 @@ usage() {
     echo "Options:"
     echo "  -v, --version <version>    Specify version/branch/tag to download (default: main)"
     echo "  -d, --directory <dir>      Installation directory (default: parent directory)"
+    echo "  -s, --skip-bundle          Skip bundle install for Ruby dependencies"
     echo "  -h, --help                 Show this help message"
     echo ""
     echo "Examples:"
@@ -43,11 +44,13 @@ usage() {
     echo "  $0 -v v1.0.0               # Install specific version"
     echo "  $0 -v feature-branch       # Install from specific branch"
     echo "  $0 -d ./my-project         # Install in specific directory"
+    echo "  $0 -s                      # Skip bundle install"
     exit 0
 }
 
 # Parse command line arguments
 VERSION=""
+SKIP_BUNDLE=false
 while [[ $# -gt 0 ]]; do
     case $1 in
         -v|--version)
@@ -57,6 +60,10 @@ while [[ $# -gt 0 ]]; do
         -d|--directory)
             INSTALL_DIR="$2"
             shift 2
+            ;;
+        -s|--skip-bundle)
+            SKIP_BUNDLE=true
+            shift
             ;;
         -h|--help)
             usage
@@ -209,8 +216,11 @@ fi
 
 # Install Ruby dependencies if Gemfile exists
 if [ -f "binding_builder/Gemfile" ]; then
-    print_info "Checking Ruby environment..."
-    cd binding_builder
+    if [ "$SKIP_BUNDLE" = true ]; then
+        print_info "Skipping bundle install as requested"
+    else
+        print_info "Checking Ruby environment..."
+        cd binding_builder
     
     # Check if bundler is available
     if command -v bundle &> /dev/null; then
@@ -295,6 +305,7 @@ if [ -f "binding_builder/Gemfile" ]; then
             print_warning "  bundle install"
         fi
     fi
+    fi  # End of SKIP_BUNDLE check
 else
     print_info "No Gemfile found, skipping Ruby dependencies"
 fi
