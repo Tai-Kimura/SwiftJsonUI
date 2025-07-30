@@ -22,16 +22,13 @@ class Setup < PbxprojManager
     # 3. HotLoader機能の設定
     setup_hotloader
     
-    # 4. HotLoad Build Phaseの設定
-    setup_hotload_build_phase
-    
-    # 5. Info.plistからStoryBoard参照を削除
+    # 4. Info.plistからStoryBoard参照を削除
     remove_storyboard_from_info_plist
     
-    # 6. membershipExceptionsを設定
+    # 5. membershipExceptionsを設定
     setup_membership_exceptions
     
-    # 7. Info.plistにIPとポートを設定
+    # 6. Info.plistにIPとポートを設定
     setup_ip_and_port_in_info_plist
     
     puts "=== SwiftJsonUI Project Setup Completed Successfully! ==="
@@ -63,13 +60,6 @@ class Setup < PbxprojManager
     app_delegate_setup.add_hotloader_functionality
   end
 
-  def setup_hotload_build_phase
-    puts "Setting up HotLoad Build Phase..."
-    require_relative 'hotload_setup'
-    
-    hotload_setup = HotLoadSetup.new(@project_file_path)
-    hotload_setup.setup_hotload_build_phase
-  end
 
   def remove_storyboard_from_info_plist
     puts "Removing StoryBoard references from Info.plist..."

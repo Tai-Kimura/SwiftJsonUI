@@ -30,11 +30,46 @@ hotload_command() {
             echo "🚀 Starting HotLoad development environment..."
             echo ""
             
-            # Step 1: Update Info.plist with current IP
+            # Step 1: Stop all existing processes
+            echo "🧹 Cleaning up existing processes..."
+            
+            # Stop IP monitor
+            "$IP_MONITOR_SCRIPT" stop >/dev/null 2>&1
+            
+            # Stop all Node.js processes on port 8081
+            NODE_PIDS=$(lsof -ti:8081 2>/dev/null)
+            if [ -n "$NODE_PIDS" ]; then
+                for PID in $NODE_PIDS; do
+                    kill -9 $PID 2>/dev/null
+                done
+                echo "   ✅ Stopped existing processes on port 8081"
+            fi
+            
+            # Stop any remaining Node.js processes related to HotLoad
+            SERVER_PIDS=$(pgrep -f "node.*server.js" 2>/dev/null)
+            if [ -n "$SERVER_PIDS" ]; then
+                for PID in $SERVER_PIDS; do
+                    kill -9 $PID 2>/dev/null
+                done
+            fi
+            
+            LOADER_PIDS=$(pgrep -f "node.*layout_loader.js" 2>/dev/null)
+            if [ -n "$LOADER_PIDS" ]; then
+                for PID in $LOADER_PIDS; do
+                    kill -9 $PID 2>/dev/null
+                done
+            fi
+            
+            # Wait for processes to fully terminate
+            sleep 1
+            
+            echo ""
+            
+            # Step 2: Update Info.plist with current IP
             echo "📝 Updating Info.plist with current IP..."
             "$IP_MONITOR_SCRIPT" update
             
-            # Step 2: Start Node.js HotLoad server
+            # Step 3: Start Node.js HotLoad server
             echo "🔥 Starting HotLoad server..."
             HOTLOAD_BUILD_SCRIPT="$SCRIPT_DIR/scripts/hotload_build_phase.sh"
             
@@ -72,7 +107,7 @@ hotload_command() {
             # Execute the HotLoad build script
             "$HOTLOAD_BUILD_SCRIPT"
             
-            # Step 3: Start IP monitor in background
+            # Step 4: Start IP monitor in background
             echo "🔄 Starting IP monitor daemon..."
             "$IP_MONITOR_SCRIPT" daemon
             
@@ -97,27 +132,66 @@ hotload_command() {
             echo "Stopping IP monitor..."
             "$IP_MONITOR_SCRIPT" stop
             
-            # Stop Node.js server (port 8081)
+            # Stop all Node.js processes on port 8081
             echo "Stopping HotLoad server..."
-            NODE_PID=$(lsof -ti:8081 2>/dev/null)
-            if [ -n "$NODE_PID" ]; then
-                kill $NODE_PID 2>/dev/null
-                if [ $? -eq 0 ]; then
-                    echo "✅ HotLoad server stopped (PID: $NODE_PID)"
-                else
-                    echo "⚠️  Failed to stop HotLoad server"
-                fi
+            NODE_PIDS=$(lsof -ti:8081 2>/dev/null)
+            if [ -n "$NODE_PIDS" ]; then
+                # Count the number of PIDs
+                PID_COUNT=$(echo "$NODE_PIDS" | wc -l | tr -d ' ')
+                echo "Found $PID_COUNT process(es) on port 8081"
+                
+                # Kill each PID
+                for PID in $NODE_PIDS; do
+                    kill -9 $PID 2>/dev/null
+                    if [ $? -eq 0 ]; then
+                        echo "   ✅ Killed process PID: $PID"
+                    else
+                        echo "   ⚠️  Failed to kill process PID: $PID"
+                    fi
+                done
             else
-                echo "ℹ️  HotLoad server was not running"
+                echo "ℹ️  No processes found on port 8081"
             fi
             
             # Stop any remaining Node.js processes related to HotLoad
             echo "Cleaning up any remaining HotLoad processes..."
-            pkill -f "node.*server.js" 2>/dev/null
-            pkill -f "node.*layout_loader.js" 2>/dev/null
             
-            echo ""
-            echo "✅ HotLoad development environment stopped"
+            # Find and kill all server.js processes
+            SERVER_PIDS=$(pgrep -f "node.*server.js" 2>/dev/null)
+            if [ -n "$SERVER_PIDS" ]; then
+                for PID in $SERVER_PIDS; do
+                    kill -9 $PID 2>/dev/null
+                    if [ $? -eq 0 ]; then
+                        echo "   ✅ Killed server.js process PID: $PID"
+                    fi
+                done
+            fi
+            
+            # Find and kill all layout_loader.js processes
+            LOADER_PIDS=$(pgrep -f "node.*layout_loader.js" 2>/dev/null)
+            if [ -n "$LOADER_PIDS" ]; then
+                for PID in $LOADER_PIDS; do
+                    kill -9 $PID 2>/dev/null
+                    if [ $? -eq 0 ]; then
+                        echo "   ✅ Killed layout_loader.js process PID: $PID"
+                    fi
+                done
+            fi
+            
+            # Wait a moment for processes to terminate
+            sleep 1
+            
+            # Verify all processes are stopped
+            REMAINING_PIDS=$(lsof -ti:8081 2>/dev/null)
+            if [ -z "$REMAINING_PIDS" ]; then
+                echo ""
+                echo "✅ HotLoad development environment stopped successfully"
+            else
+                echo ""
+                echo "⚠️  Warning: Some processes may still be running on port 8081"
+                echo "   Remaining PIDs: $REMAINING_PIDS"
+                echo "   You may need to manually kill these processes"
+            fi
             ;;
             
         "status")
