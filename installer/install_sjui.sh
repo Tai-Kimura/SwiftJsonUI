@@ -51,18 +51,27 @@ usage() {
 # Parse command line arguments
 VERSION=""
 SKIP_BUNDLE=false
+
+# Debug: Show all arguments
+print_info "DEBUG: All arguments: $@"
+print_info "DEBUG: Number of arguments: $#"
+
 while [[ $# -gt 0 ]]; do
+    print_info "DEBUG: Processing argument: $1"
     case $1 in
         -v|--version)
             VERSION="$2"
+            print_info "DEBUG: Setting VERSION to: $VERSION"
             shift 2
             ;;
         -d|--directory)
             INSTALL_DIR="$2"
+            print_info "DEBUG: Setting INSTALL_DIR to: $INSTALL_DIR"
             shift 2
             ;;
         -s|--skip-bundle)
             SKIP_BUNDLE=true
+            print_info "DEBUG: Setting SKIP_BUNDLE to: true"
             shift
             ;;
         -h|--help)
@@ -73,12 +82,18 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
     esac
+    print_info "DEBUG: Remaining arguments: $@"
 done
 
 # Use default branch if no version specified
 if [ -z "$VERSION" ]; then
+    print_warning "DEBUG: VERSION is empty, using default: $DEFAULT_BRANCH"
     VERSION="$DEFAULT_BRANCH"
 fi
+
+print_info "DEBUG: Final VERSION: $VERSION"
+print_info "DEBUG: Final SKIP_BUNDLE: $SKIP_BUNDLE"
+print_info "DEBUG: Final INSTALL_DIR: $INSTALL_DIR"
 
 # Validate installation directory
 if [ ! -d "$INSTALL_DIR" ]; then
@@ -136,7 +151,18 @@ trap cleanup EXIT
 
 # Download the archive
 print_info "Downloading SwiftJsonUI $VERSION..."
-DOWNLOAD_URL="https://github.com/$GITHUB_REPO/archive/$VERSION.tar.gz"
+# Check if VERSION looks like a version number (starts with digit or v)
+if [[ "$VERSION" =~ ^[0-9] ]] || [[ "$VERSION" =~ ^v[0-9] ]]; then
+    # For tags, use refs/tags/ prefix
+    DOWNLOAD_URL="https://github.com/$GITHUB_REPO/archive/refs/tags/$VERSION.tar.gz"
+    print_info "DEBUG: Detected version/tag format, using refs/tags/ prefix"
+else
+    # For branches, use the direct format
+    DOWNLOAD_URL="https://github.com/$GITHUB_REPO/archive/$VERSION.tar.gz"
+    print_info "DEBUG: Detected branch format, using direct archive URL"
+fi
+
+print_info "DEBUG: Download URL: $DOWNLOAD_URL"
 
 if ! curl -L -f -o "$TEMP_DIR/swiftjsonui.tar.gz" "$DOWNLOAD_URL"; then
     print_error "Failed to download from $DOWNLOAD_URL"
@@ -148,13 +174,21 @@ fi
 print_info "Extracting archive..."
 tar -xzf "$TEMP_DIR/swiftjsonui.tar.gz" -C "$TEMP_DIR"
 
+# List contents of temp directory for debugging
+print_info "DEBUG: Contents of temp directory after extraction:"
+ls -la "$TEMP_DIR"
+
 # Find the extracted directory (it will have a dynamic name based on version)
 EXTRACT_DIR=$(find "$TEMP_DIR" -maxdepth 1 -type d -name "SwiftJsonUI-*" | head -1)
 
 if [ -z "$EXTRACT_DIR" ]; then
     print_error "Failed to find extracted directory"
+    print_error "DEBUG: Looking for directories matching 'SwiftJsonUI-*' in $TEMP_DIR"
+    find "$TEMP_DIR" -maxdepth 1 -type d
     exit 1
 fi
+
+print_info "DEBUG: Found extracted directory: $EXTRACT_DIR"
 
 # Copy binding_builder if not skipped
 if [ -z "$SKIP_BINDING_BUILDER" ]; then
@@ -165,6 +199,7 @@ if [ -z "$SKIP_BINDING_BUILDER" ]; then
         # Create VERSION file with the downloaded version
         echo "$VERSION" > binding_builder/VERSION
         print_info "Set binding_builder version to: $VERSION"
+        print_info "DEBUG: VERSION file contents: $(cat binding_builder/VERSION)"
         
         # Make sjui executable
         if [ -f "binding_builder/sjui" ]; then
