@@ -103,6 +103,13 @@ class PbxprojManager
       end
     end
     
+    # installerディレクトリのすべてのファイルを追加
+    installer_dir = File.join(source_root, "installer")
+    puts "Checking installer_dir: #{installer_dir} (exists: #{Dir.exist?(installer_dir)})"
+    if Dir.exist?(installer_dir)
+      all_files.concat(get_all_files_in_directory_relative(installer_dir, "installer"))
+    end
+    
     all_files.sort
   end
 
