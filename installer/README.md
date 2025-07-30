@@ -62,10 +62,12 @@ Available options:
 
 The installer will:
 1. Download the specified version of SwiftJsonUI
-2. Extract `binding_builder` and `hot_loader` directories
+2. Extract `binding_builder` and `hot_loader` directories to the parent directory (or specified directory)
 3. Make all executable files runnable
 4. Install Ruby dependencies (if bundler is available)
 5. Create initial `config.json` file
+
+By default, the tools are installed in the parent directory of where the installer is run. This means if you run the installer from `YourProject/installer/`, the tools will be installed in `YourProject/`.
 
 ## Requirements
 

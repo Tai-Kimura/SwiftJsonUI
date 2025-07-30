@@ -8,7 +8,7 @@ set -e
 # Default values
 GITHUB_REPO="Tai-Kimura/SwiftJsonUI"
 DEFAULT_BRANCH="main"
-INSTALL_DIR="."
+INSTALL_DIR=".."
 
 # Colors for output
 RED='\033[0;31m'
@@ -35,11 +35,11 @@ usage() {
     echo ""
     echo "Options:"
     echo "  -v, --version <version>    Specify version/branch/tag to download (default: main)"
-    echo "  -d, --directory <dir>      Installation directory (default: current directory)"
+    echo "  -d, --directory <dir>      Installation directory (default: parent directory)"
     echo "  -h, --help                 Show this help message"
     echo ""
     echo "Examples:"
-    echo "  $0                         # Install latest from main branch"
+    echo "  $0                         # Install latest from main branch to parent directory"
     echo "  $0 -v v1.0.0               # Install specific version"
     echo "  $0 -v feature-branch       # Install from specific branch"
     echo "  $0 -d ./my-project         # Install in specific directory"
