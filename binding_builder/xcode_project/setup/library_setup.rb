@@ -2,6 +2,7 @@
 
 require "fileutils"
 require "pathname"
+require "json"
 require_relative "../pbxproj_manager"
 require_relative "../../project_finder"
 require_relative "../../config_manager"
@@ -21,9 +22,59 @@ class LibrarySetup < PbxprojManager
   end
 
   private
+  
+  def get_current_version
+    base_dir = File.expand_path('../..', File.dirname(__FILE__))
+    version_file = File.join(base_dir, 'VERSION')
+    
+    if File.exist?(version_file)
+      File.read(version_file).strip
+    else
+      "default"
+    end
+  end
+  
+  def load_library_versions
+    base_dir = File.expand_path('../..', File.dirname(__FILE__))
+    versions_file = File.join(base_dir, 'config', 'library_versions.json')
+    
+    if File.exist?(versions_file)
+      begin
+        JSON.parse(File.read(versions_file))
+      rescue JSON::ParserError => e
+        puts "Warning: Failed to parse library_versions.json: #{e.message}"
+        nil
+      end
+    else
+      nil
+    end
+  end
+  
+  def get_library_config(library_name, current_version)
+    versions_config = load_library_versions
+    return nil unless versions_config
+    
+    version_mappings = versions_config['version_mappings'] || {}
+    
+    # Try exact version match first
+    if version_mappings[current_version] && version_mappings[current_version][library_name]
+      return version_mappings[current_version][library_name]
+    end
+    
+    # Fallback to default
+    if version_mappings['default'] && version_mappings['default'][library_name]
+      return version_mappings['default'][library_name]
+    end
+    
+    nil
+  end
 
   def add_all_packages
     puts "Checking required packages..."
+    
+    # Get current version
+    current_version = get_current_version
+    puts "Using binding_builder version: #{current_version}"
     
     # pbxprojファイルの内容を読み取り
     content = File.read(@project_file_path)
@@ -33,11 +84,34 @@ class LibrarySetup < PbxprojManager
     
     # SwiftJsonUIは常に追加
     unless content.include?("SwiftJsonUI") && content.include?("Tai-Kimura/SwiftJsonUI")
-      packages_to_add << {
-        name: "SwiftJsonUI",
-        repo_url: "https://github.com/Tai-Kimura/SwiftJsonUI",
-        version: "6.0.0"
-      }
+      swiftjsonui_config = get_library_config("SwiftJsonUI", current_version)
+      
+      if swiftjsonui_config
+        package_info = {
+          name: "SwiftJsonUI",
+          repo_url: swiftjsonui_config['git'] || "https://github.com/Tai-Kimura/SwiftJsonUI"
+        }
+        
+        # Version requirement based on configuration
+        if swiftjsonui_config['branch']
+          package_info[:branch] = swiftjsonui_config['branch']
+        elsif swiftjsonui_config['from']
+          package_info[:version] = swiftjsonui_config['from']
+        elsif swiftjsonui_config['exact']
+          package_info[:exact_version] = swiftjsonui_config['exact']
+        else
+          package_info[:version] = "6.0.0" # default
+        end
+        
+        packages_to_add << package_info
+      else
+        # Fallback if no config found
+        packages_to_add << {
+          name: "SwiftJsonUI",
+          repo_url: "https://github.com/Tai-Kimura/SwiftJsonUI",
+          version: "6.0.0"
+        }
+      end
     end
     
     # SimpleApiNetworkはuse_networkがtrueの場合のみ追加
@@ -96,7 +170,8 @@ class LibrarySetup < PbxprojManager
         # 既存のセクションに追加
         package_refs = package_data.map do |data|
           pkg = data[:package]
-          "\t\t#{data[:package_ref_uuid]} /* XCRemoteSwiftPackageReference \"#{pkg[:name]}\" */ = {\n\t\t\tisa = XCRemoteSwiftPackageReference;\n\t\t\trepositoryURL = \"#{pkg[:repo_url]}\";\n\t\t\trequirement = {\n\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = #{pkg[:version]};\n\t\t\t};\n\t\t};"
+          requirement_str = build_requirement_string(pkg)
+          "\t\t#{data[:package_ref_uuid]} /* XCRemoteSwiftPackageReference \"#{pkg[:name]}\" */ = {\n\t\t\tisa = XCRemoteSwiftPackageReference;\n\t\t\trepositoryURL = \"#{pkg[:repo_url]}\";\n\t\t\trequirement = {\n#{requirement_str}\n\t\t\t};\n\t\t};"
         end.join("\n")
         
         content = content.gsub(
@@ -107,7 +182,8 @@ class LibrarySetup < PbxprojManager
         # 新しいセクションを作成
         package_refs = package_data.map do |data|
           pkg = data[:package]
-          "\t\t#{data[:package_ref_uuid]} /* XCRemoteSwiftPackageReference \"#{pkg[:name]}\" */ = {\n\t\t\tisa = XCRemoteSwiftPackageReference;\n\t\t\trepositoryURL = \"#{pkg[:repo_url]}\";\n\t\t\trequirement = {\n\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = #{pkg[:version]};\n\t\t\t};\n\t\t};"
+          requirement_str = build_requirement_string(pkg)
+          "\t\t#{data[:package_ref_uuid]} /* XCRemoteSwiftPackageReference \"#{pkg[:name]}\" */ = {\n\t\t\tisa = XCRemoteSwiftPackageReference;\n\t\t\trepositoryURL = \"#{pkg[:repo_url]}\";\n\t\t\trequirement = {\n#{requirement_str}\n\t\t\t};\n\t\t};"
         end.join("\n")
         
         content = content.gsub(
@@ -241,6 +317,19 @@ class LibrarySetup < PbxprojManager
     end
   end
 
+
+  def build_requirement_string(package)
+    if package[:branch]
+      "\t\t\t\tbranch = #{package[:branch]};\n\t\t\t\tkind = branch;"
+    elsif package[:exact_version]
+      "\t\t\t\tkind = exactVersion;\n\t\t\t\tversion = #{package[:exact_version]};"
+    elsif package[:version]
+      "\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = #{package[:version]};"
+    else
+      # Default to version 1.0.0 if nothing specified
+      "\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = 1.0.0;"
+    end
+  end
 
   def generate_uuid
     # Xcodeプロジェクトで使用される24桁の16進数UUIDを生成

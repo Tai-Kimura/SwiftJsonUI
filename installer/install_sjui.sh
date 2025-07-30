@@ -155,6 +155,10 @@ if [ -z "$SKIP_BINDING_BUILDER" ]; then
         print_info "Installing binding_builder..."
         cp -r "$EXTRACT_DIR/binding_builder" .
         
+        # Create VERSION file with the downloaded version
+        echo "$VERSION" > binding_builder/VERSION
+        print_info "Set binding_builder version to: $VERSION"
+        
         # Make sjui executable
         if [ -f "binding_builder/sjui" ]; then
             chmod +x binding_builder/sjui
