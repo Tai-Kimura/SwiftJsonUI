@@ -1,17 +1,21 @@
 {
   "name": "hot_loader",
   "version": "1.0.0",
-  "description": "",
+  "description": "Hot reload server for SwiftJsonUI",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.16.3",
-    "morgan": "*",
-    "socket.io": "3.*",
-    "chokidar": "*"
+    "express": "^4.21.1",
+    "morgan": "^1.10.0",
+    "ws": "^8.18.0",
+    "chokidar": "^3.6.0"
+  },
+  "engines": {
+    "node": ">=14.0.0"
   }
 }

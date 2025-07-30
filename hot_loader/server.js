@@ -4,7 +4,7 @@ var path = require("path");
 var fs = require("fs");
 var app = express();
 
-app.use(morgan({ format: "dev", immediate: true }));
+app.use(morgan("dev"));
 app.use(express.static(__dirname + "/public"));
 
 const socket = require("ws");
@@ -13,9 +13,6 @@ const socket = require("ws");
 const server = new socket.Server({ port: 8081 });
 
 let webSocket;
-
-// // socketioの準備
-// var io = require('socket.io')(server);
 
 // クライアント接続時の処理
 server.on("connection", (ws) => {
