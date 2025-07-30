@@ -97,10 +97,15 @@ open class SJUIViewCreator:NSObject {
             var url: String
             if include.contains("/") {
                 // サブディレクトリがある場合: "common/header" → "common/_header"
-                let components = include.split(separator: "/")
-                let directory = components.dropLast().joined(separator: "/")
-                let filename = String(components.last!)
-                url = getURL(path: "\(directory)/_\(filename)")
+                let components = include.split(separator: "/", omittingEmptySubsequences: true)
+                if components.count > 1 {
+                    let directory = components.dropLast().joined(separator: "/")
+                    let filename = String(components.last!)
+                    url = getURL(path: "\(directory)/_\(filename)")
+                } else {
+                    // 不正なパスの場合はそのまま処理
+                    url = getURL(path: "_\(include)")
+                }
             } else {
                 // サブディレクトリがない場合: "header" → "_header"
                 url = getURL(path: "_\(include)")
@@ -109,6 +114,16 @@ open class SJUIViewCreator:NSObject {
             if !FileManager.default.fileExists(atPath: url) {
                 url = getURL(path: include)
             }
+            
+            // デバッグ用のログとエラーハンドリングの改善
+            #if DEBUG
+            print("Include lookup: '\(include)'")
+            print("  First try: '\(url)'")
+            if !FileManager.default.fileExists(atPath: url) {
+                print("  File not found, trying: '\(getURL(path: include))'")
+            }
+            #endif
+            
             do {
                 var jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
                 if let variables = attr["variables"].dictionary {
@@ -132,7 +147,7 @@ open class SJUIViewCreator:NSObject {
                 let json = try JSON(data: jsonString.data(using: enc)!)
                 return createView(json, parentView: parentView, target: target, views: &views, isRootView: false)
             } catch let error {
-                return createErrorView("\(error)")
+                return createErrorView("Include error for '\(include)': \(error)")
             }
         }
         
