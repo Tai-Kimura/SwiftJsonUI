@@ -200,18 +200,24 @@ if [ -f "binding_builder/Gemfile" ]; then
             # If bundle install fails, try installing bundler first
             print_warning "Bundle install failed. Attempting to install bundler..."
             if command -v gem &> /dev/null; then
-                if gem install bundler 2>/dev/null; then
-                    print_info "Bundler installed. Retrying bundle install..."
-                    if bundle install 2>/dev/null; then
+                if gem install bundler; then
+                    print_info "Bundler installed successfully"
+                    # Reload PATH to ensure new bundler is found
+                    export PATH="$PATH:$(gem environment gemdir)/bin"
+                    # Also try with rbenv rehash if rbenv is available
+                    if command -v rbenv &> /dev/null; then
+                        rbenv rehash
+                    fi
+                    print_info "Retrying bundle install..."
+                    if bundle install; then
                         cd ..
                         print_info "✅ Ruby dependencies installed"
                     else
                         cd ..
                         print_warning "Failed to install Ruby dependencies"
-                        print_warning "Please install manually:"
-                        print_warning "  cd binding_builder"
-                        print_warning "  gem install bundler"
-                        print_warning "  bundle install"
+                        print_warning "This is usually not critical - binding_builder should still work"
+                        print_warning "To install dependencies manually later:"
+                        print_warning "  cd binding_builder && bundle install"
                     fi
                 else
                     cd ..
@@ -231,15 +237,23 @@ if [ -f "binding_builder/Gemfile" ]; then
         # Bundler not found, try to install it
         if command -v gem &> /dev/null; then
             print_info "Bundler not found. Installing bundler..."
-            if gem install bundler 2>/dev/null; then
-                print_info "Bundler installed. Installing dependencies..."
-                if bundle install 2>/dev/null; then
+            if gem install bundler; then
+                print_info "Bundler installed successfully"
+                # Reload PATH to ensure new bundler is found
+                export PATH="$PATH:$(gem environment gemdir)/bin"
+                # Also try with rbenv rehash if rbenv is available
+                if command -v rbenv &> /dev/null; then
+                    rbenv rehash
+                fi
+                print_info "Installing dependencies..."
+                if bundle install; then
                     cd ..
                     print_info "✅ Ruby dependencies installed"
                 else
                     cd ..
                     print_warning "Failed to install Ruby dependencies"
-                    print_warning "Please install manually:"
+                    print_warning "This is usually not critical - binding_builder should still work"
+                    print_warning "To install dependencies manually later:"
                     print_warning "  cd binding_builder && bundle install"
                 fi
             else
@@ -265,10 +279,41 @@ fi
 
 # Create initial config.json
 if [ ! -f "binding_builder/config.json" ]; then
-    print_info "Creating initial configuration..."
-    cd binding_builder
-    ./sjui init
-    cd ..
+    print_info "Checking for Xcode project..."
+    # Search for .xcodeproj files in parent directories
+    SEARCH_DIR="$(pwd)"
+    FOUND_XCODEPROJ=""
+    MAX_LEVELS=5
+    CURRENT_LEVEL=0
+    
+    while [ $CURRENT_LEVEL -lt $MAX_LEVELS ] && [ -z "$FOUND_XCODEPROJ" ]; do
+        if ls "$SEARCH_DIR"/*.xcodeproj 1> /dev/null 2>&1; then
+            FOUND_XCODEPROJ="$(ls "$SEARCH_DIR"/*.xcodeproj | head -1)"
+            print_info "Found Xcode project: $FOUND_XCODEPROJ"
+            break
+        fi
+        SEARCH_DIR="$(dirname "$SEARCH_DIR")"
+        CURRENT_LEVEL=$((CURRENT_LEVEL + 1))
+    done
+    
+    if [ -n "$FOUND_XCODEPROJ" ]; then
+        print_info "Creating initial configuration..."
+        cd binding_builder
+        if ./sjui init 2>/dev/null; then
+            cd ..
+            print_info "✅ Initial configuration created"
+        else
+            cd ..
+            print_warning "Failed to create initial configuration"
+            print_warning "You can create it manually later with:"
+            print_warning "  cd binding_builder && ./sjui init"
+        fi
+    else
+        print_warning "No Xcode project found in parent directories"
+        print_warning "Skipping initial configuration"
+        print_warning "After moving binding_builder to your Xcode project directory, run:"
+        print_warning "  cd binding_builder && ./sjui init"
+    fi
 fi
 
 print_info ""
