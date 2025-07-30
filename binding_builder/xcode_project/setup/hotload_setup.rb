@@ -144,38 +144,45 @@ fi
 
 echo "=== SwiftJsonUI HotLoad Setup ==="
 
-# binding_builderのパスを探す
-# プロジェクトのルートディレクトリから検索
-PROJECT_ROOT="${PROJECT_DIR}"
-if [ -z "${PROJECT_ROOT}" ]; then
-    PROJECT_ROOT="${SRCROOT}"
+# プロジェクトファイルのパスからbinding_builderディレクトリを探す
+# @project_file_pathから下の階層を探索
+PROJECT_DIR="#{File.dirname(@project_file_path)}"
+echo "Starting search from project directory: ${PROJECT_DIR}"
+
+# findコマンドでbinding_builderディレクトリを探す
+BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -type d -name "binding_builder" -path "*/binding_builder" 2>/dev/null | head -1)
+
+# 見つからない場合は親ディレクトリも探す
+if [ -z "${BINDING_BUILDER_DIR}" ]; then
+    PARENT_DIR="#{File.dirname(File.dirname(@project_file_path))}"
+    echo "Searching in parent directory: ${PARENT_DIR}"
+    BINDING_BUILDER_DIR=$(find "${PARENT_DIR}" -type d -name "binding_builder" -path "*/binding_builder" 2>/dev/null | head -1)
 fi
 
-# 複数の可能な場所を検索
-BINDING_BUILDER_PATH=""
-POSSIBLE_PATHS=(
-    "${PROJECT_ROOT}/binding_builder/sjui"
-    "${PROJECT_ROOT}/../binding_builder/sjui"
-    "${PROJECT_ROOT}/../../binding_builder/sjui"
-    "${SRCROOT}/binding_builder/sjui"
-    "${SRCROOT}/../binding_builder/sjui"
-    "${SRCROOT}/../../binding_builder/sjui"
-)
+if [ -z "${BINDING_BUILDER_DIR}" ]; then
+    echo "Warning: binding_builder directory not found"
+    exit 0
+fi
 
-for path in "${POSSIBLE_PATHS[@]}"; do
-    if [ -f "${path}" ]; then
-        BINDING_BUILDER_PATH="${path}"
-        echo "Found sjui at: ${BINDING_BUILDER_PATH}"
-        break
+echo "Found binding_builder at: ${BINDING_BUILDER_DIR}"
+
+# config.jsonからsource_directoryを取得（必要に応じて）
+SOURCE_DIR=""
+CONFIG_FILE="${BINDING_BUILDER_DIR}/config.json"
+
+if [ -f "${CONFIG_FILE}" ]; then
+    SOURCE_DIR=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "${CONFIG_FILE}" | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/')
+    if [ -n "${SOURCE_DIR}" ]; then
+        echo "Found source_directory: '${SOURCE_DIR}'"
     fi
-done
+fi
 
-if [ -z "${BINDING_BUILDER_PATH}" ]; then
-    echo "Warning: sjui command not found in any of the expected locations"
-    echo "Searched paths:"
-    for path in "${POSSIBLE_PATHS[@]}"; do
-        echo "  - ${path}"
-    done
+# sjuiコマンドのパスを設定
+BINDING_BUILDER_PATH="${BINDING_BUILDER_DIR}/sjui"
+
+# sjuiコマンドが存在するか確認
+if [ ! -f "${BINDING_BUILDER_PATH}" ]; then
+    echo "Warning: sjui command not found at ${BINDING_BUILDER_PATH}"
     exit 0
 fi
 
