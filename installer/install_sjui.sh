@@ -179,6 +179,28 @@ if [ -z "$SKIP_HOT_LOADER" ]; then
     if [ -d "$EXTRACT_DIR/hot_loader" ]; then
         print_info "Installing hot_loader..."
         cp -r "$EXTRACT_DIR/hot_loader" .
+        
+        # Install Node.js dependencies for hot_loader
+        if [ -f "hot_loader/package.json" ]; then
+            print_info "Installing hot_loader Node.js dependencies..."
+            cd hot_loader
+            if command -v npm &> /dev/null; then
+                if npm install; then
+                    cd ..
+                    print_info "✅ hot_loader Node.js dependencies installed"
+                else
+                    cd ..
+                    print_warning "Failed to install hot_loader Node.js dependencies"
+                    print_warning "You can install them manually later:"
+                    print_warning "  cd hot_loader && npm install"
+                fi
+            else
+                cd ..
+                print_warning "npm not found. Please install Node.js and npm"
+                print_warning "Then run: cd hot_loader && npm install"
+            fi
+        fi
+        
         print_info "✅ hot_loader installed successfully"
     else
         print_warning "hot_loader not found in the downloaded version"
