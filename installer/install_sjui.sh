@@ -187,17 +187,80 @@ fi
 
 # Install Ruby dependencies if Gemfile exists
 if [ -f "binding_builder/Gemfile" ]; then
-    print_info "Installing Ruby dependencies..."
+    print_info "Checking Ruby environment..."
     cd binding_builder
+    
+    # Check if bundler is available
     if command -v bundle &> /dev/null; then
-        bundle install
-        cd ..
-        print_info "✅ Ruby dependencies installed"
+        # Try to install dependencies
+        if bundle install 2>/dev/null; then
+            cd ..
+            print_info "✅ Ruby dependencies installed"
+        else
+            # If bundle install fails, try installing bundler first
+            print_warning "Bundle install failed. Attempting to install bundler..."
+            if command -v gem &> /dev/null; then
+                if gem install bundler 2>/dev/null; then
+                    print_info "Bundler installed. Retrying bundle install..."
+                    if bundle install 2>/dev/null; then
+                        cd ..
+                        print_info "✅ Ruby dependencies installed"
+                    else
+                        cd ..
+                        print_warning "Failed to install Ruby dependencies"
+                        print_warning "Please install manually:"
+                        print_warning "  cd binding_builder"
+                        print_warning "  gem install bundler"
+                        print_warning "  bundle install"
+                    fi
+                else
+                    cd ..
+                    print_warning "Failed to install bundler"
+                    print_warning "Please install Ruby dependencies manually:"
+                    print_warning "  cd binding_builder"
+                    print_warning "  gem install bundler"
+                    print_warning "  bundle install"
+                fi
+            else
+                cd ..
+                print_warning "Ruby gem command not found"
+                print_warning "Please ensure Ruby is properly installed"
+            fi
+        fi
     else
-        cd ..
-        print_warning "Bundler not found. Please install Ruby dependencies manually:"
-        print_warning "  cd binding_builder && bundle install"
+        # Bundler not found, try to install it
+        if command -v gem &> /dev/null; then
+            print_info "Bundler not found. Installing bundler..."
+            if gem install bundler 2>/dev/null; then
+                print_info "Bundler installed. Installing dependencies..."
+                if bundle install 2>/dev/null; then
+                    cd ..
+                    print_info "✅ Ruby dependencies installed"
+                else
+                    cd ..
+                    print_warning "Failed to install Ruby dependencies"
+                    print_warning "Please install manually:"
+                    print_warning "  cd binding_builder && bundle install"
+                fi
+            else
+                cd ..
+                print_warning "Failed to install bundler"
+                print_warning "Please install Ruby dependencies manually:"
+                print_warning "  cd binding_builder"
+                print_warning "  gem install bundler"
+                print_warning "  bundle install"
+            fi
+        else
+            cd ..
+            print_warning "Ruby and Bundler not found"
+            print_warning "Please install Ruby and then run:"
+            print_warning "  cd binding_builder"
+            print_warning "  gem install bundler"
+            print_warning "  bundle install"
+        fi
     fi
+else
+    print_info "No Gemfile found, skipping Ruby dependencies"
 fi
 
 # Create initial config.json
