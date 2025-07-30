@@ -133,7 +133,7 @@ class HotLoadSetup < PbxprojManager
   end
 
   def generate_inline_hotload_script
-    # hotload_build_phase.shの主要な処理を直接記述
+    # sjui hotload listenを実行するシンプルなスクリプト
     <<~SCRIPT.strip.gsub(/\n/, '\\n').gsub(/"/, '\\"')
 # SwiftJsonUI HotLoad Setup
 # DEBUGビルドでのみ実行
@@ -143,93 +143,20 @@ if [ "${CONFIGURATION}" != "Debug" ]; then
 fi
 
 echo "=== SwiftJsonUI HotLoad Setup ==="
-echo "BUILD CONFIGURATION: ${CONFIGURATION}"
-echo "PROJECT_DIR: ${PROJECT_DIR}"
-echo "SRCROOT: ${SRCROOT}"
 
-# Info.plist更新は ip_monitor.sh スクリプトに任せる
-echo "Info.plist update is handled by ip_monitor.sh script"
+# binding_builderのパスを探す
+BINDING_BUILDER_PATH="${SRCROOT}/binding_builder/sjui"
 
-# Node.jsサーバー起動確認
-check_server_running() {
-    local port=8081
-    lsof -ti:$port >/dev/null 2>&1
-}
-
-# Node.jsサーバー起動
-start_hotload_server() {
-    # configファイルからhot_loader_directoryを取得
-    local config_file="$SRCROOT/binding_builder/config.json"
-    local hot_loader_dir=""
-    
-    if [ -f "$config_file" ]; then
-        # JSONからhot_loader_directoryを抽出
-        hot_loader_dir=$(grep -o '"hot_loader_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "$config_file" | sed 's/.*"hot_loader_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-        
-        # 空の場合はproject_file_nameをフォールバック
-        if [ -z "$hot_loader_dir" ]; then
-            hot_loader_dir=$(grep -o '"project_file_name"[[:space:]]*:[[:space:]]*"[^"]*"' "$config_file" | sed 's/.*"project_file_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
-        fi
-    fi
-    
-    # それでも空の場合はプロジェクト名を使用
-    if [ -z "$hot_loader_dir" ]; then
-        hot_loader_dir="$PROJECT_NAME"
-    fi
-    
-    local hotload_server_dir="$SRCROOT/$hot_loader_dir/hot_loader"
-    
-    if [ ! -d "$hotload_server_dir" ]; then
-        echo "Warning: HotLoad server directory not found: $hotload_server_dir"
-        return 1
-    fi
-    
-    cd "$hotload_server_dir"
-    
-    if [ ! -f "server.js" ]; then
-        echo "Warning: server.js not found in HotLoad server directory"
-        return 1
-    fi
-    
-    if [ ! -d "node_modules" ]; then
-        echo "Installing Node.js dependencies..."
-        npm install >/dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            echo "Warning: npm install failed"
-            return 1
-        fi
-    fi
-    
-    if check_server_running; then
-        echo "HotLoad server is already running on port 8081"
-        return 0
-    fi
-    
-    echo "Starting server.js..."
-    nohup node server.js > server.log 2>&1 &
-    
-    for i in {1..10}; do
-        if check_server_running; then
-            echo "HotLoad server started successfully on port 8081"
-            return 0
-        fi
-        sleep 0.5
-    done
-    
-    echo "Warning: HotLoad server may not have started properly"
-    return 1
-}
-
-# Node.jsが利用可能かチェック
-if command -v node >/dev/null 2>&1 && command -v npm >/dev/null 2>&1; then
-    start_hotload_server
-else
-    echo "Warning: Node.js or npm not found. HotLoad server cannot be started."
+if [ ! -f "${BINDING_BUILDER_PATH}" ]; then
+    echo "Warning: sjui command not found at ${BINDING_BUILDER_PATH}"
+    exit 0
 fi
 
+# sjui hotload listenを実行
+echo "Starting HotLoad development environment..."
+"${BINDING_BUILDER_PATH}" hotload listen
+
 echo "=== HotLoad Setup Complete ==="
-echo "HotLoad server started on port 8081"
-echo "Info.plist configuration handled by ip_monitor.sh"
     SCRIPT
   end
 
