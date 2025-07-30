@@ -93,9 +93,9 @@ open class SJUIViewCreator:NSObject {
     @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
         
-        // Always log when processing JSON (not just in DEBUG)
+        // Log when processing JSON (only in DEBUG)
         if let includeValue = attr["include"].string {
-            print("[SwiftJsonUI] Processing include: '\(includeValue)'")
+            Logger.debug("[SwiftJsonUI] Processing include: '\(includeValue)'")
         }
         
         if let include = attr["include"].string {
@@ -117,15 +117,15 @@ open class SJUIViewCreator:NSObject {
                 url = getURL(path: "_\(include)")
             }
             
-            print("[SwiftJsonUI] Looking for file at: '\(url)'")
+            Logger.debug("[SwiftJsonUI] Looking for file at: '\(url)'")
             let fileExists = FileManager.default.fileExists(atPath: url)
-            print("[SwiftJsonUI] File exists: \(fileExists)")
+            Logger.debug("[SwiftJsonUI] File exists: \(fileExists)")
             
             if !fileExists {
                 url = getURL(path: include)
-                print("[SwiftJsonUI] Trying alternative path: '\(url)'")
+                Logger.debug("[SwiftJsonUI] Trying alternative path: '\(url)'")
                 let altFileExists = FileManager.default.fileExists(atPath: url)
-                print("[SwiftJsonUI] Alternative file exists: \(altFileExists)")
+                Logger.debug("[SwiftJsonUI] Alternative file exists: \(altFileExists)")
             }
             
             do {
@@ -695,7 +695,7 @@ open class SJUIViewCreator:NSObject {
         let layoutPath = "\(cachesDirPath)/Layouts"
         
         // Log the path for debugging
-        print("[SwiftJsonUI] Layout directory path: \(layoutPath)")
+        Logger.debug("[SwiftJsonUI] Layout directory path: \(layoutPath)")
         
         return layoutPath
     }
