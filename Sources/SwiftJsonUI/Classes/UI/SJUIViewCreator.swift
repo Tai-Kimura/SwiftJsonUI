@@ -92,6 +92,12 @@ open class SJUIViewCreator:NSObject {
     @MainActor
     @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
+        
+        // Always log when processing JSON (not just in DEBUG)
+        if let includeValue = attr["include"].string {
+            print("[SwiftJsonUI] Processing include: '\(includeValue)'")
+        }
+        
         if let include = attr["include"].string {
             // サブディレクトリを考慮してpartialファイルを探す
             var url: String
@@ -111,18 +117,16 @@ open class SJUIViewCreator:NSObject {
                 url = getURL(path: "_\(include)")
             }
             
-            if !FileManager.default.fileExists(atPath: url) {
-                url = getURL(path: include)
-            }
+            print("[SwiftJsonUI] Looking for file at: '\(url)'")
+            let fileExists = FileManager.default.fileExists(atPath: url)
+            print("[SwiftJsonUI] File exists: \(fileExists)")
             
-            // デバッグ用のログとエラーハンドリングの改善
-            #if DEBUG
-            print("Include lookup: '\(include)'")
-            print("  First try: '\(url)'")
-            if !FileManager.default.fileExists(atPath: url) {
-                print("  File not found, trying: '\(getURL(path: include))'")
+            if !fileExists {
+                url = getURL(path: include)
+                print("[SwiftJsonUI] Trying alternative path: '\(url)'")
+                let altFileExists = FileManager.default.fileExists(atPath: url)
+                print("[SwiftJsonUI] Alternative file exists: \(altFileExists)")
             }
-            #endif
             
             do {
                 var jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
@@ -688,7 +692,12 @@ open class SJUIViewCreator:NSObject {
     open class func getLayoutFileDirPath() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
-        return "\(cachesDirPath)/Layouts"
+        let layoutPath = "\(cachesDirPath)/Layouts"
+        
+        // Log the path for debugging
+        print("[SwiftJsonUI] Layout directory path: \(layoutPath)")
+        
+        return layoutPath
     }
     
     open class func getStyleFileDirPath() -> String {
