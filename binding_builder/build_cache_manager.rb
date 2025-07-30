@@ -52,11 +52,26 @@ class BuildCacheManager
     
     including_files.each do |f|
       # サブディレクトリを含むパスをサポート
-      # まずpartial用の_プレフィックス付きファイルを探す
-      included_file_path = File.join(layout_path, "_#{f}.json")
-      if !File.exist?(included_file_path)
-        # 次に通常のファイルを探す
-        included_file_path = File.join(layout_path, "#{f}.json")
+      if f.include?('/')
+        # サブディレクトリがある場合
+        dir_parts = f.split('/')
+        file_base = dir_parts.pop
+        dir_path = dir_parts.join('/')
+        
+        # まずpartial用の_プレフィックス付きファイルを探す
+        included_file_path = File.join(layout_path, dir_path, "_#{file_base}.json")
+        if !File.exist?(included_file_path)
+          # 次に通常のファイルを探す
+          included_file_path = File.join(layout_path, "#{f}.json")
+        end
+      else
+        # サブディレクトリがない場合
+        # まずpartial用の_プレフィックス付きファイルを探す
+        included_file_path = File.join(layout_path, "_#{f}.json")
+        if !File.exist?(included_file_path)
+          # 次に通常のファイルを探す
+          included_file_path = File.join(layout_path, "#{f}.json")
+        end
       end
       
       next unless File.exist?(included_file_path)

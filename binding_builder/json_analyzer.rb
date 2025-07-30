@@ -160,16 +160,40 @@ class JsonAnalyzer
     end
     
     # サブディレクトリを含むパスをサポート
-    # まずpartial用の_プレフィックス付きファイルを探す
-    file_path = File.join(@layout_path, "_#{value}.json")
-    if !File.exists?(file_path)
-      # 次に通常のファイルを探す
-      file_path = File.join(@layout_path, "#{value}.json")
+    # パスを分割して、ファイル名部分に_プレフィックスを追加
+    if value.include?('/')
+      # サブディレクトリがある場合
+      dir_parts = value.split('/')
+      file_base = dir_parts.pop
+      dir_path = dir_parts.join('/')
+      
+      # まずpartial用の_プレフィックス付きファイルを探す
+      file_path = File.join(@layout_path, dir_path, "_#{file_base}.json")
+      if !File.exists?(file_path)
+        # 次に通常のファイルを探す
+        file_path = File.join(@layout_path, "#{value}.json")
+      end
+    else
+      # サブディレクトリがない場合
+      # まずpartial用の_プレフィックス付きファイルを探す
+      file_path = File.join(@layout_path, "_#{value}.json")
+      if !File.exists?(file_path)
+        # 次に通常のファイルを探す
+        file_path = File.join(@layout_path, "#{value}.json")
+      end
     end
     
     # ファイルが見つからない場合はエラー
     unless File.exists?(file_path)
-      raise "Include file not found: #{value} (tried #{File.join(@layout_path, "_#{value}.json")} and #{file_path})"
+      if value.include?('/')
+        dir_parts = value.split('/')
+        file_base = dir_parts.pop
+        dir_path = dir_parts.join('/')
+        tried_paths = "#{File.join(@layout_path, dir_path, "_#{file_base}.json")} and #{File.join(@layout_path, "#{value}.json")}"
+      else
+        tried_paths = "#{File.join(@layout_path, "_#{value}.json")} and #{File.join(@layout_path, "#{value}.json")}"
+      end
+      raise "Include file not found: #{value} (tried #{tried_paths})"
     end
     
     File.open(file_path, "r") do |file|
