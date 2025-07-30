@@ -25,8 +25,8 @@ print_error() {
 # Parse arguments (pass them to the installer)
 ARGS="$@"
 
-# Default to main branch if no version specified
-VERSION="main"
+# Default to master branch if no version specified
+VERSION="master"
 
 # Parse arguments to extract version
 for i in "$@"; do
