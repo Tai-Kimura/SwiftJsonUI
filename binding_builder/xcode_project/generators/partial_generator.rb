@@ -18,7 +18,7 @@ class PartialGenerator < PbxprojManager
   def generate(partial_name)
     # 引数チェック
     if partial_name.nil? || partial_name.empty?
-      raise "Usage: sjui g partial <partial_name>\nExample: sjui g partial navigation_bar"
+      raise "Usage: sjui g partial <partial_name>\nExample: sjui g partial navigation_bar\nExample: sjui g partial components/navigation_bar"
     end
     
     # 名前の正規化（キャメルケースをスネークケースに変換）
@@ -42,9 +42,25 @@ class PartialGenerator < PbxprojManager
   private
 
   def create_partial_json_file(snake_name)
-    # ファイル名の最初に_を追加
-    file_name = "_#{snake_name}.json"
-    file_path = File.join(@layouts_path, file_name)
+    # サブディレクトリ対応
+    if snake_name.include?('/')
+      # ディレクトリパスとファイル名を分離
+      dir_parts = snake_name.split('/')
+      file_name_part = dir_parts.pop
+      sub_dir = dir_parts.join('/')
+      
+      # サブディレクトリを作成
+      target_dir = File.join(@layouts_path, sub_dir)
+      FileUtils.mkdir_p(target_dir) unless Dir.exist?(target_dir)
+      
+      # ファイル名の最初に_を追加
+      file_name = "_#{file_name_part}.json"
+      file_path = File.join(target_dir, file_name)
+    else
+      # ファイル名の最初に_を追加
+      file_name = "_#{snake_name}.json"
+      file_path = File.join(@layouts_path, file_name)
+    end
     
     if File.exist?(file_path)
       puts "Partial JSON file already exists: #{file_path}"

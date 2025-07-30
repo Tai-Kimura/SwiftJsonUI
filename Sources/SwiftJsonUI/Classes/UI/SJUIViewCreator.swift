@@ -125,7 +125,18 @@ open class SJUIViewCreator:NSObject {
     @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
         var attr = json
         if let include = attr["include"].string {
-            var url = getURL(path: "_\(include)")
+            // サブディレクトリ対応: パスとファイル名を分離してprefixを適用
+            var prefixedInclude: String
+            if include.contains("/") {
+                let pathComponents = include.split(separator: "/")
+                let fileName = pathComponents.last!
+                let dirPath = pathComponents.dropLast().joined(separator: "/")
+                prefixedInclude = "\(dirPath)/_\(fileName)"
+            } else {
+                prefixedInclude = "_\(include)"
+            }
+            
+            var url = getURL(path: prefixedInclude)
             if !FileManager.default.fileExists(atPath: url) {
                 url = getURL(path: include)
             }
