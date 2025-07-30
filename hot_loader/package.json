@@ -10,10 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^4.21.1",
+    "chokidar": "^3.6.0",
+    "express": "^5.1.0",
     "morgan": "^1.10.0",
-    "ws": "^8.18.0",
-    "chokidar": "^3.6.0"
+    "ws": "^8.18.0"
   },
   "engines": {
     "node": ">=14.0.0"

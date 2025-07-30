@@ -145,10 +145,37 @@ fi
 echo "=== SwiftJsonUI HotLoad Setup ==="
 
 # binding_builderのパスを探す
-BINDING_BUILDER_PATH="${SRCROOT}/binding_builder/sjui"
+# プロジェクトのルートディレクトリから検索
+PROJECT_ROOT="${PROJECT_DIR}"
+if [ -z "${PROJECT_ROOT}" ]; then
+    PROJECT_ROOT="${SRCROOT}"
+fi
 
-if [ ! -f "${BINDING_BUILDER_PATH}" ]; then
-    echo "Warning: sjui command not found at ${BINDING_BUILDER_PATH}"
+# 複数の可能な場所を検索
+BINDING_BUILDER_PATH=""
+POSSIBLE_PATHS=(
+    "${PROJECT_ROOT}/binding_builder/sjui"
+    "${PROJECT_ROOT}/../binding_builder/sjui"
+    "${PROJECT_ROOT}/../../binding_builder/sjui"
+    "${SRCROOT}/binding_builder/sjui"
+    "${SRCROOT}/../binding_builder/sjui"
+    "${SRCROOT}/../../binding_builder/sjui"
+)
+
+for path in "${POSSIBLE_PATHS[@]}"; do
+    if [ -f "${path}" ]; then
+        BINDING_BUILDER_PATH="${path}"
+        echo "Found sjui at: ${BINDING_BUILDER_PATH}"
+        break
+    fi
+done
+
+if [ -z "${BINDING_BUILDER_PATH}" ]; then
+    echo "Warning: sjui command not found in any of the expected locations"
+    echo "Searched paths:"
+    for path in "${POSSIBLE_PATHS[@]}"; do
+        echo "  - ${path}"
+    done
     exit 0
 fi
 
