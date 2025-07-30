@@ -21,13 +21,25 @@ class PartialGenerator < PbxprojManager
       raise "Usage: sjui g partial <partial_name>\nExample: sjui g partial navigation_bar"
     end
     
-    # 名前の正規化（キャメルケースをスネークケースに変換）
-    snake_name = partial_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
+    # パスとファイル名を分離
+    parts = partial_name.split('/')
+    if parts.length > 1
+      # サブディレクトリがある場合
+      subdir = parts[0..-2].join('/')
+      base_name = parts[-1]
+    else
+      # サブディレクトリがない場合
+      subdir = nil
+      base_name = partial_name
+    end
     
-    puts "Generating partial: #{snake_name}"
+    # 名前の正規化（キャメルケースをスネークケースに変換）
+    snake_name = base_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
+    
+    puts "Generating partial: #{snake_name}" + (subdir ? " in #{subdir}/" : "")
     
     # 1. partialのJSONファイル作成（_プレフィックス付き）
-    partial_file_path = create_partial_json_file(snake_name)
+    partial_file_path = create_partial_json_file(snake_name, subdir)
     
     # 2. バインディングファイルの生成
     generate_binding_file
@@ -41,15 +53,26 @@ class PartialGenerator < PbxprojManager
 
   private
 
-  def create_partial_json_file(snake_name)
+  def create_partial_json_file(snake_name, subdir = nil)
     # ファイル名の最初に_を追加
     file_name = "_#{snake_name}.json"
-    file_path = File.join(@layouts_path, file_name)
+    
+    # サブディレクトリがある場合はパスに含める
+    if subdir
+      dir_path = File.join(@layouts_path, subdir)
+      file_path = File.join(dir_path, file_name)
+    else
+      dir_path = @layouts_path
+      file_path = File.join(@layouts_path, file_name)
+    end
     
     if File.exist?(file_path)
       puts "Partial JSON file already exists: #{file_path}"
       return file_path
     end
+    
+    # ディレクトリが存在しない場合は作成（サブディレクトリも含めて）
+    FileUtils.mkdir_p(dir_path) unless File.directory?(dir_path)
     
     content = generate_partial_json_content(snake_name)
     File.write(file_path, content)

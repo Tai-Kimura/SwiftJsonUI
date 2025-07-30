@@ -154,7 +154,18 @@ update_plist_with_hotload_config
 # 3. Node.jsサーバーが既に起動しているかチェック
 check_server_running() {
     local port=8081
-    lsof -ti:$port >/dev/null 2>&1
+    # WebSocketサーバーとして実際に接続可能かを確認
+    # lsofでLISTEN状態のプロセスのみをチェック
+    local listening_pid=$(lsof -ti:$port -sTCP:LISTEN 2>/dev/null)
+    
+    if [ -n "$listening_pid" ]; then
+        # さらにnode server.jsプロセスかどうかを確認
+        if ps -p $listening_pid -o command= | grep -q "node.*server.js"; then
+            return 0  # server.jsが起動している
+        fi
+    fi
+    
+    return 1  # server.jsが起動していない
 }
 
 # 4. Node.jsサーバー起動
@@ -194,6 +205,19 @@ start_hotload_server() {
     # server.jsが動作していない場合は起動
     if ! check_server_running; then
         echo "Starting server.js..."
+        # 念のため古いCLOSED接続を持つプロセスをクリーンアップ
+        OLD_PIDS=$(lsof -ti:8081 2>/dev/null)
+        if [ -n "$OLD_PIDS" ]; then
+            echo "Cleaning up stale connections on port 8081..."
+            for pid in $OLD_PIDS; do
+                # server.js以外のプロセスのみクリーンアップ
+                if ! ps -p $pid -o command= | grep -q "node.*server.js"; then
+                    kill -9 $pid 2>/dev/null
+                fi
+            done
+            sleep 1
+        fi
+        
         nohup node server.js > server.log 2>&1 &
         sleep 1
     else
