@@ -149,14 +149,30 @@ echo "=== SwiftJsonUI HotLoad Setup ==="
 PROJECT_DIR="#{File.dirname(File.dirname(@project_file_path))}"
 echo "Starting search from project directory: ${PROJECT_DIR}"
 
-# findコマンドでbinding_builderディレクトリを探す（最大5階層まで探索）
-BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+# findコマンドでbinding_builderディレクトリを探す（sjuiファイルが存在するものを優先）
+BINDING_BUILDER_DIR=""
+for dir in $(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules); do
+    if [ -f "${dir}/sjui" ]; then
+        BINDING_BUILDER_DIR="${dir}"
+        break
+    fi
+done
+
+# sjuiが見つからない場合は、最初に見つかったbinding_builderを使用
+if [ -z "${BINDING_BUILDER_DIR}" ]; then
+    BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+fi
 
 # 見つからない場合は親ディレクトリも探す
 if [ -z "${BINDING_BUILDER_DIR}" ]; then
     PARENT_DIR="#{File.dirname(File.dirname(File.dirname(@project_file_path)))}"
     echo "Searching in parent directory: ${PARENT_DIR}"
-    BINDING_BUILDER_DIR=$(find "${PARENT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+    for dir in $(find "${PARENT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules); do
+        if [ -f "${dir}/sjui" ]; then
+            BINDING_BUILDER_DIR="${dir}"
+            break
+        fi
+    done
 fi
 
 # それでも見つからない場合は、より広範囲に探す
@@ -164,12 +180,22 @@ if [ -z "${BINDING_BUILDER_DIR}" ]; then
     # XcodeのPROJECT_DIRやSRCROOTも使ってみる
     if [ -n "${PROJECT_DIR}" ] && [ -d "${PROJECT_DIR}" ]; then
         echo "Searching using Xcode PROJECT_DIR: ${PROJECT_DIR}"
-        BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+        for dir in $(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules); do
+            if [ -f "${dir}/sjui" ]; then
+                BINDING_BUILDER_DIR="${dir}"
+                break
+            fi
+        done
     fi
     
     if [ -z "${BINDING_BUILDER_DIR}" ] && [ -n "${SRCROOT}" ] && [ -d "${SRCROOT}" ]; then
         echo "Searching using Xcode SRCROOT: ${SRCROOT}"
-        BINDING_BUILDER_DIR=$(find "${SRCROOT}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+        for dir in $(find "${SRCROOT}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules); do
+            if [ -f "${dir}/sjui" ]; then
+                BINDING_BUILDER_DIR="${dir}"
+                break
+            fi
+        done
     fi
 fi
 
@@ -188,18 +214,32 @@ SOURCE_DIR=""
 CONFIG_FILE="${BINDING_BUILDER_DIR}/config.json"
 
 if [ -f "${CONFIG_FILE}" ]; then
-    SOURCE_DIR=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "${CONFIG_FILE}" | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/')
-    if [ -n "${SOURCE_DIR}" ]; then
-        echo "Found source_directory: '${SOURCE_DIR}'"
+    # Read config.json with proper permissions handling
+    if [ -r "${CONFIG_FILE}" ]; then
+        SOURCE_DIR=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "${CONFIG_FILE}" 2>/dev/null | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\\([^"]*\\)".*/\\1/' 2>/dev/null || echo "")
+        if [ -n "${SOURCE_DIR}" ]; then
+            echo "Found source_directory: '${SOURCE_DIR}'"
+        fi
+    else
+        echo "Warning: Cannot read config.json (permission denied)"
     fi
 fi
 
 # sjuiコマンドのパスを設定
 BINDING_BUILDER_PATH="${BINDING_BUILDER_DIR}/sjui"
 
+# binding_builderディレクトリの内容を確認（デバッグ用）
+echo "Checking binding_builder directory contents:"
+ls -la "${BINDING_BUILDER_DIR}" | head -10
+
 # sjuiコマンドが存在するか確認
 if [ ! -f "${BINDING_BUILDER_PATH}" ]; then
     echo "Warning: sjui command not found at ${BINDING_BUILDER_PATH}"
+    # 実行権限がない可能性もチェック
+    if [ -e "${BINDING_BUILDER_PATH}" ]; then
+        echo "File exists but may not have execute permissions"
+        ls -la "${BINDING_BUILDER_PATH}"
+    fi
     exit 0
 fi
 
