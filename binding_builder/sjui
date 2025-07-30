@@ -4,13 +4,14 @@
 # Usage: sjui <command> [args...]
 
 if [ $# -eq 0 ]; then
-    echo "Usage: sjui [--project <project_name>] <command> [subcommand] [args...]"
+    echo "Usage: sjui [--project <project_name>] [--environment <env>] <command> [subcommand] [args...]"
     echo ""
     echo "Options:"
     echo "  --project <name>      Specify project name when multiple .xcodeproj exist"
+    echo "  --environment, -e <env>  Use environment-specific config (merges with base config.json)"
     echo ""
     echo "Available commands:"
-    echo "  init                  Initialize config.json file"
+    echo "  init [env1 env2 ...]  Initialize config.json file (optionally with environments)"
     echo "  setup                 Create directories and add them to Xcode project"
     echo "  g view <view_name> [--root]    Generate view controller and layout files"
     echo "  generate view <name> [--root]  Generate view controller and layout files (alias for g)"
@@ -35,6 +36,7 @@ if [ $# -eq 0 ]; then
     echo ""
     echo "Examples:"
     echo "  sjui init"
+    echo "  sjui init dev staging production"
     echo "  sjui setup"
     echo "  sjui g view sample"
     echo "  sjui generate view sample"
@@ -49,6 +51,8 @@ if [ $# -eq 0 ]; then
     echo ""
     echo "  sjui --project MyProject g view sample"
     echo "  sjui --project AnotherApp build"
+    echo "  sjui --environment dev build"
+    echo "  sjui -e production g view sample"
     exit 1
 fi
 
@@ -66,10 +70,15 @@ source "$COMMANDS_DIR/hotload_command.sh"
 
 # Parse options
 PROJECT_NAME=""
+ENVIRONMENT=""
 while [[ $# -gt 0 ]]; do
     case $1 in
         --project)
             PROJECT_NAME="$2"
+            shift 2
+            ;;
+        --environment|-e)
+            ENVIRONMENT="$2"
             shift 2
             ;;
         *)
@@ -77,6 +86,9 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Export environment for use in Ruby scripts
+export SJUI_ENVIRONMENT="$ENVIRONMENT"
 
 # Create a temporary Ruby script to find project file
 PROJECT_FINDER_SCRIPT=$(cat << EOF
@@ -137,7 +149,7 @@ shift
 # Execute command
 case "$COMMAND" in
     "init")
-        init_command "$SCRIPT_DIR" "$PROJECT_FINDER_SCRIPT"
+        init_command "$SCRIPT_DIR" "$PROJECT_FINDER_SCRIPT" "$@"
         ;;
     "setup")
         setup_command "$SCRIPT_DIR" "$PROJECT_FILE"

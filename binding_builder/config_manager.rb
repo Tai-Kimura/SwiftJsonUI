@@ -27,26 +27,60 @@ class ConfigManager
     base_dir ||= File.dirname(__FILE__)
     config_file = File.join(base_dir, 'config.json')
     
-    if File.exist?(config_file)
+    # Load base config
+    base_config = if File.exist?(config_file)
       begin
         file_content = File.read(config_file)
-        parsed_config = JSON.parse(file_content)
-        
-        # Merge with default config to ensure all keys exist
-        config = DEFAULT_CONFIG.merge(parsed_config)
-        
-        
-        return config
+        JSON.parse(file_content)
       rescue JSON::ParserError => e
         puts "Warning: Failed to parse config.json: #{e.message}"
         puts "Using default configuration."
+        {}
       rescue => e
         puts "Warning: Failed to read config.json: #{e.message}"
         puts "Using default configuration."
+        {}
+      end
+    else
+      {}
+    end
+    
+    # Load environment-specific config if SJUI_ENVIRONMENT is set
+    environment = ENV['SJUI_ENVIRONMENT']
+    if environment && !environment.empty?
+      env_config_file = File.join(base_dir, "#{environment}.config.json")
+      if File.exist?(env_config_file)
+        begin
+          env_content = File.read(env_config_file)
+          env_config = JSON.parse(env_content)
+          # Deep merge environment config into base config
+          base_config = deep_merge(base_config, env_config)
+        rescue JSON::ParserError => e
+          puts "Warning: Failed to parse #{environment}.config.json: #{e.message}"
+        rescue => e
+          puts "Warning: Failed to read #{environment}.config.json: #{e.message}"
+        end
+      else
+        puts "Warning: Environment config file #{environment}.config.json not found"
       end
     end
     
-    DEFAULT_CONFIG.dup
+    # Merge with default config to ensure all keys exist
+    DEFAULT_CONFIG.merge(base_config)
+  end
+  
+  private
+  
+  def self.deep_merge(hash1, hash2)
+    result = hash1.dup
+    hash2.each do |key, value|
+      if result[key].is_a?(Hash) && value.is_a?(Hash)
+        result[key] = deep_merge(result[key], value)
+      else
+        result[key] = value
+      end
+    end
+    result
   end
   
   def self.get_source_directory(base_dir = nil)

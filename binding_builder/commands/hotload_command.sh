@@ -132,8 +132,9 @@ hotload_command() {
             
             # Node.js HotLoad server status
             echo "🔥 HotLoad Server:"
-            NODE_PID=$(lsof -ti:8081 2>/dev/null)
-            if [ -n "$NODE_PID" ]; then
+            # LISTEN状態のプロセスのみを確認
+            NODE_PID=$(lsof -ti:8081 -sTCP:LISTEN 2>/dev/null)
+            if [ -n "$NODE_PID" ] && ps -p $NODE_PID -o command= | grep -q "node.*server.js"; then
                 echo "   ✅ Status: Running (PID: $NODE_PID)"
                 echo "   🌐 Port: 8081"
                 
