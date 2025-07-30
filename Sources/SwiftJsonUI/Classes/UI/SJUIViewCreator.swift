@@ -65,27 +65,59 @@ open class SJUIViewCreator:NSObject {
         return view
     }
     
+    // サブディレクトリ対応のヘルパーメソッド
+    private class func createSubdirectoryIfNeeded(for fullPath: String) {
+        if fullPath.contains("/") {
+            let fullURL = URL(fileURLWithPath: fullPath)
+            let directoryURL = fullURL.deletingLastPathComponent()
+            
+            do {
+                try FileManager.default.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil)
+            } catch {
+                Logger.debug("Directory creation error: \(error)")
+            }
+        }
+    }
+    
+    private class func getBundleResourcePath(path: String, fileType: String, baseDirectory: String? = nil) -> String {
+        if path.contains("/") {
+            let components = path.components(separatedBy: "/")
+            let fileName = components.last!
+            let subDirectory = baseDirectory != nil ? "\(baseDirectory!)/\(components.dropLast().joined(separator: "/"))" : components.dropLast().joined(separator: "/")
+            return Bundle.main.path(forResource: fileName, ofType: fileType, inDirectory: subDirectory) ?? Bundle.main.path(forResource: path, ofType: fileType, inDirectory: baseDirectory) ?? ""
+        } else {
+            return Bundle.main.path(forResource: path, ofType: fileType, inDirectory: baseDirectory) ?? ""
+        }
+    }
+    
     open class func getURL(path: String) -> String {
         #if DEBUG
-        return getLayoutFileDirPath() + "/\(path).json"
+        let fullPath = getLayoutFileDirPath() + "/\(path).json"
+        createSubdirectoryIfNeeded(for: fullPath)
+        return fullPath
         #else
-        return Bundle.main.path(forResource: path, ofType: "json")!
+        let result = getBundleResourcePath(path: path, fileType: "json")
+        return result.isEmpty ? Bundle.main.path(forResource: path, ofType: "json")! : result
         #endif
     }
     
     open class func getStyleURL(path: String) -> String {
         #if DEBUG
-        return getStyleFileDirPath() + "/\(path).json"
+        let fullPath = getStyleFileDirPath() + "/\(path).json"
+        createSubdirectoryIfNeeded(for: fullPath)
+        return fullPath
         #else
-        return Bundle.main.path(forResource: path, ofType: "json", inDirectory: "Styles") ?? ""
+        return getBundleResourcePath(path: path, fileType: "json", baseDirectory: "Styles")
         #endif
     }
     
     open class func getScriptURL(path: String) -> String {
         #if DEBUG
-        return getScriptFileDirPath() + "/\(path).js"
+        let fullPath = getScriptFileDirPath() + "/\(path).js"
+        createSubdirectoryIfNeeded(for: fullPath)
+        return fullPath
         #else
-        return Bundle.main.path(forResource: path, ofType: "js", inDirectory: "Scripts") ?? ""
+        return getBundleResourcePath(path: path, fileType: "js", baseDirectory: "Scripts")
         #endif
     }
     

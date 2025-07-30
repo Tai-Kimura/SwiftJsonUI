@@ -110,7 +110,22 @@ public class HotLoader: NSObject, URLSessionWebSocketDelegate {
                     toPath = "\(dir)/\(fileName).js";
                 default:
                     dir = SJUIViewCreator.getLayoutFileDirPath()
-                    toPath = "\(dir)/\(fileName).json";
+                    let fullPath = "\(dir)/\(fileName).json"
+                    
+                    // サブディレクトリが含まれている場合の処理
+                    if fileName.contains("/") {
+                        let fullURL = URL(fileURLWithPath: fullPath)
+                        let directoryURL = fullURL.deletingLastPathComponent()
+                        
+                        // サブディレクトリを作成
+                        do {
+                            try fm.createDirectory(at: directoryURL, withIntermediateDirectories: true, attributes: nil)
+                        } catch {
+                            Logger.debug("SwiftJSONUIHotloader Directory creation error: \(error)")
+                        }
+                    }
+                    
+                    toPath = fullPath;
                 }
                 do {
                     if (fm.fileExists(atPath: toPath)) {

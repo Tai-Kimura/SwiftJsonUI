@@ -39,7 +39,7 @@ server.on("disconnect", () => {
 var chokidar = require("chokidar");
 
 //chokidarの初期化
-var watcher = chokidar.watch("../*/*.json", {
+var watcher = chokidar.watch("../**/*.json", {
   ignored: /[\/\\]\./,
   persistent: true,
 });
@@ -56,9 +56,23 @@ watcher.on("ready", function () {
     var stars = path.split("/");
     var layoutPath = "layout_loader";
     var dirName = stars[stars.length - 2].toLowerCase();
-    var filePath = stars[stars.length - 1];
-    if (filePath.endsWith("json")) {
-      filePath = stars[stars.length - 1].replace(/\.json$/g, "");
+    var fileName = stars[stars.length - 1];
+    
+    // サブディレクトリ対応: Layoutsフォルダからの相対パスを取得
+    var layoutsIndex = stars.indexOf("Layouts");
+    var filePath;
+    
+    if (layoutsIndex !== -1 && layoutsIndex < stars.length - 2) {
+      // Layoutsフォルダ内のサブディレクトリの場合
+      var subDirParts = stars.slice(layoutsIndex + 1, stars.length - 1);
+      var fileNameWithoutExt = fileName.replace(/\.(json|js)$/g, "");
+      filePath = subDirParts.length > 0 ? subDirParts.join("/") + "/" + fileNameWithoutExt : fileNameWithoutExt;
+    } else {
+      // 従来のルートディレクトリの場合
+      filePath = fileName.replace(/\.(json|js)$/g, "");
+    }
+    
+    if (fileName.endsWith("json")) {
       try {
         JSON.parse(fs.readFileSync(path, "utf8"));
         console.log(path + " changed.");
@@ -66,8 +80,7 @@ watcher.on("ready", function () {
       } catch (err) {
         console.log(err);
       }
-    } else if (filePath.endsWith("js")) {
-      filePath = stars[stars.length - 1].replace(/\.js$/g, "");
+    } else if (fileName.endsWith("js")) {
       console.log(path + " changed.");
       webSocket?.send(JSON.stringify([layoutPath, dirName, filePath]));
     }

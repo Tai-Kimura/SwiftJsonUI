@@ -22,8 +22,15 @@ app.get("/layout_loader", function(req, res, next){
     } else if (req.query.dir_name.toLowerCase() == "scripts") {
       filePath = path.join(filePath, req.query.dir_name, req.query.file_path + ".js");
     } else {
+      // サブディレクトリ対応: file_pathにディレクトリ構造が含まれている場合
       filePath = path.join(filePath, "Layouts", req.query.file_path + ".json");
     }
-    var buf = fs.readFileSync(filePath);
-    res.send(buf, { 'Content-Type': 'application/json' }, 200);
+    
+    try {
+      var buf = fs.readFileSync(filePath);
+      res.send(buf, { 'Content-Type': 'application/json' }, 200);
+    } catch (err) {
+      console.error('File not found:', filePath, err);
+      res.status(404).send('File not found');
+    }
 });
