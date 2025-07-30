@@ -51,7 +51,14 @@ class BuildCacheManager
     return true if including_files.nil?
     
     including_files.each do |f|
-      included_file_path = "#{layout_path}/_#{f}.json"
+      # サブディレクトリを含むパスをサポート
+      # まずpartial用の_プレフィックス付きファイルを探す
+      included_file_path = File.join(layout_path, "_#{f}.json")
+      if !File.exist?(included_file_path)
+        # 次に通常のファイルを探す
+        included_file_path = File.join(layout_path, "#{f}.json")
+      end
+      
       next unless File.exist?(included_file_path)
       
       included_stat = File::Stat.new(included_file_path)

@@ -158,10 +158,20 @@ class JsonAnalyzer
       @including_files[file_name] << value
       @including_files[file_name].uniq!
     end
-    file_path = "#{@layout_path}/_#{value}.json"
+    
+    # サブディレクトリを含むパスをサポート
+    # まずpartial用の_プレフィックス付きファイルを探す
+    file_path = File.join(@layout_path, "_#{value}.json")
     if !File.exists?(file_path)
-      file_path = "#{@layout_path}/#{value}.json"
+      # 次に通常のファイルを探す
+      file_path = File.join(@layout_path, "#{value}.json")
     end
+    
+    # ファイルが見つからない場合はエラー
+    unless File.exists?(file_path)
+      raise "Include file not found: #{value} (tried #{File.join(@layout_path, "_#{value}.json")} and #{file_path})"
+    end
+    
     File.open(file_path, "r") do |file|
       json_string = file.read
       unless json["variables"].nil?
