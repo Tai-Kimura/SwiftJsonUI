@@ -16,7 +16,7 @@ IPアドレスの変更を監視して、SwiftJsonUI HotLoaderの設定を自動
 
 ```bash
 # スクリプトのあるディレクトリに移動
-cd bindingTestApp/binding_builder/scripts
+cd YourProject/binding_builder/scripts
 
 # 現在のIPでInfo.plistを強制更新
 ./ip_monitor.sh update
@@ -45,7 +45,7 @@ SJUIコマンドを使用すると、すべて自動で実行されます：
 
 ```bash
 # プロジェクトのbinding_builderディレクトリに移動
-cd bindingTestApp/binding_builder
+cd YourProject/binding_builder
 
 # 開発環境を一発起動（IP監視 + Xcode起動）
 ./sjui run

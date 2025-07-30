@@ -1,4 +1,5 @@
 require "fileutils"
+require "pathname"
 require_relative "adders/view_controller_adder"
 require_relative "adders/binding_files_adder"
 require_relative "pbxproj_manager"
@@ -30,7 +31,10 @@ class XcodeProjectManager < PbxprojManager
       
       # ファイル情報
       file_name = File.basename(file_path)
-      relative_path = file_path.sub(/^.*\/bindingTestApp\//, '')
+      # source_directoryを使用して相対パスを計算
+      project_root = File.dirname(File.dirname(@project_file_path))
+      source_base = @source_directory.empty? ? project_root : File.join(project_root, @source_directory)
+      relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_base)).to_s
       
       # UUIDの生成
       file_ref_uuid = generate_uuid
