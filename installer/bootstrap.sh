@@ -29,12 +29,13 @@ ARGS="$@"
 VERSION="master"
 
 # Parse arguments to extract version
-for i in "$@"; do
-    case $i in
+# Use a separate array to avoid modifying the original arguments
+set -- "$@"
+while [[ $# -gt 0 ]]; do
+    case $1 in
         -v|--version)
-            shift
-            VERSION="$1"
-            break
+            VERSION="$2"
+            shift 2
             ;;
         *)
             shift
