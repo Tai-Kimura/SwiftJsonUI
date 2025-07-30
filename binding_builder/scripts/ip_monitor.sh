@@ -5,9 +5,39 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-INFO_PLIST="$PROJECT_ROOT/bindingTestApp/Info.plist"
+CONFIG_FILE="$SCRIPT_DIR/../config/hotload.config"
 LOG_FILE="$SCRIPT_DIR/ip_monitor.log"
 CURRENT_IP_FILE="$SCRIPT_DIR/.current_ip"
+
+# Load configuration
+if [ -f "$CONFIG_FILE" ]; then
+    source "$CONFIG_FILE"
+else
+    # Default values if config not found
+    PLIST_PATH="Info.plist"
+    HOTLOADER_DIR="hot_loader"
+fi
+
+# Load source_directory from config.json
+CONFIG_JSON="$SCRIPT_DIR/../config.json"
+if [ -f "$CONFIG_JSON" ]; then
+    SOURCE_DIR=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_JSON" | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+else
+    SOURCE_DIR=""
+fi
+
+# Set Info.plist path
+if [[ "$PLIST_PATH" == /* ]]; then
+    # Absolute path
+    INFO_PLIST="$PLIST_PATH"
+else
+    # Relative path - resolve relative to source directory
+    if [ -z "$SOURCE_DIR" ]; then
+        INFO_PLIST="$PROJECT_ROOT/$PLIST_PATH"
+    else
+        INFO_PLIST="$PROJECT_ROOT/$SOURCE_DIR/$PLIST_PATH"
+    fi
+fi
 
 log_message() {
     echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee -a "$LOG_FILE"
@@ -51,7 +81,17 @@ update_info_plist() {
 }
 
 start_server_if_needed() {
-    local hotload_server_dir="$PROJECT_ROOT/bindingTestApp/hot_loader"
+    # Determine project name from xcodeproj file
+    PROJECT_NAME=$(basename "$(find "$PROJECT_ROOT" -name "*.xcodeproj" -maxdepth 1 | head -1)" .xcodeproj)
+    
+    # Set hotloader directory path
+    if [[ "$HOTLOADER_DIR" == /* ]]; then
+        # Absolute path
+        local hotload_server_dir="$HOTLOADER_DIR"
+    else
+        # Relative path - resolve relative to project directory
+        local hotload_server_dir="$PROJECT_ROOT/$PROJECT_NAME/$HOTLOADER_DIR"
+    fi
     
     if [ ! -d "$hotload_server_dir" ]; then
         log_message "Warning: HotLoad server directory not found"

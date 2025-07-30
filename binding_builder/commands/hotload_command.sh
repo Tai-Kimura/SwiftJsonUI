@@ -43,11 +43,31 @@ hotload_command() {
                 return 1
             fi
             
+            # Load configuration for plist path
+            CONFIG_FILE="$SCRIPT_DIR/config/hotload.config"
+            if [ -f "$CONFIG_FILE" ]; then
+                source "$CONFIG_FILE"
+            else
+                PLIST_PATH="Info.plist"
+            fi
+            
+            # Load source_directory from config.json
+            CONFIG_JSON="$SCRIPT_DIR/config.json"
+            if [ -f "$CONFIG_JSON" ]; then
+                SOURCE_DIR=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_JSON" | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+            else
+                SOURCE_DIR=""
+            fi
+            
             # Set required environment variables for the script
             export CONFIGURATION="Debug"
             PROJECT_DIR_PARENT="$(dirname "$PROJECT_FILE")"
-            export PROJECT_DIR="$PROJECT_DIR_PARENT/$(basename "$PROJECT_FILE" .xcodeproj)"
-            export INFOPLIST_FILE="Info.plist"
+            if [ -z "$SOURCE_DIR" ]; then
+                export PROJECT_DIR="$PROJECT_DIR_PARENT"
+            else
+                export PROJECT_DIR="$PROJECT_DIR_PARENT/$SOURCE_DIR"
+            fi
+            export INFOPLIST_FILE="$PLIST_PATH"
             
             # Execute the HotLoad build script
             "$HOTLOAD_BUILD_SCRIPT"
@@ -117,13 +137,39 @@ hotload_command() {
                 echo "   ✅ Status: Running (PID: $NODE_PID)"
                 echo "   🌐 Port: 8081"
                 
+                # Load configuration for plist path
+                CONFIG_FILE="$SCRIPT_DIR/config/hotload.config"
+                if [ -f "$CONFIG_FILE" ]; then
+                    source "$CONFIG_FILE"
+                else
+                    PLIST_PATH="Info.plist"
+                fi
+                
+                # Load source_directory from config.json
+                CONFIG_JSON="$SCRIPT_DIR/config.json"
+                if [ -f "$CONFIG_JSON" ]; then
+                    SOURCE_DIR=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "$CONFIG_JSON" | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+                else
+                    SOURCE_DIR=""
+                fi
+                
                 # Get current IP from Info.plist
                 PROJECT_DIR_PARENT="$(dirname "$PROJECT_FILE")"
-                PROJECT_DIR_NAME="$(basename "$PROJECT_FILE" .xcodeproj)"
-                PLIST_PATH="$PROJECT_DIR_PARENT/$PROJECT_DIR_NAME/Info.plist"
                 
-                if [ -f "$PLIST_PATH" ]; then
-                    CURRENT_IP=$(/usr/libexec/PlistBuddy -c "Print :CurrentIp" "$PLIST_PATH" 2>/dev/null || echo "Unknown")
+                if [[ "$PLIST_PATH" == /* ]]; then
+                    # Absolute path
+                    FULL_PLIST_PATH="$PLIST_PATH"
+                else
+                    # Relative path
+                    if [ -z "$SOURCE_DIR" ]; then
+                        FULL_PLIST_PATH="$PROJECT_DIR_PARENT/$PLIST_PATH"
+                    else
+                        FULL_PLIST_PATH="$PROJECT_DIR_PARENT/$SOURCE_DIR/$PLIST_PATH"
+                    fi
+                fi
+                
+                if [ -f "$FULL_PLIST_PATH" ]; then
+                    CURRENT_IP=$(/usr/libexec/PlistBuddy -c "Print :CurrentIp" "$FULL_PLIST_PATH" 2>/dev/null || echo "Unknown")
                     echo "   🌍 Server URL: http://$CURRENT_IP:8081"
                 fi
                 

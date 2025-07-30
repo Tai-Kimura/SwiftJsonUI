@@ -158,7 +158,26 @@ check_server_running() {
 
 # Node.jsサーバー起動
 start_hotload_server() {
-    local hotload_server_dir="$SRCROOT/bindingTestApp/hot_loader"
+    # configファイルからhot_loader_directoryを取得
+    local config_file="$SRCROOT/binding_builder/config.json"
+    local hot_loader_dir=""
+    
+    if [ -f "$config_file" ]; then
+        # JSONからhot_loader_directoryを抽出
+        hot_loader_dir=$(grep -o '"hot_loader_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "$config_file" | sed 's/.*"hot_loader_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+        
+        # 空の場合はproject_file_nameをフォールバック
+        if [ -z "$hot_loader_dir" ]; then
+            hot_loader_dir=$(grep -o '"project_file_name"[[:space:]]*:[[:space:]]*"[^"]*"' "$config_file" | sed 's/.*"project_file_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+        fi
+    fi
+    
+    # それでも空の場合はプロジェクト名を使用
+    if [ -z "$hot_loader_dir" ]; then
+        hot_loader_dir="$PROJECT_NAME"
+    fi
+    
+    local hotload_server_dir="$SRCROOT/$hot_loader_dir/hot_loader"
     
     if [ ! -d "$hotload_server_dir" ]; then
         echo "Warning: HotLoad server directory not found: $hotload_server_dir"

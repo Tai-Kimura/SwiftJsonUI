@@ -27,6 +27,19 @@ echo "SCRIPT_DIR: $SCRIPT_DIR"
 echo "BINDING_BUILDER_DIR: $BINDING_BUILDER_DIR"
 echo "PROJECT_ROOT_DIR: $PROJECT_ROOT_DIR"
 
+# configファイルからsource_directoryを取得
+get_source_directory() {
+    local config_file="$BINDING_BUILDER_DIR/config.json"
+    local source_dir=""
+    
+    if [ -f "$config_file" ]; then
+        # JSONからsource_directoryを抽出
+        source_dir=$(grep -o '"source_directory"[[:space:]]*:[[:space:]]*"[^"]*"' "$config_file" | sed 's/.*"source_directory"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')
+    fi
+    
+    echo "$source_dir"
+}
+
 # configファイルからhot_loader_directoryを取得
 get_hot_loader_directory() {
     local config_file="$BINDING_BUILDER_DIR/config.json"
@@ -42,9 +55,10 @@ get_hot_loader_directory() {
         fi
     fi
     
-    # それでも空の場合はデフォルト値
+    # それでも空の場合はプロジェクト名を使用
     if [ -z "$hot_loader_dir" ]; then
-        hot_loader_dir="bindingTestApp"
+        # PROJECT_DIRからプロジェクト名を取得
+        hot_loader_dir=$(basename "$PROJECT_DIR")
     fi
     
     echo "$hot_loader_dir"

@@ -602,7 +602,9 @@ class PbxprojManager
         
         # プロジェクトルートからの相対パスを取得
         project_root = File.dirname(File.dirname(@project_file_path))
-        relative_path = Pathname.new(file_path).relative_path_from(Pathname.new("#{project_root}/bindingTestApp")).to_s
+        # source_directoryを使用してパスを構築
+        source_base = @source_directory.empty? ? project_root : File.join(project_root, @source_directory)
+        relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_base)).to_s
         
         # ファイル名にpbxprojに問題を起こす可能性のある文字が含まれていないかチェック
         if is_safe_file_path?(relative_path)

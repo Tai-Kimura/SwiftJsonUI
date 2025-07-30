@@ -9,7 +9,7 @@ binding_builderは、SwiftJsonUIを使用したiOSアプリ開発を効率化す
 ## プロジェクト構造
 
 ```
-bindingTestApp/
+YourProject/
 ├── binding_builder/          # メインツール（汎用）
 │   ├── sjui                 # コマンドラインツール
 │   ├── xcode_project/       # Xcodeプロジェクト管理
