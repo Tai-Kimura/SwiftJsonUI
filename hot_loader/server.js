@@ -34,6 +34,7 @@ server.on("disconnect", () => {
 // server.listen(8081);
 
 var chokidar = require("chokidar");
+var { exec } = require("child_process");
 
 //chokidarの初期化
 var watcher = chokidar.watch("../*/*.json", {
@@ -59,6 +60,25 @@ watcher.on("ready", function () {
       try {
         JSON.parse(fs.readFileSync(path, "utf8"));
         console.log(path + " changed.");
+        
+        // Check if the changed file is in the Layouts directory
+        if (dirName === "layouts") {
+          console.log("Layout file changed, running sjui build...");
+          
+          // Execute sjui build command
+          exec("cd ../binding_builder && ./sjui build", (error, stdout, stderr) => {
+            if (error) {
+              console.error("Error running sjui build:", error);
+              console.error("stderr:", stderr);
+            } else {
+              console.log("sjui build completed successfully");
+              if (stdout) {
+                console.log("stdout:", stdout);
+              }
+            }
+          });
+        }
+        
         webSocket?.send(JSON.stringify([layoutPath, dirName, filePath]));
       } catch (err) {
         console.log(err);
