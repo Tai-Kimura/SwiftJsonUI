@@ -26,12 +26,21 @@ print_error() {
 ARGS="$@"
 
 # Default to main branch if no version specified
-if [[ ! "$ARGS" =~ -v|--version ]]; then
-    VERSION="main"
-else
-    # Extract version from arguments
-    VERSION=$(echo "$ARGS" | sed -n 's/.*\(-v\|--version\)[[:space:]]\+\([^[:space:]]\+\).*/\2/p')
-fi
+VERSION="main"
+
+# Parse arguments to extract version
+for i in "$@"; do
+    case $i in
+        -v|--version)
+            shift
+            VERSION="$1"
+            break
+            ;;
+        *)
+            shift
+            ;;
+    esac
+done
 
 print_info "SwiftJsonUI Bootstrap"
 print_info "Downloading installer from branch/tag: $VERSION"
