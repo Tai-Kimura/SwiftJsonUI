@@ -17,6 +17,11 @@ class PbxprojManager
       @project_file_path = find_project_file
     end
     
+    # binding_builder_dirが設定されていることを確認
+    if !@binding_builder_dir && project_file_path
+      @binding_builder_dir = File.expand_path("../../", __FILE__)
+    end
+    
     # ConfigManagerを使用してプロジェクト設定を取得
     @config = ConfigManager.load_config(@binding_builder_dir)
     @source_directory = ConfigManager.get_source_directory(@binding_builder_dir)
@@ -67,15 +72,21 @@ class PbxprojManager
   def collect_all_files_for_exclusion
     all_files = ["Info.plist", ".gitignore"]  # Info.plistと.gitignoreを最初に追加
     
-    # ConfigManagerを使用してソースディレクトリを動的に取得
-    xcodeproj_dir = File.dirname(@project_file_path)
-    project_parent = File.dirname(xcodeproj_dir)
-    
-    # source_directoryが空の場合はプロジェクト直下、指定されている場合はそのディレクトリ
-    if @source_directory.empty?
-      source_root = project_parent
+    # binding_builderディレクトリからの相対パスで親ディレクトリを特定
+    # @binding_builder_dirは初期化時に設定されている
+    if @binding_builder_dir
+      # binding_builderの親ディレクトリがsource_root
+      source_root = File.dirname(@binding_builder_dir)
     else
-      source_root = File.join(project_parent, @source_directory)
+      # フォールバック: ConfigManagerを使用してソースディレクトリを動的に取得
+      xcodeproj_dir = File.dirname(@project_file_path)
+      project_parent = File.dirname(xcodeproj_dir)
+      
+      if @source_directory.empty?
+        source_root = project_parent
+      else
+        source_root = File.join(project_parent, @source_directory)
+      end
     end
     
     
@@ -88,19 +99,14 @@ class PbxprojManager
       all_files.concat(get_all_files_in_directory_relative(binding_builder_dir, "binding_builder"))
     end
     
-    # hot_loaderディレクトリのすべてのファイルを追加（configから取得）
-    if @hot_loader_directory.empty?
-      # hot_loader_directoryが空の場合はスキップ
-      puts "hot_loader_directory is not configured, skipping hot_loader files"
-    else
-      # hot_loaderディレクトリはsource_directory内に配置されている前提
-      hot_loader_dir = File.join(source_root, "hot_loader")
-      puts "Checking hot_loader_dir: #{hot_loader_dir} (exists: #{Dir.exist?(hot_loader_dir)})"
-      if Dir.exist?(hot_loader_dir)
-        # PBXFileSystemSynchronizedRootGroupが既にsource_directoryを基準にしているため、
-        # membershipExceptionsではsource_directoryを含めない
-        all_files.concat(get_all_files_in_directory_relative(hot_loader_dir, "hot_loader"))
-      end
+    # hot_loaderディレクトリのすべてのファイルを追加
+    # 常にhot_loaderディレクトリが存在するかチェック
+    hot_loader_dir = File.join(source_root, "hot_loader")
+    puts "Checking hot_loader_dir: #{hot_loader_dir} (exists: #{Dir.exist?(hot_loader_dir)})"
+    if Dir.exist?(hot_loader_dir)
+      # PBXFileSystemSynchronizedRootGroupが既にsource_directoryを基準にしているため、
+      # membershipExceptionsではsource_directoryを含めない
+      all_files.concat(get_all_files_in_directory_relative(hot_loader_dir, "hot_loader"))
     end
     
     all_files.sort

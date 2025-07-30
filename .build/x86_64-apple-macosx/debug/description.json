@@ -21,10 +21,10 @@
 
   ],
   "swiftCommands" : {
-    "C.SwiftJsonUI-debug.module" : {
-      "executable" : "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+    "C.SwiftJsonUI-x86_64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources",
-      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules",
       "inputs" : [
         {
           "kind" : "file",
@@ -220,7 +220,7 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt"
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
         },
         {
           "kind" : "file",
@@ -229,7 +229,7 @@
       ],
       "isLibrary" : true,
       "moduleName" : "SwiftJsonUI",
-      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.swiftmodule",
+      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUI.swiftmodule",
       "objects" : [
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/Binding.swift.o",
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/DoubleExtension.swift.o",
@@ -283,8 +283,6 @@
       "otherArguments" : [
         "-target",
         "x86_64-apple-macosx10.13",
-        "-swift-version",
-        "5",
         "-enable-batch-mode",
         "-index-store-path",
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
@@ -300,28 +298,35 @@
         "-emit-objc-header",
         "-emit-objc-header-path",
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI-Swift.h",
-        "-color-diagnostics",
+        "-swift-version",
+        "5",
         "-sdk",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-F",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
         "-I",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
         "-L",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
         "-g",
         "-sdk",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
         "-target",
-        "x86_64-apple-ios13.0-simulator",
+        "arm64-apple-ios13.0",
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
         "-Xcc",
         "-fPIC",
         "-Xcc",
@@ -525,9 +530,10 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.swiftmodule"
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUI.swiftmodule"
         }
       ],
+      "prepareForIndexing" : false,
       "sources" : [
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Binding.swift",
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/Extensions/DoubleExtension.swift",
@@ -581,10 +587,110 @@
       "tempsPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build",
       "wholeModuleOptimization" : false
     },
-    "C.SwiftJsonUITests-debug.module" : {
-      "executable" : "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+    "C.SwiftJsonUIPackageTests-x86_64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "fileList" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/sources",
+      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules",
+      "inputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.derived/runner.swift"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUITests.swiftmodule"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/sources"
+        }
+      ],
+      "isLibrary" : true,
+      "moduleName" : "SwiftJsonUIPackageTests",
+      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUIPackageTests.swiftmodule",
+      "objects" : [
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/runner.swift.o"
+      ],
+      "otherArguments" : [
+        "-target",
+        "x86_64-apple-macosx10.13",
+        "-enable-batch-mode",
+        "-index-store-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
+        "-Onone",
+        "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
+        "-j16",
+        "-DSWIFT_PACKAGE",
+        "-DDEBUG",
+        "-module-cache-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
+        "-parseable-output",
+        "-parse-as-library",
+        "-emit-objc-header",
+        "-emit-objc-header-path",
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/SwiftJsonUIPackageTests-Swift.h",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-I",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-L",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "-g",
+        "-sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
+        "-target",
+        "arm64-apple-ios13.0",
+        "-Xcc",
+        "-isysroot",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+        "-Xcc",
+        "-fPIC",
+        "-Xcc",
+        "-g",
+        "-package-name",
+        "swiftjsonui"
+      ],
+      "outputFileMapPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/output-file-map.json",
+      "outputs" : [
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUIPackageTests.swiftmodule"
+        }
+      ],
+      "prepareForIndexing" : false,
+      "sources" : [
+        "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.derived/runner.swift"
+      ],
+      "tempsPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build",
+      "wholeModuleOptimization" : false
+    },
+    "C.SwiftJsonUITests-x86_64-apple-macosx15.0-debug.module" : {
+      "executable" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "fileList" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/sources",
-      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "importPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules",
       "inputs" : [
         {
           "kind" : "file",
@@ -592,11 +698,11 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt"
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
         },
         {
           "kind" : "file",
-          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.swiftmodule"
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUI.swiftmodule"
         },
         {
           "kind" : "file",
@@ -605,20 +711,20 @@
       ],
       "isLibrary" : true,
       "moduleName" : "SwiftJsonUITests",
-      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.swiftmodule",
+      "moduleOutputPath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUITests.swiftmodule",
       "objects" : [
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swift.o"
       ],
       "otherArguments" : [
         "-target",
-        "x86_64-apple-macosx13.0",
-        "-swift-version",
-        "5",
+        "x86_64-apple-macosx14.0",
         "-enable-batch-mode",
         "-index-store-path",
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
         "-Onone",
         "-enable-testing",
+        "-Xfrontend",
+        "-enable-cross-import-overlays",
         "-j16",
         "-DSWIFT_PACKAGE",
         "-DDEBUG",
@@ -626,28 +732,35 @@
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
         "-parseable-output",
         "-parse-as-library",
-        "-color-diagnostics",
+        "-swift-version",
+        "5",
         "-sdk",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-F",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-F",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
         "-I",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
         "-L",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
         "-g",
         "-sdk",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
         "-target",
-        "x86_64-apple-ios13.0-simulator",
+        "arm64-apple-ios13.0",
         "-Xcc",
         "-isysroot",
         "-Xcc",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
         "-Xcc",
         "-F",
         "-Xcc",
-        "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+        "-Xcc",
+        "-F",
+        "-Xcc",
+        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
         "-Xcc",
         "-fPIC",
         "-Xcc",
@@ -663,9 +776,10 @@
         },
         {
           "kind" : "file",
-          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.swiftmodule"
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules/SwiftJsonUITests.swiftmodule"
         }
       ],
+      "prepareForIndexing" : false,
       "sources" : [
         "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift"
       ],
@@ -678,7 +792,7 @@
   },
   "swiftTargetScanArgs" : {
     "SwiftJsonUI" : [
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "-module-name",
       "SwiftJsonUI",
       "-package-name",
@@ -734,11 +848,9 @@
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/Classes/UI/UIViewDisposure.swift",
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Sources/SwiftJsonUI/SwiftJsonUI.swift",
       "-I",
-      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules",
       "-target",
       "x86_64-apple-macosx10.13",
-      "-swift-version",
-      "5",
       "-enable-batch-mode",
       "-index-store-path",
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
@@ -754,28 +866,35 @@
       "-emit-objc-header",
       "-emit-objc-header-path",
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI-Swift.h",
-      "-color-diagnostics",
+      "-swift-version",
+      "5",
       "-sdk",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-F",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
       "-I",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
       "-L",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
       "-g",
       "-sdk",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
       "-target",
-      "x86_64-apple-ios13.0-simulator",
+      "arm64-apple-ios13.0",
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
       "-Xcc",
       "-fPIC",
       "-Xcc",
@@ -783,10 +902,76 @@
       "-package-name",
       "swiftjsonui",
       "-driver-use-frontend-path",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+    ],
+    "SwiftJsonUIPackageTests" : [
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "-module-name",
+      "SwiftJsonUIPackageTests",
+      "-package-name",
+      "swiftjsonui",
+      "-incremental",
+      "-c",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.derived/runner.swift",
+      "-I",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules",
+      "-target",
+      "x86_64-apple-macosx10.13",
+      "-enable-batch-mode",
+      "-index-store-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
+      "-Onone",
+      "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
+      "-j16",
+      "-DSWIFT_PACKAGE",
+      "-DDEBUG",
+      "-module-cache-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
+      "-parseable-output",
+      "-parse-as-library",
+      "-emit-objc-header",
+      "-emit-objc-header-path",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/SwiftJsonUIPackageTests-Swift.h",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-I",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-L",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "-g",
+      "-sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
+      "-target",
+      "arm64-apple-ios13.0",
+      "-Xcc",
+      "-isysroot",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
+      "-Xcc",
+      "-fPIC",
+      "-Xcc",
+      "-g",
+      "-package-name",
+      "swiftjsonui",
+      "-driver-use-frontend-path",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
     ],
     "SwiftJsonUITests" : [
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc",
       "-module-name",
       "SwiftJsonUITests",
       "-package-name",
@@ -795,16 +980,16 @@
       "-c",
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/Tests/SwiftJsonUITests/SwiftJsonUITests.swift",
       "-I",
-      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug",
+      "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/Modules",
       "-target",
-      "x86_64-apple-macosx13.0",
-      "-swift-version",
-      "5",
+      "x86_64-apple-macosx14.0",
       "-enable-batch-mode",
       "-index-store-path",
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/index/store",
       "-Onone",
       "-enable-testing",
+      "-Xfrontend",
+      "-enable-cross-import-overlays",
       "-j16",
       "-DSWIFT_PACKAGE",
       "-DDEBUG",
@@ -812,28 +997,35 @@
       "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/ModuleCache",
       "-parseable-output",
       "-parse-as-library",
-      "-color-diagnostics",
+      "-swift-version",
+      "5",
       "-sdk",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-F",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-F",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
       "-I",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
       "-L",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib",
       "-g",
       "-sdk",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator17.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.5.sdk",
       "-target",
-      "x86_64-apple-ios13.0-simulator",
+      "arm64-apple-ios13.0",
       "-Xcc",
       "-isysroot",
       "-Xcc",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX14.4.sdk",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk",
       "-Xcc",
       "-F",
       "-Xcc",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks",
+      "-Xcc",
+      "-F",
+      "-Xcc",
+      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks",
       "-Xcc",
       "-fPIC",
       "-Xcc",
@@ -841,12 +1033,16 @@
       "-package-name",
       "swiftjsonui",
       "-driver-use-frontend-path",
-      "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+      "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
     ]
   },
   "targetDependencyMap" : {
     "SwiftJsonUI" : [
 
+    ],
+    "SwiftJsonUIPackageTests" : [
+      "SwiftJsonUITests",
+      "SwiftJsonUI"
     ],
     "SwiftJsonUITests" : [
       "SwiftJsonUI"
@@ -856,23 +1052,22 @@
 
   },
   "testEntryPointCommands" : {
-
-  },
-  "writeCommands" : {
-    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt" : {
-      "alwaysOutOfDate" : true,
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.derived/runner.swift" : {
       "inputs" : [
-        {
-          "kind" : "virtual",
-          "name" : "<swift-get-version>"
-        },
+
+      ],
+      "outputs" : [
         {
           "kind" : "file",
-          "name" : "/Applications/Xcode-15.3.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.derived/runner.swift"
         }
-      ],
-      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version-6044DDE57671499D.txt"
-    },
+      ]
+    }
+  },
+  "traitConfiguration" : {
+    "enableAllTraits" : false
+  },
+  "writeCommands" : {
     "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources" : {
       "alwaysOutOfDate" : false,
       "inputs" : [
@@ -1075,6 +1270,20 @@
       ],
       "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/sources"
     },
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/sources" : {
+      "alwaysOutOfDate" : false,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<sources-file-list>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.derived/runner.swift"
+        }
+      ],
+      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/sources"
+    },
     "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.product/Objects.LinkFileList" : {
       "alwaysOutOfDate" : false,
       "inputs" : [
@@ -1276,6 +1485,10 @@
         },
         {
           "kind" : "file",
+          "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUIPackageTests.build/runner.swift.o"
+        },
+        {
+          "kind" : "file",
           "name" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/SwiftJsonUITests.swift.o"
         }
       ],
@@ -1294,6 +1507,20 @@
         }
       ],
       "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUITests.build/sources"
+    },
+    "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt" : {
+      "alwaysOutOfDate" : true,
+      "inputs" : [
+        {
+          "kind" : "virtual",
+          "name" : "<swift-get-version>"
+        },
+        {
+          "kind" : "file",
+          "name" : "/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"
+        }
+      ],
+      "outputFilePath" : "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
     }
   }
 }
