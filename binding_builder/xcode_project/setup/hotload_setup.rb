@@ -145,18 +145,18 @@ fi
 echo "=== SwiftJsonUI HotLoad Setup ==="
 
 # プロジェクトファイルのパスからbinding_builderディレクトリを探す
-# @project_file_pathから下の階層を探索
-PROJECT_DIR="#{File.dirname(@project_file_path)}"
+# @project_file_pathはproject.pbxprojファイルなので、.xcodeprojの親ディレクトリを取得
+PROJECT_DIR="#{File.dirname(File.dirname(@project_file_path))}"
 echo "Starting search from project directory: ${PROJECT_DIR}"
 
-# findコマンドでbinding_builderディレクトリを探す（より単純な形式で）
-BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+# findコマンドでbinding_builderディレクトリを探す（最大5階層まで探索）
+BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
 
 # 見つからない場合は親ディレクトリも探す
 if [ -z "${BINDING_BUILDER_DIR}" ]; then
-    PARENT_DIR="#{File.dirname(File.dirname(@project_file_path))}"
+    PARENT_DIR="#{File.dirname(File.dirname(File.dirname(@project_file_path)))}"
     echo "Searching in parent directory: ${PARENT_DIR}"
-    BINDING_BUILDER_DIR=$(find "${PARENT_DIR}" -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+    BINDING_BUILDER_DIR=$(find "${PARENT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
 fi
 
 # それでも見つからない場合は、より広範囲に探す
@@ -164,12 +164,12 @@ if [ -z "${BINDING_BUILDER_DIR}" ]; then
     # XcodeのPROJECT_DIRやSRCROOTも使ってみる
     if [ -n "${PROJECT_DIR}" ] && [ -d "${PROJECT_DIR}" ]; then
         echo "Searching using Xcode PROJECT_DIR: ${PROJECT_DIR}"
-        BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+        BINDING_BUILDER_DIR=$(find "${PROJECT_DIR}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
     fi
     
     if [ -z "${BINDING_BUILDER_DIR}" ] && [ -n "${SRCROOT}" ] && [ -d "${SRCROOT}" ]; then
         echo "Searching using Xcode SRCROOT: ${SRCROOT}"
-        BINDING_BUILDER_DIR=$(find "${SRCROOT}" -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
+        BINDING_BUILDER_DIR=$(find "${SRCROOT}" -maxdepth 5 -name "binding_builder" -type d 2>/dev/null | grep -v node_modules | head -1)
     fi
 fi
 
