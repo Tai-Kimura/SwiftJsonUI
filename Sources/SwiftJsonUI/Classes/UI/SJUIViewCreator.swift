@@ -16,6 +16,11 @@ open class SJUIViewCreator:NSObject {
     
     nonisolated(unsafe) private static var styleCache = [String:JSON]()
     
+    // Directory name configuration
+    nonisolated(unsafe) public static var layoutsDirectoryName = "Layouts"
+    nonisolated(unsafe) public static var stylesDirectoryName = "Styles"
+    nonisolated(unsafe) public static var scriptsDirectoryName = "Scripts"
+    
     @MainActor
     @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
         let url = getURL(path: path)
@@ -77,7 +82,7 @@ open class SJUIViewCreator:NSObject {
         #if DEBUG
         return getStyleFileDirPath() + "/\(path).json"
         #else
-        return Bundle.main.path(forResource: path, ofType: "json", inDirectory: "Styles") ?? ""
+        return Bundle.main.path(forResource: path, ofType: "json", inDirectory: stylesDirectoryName) ?? ""
         #endif
     }
     
@@ -85,7 +90,7 @@ open class SJUIViewCreator:NSObject {
         #if DEBUG
         return getScriptFileDirPath() + "/\(path).js"
         #else
-        return Bundle.main.path(forResource: path, ofType: "js", inDirectory: "Scripts") ?? ""
+        return Bundle.main.path(forResource: path, ofType: "js", inDirectory: scriptsDirectoryName) ?? ""
         #endif
     }
     
@@ -540,7 +545,7 @@ open class SJUIViewCreator:NSObject {
         let bundlePath = Bundle.main.bundlePath
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
-        let layoutFileDirPath = "\(cachesDirPath)/Layouts"
+        let layoutFileDirPath = "\(cachesDirPath)/\(layoutsDirectoryName)"
         do {
             if (!fm.fileExists(atPath: layoutFileDirPath)) {
                 try fm.createDirectory(atPath: layoutFileDirPath, withIntermediateDirectories: false, attributes: nil)
@@ -559,13 +564,13 @@ open class SJUIViewCreator:NSObject {
         } catch let error {
             Logger.debug("\(error)")
         }
-        let styleFileDirPath = "\(cachesDirPath)/Styles"
+        let styleFileDirPath = "\(cachesDirPath)/\(stylesDirectoryName)"
         do {
             if (!fm.fileExists(atPath: styleFileDirPath)) {
                 try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
-            let contents = Bundle.main.paths(forResourcesOfType: "json", inDirectory: "Styles")
+            let contents = Bundle.main.paths(forResourcesOfType: "json", inDirectory: stylesDirectoryName)
             for content in contents {
                 if (content.hasSuffix("json")) {
                     let toPath = "\(styleFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
@@ -578,13 +583,13 @@ open class SJUIViewCreator:NSObject {
         } catch let error {
             Logger.debug("\(error)")
         }
-        let scriptFileDirPath = "\(cachesDirPath)/Scripts"
+        let scriptFileDirPath = "\(cachesDirPath)/\(scriptsDirectoryName)"
         do {
             if (!fm.fileExists(atPath: scriptFileDirPath)) {
                 try fm.createDirectory(atPath: scriptFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
-            let contents = Bundle.main.paths(forResourcesOfType: "js", inDirectory: "Scripts")
+            let contents = Bundle.main.paths(forResourcesOfType: "js", inDirectory: scriptsDirectoryName)
             for content in contents {
                 if (content.hasSuffix("js")) {
                     let toPath = "\(scriptFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
@@ -692,7 +697,7 @@ open class SJUIViewCreator:NSObject {
     open class func getLayoutFileDirPath() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
-        let layoutPath = "\(cachesDirPath)/Layouts"
+        let layoutPath = "\(cachesDirPath)/\(layoutsDirectoryName)"
         
         // Log the path for debugging
         Logger.debug("[SwiftJsonUI] Layout directory path: \(layoutPath)")
@@ -703,13 +708,13 @@ open class SJUIViewCreator:NSObject {
     open class func getStyleFileDirPath() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
-        return "\(cachesDirPath)/Styles"
+        return "\(cachesDirPath)/\(stylesDirectoryName)"
     }
     
     open class func getScriptFileDirPath() -> String {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
-        return "\(cachesDirPath)/Scripts"
+        return "\(cachesDirPath)/\(scriptsDirectoryName)"
     }
     
     public class func getViewJSON(path: String) -> JSON? {

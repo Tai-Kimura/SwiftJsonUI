@@ -9,15 +9,6 @@ class ConfigManager
     'bindings_directory' => 'Bindings',
     'view_directory' => 'View',
     'styles_directory' => 'Styles',
-    'build_settings' => {
-      'auto_build' => false,
-      'clean_before_build' => false
-    },
-    'generator_settings' => {
-      'create_layout_file' => true,
-      'create_binding_file' => true,
-      'add_to_xcode_project' => true
-    },
     'custom_view_types' => {},
     'hot_loader_directory' => '',
     'use_network' => true

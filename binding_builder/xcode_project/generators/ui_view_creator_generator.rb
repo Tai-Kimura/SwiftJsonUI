@@ -2,6 +2,7 @@
 
 require "fileutils"
 require_relative "../pbxproj_manager"
+require_relative "../../config_manager"
 
 class UIViewCreatorGenerator < PbxprojManager
   def initialize(project_file_path)
@@ -26,6 +27,15 @@ class UIViewCreatorGenerator < PbxprojManager
   private
 
   def generate_content
+    # Load config values
+    base_dir = File.expand_path('../..', File.dirname(__FILE__))
+    config = ConfigManager.load_config(base_dir)
+    
+    layouts_dir = config['layouts_directory'] || 'Layouts'
+    styles_dir = config['styles_directory'] || 'Styles'
+    bindings_dir = config['bindings_directory'] || 'Bindings'
+    view_dir = config['view_directory'] || 'View'
+    
     <<~SWIFT
 import UIKit
 import SwiftJsonUI
@@ -66,6 +76,11 @@ class UIViewCreator: SJUIViewCreator {
     
     @MainActor
     class func prepare() {
+        // Directory configuration from config.json
+        SJUIViewCreator.layoutsDirectoryName = "#{layouts_dir}"
+        SJUIViewCreator.stylesDirectoryName = "#{styles_dir}"
+        SJUIViewCreator.scriptsDirectoryName = "Scripts"
+        
         // サンプル設定 - 実際のプロジェクトに合わせて調整してください
         String.currentLanguage = "ja-JP"
         defaultFont = "System"
