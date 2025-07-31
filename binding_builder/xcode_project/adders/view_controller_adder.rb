@@ -87,7 +87,9 @@ module ViewControllerAdder
       if is_app_target?(project_content, target_uuid)
         # ビルドフェーズのfiles = (行を見つける
         project_content.each_line.with_index do |line, index|
-          if line.include?("#{build_phase_uuid} /*") && line.include?("isa = #{phase_type}")
+          # PBXSourcesBuildPhaseまたはPBXResourcesBuildPhaseセクション内の定義を探す
+          phase_name = phase_type == "PBXSourcesBuildPhase" ? "Sources" : "Resources"
+          if line.include?("#{build_phase_uuid} /* #{phase_name} */ = {")
             (index+1..index+10).each do |i|
               if project_content.lines[i] && project_content.lines[i].include?("files = (")
                 insert_lines << i + 1
@@ -106,13 +108,42 @@ module ViewControllerAdder
   def self.get_target_build_phases(project_content, phase_type)
     target_build_phases = []
     current_target = nil
+    current_target_name = nil
+    in_target = false
+    in_build_phases = false
     
     project_content.each_line do |line|
-      if line.match(/([A-F0-9]{24}) \/\* (.+?) \*\/ = \{/) && line.include?("isa = PBXNativeTarget")
-        current_target = $1
-      elsif current_target && line.match(/([A-F0-9]{24}) \/\* .+ \*\/,/) && line.include?("#{phase_type}")
+      # PBXNativeTargetの開始を検出
+      if line.match(/([A-F0-9]{24}) \/\* (.+?) \*\/ = \{/)
+        uuid = $1
+        name = $2
+        # 次の行でisa = PBXNativeTargetかチェックするため一時保存
+        current_target = uuid
+        current_target_name = name
+        in_target = false
+      elsif current_target && line.include?("isa = PBXNativeTarget")
+        # 前の行で見つけたUUIDが実際にPBXNativeTargetだった
+        in_target = true
+      elsif in_target && line.include?("buildPhases = (")
+        # buildPhasesセクション内でSourcesまたはResourcesを探す
+        in_build_phases = true
+      elsif in_target && in_build_phases && line.match(/([A-F0-9]{24}) \/\* (Sources|Resources) \*\/,/)
         build_phase_uuid = $1
-        target_build_phases << [current_target, build_phase_uuid]
+        phase_name = $2
+        # PBXSourcesBuildPhaseまたはPBXResourcesBuildPhaseのチェック
+        if (phase_type == "PBXSourcesBuildPhase" && phase_name == "Sources") ||
+           (phase_type == "PBXResourcesBuildPhase" && phase_name == "Resources")
+          target_build_phases << [current_target, build_phase_uuid]
+        end
+      elsif in_build_phases && line.strip == ");"
+        # buildPhasesセクションの終了
+        in_build_phases = false
+      elsif line.strip == "};" && in_target
+        # ターゲットセクションの終了
+        in_target = false
+        in_build_phases = false
+        current_target = nil
+        current_target_name = nil
       end
     end
     target_build_phases
@@ -140,12 +171,16 @@ module ViewControllerAdder
 
   def self.get_target_product_reference(project_content, target_uuid)
     in_target_section = false
+    found_target_header = false
     
     project_content.each_line do |line|
-      if line.include?(target_uuid) && line.include?("isa = PBXNativeTarget")
+      # ターゲットの開始を検出
+      if line.include?("#{target_uuid} /*") && line.include?("*/ = {")
+        found_target_header = true
+      elsif found_target_header && line.include?("isa = PBXNativeTarget")
         in_target_section = true
       elsif in_target_section && line.include?("productReference = ")
-        if line.match(/productReference = ([A-F0-9]{24})/)
+        if line.match(/productReference = ([A-F0-9]{24}) \/\*/)
           return $1
         end
       elsif in_target_section && line.strip == "};"

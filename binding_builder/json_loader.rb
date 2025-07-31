@@ -108,7 +108,17 @@ class JsonLoader
     
     # バッチでXcodeプロジェクトに追加
     unless ENV['SRCROOT']
-      @xcode_project_manager.add_binding_files(@new_binding_files) if @new_binding_files.any?
+      puts "=== JsonLoader: Adding binding files to Xcode project ==="
+      puts "SRCROOT: #{ENV['SRCROOT'].inspect}"
+      puts "New binding files: #{@new_binding_files.inspect}"
+      if @new_binding_files.any?
+        puts "Calling add_binding_files..."
+        @xcode_project_manager.add_binding_files(@new_binding_files)
+      else
+        puts "No new binding files to add"
+      end
+    else
+      puts "=== JsonLoader: SRCROOT is set, skipping Xcode project update ==="
     end
     
     # キャッシュを保存

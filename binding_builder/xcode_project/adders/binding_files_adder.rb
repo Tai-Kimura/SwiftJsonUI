@@ -15,12 +15,15 @@ module BindingFilesAdder
       # プロジェクトファイルを読み取り
       project_content = File.read(project_manager.project_file_path)
       
-      # 既に存在するファイルをフィルタリング
+      # 既に存在するファイルをフィルタリング（PBXBuildFileセクションでチェック）
       new_file_names = file_names.reject do |file_name|
-        if project_content.include?(file_name)
-          puts "#{file_name} is already in the project, skipping..."
+        # PBXBuildFileセクションに "FileName.swift in Sources" が存在するかチェック
+        build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Sources \*\//
+        if project_content.match?(build_file_pattern)
+          puts "#{file_name} is already in the project's build phases, skipping..."
           true
         else
+          puts "#{file_name} is NOT in build phases, will be added..."
           false
         end
       end
@@ -98,14 +101,20 @@ module BindingFilesAdder
   def self.count_non_test_build_phases(project_manager, project_content, phase_type)
     # ターゲットとビルドフェーズを取得
     target_build_phases = get_target_build_phases(project_content, phase_type)
+    puts "DEBUG: Found #{target_build_phases.length} total build phases for #{phase_type}"
     
     # .appターゲットのビルドフェーズをカウント
     count = 0
     target_build_phases.each do |target_uuid, build_phase_uuid|
+      puts "DEBUG: Checking target #{target_uuid}"
       if is_app_target?(project_content, target_uuid)
+        puts "DEBUG: Target #{target_uuid} is an app target"
         count += 1
+      else
+        puts "DEBUG: Target #{target_uuid} is NOT an app target"
       end
     end
+    puts "DEBUG: Found #{count} app targets"
     count
   end
 
@@ -113,13 +122,22 @@ module BindingFilesAdder
     target_build_phases = get_target_build_phases(project_content, phase_type)
     insert_lines = []
     
+    puts "DEBUG: find_non_test_build_phase_insert_lines called with #{target_build_phases.length} phases"
+    
     target_build_phases.each do |target_uuid, build_phase_uuid|
       if is_app_target?(project_content, target_uuid)
+        puts "DEBUG: Looking for build phase #{build_phase_uuid} in Sources section"
         # ビルドフェーズのfiles = (行を見つける
+        found_build_phase = false
         project_content.each_line.with_index do |line, index|
-          if line.include?("#{build_phase_uuid} /*") && line.include?("isa = #{phase_type}")
+          # PBXSourcesBuildPhaseセクション内の定義を探す（= {で終わる行）
+          if line.include?("#{build_phase_uuid} /* Sources */ = {")
+            puts "DEBUG: Found build phase definition at line #{index}"
+            found_build_phase = true
+            # 次の数行でfiles = (を探す
             (index+1..index+10).each do |i|
               if project_content.lines[i] && project_content.lines[i].include?("files = (")
+                puts "DEBUG: Found 'files = (' at line #{i}"
                 insert_lines << i + 1
                 break
               end
@@ -127,46 +145,87 @@ module BindingFilesAdder
             break
           end
         end
+        puts "DEBUG: Build phase found: #{found_build_phase}" unless found_build_phase
       end
     end
+    puts "DEBUG: Total insert lines found: #{insert_lines.length}"
     insert_lines
   end
 
   def self.get_target_build_phases(project_content, phase_type)
     target_build_phases = []
     current_target = nil
+    current_target_name = nil
+    in_target = false
+    in_build_phases = false
     
     project_content.each_line do |line|
-      if line.match(/([A-F0-9]{24}) \/\* (.+?) \*\/ = \{/) && line.include?("isa = PBXNativeTarget")
-        current_target = $1
-      elsif current_target && line.match(/([A-F0-9]{24}) \/\* .+ \*\/,/) && line.include?("#{phase_type}")
+      # PBXNativeTargetの開始を検出
+      if line.match(/([A-F0-9]{24}) \/\* (.+?) \*\/ = \{/)
+        uuid = $1
+        name = $2
+        # 次の行でisa = PBXNativeTargetかチェックするため一時保存
+        current_target = uuid
+        current_target_name = name
+        in_target = false
+      elsif current_target && line.include?("isa = PBXNativeTarget")
+        # 前の行で見つけたUUIDが実際にPBXNativeTargetだった
+        in_target = true
+        puts "DEBUG: Found PBXNativeTarget: #{current_target_name} (#{current_target})"
+      elsif in_target && line.include?("buildPhases = (")
+        # buildPhasesセクション内でSourcesを探す
+        in_build_phases = true
+      elsif in_target && in_build_phases && line.match(/([A-F0-9]{24}) \/\* Sources \*\/,/)
         build_phase_uuid = $1
+        puts "DEBUG: Found Sources build phase for target #{current_target}: #{build_phase_uuid}"
         target_build_phases << [current_target, build_phase_uuid]
+      elsif in_build_phases && line.strip == ");"
+        # buildPhasesセクションの終了
+        in_build_phases = false
+      elsif line.strip == "};" && in_target
+        # ターゲットセクションの終了
+        in_target = false
+        in_build_phases = false
+        current_target = nil
+        current_target_name = nil
       end
     end
+    puts "DEBUG: Total target_build_phases found: #{target_build_phases.length}"
     target_build_phases
   end
 
   def self.is_app_target?(project_content, target_uuid)
     # ターゲットのproductReferenceを取得
     product_ref_uuid = get_target_product_reference(project_content, target_uuid)
+    puts "DEBUG: Target #{target_uuid} has productReference: #{product_ref_uuid}"
     return false unless product_ref_uuid
     
     # productReferenceが.appかどうかチェック
-    is_app_product?(project_content, product_ref_uuid)
+    result = is_app_product?(project_content, product_ref_uuid)
+    puts "DEBUG: is_app_product returned: #{result}"
+    result
   end
 
   def self.get_target_product_reference(project_content, target_uuid)
     in_target_section = false
+    found_target_header = false
     
     project_content.each_line do |line|
-      if line.include?(target_uuid) && line.include?("isa = PBXNativeTarget")
+      # ターゲットの開始を検出
+      if line.include?("#{target_uuid} /*") && line.include?("*/ = {")
+        found_target_header = true
+        puts "DEBUG: Found target header for #{target_uuid}"
+      elsif found_target_header && line.include?("isa = PBXNativeTarget")
         in_target_section = true
+        puts "DEBUG: Confirmed PBXNativeTarget for #{target_uuid}"
       elsif in_target_section && line.include?("productReference = ")
-        if line.match(/productReference = ([A-F0-9]{24})/)
+        puts "DEBUG: Found productReference line: #{line.strip}"
+        if line.match(/productReference = ([A-F0-9]{24}) \/\*/)
+          puts "DEBUG: Extracted productReference UUID: #{$1}"
           return $1
         end
       elsif in_target_section && line.strip == "};"
+        puts "DEBUG: End of target section, no productReference found"
         break
       end
     end
@@ -177,9 +236,13 @@ module BindingFilesAdder
     project_content.each_line do |line|
       if line.include?(product_ref_uuid) && line.include?("isa = PBXFileReference")
         # .app で終わるかチェック
-        return line.include?(".app")
+        puts "DEBUG: Found product reference line: #{line.strip}"
+        result = line.include?(".app")
+        puts "DEBUG: Line contains .app: #{result}"
+        return result
       end
     end
+    puts "DEBUG: Product reference #{product_ref_uuid} not found"
     false
   end
 
@@ -272,6 +335,9 @@ module BindingFilesAdder
     
     # 最初のファイルのbuild_file_uuidsの長さでターゲット数を判断
     target_count = file_data.first[:build_file_uuids].length
+    puts "DEBUG: sources_insert_lines: #{sources_insert_lines.inspect}"
+    puts "DEBUG: target_count from file_data: #{target_count}"
+    puts "DEBUG: file_data.first[:build_file_uuids]: #{file_data.first[:build_file_uuids].inspect}"
     return unless sources_insert_lines.length >= target_count
     
     lines = project_content.lines
