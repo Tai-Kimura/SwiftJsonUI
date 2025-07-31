@@ -25,6 +25,14 @@
 # - The --force flag skips the confirmation prompt
 # - A backup of the project file is created before conversion
 #
+# Important: Order of operations
+# For new Xcode 16 projects:
+# 1. Run `sjui convert to-group` first to convert synchronized folders
+# 2. Then run `sjui setup` to create the SwiftJsonUI directory structure
+#
+# For existing projects with SwiftJsonUI already set up:
+# - Run `sjui convert to-group` to fix synchronization issues
+#
 # After conversion:
 # - Groups will be empty (no file references)
 # - You'll need to manually add files back to groups in Xcode
@@ -157,7 +165,8 @@ class XcodeSyncToGroupConverter
       end
       
       if existing_groups.empty?
-        puts "WARNING: No SwiftJsonUI groups found in the project"
+        puts "INFO: No SwiftJsonUI groups found in the project"
+        puts "     This is normal for new projects. Run 'sjui setup' after this to create the groups."
       end
       
       # メインアプリグループを見つけて、childrenを追加
@@ -266,8 +275,13 @@ class XcodeSyncToGroupConverter
       # ファイル保存
       File.write(@pbxproj_path, content)
       puts "✅ Conversion completed!"
-      puts "ℹ️  Groups have been converted to regular groups"
-      puts "   You may need to manually add files to the groups in Xcode"
+      puts "ℹ️  Synchronized folders have been converted to regular groups"
+      
+      if existing_groups.empty?
+        puts "\n📝 Next step: Run 'sjui setup' to create the SwiftJsonUI directory structure"
+      else
+        puts "\n📝 Groups have been relinked. You may need to manually add files back to groups in Xcode"
+      end
     else
       puts "No synchronized groups found. Project may already be using group references."
     end
