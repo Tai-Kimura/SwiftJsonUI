@@ -22,6 +22,15 @@ module ViewControllerAdder
         return
       end
       
+      # Xcode 16の同期グループをチェック
+      if is_synchronized_group?(project_content)
+        puts "WARNING: Project uses Xcode 16 synchronized folders"
+        puts "Files in synchronized folders are automatically compiled."
+        puts "Consider converting the main app folder to a regular group to avoid duplicate compilation."
+        # 同期グループの場合は処理を中止
+        return
+      end
+      
       # テスト用ターゲットを除外してビルドフェーズを検出
       non_test_sources = count_non_test_build_phases(project_manager, project_content, "PBXSourcesBuildPhase")
       non_test_resources = count_non_test_build_phases(project_manager, project_content, "PBXResourcesBuildPhase")
@@ -64,6 +73,16 @@ module ViewControllerAdder
   end
 
   private
+
+  def self.is_synchronized_group?(project_content)
+    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
+    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
+       project_content.include?("PBXFileSystemSynchronizedGroup")
+      puts "DEBUG: Found synchronized group in project"
+      return true
+    end
+    false
+  end
 
   def self.count_non_test_build_phases(project_manager, project_content, phase_type)
     # ターゲットとビルドフェーズを取得
