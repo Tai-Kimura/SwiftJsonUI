@@ -35,6 +35,15 @@ module BindingFilesAdder
       
       puts "Adding #{new_file_names.length} new binding files (#{file_names.length - new_file_names.length} already exist)"
       
+      # Xcode 16の同期グループをチェック
+      if is_synchronized_group?(project_manager, project_content)
+        puts "WARNING: Bindings is a synchronized group (Xcode 16 buildable folder)"
+        puts "Files in synchronized groups are automatically compiled."
+        puts "Consider converting to a regular group to avoid duplicate compilation."
+        # 同期グループの場合は処理を中止
+        return
+      end
+      
       # テスト用ターゲットを除外してビルドフェーズを検出
       sources_targets = count_non_test_build_phases(project_manager, project_content, "PBXSourcesBuildPhase")
       puts "Detected #{sources_targets} non-test source targets for binding files"
@@ -97,6 +106,27 @@ module BindingFilesAdder
   end
 
   private
+
+  def self.is_synchronized_group?(project_manager, project_content)
+    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
+    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
+       project_content.include?("PBXFileSystemSynchronizedGroup")
+      puts "DEBUG: Found synchronized group in project"
+      
+      # Bindingsが同期グループかチェック
+      bindings_group_uuid = project_manager.find_bindings_group_uuid(project_content)
+      return false unless bindings_group_uuid
+      
+      # 同期グループの参照を探す
+      sync_group_pattern = /#{bindings_group_uuid}.*PBXFileSystemSynchronized/
+      if project_content.match?(sync_group_pattern)
+        puts "DEBUG: Bindings is a synchronized group"
+        return true
+      end
+    end
+    
+    false
+  end
 
   def self.count_non_test_build_phases(project_manager, project_content, phase_type)
     # ターゲットとビルドフェーズを取得
