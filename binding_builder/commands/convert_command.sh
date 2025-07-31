@@ -72,8 +72,8 @@ convert_to_group() {
 base_dir = '$binding_builder_dir'
 \$LOAD_PATH.unshift(base_dir)
 
-require 'project_finder'
-require 'config_manager'
+require 'project_finder.rb'
+require 'config_manager.rb'
 
 config = ConfigManager.load_config(base_dir)
 
