@@ -59,43 +59,50 @@ convert_to_group() {
     # Get project file path from environment or find it
     if [ -n "$PROJECT_FILE_PATH" ]; then
         # Use the already discovered project file
-        ruby "$SCRIPT_DIR/tools/convert_to_group_reference.rb" "$PROJECT_FILE_PATH"
+        local pbxproj_path="$PROJECT_FILE_PATH"
+        echo "Using project: $pbxproj_path"
     else
-        # Find project file first
-        local project_file=$(find . -name "*.xcodeproj" -type d | head -1)
-        if [ -z "$project_file" ]; then
-            echo "Error: No Xcode project found in current directory"
-            echo "Please run this command from your project directory"
+        # Use Ruby to find the project file with the same logic as other commands
+        local pbxproj_path=$(ruby -e "
+            require_relative '$SCRIPT_DIR/../project_finder'
+            
+            # Find project
+            result = ProjectFinder.find_from_command
+            if result[:project_file_path]
+                puts result[:project_file_path]
+            else
+                STDERR.puts 'Error: Could not find Xcode project'
+                exit 1
+            end
+        " 2>&1)
+        
+        if [ $? -ne 0 ]; then
+            echo "$pbxproj_path"
             return 1
         fi
         
-        local pbxproj_path="${project_file}/project.pbxproj"
-        if [ ! -f "$pbxproj_path" ]; then
-            echo "Error: project.pbxproj not found at: $pbxproj_path"
-            return 1
-        fi
-        
-        echo "Found project: $project_file"
+        echo "Found project: $pbxproj_path"
+    fi
+    
+    echo ""
+    
+    # Check if force flag is set
+    if [ "$force_flag" = true ]; then
+        echo "Force mode enabled - skipping confirmation"
+        ruby "$SCRIPT_DIR/tools/convert_to_group_reference.rb" "$pbxproj_path"
+    else
+        # Confirm before proceeding
+        echo "⚠️  WARNING: This will modify your project file!"
+        echo "A backup will be created, but please ensure Xcode is closed."
+        echo ""
+        read -p "Continue? (y/N): " -n 1 -r
         echo ""
         
-        # Check if force flag is set
-        if [ "$force_flag" = true ]; then
-            echo "Force mode enabled - skipping confirmation"
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
             ruby "$SCRIPT_DIR/tools/convert_to_group_reference.rb" "$pbxproj_path"
         else
-            # Confirm before proceeding
-            echo "⚠️  WARNING: This will modify your project file!"
-            echo "A backup will be created, but please ensure Xcode is closed."
-            echo ""
-            read -p "Continue? (y/N): " -n 1 -r
-            echo ""
-            
-            if [[ $REPLY =~ ^[Yy]$ ]]; then
-                ruby "$SCRIPT_DIR/tools/convert_to_group_reference.rb" "$pbxproj_path"
-            else
-                echo "Cancelled."
-                return 1
-            fi
+            echo "Cancelled."
+            return 1
         fi
     fi
 }
