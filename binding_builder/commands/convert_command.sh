@@ -62,27 +62,33 @@ convert_to_group() {
         local pbxproj_path="$PROJECT_FILE_PATH"
         echo "Using project: $pbxproj_path"
     else
-        # Use Ruby script to find the project file
-        local pbxproj_path=$(ruby -I"$SCRIPT_DIR/.." -e "
-            require 'project_finder'
-            require 'config_manager'
-            
-            base_dir = '$SCRIPT_DIR/..'
-            config = ConfigManager.load_config(base_dir)
-            
-            begin
-                if config['project_file_name'] && !config['project_file_name'].empty?
-                    puts ProjectFinder.find_project_file_by_name(base_dir, config['project_file_name'])
-                else
-                    puts ProjectFinder.find_project_file(base_dir)
-                end
-            rescue => e
-                STDERR.puts e.message
-                exit 1
-            end
-        " 2>&1)
+        # Create a temporary Ruby script to find the project
+        local temp_script=$(mktemp /tmp/find_project_XXXXXX.rb)
+        cat > "$temp_script" <<'EOF'
+#!/usr/bin/env ruby
+require_relative ARGV[0] + '/project_finder'
+require_relative ARGV[0] + '/config_manager'
+
+base_dir = ARGV[0]
+config = ConfigManager.load_config(base_dir)
+
+begin
+    if config['project_file_name'] && !config['project_file_name'].empty?
+        puts ProjectFinder.find_project_file_by_name(base_dir, config['project_file_name'])
+    else
+        puts ProjectFinder.find_project_file(base_dir)
+    end
+rescue => e
+    STDERR.puts e.message
+    exit 1
+end
+EOF
         
-        if [ $? -ne 0 ]; then
+        local pbxproj_path=$(ruby "$temp_script" "$SCRIPT_DIR/.." 2>&1)
+        local ruby_exit_code=$?
+        rm -f "$temp_script"
+        
+        if [ $ruby_exit_code -ne 0 ]; then
             echo "Error: $pbxproj_path"
             return 1
         fi
