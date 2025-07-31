@@ -283,18 +283,41 @@ class LibrarySetup < PbxprojManager
         content = LibrarySetupHelper.insert_package_product_dependencies_in_target(content, project_name, package_deps_list)
       end
       
-      # Step 6: Frameworksセクションに追加
+      # Step 6: Frameworksセクションに追加（メインアプリターゲットのみ）
       puts "DEBUG: Step 6 - Adding to Frameworks section"
-      frameworks_pattern = /([A-F0-9]{24} \/\* Frameworks \*\/ = \{\s+isa = PBXFrameworksBuildPhase;\s+buildActionMask = \d+;\s+files = \(\s*)(.*?)(\s*\);)/m
-      if content.match(frameworks_pattern)
-        build_files_list = package_data.map do |data|
-          "\t\t\t\t#{data[:build_file_uuid]} /* #{data[:package][:name]} in Frameworks */,"
-        end.join("\n")
+      
+      # Find main app target's framework build phase
+      project_name = ProjectFinder.detect_project_name(@project_file_path)
+      
+      # First, find the main app target UUID
+      target_match = content.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(project_name)} \*\/ = \{[^}]*?isa = PBXNativeTarget[^}]*?productType = "com\.apple\.product-type\.application"[^}]*?\}/m)
+      
+      if target_match
+        target_uuid = target_match[1]
         
-        content = content.gsub(
-          frameworks_pattern,
-          "\\1\\2\n#{build_files_list}\\3"
-        )
+        # Find the build phases for this target
+        if build_phases_match = content.match(/#{target_uuid} \/\* #{Regexp.escape(project_name)} \*\/ = \{[^}]*?buildPhases = \(\s*(.*?)\s*\);/m)
+          build_phases = build_phases_match[1]
+          
+          # Find the frameworks build phase UUID
+          if frameworks_uuid_match = build_phases.match(/([A-F0-9]{24}) \/\* Frameworks \*\//)
+            frameworks_uuid = frameworks_uuid_match[1]
+            
+            # Now add to this specific frameworks build phase
+            frameworks_pattern = /(#{frameworks_uuid} \/\* Frameworks \*\/ = \{\s+isa = PBXFrameworksBuildPhase;\s+buildActionMask = \d+;\s+files = \(\s*)(.*?)(\s*\);)/m
+            
+            if content.match(frameworks_pattern)
+              build_files_list = package_data.map do |data|
+                "\t\t\t\t#{data[:build_file_uuid]} /* #{data[:package][:name]} in Frameworks */,"
+              end.join("\n")
+              
+              content = content.gsub(
+                frameworks_pattern,
+                "\\1\\2\n#{build_files_list}\\3"
+              )
+            end
+          end
+        end
       end
       
       # ファイルに書き込み
