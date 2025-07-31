@@ -4,13 +4,18 @@
 convert_command() {
     # Check for subcommand
     if [ $# -eq 0 ]; then
-        echo "Usage: sjui convert <subcommand>"
+        echo "Usage: sjui convert <subcommand> [options]"
         echo ""
         echo "Available subcommands:"
         echo "  to-group    Convert Xcode 16 synchronized folders to group references"
         echo ""
-        echo "Example:"
+        echo "Options:"
+        echo "  --force, -f    Skip confirmation prompt"
+        echo ""
+        echo "Examples:"
         echo "  sjui convert to-group"
+        echo "  sjui convert to-group --force"
+        echo "  sjui convert to-group -f"
         return 1
     fi
     
@@ -31,6 +36,23 @@ convert_command() {
 
 # Convert to group references
 convert_to_group() {
+    local force_flag=false
+    
+    # Check for --force flag
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --force|-f)
+                force_flag=true
+                shift
+                ;;
+            *)
+                echo "Unknown option: $1"
+                echo "Usage: sjui convert to-group [--force|-f]"
+                return 1
+                ;;
+        esac
+    done
+    
     echo "Converting Xcode 16 synchronized folders to group references..."
     echo ""
     
@@ -56,18 +78,24 @@ convert_to_group() {
         echo "Found project: $project_file"
         echo ""
         
-        # Confirm before proceeding
-        echo "⚠️  WARNING: This will modify your project file!"
-        echo "A backup will be created, but please ensure Xcode is closed."
-        echo ""
-        read -p "Continue? (y/N): " -n 1 -r
-        echo ""
-        
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        # Check if force flag is set
+        if [ "$force_flag" = true ]; then
+            echo "Force mode enabled - skipping confirmation"
             ruby "$SCRIPT_DIR/tools/convert_to_group_reference.rb" "$pbxproj_path"
         else
-            echo "Cancelled."
-            return 1
+            # Confirm before proceeding
+            echo "⚠️  WARNING: This will modify your project file!"
+            echo "A backup will be created, but please ensure Xcode is closed."
+            echo ""
+            read -p "Continue? (y/N): " -n 1 -r
+            echo ""
+            
+            if [[ $REPLY =~ ^[Yy]$ ]]; then
+                ruby "$SCRIPT_DIR/tools/convert_to_group_reference.rb" "$pbxproj_path"
+            else
+                echo "Cancelled."
+                return 1
+            fi
         fi
     fi
 }
