@@ -1,4 +1,5 @@
 require "fileutils"
+require_relative "../pbxproj_manager"
 
 module BindingFilesAdder
   def self.add_binding_files(project_manager, file_names)
@@ -36,9 +37,8 @@ module BindingFilesAdder
       puts "Adding #{new_file_names.length} new binding files (#{file_names.length - new_file_names.length} already exist)"
       
       # Xcode 16の同期グループをチェック
-      if is_synchronized_group?(project_manager, project_content)
+      if PbxprojManager.is_synchronized_group?(project_content)
         puts "WARNING: Bindings is a synchronized group (Xcode 16 buildable folder)"
-        puts "Files in synchronized groups are automatically compiled."
         puts "Consider converting to a regular group to avoid duplicate compilation."
         # 同期グループの場合は処理を中止
         return
@@ -106,23 +106,6 @@ module BindingFilesAdder
   end
 
   private
-
-  def self.is_synchronized_group?(project_manager, project_content)
-    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
-    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
-       project_content.include?("PBXFileSystemSynchronizedGroup")
-      puts "DEBUG: Found synchronized group in project"
-      
-      # メインアプリフォルダが同期グループの場合、
-      # その中のすべてのフォルダも自動的にビルドされる
-      # これはXcode 16の新しいデフォルト動作
-      puts "WARNING: Project uses Xcode 16 synchronized folders"
-      puts "All files in synchronized folders are automatically compiled"
-      return true
-    end
-    
-    false
-  end
 
   def self.count_non_test_build_phases(project_manager, project_content, phase_type)
     # ターゲットとビルドフェーズを取得

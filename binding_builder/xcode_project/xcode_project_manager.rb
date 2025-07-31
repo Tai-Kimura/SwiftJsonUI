@@ -30,9 +30,7 @@ class XcodeProjectManager < PbxprojManager
       project_content = File.read(@project_file_path)
       
       # Xcode 16の同期グループをチェック
-      if is_synchronized_group?(project_content)
-        puts "WARNING: Project uses Xcode 16 synchronized folders"
-        puts "Files in synchronized folders are automatically compiled."
+      if PbxprojManager.is_synchronized_group?(project_content)
         puts "Consider converting the main app folder to a regular group to avoid duplicate compilation."
         cleanup_backup(backup_path)
         return
@@ -239,16 +237,6 @@ class XcodeProjectManager < PbxprojManager
   end
 
   private
-
-  def is_synchronized_group?(project_content)
-    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
-    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
-       project_content.include?("PBXFileSystemSynchronizedGroup")
-      puts "DEBUG: Found synchronized group in project"
-      return true
-    end
-    false
-  end
 
   def find_collection_group_in_view_folder(project_content, view_folder_group_uuid)
     lines = project_content.lines

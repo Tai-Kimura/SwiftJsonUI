@@ -1,6 +1,7 @@
 require "fileutils"
 require "json"
 require_relative "../../project_finder"
+require_relative "../pbxproj_manager"
 
 module ViewControllerAdder
   def self.add_view_controller_file(project_manager, file_name, folder_name, json_file_name = nil)
@@ -23,9 +24,7 @@ module ViewControllerAdder
       end
       
       # Xcode 16の同期グループをチェック
-      if is_synchronized_group?(project_content)
-        puts "WARNING: Project uses Xcode 16 synchronized folders"
-        puts "Files in synchronized folders are automatically compiled."
+      if PbxprojManager.is_synchronized_group?(project_content)
         puts "Consider converting the main app folder to a regular group to avoid duplicate compilation."
         # 同期グループの場合は処理を中止
         return
@@ -73,16 +72,6 @@ module ViewControllerAdder
   end
 
   private
-
-  def self.is_synchronized_group?(project_content)
-    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
-    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
-       project_content.include?("PBXFileSystemSynchronizedGroup")
-      puts "DEBUG: Found synchronized group in project"
-      return true
-    end
-    false
-  end
 
   def self.count_non_test_build_phases(project_manager, project_content, phase_type)
     # ターゲットとビルドフェーズを取得

@@ -23,6 +23,19 @@ class PbxprojManager
     @hot_loader_directory = ConfigManager.get_hot_loader_directory(@binding_builder_dir)
   end
 
+  # Xcode 16の同期グループをチェックする共通メソッド
+  def self.is_synchronized_group?(project_content)
+    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
+    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
+       project_content.include?("PBXFileSystemSynchronizedGroup")
+      puts "DEBUG: Found synchronized group in project"
+      puts "WARNING: Project uses Xcode 16 synchronized folders"
+      puts "All files in synchronized folders are automatically compiled"
+      return true
+    end
+    false
+  end
+
   def setup_individual_file_exclusions
     puts "Setting up individual file exclusions in membershipExceptions"
     
