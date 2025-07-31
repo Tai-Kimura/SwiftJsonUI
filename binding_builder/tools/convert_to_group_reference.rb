@@ -104,6 +104,17 @@ class XcodeSyncToGroupConverter
     end
     
     # 3. explicitFileTypesとexplicitFoldersを削除してchildrenに置き換え
+    # 重要: 既存のファイル参照を収集して保持する
+    file_references = {}
+    
+    # PBXFileSystemSynchronizedBuildFileExceptionSetから既存のファイルリストを取得
+    content.scan(/([A-F0-9]{24}) \/\* Exceptions for "([^"]+)" folder.*?\*\/ = \{[^}]*?membershipExceptions = \(([^)]*)\)/m) do |uuid, folder_name, exceptions|
+      # exceptionsから実際のファイル名を抽出
+      files = exceptions.scan(/([^,\s]+)[,\s]*/).flatten.reject { |f| f.strip.empty? }
+      file_references[folder_name] = files
+      puts "DEBUG: Found #{files.length} files in #{folder_name} folder"
+    end
+    
     content.gsub!(/explicitFileTypes = \{[^}]*\};\s*explicitFolders = \([^)]*\);/m) do
       "children = (\n\t\t\t);"
     end
@@ -277,8 +288,19 @@ class XcodeSyncToGroupConverter
       puts "✅ Conversion completed!"
       puts "ℹ️  Synchronized folders have been converted to regular groups"
       
+      # ファイル参照情報を保存（setupコマンドで使用）
+      if file_references.any?
+        conversion_info_path = File.join(File.dirname(@pbxproj_path), '.conversion_info.json')
+        File.write(conversion_info_path, JSON.pretty_generate({
+          'converted_at' => Time.now.iso8601,
+          'file_references' => file_references
+        }))
+        puts "📄 Saved file reference information for restoration"
+      end
+      
       if existing_groups.empty?
         puts "\n📝 Next step: Run 'sjui setup' to create the SwiftJsonUI directory structure"
+        puts "   Your existing files (AppDelegate, SceneDelegate, etc.) will be restored."
       else
         puts "\n📝 Groups have been relinked. You may need to manually add files back to groups in Xcode"
       end

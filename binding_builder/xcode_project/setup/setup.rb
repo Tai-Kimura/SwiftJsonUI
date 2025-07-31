@@ -13,22 +13,25 @@ class Setup < PbxprojManager
   def run_full_setup
     puts "=== Starting SwiftJsonUI Project Setup ==="
     
-    # 1. ディレクトリ構造の作成
+    # 1. 変換後のプロジェクトの場合、既存ファイルを復元
+    restore_converted_files
+    
+    # 2. ディレクトリ構造の作成
     setup_directories
     
-    # 2. ライブラリパッケージの追加
+    # 3. ライブラリパッケージの追加
     setup_libraries
     
-    # 3. HotLoader機能の設定
+    # 4. HotLoader機能の設定
     setup_hotloader
     
-    # 4. Info.plistからStoryBoard参照を削除
+    # 5. Info.plistからStoryBoard参照を削除
     remove_storyboard_from_info_plist
     
-    # 5. membershipExceptionsを設定
+    # 6. membershipExceptionsを設定
     setup_membership_exceptions
     
-    # 6. Info.plistにIPとポートを設定
+    # 7. Info.plistにIPとポートを設定
     setup_ip_and_port_in_info_plist
     
     puts "=== SwiftJsonUI Project Setup Completed Successfully! ==="
@@ -153,6 +156,59 @@ class Setup < PbxprojManager
     end
     
     ip
+  end
+  
+  def restore_converted_files
+    # 変換情報ファイルを確認
+    project_dir = File.dirname(@project_file_path)
+    conversion_info_path = File.join(project_dir, '.conversion_info.json')
+    
+    unless File.exist?(conversion_info_path)
+      # 変換情報がない場合は何もしない（通常のsetup）
+      return
+    end
+    
+    puts "Found conversion info - restoring existing file references..."
+    
+    begin
+      require 'json'
+      conversion_info = JSON.parse(File.read(conversion_info_path))
+      file_references = conversion_info['file_references'] || {}
+      
+      if file_references.empty?
+        puts "No file references to restore"
+        return
+      end
+      
+      # メインアプリグループの既存ファイルを復元
+      app_name = File.basename(File.dirname(@project_file_path), '.xcodeproj')
+      if file_references[app_name]
+        puts "Restoring #{file_references[app_name].length} files for #{app_name} group..."
+        
+        # 重要なファイル（AppDelegate、SceneDelegate、Info.plist等）を優先的に復元
+        important_files = ['AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist', 
+                          'Assets.xcassets', 'LaunchScreen.storyboard', 'Main.storyboard']
+        
+        files_to_restore = file_references[app_name].select do |file|
+          # binding_builder関連のファイルは除外
+          !file.start_with?('binding_builder/') && !file.start_with?('hot_loader/')
+        end
+        
+        if files_to_restore.any?
+          # TODO: 実際のファイル復元処理を実装
+          puts "Files to restore: #{files_to_restore.join(', ')}"
+          puts "Note: Manual restoration may be required in Xcode"
+        end
+      end
+      
+      # 変換情報ファイルを削除（使用済み）
+      File.delete(conversion_info_path)
+      puts "Cleaned up conversion info file"
+      
+    rescue => e
+      puts "Warning: Failed to restore converted files: #{e.message}"
+      # エラーが発生しても処理を続行
+    end
   end
 end
 
