@@ -118,17 +118,111 @@ class XcodeSyncToGroupConverter
     end
     
     if converted
-      # 重要: グループがchildrenに追加されていることを確認
-      # 通常、View、Layouts、Styles、Bindings、Coreグループは親グループに追加される必要がある
-      puts "Checking group references..."
+      # 7. メインアプリグループにchildrenを追加（もし存在しない場合）
+      # 既存のグループのUUIDを収集
+      existing_groups = {}
+      content.scan(/([A-F0-9]{24}) \/\* (View|Layouts|Styles|Bindings|Core|UI|Base) \*\/ = \{/) do |uuid, name|
+        existing_groups[name] = uuid
+      end
+      
+      # メインアプリグループを見つけて、childrenを追加
+      project_dir = File.dirname(File.dirname(@pbxproj_path))
+      app_name = File.basename(project_dir, '.xcodeproj')
+      
+      # メインアプリグループのUUIDを動的に検出
+      main_app_group_uuid = nil
+      content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;[^}]*?path = #{Regexp.escape(app_name)};[^}]*?\}/m) do |uuid|
+        main_app_group_uuid = uuid[0]
+        break
+      end
+      
+      if main_app_group_uuid
+        # メインアプリグループのパターンを探す
+        content.gsub!(/(#{main_app_group_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;)([^}]*?)(\};)/m) do |match|
+        prefix = $1
+        middle = $2
+        suffix = $3
+        
+        if !middle.include?("children =")
+          # childrenがない場合、追加する
+          children_array = []
+          
+          # 標準的な順序でグループを追加
+          ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].each do |group_name|
+            if existing_groups[group_name]
+              children_array << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
+            end
+          end
+          
+          if children_array.any?
+            children_str = "\n\t\t\tchildren = (\n#{children_array.join("\n")}\n\t\t\t);"
+            "#{prefix}#{children_str}#{middle}#{suffix}"
+          else
+            match
+          end
+        else
+          # childrenが既にある場合、既存のグループを確認して不足分を追加
+          existing_children = middle[/children = \((.*?)\);/m, 1]
+          
+          children_to_add = []
+          ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].each do |group_name|
+            if existing_groups[group_name] && !existing_children.include?(existing_groups[group_name])
+              children_to_add << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
+            end
+          end
+          
+          if children_to_add.any?
+            middle.gsub!(/children = \(\s*(.*?)\s*\);/m) do |children_match|
+              existing_items = $1.strip
+              if existing_items.empty?
+                "children = (\n#{children_to_add.join("\n")}\n\t\t\t);"
+              else
+                "children = (\n\t\t\t\t#{existing_items}\n#{children_to_add.join("\n")}\n\t\t\t);"
+              end
+            end
+          end
+          
+          "#{prefix}#{middle}#{suffix}"
+        end
+      end
+      else
+        puts "WARNING: Could not find main app group for #{app_name}"
+      end
+      
+      # Core グループにUI、Baseサブグループを追加
+      if existing_groups['Core'] && (existing_groups['UI'] || existing_groups['Base'])
+        content.gsub!(/(#{existing_groups['Core']} \/\* Core \*\/ = \{[^}]*?isa = PBXGroup;)([^}]*?)(\};)/m) do |match|
+          prefix = $1
+          middle = $2
+          suffix = $3
+          
+          if !middle.include?("children =")
+            children_array = []
+            ['UI', 'Base'].each do |group_name|
+              if existing_groups[group_name]
+                children_array << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
+              end
+            end
+            
+            if children_array.any?
+              children_str = "\n\t\t\tchildren = (\n#{children_array.join("\n")}\n\t\t\t);"
+              "#{prefix}#{children_str}#{middle}#{suffix}"
+            else
+              match
+            end
+          else
+            match
+          end
+        end
+      end
+      
+      puts "✅ Groups linked to parent groups"
       
       # ファイル保存
       File.write(@pbxproj_path, content)
       puts "✅ Conversion completed!"
-      puts "⚠️  IMPORTANT: Groups have been converted but may need to be properly linked"
-      puts "   1. Open the project in Xcode"
-      puts "   2. If groups appear empty, drag files into them"
-      puts "   3. Ensure proper target membership for all files"
+      puts "ℹ️  Groups have been converted to regular groups"
+      puts "   You may need to manually add files to the groups in Xcode"
     else
       puts "No synchronized groups found. Project may already be using group references."
     end
