@@ -24,6 +24,7 @@ if [ $# -eq 0 ]; then
     echo "  b                     Build binding files from JSON layouts"
     echo "  build                 Build binding files from JSON layouts (alias for b)"
     echo "  hotload <command>     Manage HotLoader IP monitoring"
+    echo "  convert to-group      Convert Xcode 16 synchronized folders to group references"
     echo ""
     echo ""
     echo "HotLoad commands:"
@@ -48,6 +49,7 @@ if [ $# -eq 0 ]; then
     echo "  sjui hotload daemon"
     echo "  sjui hotload status"
     echo "  sjui hotload stop"
+    echo "  sjui convert to-group"
     echo ""
     echo "  sjui --project MyProject g view sample"
     echo "  sjui --project AnotherApp build"
@@ -67,6 +69,7 @@ source "$COMMANDS_DIR/generate_command.sh"
 source "$COMMANDS_DIR/destroy_command.sh"
 source "$COMMANDS_DIR/build_command.sh"
 source "$COMMANDS_DIR/hotload_command.sh"
+source "$COMMANDS_DIR/convert_command.sh"
 
 # Parse options
 PROJECT_NAME=""
@@ -165,6 +168,9 @@ case "$COMMAND" in
         ;;
     "hotload")
         hotload_command "$SCRIPT_DIR" "$PROJECT_FILE" "$@"
+        ;;
+    "convert")
+        convert_command "$@"
         ;;
     *)
         echo "Unknown command: $COMMAND"
