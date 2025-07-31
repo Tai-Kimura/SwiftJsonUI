@@ -70,6 +70,16 @@ class XcodeSyncToGroupConverter
       "children = (\n\t\t\t);"
     end
     
+    # 3.5. グループ定義内のchildrenがないものに空のchildrenを追加
+    # PBXGroupセクション内のグループでchildrenがないものを修正
+    content.gsub!(/(isa = PBXGroup;[^}]*?)(path = [^;]+;)(\s*sourceTree = [^;]+;)(\s*\};)/m) do |match|
+      if match.include?("children =")
+        match
+      else
+        "#{$1}children = (\n\t\t\t);\n\t\t\t#{$2}#{$3}#{$4}"
+      end
+    end
+    
     # 4. PBXFileSystemSynchronizedBuildFileExceptionSetセクションを削除
     if content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
       content.gsub!(
@@ -108,11 +118,17 @@ class XcodeSyncToGroupConverter
     end
     
     if converted
+      # 重要: グループがchildrenに追加されていることを確認
+      # 通常、View、Layouts、Styles、Bindings、Coreグループは親グループに追加される必要がある
+      puts "Checking group references..."
+      
       # ファイル保存
       File.write(@pbxproj_path, content)
       puts "✅ Conversion completed!"
-      puts "⚠️  IMPORTANT: You need to manually add file references to the groups"
-      puts "   Open Xcode and use 'Add Files to...' to re-add your files"
+      puts "⚠️  IMPORTANT: Groups have been converted but may need to be properly linked"
+      puts "   1. Open the project in Xcode"
+      puts "   2. If groups appear empty, drag files into them"
+      puts "   3. Ensure proper target membership for all files"
     else
       puts "No synchronized groups found. Project may already be using group references."
     end
