@@ -4,6 +4,28 @@ var path = require("path");
 var fs = require("fs");
 var app = express();
 
+// Load config from binding_builder/config.json
+var config = {};
+var defaultConfig = {
+  'layouts_directory': 'Layouts',
+  'styles_directory': 'Styles',
+  'scripts_directory': 'Scripts'
+};
+
+try {
+  var configPath = path.join(__dirname, '..', 'binding_builder', 'config.json');
+  if (fs.existsSync(configPath)) {
+    var configContent = fs.readFileSync(configPath, 'utf8');
+    var loadedConfig = JSON.parse(configContent);
+    config = Object.assign({}, defaultConfig, loadedConfig);
+  } else {
+    config = defaultConfig;
+  }
+} catch (err) {
+  console.error('Error loading config.json:', err);
+  config = defaultConfig;
+}
+
 app.use(morgan("dev"));
 app.use(express.static(__dirname + "/public"));
 
@@ -37,7 +59,14 @@ var chokidar = require("chokidar");
 var { exec } = require("child_process");
 
 //chokidarの初期化
-var watcher = chokidar.watch("../*/*.json", {
+// Watch patterns for each directory
+var watchPatterns = [
+  `../${config.layouts_directory || 'Layouts'}/**/*.json`,
+  `../${config.styles_directory || 'Styles'}/**/*.json`,
+  `../${config.scripts_directory || 'Scripts'}/**/*.js`
+];
+
+var watcher = chokidar.watch(watchPatterns, {
   ignored: /[\/\\]\./,
   persistent: true,
 });
@@ -62,7 +91,7 @@ watcher.on("ready", function () {
         console.log(path + " changed.");
         
         // Check if the changed file is in the Layouts directory
-        if (dirName === "layouts") {
+        if (dirName === (config.layouts_directory || "Layouts").toLowerCase()) {
           console.log("Layout file changed, running sjui build...");
           
           // Execute sjui build command
