@@ -153,6 +153,11 @@ class XcodeSyncToGroupConverter
       existing_groups = {}
       content.scan(/([A-F0-9]{24}) \/\* (View|Layouts|Styles|Bindings|Core|UI|Base) \*\/ = \{/) do |uuid, name|
         existing_groups[name] = uuid
+        puts "DEBUG: Found group #{name} with UUID #{uuid}"
+      end
+      
+      if existing_groups.empty?
+        puts "WARNING: No SwiftJsonUI groups found in the project"
       end
       
       # メインアプリグループを見つけて、childrenを追加
@@ -160,10 +165,18 @@ class XcodeSyncToGroupConverter
       app_name = File.basename(project_dir, '.xcodeproj')
       
       # メインアプリグループのUUIDを動的に検出
+      puts "DEBUG: Looking for main app group: #{app_name}"
       main_app_group_uuid = nil
-      content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;[^}]*?path = #{Regexp.escape(app_name)};[^}]*?\}/m) do |uuid|
-        main_app_group_uuid = uuid[0]
-        break
+      
+      # より柔軟なパターンでメインアプリグループを検索
+      content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;[^}]*?\}/m) do |uuid|
+        group_content = $&
+        # pathかexceptionsを含むものがメインアプリグループ
+        if group_content.include?("path = #{app_name}") || group_content.include?("exceptions =")
+          main_app_group_uuid = uuid[0]
+          puts "DEBUG: Found main app group UUID: #{main_app_group_uuid}"
+          break
+        end
       end
       
       if main_app_group_uuid
@@ -174,6 +187,7 @@ class XcodeSyncToGroupConverter
         suffix = $3
         
         if !middle.include?("children =")
+          puts "DEBUG: Main app group has no children, adding..."
           # childrenがない場合、追加する
           children_array = []
           
@@ -181,6 +195,7 @@ class XcodeSyncToGroupConverter
           ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].each do |group_name|
             if existing_groups[group_name]
               children_array << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
+              puts "DEBUG: Adding #{group_name} to children"
             end
           end
           
