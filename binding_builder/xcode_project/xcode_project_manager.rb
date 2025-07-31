@@ -3,6 +3,7 @@ require "pathname"
 require_relative "adders/view_controller_adder"
 require_relative "adders/binding_files_adder"
 require_relative "adders/collection_adder"
+require_relative "adders/json_adder"
 require_relative "pbxproj_manager"
 
 class XcodeProjectManager < PbxprojManager
@@ -22,6 +23,10 @@ class XcodeProjectManager < PbxprojManager
 
   def add_collection_cell_file(file_path, view_folder_name)
     CollectionAdder.add_collection_cell_file(self, file_path, view_folder_name)
+  end
+
+  def add_json_file(json_file_path, group_name = nil)
+    JsonAdder.add_json_file(self, json_file_path, group_name)
   end
 
   def add_folder_group(group_name, relative_path)

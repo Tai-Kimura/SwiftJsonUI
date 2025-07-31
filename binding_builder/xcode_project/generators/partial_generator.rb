@@ -3,6 +3,7 @@
 require "fileutils"
 require "json"
 require_relative "../pbxproj_manager"
+require_relative "../xcode_project_manager"
 require_relative "../../project_finder"
 
 class PartialGenerator < PbxprojManager
@@ -13,6 +14,7 @@ class PartialGenerator < PbxprojManager
     # ProjectFinderを使用してパスを設定
     paths = ProjectFinder.setup_paths(base_dir, @project_file_path)
     @layouts_path = paths.layout_path
+    @xcode_manager = XcodeProjectManager.new(@project_file_path)
   end
 
   def generate(partial_name)
@@ -41,7 +43,10 @@ class PartialGenerator < PbxprojManager
     # 1. partialのJSONファイル作成（_プレフィックス付き）
     partial_file_path = create_partial_json_file(snake_name, subdir)
     
-    # 2. バインディングファイルの生成
+    # 2. Xcodeプロジェクトに追加（Layoutsグループに追加）
+    add_to_xcode_project(partial_file_path)
+    
+    # 3. バインディングファイルの生成
     generate_binding_file
     
     puts "\nSuccessfully generated:"
@@ -100,6 +105,11 @@ class PartialGenerator < PbxprojManager
       ]
     }
     JSON.pretty_generate(content)
+  end
+
+  def add_to_xcode_project(json_file_path)
+    # バックアップとエラーハンドリングを含む安全な処理
+    @xcode_manager.add_json_file(json_file_path, "Layouts")
   end
 
   def generate_binding_file
