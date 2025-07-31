@@ -6,6 +6,7 @@ require "json"
 require_relative "../pbxproj_manager"
 require_relative "../../project_finder"
 require_relative "../../config_manager"
+require_relative "library_setup_helper"
 
 class LibrarySetup < PbxprojManager
   def initialize(project_file_path = nil)
@@ -249,10 +250,8 @@ class LibrarySetup < PbxprojManager
           "\t\t\t\t#{data[:package_ref_uuid]} /* XCRemoteSwiftPackageReference \"#{data[:package][:name]}\" */,"
         end.join("\n")
         
-        content = content.gsub(
-          /(\s+)(minimizedProjectReferenceProxies = \d+;)/,
-          "\\1\\2\n\\1packageReferences = (\n#{package_refs_list}\n\\1);"
-        )
+        # Use helper to insert packageReferences
+        content = LibrarySetupHelper.insert_package_references_in_project(content, package_refs_list)
       else
         # 既存のpackageReferencesに追加
         package_refs_list = package_data.map do |data|
@@ -272,10 +271,17 @@ class LibrarySetup < PbxprojManager
         "\t\t\t\t#{data[:package_dependency_uuid]} /* #{data[:package][:name]} */,"
       end.join("\n")
       
-      content = content.gsub(
-        /(name = #{project_name};[\s\S]*?packageProductDependencies = \(\s*)(.*?)(\s*\);)/m,
-        "\\1\\2\n#{package_deps_list}\\3"
-      )
+      # Check if packageProductDependencies already exists in the target
+      if content.match(/#{Regexp.escape(project_name)}.*?packageProductDependencies = \(/m)
+        # Already exists, add to it
+        content = content.gsub(
+          /(#{Regexp.escape(project_name)}.*?packageProductDependencies = \(\s*)(.*?)(\s*\);)/m,
+          "\\1\\2\n#{package_deps_list}\\3"
+        )
+      else
+        # Doesn't exist, use helper to insert it
+        content = LibrarySetupHelper.insert_package_product_dependencies_in_target(content, project_name, package_deps_list)
+      end
       
       # Step 6: Frameworksセクションに追加
       puts "DEBUG: Step 6 - Adding to Frameworks section"
