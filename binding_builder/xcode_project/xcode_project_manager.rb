@@ -2,10 +2,11 @@ require "fileutils"
 require "pathname"
 require_relative "adders/view_controller_adder"
 require_relative "adders/binding_files_adder"
+require_relative "adders/collection_adder"
 require_relative "pbxproj_manager"
 
 class XcodeProjectManager < PbxprojManager
-  attr_reader :project_file_path
+  attr_reader :project_file_path, :source_directory
 
   def initialize(project_file_path)
     super(project_file_path)
@@ -20,65 +21,7 @@ class XcodeProjectManager < PbxprojManager
   end
 
   def add_collection_cell_file(file_path, view_folder_name)
-    return unless File.exist?(@project_file_path)
-    puts "Adding collection cell to Xcode project..."
-    
-    # バックアップ作成
-    backup_path = create_backup(@project_file_path)
-    
-    begin
-      project_content = File.read(@project_file_path)
-      
-      # Xcode 16の同期グループをチェック
-      if PbxprojManager.is_synchronized_group?(project_content)
-        puts "Consider converting the main app folder to a regular group to avoid duplicate compilation."
-        cleanup_backup(backup_path)
-        return
-      end
-      
-      # ファイル情報
-      file_name = File.basename(file_path)
-      # source_directoryを使用して相対パスを計算
-      project_root = File.dirname(File.dirname(@project_file_path))
-      source_base = @source_directory.empty? ? project_root : File.join(project_root, @source_directory)
-      relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_base)).to_s
-      
-      # UUIDの生成
-      file_ref_uuid = generate_uuid
-      build_file_uuid = generate_uuid
-      
-      # PBXFileReferenceを追加
-      add_pbx_file_reference(project_content, file_ref_uuid, file_name)
-      
-      # PBXBuildFileを追加
-      add_pbx_build_file(project_content, build_file_uuid, file_ref_uuid, file_name)
-      
-      # Sources Build Phaseに追加
-      add_to_sources_build_phase(project_content, build_file_uuid, file_name)
-      
-      # ファイルに書き込み
-      File.write(@project_file_path, project_content)
-      
-      # 整合性をチェック
-      if validate_pbxproj(@project_file_path)
-        puts "✅ Added '#{file_name}' to Xcode project successfully"
-        cleanup_backup(backup_path)
-      else
-        puts "❌ pbxproj file validation failed, rolling back..."
-        FileUtils.copy(backup_path, @project_file_path)
-        cleanup_backup(backup_path)
-        raise "pbxproj file corruption detected after adding collection cell"
-      end
-      
-    rescue => e
-      puts "Error during file addition: #{e.message}"
-      if File.exist?(backup_path)
-        FileUtils.copy(backup_path, @project_file_path)
-        cleanup_backup(backup_path)
-        puts "Restored pbxproj file from backup"
-      end
-      raise e
-    end
+    CollectionAdder.add_collection_cell_file(self, file_path, view_folder_name)
   end
 
   def add_folder_group(group_name, relative_path)
@@ -278,79 +221,4 @@ class XcodeProjectManager < PbxprojManager
     end
   end
 
-  def add_pbx_file_reference(project_content, file_ref_uuid, file_name)
-    lines = project_content.lines
-    pbx_file_ref_section_end = nil
-    
-    lines.each_with_index do |line, index|
-      if line.strip == "/* End PBXFileReference section */"
-        pbx_file_ref_section_end = index
-        break
-      end
-    end
-    
-    if pbx_file_ref_section_end
-      new_entry = "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = #{file_name}; sourceTree = \"<group>\"; };\n"
-      lines.insert(pbx_file_ref_section_end, new_entry)
-      project_content.replace(lines.join)
-    end
-  end
-
-  def add_pbx_build_file(project_content, build_file_uuid, file_ref_uuid, file_name)
-    lines = project_content.lines
-    pbx_build_file_section_end = nil
-    
-    lines.each_with_index do |line, index|
-      if line.strip == "/* End PBXBuildFile section */"
-        pbx_build_file_section_end = index
-        break
-      end
-    end
-    
-    if pbx_build_file_section_end
-      new_entry = "\t\t#{build_file_uuid} /* #{file_name} in Sources */ = {isa = PBXBuildFile; fileRef = #{file_ref_uuid} /* #{file_name} */; };\n"
-      lines.insert(pbx_build_file_section_end, new_entry)
-      project_content.replace(lines.join)
-    end
-  end
-
-  def add_file_to_collection_group(project_content, collection_group_uuid, file_ref_uuid, file_name)
-    lines = project_content.lines
-    in_collection_group = false
-    children_section_found = false
-    
-    lines.each_with_index do |line, index|
-      if line.include?("#{collection_group_uuid} /* Collection */ = {")
-        in_collection_group = true
-      elsif in_collection_group && line.include?("children = (")
-        children_section_found = true
-      elsif in_collection_group && children_section_found && line.strip == ");"
-        # childrenセクションの終わりを見つけたので、その前に追加
-        new_reference = "\t\t\t\t#{file_ref_uuid} /* #{file_name} */,\n"
-        lines.insert(index, new_reference)
-        project_content.replace(lines.join)
-        break
-      end
-    end
-  end
-
-  def add_to_sources_build_phase(project_content, build_file_uuid, file_name)
-    lines = project_content.lines
-    in_sources_phase = false
-    files_section_found = false
-    
-    lines.each_with_index do |line, index|
-      if line.include?("/* Sources */ = {") && line.include?("isa = PBXSourcesBuildPhase")
-        in_sources_phase = true
-      elsif in_sources_phase && line.include?("files = (")
-        files_section_found = true
-      elsif in_sources_phase && files_section_found && line.strip == ");"
-        # filesセクションの終わりを見つけたので、その前に追加
-        new_reference = "\t\t\t\t#{build_file_uuid} /* #{file_name} in Sources */,\n"
-        lines.insert(index, new_reference)
-        project_content.replace(lines.join)
-        break
-      end
-    end
-  end
 end
