@@ -82,10 +82,32 @@ watcher.on("ready", function () {
   watcher.on("change", function (path) {
     var stars = path.split("/");
     var layoutPath = "layout_loader";
-    var dirName = stars[stars.length - 2].toLowerCase();
-    var filePath = stars[stars.length - 1];
-    if (filePath.endsWith("json")) {
-      filePath = stars[stars.length - 1].replace(/\.json$/g, "");
+    
+    // Find the main directory (Layouts, Styles, or Scripts)
+    var dirName = "";
+    var filePathParts = [];
+    var foundMainDir = false;
+    
+    for (var i = 0; i < stars.length; i++) {
+      var part = stars[i];
+      if (!foundMainDir && (
+        part.toLowerCase() === (config.layouts_directory || 'Layouts').toLowerCase() ||
+        part.toLowerCase() === (config.styles_directory || 'Styles').toLowerCase() ||
+        part.toLowerCase() === (config.scripts_directory || 'Scripts').toLowerCase()
+      )) {
+        dirName = part.toLowerCase();
+        foundMainDir = true;
+      } else if (foundMainDir) {
+        filePathParts.push(part);
+      }
+    }
+    
+    // Join subdirectories and filename
+    var fullFilePath = filePathParts.join("/");
+    
+    if (fullFilePath.endsWith(".json")) {
+      // Remove extension and keep directory structure
+      var filePathWithoutExt = fullFilePath.replace(/\.json$/g, "");
       try {
         JSON.parse(fs.readFileSync(path, "utf8"));
         console.log(path + " changed.");
@@ -108,14 +130,15 @@ watcher.on("ready", function () {
           });
         }
         
-        webSocket?.send(JSON.stringify([layoutPath, dirName, filePath]));
+        webSocket?.send(JSON.stringify([layoutPath, dirName, filePathWithoutExt]));
       } catch (err) {
         console.log(err);
       }
-    } else if (filePath.endsWith("js")) {
-      filePath = stars[stars.length - 1].replace(/\.js$/g, "");
+    } else if (fullFilePath.endsWith(".js")) {
+      // Remove extension and keep directory structure
+      var filePathWithoutExt = fullFilePath.replace(/\.js$/g, "");
       console.log(path + " changed.");
-      webSocket?.send(JSON.stringify([layoutPath, dirName, filePath]));
+      webSocket?.send(JSON.stringify([layoutPath, dirName, filePathWithoutExt]));
     }
   });
 });
