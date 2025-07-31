@@ -113,16 +113,12 @@ module BindingFilesAdder
        project_content.include?("PBXFileSystemSynchronizedGroup")
       puts "DEBUG: Found synchronized group in project"
       
-      # Bindingsが同期グループかチェック
-      bindings_group_uuid = project_manager.find_bindings_group_uuid(project_content)
-      return false unless bindings_group_uuid
-      
-      # 同期グループの参照を探す
-      sync_group_pattern = /#{bindings_group_uuid}.*PBXFileSystemSynchronized/
-      if project_content.match?(sync_group_pattern)
-        puts "DEBUG: Bindings is a synchronized group"
-        return true
-      end
+      # メインアプリフォルダが同期グループの場合、
+      # その中のすべてのフォルダも自動的にビルドされる
+      # これはXcode 16の新しいデフォルト動作
+      puts "WARNING: Project uses Xcode 16 synchronized folders"
+      puts "All files in synchronized folders are automatically compiled"
+      return true
     end
     
     false
