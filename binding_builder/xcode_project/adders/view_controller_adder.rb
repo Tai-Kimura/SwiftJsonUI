@@ -1,32 +1,15 @@
-require "fileutils"
 require "json"
+require_relative "file_adder"
 require_relative "../../project_finder"
-require_relative "../pbxproj_manager"
 
-module ViewControllerAdder
+class ViewControllerAdder < FileAdder
   def self.add_view_controller_file(project_manager, file_name, folder_name, json_file_name = nil)
-    return unless File.exist?(project_manager.project_file_path)
-    
     puts "Adding #{file_name} (ViewController) to Xcode project..."
     
-    # プロジェクトファイルをバックアップ
-    backup_path = project_manager.project_file_path + ".backup"
-    FileUtils.copy(project_manager.project_file_path, backup_path)
-    
-    begin
-      # プロジェクトファイルを読み取り
-      project_content = File.read(project_manager.project_file_path)
-      
+    safe_add_files(project_manager) do |project_content|
       # ファイルが既にプロジェクトに含まれているかチェック
       if project_content.include?(file_name)
         puts "#{file_name} is already in the project"
-        return
-      end
-      
-      # Xcode 16の同期グループをチェック
-      if PbxprojManager.is_synchronized_group?(project_content)
-        puts "Consider converting the main app folder to a regular group to avoid duplicate compilation."
-        # 同期グループの場合は処理を中止
         return
       end
       
@@ -52,162 +35,11 @@ module ViewControllerAdder
       # ViewControllerファイル用の処理
       add_view_controller_to_sections(project_manager, project_content, file_name, folder_name, file_ref_uuid, build_file_uuids, folder_uuid, json_file_name, json_file_ref_uuid, json_resource_uuids)
       
-      # プロジェクトファイルを書き戻し
-      File.write(project_manager.project_file_path, project_content)
       puts "Successfully added #{file_name} to Xcode project"
-      
-      # バックアップファイルを削除
-      File.delete(backup_path) if File.exist?(backup_path)
-      
-    rescue => e
-      puts "Error adding #{file_name} to Xcode project: #{e.message}"
-      puts e.backtrace.first(3)
-      # エラー時は元のファイルを復元
-      if File.exist?(backup_path)
-        FileUtils.copy(backup_path, project_manager.project_file_path)
-        File.delete(backup_path)
-        puts "Restored original project file"
-      end
     end
   end
 
   private
-
-  def self.count_non_test_build_phases(project_manager, project_content, phase_type)
-    # ターゲットとビルドフェーズを取得
-    target_build_phases = get_target_build_phases(project_content, phase_type)
-    
-    # .appターゲットのビルドフェーズをカウント
-    count = 0
-    target_build_phases.each do |target_uuid, build_phase_uuid|
-      if is_app_target?(project_content, target_uuid)
-        count += 1
-      end
-    end
-    count
-  end
-
-  def self.find_non_test_build_phase_insert_lines(project_content, phase_type)
-    target_build_phases = get_target_build_phases(project_content, phase_type)
-    insert_lines = []
-    
-    target_build_phases.each do |target_uuid, build_phase_uuid|
-      if is_app_target?(project_content, target_uuid)
-        # ビルドフェーズのfiles = (行を見つける
-        project_content.each_line.with_index do |line, index|
-          # PBXSourcesBuildPhaseまたはPBXResourcesBuildPhaseセクション内の定義を探す
-          phase_name = phase_type == "PBXSourcesBuildPhase" ? "Sources" : "Resources"
-          if line.include?("#{build_phase_uuid} /* #{phase_name} */ = {")
-            (index+1..index+10).each do |i|
-              if project_content.lines[i] && project_content.lines[i].include?("files = (")
-                insert_lines << i + 1
-                break
-              end
-            end
-            break
-          end
-        end
-      end
-    end
-    insert_lines
-  end
-
-
-  def self.get_target_build_phases(project_content, phase_type)
-    target_build_phases = []
-    current_target = nil
-    current_target_name = nil
-    in_target = false
-    in_build_phases = false
-    
-    project_content.each_line do |line|
-      # PBXNativeTargetの開始を検出
-      if line.match(/([A-F0-9]{24}) \/\* (.+?) \*\/ = \{/)
-        uuid = $1
-        name = $2
-        # 次の行でisa = PBXNativeTargetかチェックするため一時保存
-        current_target = uuid
-        current_target_name = name
-        in_target = false
-      elsif current_target && line.include?("isa = PBXNativeTarget")
-        # 前の行で見つけたUUIDが実際にPBXNativeTargetだった
-        in_target = true
-      elsif in_target && line.include?("buildPhases = (")
-        # buildPhasesセクション内でSourcesまたはResourcesを探す
-        in_build_phases = true
-      elsif in_target && in_build_phases && line.match(/([A-F0-9]{24}) \/\* (Sources|Resources) \*\/,/)
-        build_phase_uuid = $1
-        phase_name = $2
-        # PBXSourcesBuildPhaseまたはPBXResourcesBuildPhaseのチェック
-        if (phase_type == "PBXSourcesBuildPhase" && phase_name == "Sources") ||
-           (phase_type == "PBXResourcesBuildPhase" && phase_name == "Resources")
-          target_build_phases << [current_target, build_phase_uuid]
-        end
-      elsif in_build_phases && line.strip == ");"
-        # buildPhasesセクションの終了
-        in_build_phases = false
-      elsif line.strip == "};" && in_target
-        # ターゲットセクションの終了
-        in_target = false
-        in_build_phases = false
-        current_target = nil
-        current_target_name = nil
-      end
-    end
-    target_build_phases
-  end
-
-  def self.get_target_name_by_uuid(project_content, target_uuid)
-    project_content.each_line do |line|
-      if line.include?(target_uuid) && line.include?("isa = PBXNativeTarget")
-        if line.match(/\/\* (.+?) \*\//)
-          return $1
-        end
-      end
-    end
-    nil
-  end
-
-  def self.is_app_target?(project_content, target_uuid)
-    # ターゲットのproductReferenceを取得
-    product_ref_uuid = get_target_product_reference(project_content, target_uuid)
-    return false unless product_ref_uuid
-    
-    # productReferenceが.appかどうかチェック
-    is_app_product?(project_content, product_ref_uuid)
-  end
-
-  def self.get_target_product_reference(project_content, target_uuid)
-    in_target_section = false
-    found_target_header = false
-    
-    project_content.each_line do |line|
-      # ターゲットの開始を検出
-      if line.include?("#{target_uuid} /*") && line.include?("*/ = {")
-        found_target_header = true
-      elsif found_target_header && line.include?("isa = PBXNativeTarget")
-        in_target_section = true
-      elsif in_target_section && line.include?("productReference = ")
-        if line.match(/productReference = ([A-F0-9]{24}) \/\*/)
-          return $1
-        end
-      elsif in_target_section && line.strip == "};"
-        break
-      end
-    end
-    nil
-  end
-
-  def self.is_app_product?(project_content, product_ref_uuid)
-    project_content.each_line do |line|
-      if line.include?(product_ref_uuid) && line.include?("isa = PBXFileReference")
-        # .app で終わるかチェック
-        return line.include?(".app")
-      end
-    end
-    false
-  end
-
 
   def self.detect_project_name(project_file_path)
     ProjectFinder.detect_project_name(project_file_path)
@@ -215,13 +47,7 @@ module ViewControllerAdder
 
   def self.add_view_controller_to_sections(project_manager, project_content, file_name, folder_name, file_ref_uuid, build_file_uuids, folder_uuid, json_file_name, json_file_ref_uuid, json_resource_uuids)
     # 1. PBXBuildFile セクションに追加
-    insert_line = nil
-    project_content.each_line.with_index do |line, index|
-      if line.include?("/* End PBXBuildFile section */")
-        insert_line = index
-        break
-      end
-    end
+    insert_line = find_pbx_build_file_section_end(project_content)
     
     if insert_line
       lines = project_content.lines
@@ -245,13 +71,7 @@ module ViewControllerAdder
     end
     
     # 2. PBXFileReference セクションに追加（フォルダとファイル）
-    insert_line = nil
-    project_content.each_line.with_index do |line, index|
-      if line.include?("/* End PBXFileReference section */")
-        insert_line = index
-        break
-      end
-    end
+    insert_line = find_pbx_file_reference_section_end(project_content)
     
     if insert_line
       lines = project_content.lines
