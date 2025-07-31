@@ -62,22 +62,28 @@ convert_to_group() {
         local pbxproj_path="$PROJECT_FILE_PATH"
         echo "Using project: $pbxproj_path"
     else
-        # Use Ruby to find the project file with the same logic as other commands
-        local pbxproj_path=$(ruby -e "
-            require_relative '$SCRIPT_DIR/../project_finder'
+        # Use Ruby script to find the project file
+        local pbxproj_path=$(ruby -I"$SCRIPT_DIR/.." -e "
+            require 'project_finder'
+            require 'config_manager'
             
-            # Find project
-            result = ProjectFinder.find_from_command
-            if result[:project_file_path]
-                puts result[:project_file_path]
-            else
-                STDERR.puts 'Error: Could not find Xcode project'
+            base_dir = '$SCRIPT_DIR/..'
+            config = ConfigManager.load_config(base_dir)
+            
+            begin
+                if config['project_file_name'] && !config['project_file_name'].empty?
+                    puts ProjectFinder.find_project_file_by_name(base_dir, config['project_file_name'])
+                else
+                    puts ProjectFinder.find_project_file(base_dir)
+                end
+            rescue => e
+                STDERR.puts e.message
                 exit 1
             end
         " 2>&1)
         
         if [ $? -ne 0 ]; then
-            echo "$pbxproj_path"
+            echo "Error: $pbxproj_path"
             return 1
         fi
         
