@@ -1,5 +1,19 @@
 #!/usr/bin/env bash
 
+# convert_command.sh - SwiftJsonUI Convert Command
+#
+# This command provides utilities for converting Xcode project formats to ensure
+# compatibility with SwiftJsonUI's binding_builder.
+#
+# Currently supported conversions:
+# - to-group: Converts Xcode 16's synchronized folders to traditional group references
+#
+# Why this is needed:
+# Xcode 16 introduced synchronized folders that automatically compile all files
+# in a directory. This causes "Multiple commands produce" errors when binding_builder
+# generates files, as both the synchronized folder and explicit file references
+# try to compile the same files.
+
 # Convert command: Convert Xcode 16 synchronized folders to group references
 convert_command() {
     local SCRIPT_DIR="$1"

@@ -1,5 +1,35 @@
 #!/usr/bin/env ruby
 
+# convert_to_group_reference.rb - Xcode 16 Synchronized Folder to Group Reference Converter
+#
+# Purpose:
+# This tool converts Xcode 16's new synchronized folder references back to traditional group references.
+# 
+# Background:
+# Starting with Xcode 16, Apple introduced synchronized folders that automatically include all files
+# in a directory. While convenient, this can cause issues with SwiftJsonUI's binding_builder:
+# - All files in synchronized folders are automatically compiled, causing duplicate compilation errors
+# - binding_builder needs precise control over which files are included in the build
+# - The new format is incompatible with older Xcode versions
+#
+# What this tool does:
+# 1. Converts PBXFileSystemSynchronizedRootGroup → PBXGroup
+# 2. Converts PBXFileSystemSynchronizedGroup → PBXGroup
+# 3. Removes PBXFileSystemSynchronizedBuildFileExceptionSet sections
+# 4. Adds empty children arrays to groups
+# 5. Links converted groups to their parent groups (maintains hierarchy)
+# 6. Ensures Core group contains UI and Base subgroups
+#
+# Usage:
+# - Run via: sjui convert to-group [--force]
+# - The --force flag skips the confirmation prompt
+# - A backup of the project file is created before conversion
+#
+# After conversion:
+# - Groups will be empty (no file references)
+# - You'll need to manually add files back to groups in Xcode
+# - This restores the traditional behavior where you explicitly control which files are included
+
 require 'fileutils'
 require 'json'
 
