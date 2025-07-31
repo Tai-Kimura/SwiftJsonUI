@@ -2,6 +2,10 @@
 
 # Convert command: Convert Xcode 16 synchronized folders to group references
 convert_command() {
+    local SCRIPT_DIR="$1"
+    local PROJECT_FILE="$2"
+    shift 2
+    
     # Check for subcommand
     if [ $# -eq 0 ]; then
         echo "Usage: sjui convert <subcommand> [options]"
@@ -56,50 +60,18 @@ convert_to_group() {
     echo "Converting Xcode 16 synchronized folders to group references..."
     echo ""
     
-    # Get project file path from environment or find it
-    if [ -n "$PROJECT_FILE_PATH" ]; then
-        # Use the already discovered project file
-        local pbxproj_path="$PROJECT_FILE_PATH"
-        echo "Using project: $pbxproj_path"
-    else
-        # Get the absolute path to binding_builder directory
-        local binding_builder_dir=$(cd "$SCRIPT_DIR/.." && pwd)
-        
-        # Create a temporary Ruby script to find the project
-        local temp_script=$(mktemp)
-        cat > "$temp_script" <<EOF
-#!/usr/bin/env ruby
-base_dir = '$binding_builder_dir'
-\$LOAD_PATH.unshift(base_dir)
-
-require 'project_finder.rb'
-require 'config_manager.rb'
-
-config = ConfigManager.load_config(base_dir)
-
-begin
-    if config['project_file_name'] && !config['project_file_name'].empty?
-        puts ProjectFinder.find_project_file_by_name(base_dir, config['project_file_name'])
-    else
-        puts ProjectFinder.find_project_file(base_dir)
-    end
-rescue => e
-    STDERR.puts e.message
-    exit 1
-end
-EOF
-        
-        local pbxproj_path=$(ruby "$temp_script" 2>&1)
-        local ruby_exit_code=$?
-        rm -f "$temp_script"
-        
-        if [ $ruby_exit_code -ne 0 ]; then
-            echo "Error: $pbxproj_path"
-            return 1
-        fi
-        
-        echo "Found project: $pbxproj_path"
+    # Ensure we have the project.pbxproj path
+    local pbxproj_path="$PROJECT_FILE"
+    if [[ "$pbxproj_path" == *.xcodeproj ]]; then
+        pbxproj_path="$pbxproj_path/project.pbxproj"
     fi
+    
+    if [ ! -f "$pbxproj_path" ]; then
+        echo "Error: project.pbxproj not found at: $pbxproj_path"
+        return 1
+    fi
+    
+    echo "Using project: $pbxproj_path"
     
     echo ""
     

@@ -170,7 +170,7 @@ case "$COMMAND" in
         hotload_command "$SCRIPT_DIR" "$PROJECT_FILE" "$@"
         ;;
     "convert")
-        convert_command "$@"
+        convert_command "$SCRIPT_DIR" "$PROJECT_FILE" "$@"
         ;;
     *)
         echo "Unknown command: $COMMAND"
