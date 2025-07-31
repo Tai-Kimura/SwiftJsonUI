@@ -62,14 +62,19 @@ convert_to_group() {
         local pbxproj_path="$PROJECT_FILE_PATH"
         echo "Using project: $pbxproj_path"
     else
+        # Get the absolute path to binding_builder directory
+        local binding_builder_dir=$(cd "$SCRIPT_DIR/.." && pwd)
+        
         # Create a temporary Ruby script to find the project
-        local temp_script=$(mktemp /tmp/find_project_XXXXXX.rb)
-        cat > "$temp_script" <<'EOF'
+        local temp_script=$(mktemp)
+        cat > "$temp_script" <<EOF
 #!/usr/bin/env ruby
-require_relative ARGV[0] + '/project_finder'
-require_relative ARGV[0] + '/config_manager'
+base_dir = '$binding_builder_dir'
+\$LOAD_PATH.unshift(base_dir)
 
-base_dir = ARGV[0]
+require 'project_finder'
+require 'config_manager'
+
 config = ConfigManager.load_config(base_dir)
 
 begin
@@ -84,7 +89,7 @@ rescue => e
 end
 EOF
         
-        local pbxproj_path=$(ruby "$temp_script" "$SCRIPT_DIR/.." 2>&1)
+        local pbxproj_path=$(ruby "$temp_script" 2>&1)
         local ruby_exit_code=$?
         rm -f "$temp_script"
         
