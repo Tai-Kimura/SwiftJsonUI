@@ -40,6 +40,7 @@
 
 require 'fileutils'
 require 'json'
+require 'time'
 
 class XcodeSyncToGroupConverter
   def initialize(pbxproj_path)
