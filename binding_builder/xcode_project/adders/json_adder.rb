@@ -19,7 +19,6 @@ class JsonAdder < FileAdder
       
       # グループからの相対パスを計算
       relative_path = calculate_group_relative_path(json_file_path, group_name, project_manager)
-      puts "DEBUG: calculate_group_relative_path - json_file_path: #{json_file_path}, group_name: #{group_name}, result: #{relative_path}"
       
       # ファイルが既にプロジェクトに含まれているかチェック
       build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Resources \*\//
@@ -40,7 +39,6 @@ class JsonAdder < FileAdder
       # 1. PBXFileReferenceを追加
       # サブディレクトリがある場合でも、相対パスを保持する
       file_path_for_reference = relative_path
-      puts "DEBUG: Adding PBXFileReference - file_name: #{file_name}, relative_path: #{relative_path}, file_path_for_reference: #{file_path_for_reference}"
       add_pbx_file_reference(project_content, file_ref_uuid, file_name, file_path_for_reference)
       
       # 2. PBXBuildFileを追加（複数ターゲット対応）
@@ -78,21 +76,8 @@ class JsonAdder < FileAdder
       # グループフォルダからの相対パス
       relative = file_pathname.relative_path_from(group_pathname).to_s
       
-      # ../ で始まる場合は、ファイルがグループフォルダ外にあることを意味する
-      # この場合はファイル名のみを使用
-      if relative.start_with?('../')
-        # ただし、サブディレクトリ情報は保持したい
-        # 例: Layouts/common/_navigation_bar.json -> common/_navigation_bar.json
-        file_path_from_project = file_pathname.relative_path_from(Pathname.new(project_root)).to_s
-        if file_path_from_project.start_with?("#{group_name}/")
-          # グループ名を除去
-          file_path_from_project.sub("#{group_name}/", '')
-        else
-          File.basename(json_file_path)
-        end
-      else
-        relative
-      end
+      # 相対パスをそのまま返す（サブディレクトリ構造を保持）
+      relative
     rescue
       # 相対パス計算に失敗した場合はファイル名のみ
       File.basename(json_file_path)
@@ -134,7 +119,6 @@ class JsonAdder < FileAdder
   end
 
   def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path = nil)
-    puts "DEBUG: add_to_group - file_name: #{file_name}, group_name: #{group_name}, relative_path: #{relative_path}"
     # グループのUUIDを検索
     group_uuid = find_group_uuid_by_name(project_content, group_name)
     return unless group_uuid
