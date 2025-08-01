@@ -19,7 +19,6 @@ class JsonAdder < FileAdder
       
       # グループからの相対パスを計算
       relative_path = calculate_group_relative_path(json_file_path, group_name, project_manager)
-      puts "DEBUG: json_file_path=#{json_file_path}, group_name=#{group_name}, relative_path=#{relative_path}"
       
       # ファイルが既にプロジェクトに含まれているかチェック
       build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Resources \*\//
@@ -76,30 +75,27 @@ class JsonAdder < FileAdder
       
       # グループフォルダからの相対パス
       relative = file_pathname.relative_path_from(group_pathname).to_s
-      puts "DEBUG calculate_group_relative_path: project_root=#{project_root}, group_folder_path=#{group_folder_path}, relative=#{relative}"
       
       # 相対パスが..で始まる場合は、ファイルがグループ外にあることを意味する
       if relative.start_with?('../')
         # プロジェクトルートからの相対パスを取得
         file_path_from_project = file_pathname.relative_path_from(Pathname.new(project_root)).to_s
-        puts "DEBUG: file_path_from_project=#{file_path_from_project}"
         # グループ名/で始まる場合は、グループ名を除去
-        if file_path_from_project.start_with?("#{group_name}/")
-          result = file_path_from_project.sub("#{group_name}/", '')
-          puts "DEBUG: Returning #{result} after stripping group name"
-          result
+        # bindingTestApp/Layouts/... のようなパスも考慮
+        if file_path_from_project.include?("/#{group_name}/")
+          # /Layouts/ より後の部分を取得
+          file_path_from_project.split("/#{group_name}/", 2).last
+        elsif file_path_from_project.start_with?("#{group_name}/")
+          file_path_from_project.sub("#{group_name}/", '')
         else
-          puts "DEBUG: Returning basename #{File.basename(json_file_path)}"
           File.basename(json_file_path)
         end
       else
         # 相対パスをそのまま返す（サブディレクトリ構造を保持）
-        puts "DEBUG: Returning relative path as-is: #{relative}"
         relative
       end
     rescue => e
       # 相対パス計算に失敗した場合はファイル名のみ
-      puts "DEBUG: Exception in calculate_group_relative_path: #{e.message}"
       File.basename(json_file_path)
     end
   end
