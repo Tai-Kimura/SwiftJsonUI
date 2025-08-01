@@ -197,13 +197,35 @@ class XcodeProjectManager < PbxprojManager
     lines = project_content.lines
     
     # プロジェクト名を取得（フォールバック付き）
-    project_name = @project_name || File.basename(File.dirname(@project_file_path), '.xcodeproj')
+    if @project_name
+      project_name = @project_name
+    else
+      # .xcodeprojディレクトリを探す
+      project_dir = File.dirname(@project_file_path)
+      if project_dir.end_with?('.xcodeproj')
+        project_name = File.basename(project_dir, '.xcodeproj')
+      else
+        # pbxprojファイルから推測 - mainGroupの最初の子を探す
+        # 通常、アプリ名のグループが最初に来る
+        project_name = nil
+        content_for_name = project_content.dup
+        if content_for_name.match(/mainGroup = ([A-F0-9]{24});/)
+          main_group_id = $1
+          # mainGroupの定義を探す
+          if content_for_name.match(/#{main_group_id}[^{]*\{[^}]*children = \(\s*([A-F0-9]{24}) \/\* ([^*]+) \*\//)
+            project_name = $2 unless $2 == "Products" || $2.include?("Tests")
+          end
+        end
+        project_name ||= File.basename(File.dirname(@project_file_path), '.xcodeproj')
+      end
+    end
     puts "DEBUG: Looking for main project group: #{project_name}"
     
     found_main_group = false
     lines.each_with_index do |line, index|
       # メインプロジェクトグループを探す（PBXGroupになっているものも含む）
-      if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(project_name)} \*\/ = \{/)
+      # PBXGroupセクション内のみを対象にする
+      if line.match(/^\s*([A-F0-9]{24}) \/\* #{Regexp.escape(project_name)} \*\/ = \{/)
         main_group_uuid = $1
         puts "DEBUG: Found potential main group at line #{index + 1}: #{main_group_uuid}"
         
@@ -233,7 +255,7 @@ class XcodeProjectManager < PbxprojManager
           if lines[i].include?("children = (") && children_start.nil?
             children_start = i + 1
             puts "DEBUG: Found children start at line #{children_start}"
-          elsif lines[i].strip == ");" && children_start && children_end.nil?
+          elsif (lines[i].strip == ");" || lines[i].include?(");")) && children_start && children_end.nil?
             children_end = i
             puts "DEBUG: Found children end at line #{children_end}"
             break
@@ -242,8 +264,19 @@ class XcodeProjectManager < PbxprojManager
         
         if children_start && children_end
           # 新しいグループ参照を追加
-          new_reference = "\t\t\t\t#{group_uuid} /* #{group_name} */,\n"
-          lines.insert(children_end, new_reference)
+          # );path のようなケースを処理
+          if lines[children_end].include?(");") && !lines[children_end].strip.end_with?(");")
+            # );の後に何かがある場合、);の前に挿入
+            # 最後の要素の後にカンマを追加
+            if children_end > children_start && lines[children_end - 1].strip.length > 0 && !lines[children_end - 1].strip.end_with?(",")
+              lines[children_end - 1] = lines[children_end - 1].rstrip + ",\n"
+            end
+            lines[children_end] = lines[children_end].sub(/\);/, "\t\t\t\t#{group_uuid} /* #{group_name} */,\n\t\t\t);")
+          else
+            # 通常のケース
+            new_reference = "\t\t\t\t#{group_uuid} /* #{group_name} */,\n"
+            lines.insert(children_end, new_reference)
+          end
           project_content.replace(lines.join)
           puts "✅ Added #{group_name} to main project group"
           found_main_group = true
