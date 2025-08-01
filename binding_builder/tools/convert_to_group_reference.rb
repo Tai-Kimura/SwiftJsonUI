@@ -290,6 +290,16 @@ class XcodeSyncToGroupConverter
           # childrenがない場合、追加する
           children_array = []
           
+          # 既存のファイル参照を追加（AppDelegate、SceneDelegate等）
+          ["#{app_name} folder", app_name].each do |possible_key|
+            if file_references_by_group[possible_key]
+              file_references_by_group[possible_key].each do |file_ref|
+                children_array << "\t\t\t\t#{file_ref},"
+                puts "DEBUG: Adding file reference: #{file_ref}"
+              end
+            end
+          end
+          
           # すべての既存グループを追加（Products以外）
           all_groups.each do |group_name, uuid|
             next if group_name == app_name || group_name == 'Products' || group_name.include?('Tests')
@@ -306,8 +316,18 @@ class XcodeSyncToGroupConverter
         else
           # childrenが既にある場合、空なら全グループを追加
           if middle =~ /children = \(\s*\);/m
-            puts "DEBUG: Main app group has empty children, adding all groups..."
+            puts "DEBUG: Main app group has empty children, adding all groups and files..."
             children_array = []
+            
+            # 既存のファイル参照を追加（AppDelegate、SceneDelegate等）
+            ["#{app_name} folder", app_name].each do |possible_key|
+              if file_references_by_group[possible_key]
+                file_references_by_group[possible_key].each do |file_ref|
+                  children_array << "\t\t\t\t#{file_ref},"
+                  puts "DEBUG: Adding file reference: #{file_ref}"
+                end
+              end
+            end
             
             # すべての既存グループを追加（Products以外）
             all_groups.each do |group_name, uuid|
