@@ -19,6 +19,7 @@ class JsonAdder < FileAdder
       
       # グループからの相対パスを計算
       relative_path = calculate_group_relative_path(json_file_path, group_name, project_manager)
+      puts "Calculated relative path: #{relative_path}" if relative_path && relative_path.include?('/')
       
       # ファイルが既にプロジェクトに含まれているかチェック
       build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Resources \*\//
@@ -241,7 +242,48 @@ class JsonAdder < FileAdder
   def self.create_subgroup(project_content, parent_group_uuid, subgroup_uuid, subgroup_name)
     lines = project_content.lines
     
-    # 1. PBXGroupセクションにサブグループを追加
+    # 1. 親グループのchildrenに追加を先に行う
+    parent_found = false
+    children_line = nil
+    parent_group_index = nil
+    
+    lines.each_with_index do |line, index|
+      if line.include?("#{parent_group_uuid} /* ") && line.include?(" */ = {")
+        parent_found = true
+        parent_group_index = index
+        puts "Found parent group at line #{index}: #{line.strip}"
+        # childrenを探す
+        (index+1..index+10).each do |i|
+          if lines[i] && lines[i].include?("children = (")
+            children_line = i
+            puts "Found children at line #{i}"
+            break
+          end
+        end
+        break
+      end
+    end
+    
+    if parent_found && children_line
+      # childrenの終了位置を探す
+      children_end = nil
+      (children_line+1..lines.length-1).each do |i|
+        if lines[i] && (lines[i].strip == ");" || lines[i].include?(");"))
+          children_end = i
+          break
+        end
+      end
+      
+      if children_end
+        puts "Inserting subgroup reference at line #{children_end}"
+        subgroup_entry = "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n"
+        lines.insert(children_end, subgroup_entry)
+      end
+    else
+      puts "WARNING: Could not find parent group or children section"
+    end
+    
+    # 2. PBXGroupセクションにサブグループを追加
     pbx_group_section_end = nil
     lines.each_with_index do |line, index|
       if line.strip == "/* End PBXGroup section */"
@@ -251,6 +293,7 @@ class JsonAdder < FileAdder
     end
     
     if pbx_group_section_end
+      puts "Adding subgroup definition at line #{pbx_group_section_end}"
       new_entry = "\t\t#{subgroup_uuid} /* #{subgroup_name} */ = {\n"
       new_entry += "\t\t\tisa = PBXGroup;\n"
       new_entry += "\t\t\tchildren = (\n"
@@ -260,44 +303,11 @@ class JsonAdder < FileAdder
       new_entry += "\t\t\tsourceTree = \"<group>\";\n"
       new_entry += "\t\t};\n"
       lines.insert(pbx_group_section_end, new_entry)
-      
-      # 更新されたlinesでproject_contentを更新
-      project_content.replace(lines.join)
-      lines = project_content.lines  # 新しいlines配列を取得
     end
     
-    # 2. 親グループのchildrenに追加
-    in_parent_group = false
-    in_children = false
-    children_start = nil
-    
-    lines.each_with_index do |line, index|
-      if line.include?("#{parent_group_uuid} /* ")
-        in_parent_group = true
-        puts "Found parent group at line #{index}: #{line.strip}"
-      elsif in_parent_group && line.strip == "};"
-        puts "Parent group ended at line #{index}"
-        break
-      elsif in_parent_group && line.include?("children = (")
-        in_children = true
-        children_start = index
-        puts "Found children start at line #{index}"
-        # 次の行から);を探す
-        (index+1..lines.length-1).each do |i|
-          if lines[i] && (lines[i].strip == ");" || lines[i].include?(");"))
-            puts "Found children end at line #{i}: #{lines[i].strip}"
-            # 挿入位置は);の前
-            subgroup_entry = "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n"
-            lines.insert(i, subgroup_entry)
-            puts "Inserted subgroup at line #{i}"
-            break
-          end
-        end
-        break
-      end
-    end
-    
+    # 3. 更新されたlinesでproject_contentを更新
     project_content.replace(lines.join)
+    puts "Subgroup '#{subgroup_name}' created successfully"
   end
 
   def self.add_to_resources_build_phases(project_content, resource_uuids, file_name)
