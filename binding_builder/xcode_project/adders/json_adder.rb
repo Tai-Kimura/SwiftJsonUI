@@ -76,8 +76,20 @@ class JsonAdder < FileAdder
       # グループフォルダからの相対パス
       relative = file_pathname.relative_path_from(group_pathname).to_s
       
-      # 相対パスをそのまま返す（サブディレクトリ構造を保持）
-      relative
+      # 相対パスが..で始まる場合は、ファイルがグループ外にあることを意味する
+      if relative.start_with?('../')
+        # プロジェクトルートからの相対パスを取得
+        file_path_from_project = file_pathname.relative_path_from(Pathname.new(project_root)).to_s
+        # グループ名/で始まる場合は、グループ名を除去
+        if file_path_from_project.start_with?("#{group_name}/")
+          file_path_from_project.sub("#{group_name}/", '')
+        else
+          File.basename(json_file_path)
+        end
+      else
+        # 相対パスをそのまま返す（サブディレクトリ構造を保持）
+        relative
+      end
     rescue
       # 相対パス計算に失敗した場合はファイル名のみ
       File.basename(json_file_path)
