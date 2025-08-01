@@ -104,20 +104,70 @@ class XcodeSyncToGroupConverter
       puts "Converted isa = PBXFileSystemSynchronizedGroup to PBXGroup"
     end
     
-    # 3. explicitFileTypesとexplicitFoldersを削除してchildrenに置き換え
-    # 重要: 既存のファイル参照を収集して保持する
-    file_references = {}
+    # 3. 既存のファイル情報を収集
+    file_references_by_group = {}
+    group_uuids = {}
     
-    # PBXFileSystemSynchronizedBuildFileExceptionSetから既存のファイルリストを取得
-    content.scan(/([A-F0-9]{24}) \/\* Exceptions for "([^"]+)" folder.*?\*\/ = \{[^}]*?membershipExceptions = \(([^)]*)\)/m) do |uuid, folder_name, exceptions|
-      # exceptionsから実際のファイル名を抽出
-      files = exceptions.scan(/([^,\s]+)[,\s]*/).flatten.reject { |f| f.strip.empty? }
-      file_references[folder_name] = files
-      puts "DEBUG: Found #{files.length} files in #{folder_name} folder"
+    # まず、グループのUUIDを収集
+    content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBX(?:FileSystem)?(?:Synchronized)?(?:Root)?Group;/) do |uuid, name|
+      group_uuids[name] = uuid
+      puts "DEBUG: Found group #{name} with UUID #{uuid}"
     end
     
+    # exceptionsがある場合、そのファイル参照を収集
+    content.scan(/([A-F0-9]{24}) \/\* Exceptions for "([^"]+)" folder.*?\*\/ = \{[^}]*?membershipExceptions = \(([^)]*)\)/m) do |exception_uuid, folder_name, exceptions|
+      files = exceptions.scan(/([^,\s]+)[,\s]*/).flatten.reject { |f| f.strip.empty? }
+      puts "DEBUG: Found #{files.length} files in #{folder_name} folder exceptions"
+      
+      # 各ファイルのUUIDを探す
+      file_uuids = []
+      files.each do |file|
+        # ファイル名からPBXFileReferenceのUUIDを検索
+        if match = content.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(file)} \*\/ = \{[^}]*?isa = PBXFileReference/)
+          file_uuids << "#{match[1]} /* #{file} */"
+          puts "  Found file reference: #{file} -> #{match[1]}"
+        end
+      end
+      
+      file_references_by_group[folder_name] = file_uuids if file_uuids.any?
+    end
+    
+    # 4. explicitFileTypesとexplicitFoldersを削除してchildrenに置き換え
     content.gsub!(/explicitFileTypes = \{[^}]*\};\s*explicitFolders = \([^)]*\);/m) do
       "children = (\n\t\t\t);"
+    end
+    
+    # 4.5. 各グループの変換処理を改善
+    group_uuids.each do |group_name, group_uuid|
+      # グループ定義を見つけて変換
+      content.gsub!(/(#{group_uuid} \/\* #{Regexp.escape(group_name)} \*\/ = \{[^}]*?)(\};)/m) do |match|
+        group_content = $1
+        suffix = $2
+        
+        # exceptionsを削除
+        group_content.gsub!(/\s*exceptions = [^;]+;\s*/m, '')
+        
+        # childrenがない場合は追加
+        unless group_content.include?("children =")
+          # ファイル参照があれば追加
+          if file_references_by_group[group_name] && file_references_by_group[group_name].any?
+            children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
+            group_content += "\n\t\t\tchildren = (\n#{children_items}\n\t\t\t);"
+          else
+            group_content += "\n\t\t\tchildren = (\n\t\t\t);"
+          end
+        else
+          # 既存のchildrenが空の場合、ファイル参照を追加
+          if file_references_by_group[group_name] && file_references_by_group[group_name].any?
+            group_content.gsub!(/children = \(\s*\);/m) do
+              children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
+              "children = (\n#{children_items}\n\t\t\t);"
+            end
+          end
+        end
+        
+        "#{group_content}#{suffix}"
+      end
     end
     
     # 3.5. グループ定義内のchildrenがないものに空のchildrenを追加
@@ -140,7 +190,8 @@ class XcodeSyncToGroupConverter
       puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
     end
     
-    # 5. exceptionsへの参照を削除
+    # 5. exceptionsへの参照を削除（既に上で処理済みだが念のため）
+    content.gsub!(/\s*exceptions = \([^)]*\);\s*/m, '')
     content.gsub!(/\s*exceptions = [A-F0-9]{24} \/\* [^*]* \*\/;\s*/m, '')
     
     # 6. 複数のPBXGroupセクションをマージ
@@ -284,20 +335,44 @@ class XcodeSyncToGroupConverter
       
       puts "✅ Groups linked to parent groups"
       
+      # 8. 収集したファイル参照を各グループに追加
+      if file_references_by_group.any?
+        puts "\nAdding file references to groups..."
+        
+        file_references_by_group.each do |group_name, file_uuids|
+          puts "Adding #{file_uuids.length} files to #{group_name} group"
+          
+          # グループを検索して、childrenに追加
+          content.gsub!(/(\/\* #{Regexp.escape(group_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);)/m) do |match|
+            prefix = $1
+            existing_children = $2.strip
+            suffix = $3
+            
+            # 既存のchildrenと新しいファイルを結合
+            all_children = []
+            all_children << existing_children unless existing_children.empty?
+            file_uuids.each { |uuid| all_children << "\t\t\t\t#{uuid}," }
+            
+            "#{prefix}\n#{all_children.join("\n")}\n\t\t\t#{suffix}"
+          end
+        end
+      end
+      
+      # 変換情報を保存（setupで使用）
+      if file_references_by_group.any?
+        project_dir = File.dirname(@pbxproj_path)
+        conversion_info = {
+          'conversion_date' => Time.now.iso8601,
+          'file_references' => file_references_by_group
+        }
+        File.write(File.join(project_dir, '.conversion_info.json'), JSON.pretty_generate(conversion_info))
+        puts "Saved conversion info for file restoration"
+      end
+      
       # ファイル保存
       File.write(@pbxproj_path, content)
       puts "✅ Conversion completed!"
       puts "ℹ️  Synchronized folders have been converted to regular groups"
-      
-      # ファイル参照情報を保存（setupコマンドで使用）
-      if file_references.any?
-        conversion_info_path = File.join(File.dirname(@pbxproj_path), '.conversion_info.json')
-        File.write(conversion_info_path, JSON.pretty_generate({
-          'converted_at' => Time.now.iso8601,
-          'file_references' => file_references
-        }))
-        puts "📄 Saved file reference information for restoration"
-      end
       
       if existing_groups.empty?
         puts "\n📝 Next step: Run 'sjui setup' to create the SwiftJsonUI directory structure"

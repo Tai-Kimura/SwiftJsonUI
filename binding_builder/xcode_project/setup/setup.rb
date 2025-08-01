@@ -168,7 +168,7 @@ class Setup < PbxprojManager
       return
     end
     
-    puts "Found conversion info - restoring existing file references..."
+    puts "Found conversion info - processing converted project..."
     
     begin
       require 'json'
@@ -176,37 +176,20 @@ class Setup < PbxprojManager
       file_references = conversion_info['file_references'] || {}
       
       if file_references.empty?
-        puts "No file references to restore"
+        puts "No file references found in conversion info"
         return
       end
       
-      # メインアプリグループの既存ファイルを復元
-      app_name = File.basename(File.dirname(@project_file_path), '.xcodeproj')
-      if file_references[app_name]
-        puts "Restoring #{file_references[app_name].length} files for #{app_name} group..."
-        
-        # 重要なファイル（AppDelegate、SceneDelegate、Info.plist等）を優先的に復元
-        important_files = ['AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist', 
-                          'Assets.xcassets', 'LaunchScreen.storyboard', 'Main.storyboard']
-        
-        files_to_restore = file_references[app_name].select do |file|
-          # binding_builder関連のファイルは除外
-          !file.start_with?('binding_builder/') && !file.start_with?('hot_loader/')
-        end
-        
-        if files_to_restore.any?
-          # TODO: 実際のファイル復元処理を実装
-          puts "Files to restore: #{files_to_restore.join(', ')}"
-          puts "Note: Manual restoration may be required in Xcode"
-        end
-      end
+      puts "Conversion info contains references for: #{file_references.keys.join(', ')}"
+      puts "Note: Existing files are preserved in their original locations"
+      puts "      The convert command has already restored file references in the project"
       
       # 変換情報ファイルを削除（使用済み）
       File.delete(conversion_info_path)
       puts "Cleaned up conversion info file"
       
     rescue => e
-      puts "Warning: Failed to restore converted files: #{e.message}"
+      puts "Warning: Failed to process conversion info: #{e.message}"
       # エラーが発生しても処理を続行
     end
   end
