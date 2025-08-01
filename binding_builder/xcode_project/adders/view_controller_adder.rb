@@ -92,9 +92,11 @@ class ViewControllerAdder < FileAdder
         "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = #{file_name}; sourceTree = \"<group>\"; };\n"
       ]
       
-      # JSONファイルがある場合は追加（グループ内なのでpathはファイル名のみ）
+      # JSONファイルがある場合は追加（Layoutsフォルダへの相対パスを使用）
       if json_file_name
-        file_entries << "\t\t#{json_file_ref_uuid} /* #{json_file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = #{json_file_name}; sourceTree = \"<group>\"; };\n"
+        # View/FolderNameグループからLayoutsフォルダへの相対パス
+        json_relative_path = "../../Layouts/#{json_file_name}"
+        file_entries << "\t\t#{json_file_ref_uuid} /* #{json_file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = \"#{json_relative_path}\"; sourceTree = \"<group>\"; };\n"
       end
       
       # フォルダエントリ（JSONファイルがある場合は両方含める）
