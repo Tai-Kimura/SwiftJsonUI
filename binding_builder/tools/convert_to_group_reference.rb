@@ -13,12 +13,10 @@
 # - The new format is incompatible with older Xcode versions
 #
 # What this tool does:
-# 1. Converts PBXFileSystemSynchronizedRootGroup → PBXGroup
-# 2. Converts PBXFileSystemSynchronizedGroup → PBXGroup
-# 3. Removes PBXFileSystemSynchronizedBuildFileExceptionSet sections
-# 4. Adds empty children arrays to groups
-# 5. Links converted groups to their parent groups (maintains hierarchy)
-# 6. Ensures Core group contains UI and Base subgroups
+# 1. Converts PBXFileSystemSynchronizedRootGroup → PBXGroup for the main app only
+# 2. Removes exceptions and fileSystemSynchronizedGroups references
+# 3. Preserves test targets as synchronized (they don't have the same issues)
+# 4. Maintains all existing file references in the project
 #
 # Usage:
 # - Run via: sjui convert to-group [--force]
@@ -34,9 +32,9 @@
 # - Run `sjui convert to-group` to fix synchronization issues
 #
 # After conversion:
-# - Groups will be empty (no file references)
-# - You'll need to manually add files back to groups in Xcode
-# - This restores the traditional behavior where you explicitly control which files are included
+# - The main app group will contain all existing files and groups
+# - Test targets remain as synchronized folders (no issues there)
+# - You can continue using binding_builder normally
 
 require 'fileutils'
 require 'json'
@@ -59,385 +57,126 @@ class XcodeSyncToGroupConverter
     content = File.read(@pbxproj_path)
     original_content = content.dup
     
-    # 変換実行
-    converted = false
+    # プロジェクト情報を取得
+    project_dir = File.dirname(File.dirname(@pbxproj_path))
+    app_name = File.basename(project_dir, '.xcodeproj')
     
-    # 1. セクション名を変換
-    # PBXFileSystemSynchronizedRootGroupセクションをPBXGroupセクションに変換
-    if content.include?("/* Begin PBXFileSystemSynchronizedRootGroup section */")
-      content.gsub!(
-        /\/\* Begin PBXFileSystemSynchronizedRootGroup section \*\//,
-        '/* Begin PBXGroup section */'
-      )
-      content.gsub!(
-        /\/\* End PBXFileSystemSynchronizedRootGroup section \*\//,
-        '/* End PBXGroup section */'
-      )
-      converted = true
-      puts "Converted PBXFileSystemSynchronizedRootGroup section to PBXGroup section"
+    # メインアプリグループのUUIDを探す
+    main_app_uuid = nil
+    content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;/) do |uuid|
+      main_app_uuid = uuid[0]
+      puts "Found main app synchronized group: #{main_app_uuid}"
+      break
     end
     
-    # PBXFileSystemSynchronizedGroupセクションも同様に
-    if content.include?("/* Begin PBXFileSystemSynchronizedGroup section */")
-      content.gsub!(
-        /\/\* Begin PBXFileSystemSynchronizedGroup section \*\//,
-        '/* Begin PBXGroup section */'
-      )
-      content.gsub!(
-        /\/\* End PBXFileSystemSynchronizedGroup section \*\//,
-        '/* End PBXGroup section */'
-      )
-      converted = true
-      puts "Converted PBXFileSystemSynchronizedGroup section to PBXGroup section"
+    unless main_app_uuid
+      puts "No synchronized groups found. Project may already be using group references."
+      return
     end
     
-    # 2. isa = PBXFileSystemSynchronized* を PBXGroup に変換
-    if content.include?("PBXFileSystemSynchronizedRootGroup")
-      content.gsub!(/isa = PBXFileSystemSynchronizedRootGroup;/, 'isa = PBXGroup;')
-      converted = true
-      puts "Converted isa = PBXFileSystemSynchronizedRootGroup to PBXGroup"
-    end
-    
-    if content.include?("PBXFileSystemSynchronizedGroup")
-      content.gsub!(/isa = PBXFileSystemSynchronizedGroup;/, 'isa = PBXGroup;')
-      converted = true
-      puts "Converted isa = PBXFileSystemSynchronizedGroup to PBXGroup"
-    end
-    
-    # 3. 既存のファイル情報を収集
-    file_references_by_group = {}
-    group_uuids = {}
-    
-    # まず、グループのUUIDを収集
-    content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBX(?:FileSystem)?(?:Synchronized)?(?:Root)?Group;/) do |uuid, name|
-      group_uuids[name] = uuid
-      puts "DEBUG: Found group #{name} with UUID #{uuid}"
-    end
-    
-    # exceptionsがある場合、そのファイル参照を収集
-    content.scan(/([A-F0-9]{24}) \/\* Exceptions for "([^"]+)" folder.*?\*\/ = \{[^}]*?membershipExceptions = \(([^)]*)\)/m) do |exception_uuid, folder_name, exceptions|
-      files = exceptions.scan(/([^,\s]+)[,\s]*/).flatten.reject { |f| f.strip.empty? }
-      puts "DEBUG: Found #{files.length} files in #{folder_name} folder exceptions"
+    # 1. メインアプリグループをPBXGroupに変換
+    content.gsub!(/(#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{)([^}]*?)(isa = PBXFileSystemSynchronized(?:Root)?Group;)([^}]*?)(\};)/m) do |match|
+      prefix = $1
+      before_isa = $2
+      isa = $3
+      after_isa = $4
+      suffix = $5
       
-      # 各ファイルのUUIDを探す
-      file_uuids = []
-      files.each do |file|
-        # ファイル名からPBXFileReferenceのUUIDを検索
-        if match = content.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(file)} \*\/ = \{[^}]*?isa = PBXFileReference/)
-          file_uuids << "#{match[1]} /* #{file} */"
-          puts "  Found file reference: #{file} -> #{match[1]}"
-        end
+      # isaをPBXGroupに変更
+      new_isa = "isa = PBXGroup;"
+      
+      # exceptionsを削除
+      after_isa = after_isa.gsub(/\s*exceptions = [^;]+;\s*/m, '')
+      
+      # explicitFileTypesとexplicitFoldersをchildrenに置き換え
+      if after_isa =~ /explicitFileTypes = \{[^}]*\};\s*explicitFolders = \([^)]*\);/m
+        after_isa = after_isa.gsub(/explicitFileTypes = \{[^}]*\};\s*explicitFolders = \([^)]*\);/m, "children = (\n\t\t\t);")
       end
       
-      file_references_by_group[folder_name] = file_uuids if file_uuids.any?
-    end
-    
-    # 4. explicitFileTypesとexplicitFoldersを削除してchildrenに置き換え
-    content.gsub!(/explicitFileTypes = \{[^}]*\};\s*explicitFolders = \([^)]*\);/m) do
-      "children = (\n\t\t\t);"
-    end
-    
-    # 4.5. 各グループの変換処理を改善
-    group_uuids.each do |group_name, group_uuid|
-      # グループ定義を見つけて変換
-      content.gsub!(/(#{group_uuid} \/\* #{Regexp.escape(group_name)} \*\/ = \{)([^}]*?)(\};)/m) do |match|
-        prefix = $1
-        group_content = $2
-        suffix = $3
-        
-        # exceptionsを削除
-        group_content.gsub!(/\s*exceptions = [^;]+;\s*/m, '')
-        
-        # グループの属性を整理して正しい順序にする
-        attributes = {}
-        
-        # isaを抽出
-        if group_content =~ /isa = ([^;]+);/
-          attributes[:isa] = $1
-          group_content.gsub!(/\s*isa = [^;]+;\s*/m, '')
-        end
-        
-        # pathを抽出
-        if group_content =~ /path = ([^;]+);/
-          attributes[:path] = $1
-          group_content.gsub!(/\s*path = [^;]+;\s*/m, '')
-        end
-        
-        # sourceTreeを抽出
-        if group_content =~ /sourceTree = ([^;]+);/
-          attributes[:sourceTree] = $1
-          group_content.gsub!(/\s*sourceTree = [^;]+;\s*/m, '')
-        end
-        
-        # childrenを抽出または作成
-        if group_content =~ /children = \([^)]*\);/m
-          # 既存のchildrenが空の場合、ファイル参照を追加
-          if file_references_by_group[group_name] && file_references_by_group[group_name].any?
-            children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
-            attributes[:children] = "(\n#{children_items}\n\t\t\t)"
-          else
-            attributes[:children] = "(\n\t\t\t)"
-          end
-          group_content.gsub!(/\s*children = \([^)]*\);\s*/m, '')
-        else
-          # childrenがない場合は追加
-          if file_references_by_group[group_name] && file_references_by_group[group_name].any?
-            children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
-            attributes[:children] = "(\n#{children_items}\n\t\t\t)"
-          else
-            attributes[:children] = "(\n\t\t\t)"
-          end
-        end
-        
-        # 正しい順序で属性を再構築
-        new_content = "\n"
-        new_content += "\t\t\tisa = #{attributes[:isa]};\n" if attributes[:isa]
-        new_content += "\t\t\tchildren = #{attributes[:children]};\n" if attributes[:children]
-        new_content += "\t\t\tpath = #{attributes[:path]};\n" if attributes[:path]
-        new_content += "\t\t\tsourceTree = #{attributes[:sourceTree]};\n" if attributes[:sourceTree]
-        new_content += "\t\t"
-        
-        "#{prefix}#{new_content}#{suffix}"
+      # childrenがない場合は追加
+      unless after_isa.include?("children =")
+        after_isa = "\n\t\t\tchildren = (\n\t\t\t);" + after_isa
       end
+      
+      "#{prefix}#{before_isa}#{new_isa}#{after_isa}#{suffix}"
     end
     
-    # 3.5. グループ定義内のchildrenがないものに空のchildrenを追加
-    # PBXGroupセクション内のグループでchildrenがないものを修正
-    content.gsub!(/(isa = PBXGroup;[^}]*?)(path = [^;]+;)(\s*sourceTree = [^;]+;)(\s*\};)/m) do |match|
-      if match.include?("children =")
-        match
-      else
-        "#{$1}children = (\n\t\t\t);\n\t\t\t#{$2}#{$3}#{$4}"
-      end
-    end
+    # 2. fileSystemSynchronizedGroupsを削除（メインアプリのみ）
+    content.gsub!(/fileSystemSynchronizedGroups = \(\s*#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/,?\s*\);/m, '')
     
-    # 4. PBXFileSystemSynchronizedBuildFileExceptionSetセクションを削除
+    # 3. PBXFileSystemSynchronizedBuildFileExceptionSetセクションを削除
     if content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
       content.gsub!(
         /\/\* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section \*\/.*?\/\* End PBXFileSystemSynchronizedBuildFileExceptionSet section \*\//m,
         ''
       )
-      converted = true
       puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
     end
     
-    # 5. exceptionsへの参照を削除（既に上で処理済みだが念のため）
-    content.gsub!(/\s*exceptions = \([^)]*\);\s*/m, '')
-    content.gsub!(/\s*exceptions = [A-F0-9]{24} \/\* [^*]* \*\/;\s*/m, '')
+    # 4. 既存のファイル・グループ参照を収集してchildrenに追加
+    # まず、すべてのグループとファイル参照を収集
+    all_items = {}
     
-    # 5.5. fileSystemSynchronizedGroupsを削除
-    content.gsub!(/\s*fileSystemSynchronizedGroups = \([^)]*\);\s*/m, '')
-    puts "Removed fileSystemSynchronizedGroups references" if content.include?("fileSystemSynchronizedGroups")
-    
-    # 6. 複数のPBXGroupセクションをマージ
-    group_sections = content.scan(/\/\* Begin PBXGroup section \*\/(.*?)\/\* End PBXGroup section \*\//m)
-    if group_sections.length > 1
-      # すべてのグループエントリを集める
-      all_groups = group_sections.map { |section| section[0].strip }.join("\n")
-      
-      # 最初のPBXGroupセクションにすべてをまとめる
-      content.sub!(
-        /\/\* Begin PBXGroup section \*\/.*?\/\* End PBXGroup section \*\//m,
-        "/* Begin PBXGroup section */\n#{all_groups}\n/* End PBXGroup section */"
-      )
-      
-      # 残りのPBXGroupセクションを削除
-      while content.scan(/\/\* Begin PBXGroup section \*\//m).length > 1
-        # 2番目以降のPBXGroupセクションを削除
-        content.sub!(
-          /\/\* End PBXGroup section \*\/(.*?)\/\* Begin PBXGroup section \*\/.*?\/\* End PBXGroup section \*\//m,
-          '/* End PBXGroup section */\1'
-        )
-      end
-      
-      puts "Merged multiple PBXGroup sections into one"
+    # PBXGroupを収集
+    content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXGroup;/) do |uuid, name|
+      next if name == app_name || name == 'Products' || name.include?('Tests')
+      all_items[name] = { uuid: uuid, type: 'group' }
     end
     
-    if converted
-      # 7. すべてのグループのUUIDを収集
-      all_groups = {}
-      content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXGroup;/) do |uuid, name|
-        all_groups[name] = uuid
-        puts "DEBUG: Found group #{name} with UUID #{uuid}"
+    # PBXFileReferenceを収集（メインアプリに属するもの）
+    content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXFileReference;[^}]*?path = ([^;]+);/) do |uuid, name, path|
+      # メインアプリディレクトリに属するファイルのみ
+      if path.include?(app_name) || name.match?(/\.(swift|plist|xcassets|storyboard|xcdatamodeld)$/)
+        all_items[name] = { uuid: uuid, type: 'file' } unless name.include?('Tests')
       end
-      
-      # SwiftJsonUI関連グループ
-      swiftjsonui_groups = ['View', 'Layouts', 'Styles', 'Bindings', 'Core', 'UI', 'Base']
-      existing_groups = all_groups.select { |name, _| swiftjsonui_groups.include?(name) }
-      
-      if existing_groups.empty?
-        puts "INFO: No SwiftJsonUI groups found in the project"
-        puts "     This is normal for new projects. Run 'sjui setup' after this to create the groups."
-      end
-      
-      # メインアプリグループを見つけて、childrenを追加
-      project_dir = File.dirname(File.dirname(@pbxproj_path))
-      app_name = File.basename(project_dir, '.xcodeproj')
-      
-      # メインアプリグループのUUIDを動的に検出
-      puts "DEBUG: Looking for main app group: #{app_name}"
-      main_app_group_uuid = all_groups[app_name]
-      
-      if main_app_group_uuid
-        # メインアプリグループのパターンを探す
-        content.gsub!(/(#{main_app_group_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;)([^}]*?)(\};)/m) do |match|
+    end
+    
+    # メインアプリグループのchildrenを更新
+    if all_items.any?
+      content.gsub!(/(#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?children = \()(\s*\);)/m) do |match|
         prefix = $1
-        middle = $2
-        suffix = $3
+        suffix = $2
         
-        if !middle.include?("children =")
-          puts "DEBUG: Main app group has no children, adding..."
-          # childrenがない場合、追加する
-          children_array = []
-          
-          # 既存のファイル参照を追加（AppDelegate、SceneDelegate等）
-          ["#{app_name} folder", app_name].each do |possible_key|
-            if file_references_by_group[possible_key]
-              file_references_by_group[possible_key].each do |file_ref|
-                children_array << "\t\t\t\t#{file_ref},"
-                puts "DEBUG: Adding file reference: #{file_ref}"
-              end
-            end
+        children_items = []
+        
+        # 重要なファイルを優先的に追加
+        priority_files = ['AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist', 'Assets.xcassets']
+        priority_files.each do |file|
+          if all_items[file]
+            children_items << "\t\t\t\t#{all_items[file][:uuid]} /* #{file} */,"
+            all_items.delete(file)
           end
-          
-          # すべての既存グループを追加（Products以外）
-          all_groups.each do |group_name, uuid|
-            next if group_name == app_name || group_name == 'Products' || group_name.include?('Tests')
-            children_array << "\t\t\t\t#{uuid} /* #{group_name} */,"
-            puts "DEBUG: Adding #{group_name} to children"
-          end
-          
-          if children_array.any?
-            children_str = "\n\t\t\tchildren = (\n#{children_array.join("\n")}\n\t\t\t);"
-            "#{prefix}#{children_str}#{middle}#{suffix}"
-          else
-            match
-          end
+        end
+        
+        # 残りのアイテムを追加（グループ→ファイルの順）
+        all_items.select { |_, v| v[:type] == 'group' }.each do |name, info|
+          children_items << "\t\t\t\t#{info[:uuid]} /* #{name} */,"
+        end
+        
+        all_items.select { |_, v| v[:type] == 'file' }.each do |name, info|
+          children_items << "\t\t\t\t#{info[:uuid]} /* #{name} */,"
+        end
+        
+        if children_items.any?
+          "#{prefix}\n#{children_items.join("\n")}\n\t\t\t#{suffix}"
         else
-          # childrenが既にある場合、空なら全グループを追加
-          if middle =~ /children = \(\s*\);/m
-            puts "DEBUG: Main app group has empty children, adding all groups and files..."
-            children_array = []
-            
-            # 既存のファイル参照を追加（AppDelegate、SceneDelegate等）
-            ["#{app_name} folder", app_name].each do |possible_key|
-              if file_references_by_group[possible_key]
-                file_references_by_group[possible_key].each do |file_ref|
-                  children_array << "\t\t\t\t#{file_ref},"
-                  puts "DEBUG: Adding file reference: #{file_ref}"
-                end
-              end
-            end
-            
-            # すべての既存グループを追加（Products以外）
-            all_groups.each do |group_name, uuid|
-              next if group_name == app_name || group_name == 'Products' || group_name.include?('Tests')
-              children_array << "\t\t\t\t#{uuid} /* #{group_name} */,"
-              puts "DEBUG: Adding #{group_name} to empty children"
-            end
-            
-            if children_array.any?
-              middle.gsub!(/children = \(\s*\);/m) do
-                "children = (\n#{children_array.join("\n")}\n\t\t\t);"
-              end
-            end
-          end
-          
-          "#{prefix}#{middle}#{suffix}"
-        end
-      end
-      else
-        puts "WARNING: Could not find main app group for #{app_name}"
-      end
-      
-      # Core グループにUI、Baseサブグループを追加
-      if existing_groups['Core'] && (existing_groups['UI'] || existing_groups['Base'])
-        content.gsub!(/(#{existing_groups['Core']} \/\* Core \*\/ = \{[^}]*?isa = PBXGroup;)([^}]*?)(\};)/m) do |match|
-          prefix = $1
-          middle = $2
-          suffix = $3
-          
-          if !middle.include?("children =")
-            children_array = []
-            ['UI', 'Base'].each do |group_name|
-              if existing_groups[group_name]
-                children_array << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
-              end
-            end
-            
-            if children_array.any?
-              children_str = "\n\t\t\tchildren = (\n#{children_array.join("\n")}\n\t\t\t);"
-              "#{prefix}#{children_str}#{middle}#{suffix}"
-            else
-              match
-            end
-          else
-            match
-          end
+          match
         end
       end
       
-      puts "✅ Groups linked to parent groups"
-      
-      # 8. 収集したファイル参照を各グループに追加
-      if file_references_by_group.any?
-        puts "\nAdding file references to groups..."
-        
-        file_references_by_group.each do |group_name, file_uuids|
-          puts "Adding #{file_uuids.length} files to #{group_name} group"
-          
-          # グループを検索して、childrenに追加
-          content.gsub!(/(\/\* #{Regexp.escape(group_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);)/m) do |match|
-            prefix = $1
-            existing_children = $2.strip
-            suffix = $3
-            
-            # 既存のchildrenと新しいファイルを結合
-            all_children = []
-            all_children << existing_children unless existing_children.empty?
-            file_uuids.each { |uuid| all_children << "\t\t\t\t#{uuid}," }
-            
-            "#{prefix}\n#{all_children.join("\n")}\n\t\t\t#{suffix}"
-          end
-        end
-      end
-      
-      # 変換情報を保存（setupで使用）
-      if file_references_by_group.any?
-        project_dir = File.dirname(@pbxproj_path)
-        conversion_info = {
-          'conversion_date' => Time.now.iso8601,
-          'file_references' => file_references_by_group
-        }
-        File.write(File.join(project_dir, '.conversion_info.json'), JSON.pretty_generate(conversion_info))
-        puts "Saved conversion info for file restoration"
-      end
-      
-      # ファイル保存
-      File.write(@pbxproj_path, content)
-      puts "✅ Conversion completed!"
-      puts "ℹ️  Synchronized folders have been converted to regular groups"
-      
-      if existing_groups.empty?
-        puts "\n📝 Next step: Run 'sjui setup' to create the SwiftJsonUI directory structure"
-        puts "   Your existing files (AppDelegate, SceneDelegate, etc.) will be restored."
-      else
-        puts "\n📝 Groups have been relinked. You may need to manually add files back to groups in Xcode"
-      end
-    else
-      puts "No synchronized groups found. Project may already be using group references."
+      puts "Added #{all_items.size} items to main app group"
     end
+    
+    # ファイル保存
+    File.write(@pbxproj_path, content)
+    puts "✅ Conversion completed!"
+    puts "ℹ️  Main app synchronized folder has been converted to regular group"
+    puts "ℹ️  Test targets remain as synchronized folders (no issues there)"
     
     # 変更があったか確認
     if content != original_content
       puts "\nChanges made to: #{@pbxproj_path}"
       puts "Backup saved as: #{@backup_path}"
-      puts "\nNext steps:"
-      puts "1. Open the project in Xcode"
-      puts "2. You may see empty groups - this is expected"
-      puts "3. Right-click on each empty group and 'Add Files to...'"
-      puts "4. Select the corresponding folder and choose 'Create groups'"
-      puts "5. Make sure to check the target membership"
     end
   end
   
@@ -445,30 +184,25 @@ class XcodeSyncToGroupConverter
     content = File.read(@pbxproj_path)
     
     sync_groups = content.scan(/PBXFileSystemSynchronized(?:Root)?Group/).length
-    sync_sections = content.scan(/PBXFileSystemSynchronized/).length
+    sync_refs = content.scan(/fileSystemSynchronizedGroups/).length
     sync_exceptions = content.scan(/PBXFileSystemSynchronizedBuildFileExceptionSet/).length
     regular_groups = content.scan(/isa = PBXGroup/).length
     
     puts "\nValidation Results:"
     puts "- Regular groups (PBXGroup): #{regular_groups}"
-    puts "- Synchronized groups: #{sync_groups}"
-    puts "- Synchronized sections: #{sync_sections}"
+    puts "- Synchronized groups remaining: #{sync_groups}"
+    puts "- fileSystemSynchronizedGroups references: #{sync_refs}"
     puts "- Exception sets: #{sync_exceptions}"
     
-    if sync_sections > 0
-      puts "⚠️  Still has #{sync_sections} synchronized references"
-      
-      # 詳細を表示
-      if sync_groups > 0
-        puts "  - PBXFileSystemSynchronized groups: #{sync_groups}"
-      end
-      if sync_exceptions > 0
-        puts "  - PBXFileSystemSynchronizedBuildFileExceptionSet: #{sync_exceptions}"
-      end
-      
+    if sync_groups > 0
+      puts "ℹ️  #{sync_groups} synchronized groups remain (likely test targets - this is OK)"
+    end
+    
+    if sync_exceptions > 0
+      puts "⚠️  Still has #{sync_exceptions} exception sets"
       false
     else
-      puts "✅ All groups are regular PBXGroup references"
+      puts "✅ Main app group is now a regular PBXGroup"
       true
     end
   end
