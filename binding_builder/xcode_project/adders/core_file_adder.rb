@@ -69,8 +69,19 @@ class CoreFileAdder < FileAdder
     group_uuid = find_group_uuid_by_name(project_content, group_name)
     
     if group_uuid.nil?
-      puts "Warning: Group '#{group_name}' not found. File will be added but not in a specific group."
-      return
+      # UI/BaseグループがCore内にある場合の特別処理
+      if group_name == "UI" || group_name == "Base"
+        core_uuid = find_group_uuid_by_name(project_content, "Core")
+        if core_uuid
+          # Core内のUI/Baseを探す
+          group_uuid = find_subgroup_in_parent(project_content, core_uuid, group_name)
+        end
+      end
+      
+      if group_uuid.nil?
+        puts "Warning: Group '#{group_name}' not found. File will be added but not in a specific group."
+        return
+      end
     end
     
     # グループの定義を探す
@@ -106,6 +117,30 @@ class CoreFileAdder < FileAdder
     project_content.each_line do |line|
       if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(group_name)} \*\/ = \{/)
         return $1
+      end
+    end
+    nil
+  end
+  
+  def self.find_subgroup_in_parent(project_content, parent_uuid, subgroup_name)
+    lines = project_content.lines
+    in_parent_group = false
+    in_children = false
+    
+    lines.each_with_index do |line, index|
+      # 親グループの開始を検出
+      if line.include?("#{parent_uuid} /* ") && line.include?(" */ = {")
+        in_parent_group = true
+      elsif in_parent_group && line.strip == "};"
+        in_parent_group = false
+        in_children = false
+      elsif in_parent_group && line.include?("children = (")
+        in_children = true
+      elsif in_parent_group && in_children
+        # childrenセクション内でサブグループを探す
+        if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(subgroup_name)} \*\//)
+          return $1
+        end
       end
     end
     nil

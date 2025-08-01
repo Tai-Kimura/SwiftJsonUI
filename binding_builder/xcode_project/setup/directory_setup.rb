@@ -78,11 +78,23 @@ class DirectorySetup < PbxprojManager
     puts "Adding directories to Xcode project..."
     
     safe_pbxproj_operation([], []) do
-      directories_to_create.each do |dir_info|
+      # Coreグループを最初に追加（UI/Baseが内部で作成されるため）
+      core_dir = directories_to_create.find { |d| d[:name] == "Core" }
+      other_dirs = directories_to_create.reject { |d| d[:name] == "Core" || d[:name] == "UI" || d[:name] == "Base" }
+      
+      # Coreを最初に追加
+      if core_dir
+        puts "  Adding Core group to Xcode project (will include UI and Base)..."
+        @xcode_manager.add_folder_group(core_dir[:name], core_dir[:relative_path])
+      end
+      
+      # その他のディレクトリを追加
+      other_dirs.each do |dir_info|
         folder_name = dir_info[:name]
         puts "  Adding #{folder_name} group to Xcode project..."
         @xcode_manager.add_folder_group(folder_name, dir_info[:relative_path])
       end
+      
       puts "Successfully added directories to Xcode project"
     end
   end
