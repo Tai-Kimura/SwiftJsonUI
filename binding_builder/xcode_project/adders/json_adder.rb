@@ -34,7 +34,7 @@ class JsonAdder < FileAdder
       
       # 3. グループに追加（指定されている場合）
       if group_name
-        add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name)
+        add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path)
       end
       
       # 4. Resources Build Phaseに追加
@@ -64,8 +64,13 @@ class JsonAdder < FileAdder
       # グループフォルダからの相対パス
       relative = file_pathname.relative_path_from(group_pathname).to_s
       
-      # サブディレクトリがある場合は保持、ない場合はファイル名のみ
-      relative
+      # ../ で始まる場合は、ファイルがグループフォルダ外にあることを意味する
+      # この場合はファイル名のみを使用
+      if relative.start_with?('../')
+        File.basename(json_file_path)
+      else
+        relative
+      end
     rescue
       # 相対パス計算に失敗した場合はファイル名のみ
       File.basename(json_file_path)
@@ -77,9 +82,18 @@ class JsonAdder < FileAdder
     return unless insert_line
     
     lines = project_content.lines
-    # パスを設定（相対パスが指定されている場合はそれを使用）
+    # グループ内のファイルは、そのグループからの相対パスのみを使用
+    # relative_pathがある場合はそれを使用、なければファイル名のみ
     path = relative_path || file_name
-    new_entry = "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = \"#{path}\"; sourceTree = \"<group>\"; };\n"
+    
+    # pathにエスケープが必要な文字が含まれているかチェック
+    if path.include?(' ') || path.include?('"')
+      path = path.gsub('"', '\\"')  # ダブルクォートをエスケープ
+      new_entry = "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = \"#{path}\"; sourceTree = \"<group>\"; };\n"
+    else
+      new_entry = "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = #{path}; sourceTree = \"<group>\"; };\n"
+    end
+    
     lines.insert(insert_line, new_entry)
     project_content.replace(lines.join)
   end
@@ -97,14 +111,13 @@ class JsonAdder < FileAdder
     puts "Added PBXBuildFile entries (#{resource_uuids.length} targets)"
   end
 
-  def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name)
+  def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path = nil)
     # グループのUUIDを検索
     group_uuid = find_group_uuid_by_name(project_content, group_name)
     return unless group_uuid
     
     # サブディレクトリがある場合の処理
-    relative_path = calculate_group_relative_path(File.join(group_name, file_name), group_name, project_manager)
-    if relative_path.include?('/')
+    if relative_path && relative_path.include?('/')
       # サブディレクトリがある場合、サブグループを作成または検索
       subdirs = File.dirname(relative_path).split('/')
       current_group_uuid = group_uuid

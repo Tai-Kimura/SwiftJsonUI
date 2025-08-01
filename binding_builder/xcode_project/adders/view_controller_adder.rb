@@ -79,11 +79,9 @@ class ViewControllerAdder < FileAdder
         "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = #{file_name}; sourceTree = \"<group>\"; };\n"
       ]
       
-      # JSONファイルがある場合は追加
+      # JSONファイルがある場合は追加（グループ内なのでpathはファイル名のみ）
       if json_file_name
-        # プロジェクト名を動的に取得
-        project_name = detect_project_name(project_manager.project_file_path)
-        file_entries << "\t\t#{json_file_ref_uuid} /* #{json_file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; name = #{json_file_name}; path = #{project_name}/Layouts/#{json_file_name}; sourceTree = SOURCE_ROOT; };\n"
+        file_entries << "\t\t#{json_file_ref_uuid} /* #{json_file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = #{json_file_name}; sourceTree = \"<group>\"; };\n"
       end
       
       # フォルダエントリ（JSONファイルがある場合は両方含める）
