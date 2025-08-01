@@ -60,15 +60,16 @@ class XcodeSyncToGroupConverter
     original_content = content.dup
     
     # プロジェクト情報を取得
-    # /tmp/test_non_setup.pbxproj の場合は特別処理
-    if @pbxproj_path.include?('/tmp/')
-      # ファイル名から推測
-      app_name = 'bindingTestApp'
-      project_dir = '/tmp'
-    else
-      project_dir = File.dirname(File.dirname(@pbxproj_path))
-      app_name = File.basename(project_dir, '.xcodeproj')
+    project_path = File.dirname(File.dirname(@pbxproj_path))
+    project_name = Dir.glob("#{project_path}/*.xcodeproj").first
+    
+    if project_name.nil?
+      puts "Error: Could not find .xcodeproj file in #{project_path}"
+      return false
     end
+    
+    app_name = File.basename(project_name, ".xcodeproj")
+    project_dir = File.dirname(project_path)
     
     # メインアプリグループのUUIDを探す
     main_app_uuid = nil
@@ -84,11 +85,7 @@ class XcodeSyncToGroupConverter
     end
     
     # 1. 実際のディレクトリ構造からファイルを取得
-    app_dir = if @pbxproj_path.include?('/tmp/')
-      nil  # テスト環境では実際のファイルシステムを参照しない
-    else
-      File.join(project_dir, app_name)
-    end
+    app_dir = File.join(project_path, app_name)
     
     # 2. PBXFileSystemSynchronizedBuildFileExceptionSetセクションから情報を取得してから削除
     exception_files = []
