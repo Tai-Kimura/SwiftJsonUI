@@ -218,6 +218,7 @@ class JsonAdder < FileAdder
     
     # サブグループが見つからない場合は作成
     subgroup_uuid = project_manager.generate_uuid
+    puts "Creating subgroup '#{subgroup_name}' with UUID #{subgroup_uuid} under parent #{parent_group_uuid}"
     create_subgroup(project_content, parent_group_uuid, subgroup_uuid, subgroup_name)
     subgroup_uuid
   end
@@ -265,14 +266,17 @@ class JsonAdder < FileAdder
     end
     
     if children_end
+      puts "Adding subgroup to parent at line #{children_end}"
       # 空のchildren配列の場合と既存要素がある場合を処理
       if lines[children_end - 1].strip.empty? || lines[children_end - 1].include?("children = (")
         # 空の場合
         lines.insert(children_end, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n")
       else
-        # 既存要素がある場合
-        lines[children_end] = lines[children_end].sub(/(\s*)\);/, "\\1\t#{subgroup_uuid} /* #{subgroup_name} */,\n\\1);")
+        # 既存要素がある場合 - 閉じカッコの前に新しいエントリを挿入
+        lines.insert(children_end, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n")
       end
+    else
+      puts "WARNING: Could not find children end for parent group #{parent_group_uuid}"
     end
     
     project_content.replace(lines.join)
