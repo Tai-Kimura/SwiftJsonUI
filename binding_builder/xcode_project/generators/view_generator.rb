@@ -39,7 +39,7 @@ class ViewGenerator < PbxprojManager
     json_path = create_json_file(snake_name)
     
     # 4. Xcodeプロジェクトに追加
-    add_to_xcode_project([view_controller_path])
+    add_to_xcode_project([view_controller_path, json_path])
     
     # 5. rootオプションが指定された場合、AppDelegateを修正
     if is_root
