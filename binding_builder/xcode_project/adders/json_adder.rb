@@ -13,8 +13,9 @@ class JsonAdder < FileAdder
       
       # ファイルが既にプロジェクトに含まれているかチェック
       build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Resources \*\//
-      if project_content.match?(build_file_pattern)
-        puts "#{file_name} is already in the project's resources"
+      file_ref_pattern = /\/\* #{Regexp.escape(file_name)} \*\/ = \{isa = PBXFileReference/
+      if project_content.match?(build_file_pattern) || project_content.match?(file_ref_pattern)
+        puts "#{file_name} is already in the project"
         return
       end
       
@@ -67,7 +68,15 @@ class JsonAdder < FileAdder
       # ../ で始まる場合は、ファイルがグループフォルダ外にあることを意味する
       # この場合はファイル名のみを使用
       if relative.start_with?('../')
-        File.basename(json_file_path)
+        # ただし、サブディレクトリ情報は保持したい
+        # 例: Layouts/common/_navigation_bar.json -> common/_navigation_bar.json
+        file_path_from_project = file_pathname.relative_path_from(Pathname.new(project_root)).to_s
+        if file_path_from_project.start_with?("#{group_name}/")
+          # グループ名を除去
+          file_path_from_project.sub("#{group_name}/", '')
+        else
+          File.basename(json_file_path)
+        end
       else
         relative
       end
@@ -225,19 +234,31 @@ class JsonAdder < FileAdder
     
     # 2. 親グループのchildrenに追加
     in_parent_group = false
+    in_children = false
     children_end = nil
     
     lines.each_with_index do |line, index|
       if line.include?("#{parent_group_uuid} /* ")
         in_parent_group = true
-      elsif in_parent_group && line.include?(");")
+      elsif in_parent_group && line.strip == "};"
+        break
+      elsif in_parent_group && line.include?("children = (")
+        in_children = true
+      elsif in_parent_group && in_children && (line.strip == ");" || line.include?(");"))
         children_end = index
         break
       end
     end
     
     if children_end
-      lines[children_end] = lines[children_end].sub(/\);/, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n\t\t\t);")
+      # 空のchildren配列の場合と既存要素がある場合を処理
+      if lines[children_end - 1].strip.empty? || lines[children_end - 1].include?("children = (")
+        # 空の場合
+        lines.insert(children_end, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n")
+      else
+        # 既存要素がある場合
+        lines[children_end] = lines[children_end].sub(/(\s*)\);/, "\\1\t#{subgroup_uuid} /* #{subgroup_name} */,\n\\1);")
+      end
     end
     
     project_content.replace(lines.join)
