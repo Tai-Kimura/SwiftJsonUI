@@ -28,7 +28,12 @@ class JsonAdder < FileAdder
       resource_uuids = resources_targets.times.map { project_manager.generate_uuid }
       
       # 1. PBXFileReferenceを追加
-      add_pbx_file_reference(project_content, file_ref_uuid, file_name, relative_path)
+      # サブディレクトリがある場合は、ファイル名のみを使用（サブグループに追加されるため）
+      file_path_for_reference = relative_path
+      if relative_path && relative_path.include?('/')
+        file_path_for_reference = File.basename(relative_path)
+      end
+      add_pbx_file_reference(project_content, file_ref_uuid, file_name, file_path_for_reference)
       
       # 2. PBXBuildFileを追加（複数ターゲット対応）
       add_pbx_build_files(project_content, resource_uuids, file_ref_uuid, file_name)
