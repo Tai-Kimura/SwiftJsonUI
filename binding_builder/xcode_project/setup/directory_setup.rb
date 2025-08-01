@@ -35,10 +35,12 @@ class DirectorySetup < PbxprojManager
     check_and_add_directory(@paths.base_path, "Base", directories_to_create)
     
     unless directories_to_create.empty?
-      # ディレクトリを作成
+      # ディレクトリを作成（create_dirフラグがtrueの場合のみ）
       directories_to_create.each do |dir_info|
-        FileUtils.mkdir_p(dir_info[:path])
-        puts "Created directory: #{dir_info[:path]}"
+        if dir_info[:create_dir]
+          FileUtils.mkdir_p(dir_info[:path])
+          puts "Created directory: #{dir_info[:path]}"
+        end
       end
       
       # Xcodeプロジェクトに追加
@@ -54,15 +56,31 @@ class DirectorySetup < PbxprojManager
   private
 
   def check_and_add_directory(path, name, directories_to_create)
-    unless Dir.exist?(path)
-      directories_to_create << {
-        path: path,
-        name: name,
-        relative_path: get_relative_path(path)
-      }
+    dir_exists = Dir.exist?(path)
+    
+    # ディレクトリが存在しない場合は作成必要
+    if !dir_exists
       puts "  Missing: #{path}"
     else
       puts "  Exists: #{path}"
+    end
+    
+    # Xcodeプロジェクトにグループが存在するか確認
+    project_content = File.read(@xcode_manager.project_file_path)
+    group_exists = project_content.include?("/* #{name} */ = {")
+    
+    if !group_exists
+      puts "    (Group not in Xcode project, will be added)"
+    end
+    
+    # ディレクトリが存在しない、またはXcodeグループが存在しない場合は追加
+    if !dir_exists || !group_exists
+      directories_to_create << {
+        path: path,
+        name: name,
+        relative_path: get_relative_path(path),
+        create_dir: !dir_exists
+      }
     end
   end
 
