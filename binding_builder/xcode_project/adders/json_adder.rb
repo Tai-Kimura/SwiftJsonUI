@@ -137,7 +137,11 @@ class JsonAdder < FileAdder
   def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path = nil)
     # グループのUUIDを検索
     group_uuid = find_group_uuid_by_name(project_content, group_name)
-    return unless group_uuid
+    if !group_uuid
+      puts "ERROR: Could not find group '#{group_name}'"
+      return
+    end
+    puts "Found group '#{group_name}' with UUID: #{group_uuid}"
     
     # サブディレクトリがある場合の処理
     if relative_path && relative_path.include?('/')
@@ -186,8 +190,9 @@ class JsonAdder < FileAdder
   end
 
   def self.find_group_uuid_by_name(project_content, group_name)
-    project_content.each_line do |line|
+    project_content.each_line.with_index do |line, index|
       if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(group_name)} \*\/ = \{/)
+        puts "Found group '#{group_name}' at line #{index}: #{line.strip}"
         return $1
       end
     end
@@ -200,17 +205,26 @@ class JsonAdder < FileAdder
     lines = project_content.lines
     in_parent_group = false
     in_children = false
+    children_start = nil
+    children_end = nil
     
     lines.each_with_index do |line, index|
       if line.include?("#{parent_group_uuid} /* ")
         in_parent_group = true
+        puts "Found parent group at line #{index}: #{line.strip}"
       elsif in_parent_group && line.strip == "};"
         in_parent_group = false
         in_children = false
       elsif in_parent_group && line.include?("children = (")
         in_children = true
+        children_start = index
+        puts "Found children start at line #{index}"
+      elsif in_parent_group && in_children && (line.strip == ");" || line.include?(");"))
+        children_end = index
+        puts "Found children end at line #{index}"
       elsif in_parent_group && in_children
         if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(subgroup_name)} \*\//)
+          puts "Found existing subgroup '#{subgroup_name}' with UUID #{$1}"
           return $1
         end
       end
@@ -219,6 +233,7 @@ class JsonAdder < FileAdder
     # サブグループが見つからない場合は作成
     subgroup_uuid = project_manager.generate_uuid
     puts "Creating subgroup '#{subgroup_name}' with UUID #{subgroup_uuid} under parent #{parent_group_uuid}"
+    puts "Parent children range: #{children_start} to #{children_end}"
     create_subgroup(project_content, parent_group_uuid, subgroup_uuid, subgroup_name)
     subgroup_uuid
   end
