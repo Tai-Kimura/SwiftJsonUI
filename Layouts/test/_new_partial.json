@@ -1,0 +1,17 @@
+{
+  "type": "View",
+  "id": "new_partial_container",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "background": "FFFFFF",
+  "padding": "16",
+  "child": [
+    {
+      "type": "Label",
+      "id": "new_partial_label",
+      "text": "New Partial Partial",
+      "textSize": "16",
+      "textColor": "333333"
+    }
+  ]
+}
