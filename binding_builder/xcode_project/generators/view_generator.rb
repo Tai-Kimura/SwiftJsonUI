@@ -39,7 +39,7 @@ class ViewGenerator < PbxprojManager
     json_path = create_json_file(snake_name)
     
     # 4. Xcodeプロジェクトに追加
-    add_to_xcode_project([view_controller_path], json_path)
+    add_to_xcode_project([view_controller_path])
     
     # 5. rootオプションが指定された場合、AppDelegateを修正
     if is_root
@@ -177,28 +177,22 @@ class #{camel_name}ViewController: BaseViewController {
     JSON.pretty_generate(content)
   end
 
-  def add_to_xcode_project(file_paths, json_path = nil)
+  def add_to_xcode_project(file_paths)
     created_files = []
     
     # 作成されたファイルを記録
     file_paths.each { |file_path| created_files << file_path }
-    created_files << json_path if json_path
     
     safe_pbxproj_operation([], created_files) do
       file_paths.each do |file_path|
         file_name = File.basename(file_path)
         if file_name.include?("ViewController.swift")
           folder_name = File.basename(File.dirname(file_path))
+          folder_name = File.basename(File.dirname(file_path))
           json_file_name = "#{snake_name_from_camel(folder_name)}.json"
           @xcode_manager.add_view_controller_file(file_name, folder_name, json_file_name)
         end
       end
-      
-      # JSONファイルをLayoutsグループに追加
-      if json_path
-        @xcode_manager.add_json_file(json_path, "Layouts")
-      end
-      
       puts "Added files to Xcode project"
     end
   end

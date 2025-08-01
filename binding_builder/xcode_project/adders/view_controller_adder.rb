@@ -7,6 +7,12 @@ class ViewControllerAdder < FileAdder
     puts "Adding #{file_name} (ViewController) to Xcode project..."
     
     safe_add_files(project_manager) do |project_content|
+      # Layoutsグループの存在を確認
+      if project_content.include?("/* Layouts */ = {")
+        puts "DEBUG: Layouts group exists before ViewControllerAdder processing"
+      else
+        puts "WARNING: Layouts group NOT found before ViewControllerAdder processing"
+      end
       # ファイルが既にプロジェクトに含まれているかチェック
       if project_content.include?(file_name)
         puts "#{file_name} is already in the project"
@@ -34,6 +40,13 @@ class ViewControllerAdder < FileAdder
       
       # ViewControllerファイル用の処理
       add_view_controller_to_sections(project_manager, project_content, file_name, folder_name, file_ref_uuid, build_file_uuids, folder_uuid, json_file_name, json_file_ref_uuid, json_resource_uuids)
+      
+      # 処理後のLayoutsグループの存在を確認
+      if project_content.include?("/* Layouts */ = {")
+        puts "DEBUG: Layouts group still exists after ViewControllerAdder processing"
+      else
+        puts "ERROR: Layouts group DISAPPEARED after ViewControllerAdder processing!"
+      end
       
       puts "Successfully added #{file_name} to Xcode project"
     end
