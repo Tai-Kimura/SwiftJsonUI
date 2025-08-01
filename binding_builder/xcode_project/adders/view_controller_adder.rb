@@ -32,8 +32,9 @@ class ViewControllerAdder < FileAdder
       folder_uuid = project_manager.generate_uuid
       build_file_uuids = sources_targets.times.map { project_manager.generate_uuid }
       
-      json_file_ref_uuid = json_file_name ? project_manager.generate_uuid : nil
-      json_resource_uuids = json_file_name ? resources_targets.times.map { project_manager.generate_uuid } : []
+      # JSONファイルは追加しない（Layoutsグループに残す）
+      json_file_ref_uuid = nil
+      json_resource_uuids = []
       
       puts "Generated UUIDs: file_ref=#{file_ref_uuid}, builds=[#{build_file_uuids.join(', ')}], folder=#{folder_uuid}"
       puts "JSON UUIDs: file_ref=#{json_file_ref_uuid}, resources=[#{json_resource_uuids.join(', ')}]" if json_file_name
@@ -71,12 +72,7 @@ class ViewControllerAdder < FileAdder
         build_entries << "\t\t#{uuid} /* #{file_name} in Sources */ = {isa = PBXBuildFile; fileRef = #{file_ref_uuid} /* #{file_name} */; };\n"
       end
       
-      # JSONファイルがある場合はリソースエントリも追加
-      if json_file_name
-        json_resource_uuids.each do |uuid|
-          build_entries << "\t\t#{uuid} /* #{json_file_name} in Resources */ = {isa = PBXBuildFile; fileRef = #{json_file_ref_uuid} /* #{json_file_name} */; };\n"
-        end
-      end
+      # JSONファイルのビルドエントリは追加しない
       
       lines.insert(insert_line, *build_entries)
       project_content.replace(lines.join)
@@ -92,18 +88,10 @@ class ViewControllerAdder < FileAdder
         "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = #{file_name}; sourceTree = \"<group>\"; };\n"
       ]
       
-      # JSONファイルがある場合は追加（Layoutsフォルダへの相対パスを使用）
-      if json_file_name
-        # View/FolderNameグループからLayoutsフォルダへの相対パス
-        json_relative_path = "../../Layouts/#{json_file_name}"
-        file_entries << "\t\t#{json_file_ref_uuid} /* #{json_file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = \"#{json_relative_path}\"; sourceTree = \"<group>\"; };\n"
-      end
+      # JSONファイルは追加しない
       
-      # フォルダエントリ（JSONファイルがある場合は両方含める）
+      # フォルダエントリ（ViewControllerのみ含める、JSONはLayoutsグループに残す）
       children_list = "#{file_ref_uuid} /* #{file_name} */,"
-      if json_file_name
-        children_list += "\n\t\t\t\t#{json_file_ref_uuid} /* #{json_file_name} */,"
-      end
       
       file_entries << "\t\t#{folder_uuid} /* #{folder_name} */ = {isa = PBXGroup; children = (\n\t\t\t\t#{children_list}\n\t\t\t); path = #{folder_name}; sourceTree = \"<group>\"; };\n"
       
@@ -152,20 +140,6 @@ class ViewControllerAdder < FileAdder
       puts "Added to Sources build phases (#{build_file_uuids.length} targets)"
     end
     
-    # 5. JSONファイルがある場合はテスト用以外のResources build phasesに追加
-    if json_file_name && !json_resource_uuids.empty?
-      resources_insert_lines = find_non_test_build_phase_insert_lines(project_content, "PBXResourcesBuildPhase")
-      
-      if resources_insert_lines.length >= json_resource_uuids.length
-        lines = project_content.lines
-        # 後ろから追加して行番号がずれないようにする
-        json_resource_uuids.each_with_index.reverse_each do |uuid, index|
-          resources_entry = "\t\t\t\t#{uuid} /* #{json_file_name} in Resources */,\n"
-          lines.insert(resources_insert_lines[index], resources_entry)
-        end
-        project_content.replace(lines.join)
-        puts "Added JSON to Resources build phases (#{json_resource_uuids.length} targets)"
-      end
-    end
+    # JSONファイルはLayoutsグループに残すため、ここでは追加しない
   end
 end
