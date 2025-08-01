@@ -147,6 +147,40 @@ class XcodeProjectManager < PbxprojManager
       new_entry = "\t\t#{group_uuid} /* #{group_name} */ = {\n"
       new_entry += "\t\t\tisa = PBXGroup;\n"
       new_entry += "\t\t\tchildren = (\n"
+      
+      # Core内のUI、Baseグループを自動的に追加
+      if group_name == "Core"
+        ui_uuid = generate_uuid
+        base_uuid = generate_uuid
+        
+        # UIとBaseグループのエントリも追加
+        ui_entry = "\t\t#{ui_uuid} /* UI */ = {\n"
+        ui_entry += "\t\t\tisa = PBXGroup;\n"
+        ui_entry += "\t\t\tchildren = (\n"
+        ui_entry += "\t\t\t);\n"
+        ui_entry += "\t\t\tname = UI;\n"
+        ui_entry += "\t\t\tpath = #{relative_path}/UI;\n"
+        ui_entry += "\t\t\tsourceTree = \"<group>\";\n"
+        ui_entry += "\t\t};\n"
+        
+        base_entry = "\t\t#{base_uuid} /* Base */ = {\n"
+        base_entry += "\t\t\tisa = PBXGroup;\n"
+        base_entry += "\t\t\tchildren = (\n"
+        base_entry += "\t\t\t);\n"
+        base_entry += "\t\t\tname = Base;\n"
+        base_entry += "\t\t\tpath = #{relative_path}/Base;\n"
+        base_entry += "\t\t\tsourceTree = \"<group>\";\n"
+        base_entry += "\t\t};\n"
+        
+        # Coreのchildrenに追加
+        new_entry += "\t\t\t\t#{ui_uuid} /* UI */,\n"
+        new_entry += "\t\t\t\t#{base_uuid} /* Base */,\n"
+        
+        # UI、Baseエントリを先に追加
+        lines.insert(pbx_group_section_end, ui_entry)
+        lines.insert(pbx_group_section_end, base_entry)
+      end
+      
       new_entry += "\t\t\t);\n"
       new_entry += "\t\t\tname = #{group_name};\n"
       new_entry += "\t\t\tpath = #{relative_path};\n"
@@ -164,34 +198,44 @@ class XcodeProjectManager < PbxprojManager
     
     # プロジェクト名を取得（フォールバック付き）
     project_name = @project_name || File.basename(File.dirname(@project_file_path), '.xcodeproj')
+    puts "DEBUG: Looking for main project group: #{project_name}"
     
+    found_main_group = false
     lines.each_with_index do |line, index|
       # メインプロジェクトグループを探す（PBXGroupになっているものも含む）
       if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(project_name)} \*\/ = \{/)
         main_group_uuid = $1
+        puts "DEBUG: Found potential main group at line #{index + 1}: #{main_group_uuid}"
         
         # このグループがPBXGroupであることを確認
         is_pbx_group = false
+        group_end_index = nil
         (index + 1...lines.length).each do |i|
           if lines[i].include?("isa = PBXGroup;")
             is_pbx_group = true
-            break
+            puts "DEBUG: Confirmed as PBXGroup"
           elsif lines[i].strip == "};"
+            group_end_index = i
             break
           end
         end
         
-        next unless is_pbx_group
+        if !is_pbx_group
+          puts "DEBUG: Not a PBXGroup, skipping"
+          next
+        end
         
         # このグループの children セクションを見つける
         children_start = nil
         children_end = nil
         
-        (index + 1...lines.length).each do |i|
+        (index + 1...group_end_index).each do |i|
           if lines[i].include?("children = (") && children_start.nil?
             children_start = i + 1
+            puts "DEBUG: Found children start at line #{children_start}"
           elsif lines[i].strip == ");" && children_start && children_end.nil?
             children_end = i
+            puts "DEBUG: Found children end at line #{children_end}"
             break
           end
         end
@@ -201,10 +245,17 @@ class XcodeProjectManager < PbxprojManager
           new_reference = "\t\t\t\t#{group_uuid} /* #{group_name} */,\n"
           lines.insert(children_end, new_reference)
           project_content.replace(lines.join)
-          puts "Added #{group_name} to main project group"
+          puts "✅ Added #{group_name} to main project group"
+          found_main_group = true
           break
+        else
+          puts "DEBUG: Could not find children section"
         end
       end
+    end
+    
+    if !found_main_group
+      puts "⚠️  WARNING: Could not find main project group '#{project_name}' to add '#{group_name}'"
     end
   end
 
