@@ -1,0 +1,92 @@
+import UIKit
+import SwiftJsonUI
+import WebKit
+
+@MainActor
+class UIViewCreator: SJUIViewCreator {
+    
+    nonisolated override init() {
+        super.init()
+    }
+    
+    @MainActor
+    open override class func getOnView(target: ViewHolder) -> UIView? {
+        if let viewController = target as? BaseViewController {
+            return viewController.view
+        } else if let collectionViewCell = target as? BaseCollectionViewCell {
+            return collectionViewCell.contentView
+        } else if let collectionViewHeader = target as? SJUICollectionReusableView {
+            return collectionViewHeader
+        } else {
+            return super.getOnView(target: target)
+        }
+    }
+    
+    @MainActor
+    override class func getViewFromJSON(attr: JSON, target: Any, views: inout [String: UIView]) -> UIView? {
+        let view: UIView?
+        switch(attr["type"].stringValue) {
+        case "Web":
+            let configuration = WKWebViewConfiguration()
+            view = WKWebView(frame: CGRect.zero, configuration: configuration)
+        default:
+            view = super.getViewFromJSON(attr: attr, target: target, views: &views)
+        }
+        return view
+    }
+    
+    @MainActor
+    class func prepare() {
+        // Directory configuration from config.json
+        SJUIViewCreator.layoutsDirectoryName = "Layouts"
+        SJUIViewCreator.stylesDirectoryName = "Styles"
+        SJUIViewCreator.scriptsDirectoryName = "Scripts"
+        
+        // サンプル設定 - 実際のプロジェクトに合わせて調整してください
+        String.currentLanguage = "ja-JP"
+        defaultFont = "System"
+        defaultFontColor = UIColor.label
+        defaultHintColor = UIColor.secondaryLabel
+        defaultFontSize = 14.0
+        // カラーIDに基づく色の検索機能（サンプル実装）
+//        findColorFunc = {arg in
+//            if let intValue = arg as? Int {
+//                // 実際のプロジェクトではカラーIDに応じた色を返す
+//                switch intValue {
+//                case 1: return UIColor.systemBlue
+//                case 2: return UIColor.systemRed
+//                case 3: return UIColor.systemGreen
+//                default: return UIColor.label
+//                }
+//            }
+//            return nil
+//        }
+        SJUILabel.defaultLinkColor = UIColor.link
+        
+        // フォントによる文字の上下位置補正（サンプル実装）
+        // 特定のフォントでは文字が切れることがあるため、垂直位置を調整する
+//        if #available(iOS 17.0, *) {
+//            // iOS 17以降での補正値（HiraginoSansの場合）
+//            SJUILabel.verticalAdjustmentByFonts["HiraginoSans-W3"] = 21.0
+//            SJUILabel.verticalAdjustmentByFonts["HiraginoSans-W6"] = 21.0
+//        } else {
+//            // iOS 16以前での補正値（HiraginoSansの場合）
+//            SJUILabel.verticalAdjustmentByFonts["HiraginoSans-W3"] = 7.0
+//            SJUILabel.verticalAdjustmentByFonts["HiraginoSans-W6"] = 7.0
+//        }
+        SJUIRadioButton.defaultOnColor = UIColor.systemBlue
+        SJUITextField.accessoryBackgroundColor = UIColor.systemGray6
+        SJUITextField.accessoryTextColor = UIColor.link
+        SJUITextField.defaultBorderColor = UIColor.lightGray
+        SJUISegmentedControl.defaultTintColor = UIColor.systemGray
+        SJUISegmentedControl.defaultSelectedColor = UIColor.white
+        SJUIRadioButton.defaultOffColor = UIColor.systemGray
+        SJUIRadioButton.defaultOnColor = UIColor.systemBlue
+        SJUISelectBox.defaultCaretImageName = "chevron.down"
+        SJUISelectBox.defaultReferenceViewId = "scroll_view"
+        // SheetView の設定例
+        // SheetView.lineColor = UIColor.systemGray4
+        // SheetView.font = UIFont.systemFont(ofSize: 20.0)
+        // SheetView.textColor = UIColor.label
+    }
+}
