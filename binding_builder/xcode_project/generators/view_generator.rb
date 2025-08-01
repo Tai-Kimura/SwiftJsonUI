@@ -184,15 +184,27 @@ class #{camel_name}ViewController: BaseViewController {
     file_paths.each { |file_path| created_files << file_path }
     
     safe_pbxproj_operation([], created_files) do
+      # ViewControllerファイルを追加
+      view_controller_path = nil
+      json_path = nil
+      
       file_paths.each do |file_path|
         file_name = File.basename(file_path)
         if file_name.include?("ViewController.swift")
+          view_controller_path = file_path
           folder_name = File.basename(File.dirname(file_path))
-          folder_name = File.basename(File.dirname(file_path))
-          json_file_name = "#{snake_name_from_camel(folder_name)}.json"
-          @xcode_manager.add_view_controller_file(file_name, folder_name, json_file_name)
+          @xcode_manager.add_view_controller_file(file_name, folder_name, nil)
+        elsif file_name.end_with?(".json")
+          json_path = file_path
         end
       end
+      
+      # JSONファイルをLayoutsグループに追加
+      if json_path
+        require_relative "../adders/json_adder"
+        JsonAdder.add_json_file(@xcode_manager, json_path, "Layouts")
+      end
+      
       puts "Added files to Xcode project"
     end
   end
