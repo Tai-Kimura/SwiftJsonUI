@@ -162,9 +162,27 @@ class XcodeProjectManager < PbxprojManager
     # メインプロジェクトグループを見つけて、新しいグループを追加
     lines = project_content.lines
     
+    # プロジェクト名を取得（フォールバック付き）
+    project_name = @project_name || File.basename(File.dirname(@project_file_path), '.xcodeproj')
+    
     lines.each_with_index do |line, index|
-      # メインプロジェクトグループを探す
-      if line.match(/([A-F0-9]{24}) \/\* #{@project_name} \*\/ = \{/)
+      # メインプロジェクトグループを探す（PBXGroupになっているものも含む）
+      if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(project_name)} \*\/ = \{/)
+        main_group_uuid = $1
+        
+        # このグループがPBXGroupであることを確認
+        is_pbx_group = false
+        (index + 1...lines.length).each do |i|
+          if lines[i].include?("isa = PBXGroup;")
+            is_pbx_group = true
+            break
+          elsif lines[i].strip == "};"
+            break
+          end
+        end
+        
+        next unless is_pbx_group
+        
         # このグループの children セクションを見つける
         children_start = nil
         children_end = nil
@@ -183,6 +201,7 @@ class XcodeProjectManager < PbxprojManager
           new_reference = "\t\t\t\t#{group_uuid} /* #{group_name} */,\n"
           lines.insert(children_end, new_reference)
           project_content.replace(lines.join)
+          puts "Added #{group_name} to main project group"
           break
         end
       end
