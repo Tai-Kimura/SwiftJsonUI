@@ -67,9 +67,9 @@ class DirectorySetup < PbxprojManager
   end
 
   def get_relative_path(full_path)
-    # プロジェクトルートからの相対パスを取得
-    project_root = File.dirname(File.dirname(@project_file_path))
-    Pathname.new(full_path).relative_path_from(Pathname.new(project_root)).to_s
+    # グループ名を返す（親グループからの相対パス）
+    # 例: /path/to/project/Core -> Core
+    File.basename(full_path)
   end
 
   def add_directories_to_xcode_project(directories_to_create)

@@ -45,8 +45,23 @@ class XcodeProjectManager < PbxprojManager
       project_content = File.read(@project_file_path)
       
       # すでにグループが存在するかチェック
-      if find_group_uuid_by_name(project_content, group_name)
+      existing_group_uuid = find_group_uuid_by_name(project_content, group_name)
+      if existing_group_uuid
         puts "  Group '#{group_name}' already exists in Xcode project"
+        
+        # 既存グループのパスを修正（必要な場合）
+        if fix_group_path(project_content, existing_group_uuid, group_name, relative_path)
+          File.write(@project_file_path, project_content)
+          puts "  Fixed path for existing group '#{group_name}'"
+        end
+        
+        # メインプロジェクトグループに追加されているか確認
+        if !is_group_in_main_project(project_content, existing_group_uuid)
+          add_to_main_project_group(project_content, existing_group_uuid, group_name)
+          File.write(@project_file_path, project_content)
+          puts "  Added existing group '#{group_name}' to main project"
+        end
+        
         cleanup_backup(backup_path)
         return
       end
@@ -159,7 +174,7 @@ class XcodeProjectManager < PbxprojManager
         ui_entry += "\t\t\tchildren = (\n"
         ui_entry += "\t\t\t);\n"
         ui_entry += "\t\t\tname = UI;\n"
-        ui_entry += "\t\t\tpath = #{relative_path}/UI;\n"
+        ui_entry += "\t\t\tpath = UI;\n"
         ui_entry += "\t\t\tsourceTree = \"<group>\";\n"
         ui_entry += "\t\t};\n"
         
@@ -168,7 +183,7 @@ class XcodeProjectManager < PbxprojManager
         base_entry += "\t\t\tchildren = (\n"
         base_entry += "\t\t\t);\n"
         base_entry += "\t\t\tname = Base;\n"
-        base_entry += "\t\t\tpath = #{relative_path}/Base;\n"
+        base_entry += "\t\t\tpath = Base;\n"
         base_entry += "\t\t\tsourceTree = \"<group>\";\n"
         base_entry += "\t\t};\n"
         
@@ -293,6 +308,53 @@ class XcodeProjectManager < PbxprojManager
   end
 
   private
+  
+  def fix_group_path(project_content, group_uuid, group_name, expected_path)
+    lines = project_content.lines
+    changed = false
+    
+    lines.each_with_index do |line, index|
+      if line.include?("#{group_uuid} /* #{group_name} */ = {")
+        # グループ定義を探す
+        group_end = index + 10 # 十分な範囲
+        (index+1..group_end).each do |i|
+          if lines[i] && lines[i].include?("path = ")
+            current_path = lines[i][/path = ([^;]+);/, 1]
+            if current_path != expected_path
+              lines[i] = lines[i].sub(/path = [^;]+;/, "path = #{expected_path};")
+              changed = true
+              break
+            end
+          end
+        end
+        break
+      end
+    end
+    
+    if changed
+      project_content.replace(lines.join)
+    end
+    changed
+  end
+  
+  def is_group_in_main_project(project_content, group_uuid)
+    # プロジェクト名を取得
+    project_name = @project_name || File.basename(File.dirname(@project_file_path), '.xcodeproj')
+    
+    # pbxprojファイルから推測
+    if project_content.match(/mainGroup = ([A-F0-9]{24});/)
+      main_group_id = $1
+      if project_content.match(/#{main_group_id}[^{]*\{[^}]*children = \(\s*([A-F0-9]{24}) \/\* ([^*]+) \*\//)
+        project_name = $2 unless $2 == "Products" || $2.include?("Tests")
+      end
+    end
+    
+    # メインプロジェクトグループを探してグループが含まれているか確認
+    if project_content.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(project_name)} \*\/ = \{[^}]*?children = \([^)]*#{group_uuid}[^)]*\)/m)
+      return true
+    end
+    false
+  end
 
   def find_collection_group_in_view_folder(project_content, view_folder_group_uuid)
     lines = project_content.lines

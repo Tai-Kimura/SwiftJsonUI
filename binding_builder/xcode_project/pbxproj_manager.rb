@@ -25,14 +25,33 @@ class PbxprojManager
 
   # Xcode 16の同期グループをチェックする共通メソッド
   def self.is_synchronized_group?(project_content)
-    # PBXFileSystemSynchronizedRootGroup または PBXFileSystemSynchronizedGroup をチェック
-    if project_content.include?("PBXFileSystemSynchronizedRootGroup") || 
-       project_content.include?("PBXFileSystemSynchronizedGroup")
-      puts "DEBUG: Found synchronized group in project"
-      puts "WARNING: Project uses Xcode 16 synchronized folders"
+    # メインアプリグループが同期グループかどうかをチェック
+    # テストターゲットの同期グループは無視する
+    main_app_has_sync = false
+    
+    # mainGroupの最初の子グループ（通常アプリグループ）を探す
+    if project_content.match(/mainGroup = ([A-F0-9]{24});/)
+      main_group_id = $1
+      # mainGroupの定義を探す
+      if project_content.match(/#{main_group_id}[^{]*\{[^}]*children = \(\s*([A-F0-9]{24}) \/\* ([^*]+) \*\//)
+        app_group_id = $1
+        app_name = $2
+        unless app_name == "Products" || app_name.include?("Tests")
+          # このグループが同期グループかチェック
+          if project_content.match(/#{app_group_id} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group/)
+            main_app_has_sync = true
+          end
+        end
+      end
+    end
+    
+    if main_app_has_sync
+      puts "DEBUG: Found synchronized group in main app"
+      puts "WARNING: Main app uses Xcode 16 synchronized folders"
       puts "All files in synchronized folders are automatically compiled"
       return true
     end
+    
     false
   end
 

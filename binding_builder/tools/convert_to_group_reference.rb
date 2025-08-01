@@ -158,12 +158,15 @@ class XcodeSyncToGroupConverter
     # グループを特定の順序で追加（SwiftJsonUIのグループを優先）
     swiftjsonui_groups = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
     
-    # SwiftJsonUIグループを順番に追加
+    # SwiftJsonUIグループを順番に追加し、パスも修正
     swiftjsonui_groups.each do |group_name|
       group = groups_to_add.find { |g| g[:name] == group_name }
       if group
         children_items << "\t\t\t\t#{group[:uuid]} /* #{group[:name]} */,"
         groups_to_add.delete(group)
+        
+        # グループのパスを修正
+        fix_group_path(content, group[:uuid], group[:name])
       end
     end
     
@@ -326,6 +329,35 @@ class XcodeSyncToGroupConverter
   def generate_uuid
     # Xcodeスタイルの24文字のUUID生成
     SecureRandom.hex(12).upcase
+  end
+  
+  def fix_group_path(content, group_uuid, group_name)
+    # グループのパスを正しく設定（親グループからの相対パス）
+    content.gsub!(/(#{group_uuid} \/\* #{Regexp.escape(group_name)} \*\/ = \{[^}]*?path = )([^;]+)(;)/m) do
+      prefix = $1
+      suffix = $3
+      # SwiftJsonUIグループは単純なグループ名をパスとして使用
+      if ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].include?(group_name)
+        "#{prefix}#{group_name}#{suffix}"
+      else
+        # その他のグループは元のパスを保持
+        "#{prefix}#{$2}#{suffix}"
+      end
+    end
+    
+    # Core内のUI/Baseグループのパスも修正
+    if group_name == "Core"
+      # Coreグループ内のUI/Baseを探す
+      if content.match(/(#{group_uuid} \/\* Core \*\/ = \{[^}]*?children = \([^)]*\))/m)
+        core_section = $1
+        # UI/Baseグループを探す
+        core_section.scan(/([A-F0-9]{24}) \/\* (UI|Base) \*\//).each do |uuid, name|
+          content.gsub!(/(#{uuid} \/\* #{name} \*\/ = \{[^}]*?path = )([^;]+)(;)/m) do
+            "#{$1}#{name}#{$3}"
+          end
+        end
+      end
+    end
   end
 end
 
