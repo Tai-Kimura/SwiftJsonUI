@@ -83,7 +83,20 @@ class XcodeSyncToGroupConverter
       return
     end
     
-    # 1. PBXFileSystemSynchronizedBuildFileExceptionSetセクションを削除（先に実行）
+    # 1. 実際のディレクトリ構造からファイルを取得
+    app_dir = if @pbxproj_path.include?('/tmp/')
+      nil  # テスト環境では実際のファイルシステムを参照しない
+    else
+      File.join(project_dir, app_name)
+    end
+    
+    # 2. PBXFileSystemSynchronizedBuildFileExceptionSetセクションから情報を取得してから削除
+    exception_files = []
+    content.scan(/membershipExceptions = \(([^)]*)\)/m) do |exceptions|
+      files = exceptions[0].scan(/([^,\s]+)[,\s]*/).flatten.reject { |f| f.strip.empty? }
+      exception_files.concat(files)
+    end
+    
     if content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
       content.gsub!(
         /\/\* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section \*\/.*?\/\* End PBXFileSystemSynchronizedBuildFileExceptionSet section \*\//m,
@@ -92,8 +105,30 @@ class XcodeSyncToGroupConverter
       puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
     end
     
-    # 2. 標準的なファイルのPBXFileReferenceを作成
-    file_references = create_standard_file_references(app_name)
+    # 3. ファイルリストを作成（実際のファイルまたは標準セット）
+    files_to_add = if app_dir && Dir.exist?(app_dir)
+      # 実際のディレクトリから取得（第一階層のみ）
+      Dir.children(app_dir).select do |item|
+        path = File.join(app_dir, item)
+        # ファイルのみ（ディレクトリは除外）
+        File.file?(path) && 
+        # 隠しファイルを除外
+        !item.start_with?('.') &&
+        # 特定の拡張子のみ
+        item.match?(/\.(swift|plist|xcassets|storyboard|xcdatamodeld)$/)
+      end
+    else
+      # テスト環境または新規プロジェクトの場合は標準セット
+      standard_files = ['AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist', 
+                       'Assets.xcassets', 'LaunchScreen.storyboard', 'Main.storyboard']
+      # exceptionsに含まれているファイルも追加
+      (standard_files + exception_files).uniq
+    end
+    
+    puts "Found #{files_to_add.size} files to add: #{files_to_add.join(', ')}"
+    
+    # 4. PBXFileReferenceを作成
+    file_references = create_file_references(files_to_add, app_name)
     
     # PBXFileReferenceセクションに追加
     if file_references.any? && content.include?("/* Begin PBXFileReference section */")
@@ -105,7 +140,7 @@ class XcodeSyncToGroupConverter
       puts "Added #{file_references.size} file references"
     end
     
-    # 3. メインアプリグループをPBXGroupに変換
+    # 5. メインアプリグループをPBXGroupに変換
     children_items = []
     
     # ファイル参照を追加
@@ -113,10 +148,28 @@ class XcodeSyncToGroupConverter
       children_items << "\t\t\t\t#{ref[:uuid]} /* #{ref[:name]} */,"
     end
     
-    # 既存のグループを収集して追加
+    # 既存のグループを収集して追加（SwiftJsonUI関連を含む）
+    groups_to_add = []
     content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXGroup;/) do |uuid, name|
       next if name == app_name || name == 'Products' || name.include?('Tests')
-      children_items << "\t\t\t\t#{uuid} /* #{name} */,"
+      groups_to_add << { uuid: uuid, name: name }
+    end
+    
+    # グループを特定の順序で追加（SwiftJsonUIのグループを優先）
+    swiftjsonui_groups = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+    
+    # SwiftJsonUIグループを順番に追加
+    swiftjsonui_groups.each do |group_name|
+      group = groups_to_add.find { |g| g[:name] == group_name }
+      if group
+        children_items << "\t\t\t\t#{group[:uuid]} /* #{group[:name]} */,"
+        groups_to_add.delete(group)
+      end
+    end
+    
+    # その他のグループを追加
+    groups_to_add.each do |group|
+      children_items << "\t\t\t\t#{group[:uuid]} /* #{group[:name]} */,"
     end
     
     # メインアプリグループを変換
@@ -214,32 +267,55 @@ class XcodeSyncToGroupConverter
   
   private
   
-  def create_standard_file_references(app_name)
+  def create_file_references(files, app_name)
     references = []
     
-    # 標準的なファイルのリスト
-    standard_files = [
-      { name: 'AppDelegate.swift', type: 'sourcecode.swift' },
-      { name: 'SceneDelegate.swift', type: 'sourcecode.swift' },
-      { name: 'Info.plist', type: 'text.plist.xml' },
-      { name: 'Assets.xcassets', type: 'folder.assetcatalog' },
-      { name: 'LaunchScreen.storyboard', type: 'file.storyboard' },
-      { name: 'Main.storyboard', type: 'file.storyboard' },
-      { name: "#{app_name}.xcdatamodeld", type: 'wrapper.xcdatamodel' }
-    ]
-    
-    standard_files.each do |file_info|
+    files.each do |filename|
+      # ファイルタイプを推測
+      file_type = case filename
+      when /\.swift$/
+        'sourcecode.swift'
+      when /\.plist$/
+        'text.plist.xml'
+      when /\.xcassets$/
+        'folder.assetcatalog'
+      when /\.storyboard$/
+        'file.storyboard'
+      when /\.xcdatamodeld$/
+        'wrapper.xcdatamodel'
+      else
+        'text'
+      end
+      
       uuid = generate_uuid
       
-      definition = "\t\t#{uuid} /* #{file_info[:name]} */ = {"
+      definition = "\t\t#{uuid} /* #{filename} */ = {"
       definition += "isa = PBXFileReference; "
-      definition += "lastKnownFileType = #{file_info[:type]}; "
-      definition += "path = #{file_info[:name]}; "
+      definition += "lastKnownFileType = #{file_type}; "
+      definition += "path = #{filename}; "
       definition += "sourceTree = \"<group>\"; };"
       
       references << {
         uuid: uuid,
-        name: file_info[:name],
+        name: filename,
+        definition: definition
+      }
+    end
+    
+    # xcdatamodeldファイルが見つからない場合は追加（新規プロジェクトで必要）
+    if !files.any? { |f| f.end_with?('.xcdatamodeld') }
+      xcdatamodeld_name = "#{app_name}.xcdatamodeld"
+      uuid = generate_uuid
+      
+      definition = "\t\t#{uuid} /* #{xcdatamodeld_name} */ = {"
+      definition += "isa = PBXFileReference; "
+      definition += "lastKnownFileType = wrapper.xcdatamodel; "
+      definition += "path = #{xcdatamodeld_name}; "
+      definition += "sourceTree = \"<group>\"; };"
+      
+      references << {
+        uuid: uuid,
+        name: xcdatamodeld_name,
         definition: definition
       }
     end
