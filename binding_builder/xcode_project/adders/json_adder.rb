@@ -260,38 +260,41 @@ class JsonAdder < FileAdder
       new_entry += "\t\t\tsourceTree = \"<group>\";\n"
       new_entry += "\t\t};\n"
       lines.insert(pbx_group_section_end, new_entry)
+      
+      # 更新されたlinesでproject_contentを更新
+      project_content.replace(lines.join)
+      lines = project_content.lines  # 新しいlines配列を取得
     end
     
     # 2. 親グループのchildrenに追加
     in_parent_group = false
     in_children = false
-    children_end = nil
+    children_start = nil
     
     lines.each_with_index do |line, index|
       if line.include?("#{parent_group_uuid} /* ")
         in_parent_group = true
+        puts "Found parent group at line #{index}: #{line.strip}"
       elsif in_parent_group && line.strip == "};"
+        puts "Parent group ended at line #{index}"
         break
       elsif in_parent_group && line.include?("children = (")
         in_children = true
-      elsif in_parent_group && in_children && (line.strip == ");" || line.include?(");"))
-        children_end = index
+        children_start = index
+        puts "Found children start at line #{index}"
+        # 次の行から);を探す
+        (index+1..lines.length-1).each do |i|
+          if lines[i] && (lines[i].strip == ");" || lines[i].include?(");"))
+            puts "Found children end at line #{i}: #{lines[i].strip}"
+            # 挿入位置は);の前
+            subgroup_entry = "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n"
+            lines.insert(i, subgroup_entry)
+            puts "Inserted subgroup at line #{i}"
+            break
+          end
+        end
         break
       end
-    end
-    
-    if children_end
-      puts "Adding subgroup to parent at line #{children_end}"
-      # 空のchildren配列の場合と既存要素がある場合を処理
-      if lines[children_end - 1].strip.empty? || lines[children_end - 1].include?("children = (")
-        # 空の場合
-        lines.insert(children_end, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n")
-      else
-        # 既存要素がある場合 - 閉じカッコの前に新しいエントリを挿入
-        lines.insert(children_end, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n")
-      end
-    else
-      puts "WARNING: Could not find children end for parent group #{parent_group_uuid}"
     end
     
     project_content.replace(lines.join)
