@@ -4,6 +4,15 @@ class JsonAdder < FileAdder
   def self.add_json_file(project_manager, json_file_path, group_name = nil)
     puts "Adding JSON file to Xcode project..."
     
+    # Layoutsグループが必要で存在しない場合は作成
+    if group_name == "Layouts"
+      project_content = File.read(project_manager.project_file_path)
+      if !project_content.include?("/* Layouts */ = {")
+        puts "Layouts group not found, creating it..."
+        project_manager.add_folder_group("Layouts", "Layouts")
+      end
+    end
+    
     safe_add_files(project_manager) do |project_content|
       # ファイル情報
       file_name = File.basename(json_file_path)
