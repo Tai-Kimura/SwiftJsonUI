@@ -140,33 +140,64 @@ class XcodeSyncToGroupConverter
     # 4.5. 各グループの変換処理を改善
     group_uuids.each do |group_name, group_uuid|
       # グループ定義を見つけて変換
-      content.gsub!(/(#{group_uuid} \/\* #{Regexp.escape(group_name)} \*\/ = \{[^}]*?)(\};)/m) do |match|
-        group_content = $1
-        suffix = $2
+      content.gsub!(/(#{group_uuid} \/\* #{Regexp.escape(group_name)} \*\/ = \{)([^}]*?)(\};)/m) do |match|
+        prefix = $1
+        group_content = $2
+        suffix = $3
         
         # exceptionsを削除
         group_content.gsub!(/\s*exceptions = [^;]+;\s*/m, '')
         
-        # childrenがない場合は追加
-        unless group_content.include?("children =")
-          # ファイル参照があれば追加
-          if file_references_by_group[group_name] && file_references_by_group[group_name].any?
-            children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
-            group_content += "\n\t\t\tchildren = (\n#{children_items}\n\t\t\t);"
-          else
-            group_content += "\n\t\t\tchildren = (\n\t\t\t);"
-          end
-        else
+        # グループの属性を整理して正しい順序にする
+        attributes = {}
+        
+        # isaを抽出
+        if group_content =~ /isa = ([^;]+);/
+          attributes[:isa] = $1
+          group_content.gsub!(/\s*isa = [^;]+;\s*/m, '')
+        end
+        
+        # pathを抽出
+        if group_content =~ /path = ([^;]+);/
+          attributes[:path] = $1
+          group_content.gsub!(/\s*path = [^;]+;\s*/m, '')
+        end
+        
+        # sourceTreeを抽出
+        if group_content =~ /sourceTree = ([^;]+);/
+          attributes[:sourceTree] = $1
+          group_content.gsub!(/\s*sourceTree = [^;]+;\s*/m, '')
+        end
+        
+        # childrenを抽出または作成
+        if group_content =~ /children = \([^)]*\);/m
           # 既存のchildrenが空の場合、ファイル参照を追加
           if file_references_by_group[group_name] && file_references_by_group[group_name].any?
-            group_content.gsub!(/children = \(\s*\);/m) do
-              children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
-              "children = (\n#{children_items}\n\t\t\t);"
-            end
+            children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
+            attributes[:children] = "(\n#{children_items}\n\t\t\t)"
+          else
+            attributes[:children] = "(\n\t\t\t)"
+          end
+          group_content.gsub!(/\s*children = \([^)]*\);\s*/m, '')
+        else
+          # childrenがない場合は追加
+          if file_references_by_group[group_name] && file_references_by_group[group_name].any?
+            children_items = file_references_by_group[group_name].map { |ref| "\t\t\t\t#{ref}," }.join("\n")
+            attributes[:children] = "(\n#{children_items}\n\t\t\t)"
+          else
+            attributes[:children] = "(\n\t\t\t)"
           end
         end
         
-        "#{group_content}#{suffix}"
+        # 正しい順序で属性を再構築
+        new_content = "\n"
+        new_content += "\t\t\tisa = #{attributes[:isa]};\n" if attributes[:isa]
+        new_content += "\t\t\tchildren = #{attributes[:children]};\n" if attributes[:children]
+        new_content += "\t\t\tpath = #{attributes[:path]};\n" if attributes[:path]
+        new_content += "\t\t\tsourceTree = #{attributes[:sourceTree]};\n" if attributes[:sourceTree]
+        new_content += "\t\t"
+        
+        "#{prefix}#{new_content}#{suffix}"
       end
     end
     
