@@ -225,6 +225,10 @@ class XcodeSyncToGroupConverter
     content.gsub!(/\s*exceptions = \([^)]*\);\s*/m, '')
     content.gsub!(/\s*exceptions = [A-F0-9]{24} \/\* [^*]* \*\/;\s*/m, '')
     
+    # 5.5. fileSystemSynchronizedGroupsを削除
+    content.gsub!(/\s*fileSystemSynchronizedGroups = \([^)]*\);\s*/m, '')
+    puts "Removed fileSystemSynchronizedGroups references" if content.include?("fileSystemSynchronizedGroups")
+    
     # 6. 複数のPBXGroupセクションをマージ
     group_sections = content.scan(/\/\* Begin PBXGroup section \*\/(.*?)\/\* End PBXGroup section \*\//m)
     if group_sections.length > 1
@@ -250,13 +254,16 @@ class XcodeSyncToGroupConverter
     end
     
     if converted
-      # 7. メインアプリグループにchildrenを追加（もし存在しない場合）
-      # 既存のグループのUUIDを収集
-      existing_groups = {}
-      content.scan(/([A-F0-9]{24}) \/\* (View|Layouts|Styles|Bindings|Core|UI|Base) \*\/ = \{/) do |uuid, name|
-        existing_groups[name] = uuid
+      # 7. すべてのグループのUUIDを収集
+      all_groups = {}
+      content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXGroup;/) do |uuid, name|
+        all_groups[name] = uuid
         puts "DEBUG: Found group #{name} with UUID #{uuid}"
       end
+      
+      # SwiftJsonUI関連グループ
+      swiftjsonui_groups = ['View', 'Layouts', 'Styles', 'Bindings', 'Core', 'UI', 'Base']
+      existing_groups = all_groups.select { |name, _| swiftjsonui_groups.include?(name) }
       
       if existing_groups.empty?
         puts "INFO: No SwiftJsonUI groups found in the project"
@@ -269,18 +276,7 @@ class XcodeSyncToGroupConverter
       
       # メインアプリグループのUUIDを動的に検出
       puts "DEBUG: Looking for main app group: #{app_name}"
-      main_app_group_uuid = nil
-      
-      # より柔軟なパターンでメインアプリグループを検索
-      content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;[^}]*?\}/m) do |uuid|
-        group_content = $&
-        # pathかexceptionsを含むものがメインアプリグループ
-        if group_content.include?("path = #{app_name}") || group_content.include?("exceptions =")
-          main_app_group_uuid = uuid[0]
-          puts "DEBUG: Found main app group UUID: #{main_app_group_uuid}"
-          break
-        end
-      end
+      main_app_group_uuid = all_groups[app_name]
       
       if main_app_group_uuid
         # メインアプリグループのパターンを探す
@@ -294,12 +290,11 @@ class XcodeSyncToGroupConverter
           # childrenがない場合、追加する
           children_array = []
           
-          # 標準的な順序でグループを追加
-          ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].each do |group_name|
-            if existing_groups[group_name]
-              children_array << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
-              puts "DEBUG: Adding #{group_name} to children"
-            end
+          # すべての既存グループを追加（Products以外）
+          all_groups.each do |group_name, uuid|
+            next if group_name == app_name || group_name == 'Products' || group_name.include?('Tests')
+            children_array << "\t\t\t\t#{uuid} /* #{group_name} */,"
+            puts "DEBUG: Adding #{group_name} to children"
           end
           
           if children_array.any?
@@ -309,23 +304,21 @@ class XcodeSyncToGroupConverter
             match
           end
         else
-          # childrenが既にある場合、既存のグループを確認して不足分を追加
-          existing_children = middle[/children = \((.*?)\);/m, 1]
-          
-          children_to_add = []
-          ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].each do |group_name|
-            if existing_groups[group_name] && !existing_children.include?(existing_groups[group_name])
-              children_to_add << "\t\t\t\t#{existing_groups[group_name]} /* #{group_name} */,"
+          # childrenが既にある場合、空なら全グループを追加
+          if middle =~ /children = \(\s*\);/m
+            puts "DEBUG: Main app group has empty children, adding all groups..."
+            children_array = []
+            
+            # すべての既存グループを追加（Products以外）
+            all_groups.each do |group_name, uuid|
+              next if group_name == app_name || group_name == 'Products' || group_name.include?('Tests')
+              children_array << "\t\t\t\t#{uuid} /* #{group_name} */,"
+              puts "DEBUG: Adding #{group_name} to empty children"
             end
-          end
-          
-          if children_to_add.any?
-            middle.gsub!(/children = \(\s*(.*?)\s*\);/m) do |children_match|
-              existing_items = $1.strip
-              if existing_items.empty?
-                "children = (\n#{children_to_add.join("\n")}\n\t\t\t);"
-              else
-                "children = (\n\t\t\t\t#{existing_items}\n#{children_to_add.join("\n")}\n\t\t\t);"
+            
+            if children_array.any?
+              middle.gsub!(/children = \(\s*\);/m) do
+                "children = (\n#{children_array.join("\n")}\n\t\t\t);"
               end
             end
           end
