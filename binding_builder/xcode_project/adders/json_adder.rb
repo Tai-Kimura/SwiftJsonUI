@@ -47,7 +47,9 @@ class JsonAdder < FileAdder
       
       # 3. グループに追加（指定されている場合）
       if group_name
-        add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path)
+        # サブディレクトリがある場合は、ファイル名のみを渡す（パスはグループ階層で管理）
+        file_in_subgroup = relative_path && relative_path.include?('/')
+        add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path, file_in_subgroup)
       end
       
       # 4. Resources Build Phaseに追加
@@ -135,7 +137,7 @@ class JsonAdder < FileAdder
     puts "Added PBXBuildFile entries (#{resource_uuids.length} targets)"
   end
 
-  def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path = nil)
+  def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name, relative_path = nil, file_in_subgroup = false)
     # グループのUUIDを検索
     group_uuid = find_group_uuid_by_name(project_content, group_name)
     if !group_uuid
@@ -159,6 +161,11 @@ class JsonAdder < FileAdder
       end
       
       group_uuid = current_group_uuid
+      
+      # サブグループに追加する場合は、PBXFileReferenceのパスをファイル名のみに更新
+      if file_in_subgroup
+        update_file_reference_path(project_content, file_ref_uuid, file_name)
+      end
     end
     
     # グループの定義を探す
@@ -308,6 +315,23 @@ class JsonAdder < FileAdder
     # 3. 更新されたlinesでproject_contentを更新
     project_content.replace(lines.join)
     puts "Subgroup '#{subgroup_name}' created successfully"
+  end
+
+  def self.update_file_reference_path(project_content, file_ref_uuid, file_name)
+    lines = project_content.lines
+    lines.each_with_index do |line, index|
+      if line.include?("#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference")
+        # パスをファイル名のみに更新
+        if line.include?("path = \"")
+          lines[index] = line.gsub(/path = "[^"]+";/, "path = \"#{file_name}\";")
+        else
+          lines[index] = line.gsub(/path = [^;]+;/, "path = #{file_name};")
+        end
+        puts "Updated file reference path to just filename: #{file_name}"
+        break
+      end
+    end
+    project_content.replace(lines.join)
   end
 
   def self.add_to_resources_build_phases(project_content, resource_uuids, file_name)
