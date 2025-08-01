@@ -8,6 +8,9 @@ class JsonAdder < FileAdder
       # ファイル情報
       file_name = File.basename(json_file_path)
       
+      # グループからの相対パスを計算
+      relative_path = calculate_group_relative_path(json_file_path, group_name, project_manager)
+      
       # ファイルが既にプロジェクトに含まれているかチェック
       build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Resources \*\//
       if project_content.match?(build_file_pattern)
@@ -24,7 +27,7 @@ class JsonAdder < FileAdder
       resource_uuids = resources_targets.times.map { project_manager.generate_uuid }
       
       # 1. PBXFileReferenceを追加
-      add_pbx_file_reference(project_content, file_ref_uuid, file_name)
+      add_pbx_file_reference(project_content, file_ref_uuid, file_name, relative_path)
       
       # 2. PBXBuildFileを追加（複数ターゲット対応）
       add_pbx_build_files(project_content, resource_uuids, file_ref_uuid, file_name)
@@ -42,14 +45,41 @@ class JsonAdder < FileAdder
   end
 
   private
+  
+  def self.calculate_group_relative_path(json_file_path, group_name, project_manager)
+    return File.basename(json_file_path) unless group_name
+    
+    # プロジェクトルートを取得
+    project_root = File.dirname(File.dirname(project_manager.project_file_path))
+    
+    # グループフォルダへのパスを構築
+    group_folder_path = File.join(project_root, group_name)
+    
+    # JSONファイルのフルパスからグループフォルダの相対パスを計算
+    require 'pathname'
+    begin
+      file_pathname = Pathname.new(json_file_path)
+      group_pathname = Pathname.new(group_folder_path)
+      
+      # グループフォルダからの相対パス
+      relative = file_pathname.relative_path_from(group_pathname).to_s
+      
+      # サブディレクトリがある場合は保持、ない場合はファイル名のみ
+      relative
+    rescue
+      # 相対パス計算に失敗した場合はファイル名のみ
+      File.basename(json_file_path)
+    end
+  end
 
-  def self.add_pbx_file_reference(project_content, file_ref_uuid, file_name)
+  def self.add_pbx_file_reference(project_content, file_ref_uuid, file_name, relative_path = nil)
     insert_line = find_pbx_file_reference_section_end(project_content)
     return unless insert_line
     
     lines = project_content.lines
-    # グループ内のファイルは <group> を使用し、pathはファイル名のみ
-    new_entry = "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = #{file_name}; sourceTree = \"<group>\"; };\n"
+    # パスを設定（相対パスが指定されている場合はそれを使用）
+    path = relative_path || file_name
+    new_entry = "\t\t#{file_ref_uuid} /* #{file_name} */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = \"#{path}\"; sourceTree = \"<group>\"; };\n"
     lines.insert(insert_line, new_entry)
     project_content.replace(lines.join)
   end
@@ -72,10 +102,28 @@ class JsonAdder < FileAdder
     group_uuid = find_group_uuid_by_name(project_content, group_name)
     return unless group_uuid
     
+    # サブディレクトリがある場合の処理
+    relative_path = calculate_group_relative_path(File.join(group_name, file_name), group_name, project_manager)
+    if relative_path.include?('/')
+      # サブディレクトリがある場合、サブグループを作成または検索
+      subdirs = File.dirname(relative_path).split('/')
+      current_group_uuid = group_uuid
+      current_group_name = group_name
+      
+      subdirs.each do |subdir|
+        # サブグループを探す、なければ作成
+        subgroup_uuid = find_or_create_subgroup(project_manager, project_content, current_group_uuid, current_group_name, subdir)
+        current_group_uuid = subgroup_uuid
+        current_group_name = subdir
+      end
+      
+      group_uuid = current_group_uuid
+    end
+    
     # グループの定義を探す
     insert_line = nil
     project_content.each_line.with_index do |line, index|
-      if line.include?("#{group_uuid} /* #{group_name} */ = {")
+      if line.include?("#{group_uuid} /* ") && line.include?(" */ = {")
         lines = project_content.lines
         (index+1..index+10).each do |i|
           if lines[i] && lines[i].include?("children = (")
@@ -98,7 +146,7 @@ class JsonAdder < FileAdder
     group_entry = "\t\t\t\t#{file_ref_uuid} /* #{file_name} */,\n"
     lines.insert(insert_line, group_entry)
     project_content.replace(lines.join)
-    puts "Added to #{group_name} group"
+    puts "Added to group hierarchy"
   end
 
   def self.find_group_uuid_by_name(project_content, group_name)
@@ -109,6 +157,77 @@ class JsonAdder < FileAdder
     end
     puts "Warning: Could not find group '#{group_name}'"
     nil
+  end
+  
+  def self.find_or_create_subgroup(project_manager, project_content, parent_group_uuid, parent_group_name, subgroup_name)
+    # 親グループ内でサブグループを探す
+    lines = project_content.lines
+    in_parent_group = false
+    in_children = false
+    
+    lines.each_with_index do |line, index|
+      if line.include?("#{parent_group_uuid} /* ")
+        in_parent_group = true
+      elsif in_parent_group && line.strip == "};"
+        in_parent_group = false
+        in_children = false
+      elsif in_parent_group && line.include?("children = (")
+        in_children = true
+      elsif in_parent_group && in_children
+        if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(subgroup_name)} \*\//)
+          return $1
+        end
+      end
+    end
+    
+    # サブグループが見つからない場合は作成
+    subgroup_uuid = project_manager.generate_uuid
+    create_subgroup(project_content, parent_group_uuid, subgroup_uuid, subgroup_name)
+    subgroup_uuid
+  end
+  
+  def self.create_subgroup(project_content, parent_group_uuid, subgroup_uuid, subgroup_name)
+    lines = project_content.lines
+    
+    # 1. PBXGroupセクションにサブグループを追加
+    pbx_group_section_end = nil
+    lines.each_with_index do |line, index|
+      if line.strip == "/* End PBXGroup section */"
+        pbx_group_section_end = index
+        break
+      end
+    end
+    
+    if pbx_group_section_end
+      new_entry = "\t\t#{subgroup_uuid} /* #{subgroup_name} */ = {\n"
+      new_entry += "\t\t\tisa = PBXGroup;\n"
+      new_entry += "\t\t\tchildren = (\n"
+      new_entry += "\t\t\t);\n"
+      new_entry += "\t\t\tname = #{subgroup_name};\n"
+      new_entry += "\t\t\tpath = #{subgroup_name};\n"
+      new_entry += "\t\t\tsourceTree = \"<group>\";\n"
+      new_entry += "\t\t};\n"
+      lines.insert(pbx_group_section_end, new_entry)
+    end
+    
+    # 2. 親グループのchildrenに追加
+    in_parent_group = false
+    children_end = nil
+    
+    lines.each_with_index do |line, index|
+      if line.include?("#{parent_group_uuid} /* ")
+        in_parent_group = true
+      elsif in_parent_group && line.include?(");")
+        children_end = index
+        break
+      end
+    end
+    
+    if children_end
+      lines[children_end] = lines[children_end].sub(/\);/, "\t\t\t\t#{subgroup_uuid} /* #{subgroup_name} */,\n\t\t\t);")
+    end
+    
+    project_content.replace(lines.join)
   end
 
   def self.add_to_resources_build_phases(project_content, resource_uuids, file_name)
