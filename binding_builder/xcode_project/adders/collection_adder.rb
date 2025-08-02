@@ -73,7 +73,12 @@ class CollectionAdder < FileAdder
   def self.add_to_collection_group(project_manager, project_content, file_ref_uuid, file_name, view_folder_name)
     # Viewフォルダグループを探す
     view_folder_group_uuid = find_view_folder_group_uuid(project_content, view_folder_name)
-    return unless view_folder_group_uuid
+    
+    if view_folder_group_uuid.nil?
+      puts "ERROR: View folder '#{view_folder_name}' not found in Xcode project"
+      puts "Please ensure the view was created properly with 'sjui g view #{view_folder_name.downcase}'"
+      return
+    end
     
     # Collectionグループを探す（なければ作成）
     collection_group_uuid = find_collection_group_in_view_folder(project_content, view_folder_group_uuid)
@@ -89,8 +94,15 @@ class CollectionAdder < FileAdder
   end
 
   def self.find_view_folder_group_uuid(project_content, view_folder_name)
+    # まずPBXGroupセクションでViewフォルダを探す
+    in_pbx_group = false
     project_content.each_line do |line|
-      if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{/)
+      if line.include?("/* Begin PBXGroup section */")
+        in_pbx_group = true
+      elsif line.include?("/* End PBXGroup section */")
+        in_pbx_group = false
+      elsif in_pbx_group && line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{\s*isa = PBXGroup/)
+        puts "Found View folder group: #{$1} for #{view_folder_name}"
         return $1
       end
     end
@@ -128,6 +140,14 @@ class CollectionAdder < FileAdder
         in_view_folder_group = true
       elsif in_view_folder_group && line.include?("children = (")
         children_section_found = true
+        # 空のchildren配列の場合、次の行に追加
+        if lines[index + 1] && lines[index + 1].strip == ");"
+          new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
+          lines.insert(index + 1, new_reference)
+          project_content.replace(lines.join)
+          puts "Added Collection group to View folder (empty children)"
+          break
+        end
       elsif in_view_folder_group && children_section_found && line.strip == ");"
         # childrenセクションの終わりを見つけたので、その前に追加
         new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
@@ -142,9 +162,12 @@ class CollectionAdder < FileAdder
     # PBXGroupセクションの最後を見つけて、新しいエントリを追加
     lines = project_content.lines
     pbx_group_section_end = nil
+    in_pbx_group = false
     
     lines.each_with_index do |line, index|
-      if line.strip == "/* End PBXGroup section */"
+      if line.include?("/* Begin PBXGroup section */")
+        in_pbx_group = true
+      elsif line.include?("/* End PBXGroup section */")
         pbx_group_section_end = index
         break
       end
@@ -155,13 +178,15 @@ class CollectionAdder < FileAdder
       new_entry += "\t\t\tisa = PBXGroup;\n"
       new_entry += "\t\t\tchildren = (\n"
       new_entry += "\t\t\t);\n"
-      new_entry += "\t\t\tname = #{group_name};\n"
       new_entry += "\t\t\tpath = #{relative_path};\n"
       new_entry += "\t\t\tsourceTree = \"<group>\";\n"
       new_entry += "\t\t};\n"
       
       lines.insert(pbx_group_section_end, new_entry)
       project_content.replace(lines.join)
+      puts "Added PBXGroup entry for Collection"
+    else
+      puts "ERROR: Could not find PBXGroup section"
     end
   end
 
