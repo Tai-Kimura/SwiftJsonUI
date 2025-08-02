@@ -94,40 +94,33 @@ class CollectionAdder < FileAdder
   end
 
   def self.find_view_folder_group_uuid(project_content, view_folder_name)
-    # PBXGroupセクションでViewフォルダを探す（複数の形式に対応）
-    in_pbx_group_section = false
+    # プロジェクトファイル全体でViewフォルダグループを探す
     lines = project_content.lines
     
     lines.each_with_index do |line, index|
-      if line.include?("/* Begin PBXGroup section */")
-        in_pbx_group_section = true
-      elsif line.include?("/* End PBXGroup section */")
-        in_pbx_group_section = false
-      elsif in_pbx_group_section
-        # 形式1: UUID /* Name */ = {isa = PBXGroup; children = ( （1行形式）
-        if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{isa = PBXGroup;/)
-          puts "Found View folder group (inline format): #{$1} for #{view_folder_name}"
-          return $1
-        # 形式2: UUID /* Name */ = { で始まり、次の行でisa = PBXGroupを探す
-        elsif line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{/)
-          uuid = $1
-          # 現在の行自体にisa = PBXGroupが含まれているかチェック
-          if line.include?("isa = PBXGroup")
-            puts "Found View folder group (same line): #{uuid} for #{view_folder_name}"
+      # 形式1: UUID /* Name */ = {isa = PBXGroup; children = ( （1行形式）
+      if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{isa = PBXGroup;/)
+        puts "Found View folder group (inline format): #{$1} for #{view_folder_name}"
+        return $1
+      # 形式2: UUID /* Name */ = { で始まり、isa = PBXGroupを探す
+      elsif line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{/)
+        uuid = $1
+        # 現在の行自体にisa = PBXGroupが含まれているかチェック
+        if line.include?("isa = PBXGroup")
+          puts "Found View folder group (same line): #{uuid} for #{view_folder_name}"
+          return uuid
+        end
+        # 次の数行でisa = PBXGroupがあるか確認
+        (1..5).each do |offset|
+          next_line = lines[index + offset]
+          if next_line && next_line.include?("isa = PBXGroup")
+            puts "Found View folder group (multi-line): #{uuid} for #{view_folder_name}"
             return uuid
-          end
-          # 次の数行でisa = PBXGroupがあるか確認
-          (1..5).each do |offset|
-            next_line = lines[index + offset]
-            if next_line && next_line.include?("isa = PBXGroup")
-              puts "Found View folder group (multi-line): #{uuid} for #{view_folder_name}"
-              return uuid
-            end
           end
         end
       end
     end
-    puts "Warning: Could not find View folder group '#{view_folder_name}' in PBXGroup section"
+    puts "Warning: Could not find View folder group '#{view_folder_name}' in project file"
     nil
   end
 
