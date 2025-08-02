@@ -102,8 +102,8 @@ class CollectionAdder < FileAdder
       elsif line.include?("/* End PBXGroup section */")
         in_pbx_group = false
       elsif in_pbx_group
-        # 形式1: UUID /* Name */ = {isa = PBXGroup
-        if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{\s*isa = PBXGroup/)
+        # 形式1: UUID /* Name */ = {isa = PBXGroup (スペースの有無に対応)
+        if line.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(view_folder_name)} \*\/ = \{[\s]*isa = PBXGroup/)
           puts "Found View folder group (format 1): #{$1} for #{view_folder_name}"
           return $1
         # 形式2: UUID /* Name */ = {isa = PBXGroup; の前にchildren行がある場合
