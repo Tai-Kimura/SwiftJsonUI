@@ -154,63 +154,33 @@ class CollectionAdder < FileAdder
     add_pbx_group_entry(project_content, collection_group_uuid, "Collection", "Collection")
     
     # ViewFolderグループのchildrenにCollectionグループを追加
-    # MainグループがPBXFileReferenceセクションにある場合も考慮
     lines = project_content.lines
-    group_found = false
     children_updated = false
     
     lines.each_with_index do |line, index|
-      # パターン1: UUID /* Name */ = {isa = PBXGroup; children = ( の形式
-      if line.include?("#{view_folder_group_uuid} /* ") && line.include?(" */ = {")
-        group_found = true
-        # 同じ行にchildren = (がある場合
+      # MainグループのUUIDを含む行を探す
+      if line.include?("#{view_folder_group_uuid} /* ")
+        puts "DEBUG: Found Main group at line #{index + 1}: #{line.strip}"
+        
+        # children = ( を探す（同じ行または次の行）
         if line.include?("children = (")
-          # 次の行をチェック
-          if index + 1 < lines.length && lines[index + 1].strip == ");"
-            # 空のchildren配列
-            new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
-            lines.insert(index + 1, new_reference)
-            children_updated = true
-            break
-          else
-            # children配列に既に要素がある場合、次の);を探す
-            (1..10).each do |offset|
-              if index + offset < lines.length && lines[index + offset].strip == ");"
-                new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
-                lines.insert(index + offset, new_reference)
-                children_updated = true
-                break
-              end
+          puts "DEBUG: Found children on same line"
+          # 既存の要素の後、閉じ括弧の前に追加
+          (1..10).each do |offset|
+            next_line = lines[index + offset]
+            if next_line && next_line.match(/^\s*\);/)
+              puts "DEBUG: Found closing ); at line #{index + offset + 1}"
+              new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
+              lines.insert(index + offset, new_reference)
+              children_updated = true
+              break
             end
-            break if children_updated
           end
         else
-          # children = (が次の行にある場合
-          (1..5).each do |offset|
-            if index + offset < lines.length && lines[index + offset].include?("children = (")
-              # その次の行をチェック
-              if index + offset + 1 < lines.length && lines[index + offset + 1].strip == ");"
-                # 空のchildren配列
-                new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
-                lines.insert(index + offset + 1, new_reference)
-                children_updated = true
-                break
-              else
-                # children配列に既に要素がある場合、次の);を探す
-                (1..10).each do |offset2|
-                  if index + offset + offset2 < lines.length && lines[index + offset + offset2].strip == ");"
-                    new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
-                    lines.insert(index + offset + offset2, new_reference)
-                    children_updated = true
-                    break
-                  end
-                end
-                break if children_updated
-              end
-            end
-          end
-          break if children_updated
+          # children = ( が次の行にある場合はサポートしない（現在の形式では発生しない）
+          puts "DEBUG: children not found on same line"
         end
+        break
       end
     end
     
@@ -219,6 +189,7 @@ class CollectionAdder < FileAdder
       puts "Added Collection group to View folder's children"
     else
       puts "WARNING: Could not add Collection group to View folder's children"
+      puts "DEBUG: View folder group UUID: #{view_folder_group_uuid}"
     end
   end
 
