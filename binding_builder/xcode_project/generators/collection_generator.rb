@@ -149,7 +149,7 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
     created_files = [json_file_path]
     
     safe_pbxproj_operation([], created_files) do
-      @xcode_manager.add_json_file(json_file_path)
+      @xcode_manager.add_json_file(json_file_path, "Layouts")
       puts "Added JSON layout to Xcode project"
     end
   end
