@@ -77,7 +77,7 @@ class BindingFilesAdder < FileAdder
 
   def self.add_to_pbx_build_file_section(project_content, file_data, all_bindings)
     # PBXBuildFileセクションの終わりを探す
-    insert_line = find_pbx_build_file_section_end(project_content)
+    insert_line = find_or_create_pbx_build_file_section_end(project_content)
     return unless insert_line
     
     lines = project_content.lines

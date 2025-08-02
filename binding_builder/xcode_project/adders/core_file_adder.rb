@@ -84,11 +84,11 @@ class CoreFileAdder < FileAdder
   end
 
   def self.add_pbx_build_files(project_content, build_file_uuids, file_ref_uuid, file_name)
-    insert_line = find_pbx_build_file_section_end(project_content)
+    insert_line = find_or_create_pbx_build_file_section_end(project_content)
     puts "DEBUG: PBXBuildFile section end at line: #{insert_line}"
     
     if insert_line.nil?
-      puts "ERROR: Could not find PBXBuildFile section end!"
+      puts "ERROR: Could not find or create PBXBuildFile section!"
       return
     end
     

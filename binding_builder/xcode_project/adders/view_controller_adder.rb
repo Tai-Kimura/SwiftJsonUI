@@ -61,7 +61,7 @@ class ViewControllerAdder < FileAdder
 
   def self.add_view_controller_to_sections(project_manager, project_content, file_name, folder_name, file_ref_uuid, build_file_uuids, folder_uuid, json_file_name, json_file_ref_uuid, json_resource_uuids)
     # 1. PBXBuildFile セクションに追加
-    insert_line = find_pbx_build_file_section_end(project_content)
+    insert_line = find_or_create_pbx_build_file_section_end(project_content)
     
     if insert_line
       lines = project_content.lines

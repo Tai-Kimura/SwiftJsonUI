@@ -125,7 +125,7 @@ class JsonAdder < FileAdder
   end
 
   def self.add_pbx_build_files(project_content, resource_uuids, file_ref_uuid, file_name)
-    insert_line = find_pbx_build_file_section_end(project_content)
+    insert_line = find_or_create_pbx_build_file_section_end(project_content)
     return unless insert_line
     
     lines = project_content.lines

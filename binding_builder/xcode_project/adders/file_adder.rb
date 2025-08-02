@@ -156,12 +156,49 @@ class FileAdder
         return index
       end
     end
-    puts "ERROR: Could not find '/* End PBXBuildFile section */' marker in project file!"
-    puts "DEBUG: First 20 lines of content:"
-    lines.first(20).each_with_index do |line, idx|
-      puts "  #{idx}: #{line.chomp}"
-    end
+    puts "WARNING: Could not find '/* End PBXBuildFile section */' marker in project file!"
     nil
+  end
+  
+  # PBXBuildFileセクションを作成
+  def self.create_pbx_build_file_section(project_content)
+    lines = project_content.lines
+    
+    # objectsセクションの開始を探す
+    objects_start = nil
+    lines.each_with_index do |line, index|
+      if line.strip == "objects = {"
+        objects_start = index + 1
+        break
+      end
+    end
+    
+    if objects_start.nil?
+      puts "ERROR: Could not find objects section"
+      return nil
+    end
+    
+    # PBXBuildFileセクションを挿入
+    section_header = "\n/* Begin PBXBuildFile section */\n"
+    section_footer = "/* End PBXBuildFile section */\n"
+    
+    lines.insert(objects_start, section_header)
+    lines.insert(objects_start + 1, section_footer)
+    project_content.replace(lines.join)
+    
+    puts "Created PBXBuildFile section at line #{objects_start}"
+    # 新しく作成したセクションの終了位置を返す
+    objects_start + 1
+  end
+  
+  # PBXBuildFileセクションの終わりを見つけるか、無ければ作成
+  def self.find_or_create_pbx_build_file_section_end(project_content)
+    insert_line = find_pbx_build_file_section_end(project_content)
+    if insert_line.nil?
+      puts "PBXBuildFile section not found, creating it..."
+      insert_line = create_pbx_build_file_section(project_content)
+    end
+    insert_line
   end
 
   # PBXFileReferenceセクションの終わりを見つける
