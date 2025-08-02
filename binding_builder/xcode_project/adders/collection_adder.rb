@@ -154,31 +154,71 @@ class CollectionAdder < FileAdder
     add_pbx_group_entry(project_content, collection_group_uuid, "Collection", "Collection")
     
     # ViewFolderグループのchildrenにCollectionグループを追加
+    # MainグループがPBXFileReferenceセクションにある場合も考慮
     lines = project_content.lines
-    in_view_folder_group = false
-    children_section_found = false
+    group_found = false
+    children_updated = false
     
     lines.each_with_index do |line, index|
+      # パターン1: UUID /* Name */ = {isa = PBXGroup; children = ( の形式
       if line.include?("#{view_folder_group_uuid} /* ") && line.include?(" */ = {")
-        in_view_folder_group = true
-      elsif in_view_folder_group && line.include?("children = (")
-        children_section_found = true
-        # 空のchildren配列の場合、次の行に追加
-        if lines[index + 1] && lines[index + 1].strip == ");"
-          new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
-          lines.insert(index + 1, new_reference)
-          project_content.replace(lines.join)
-          puts "Added Collection group to View folder (empty children)"
-          break
+        group_found = true
+        # 同じ行にchildren = (がある場合
+        if line.include?("children = (")
+          # 次の行をチェック
+          if index + 1 < lines.length && lines[index + 1].strip == ");"
+            # 空のchildren配列
+            new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
+            lines.insert(index + 1, new_reference)
+            children_updated = true
+            break
+          else
+            # children配列に既に要素がある場合、次の);を探す
+            (1..10).each do |offset|
+              if index + offset < lines.length && lines[index + offset].strip == ");"
+                new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
+                lines.insert(index + offset, new_reference)
+                children_updated = true
+                break
+              end
+            end
+            break if children_updated
+          end
+        else
+          # children = (が次の行にある場合
+          (1..5).each do |offset|
+            if index + offset < lines.length && lines[index + offset].include?("children = (")
+              # その次の行をチェック
+              if index + offset + 1 < lines.length && lines[index + offset + 1].strip == ");"
+                # 空のchildren配列
+                new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
+                lines.insert(index + offset + 1, new_reference)
+                children_updated = true
+                break
+              else
+                # children配列に既に要素がある場合、次の);を探す
+                (1..10).each do |offset2|
+                  if index + offset + offset2 < lines.length && lines[index + offset + offset2].strip == ");"
+                    new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
+                    lines.insert(index + offset + offset2, new_reference)
+                    children_updated = true
+                    break
+                  end
+                end
+                break if children_updated
+              end
+            end
+          end
+          break if children_updated
         end
-      elsif in_view_folder_group && children_section_found && line.strip == ");"
-        # childrenセクションの終わりを見つけたので、その前に追加
-        new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
-        lines.insert(index, new_reference)
-        project_content.replace(lines.join)
-        puts "Added Collection group to View folder"
-        break
       end
+    end
+    
+    if children_updated
+      project_content.replace(lines.join)
+      puts "Added Collection group to View folder's children"
+    else
+      puts "WARNING: Could not add Collection group to View folder's children"
     end
   end
 
