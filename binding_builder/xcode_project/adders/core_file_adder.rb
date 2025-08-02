@@ -1,48 +1,58 @@
 require_relative "file_adder"
 
 class CoreFileAdder < FileAdder
-  def self.add_core_file(project_manager, file_path, group_name)
+  def self.add_core_file(project_manager, file_path, group_name, project_content = nil)
     puts "Adding core file to Xcode project: #{File.basename(file_path)}"
     
-    safe_add_files(project_manager) do |project_content|
-      # ファイル情報
-      file_name = File.basename(file_path)
-      
-      # ファイルが既にプロジェクトに含まれているかチェック
-      build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Sources \*\//
-      file_ref_pattern = /\/\* #{Regexp.escape(file_name)} \*\/ = \{isa = PBXFileReference/
-      
-      if project_content.match?(build_file_pattern)
-        puts "#{file_name} is already in the project's build phases"
-        # ファイル参照も存在するかチェック
-        if !project_content.match?(file_ref_pattern)
-          puts "WARNING: #{file_name} is in build phases but has no file reference!"
-        end
-        return
+    # project_contentが渡されていない場合は、safe_add_filesを使用
+    if project_content.nil?
+      safe_add_files(project_manager) do |content|
+        add_core_file_to_project(project_manager, content, file_path, group_name)
       end
-      
-      # テスト用ターゲットを除外してビルドフェーズを検出
-      sources_targets = count_non_test_build_phases(project_manager, project_content, "PBXSourcesBuildPhase")
-      puts "Detected #{sources_targets} non-test source targets"
-      
-      # 必要なUUIDを生成
-      file_ref_uuid = project_manager.generate_uuid
-      build_file_uuids = sources_targets.times.map { project_manager.generate_uuid }
-      
-      # 1. PBXFileReferenceを追加
-      add_pbx_file_reference(project_content, file_ref_uuid, file_name)
-      
-      # 2. PBXBuildFileを追加（複数ターゲット対応）
-      add_pbx_build_files(project_content, build_file_uuids, file_ref_uuid, file_name)
-      
-      # 3. グループに追加
-      add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name)
-      
-      # 4. Sources Build Phaseに追加
-      add_to_sources_build_phases(project_content, build_file_uuids, file_name)
-      
-      puts "✅ Added '#{file_name}' to Xcode project successfully"
+    else
+      # project_contentが渡されている場合は直接処理
+      add_core_file_to_project(project_manager, project_content, file_path, group_name)
     end
+  end
+  
+  def self.add_core_file_to_project(project_manager, project_content, file_path, group_name)
+    # ファイル情報
+    file_name = File.basename(file_path)
+    
+    # ファイルが既にプロジェクトに含まれているかチェック
+    build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Sources \*\//
+    file_ref_pattern = /\/\* #{Regexp.escape(file_name)} \*\/ = \{isa = PBXFileReference/
+    
+    if project_content.match?(build_file_pattern)
+      puts "#{file_name} is already in the project's build phases"
+      # ファイル参照も存在するかチェック
+      if !project_content.match?(file_ref_pattern)
+        puts "WARNING: #{file_name} is in build phases but has no file reference!"
+      end
+      return
+    end
+    
+    # テスト用ターゲットを除外してビルドフェーズを検出
+    sources_targets = count_non_test_build_phases(project_manager, project_content, "PBXSourcesBuildPhase")
+    puts "Detected #{sources_targets} non-test source targets"
+    
+    # 必要なUUIDを生成
+    file_ref_uuid = project_manager.generate_uuid
+    build_file_uuids = sources_targets.times.map { project_manager.generate_uuid }
+    
+    # 1. PBXFileReferenceを追加
+    add_pbx_file_reference(project_content, file_ref_uuid, file_name)
+    
+    # 2. PBXBuildFileを追加（複数ターゲット対応）
+    add_pbx_build_files(project_content, build_file_uuids, file_ref_uuid, file_name)
+    
+    # 3. グループに追加
+    add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name)
+    
+    # 4. Sources Build Phaseに追加
+    add_to_sources_build_phases(project_content, build_file_uuids, file_name)
+    
+    puts "✅ Added '#{file_name}' to Xcode project successfully"
   end
 
   private

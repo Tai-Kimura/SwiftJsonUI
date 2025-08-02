@@ -189,22 +189,20 @@ class DirectorySetup < PbxprojManager
   end
 
   def add_core_files_to_xcode_project(file_paths)
-    safe_pbxproj_operation([], file_paths) do
-      file_paths.each do |file_path|
-        # グループ名を決定
-        if file_path.include?("/UI/")
-          group_name = "UI"
-        elsif file_path.include?("/Base/")
-          group_name = "Base"
-        else
-          group_name = "Core"
-        end
-        
-        # CoreFileAdderを使用してファイルを追加
-        @xcode_manager.add_core_file(file_path, group_name)
+    file_paths.each do |file_path|
+      # グループ名を決定
+      if file_path.include?("/UI/")
+        group_name = "UI"
+      elsif file_path.include?("/Base/")
+        group_name = "Base"
+      else
+        group_name = "Core"
       end
-      puts "Added core files to Xcode project"
+      
+      # CoreFileAdderを使用してファイルを追加（safe_add_filesは内部で実行される）
+      @xcode_manager.add_core_file(file_path, group_name)
     end
+    puts "Added core files to Xcode project"
   end
 end
 
