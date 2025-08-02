@@ -189,8 +189,14 @@ class FileAdder
       # サブクラスの処理を実行
       result = block.call(project_content)
       
+      # デバッグ: 変更前後を確認
+      if project_content.include?("PBXBuildFile")
+        puts "DEBUG: PBXBuildFile section exists in content"
+      end
+      
       # プロジェクトファイルを書き戻し
       File.write(project_manager.project_file_path, project_content)
+      puts "DEBUG: Written project file to: #{project_manager.project_file_path}"
       
       # バックアップファイルを削除
       FileUtils.rm(backup_path) if File.exist?(backup_path)

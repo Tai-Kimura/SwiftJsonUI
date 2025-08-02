@@ -29,7 +29,14 @@ class CoreFileAdder < FileAdder
       if !project_content.match?(file_ref_pattern)
         puts "WARNING: #{file_name} is in build phases but has no file reference!"
       end
+      puts "DEBUG: Skipping #{file_name} as it's already in build phases"
       return
+    end
+    
+    # Sources Build Phaseでのチェックも追加
+    sources_pattern = /#{Regexp.escape(file_name)} in Sources \*\/,/
+    if project_content.match?(sources_pattern)
+      puts "WARNING: #{file_name} is already in Sources build phase but not in PBXBuildFile!"
     end
     
     # テスト用ターゲットを除外してビルドフェーズを検出
@@ -69,15 +76,31 @@ class CoreFileAdder < FileAdder
 
   def self.add_pbx_build_files(project_content, build_file_uuids, file_ref_uuid, file_name)
     insert_line = find_pbx_build_file_section_end(project_content)
-    return unless insert_line
+    puts "DEBUG: PBXBuildFile section end at line: #{insert_line}"
+    
+    if insert_line.nil?
+      puts "ERROR: Could not find PBXBuildFile section end!"
+      return
+    end
     
     lines = project_content.lines
     build_entries = build_file_uuids.map do |uuid|
-      "\t\t#{uuid} /* #{file_name} in Sources */ = {isa = PBXBuildFile; fileRef = #{file_ref_uuid} /* #{file_name} */; };\n"
+      entry = "\t\t#{uuid} /* #{file_name} in Sources */ = {isa = PBXBuildFile; fileRef = #{file_ref_uuid} /* #{file_name} */; };\n"
+      puts "DEBUG: Creating PBXBuildFile entry: #{entry.strip}"
+      entry
     end
+    
+    puts "DEBUG: Inserting #{build_entries.length} entries at line #{insert_line}"
     lines.insert(insert_line, *build_entries)
     project_content.replace(lines.join)
     puts "Added PBXBuildFile entries (#{build_file_uuids.length} targets)"
+    
+    # 確認のため、追加されたかチェック
+    if project_content.include?("#{build_file_uuids.first} /* #{file_name} in Sources */")
+      puts "DEBUG: Successfully verified PBXBuildFile entry was added"
+    else
+      puts "ERROR: PBXBuildFile entry was NOT added to content!"
+    end
   end
 
   def self.add_to_group(project_manager, project_content, file_ref_uuid, file_name, group_name)
