@@ -38,15 +38,45 @@ class BaseViewConverter
   def apply_modifiers
     # サイズ
     if @component['width'] || @component['height']
-      width = size_to_swiftui(@component['width'])
-      height = size_to_swiftui(@component['height'])
+      # widthの処理
+      processed_width = process_template_value(@component['width'])
+      if processed_width.is_a?(Hash) && processed_width[:template_var]
+        width_value = to_camel_case(processed_width[:template_var])
+      else
+        width_value = size_to_swiftui(@component['width'])
+      end
       
-      if width && height
-        add_modifier_line ".frame(width: #{width}, height: #{height})"
-      elsif width
-        add_modifier_line ".frame(maxWidth: #{width})"
-      elsif height
-        add_modifier_line ".frame(height: #{height})"
+      # heightの処理
+      processed_height = process_template_value(@component['height'])
+      if processed_height.is_a?(Hash) && processed_height[:template_var]
+        height_value = to_camel_case(processed_height[:template_var])
+      else
+        height_value = size_to_swiftui(@component['height'])
+      end
+      
+      # テンプレート変数の場合は型変換が必要
+      if processed_width.is_a?(Hash) && processed_width[:template_var]
+        width_param = "CGFloat(#{width_value})"
+      else
+        width_param = width_value
+      end
+      
+      if processed_height.is_a?(Hash) && processed_height[:template_var]
+        height_param = "CGFloat(#{height_value})"
+      else
+        height_param = height_value
+      end
+      
+      if width_value && height_value
+        add_modifier_line ".frame(width: #{width_param}, height: #{height_param})"
+      elsif width_value
+        if width_value == '.infinity'
+          add_modifier_line ".frame(maxWidth: #{width_param})"
+        else
+          add_modifier_line ".frame(width: #{width_param})"
+        end
+      elsif height_value
+        add_modifier_line ".frame(height: #{height_param})"
       end
     end
     
@@ -199,6 +229,16 @@ class BaseViewConverter
       nil
     when nil
       nil
+    when Numeric
+      size.to_s
+    when String
+      # 数値文字列かどうかチェック
+      if size =~ /^\d+(\.\d+)?$/
+        size
+      else
+        # それ以外の文字列（変数名など）
+        size
+      end
     else
       size.to_s
     end

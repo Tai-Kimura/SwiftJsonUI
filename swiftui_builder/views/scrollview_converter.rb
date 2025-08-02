@@ -11,11 +11,34 @@ class ScrollViewConverter < BaseViewConverter
   def convert
     children = @component['child'] || []
     
-    # スクロール方向の判定（デフォルトは垂直）
-    # showsIndicatorは表示/非表示の設定なので、スクロール方向の判定には使わない
-    axes_param = ''  # デフォルトは垂直スクロールのみ
+    # スクロール方向の判定
+    # orientation属性またはchild要素の配置から判定
+    orientation = @component['orientation']
     
-    add_line "ScrollView(#{axes_param}showsIndicators: #{@component['showsVerticalScrollIndicator'] != false}) {"
+    # 子要素が1つでView/SafeAreaViewの場合、その orientation を確認
+    if children.length == 1 && ['View', 'SafeAreaView'].include?(children.first['type'])
+      child_orientation = children.first['orientation']
+      orientation ||= child_orientation
+    end
+    
+    # スクロール軸の設定
+    if orientation == 'horizontal'
+      axes = '.horizontal'
+      stack_type = 'HStack'
+    else
+      # デフォルトは垂直スクロール
+      axes = '.vertical'
+      stack_type = 'VStack'
+    end
+    
+    # インジケーターの表示設定
+    show_indicators = if orientation == 'horizontal'
+      @component['showsHorizontalScrollIndicator'] != false
+    else
+      @component['showsVerticalScrollIndicator'] != false
+    end
+    
+    add_line "ScrollView(#{axes}, showsIndicators: #{show_indicators}) {"
     
     indent do
       if children.length == 1
@@ -25,7 +48,7 @@ class ScrollViewConverter < BaseViewConverter
           child_code.split("\n").each { |line| @generated_code << line }
         end
       else
-        add_line "VStack(spacing: 0) {"
+        add_line "#{stack_type}(spacing: 0) {"
         indent do
           children.each do |child|
             if @converter_factory

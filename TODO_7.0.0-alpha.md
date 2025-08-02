@@ -57,12 +57,23 @@ ruby swiftui_builder/json_to_swiftui_converter.rb test/notification_list.json
 ruby swiftui_builder/json_to_swiftui_converter.rb test/notification_cell.json
 ```
 
-#### 5. テストファイル
+#### 5. 最新のアップデート（2025-08-02）
+- **横スクロールのサポート**: ScrollViewコンバーターに`orientation`属性を追加
+- **Collection/Tableのセルレイアウトサポート**: 
+  - `cell_layout`属性で指定されたセルビューを使用
+  - `binding.data`でデータ配列をバインディング
+  - データ配列の型推論（`[NotificationItem]`など）
+- **コンバーターファクトリーの修正**: ScrollView/Textなどのマッピングを追加
+- **プレビューデータの改善**: 配列型のプロパティに空配列を使用
+
+#### 6. テストファイル
 - `test/お知らせ.png` - 参考デザイン画像
 - `test/notification_list.json` - TableViewを使用したリスト実装
 - `test/notification_cell.json` - セルレイアウト（テンプレート変数付き）
 - `test/notification_with_data.json` - データバインディングの例
 - `test/NotificationCompleteView.swift` - 完全な実装例
+- `test/table_test.json` - Tableのセルレイアウトテスト
+- `test/list_components_test.json` - CollectionとTableの統合テスト
 
 ## 今後の課題
 

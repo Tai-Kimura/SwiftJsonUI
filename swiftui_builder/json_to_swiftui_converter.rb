@@ -124,6 +124,8 @@ class JsonToSwiftUIConverter
         '8'
       when 'Bool'
         'true'
+      when /^\[.*\]$/ # 配列型の場合
+        '[]' # 空配列をプレビューデータとして使用
       else
         '"sample"'
       end

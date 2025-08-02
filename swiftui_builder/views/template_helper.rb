@@ -3,6 +3,10 @@
 module TemplateHelper
   # テンプレート変数を検出してSwiftUIプロパティに変換
   def process_template_value(value)
+    # 数値の場合はそのまま返す
+    return value if value.is_a?(Numeric)
+    
+    # 文字列以外の場合もそのまま返す
     return value unless value.is_a?(String)
     
     # @{variable_name}形式のテンプレート変数を検出
@@ -42,6 +46,12 @@ module TemplateHelper
     # 使用されている属性から型を推論
     used_attrs = var_info[:used_as]
     
+    # データバインディング用の配列型（Collection/Tableのdata属性）
+    if used_attrs.include?('data') && var_info[:component_types]&.any? { |ct| ['Collection', 'Table'].include?(ct) }
+      # 一般的なIdentifiableアイテムの配列として扱う
+      return '[NotificationItem]' # TODO: アイテム型を動的に推論
+    end
+    
     # Color型の属性
     color_attrs = ['color', 'background', 'borderColor', 'fontColor', 'textColor', 
                    'tintColor', 'progressTintColor', 'trackTintColor']
@@ -49,8 +59,14 @@ module TemplateHelper
       return 'Color'
     end
     
-    # CGFloat型の属性
-    numeric_attrs = ['cornerRadius', 'width', 'height', 'borderWidth', 'fontSize', 
+    # width/heightは特殊（文字列または数値）
+    if used_attrs.any? { |attr| attr == 'width' || attr == 'height' }
+      # SwiftUIではCGFloatとして扱うのが一般的
+      return 'CGFloat'
+    end
+    
+    # CGFloat型の属性（width/height以外）
+    numeric_attrs = ['cornerRadius', 'borderWidth', 'fontSize', 
                      'padding', 'margin', 'radius', 'size']
     if used_attrs.any? { |attr| numeric_attrs.any? { |na| attr.downcase.include?(na.downcase) } }
       return 'CGFloat'
@@ -72,20 +88,33 @@ module TemplateHelper
   end
   
   # コンポーネント内のすべてのテンプレート変数を収集
-  def collect_template_vars(component, vars = {}, path = [])
+  def collect_template_vars(component, vars = {}, path = [], current_component_type = nil)
     return vars unless component.is_a?(Hash)
+    
+    # 現在のコンポーネントタイプを更新
+    current_component_type = component['type'] if component['type']
     
     component.each do |key, value|
       if value.is_a?(String) && value =~ /^@\{([^}]+)\}$/
         var_name = $1
-        vars[var_name] ||= { used_as: [], paths: [] }
+        vars[var_name] ||= { used_as: [], paths: [], component_types: [] }
         vars[var_name][:used_as] << key
         vars[var_name][:paths] << path + [key]
+        vars[var_name][:component_types] << current_component_type if current_component_type
       elsif value.is_a?(Hash)
-        collect_template_vars(value, vars, path + [key])
+        # bindingオブジェクト内のdata属性を特別に処理
+        if key == 'binding' && value['data'] && value['data'] =~ /^@\{([^}]+)\}$/
+          var_name = $1
+          vars[var_name] ||= { used_as: [], paths: [], component_types: [] }
+          vars[var_name][:used_as] << 'data'
+          vars[var_name][:paths] << path + [key, 'data']
+          vars[var_name][:component_types] << current_component_type if current_component_type
+        else
+          collect_template_vars(value, vars, path + [key], current_component_type)
+        end
       elsif value.is_a?(Array)
         value.each_with_index do |item, index|
-          collect_template_vars(item, vars, path + [key, index]) if item.is_a?(Hash)
+          collect_template_vars(item, vars, path + [key, index], current_component_type) if item.is_a?(Hash)
         end
       end
     end

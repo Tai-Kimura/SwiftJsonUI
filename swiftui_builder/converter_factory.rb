@@ -25,7 +25,7 @@ class ConverterFactory
     component_type = component['type']
     
     case component_type
-    when 'Label'
+    when 'Label', 'Text'
       LabelConverter.new(component, indent_level)
     when 'IconLabel'
       IconLabelConverter.new(component, indent_level)
@@ -43,7 +43,7 @@ class ConverterFactory
       ImageConverter.new(component, indent_level)
     when 'NetworkImage'
       NetworkImageConverter.new(component, indent_level)
-    when 'Scroll'
+    when 'Scroll', 'ScrollView'
       ScrollViewConverter.new(component, indent_level, self)
     when 'TextView'
       TextViewConverter.new(component, indent_level)
