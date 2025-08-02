@@ -20,16 +20,24 @@ class CoreFileAdder < FileAdder
     file_name = File.basename(file_path)
     
     # ファイルが既にプロジェクトに含まれているかチェック
-    build_file_pattern = /\/\* #{Regexp.escape(file_name)} in Sources \*\//
+    # PBXBuildFileセクションでのパターン（正確なパターン）
+    build_file_pattern = /= \{isa = PBXBuildFile;.*\/\* #{Regexp.escape(file_name)} in Sources \*\//
     file_ref_pattern = /\/\* #{Regexp.escape(file_name)} \*\/ = \{isa = PBXFileReference/
     
-    if project_content.match?(build_file_pattern)
+    # デバッグ: 各パターンのチェック結果を出力
+    puts "DEBUG: Checking if #{file_name} exists in project..."
+    has_build_file = project_content.match?(build_file_pattern)
+    has_file_ref = project_content.match?(file_ref_pattern)
+    
+    puts "DEBUG: Has PBXBuildFile entry: #{has_build_file}"
+    puts "DEBUG: Has PBXFileReference entry: #{has_file_ref}"
+    
+    if has_build_file
       puts "#{file_name} is already in the project's build phases"
-      # ファイル参照も存在するかチェック
-      if !project_content.match?(file_ref_pattern)
+      if !has_file_ref
         puts "WARNING: #{file_name} is in build phases but has no file reference!"
       end
-      puts "DEBUG: Skipping #{file_name} as it's already in build phases"
+      puts "DEBUG: Skipping #{file_name} as it's already in PBXBuildFile"
       return
     end
     
@@ -37,6 +45,7 @@ class CoreFileAdder < FileAdder
     sources_pattern = /#{Regexp.escape(file_name)} in Sources \*\/,/
     if project_content.match?(sources_pattern)
       puts "WARNING: #{file_name} is already in Sources build phase but not in PBXBuildFile!"
+      puts "DEBUG: Will proceed to add PBXBuildFile entry"
     end
     
     # テスト用ターゲットを除外してビルドフェーズを検出

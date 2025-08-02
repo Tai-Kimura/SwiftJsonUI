@@ -149,10 +149,17 @@ class FileAdder
 
   # PBXBuildFileセクションの終わりを見つける
   def self.find_pbx_build_file_section_end(project_content)
-    project_content.each_line.with_index do |line, index|
+    lines = project_content.lines
+    lines.each_with_index do |line, index|
       if line.include?("/* End PBXBuildFile section */")
+        puts "DEBUG: Found PBXBuildFile section end at line #{index}: #{line.strip}"
         return index
       end
+    end
+    puts "ERROR: Could not find '/* End PBXBuildFile section */' marker in project file!"
+    puts "DEBUG: First 20 lines of content:"
+    lines.first(20).each_with_index do |line, idx|
+      puts "  #{idx}: #{line.chomp}"
     end
     nil
   end
@@ -187,12 +194,16 @@ class FileAdder
       end
       
       # サブクラスの処理を実行
+      puts "DEBUG: Processing project file: #{project_manager.project_file_path}"
+      puts "DEBUG: Content length before processing: #{project_content.length}"
+      
       result = block.call(project_content)
       
       # デバッグ: 変更前後を確認
       if project_content.include?("PBXBuildFile")
         puts "DEBUG: PBXBuildFile section exists in content"
       end
+      puts "DEBUG: Content length after processing: #{project_content.length}"
       
       # プロジェクトファイルを書き戻し
       File.write(project_manager.project_file_path, project_content)
