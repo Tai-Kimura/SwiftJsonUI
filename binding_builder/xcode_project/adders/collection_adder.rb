@@ -113,16 +113,25 @@ class CollectionAdder < FileAdder
   def self.find_collection_group_in_view_folder(project_content, view_folder_group_uuid)
     lines = project_content.lines
     in_view_folder_group = false
+    children_section = false
     
     lines.each_with_index do |line, index|
       if line.include?("#{view_folder_group_uuid} /* ") && line.include?(" */ = {")
         in_view_folder_group = true
+        puts "DEBUG: Found view folder group section"
+      elsif in_view_folder_group && line.include?("children = (")
+        children_section = true
+        puts "DEBUG: Found children section"
+      elsif in_view_folder_group && children_section && line.strip == ");"
+        children_section = false
       elsif in_view_folder_group && line.strip == "};"
         in_view_folder_group = false
-      elsif in_view_folder_group && line.match(/([A-F0-9]{24}) \/\* Collection \*\//)
+      elsif in_view_folder_group && children_section && line.match(/([A-F0-9]{24}) \/\* Collection \*\//)
+        puts "DEBUG: Found Collection group: #{$1}"
         return $1
       end
     end
+    puts "DEBUG: No Collection group found in view folder"
     nil
   end
 
@@ -153,6 +162,7 @@ class CollectionAdder < FileAdder
         new_reference = "\t\t\t\t#{collection_group_uuid} /* Collection */,\n"
         lines.insert(index, new_reference)
         project_content.replace(lines.join)
+        puts "Added Collection group to View folder"
         break
       end
     end
@@ -198,13 +208,23 @@ class CollectionAdder < FileAdder
     lines.each_with_index do |line, index|
       if line.include?("#{collection_group_uuid} /* Collection */ = {")
         in_collection_group = true
+        puts "DEBUG: Found Collection group to add file to"
       elsif in_collection_group && line.include?("children = (")
         children_section_found = true
+        # 空のchildren配列の場合、次の行に追加
+        if lines[index + 1] && lines[index + 1].strip == ");"
+          new_reference = "\t\t\t\t#{file_ref_uuid} /* #{file_name} */,\n"
+          lines.insert(index + 1, new_reference)
+          project_content.replace(lines.join)
+          puts "Added #{file_name} to Collection group (empty children)"
+          break
+        end
       elsif in_collection_group && children_section_found && line.strip == ");"
         # childrenセクションの終わりを見つけたので、その前に追加
         new_reference = "\t\t\t\t#{file_ref_uuid} /* #{file_name} */,\n"
         lines.insert(index, new_reference)
         project_content.replace(lines.join)
+        puts "Added #{file_name} to Collection group"
         break
       end
     end
