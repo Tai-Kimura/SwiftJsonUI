@@ -195,7 +195,10 @@ class XcodeSyncToGroupConverter
       "#{prefix}#{before_isa}#{new_isa}#{children_str}#{after_isa}#{suffix}"
     end
     
-    # 4. fileSystemSynchronizedGroupsを削除（メインアプリのみ）
+    # 4. ビルドフェーズにファイルを追加
+    add_files_to_build_phases(content, file_references, app_name) if file_references.any?
+    
+    # 5. fileSystemSynchronizedGroupsを削除（メインアプリのみ）
     content.gsub!(/fileSystemSynchronizedGroups = \(\s*#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/,?\s*\);/m, '')
     
     # PBXFileSystemSynchronizedRootGroupセクションをPBXGroupセクションに移動
@@ -355,6 +358,66 @@ class XcodeSyncToGroupConverter
         end
       end
     end
+  end
+  
+  def add_files_to_build_phases(content, file_references, app_name)
+    # ソースファイルのみをフィルタリング
+    source_files = file_references.select do |ref|
+      ref[:name].end_with?('.swift', '.m', '.mm', '.c', '.cpp')
+    end
+    
+    return if source_files.empty?
+    
+    # メインアプリターゲットを探す
+    target_match = content.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXNativeTarget[^}]*?productType = "com\.apple\.product-type\.application"[^}]*?\}/m)
+    return unless target_match
+    
+    target_uuid = target_match[1]
+    
+    # ターゲットのSources build phaseを探す
+    build_phases_match = content.match(/#{target_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?buildPhases = \(\s*(.*?)\s*\);/m)
+    return unless build_phases_match
+    
+    build_phases = build_phases_match[1]
+    sources_phase_match = build_phases.match(/([A-F0-9]{24}) \/\* Sources \*\//)
+    return unless sources_phase_match
+    
+    sources_phase_uuid = sources_phase_match[1]
+    
+    # PBXBuildFileセクションに追加
+    build_file_entries = []
+    build_file_uuids = []
+    
+    source_files.each do |file_ref|
+      build_file_uuid = generate_uuid
+      build_file_uuids << { uuid: build_file_uuid, file_ref: file_ref }
+      build_file_entries << "\t\t#{build_file_uuid} /* #{file_ref[:name]} in Sources */ = {isa = PBXBuildFile; fileRef = #{file_ref[:uuid]} /* #{file_ref[:name]} */; };"
+    end
+    
+    # PBXBuildFileセクションに追加
+    if content.include?("/* Begin PBXBuildFile section */")
+      content.gsub!(/(\/* Begin PBXBuildFile section \*\/\n)/, "\\1#{build_file_entries.join("\n")}\n")
+    else
+      # セクションがない場合は作成
+      content.gsub!(/(objects = \{\n)/, "\\1\n/* Begin PBXBuildFile section */\n#{build_file_entries.join("\n")}\n/* End PBXBuildFile section */\n")
+    end
+    
+    # Sources build phaseのfilesセクションに追加
+    content.gsub!(/(#{sources_phase_uuid} \/\* Sources \*\/ = \{[^}]*?files = \(\s*)(.*?)(\s*\);)/m) do
+      prefix = $1
+      existing_files = $2
+      suffix = $3
+      
+      new_files = build_file_uuids.map { |bf| "\t\t\t\t#{bf[:uuid]} /* #{bf[:file_ref][:name]} in Sources */," }.join("\n")
+      
+      if existing_files.strip.empty?
+        "#{prefix}#{new_files}#{suffix}"
+      else
+        "#{prefix}#{existing_files}\n#{new_files}#{suffix}"
+      end
+    end
+    
+    puts "Added #{source_files.size} source files to build phases"
   end
 end
 
