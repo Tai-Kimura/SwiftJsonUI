@@ -86,7 +86,7 @@ class PartialGenerator < PbxprojManager
   end
 
   def generate_partial_json_content(snake_name)
-    # Partialの基本テンプレート
+    # Partialの基本テンプレート（SwiftJsonUIの正しい属性を使用）
     content = {
       "type" => "View",
       "id" => "#{snake_name}_container",
@@ -99,8 +99,8 @@ class PartialGenerator < PbxprojManager
           "type" => "Label",
           "id" => "#{snake_name}_label",
           "text" => "#{snake_name.split('_').map(&:capitalize).join(' ')} Partial",
-          "textSize" => "16",
-          "textColor" => "333333"
+          "fontSize" => "16",  # textSizeではなくfontSize
+          "fontColor" => "333333"  # textColorではなくfontColor
         }
       ]
     }

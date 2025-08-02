@@ -1,0 +1,17 @@
+{
+  "type": "View",
+  "id": "test_correct_attrs_container",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "background": "FFFFFF",
+  "padding": "16",
+  "child": [
+    {
+      "type": "Label",
+      "id": "test_correct_attrs_label",
+      "text": "Test Correct Attrs Partial",
+      "fontSize": "16",
+      "fontColor": "333333"
+    }
+  ]
+}
