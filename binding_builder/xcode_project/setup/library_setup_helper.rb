@@ -128,19 +128,19 @@ class LibrarySetupHelper
         # Insert after productName
         new_target_content = target_content.gsub(
           /(productName = [^;]+;)/,
-          "\\1\n\t\t\tpackageProductDependencies = (\n#{package_deps_list}\n\t\t\t);"
+          "\\1\n\t\t\tpackageProductDependencies = (\n#{package_deps_list.chomp}\n\t\t\t);"
         )
       elsif target_content.match(/name = #{Regexp.escape(project_name)};/)
         # Insert after name
         new_target_content = target_content.gsub(
           /(name = #{Regexp.escape(project_name)};)/,
-          "\\1\n\t\t\tpackageProductDependencies = (\n#{package_deps_list}\n\t\t\t);"
+          "\\1\n\t\t\tpackageProductDependencies = (\n#{package_deps_list.chomp}\n\t\t\t);"
         )
       else
         # Insert before the closing brace
         new_target_content = target_content.gsub(
           /(\n\s*\};)$/,
-          "\n\t\t\tpackageProductDependencies = (\n#{package_deps_list}\n\t\t\t);\\1"
+          "\n\t\t\tpackageProductDependencies = (\n#{package_deps_list.chomp}\n\t\t\t);\\1"
         )
       end
       
@@ -169,11 +169,13 @@ class LibrarySetupHelper
       
       if insert_index
         indent = "\t\t\t"
+        # packageProductDependenciesを追加（空行を入れない）
+        deps_array = package_deps_list.split("\n")
         lines.insert(insert_index, "#{indent}packageProductDependencies = (\n")
-        package_deps_list.split("\n").each_with_index do |dep, idx|
+        deps_array.each_with_index do |dep, idx|
           lines.insert(insert_index + 1 + idx, "#{dep}\n")
         end
-        lines.insert(insert_index + 1 + package_deps_list.split("\n").length, "#{indent});\n")
+        lines.insert(insert_index + 1 + deps_array.length, "#{indent});\n")
       end
       
       content = lines.join

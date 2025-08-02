@@ -276,7 +276,7 @@ class LibrarySetup < PbxprojManager
         # Already exists, add to it
         content = content.gsub(
           /(#{Regexp.escape(project_name)}.*?packageProductDependencies = \(\s*)(.*?)(\s*\);)/m,
-          "\\1\\2\n#{package_deps_list}\\3"
+          "\\1\\2#{package_deps_list}\\3"
         )
       else
         # Doesn't exist, use helper to insert it
@@ -349,14 +349,15 @@ class LibrarySetup < PbxprojManager
 
   def build_requirement_string(package)
     if package[:branch]
-      "\t\t\t\tbranch = #{package[:branch]};\n\t\t\t\tkind = branch;"
+      # Xcode 16形式: branchの値を引用符で囲む
+      "\t\t\t\tbranch = \"#{package[:branch]}\";\n\t\t\t\tkind = branch;"
     elsif package[:exact_version]
-      "\t\t\t\tkind = exactVersion;\n\t\t\t\tversion = #{package[:exact_version]};"
+      "\t\t\t\tkind = exactVersion;\n\t\t\t\tversion = \"#{package[:exact_version]}\";"
     elsif package[:version]
-      "\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = #{package[:version]};"
+      "\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = \"#{package[:version]}\";"
     else
       # Default to version 1.0.0 if nothing specified
-      "\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = 1.0.0;"
+      "\t\t\t\tkind = upToNextMajorVersion;\n\t\t\t\tminimumVersion = \"1.0.0\";"
     end
   end
 
