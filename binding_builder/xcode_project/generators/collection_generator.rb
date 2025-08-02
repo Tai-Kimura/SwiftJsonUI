@@ -57,6 +57,9 @@ class CollectionGenerator < PbxprojManager
     # 6. Xcodeプロジェクトに追加
     add_to_xcode_project(cell_file_path, camel_view_folder)
     
+    # 6.5. JSONファイルもXcodeプロジェクトに追加
+    add_json_to_xcode_project(json_file_path)
+    
     # 7. バインディングファイルの生成
     generate_binding_file(camel_cell_name)
     
@@ -139,6 +142,15 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
     safe_pbxproj_operation([], created_files) do
       @xcode_manager.add_collection_cell_file(file_path, view_folder_name)
       puts "Added collection cell to Xcode project"
+    end
+  end
+  
+  def add_json_to_xcode_project(json_file_path)
+    created_files = [json_file_path]
+    
+    safe_pbxproj_operation([], created_files) do
+      @xcode_manager.add_json_file(json_file_path)
+      puts "Added JSON layout to Xcode project"
     end
   end
 
