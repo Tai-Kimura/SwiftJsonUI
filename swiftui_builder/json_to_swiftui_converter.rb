@@ -20,6 +20,9 @@ class JsonToSwiftUIConverter
     # JSONファイルを読み込み
     json_content = File.read(json_file_path)
     json_data = JSON.parse(json_content)
+    
+    # includeを処理
+    json_data = process_includes(json_data, File.dirname(json_file_path))
 
     # ファイル名からビュー名を生成
     base_name = File.basename(json_file_path, '.json')
@@ -41,6 +44,74 @@ class JsonToSwiftUIConverter
     puts "Generated SwiftUI view: #{output_path}"
     
     output_path
+  end
+  
+  def process_includes(json_data, base_dir)
+    return json_data unless json_data.is_a?(Hash)
+    
+    # includeがある場合の処理
+    if json_data['include']
+      include_path = json_data['include']
+      variables = json_data['variables'] || {}
+      
+      # includeファイルのパスを構築
+      include_file_path = if include_path.include?('/')
+        # サブディレクトリがある場合: "common/header" → "common/_header.json"
+        components = include_path.split('/')
+        directory = components[0...-1].join('/')
+        filename = "_#{components.last}"
+        File.join(base_dir, directory, "#{filename}.json")
+      else
+        # サブディレクトリがない場合: "header" → "_header.json"
+        File.join(base_dir, "_#{include_path}.json")
+      end
+      
+      # ファイルが存在しない場合は、プレフィックスなしも試す
+      unless File.exist?(include_file_path)
+        include_file_path = File.join(base_dir, "#{include_path}.json")
+      end
+      
+      if File.exist?(include_file_path)
+        # includeファイルを読み込み
+        include_content = File.read(include_file_path)
+        
+        # 変数を置換
+        variables.each do |key, value|
+          if key.start_with?('@@')
+            # @@から始まる変数はそのまま置換
+            include_content = include_content.gsub(key, value.to_s)
+          else
+            # それ以外は"key"形式で置換
+            include_content = include_content.gsub("\"#{key}\"", "\"#{value}\"")
+          end
+        end
+        
+        # パースして返す
+        included_data = JSON.parse(include_content)
+        
+        # includeしたデータを再帰的に処理
+        return process_includes(included_data, File.dirname(include_file_path))
+      else
+        raise "Include file not found: #{include_file_path}"
+      end
+    end
+    
+    # 子要素も再帰的に処理
+    if json_data['child']
+      if json_data['child'].is_a?(Array)
+        json_data['child'] = json_data['child'].map { |child| process_includes(child, base_dir) }
+      else
+        json_data['child'] = process_includes(json_data['child'], base_dir)
+      end
+    elsif json_data['children']
+      if json_data['children'].is_a?(Array)
+        json_data['children'] = json_data['children'].map { |child| process_includes(child, base_dir) }
+      else
+        json_data['children'] = process_includes(json_data['children'], base_dir)
+      end
+    end
+    
+    json_data
   end
 
   private
@@ -138,20 +209,26 @@ class JsonToSwiftUIConverter
   def collect_state_properties(component, properties = [])
     return properties unless component.is_a?(Hash)
     
-    # コンポーネントタイプに基づいて@Stateプロパティを収集
+    # コンバーターを作成して@Stateプロパティを収集
+    converter = @converter_factory.create_converter(component, 0)
+    if converter.respond_to?(:state_properties)
+      properties.concat(converter.state_properties)
+    end
+    
+    # 従来の方法も残す（後方互換性のため）
     case component['type']
     when 'TextField'
       id = component['id'] || 'textField'
-      properties << "@State private var #{id}Text = \"\""
+      properties << "@State private var #{id}Text = \"\"" unless converter.respond_to?(:state_properties)
     when 'TextView'
       id = component['id'] || 'textEditor'
-      properties << "@State private var #{id}Text = \"\""
+      properties << "@State private var #{id}Text = \"\"" unless converter.respond_to?(:state_properties)
     when 'Switch'
       id = component['id'] || 'toggle'
-      properties << "@State private var #{id}IsOn = false"
+      properties << "@State private var #{id}IsOn = false" unless converter.respond_to?(:state_properties)
     when 'Check'
       id = component['id'] || 'checkbox'
-      properties << "@State private var #{id}IsChecked = false"
+      properties << "@State private var #{id}IsChecked = false" unless converter.respond_to?(:state_properties)
     end
     
     # 子要素も再帰的に処理

@@ -5,70 +5,94 @@ require_relative 'base_view_converter'
 class IconLabelConverter < BaseViewConverter
   def convert
     text = @component['text'] || ""
-    icon = @component['icon'] || "star"
+    iconOn = @component['icon_on']
+    iconOff = @component['icon_off']
     iconPosition = @component['iconPosition'] || 'left'
+    onclick = @component['onclick']
     
-    # HStackでアイコンとテキストを並べる
-    add_line "HStack(spacing: #{@component['iconSpacing'] || 8}) {"
+    # IconLabelViewまたはIconLabelButtonを使用
+    if onclick
+      add_line "IconLabelButton("
+    else
+      add_line "IconLabelView("
+    end
+    
     indent do
-      if iconPosition == 'left'
-        add_icon(icon)
-        add_text(text)
+      # text
+      add_line "text: \"#{text}\","
+      
+      # icons
+      if iconOn
+        add_line "iconOn: \"#{iconOn}\","
+      end
+      
+      if iconOff
+        add_line "iconOff: \"#{iconOff}\","
+      end
+      
+      # iconPosition
+      case iconPosition.downcase
+      when 'top'
+        add_line "iconPosition: .top,"
+      when 'right'
+        add_line "iconPosition: .right,"
+      when 'bottom'
+        add_line "iconPosition: .bottom,"
+      else # left or default
+        add_line "iconPosition: .left,"
+      end
+      
+      # iconSize
+      if @component['iconSize']
+        add_line "iconSize: #{@component['iconSize']},"
+      end
+      
+      # iconMargin
+      if @component['iconMargin']
+        add_line "iconMargin: #{@component['iconMargin']},"
+      end
+      
+      # fontSize
+      if @component['fontSize']
+        add_line "fontSize: #{@component['fontSize']},"
+      end
+      
+      # fontColor
+      if @component['fontColor']
+        color = hex_to_swiftui_color(@component['fontColor'])
+        add_line "fontColor: #{color},"
+      end
+      
+      # selectedFontColor
+      if @component['selectedFontColor']
+        color = hex_to_swiftui_color(@component['selectedFontColor'])
+        add_line "selectedFontColor: #{color},"
+      end
+      
+      # fontName
+      if @component['font'] && @component['font'] != 'bold'
+        add_line "fontName: \"#{@component['font']}\","
+      end
+      
+      # action for button (最後のパラメータなのでカンマなし)
+      if onclick
+        add_line "action: {"
+        indent do
+          add_line "// #{onclick} action"
+        end
+        add_line "}"
       else
-        add_text(text)
-        add_icon(icon)
+        # 最後のカンマを削除
+        if @generated_code.last.end_with?(',')
+          @generated_code[-1] = @generated_code.last.chomp(',')
+        end
       end
     end
-    add_line "}"
+    add_line ")"
     
-    # 共通のモディファイアを適用
+    # Apply common modifiers
     apply_modifiers
     
     generated_code
-  end
-  
-  private
-  
-  def add_icon(icon)
-    # システムアイコンかカスタムアイコンかを判定
-    if icon.start_with?('system:')
-      add_line "Image(systemName: \"#{icon.sub('system:', '')}\")"
-    else
-      add_line "Image(\"#{icon}\")"
-    end
-    
-    # アイコンサイズ
-    if @component['iconSize']
-      add_modifier_line ".resizable()"
-      add_modifier_line ".frame(width: #{@component['iconSize']}, height: #{@component['iconSize']})"
-    end
-    
-    # アイコンカラー
-    if @component['iconColor']
-      color = hex_to_swiftui_color(@component['iconColor'])
-      add_modifier_line ".foregroundColor(#{color})"
-    end
-  end
-  
-  def add_text(text)
-    add_line "Text(\"#{text}\")"
-    
-    # fontSize
-    if @component['fontSize']
-      add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-    end
-    
-    # fontColor
-    if @component['fontColor']
-      color = hex_to_swiftui_color(@component['fontColor'])
-      add_modifier_line ".foregroundColor(#{color})"
-    end
-    
-    # font (bold対応)
-    if @component['font'] == 'bold'
-      add_modifier_line ".fontWeight(.bold)"
-    elsif @component['font']
-      add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{@component['fontSize'] || 17}))"
-    end
   end
 end

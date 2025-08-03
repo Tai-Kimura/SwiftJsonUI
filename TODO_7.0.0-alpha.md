@@ -78,6 +78,10 @@ ruby swiftui_builder/json_to_swiftui_converter.rb test/notification_cell.json
 ## 今後の課題
 
 ### 機能追加
+- [x] typeキーでSwiftJsonUIとSwiftUI両方のコンポーネント名に対応（実装済み）
+  - "type": "Label" (SwiftJsonUI) → Text (SwiftUI)
+  - "type": "Scroll" (SwiftJsonUI) → ScrollView (SwiftUI)
+  - 現在の実装: ConverterFactoryで両方の名前を受け入れ、適切なSwiftUIコンポーネントに変換
 - [ ] コマンドラインツールの作成（sjui コマンドへの統合）
 - [ ] 画像からJSONへの自動変換機能
 - [ ] より複雑な条件式のサポート（@{icon_type == 'emoji' ? 30 : 12}）

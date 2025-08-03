@@ -8,13 +8,13 @@ class CollectionConverter < BaseViewConverter
     columns = @component['columns'] || 2
     cell_layout = @component['cell_layout']
     
-    # データバインディングの確認
-    has_binding = @component['binding'] && @component['binding']['data']
-    binding_data = has_binding ? @component['binding']['data'] : nil
+    # データ設定の確認（itemsキーを使用）
+    items_data = @component['items']
+    has_items = !items_data.nil?
     
     # データ配列名の生成（@{items} → items）
-    if binding_data && binding_data.start_with?('@{') && binding_data.end_with?('}')
-      data_var_name = binding_data[2..-2]
+    if items_data && items_data.is_a?(String) && items_data.start_with?('@{') && items_data.end_with?('}')
+      data_var_name = items_data[2..-2]
     else
       data_var_name = 'items'
     end
@@ -22,9 +22,15 @@ class CollectionConverter < BaseViewConverter
     # LazyVGridとして実装
     add_line "LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: #{columns}), spacing: #{@component['itemSpacing'] || 10}) {"
     indent do
-      if has_binding && cell_layout
-        # データバインディングとセルレイアウトが指定されている場合
-        add_line "ForEach(#{to_camel_case(data_var_name)}) { item in"
+      if cell_layout
+        # セルレイアウトが指定されている場合
+        if has_items
+          # itemsが指定されている場合は、その変数を使用
+          add_line "ForEach(#{to_camel_case(data_var_name)}) { item in"
+        else
+          # itemsが指定されていない場合は空の配列
+          add_line "ForEach([]) { item in"
+        end
         indent do
           # セルレイアウトファイル名からビュー名を生成
           cell_view_name = cell_layout.split('/').last.sub(/^_/, '').split('_').map(&:capitalize).join + 'View'
@@ -37,21 +43,8 @@ class CollectionConverter < BaseViewConverter
           add_modifier_line ".frame(maxWidth: .infinity)"
         end
         add_line "}"
-      elsif cell_layout
-        # セルレイアウトのみ指定されている場合（静的データ）
-        add_line "// Cell layout: #{cell_layout}"
-        add_line "// Note: Add data binding to use custom cell layout"
-        add_line "ForEach(0..<20) { index in"
-        indent do
-          add_line "Text(\"Item \\(index)\")"
-          add_modifier_line ".frame(height: 100)"
-          add_modifier_line ".frame(maxWidth: .infinity)"
-          add_modifier_line ".background(Color.gray.opacity(0.3))"
-          add_modifier_line ".cornerRadius(8)"
-        end
-        add_line "}"
       else
-        # デフォルトのデモコンテンツ
+        # セルレイアウトが指定されていない場合のデフォルトコンテンツ
         add_line "ForEach(0..<20) { index in"
         indent do
           add_line "Text(\"Item \\(index)\")"

@@ -5,82 +5,92 @@ require_relative 'base_view_converter'
 class SelectBoxConverter < BaseViewConverter
   def convert
     id = @component['id'] || 'selectBox'
-    selectItemType = @component['selectItemType'] || 'picker'
+    prompt = @component['prompt']
+    selectItemType = @component['selectItemType'] || 'Normal'
+    items = @component['items'] || []
     
-    case selectItemType
-    when 'datePicker'
-      generate_date_picker(id)
-    when 'timePicker'
-      generate_time_picker(id)
-    when 'dateTimePicker'
-      generate_datetime_picker(id)
-    else
-      generate_picker(id)
+    # SelectBoxViewを使用
+    add_line "SelectBoxView("
+    indent do
+      add_line "id: \"#{id}\","
+      
+      if prompt
+        add_line "prompt: \"#{prompt}\","
+      end
+      
+      if @component['fontSize']
+        add_line "fontSize: #{@component['fontSize']},"
+      end
+      
+      if @component['fontColor']
+        color = hex_to_swiftui_color(@component['fontColor'])
+        add_line "fontColor: #{color},"
+      end
+      
+      if @component['background']
+        bg_color = hex_to_swiftui_color(@component['background'])
+        add_line "backgroundColor: #{bg_color},"
+      end
+      
+      if @component['cornerRadius']
+        add_line "cornerRadius: #{@component['cornerRadius']},"
+      end
+      
+      # selectItemType
+      case selectItemType
+      when 'Date'
+        add_line "selectItemType: .date,"
+        
+        # datePickerMode
+        if @component['datePickerMode']
+          case @component['datePickerMode']
+          when 'time'
+            add_line "datePickerMode: .time,"
+          when 'datetime'
+            add_line "datePickerMode: .dateTime,"
+          else
+            add_line "datePickerMode: .date,"
+          end
+        end
+        
+        # datePickerStyle
+        if @component['datePickerStyle']
+          case @component['datePickerStyle']
+          when 'automatic'
+            add_line "datePickerStyle: .automatic,"
+          when 'compact'
+            add_line "datePickerStyle: .compact,"
+          when 'graphical', 'inline'  # SwiftJsonUIのinlineはSwiftUIのgraphicalにマッピング
+            add_line "datePickerStyle: .graphical,"
+          else # 'wheels' or default
+            add_line "datePickerStyle: .wheel,"
+          end
+        end
+        
+        # dateStringFormat
+        if @component['dateStringFormat']
+          add_line "dateStringFormat: \"#{@component['dateStringFormat']}\""
+        end
+      else
+        add_line "selectItemType: .normal,"
+        
+        # items配列の処理
+        if items.is_a?(String) && items.start_with?('@{') && items.end_with?('}')
+          # テンプレート変数の場合
+          add_line "items: Array(#{to_camel_case(items[2..-2])})"
+        elsif items.is_a?(Array) && items.any?
+          # 静的配列の場合
+          add_line "items: [#{items.map { |item| "\"#{item}\"" }.join(", ")}]"
+        else
+          add_line "items: []"
+        end
+      end
     end
+    add_line ")"
     
-    # 共通のモディファイアを適用
+    # 共通のモディファイアを適用（frame, margin等）
     apply_modifiers
     
     generated_code
-  end
-  
-  private
-  
-  def generate_picker(id)
-    items = @component['items'] || []
-    
-    # @Stateプロパティ
-    add_line "@State private var selected#{id.split('_').map(&:capitalize).join} = \"\""
-    
-    # Picker
-    add_line "Picker(\"#{@component['hint'] || 'Select'}\", selection: $selected#{id.split('_').map(&:capitalize).join}) {"
-    indent do
-      items.each do |item|
-        add_line "Text(\"#{item}\").tag(\"#{item}\")"
-      end
-    end
-    add_line "}"
-    
-    if @component['pickerStyle'] == 'menu'
-      add_modifier_line ".pickerStyle(.menu)"
-    end
-  end
-  
-  def generate_date_picker(id)
-    # @Stateプロパティ
-    add_line "@State private var selected#{id.split('_').map(&:capitalize).join}Date = Date()"
-    
-    # DatePicker
-    add_line "DatePicker(\"#{@component['hint'] || 'Select Date'}\", selection: $selected#{id.split('_').map(&:capitalize).join}Date, displayedComponents: .date)"
-    
-    if @component['datePickerStyle'] == 'compact'
-      add_modifier_line ".datePickerStyle(.compact)"
-    elsif @component['datePickerStyle'] == 'wheel'
-      add_modifier_line ".datePickerStyle(.wheel)"
-    end
-  end
-  
-  def generate_time_picker(id)
-    # @Stateプロパティ
-    add_line "@State private var selected#{id.split('_').map(&:capitalize).join}Time = Date()"
-    
-    # DatePicker（時間のみ）
-    add_line "DatePicker(\"#{@component['hint'] || 'Select Time'}\", selection: $selected#{id.split('_').map(&:capitalize).join}Time, displayedComponents: .hourAndMinute)"
-    
-    if @component['datePickerStyle']
-      add_modifier_line ".datePickerStyle(.#{@component['datePickerStyle']})"
-    end
-  end
-  
-  def generate_datetime_picker(id)
-    # @Stateプロパティ
-    add_line "@State private var selected#{id.split('_').map(&:capitalize).join}DateTime = Date()"
-    
-    # DatePicker（日付と時間）
-    add_line "DatePicker(\"#{@component['hint'] || 'Select Date & Time'}\", selection: $selected#{id.split('_').map(&:capitalize).join}DateTime)"
-    
-    if @component['datePickerStyle']
-      add_modifier_line ".datePickerStyle(.#{@component['datePickerStyle']})"
-    end
   end
 end

@@ -4,6 +4,7 @@ require_relative 'views/label_converter'
 require_relative 'views/button_converter'
 require_relative 'views/view_converter'
 require_relative 'views/textfield_converter'
+require_relative 'views/textview_converter'
 require_relative 'views/image_converter'
 require_relative 'views/scrollview_converter'
 require_relative 'views/segment_converter'
@@ -77,28 +78,6 @@ class ConverterFactory
 end
 
 # 追加のコンバータークラス
-class TextViewConverter < BaseViewConverter
-  def convert
-    id = @component['id'] || "textEditor"
-    
-    add_line "@State private var #{id}Text = \"\""
-    add_line "TextEditor(text: $#{id}Text)"
-    
-    # fontSize
-    if @component['fontSize']
-      add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-    end
-    
-    # fontColor
-    if @component['fontColor']
-      color = hex_to_swiftui_color(@component['fontColor'])
-      add_modifier_line ".foregroundColor(#{color})"
-    end
-    
-    apply_modifiers
-    generated_code
-  end
-end
 
 class SwitchConverter < BaseViewConverter
   def convert

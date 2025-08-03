@@ -46,10 +46,15 @@ module TemplateHelper
     # 使用されている属性から型を推論
     used_attrs = var_info[:used_as]
     
-    # データバインディング用の配列型（Collection/Tableのdata属性）
-    if used_attrs.include?('data') && var_info[:component_types]&.any? { |ct| ['Collection', 'Table'].include?(ct) }
-      # 一般的なIdentifiableアイテムの配列として扱う
-      return '[NotificationItem]' # TODO: アイテム型を動的に推論
+    # データバインディング用の配列型（Collectionのitems属性、Tableのdata属性、SelectBoxのitems属性）
+    if (used_attrs.include?('items') && var_info[:component_types]&.any? { |ct| ['Collection', 'SelectBox'].include?(ct) }) ||
+       (used_attrs.include?('data') && var_info[:component_types]&.any? { |ct| ct == 'Table' })
+      # コンポーネントタイプに応じた配列型を返す
+      if var_info[:component_types]&.any? { |ct| ct == 'SelectBox' }
+        return '[String]' # SelectBoxは文字列の配列
+      else
+        return '[NotificationItem]' # CollectionとTableは構造体の配列
+      end
     end
     
     # Color型の属性

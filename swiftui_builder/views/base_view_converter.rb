@@ -92,8 +92,23 @@ class BaseViewConverter
     end
     
     # パディング（SwiftJsonUIの属性に対応）
-    if @component['padding']
-      add_modifier_line ".padding(#{@component['padding']})"
+    if @component['padding'] || @component['paddings']
+      padding = @component['padding'] || @component['paddings']
+      if padding.is_a?(Array)
+        case padding.length
+        when 1
+          add_modifier_line ".padding(#{padding[0]})"
+        when 2
+          add_modifier_line ".padding(.vertical, #{padding[0]})"
+          add_modifier_line ".padding(.horizontal, #{padding[1]})"
+        when 4
+          add_modifier_line ".padding(.top, #{padding[0]})"
+          add_modifier_line ".padding(.horizontal, #{padding[1]})"
+          add_modifier_line ".padding(.bottom, #{padding[2]})"
+        end
+      else
+        add_modifier_line ".padding(#{padding})"
+      end
     elsif @component['paddingLeft'] || @component['paddingRight'] || @component['paddingTop'] || @component['paddingBottom']
       # 各方向のパディングを個別に適用
       if @component['paddingLeft']
@@ -111,7 +126,24 @@ class BaseViewConverter
     end
     
     # マージン（SwiftUIではパディングとして実装）
-    if @component['leftMargin'] || @component['rightMargin'] || @component['topMargin'] || @component['bottomMargin']
+    if @component['margin'] || @component['margins']
+      margin = @component['margin'] || @component['margins']
+      if margin.is_a?(Array)
+        case margin.length
+        when 1
+          add_modifier_line ".padding(#{margin[0]})"
+        when 2
+          add_modifier_line ".padding(.vertical, #{margin[0]})"
+          add_modifier_line ".padding(.horizontal, #{margin[1]})"
+        when 4
+          add_modifier_line ".padding(.top, #{margin[0]})"
+          add_modifier_line ".padding(.horizontal, #{margin[1]})"
+          add_modifier_line ".padding(.bottom, #{margin[2]})"
+        end
+      else
+        add_modifier_line ".padding(#{margin})"
+      end
+    elsif @component['leftMargin'] || @component['rightMargin'] || @component['topMargin'] || @component['bottomMargin']
       # マージンをパディングとして適用（簡易的な実装）
       if @component['rightMargin']
         add_modifier_line ".padding(.trailing, #{@component['rightMargin']})"
@@ -184,6 +216,46 @@ class BaseViewConverter
     if @component['shadow']
       apply_shadow(@component['shadow'])
     end
+    
+    # クリッピング
+    if @component['clipToBounds'] == true
+      add_modifier_line ".clipped()"
+    end
+    
+    # 最小/最大サイズ
+    if @component['minWidth'] || @component['maxWidth'] || @component['minHeight'] || @component['maxHeight']
+      frame_params = []
+      frame_params << "minWidth: #{@component['minWidth']}" if @component['minWidth']
+      frame_params << "maxWidth: #{size_to_swiftui(@component['maxWidth']) || @component['maxWidth']}" if @component['maxWidth']
+      frame_params << "minHeight: #{@component['minHeight']}" if @component['minHeight']
+      frame_params << "maxHeight: #{size_to_swiftui(@component['maxHeight']) || @component['maxHeight']}" if @component['maxHeight']
+      add_modifier_line ".frame(#{frame_params.join(', ')})"
+    end
+    
+    # アスペクト比
+    if @component['aspectWidth'] && @component['aspectHeight']
+      ratio = @component['aspectWidth'].to_f / @component['aspectHeight'].to_f
+      add_modifier_line ".aspectRatio(#{ratio}, contentMode: .fit)"
+    end
+    
+    # ユーザーインタラクション
+    if @component['userInteractionEnabled'] == false
+      add_modifier_line ".disabled(true)"
+    end
+    
+    # 中央配置
+    if @component['centerInParent'] == true
+      add_modifier_line ".frame(maxWidth: .infinity, maxHeight: .infinity)"
+    end
+    
+    # weight（親がStack内の場合に使用）
+    if @component['weight']
+      weight = @component['weight'].to_f
+      if weight > 0
+        add_modifier_line ".frame(maxWidth: .infinity)"
+        add_modifier_line ".frame(maxHeight: .infinity)"
+      end
+    end
   end
 
   def apply_shadow(shadow)
@@ -202,6 +274,11 @@ class BaseViewConverter
       y = shadow['offsetY'] || 0
       add_modifier_line ".shadow(color: #{color}.opacity(#{opacity}), radius: #{radius}, x: #{x}, y: #{y})"
     end
+  end
+  
+  # @Stateプロパティを返すメソッド（サブクラスでオーバーライド可能）
+  def state_properties
+    []
   end
 
   def hex_to_swiftui_color(hex)

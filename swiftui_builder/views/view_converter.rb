@@ -9,7 +9,9 @@ class ViewConverter < BaseViewConverter
   end
 
   def convert
-    children = @component['child'] || []
+    child_data = @component['child'] || []
+    # childが単一要素の場合は配列に変換
+    children = child_data.is_a?(Array) ? child_data : [child_data]
     orientation = @component['orientation'] || 'vertical'
     
     if children.empty?
