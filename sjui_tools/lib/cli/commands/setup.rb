@@ -66,9 +66,9 @@ module SjuiTools
             File.join(source_path, config['bindings_directory']),
             File.join(source_path, config['view_directory']),
             File.join(source_path, config['styles_directory']),
-            File.join(project_dir, 'Core'),
-            File.join(project_dir, 'Core', 'Base'),
-            File.join(project_dir, 'Core', 'UI')
+            File.join(source_path, 'Core'),
+            File.join(source_path, 'Core', 'Base'),
+            File.join(source_path, 'Core', 'UI')
           ]
           
           directories.each do |dir|
@@ -80,19 +80,19 @@ module SjuiTools
         end
 
         def generate_base_files
-          project_dir = Core::ProjectFinder.project_dir
+          source_path = Core::ProjectFinder.get_full_source_path
           
           # Generate BaseViewController
-          generate_base_view_controller(project_dir)
+          generate_base_view_controller(source_path)
           
           # Generate BaseBinding
-          generate_base_binding(project_dir)
+          generate_base_binding(source_path)
           
           # Generate UIViewCreator
-          generate_ui_view_creator(project_dir)
+          generate_ui_view_creator(source_path)
           
           # Generate BaseCollectionViewCell
-          generate_base_collection_view_cell(project_dir)
+          generate_base_collection_view_cell(source_path)
           
           # Add to Xcode project if applicable
           if Core::ProjectFinder.project_file_path&.end_with?('.xcodeproj')
@@ -100,8 +100,8 @@ module SjuiTools
           end
         end
 
-        def generate_base_view_controller(project_dir)
-          file_path = File.join(project_dir, 'Core', 'Base', 'BaseViewController.swift')
+        def generate_base_view_controller(source_path)
+          file_path = File.join(source_path, 'Core', 'Base', 'BaseViewController.swift')
           return if File.exist?(file_path)
           
           content = <<~SWIFT
@@ -159,8 +159,8 @@ module SjuiTools
           puts "Created: Core/Base/BaseViewController.swift"
         end
 
-        def generate_base_binding(project_dir)
-          file_path = File.join(project_dir, 'Core', 'Base', 'BaseBinding.swift')
+        def generate_base_binding(source_path)
+          file_path = File.join(source_path, 'Core', 'Base', 'BaseBinding.swift')
           return if File.exist?(file_path)
           
           content = <<~SWIFT
@@ -191,8 +191,8 @@ module SjuiTools
           puts "Created: Core/Base/BaseBinding.swift"
         end
 
-        def generate_ui_view_creator(project_dir)
-          file_path = File.join(project_dir, 'Core', 'UI', 'UIViewCreator.swift')
+        def generate_ui_view_creator(source_path)
+          file_path = File.join(source_path, 'Core', 'UI', 'UIViewCreator.swift')
           return if File.exist?(file_path)
           
           content = <<~SWIFT
@@ -215,8 +215,8 @@ module SjuiTools
           puts "Created: Core/UI/UIViewCreator.swift"
         end
 
-        def generate_base_collection_view_cell(project_dir)
-          file_path = File.join(project_dir, 'Core', 'Base', 'BaseCollectionViewCell.swift')
+        def generate_base_collection_view_cell(source_path)
+          file_path = File.join(source_path, 'Core', 'Base', 'BaseCollectionViewCell.swift')
           return if File.exist?(file_path)
           
           content = <<~SWIFT

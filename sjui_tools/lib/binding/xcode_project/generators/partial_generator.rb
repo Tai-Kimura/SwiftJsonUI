@@ -129,8 +129,7 @@ module SjuiTools
       require_relative '../../../core/config_manager'
       
       # configから カスタムビュータイプを読み込んで設定
-      base_dir = File.expand_path('../..', File.dirname(__FILE__))
-      custom_view_types = ConfigManager.get_custom_view_types(base_dir)
+      custom_view_types = Core::ConfigManager.get_custom_view_types
       
       # カスタムビュータイプを設定
       view_type_mappings = {}
