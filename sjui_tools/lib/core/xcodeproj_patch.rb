@@ -41,17 +41,24 @@ module Xcodeproj
       end
       
       # Override the klass_from_isa method to handle new ISA types
-      class << self
-        alias_method :original_klass_from_isa, :klass_from_isa
-        
-        def klass_from_isa(isa)
-          case isa
-          when 'PBXFileSystemSynchronizedRootGroup'
-            PBXFileSystemSynchronizedRootGroup
-          when 'PBXFileSystemSynchronizedBuildFileExceptionSet'
-            PBXFileSystemSynchronizedBuildFileExceptionSet
-          else
-            original_klass_from_isa(isa)
+      class AbstractObject
+        class << self
+          alias_method :original_klass_from_isa, :klass_from_isa if method_defined?(:klass_from_isa)
+          
+          def klass_from_isa(isa)
+            case isa
+            when 'PBXFileSystemSynchronizedRootGroup'
+              PBXFileSystemSynchronizedRootGroup
+            when 'PBXFileSystemSynchronizedBuildFileExceptionSet'
+              PBXFileSystemSynchronizedBuildFileExceptionSet
+            else
+              if respond_to?(:original_klass_from_isa)
+                original_klass_from_isa(isa)
+              else
+                # Fallback to the default behavior
+                Object.const_get("Xcodeproj::Project::Object::#{isa}")
+              end
+            end
           end
         end
       end

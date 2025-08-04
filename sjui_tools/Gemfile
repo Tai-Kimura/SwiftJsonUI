@@ -1,5 +1,7 @@
 source 'https://rubygems.org'
 
+ruby '>= 2.7.0'
+
 # Core dependencies
 gem 'json', '~> 2.6'
 gem 'listen', '~> 3.8'
@@ -17,5 +19,5 @@ gem 'faye-websocket', '~> 0.11'
 group :development do
   gem 'rspec', '~> 3.12'
   gem 'rubocop', '~> 1.50'
-  gem 'bundler', '~> 2.4'
+  gem 'bundler', '>= 2.0'
 end

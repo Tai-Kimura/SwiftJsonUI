@@ -202,6 +202,22 @@ fi
 if [ -f "sjui_tools/Gemfile" ] && [ "$SKIP_BUNDLE" != true ]; then
     GEMFILE_DIR="sjui_tools"
     print_info "Installing Ruby dependencies..."
+    
+    # Check Ruby version
+    if command -v ruby &> /dev/null; then
+        RUBY_VERSION=$(ruby -v | cut -d' ' -f2)
+        print_info "Ruby version: $RUBY_VERSION"
+        
+        # Check if Ruby version is at least 2.7.0
+        if ruby -e "exit RUBY_VERSION >= '2.7.0' ? 0 : 1" 2>/dev/null; then
+            print_info "Ruby version is compatible"
+        else
+            print_warning "Ruby version is older than 2.7.0"
+            print_warning "Some features may not work properly"
+            print_warning "Please consider upgrading Ruby to 2.7.0 or later"
+        fi
+    fi
+    
     cd "$GEMFILE_DIR"
     
     if command -v bundle &> /dev/null; then
