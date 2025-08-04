@@ -4,7 +4,7 @@ require "fileutils"
 require "pathname"
 require "json"
 require 'xcodeproj'
-require_relative '../../binding/project_finder'
+require_relative '../project_finder'
 require_relative '../config_manager'
 
 module SjuiTools
@@ -37,18 +37,20 @@ module SjuiTools
         private
         
         def get_current_version
-          base_dir = File.expand_path('../..', File.dirname(__FILE__))
-          version_file = File.join(base_dir, 'VERSION')
-          
-          if File.exist?(version_file)
-            File.read(version_file).strip
-          else
-            "default"
+          # Check git branch first
+          begin
+            git_branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
+            return git_branch unless git_branch.empty?
+          rescue
+            # Git command failed, continue with other methods
           end
+          
+          # Fallback to default
+          "default"
         end
         
         def load_library_versions
-          base_dir = File.expand_path('../..', File.dirname(__FILE__))
+          base_dir = File.expand_path('../../../..', File.dirname(__FILE__))
           versions_file = File.join(base_dir, 'config', 'library_versions.json')
           
           if File.exist?(versions_file)

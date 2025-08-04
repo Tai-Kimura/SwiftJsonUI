@@ -37,8 +37,8 @@ module SjuiTools
           
           puts "\nSetup complete!"
           puts "Next steps:"
-          puts "  1. Add SwiftJsonUI library to your project (via SPM or CocoaPods)"
-          puts "  2. Run 'sjui g view HomeView' to generate your first view"
+          puts "  1. Run 'sjui g view HomeView' to generate your first view"
+          puts "  2. Build your project to download the SwiftJsonUI dependencies"
         end
 
         private
@@ -316,10 +316,17 @@ module SjuiTools
         end
 
         def setup_library
-          # TODO: Implement library setup (SPM/CocoaPods)
-          puts "\nNote: Please add SwiftJsonUI library manually via:"
-          puts "  - Swift Package Manager: https://github.com/mcprol/SwiftJsonUI-ios"
-          puts "  - CocoaPods: pod 'SwiftJsonUI'"
+          require_relative '../../core/setup/library_setup'
+          
+          begin
+            library_setup = Core::Setup::LibrarySetup.new(Core::ProjectFinder.project_file_path)
+            library_setup.setup_libraries
+          rescue => e
+            puts "\nWarning: Could not automatically add SPM packages: #{e.message}"
+            puts "\nNote: Please add SwiftJsonUI library manually via:"
+            puts "  - Swift Package Manager: https://github.com/mcprol/SwiftJsonUI-ios"
+            puts "  - CocoaPods: pod 'SwiftJsonUI'"
+          end
         end
       end
     end
