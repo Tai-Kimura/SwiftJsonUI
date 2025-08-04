@@ -44,6 +44,8 @@ module SwiftUIBuilder
       desc "view VIEW_NAME", "Generate view and JSON layout file"
       method_option :root, type: :boolean, default: false,
                     desc: 'Set as root view'
+      method_option :dynamic, type: :boolean, default: false,
+                    desc: 'Use DynamicView to load JSON at runtime'
       def view(view_name)
         puts "Generating SwiftUI view: #{view_name}"
         
@@ -73,7 +75,11 @@ module SwiftUIBuilder
         
         # SwiftUIビューの生成
         swift_path = File.join(views_dir, "#{camel_name}View.swift")
-        generate_swiftui_view(json_path, swift_path, camel_name)
+        if options[:dynamic]
+          generate_dynamic_view(swift_path, camel_name, snake_name)
+        else
+          generate_swiftui_view(json_path, swift_path, camel_name)
+        end
         
         puts "Generated:"
         puts "  Layout: #{json_path}"
@@ -280,6 +286,33 @@ module SwiftUIBuilder
         struct #{view_name}View: View {
             var body: some View {
         #{converter.convert_component(json_data, 2)}
+            }
+        }
+        
+        struct #{view_name}View_Previews: PreviewProvider {
+            static var previews: some View {
+                #{view_name}View()
+            }
+        }
+        SWIFT
+        
+        File.write(swift_path, swift_code)
+      end
+      
+      def generate_dynamic_view(swift_path, view_name, json_name)
+        swift_code = <<~SWIFT
+        import SwiftUI
+        import SwiftJsonUI
+        
+        struct #{view_name}View: View {
+            var body: some View {
+                DynamicView(jsonName: "#{json_name}")
+                    .onAppear {
+                        #if DEBUG
+                        // Enable HotLoader for development
+                        HotLoader.instance.isHotLoadEnabled = true
+                        #endif
+                    }
             }
         }
         
