@@ -10,6 +10,11 @@ module SjuiTools
         def run(args)
           port = 8080
           
+          # Check for 'listen' subcommand (for backward compatibility)
+          if args.first == 'listen'
+            args.shift  # Remove 'listen' from args
+          end
+          
           # Parse arguments
           while arg = args.shift
             case arg

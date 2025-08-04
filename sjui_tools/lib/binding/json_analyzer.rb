@@ -174,7 +174,7 @@ module SjuiTools
           
           # まずpartial用の_プレフィックス付きファイルを探す
           file_path = File.join(@layout_path, dir_path, "_#{file_base}.json")
-          if !File.exists?(file_path)
+          if !File.exist?(file_path)
             # 次に通常のファイルを探す
             file_path = File.join(@layout_path, "#{value}.json")
           end
@@ -182,14 +182,14 @@ module SjuiTools
           # サブディレクトリがない場合
           # まずpartial用の_プレフィックス付きファイルを探す
           file_path = File.join(@layout_path, "_#{value}.json")
-          if !File.exists?(file_path)
+          if !File.exist?(file_path)
             # 次に通常のファイルを探す
             file_path = File.join(@layout_path, "#{value}.json")
           end
         end
         
         # ファイルが見つからない場合はエラー
-        unless File.exists?(file_path)
+        unless File.exist?(file_path)
           if value.include?('/')
             dir_parts = value.split('/')
             file_base = dir_parts.pop

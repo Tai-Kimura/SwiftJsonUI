@@ -283,7 +283,12 @@ module SjuiTools
 
           puts "Updating SceneDelegate: #{scene_delegate_path}"
           
-          # SceneDelegate.swiftの内容を読み込む
+          # SceneDelegate.swiftの内容を読み込む（安全チェック付き）
+          unless File.file?(scene_delegate_path)
+            puts "Warning: SceneDelegate path is not a file: #{scene_delegate_path}"
+            return
+          end
+          
           content = File.read(scene_delegate_path)
           
           # 安全にSceneDelegateを更新

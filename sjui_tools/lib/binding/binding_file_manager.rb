@@ -19,12 +19,12 @@ module SjuiTools
         puts @binding_file_name
         @binding_file_path = "#{@binding_path}/#{@binding_file_name}"
         
-        if File.exists? @binding_file_path
+        if File.exist? @binding_file_path
           File.delete(@binding_file_path)
         end
         
         @super_binding = "Binding"
-        if File.exists?("#{@view_path}/#{@base_name}/#{@base_name}ViewController.swift")
+        if File.exist?("#{@view_path}/#{@base_name}/#{@base_name}ViewController.swift")
           @super_binding = "BaseBinding"
         end
 
