@@ -122,6 +122,12 @@ module SjuiTools
         @project.save
       end
 
+      def add_binding_files(binding_files, project_dir)
+        binding_files.each do |file_path|
+          add_file(file_path, 'Bindings')
+        end
+      end
+
       private
 
       def add_file_to_group(file_path, group)
@@ -141,12 +147,6 @@ module SjuiTools
             main_target = @project.targets.first
             main_target.add_file_references([file_ref]) if main_target
           end
-        end
-      end
-
-      def add_binding_files(binding_files, project_dir)
-        binding_files.each do |file_path|
-          add_file(file_path, 'Bindings')
         end
       end
 

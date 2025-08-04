@@ -31,10 +31,16 @@ module SjuiTools
         current_view = {"name": "", "type": ""}
         unless json["style"].nil?
           file_path = "#{@style_path}/#{json["style"]}.json"
-          File.open(file_path, "r") do |file|
-            json_string = file.read
-            style_json = JSON.parse(json_string)
-            json = json.merge(style_json)
+          if File.exist?(file_path) && File.file?(file_path)
+            File.open(file_path, "r") do |file|
+              json_string = file.read
+              style_json = JSON.parse(json_string)
+              json = json.merge(style_json)
+            end
+          elsif File.exist?(file_path)
+            puts "Warning: Style path is not a file: #{file_path}"
+          else
+            puts "Warning: Style file not found: #{file_path}"
           end
         end
         json.each do |key,value|
@@ -199,6 +205,11 @@ module SjuiTools
             tried_paths = "#{File.join(@layout_path, "_#{value}.json")} and #{File.join(@layout_path, "#{value}.json")}"
           end
           raise "Include file not found: #{value} (tried #{tried_paths})"
+        end
+        
+        # ディレクトリの場合はエラー
+        unless File.file?(file_path)
+          raise "Include path is not a file: #{file_path}"
         end
         
         File.open(file_path, "r") do |file|
