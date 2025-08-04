@@ -99,7 +99,8 @@ module SwiftUIBuilder
         project_root = find_project_root
         
         # プロジェクトルート直下にiOSアプリファイルがあるかチェック
-        ios_files = ['Info.plist', 'App.swift', 'ContentView.swift', 'AppDelegate.swift', 'SceneDelegate.swift']
+        # SwiftUIアプリの主要ファイルを優先
+        ios_files = ['App.swift', 'ContentView.swift', 'AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist']
         if ios_files.any? { |file| File.exist?(File.join(project_root, file)) }
           # ファイルがプロジェクトルートにある場合は空文字を返す
           return ""

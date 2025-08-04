@@ -83,15 +83,15 @@ EOF
         BINDING_BUILDER_PARENT=$(dirname "$SCRIPT_DIR")
         
         # The source directory is the directory containing the iOS app files
-        # Check if the parent directory contains iOS app files
-        if [ -f "$BINDING_BUILDER_PARENT/Info.plist" -o -f "$BINDING_BUILDER_PARENT/AppDelegate.swift" -o -f "$BINDING_BUILDER_PARENT/SceneDelegate.swift" ]; then
+        # Check if the parent directory contains iOS app files (SwiftUI files have priority)
+        if [ -f "$BINDING_BUILDER_PARENT/App.swift" -o -f "$BINDING_BUILDER_PARENT/ContentView.swift" -o -f "$BINDING_BUILDER_PARENT/AppDelegate.swift" -o -f "$BINDING_BUILDER_PARENT/SceneDelegate.swift" -o -f "$BINDING_BUILDER_PARENT/Info.plist" ]; then
             # If iOS files are in the same directory as binding_builder, use the directory name
             SOURCE_DIR=$(basename "$BINDING_BUILDER_PARENT")
             HOT_LOADER_DIR=$(basename "$BINDING_BUILDER_PARENT")
         else
             # Look for subdirectories containing iOS app files
             for dir in "$BINDING_BUILDER_PARENT"/*; do
-                if [ -d "$dir" ] && [ "$(basename "$dir")" != "binding_builder" ] && [ -f "$dir/Info.plist" -o -f "$dir/AppDelegate.swift" -o -f "$dir/SceneDelegate.swift" ]; then
+                if [ -d "$dir" ] && [ "$(basename "$dir")" != "binding_builder" ] && [ -f "$dir/App.swift" -o -f "$dir/ContentView.swift" -o -f "$dir/AppDelegate.swift" -o -f "$dir/SceneDelegate.swift" -o -f "$dir/Info.plist" ]; then
                     SOURCE_DIR=$(basename "$dir")
                     HOT_LOADER_DIR=$(basename "$dir")
                     break
