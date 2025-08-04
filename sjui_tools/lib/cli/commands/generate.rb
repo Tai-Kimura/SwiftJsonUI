@@ -89,8 +89,9 @@ module SjuiTools
           case mode
           when 'binding'
             require_relative '../../binding/xcode_project/generators/partial_generator'
-            generator = SjuiTools::Binding::Generators::PartialGenerator.new(name)
-            generator.generate
+            project_file = Core::ProjectFinder.find_project_file
+            generator = SjuiTools::Binding::Generators::PartialGenerator.new(project_file)
+            generator.generate(name)
           when 'swiftui'
             puts "Generating SwiftUI partial: #{name}"
             # TODO: Implement SwiftUI partial generation
@@ -109,8 +110,9 @@ module SjuiTools
           case mode
           when 'binding'
             require_relative '../../binding/xcode_project/generators/collection_generator'
-            generator = SjuiTools::Binding::Generators::CollectionGenerator.new(name)
-            generator.generate
+            project_file = Core::ProjectFinder.find_project_file
+            generator = SjuiTools::Binding::Generators::CollectionGenerator.new(project_file)
+            generator.generate(name)
           else
             puts "Collection generation is only available in binding mode"
             exit 1

@@ -12,12 +12,18 @@ module SjuiTools
       class PartialGenerator < SjuiTools::Binding::PbxprojManager
   def initialize(project_file_path = nil)
     super(project_file_path)
-    base_dir = File.expand_path('../..', File.dirname(__FILE__))
     
-    # ProjectFinderを使用してパスを設定
-    paths = Core::ProjectFinder.setup_paths(base_dir, @project_file_path)
-    @layouts_path = paths.layout_path
-    @xcode_manager = XcodeProjectManager.new(@project_file_path)
+    # Setup paths using ProjectFinder
+    Core::ProjectFinder.setup_paths(@project_file_path)
+    
+    # Get configuration
+    config = Core::ConfigManager.load_config
+    
+    # Set layouts path
+    source_path = Core::ProjectFinder.get_full_source_path
+    @layouts_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
+    
+    @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
   end
 
   def generate(partial_name)

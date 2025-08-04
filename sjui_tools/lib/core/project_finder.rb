@@ -94,6 +94,28 @@ module SjuiTools
           end
         end
 
+        def find_project_file(starting_dir = nil)
+          starting_dir ||= Dir.pwd
+          xcodeproj = find_xcodeproj(starting_dir)
+          return xcodeproj if xcodeproj
+          
+          package_swift = find_package_swift(starting_dir)
+          return package_swift if package_swift
+          
+          nil
+        end
+
+        def get_project_root(project_file_path)
+          if project_file_path.end_with?('.xcodeproj')
+            File.dirname(project_file_path)
+          elsif project_file_path.end_with?('Package.swift')
+            File.dirname(project_file_path)
+          else
+            # Assume it's a pbxproj file
+            File.dirname(File.dirname(project_file_path))
+          end
+        end
+
         # Find directory by name within project
         def find_directory(name, create: false)
           # First check in source directory

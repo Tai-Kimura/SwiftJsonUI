@@ -25,10 +25,13 @@ module SjuiTools
           
           base_dir = File.expand_path('../..', File.dirname(__FILE__))
           
-          # ProjectFinderを使用してパスを設定
-          paths = Core::ProjectFinder.setup_paths(base_dir, @project_file_path)
-          @view_path = paths.view_path
-          @layout_path = paths.layout_path
+          # Get configuration
+          config = Core::ConfigManager.load_config
+          
+          # Set paths
+          source_path = Core::ProjectFinder.get_full_source_path
+          @view_path = File.join(source_path, config['view_directory'] || 'View')
+          @layout_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
           @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
         end
 

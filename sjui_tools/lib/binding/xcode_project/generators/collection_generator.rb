@@ -11,14 +11,20 @@ module SjuiTools
       class CollectionGenerator < SjuiTools::Binding::PbxprojManager
   def initialize(project_file_path = nil)
     super(project_file_path)
-    base_dir = File.expand_path('../..', File.dirname(__FILE__))
     
-    # ProjectFinderを使用してパスを設定
-    paths = Core::ProjectFinder.setup_paths(base_dir, @project_file_path)
-    @view_path = paths.view_path
-    @core_path = paths.core_path
-    @layouts_path = paths.layout_path
-    @bindings_path = paths.bindings_path
+    # Setup paths using ProjectFinder
+    Core::ProjectFinder.setup_paths(@project_file_path)
+    
+    # Get configuration
+    config = Core::ConfigManager.load_config
+    
+    # Set paths
+    source_path = Core::ProjectFinder.get_full_source_path
+    @view_path = File.join(source_path, config['view_directory'] || 'View')
+    @core_path = File.join(Core::ProjectFinder.project_dir, 'Core')
+    @layouts_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
+    @bindings_path = File.join(source_path, config['bindings_directory'] || 'Bindings')
+    
     @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
   end
 
