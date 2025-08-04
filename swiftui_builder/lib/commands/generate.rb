@@ -12,13 +12,33 @@ module SwiftUIBuilder
       
       def initialize(*args)
         super
-        # 設定ファイルを読み込む
-        config_file = 'config.json'
+        # プロジェクトルートのconfig.jsonを読み込む
+        project_root = find_project_root_for_config
+        config_file = File.join(project_root, 'config.json')
         @config = if File.exist?(config_file)
                     JSON.parse(File.read(config_file))
                   else
                     {}
                   end
+      end
+      
+      def find_project_root_for_config
+        # swiftui_builderディレクトリの親ディレクトリがプロジェクトルート
+        current_dir = File.dirname(File.dirname(File.dirname(__FILE__)))
+        parent = File.dirname(current_dir)
+        
+        # .xcodeprojが存在するディレクトリを探す
+        5.times do
+          if Dir.glob(File.join(parent, '*.xcodeproj')).any?
+            return parent
+          end
+          new_parent = File.dirname(parent)
+          break if new_parent == parent
+          parent = new_parent
+        end
+        
+        # 見つからない場合は、swiftui_builderの親ディレクトリを使用
+        File.dirname(current_dir)
       end
       
       desc "view VIEW_NAME", "Generate view and JSON layout file"
@@ -31,9 +51,16 @@ module SwiftUIBuilder
         camel_name = view_name.split('_').map(&:capitalize).join
         snake_name = view_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
         
+        # プロジェクトルートを探す
+        project_root = find_project_root
+        
         # ディレクトリの作成
         layouts_dir = @config.dig('paths', 'layouts') || './Layouts'
         views_dir = @config.dig('paths', 'views') || './Views'
+        
+        # 絶対パスに変換
+        layouts_dir = File.join(project_root, layouts_dir)
+        views_dir = File.join(project_root, views_dir)
         
         FileUtils.mkdir_p(layouts_dir)
         FileUtils.mkdir_p(views_dir)
@@ -69,8 +96,12 @@ module SwiftUIBuilder
           name = partial_name
         end
         
+        # プロジェクトルートを探す
+        project_root = find_project_root
+        
         # ディレクトリの作成
         includes_dir = @config.dig('paths', 'includes') || './includes'
+        includes_dir = File.join(project_root, includes_dir)
         target_dir = subfolder ? File.join(includes_dir, subfolder) : includes_dir
         FileUtils.mkdir_p(target_dir)
         
@@ -95,9 +126,16 @@ module SwiftUIBuilder
         
         puts "Generating collection cell: #{folder_name}/#{cell_name}"
         
+        # プロジェクトルートを探す
+        project_root = find_project_root
+        
         # ディレクトリの作成
         views_dir = @config.dig('paths', 'views') || './Views'
         layouts_dir = @config.dig('paths', 'layouts') || './Layouts'
+        
+        # 絶対パスに変換
+        views_dir = File.join(project_root, views_dir)
+        layouts_dir = File.join(project_root, layouts_dir)
         
         view_folder = File.join(views_dir, folder_name)
         layout_folder = File.join(layouts_dir, 'cells')
@@ -116,6 +154,25 @@ module SwiftUIBuilder
       end
       
       private
+      
+      def find_project_root
+        # swiftui_builderディレクトリの親ディレクトリがプロジェクトルート
+        current_dir = File.dirname(File.dirname(File.dirname(__FILE__)))
+        parent = File.dirname(current_dir)
+        
+        # .xcodeprojが存在するディレクトリを探す
+        5.times do
+          if Dir.glob(File.join(parent, '*.xcodeproj')).any?
+            return parent
+          end
+          new_parent = File.dirname(parent)
+          break if new_parent == parent
+          parent = new_parent
+        end
+        
+        # 見つからない場合は、swiftui_builderの親ディレクトリを使用
+        File.dirname(current_dir)
+      end
       
       def create_json_layout(path, view_name)
         layout = {

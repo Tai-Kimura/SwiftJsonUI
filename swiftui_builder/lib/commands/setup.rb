@@ -59,6 +59,9 @@ module SwiftUIBuilder
       end
       
       def create_directory_structure
+        # プロジェクトルートを探す
+        project_root = find_project_root
+        
         paths = @config['paths'] || {
           'layouts' => './Layouts',
           'views' => './Views',
@@ -67,15 +70,36 @@ module SwiftUIBuilder
         }
         
         paths.each do |key, path|
-          FileUtils.mkdir_p(path)
-          puts "Created directory: #{path}"
+          full_path = File.join(project_root, path)
+          FileUtils.mkdir_p(full_path)
+          puts "Created directory: #{full_path}"
         end
         
         # .gitkeepファイルを作成
         paths.each do |key, path|
-          gitkeep = File.join(path, '.gitkeep')
+          full_path = File.join(project_root, path)
+          gitkeep = File.join(full_path, '.gitkeep')
           File.write(gitkeep, '') unless File.exist?(gitkeep)
         end
+      end
+      
+      def find_project_root
+        # swiftui_builderディレクトリの親ディレクトリがプロジェクトルート
+        current_dir = File.dirname(File.dirname(File.dirname(__FILE__)))
+        parent = File.dirname(current_dir)
+        
+        # .xcodeprojが存在するディレクトリを探す
+        5.times do
+          if Dir.glob(File.join(parent, '*.xcodeproj')).any?
+            return parent
+          end
+          new_parent = File.dirname(parent)
+          break if new_parent == parent
+          parent = new_parent
+        end
+        
+        # 見つからない場合は、swiftui_builderの親ディレクトリを使用
+        File.dirname(current_dir)
       end
       
       def add_swift_json_ui_package(project_path)

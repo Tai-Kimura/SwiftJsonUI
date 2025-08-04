@@ -12,7 +12,9 @@ module SwiftUIBuilder
       end
       
       def execute
-        config_file = options[:config] || 'config.json'
+        # プロジェクトルートを探す
+        project_root = find_project_root
+        config_file = File.join(project_root, options[:config] || 'config.json')
         
         if File.exist?(config_file) && !options[:force]
           puts "Configuration file already exists: #{config_file}"
@@ -55,6 +57,25 @@ module SwiftUIBuilder
       
       private
       
+      def find_project_root
+        # swiftui_builderディレクトリの親ディレクトリがプロジェクトルート
+        current_dir = File.dirname(File.dirname(File.dirname(__FILE__)))
+        parent = File.dirname(current_dir)
+        
+        # .xcodeprojが存在するディレクトリを探す
+        5.times do
+          if Dir.glob(File.join(parent, '*.xcodeproj')).any?
+            return parent
+          end
+          new_parent = File.dirname(parent)
+          break if new_parent == parent
+          parent = new_parent
+        end
+        
+        # 見つからない場合は、swiftui_builderの親ディレクトリを使用
+        File.dirname(current_dir)
+      end
+      
       def find_project_name
         # 現在のディレクトリから上位に向かって.xcodeprojを探す
         current_dir = Dir.pwd
@@ -89,13 +110,17 @@ module SwiftUIBuilder
       end
       
       def create_directory_structure(paths)
+        project_root = find_project_root
         paths.each do |key, path|
-          FileUtils.mkdir_p(path)
-          puts "Created directory: #{path}"
+          full_path = File.join(project_root, path)
+          FileUtils.mkdir_p(full_path)
+          puts "Created directory: #{full_path}"
         end
       end
       
       def create_sample_files(paths)
+        project_root = find_project_root
+        
         # Create sample layout JSON
         sample_layout = {
           'type' => 'View',
@@ -131,7 +156,7 @@ module SwiftUIBuilder
           }
         }
         
-        sample_file = File.join(paths['layouts'], 'sample.json')
+        sample_file = File.join(project_root, paths['layouts'], 'sample.json')
         FileUtils.mkdir_p(File.dirname(sample_file))
         File.write(sample_file, JSON.pretty_generate(sample_layout))
         puts "Created sample file: #{sample_file}"
@@ -144,7 +169,7 @@ module SwiftUIBuilder
           'fontColor' => '@{color}'
         }
         
-        include_file = File.join(paths['includes'], 'title_text.json')
+        include_file = File.join(project_root, paths['includes'], 'title_text.json')
         FileUtils.mkdir_p(File.dirname(include_file))
         File.write(include_file, JSON.pretty_generate(sample_include))
         puts "Created include file: #{include_file}"
@@ -182,7 +207,7 @@ module SwiftUIBuilder
         Edit `config.json` to customize the build process.
         README
         
-        File.write('README.md', readme_content)
+        File.write(File.join(project_root, 'README.md'), readme_content)
         puts "Created README.md"
       end
     end
