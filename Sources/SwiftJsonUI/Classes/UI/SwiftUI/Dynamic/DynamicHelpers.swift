@@ -129,7 +129,10 @@ public struct DynamicHelpers {
         case "wrapContent", nil:
             return nil
         default:
-            return Double(value ?? "")
+            if let doubleValue = Double(value ?? "") {
+                return CGFloat(doubleValue)
+            }
+            return nil
         }
     }
 }

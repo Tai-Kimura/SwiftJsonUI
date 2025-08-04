@@ -19,7 +19,7 @@ struct DynamicViewContainer: View {
     }
     
     var body: some View {
-        let children = component.child?.asArray ?? component.children ?? []
+        let children: [DynamicComponent] = component.child?.asArray ?? component.children ?? []
         
         if children.isEmpty {
             EmptyView()
@@ -57,7 +57,7 @@ struct DynamicScrollViewContainer: View {
     
     var body: some View {
         ScrollView {
-            let children = component.child?.asArray ?? component.children ?? []
+            let children: [DynamicComponent] = component.child?.asArray ?? component.children ?? []
             VStack(spacing: 0) {
                 ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                     DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)

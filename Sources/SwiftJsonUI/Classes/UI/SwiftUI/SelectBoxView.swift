@@ -117,7 +117,7 @@ public struct SelectBoxView: View {
                 VStack {
                     switch selectItemType {
                     case .normal:
-                        Picker("Select", selection: Binding(
+                        Picker("Select", selection: Binding<Int>(
                             get: { selectedIndex ?? 0 },
                             set: { newValue in
                                 selectedIndex = newValue
