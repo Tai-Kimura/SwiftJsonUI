@@ -80,7 +80,7 @@ module SwiftUIBuilder
         puts "  View: #{swift_path}"
         
         if options[:root]
-          puts "TODO: Set as root view in App.swift"
+          update_app_file(camel_name)
         end
       end
       
@@ -291,6 +291,56 @@ module SwiftUIBuilder
         SWIFT
         
         File.write(swift_path, swift_code)
+      end
+      
+      def update_app_file(view_name)
+        project_root = find_project_root
+        source_dir = @config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
+        
+        # App.swiftファイルを探す
+        app_files = [
+          'App.swift',
+          "#{@config['project_name']}App.swift",
+          "*App.swift"
+        ]
+        
+        app_file = nil
+        app_files.each do |pattern|
+          files = Dir.glob(File.join(base_path, pattern))
+          if files.any?
+            app_file = files.first
+            break
+          end
+        end
+        
+        unless app_file
+          puts "\nWarning: Could not find App.swift file"
+          puts "Please set #{view_name}View as root view manually in your App.swift:"
+          puts "\n    WindowGroup {"
+          puts "        #{view_name}View()"
+          puts "    }"
+          return
+        end
+        
+        # App.swiftを読み込む
+        content = File.read(app_file)
+        
+        # WindowGroupの中身を置き換える
+        if content =~ /WindowGroup\s*\{[^}]*\}/m
+          # 既存のWindowGroupの中身を新しいビューで置き換え
+          new_content = content.gsub(/WindowGroup\s*\{[^}]*\}/m) do |match|
+            # インデントを保持
+            indent = match.scan(/\n(\s+)/).flatten.first || "        "
+            "WindowGroup {\n#{indent}#{view_name}View()\n#{indent[0..-5]}}"
+          end
+          
+          File.write(app_file, new_content)
+          puts "\n✅ Set #{view_name}View as root view in #{File.basename(app_file)}"
+        else
+          puts "\nWarning: Could not find WindowGroup in App.swift"
+          puts "Please set #{view_name}View as root view manually"
+        end
       end
     end
   end
