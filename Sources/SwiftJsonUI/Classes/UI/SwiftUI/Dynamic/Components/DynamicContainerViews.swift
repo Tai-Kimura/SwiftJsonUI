@@ -18,26 +18,33 @@ struct DynamicViewContainer: View {
         self.viewId = viewId
     }
     
+    @ViewBuilder
     var body: some View {
         let children: [DynamicComponent] = component.child?.asArray ?? component.children ?? []
         
-        if children.isEmpty {
+        switch children.count {
+        case 0:
             EmptyView()
-        } else if children.count == 1 {
+        case 1:
             DynamicComponentBuilder(component: children[0], viewModel: viewModel, viewId: viewId)
-        } else {
-            let orientation = component.orientation ?? "vertical"
-            if orientation == "horizontal" {
-                HStack(spacing: 0) {
-                    ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                    }
+        default:
+            multipleChildrenView(children: children)
+        }
+    }
+    
+    @ViewBuilder
+    private func multipleChildrenView(children: [DynamicComponent]) -> some View {
+        let orientation = component.orientation ?? "vertical"
+        if orientation == "horizontal" {
+            HStack(spacing: 0) {
+                ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                    DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                 }
-            } else {
-                VStack(spacing: 0) {
-                    ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                    }
+            }
+        } else {
+            VStack(spacing: 0) {
+                ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                    DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                 }
             }
         }
@@ -55,6 +62,7 @@ struct DynamicScrollViewContainer: View {
         self.viewId = viewId
     }
     
+    @ViewBuilder
     var body: some View {
         ScrollView {
             let children: [DynamicComponent] = component.child?.asArray ?? component.children ?? []
