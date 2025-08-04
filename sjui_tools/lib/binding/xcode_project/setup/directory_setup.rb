@@ -4,7 +4,7 @@ require "fileutils"
 require "pathname"
 require_relative '../../xcode_project_manager'
 require_relative '../../../core/project_finder'
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 require_relative '../../generators/ui_view_creator_generator'
 require_relative '../../generators/base_view_controller_generator'
 require_relative '../../generators/base_binding_generator'

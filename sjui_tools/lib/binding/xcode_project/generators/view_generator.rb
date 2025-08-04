@@ -29,7 +29,7 @@ module SjuiTools
           paths = Core::ProjectFinder.setup_paths(base_dir, @project_file_path)
           @view_path = paths.view_path
           @layout_path = paths.layout_path
-          @xcode_manager = XcodeProjectManager.new(@project_file_path)
+          @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
         end
 
         def generate

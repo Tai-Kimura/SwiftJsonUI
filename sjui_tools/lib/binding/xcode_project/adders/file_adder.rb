@@ -1,5 +1,5 @@
 require "fileutils"
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 
 # Base class for adding files to Xcode project
 class FileAdder

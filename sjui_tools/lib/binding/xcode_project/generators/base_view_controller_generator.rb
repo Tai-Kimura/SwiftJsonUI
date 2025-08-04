@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 
 class BaseViewControllerGenerator < PbxprojManager
   def initialize(project_file_path)

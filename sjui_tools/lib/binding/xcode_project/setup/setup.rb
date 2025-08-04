@@ -2,7 +2,7 @@
 
 require "fileutils"
 require "pathname"
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 require_relative '../../../core/project_finder'
 
 class Setup < PbxprojManager

@@ -5,11 +5,13 @@ require "pathname"
 require_relative '../../core/project_finder'
 require_relative '../../core/config_manager'
 
-class PbxprojManager
+module SjuiTools
+  module Binding
+    class PbxprojManager
   def initialize(project_file_path = nil)
     if project_file_path
       @project_file_path = project_file_path
-      @project_root = ProjectFinder.get_project_root(@project_file_path)
+      @project_root = Core::ProjectFinder.get_project_root(@project_file_path)
     else
       # 後方互換性のため、引数なしの場合は従来通り検索
       @binding_builder_dir = File.expand_path("../../", __FILE__)
@@ -18,9 +20,9 @@ class PbxprojManager
     end
     
     # ConfigManagerを使用してプロジェクト設定を取得
-    @config = ConfigManager.load_config(@binding_builder_dir)
-    @source_directory = ConfigManager.get_source_directory(@binding_builder_dir)
-    @hot_loader_directory = ConfigManager.get_hot_loader_directory(@binding_builder_dir)
+    @config = Core::ConfigManager.load_config(@binding_builder_dir)
+    @source_directory = Core::ConfigManager.get_source_directory(@binding_builder_dir)
+    @hot_loader_directory = Core::ConfigManager.get_hot_loader_directory(@binding_builder_dir)
   end
 
   # Xcode 16の同期グループをチェックする共通メソッド
@@ -720,5 +722,7 @@ class PbxprojManager
     end
     
     content
+  end
+    end
   end
 end

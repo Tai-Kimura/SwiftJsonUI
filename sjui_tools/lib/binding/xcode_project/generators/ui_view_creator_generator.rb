@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 require_relative '../../../core/config_manager'
 
 class UIViewCreatorGenerator < PbxprojManager

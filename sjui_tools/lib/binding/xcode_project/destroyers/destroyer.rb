@@ -2,7 +2,7 @@
 
 require "fileutils"
 require_relative '../../../core/project_finder'
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 
 class Destroyer < PbxprojManager
   def initialize(project_file_path = nil)

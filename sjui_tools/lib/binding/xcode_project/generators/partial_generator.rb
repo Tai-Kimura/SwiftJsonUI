@@ -2,17 +2,20 @@
 
 require "fileutils"
 require "json"
-require_relative '../../pbxproj_manager'
+require_relative '../pbxproj_manager'
 require_relative '../../xcode_project_manager'
 require_relative '../../../core/project_finder'
 
-class PartialGenerator < PbxprojManager
+module SjuiTools
+  module Binding
+    module Generators
+      class PartialGenerator < SjuiTools::Binding::PbxprojManager
   def initialize(project_file_path = nil)
     super(project_file_path)
     base_dir = File.expand_path('../..', File.dirname(__FILE__))
     
     # ProjectFinderを使用してパスを設定
-    paths = ProjectFinder.setup_paths(base_dir, @project_file_path)
+    paths = Core::ProjectFinder.setup_paths(base_dir, @project_file_path)
     @layouts_path = paths.layout_path
     @xcode_manager = XcodeProjectManager.new(@project_file_path)
   end
@@ -154,6 +157,9 @@ class PartialGenerator < PbxprojManager
       puts "You can run 'sjui build' manually to generate binding files"
     end
   end
+      end
+    end
+  end
 end
 
 # コマンドライン実行
@@ -167,8 +173,8 @@ if __FILE__ == $0
   begin
     # binding_builderディレクトリから検索開始
     binding_builder_dir = File.expand_path("../../", __FILE__)
-    project_file_path = ProjectFinder.find_project_file(binding_builder_dir)
-    generator = PartialGenerator.new(project_file_path)
+    project_file_path = Core::ProjectFinder.find_project_file(binding_builder_dir)
+    generator = SjuiTools::Binding::Generators::PartialGenerator.new(project_file_path)
     generator.generate(ARGV[0])
   rescue => e
     puts "Error: #{e.message}"
