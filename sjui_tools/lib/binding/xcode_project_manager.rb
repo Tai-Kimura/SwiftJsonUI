@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'xcodeproj'
+require_relative '../core/xcodeproj_patch'
 require_relative 'xcode_project/pbxproj_manager'
 require_relative '../core/config_manager'
 

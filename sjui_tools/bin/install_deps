@@ -1,0 +1,30 @@
+#!/usr/bin/env ruby
+
+# Install dependencies for sjui_tools
+
+require 'fileutils'
+
+# Get the sjui_tools directory
+sjui_tools_dir = File.expand_path('../..', __FILE__)
+Dir.chdir(sjui_tools_dir)
+
+puts "Installing sjui_tools dependencies..."
+
+# Check if bundler is installed
+bundler_installed = system('gem list bundler -i > /dev/null 2>&1')
+unless bundler_installed
+  puts "Installing bundler..."
+  system('gem install bundler')
+end
+
+# Install gems
+puts "Running bundle install..."
+success = system('bundle install')
+
+if success
+  puts "✅ Dependencies installed successfully!"
+else
+  puts "❌ Failed to install dependencies"
+  puts "Please ensure you have Ruby and bundler installed"
+  exit 1
+end

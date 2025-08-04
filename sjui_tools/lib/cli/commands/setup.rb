@@ -12,6 +12,9 @@ module SjuiTools
         def run(args)
           options = parse_options(args)
           
+          # Check and install dependencies first
+          ensure_dependencies_installed
+          
           # Setup project paths
           unless Core::ProjectFinder.setup_paths
             puts "Error: Could not find project file (.xcodeproj)"
@@ -39,6 +42,23 @@ module SjuiTools
         end
 
         private
+
+        def ensure_dependencies_installed
+          # Check if Gemfile.lock exists
+          sjui_tools_dir = File.expand_path('../../../..', __FILE__)
+          gemfile_lock = File.join(sjui_tools_dir, 'Gemfile.lock')
+          
+          unless File.exist?(gemfile_lock)
+            puts "Installing sjui_tools dependencies..."
+            Dir.chdir(sjui_tools_dir) do
+              success = system('bundle install')
+              unless success
+                puts "Warning: Failed to install some dependencies"
+                puts "You may need to install them manually with: cd sjui_tools && bundle install"
+              end
+            end
+          end
+        end
 
         def parse_options(args)
           options = {}
