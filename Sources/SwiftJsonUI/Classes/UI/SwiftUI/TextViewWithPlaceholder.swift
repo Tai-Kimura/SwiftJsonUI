@@ -16,7 +16,7 @@ struct HeightPreferenceKey: PreferenceKey {
 }
 
 public struct TextViewWithPlaceholder: View {
-    @Binding var text: String
+    @SwiftUI.Binding var text: String
     let hint: String?
     let hintColor: Color
     let hintFont: Font
@@ -35,7 +35,7 @@ public struct TextViewWithPlaceholder: View {
     @State private var textHeight: CGFloat = 0
     
     public init(
-        text: Binding<String>,
+        text: SwiftUI.Binding<String>,
         hint: String? = nil,
         hintColor: Color = Color.gray.opacity(0.6),
         hintFont: String? = nil,

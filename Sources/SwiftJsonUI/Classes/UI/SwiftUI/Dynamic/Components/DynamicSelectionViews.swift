@@ -14,11 +14,11 @@ struct DynamicSelectBoxView: View {
     var body: some View {
         let id = component.id ?? UUID().uuidString
         SelectBoxView(
-            items: Binding(
+            items: SwiftUI.Binding(
                 get: { component.items ?? [] },
                 set: { _ in }
             ),
-            selectedItem: Binding(
+            selectedItem: SwiftUI.Binding(
                 get: { viewModel.textFieldValues[id] ?? component.selectedItem ?? "" },
                 set: { viewModel.textFieldValues[id] = $0 }
             ),
@@ -37,7 +37,7 @@ struct DynamicSwitchView: View {
         let id = component.id ?? UUID().uuidString
         Toggle(
             component.text ?? "",
-            isOn: Binding(
+            isOn: SwiftUI.Binding(
                 get: { viewModel.toggleValues[id] ?? component.isOn ?? false },
                 set: { viewModel.toggleValues[id] = $0 }
             )

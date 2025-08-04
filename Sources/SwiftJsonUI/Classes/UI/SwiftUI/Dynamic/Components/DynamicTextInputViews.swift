@@ -15,7 +15,7 @@ struct DynamicTextFieldView: View {
         let id = component.id ?? UUID().uuidString
         TextField(
             component.hint ?? component.text ?? "",
-            text: Binding(
+            text: SwiftUI.Binding(
                 get: { viewModel.textFieldValues[id] ?? "" },
                 set: { newValue in
                     viewModel.textFieldValues[id] = newValue
@@ -60,7 +60,7 @@ struct DynamicTextViewWrapper: View {
     var body: some View {
         let id = component.id ?? UUID().uuidString
         TextViewWithPlaceholder(
-            text: Binding(
+            text: SwiftUI.Binding(
                 get: { viewModel.textFieldValues[id] ?? "" },
                 set: { viewModel.textFieldValues[id] = $0 }
             ),
