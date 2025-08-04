@@ -1,126 +1,233 @@
 require 'json'
 require 'pathname'
+require 'thor'
+require 'fileutils'
 
 module SwiftUIBuilder
   module Commands
-    class Generate
-      attr_reader :options, :config
-      
-      def initialize(options, config)
-        @options = options
-        @config = config
+    class Generate < Thor
+      def self.exit_on_failure?
+        true
       end
       
-      def execute(file)
-        unless File.exist?(file)
-          raise "File not found: #{file}"
+      def initialize(*args)
+        super
+        # 設定ファイルを読み込む
+        config_file = 'config.json'
+        @config = if File.exist?(config_file)
+                    JSON.parse(File.read(config_file))
+                  else
+                    {}
+                  end
+      end
+      
+      desc "view VIEW_NAME", "Generate view and JSON layout file"
+      method_option :root, type: :boolean, default: false,
+                    desc: 'Set as root view'
+      def view(view_name)
+        puts "Generating SwiftUI view: #{view_name}"
+        
+        # 名前の正規化
+        camel_name = view_name.split('_').map(&:capitalize).join
+        snake_name = view_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
+        
+        # ディレクトリの作成
+        layouts_dir = @config.dig('paths', 'layouts') || './Layouts'
+        views_dir = @config.dig('paths', 'views') || './Views'
+        
+        FileUtils.mkdir_p(layouts_dir)
+        FileUtils.mkdir_p(views_dir)
+        
+        # JSONファイルの作成
+        json_path = File.join(layouts_dir, "#{snake_name}.json")
+        create_json_layout(json_path, camel_name)
+        
+        # SwiftUIビューの生成
+        swift_path = File.join(views_dir, "#{camel_name}View.swift")
+        generate_swiftui_view(json_path, swift_path, camel_name)
+        
+        puts "Generated:"
+        puts "  Layout: #{json_path}"
+        puts "  View: #{swift_path}"
+        
+        if options[:root]
+          puts "TODO: Set as root view in App.swift"
         end
+      end
+      
+      desc "partial PARTIAL_NAME", "Generate partial JSON layout"
+      def partial(partial_name)
+        puts "Generating partial: #{partial_name}"
         
-        # Load the converter
-        converter_path = File.expand_path('../../../json_to_swiftui_converter.rb', __FILE__)
-        require converter_path
-        
-        # Read the JSON file
-        json_content = File.read(file)
-        json_data = JSON.parse(json_content)
-        
-        # Get include path
-        include_path = options[:include_path] || config['include_path'] || File.dirname(file)
-        
-        # Create converter instance
-        converter = JsonToSwiftUIConverter.new
-        
-        # Process includes
-        if json_data['include']
-          json_data = converter.process_includes(json_data, include_path)
-        end
-        
-        # Generate SwiftUI code based on type
-        case options[:type]
-        when 'component'
-          swift_code = generate_component(json_data, converter)
-        when 'dynamic'
-          swift_code = generate_dynamic(json_data, converter)
+        # パスの解析
+        parts = partial_name.split('/')
+        if parts.length > 1
+          subfolder = parts[0..-2].join('/')
+          name = parts[-1]
         else
-          swift_code = generate_view(json_data, converter)
+          subfolder = nil
+          name = partial_name
         end
         
-        # Determine output path
-        output_path = options[:output] || "#{file.sub(/\.json$/, '')}.swift"
+        # ディレクトリの作成
+        includes_dir = @config.dig('paths', 'includes') || './includes'
+        target_dir = subfolder ? File.join(includes_dir, subfolder) : includes_dir
+        FileUtils.mkdir_p(target_dir)
         
-        # Write output
-        File.write(output_path, swift_code)
-        puts "Generated: #{output_path}"
+        # パーシャルJSONの作成
+        json_path = File.join(target_dir, "_#{name}.json")
+        create_partial_json(json_path, name)
+        
+        puts "Generated partial: #{json_path}"
+      end
+      
+      desc "collection FOLDER/NAME", "Generate collection view cell"
+      def collection(path)
+        parts = path.split('/')
+        if parts.length != 2
+          puts "Error: Please specify as ViewFolder/CellName"
+          puts "Example: sjui-swiftui g collection Home/ProductCell"
+          exit 1
+        end
+        
+        folder_name = parts[0]
+        cell_name = parts[1]
+        
+        puts "Generating collection cell: #{folder_name}/#{cell_name}"
+        
+        # ディレクトリの作成
+        views_dir = @config.dig('paths', 'views') || './Views'
+        layouts_dir = @config.dig('paths', 'layouts') || './Layouts'
+        
+        view_folder = File.join(views_dir, folder_name)
+        layout_folder = File.join(layouts_dir, 'cells')
+        
+        FileUtils.mkdir_p(view_folder)
+        FileUtils.mkdir_p(layout_folder)
+        
+        # セルレイアウトJSONの作成
+        json_path = File.join(layout_folder, "_#{cell_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')}.json")
+        create_cell_json(json_path, cell_name)
+        
+        # TODO: コレクションビューのSwiftコード生成
+        
+        puts "Generated:"
+        puts "  Cell layout: #{json_path}"
       end
       
       private
       
-      def generate_view(json_data, converter)
-        view_name = json_data['name'] || 'GeneratedView'
+      def create_json_layout(path, view_name)
+        layout = {
+          "type" => "View",
+          "width" => "matchParent",
+          "height" => "matchParent",
+          "padding" => [20],
+          "child" => [
+            {
+              "type" => "Label",
+              "text" => "#{view_name} View",
+              "fontSize" => 24,
+              "font" => "bold",
+              "fontColor" => "#000000",
+              "alignment" => "center"
+            },
+            {
+              "type" => "Label",
+              "text" => "Edit #{File.basename(path)} to customize this view",
+              "fontSize" => 16,
+              "fontColor" => "#666666",
+              "alignment" => "center",
+              "margin" => [20, 0, 0, 0]
+            }
+          ]
+        }
         
-        <<~SWIFT
+        File.write(path, JSON.pretty_generate(layout))
+      end
+      
+      def create_partial_json(path, name)
+        partial = {
+          "type" => "View",
+          "padding" => [10],
+          "background" => "#F5F5F5",
+          "cornerRadius" => 8,
+          "child" => {
+            "type" => "Label",
+            "text" => "@{text}",
+            "fontSize" => "@{fontSize}",
+            "fontColor" => "@{color}",
+            "alignment" => "center"
+          }
+        }
+        
+        File.write(path, JSON.pretty_generate(partial))
+      end
+      
+      def create_cell_json(path, cell_name)
+        cell_layout = {
+          "type" => "View",
+          "width" => "matchParent",
+          "height" => "wrapContent",
+          "padding" => [16],
+          "background" => "#FFFFFF",
+          "child" => [
+            {
+              "type" => "Label",
+              "text" => "@{title}",
+              "fontSize" => 18,
+              "font" => "semibold",
+              "fontColor" => "#000000"
+            },
+            {
+              "type" => "Label",
+              "text" => "@{subtitle}",
+              "fontSize" => 14,
+              "fontColor" => "#666666",
+              "margin" => [4, 0, 0, 0]
+            }
+          ]
+        }
+        
+        File.write(path, JSON.pretty_generate(cell_layout))
+      end
+      
+      def generate_swiftui_view(json_path, swift_path, view_name)
+        # コンバーターのパスを取得
+        converter_path = File.expand_path('../../../json_to_swiftui_converter.rb', __FILE__)
+        require converter_path
+        
+        # JSONファイルを読み込み
+        json_content = File.read(json_path)
+        json_data = JSON.parse(json_content)
+        
+        # コンバーターでSwiftUIコードを生成
+        converter = JsonToSwiftUIConverter.new
+        
+        # includeを処理
+        if json_data['include']
+          json_data = converter.process_includes(json_data, File.dirname(json_path))
+        end
+        
+        # SwiftUIコードを生成
+        swift_code = <<~SWIFT
         import SwiftUI
         import SwiftJsonUI
         
-        struct #{view_name}: View {
+        struct #{view_name}View: View {
             var body: some View {
         #{converter.convert_component(json_data, 2)}
             }
         }
         
-        struct #{view_name}_Previews: PreviewProvider {
+        struct #{view_name}View_Previews: PreviewProvider {
             static var previews: some View {
-                #{view_name}()
+                #{view_name}View()
             }
         }
         SWIFT
-      end
-      
-      def generate_component(json_data, converter)
-        component_name = json_data['name'] || 'GeneratedComponent'
         
-        <<~SWIFT
-        import SwiftUI
-        
-        struct #{component_name}: View {
-            // Add properties as needed
-            
-            var body: some View {
-        #{converter.convert_component(json_data, 2)}
-            }
-        }
-        SWIFT
-      end
-      
-      def generate_dynamic(json_data, converter)
-        view_name = json_data['name'] || 'DynamicGeneratedView'
-        json_string = JSON.pretty_generate(json_data).gsub('"', '\\"').gsub("\n", '\n')
-        
-        <<~SWIFT
-        import SwiftUI
-        import SwiftJsonUI
-        
-        struct #{view_name}: View {
-            let jsonString = \"\"\"
-        #{JSON.pretty_generate(json_data)}
-            \"\"\"
-            
-            var body: some View {
-                if let data = jsonString.data(using: .utf8),
-                   let component = try? JSONDecoder().decode(DynamicComponent.self, from: data) {
-                    DynamicView(component: component)
-                } else {
-                    Text("Failed to load component")
-                }
-            }
-        }
-        
-        struct #{view_name}_Previews: PreviewProvider {
-            static var previews: some View {
-                #{view_name}()
-            }
-        }
-        SWIFT
+        File.write(swift_path, swift_code)
       end
     end
   end

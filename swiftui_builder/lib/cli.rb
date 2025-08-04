@@ -9,6 +9,7 @@ require_relative 'commands/batch'
 require_relative 'commands/watch'
 require_relative 'commands/validate'
 require_relative 'commands/init'
+require_relative 'commands/setup'
 
 module SwiftUIBuilder
   class CLI < Thor
@@ -17,19 +18,14 @@ module SwiftUIBuilder
     end
     
     # Configuration file management
-    class_option :config, type: :string, default: '.sjui-swiftui.yml', 
+    class_option :config, type: :string, default: 'config.json', 
                  desc: 'Path to configuration file'
     
-    desc "generate FILE", "Generate SwiftUI code from a JSON file"
-    method_option :output, aliases: '-o', type: :string, 
-                  desc: 'Output file path (defaults to FILE.swift)'
-    method_option :type, aliases: '-t', type: :string, default: 'view',
-                  desc: 'Generation type: view, component, or dynamic'
-    method_option :include_path, aliases: '-i', type: :string,
-                  desc: 'Base path for include files'
-    def generate(file)
-      Commands::Generate.new(options, config).execute(file)
-    end
+    desc "g SUBCOMMAND", "Generate various components"
+    subcommand "g", Generate
+    
+    desc "generate SUBCOMMAND", "Generate various components (alias for g)"
+    subcommand "generate", Generate
     
     desc "batch", "Generate SwiftUI code for multiple JSON files"
     method_option :input, aliases: '-i', type: :string, required: true,
@@ -65,6 +61,11 @@ module SwiftUIBuilder
       Commands::Init.new(options, config).execute
     end
     
+    desc "setup", "Setup project with SwiftJsonUI SPM package"
+    def setup
+      Commands::Setup.new(options, config).execute
+    end
+    
     desc "version", "Show version information"
     def version
       puts "SwiftUI Builder for SwiftJsonUI v7.0.0-alpha"
@@ -81,7 +82,7 @@ module SwiftUIBuilder
       return {} unless File.exist?(config_file)
       
       begin
-        YAML.load_file(config_file) || {}
+        JSON.parse(File.read(config_file))
       rescue => e
         say "Warning: Failed to load config file: #{e.message}", :yellow
         {}

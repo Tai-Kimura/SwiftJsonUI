@@ -1,4 +1,4 @@
-require 'yaml'
+require 'json'
 require 'fileutils'
 
 module SwiftUIBuilder
@@ -12,7 +12,7 @@ module SwiftUIBuilder
       end
       
       def execute
-        config_file = options[:config] || '.sjui-swiftui.yml'
+        config_file = options[:config] || 'config.json'
         
         if File.exist?(config_file) && !options[:force]
           puts "Configuration file already exists: #{config_file}"
@@ -20,32 +20,24 @@ module SwiftUIBuilder
           return false
         end
         
+        # Find project name
+        project_name = find_project_name
+        
         # Default configuration
         default_config = {
-          'version' => '7.0.0-alpha',
-          'defaults' => {
-            'type' => 'view',
-            'include_path' => './includes'
-          },
-          'paths' => {
-            'layouts' => './Layouts',
-            'views' => './Views',
-            'components' => './Components',
-            'includes' => './includes'
-          },
-          'generation' => {
-            'add_previews' => true,
-            'import_swiftjsonui' => true,
-            'default_view_name' => 'GeneratedView'
-          },
-          'validation' => {
-            'strict' => false,
-            'warn_unknown_attributes' => true
+          "project_file_name" => project_name,
+          "version" => "7.0.0-alpha",
+          "mode" => "swiftui",
+          "paths" => {
+            "layouts" => "./Layouts",
+            "views" => "./Views", 
+            "components" => "./Components",
+            "includes" => "./includes"
           }
         }
         
         # Write configuration file
-        File.write(config_file, default_config.to_yaml)
+        File.write(config_file, JSON.pretty_generate(default_config))
         puts "Created configuration file: #{config_file}"
         
         # Create directory structure if requested
@@ -62,6 +54,23 @@ module SwiftUIBuilder
       end
       
       private
+      
+      def find_project_name
+        # 現在のディレクトリから上位に向かって.xcodeprojを探す
+        current_dir = Dir.pwd
+        5.times do
+          projects = Dir.glob(File.join(current_dir, '*.xcodeproj'))
+          if projects.any?
+            return File.basename(projects.first, '.xcodeproj')
+          end
+          
+          parent = File.dirname(current_dir)
+          break if parent == current_dir
+          current_dir = parent
+        end
+        
+        nil
+      end
       
       def prompt_create_directories?
         return false unless $stdin.tty?
@@ -148,24 +157,29 @@ module SwiftUIBuilder
         
         ## Usage
         
-        Generate a single view:
+        Generate a new view:
         ```bash
-        sjui-swiftui generate Layouts/sample.json
+        bin/sjui-swiftui g view Home
+        ```
+        
+        Generate a partial:
+        ```bash
+        bin/sjui-swiftui g partial header
         ```
         
         Generate all views:
         ```bash
-        sjui-swiftui batch -i Layouts -o Views
+        bin/sjui-swiftui batch -i Layouts -o Views
         ```
         
         Watch for changes:
         ```bash
-        sjui-swiftui watch -i Layouts -o Views
+        bin/sjui-swiftui watch -i Layouts -o Views
         ```
         
         ## Configuration
         
-        Edit `.sjui-swiftui.yml` to customize the build process.
+        Edit `config.json` to customize the build process.
         README
         
         File.write('README.md', readme_content)
