@@ -33,8 +33,8 @@ struct DynamicViewContainer: View {
     }
     
     private func getChildren() -> [DynamicComponent] {
-        if let childArray = component.child?.asArray {
-            return childArray
+        if let child = component.child {
+            return child.asArray
         } else if let children = component.children {
             return children
         } else {
@@ -59,16 +59,6 @@ struct DynamicViewContainer: View {
             }
         }
     }
-    
-    private func getChildren() -> [DynamicComponent] {
-        if let childArray = component.child?.asArray {
-            return childArray
-        } else if let children = component.children {
-            return children
-        } else {
-            return []
-        }
-    }
 }
 
 struct DynamicScrollViewContainer: View {
@@ -90,6 +80,16 @@ struct DynamicScrollViewContainer: View {
                     DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                 }
             }
+        }
+    }
+    
+    private func getChildren() -> [DynamicComponent] {
+        if let child = component.child {
+            return child.asArray
+        } else if let children = component.children {
+            return children
+        } else {
+            return []
         }
     }
 }

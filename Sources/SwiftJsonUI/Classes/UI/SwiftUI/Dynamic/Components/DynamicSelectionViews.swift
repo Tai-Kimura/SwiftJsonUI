@@ -14,17 +14,11 @@ struct DynamicSelectBoxView: View {
     var body: some View {
         let id = component.id ?? UUID().uuidString
         SelectBoxView(
-            items: SwiftUI.Binding(
-                get: { component.items ?? [] },
-                set: { _ in }
-            ),
-            selectedItem: SwiftUI.Binding(
-                get: { viewModel.textFieldValues[id] ?? component.selectedItem ?? "" },
-                set: { viewModel.textFieldValues[id] = $0 }
-            ),
+            id: id,
+            prompt: component.text,
             selectItemType: .normal,
-            datePickerStyle: .wheel,
-            text: component.text ?? ""
+            items: component.items ?? [],
+            datePickerStyle: .wheel
         )
     }
 }
