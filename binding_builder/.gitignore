@@ -1,7 +1,0 @@
-# Config files
-config.json
-*.config.json
-including.json
-
-# Logs
-*.log

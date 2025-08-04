@@ -11,8 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/install
 ```
 
 This will download and install:
-- `binding_builder` - The code generation tool
-- `hot_loader` - The hot reload server
+- `sjui_tools` - The unified tool containing binding_builder, hot_loader, and swiftui_builder functionality
 
 ## Installation Options
 
@@ -20,7 +19,7 @@ This will download and install:
 
 ```bash
 # Install from a specific tag
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v v1.0.0
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v v7.0.0
 
 # Install from a specific branch
 curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v feature-branch
@@ -32,10 +31,16 @@ curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/install
 curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -d ./my-project
 ```
 
+### Skip Ruby dependency installation
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -s
+```
+
 ### Combined options
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v v1.0.0 -d ./my-project
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v v7.0.0 -d ./my-project -s
 ```
 
 ## Manual Installation
@@ -54,29 +59,58 @@ chmod +x install_sjui.sh
 ```
 
 Available options:
-- `-v, --version <version>` - Specify version/branch/tag to download (default: main)
-- `-d, --directory <dir>` - Installation directory (default: current directory)
+- `-v, --version <version>` - Specify version/branch/tag to download (default: master)
+- `-d, --directory <dir>` - Installation directory (default: parent directory)
+- `-s, --skip-bundle` - Skip bundle install for Ruby dependencies
 - `-h, --help` - Show help message
 
 ## What Gets Installed
 
 The installer will:
 1. Download the specified version of SwiftJsonUI
-2. Extract `binding_builder` and `hot_loader` directories to the parent directory (or specified directory)
-3. Make all executable files runnable
-4. Install Ruby dependencies for binding_builder (if bundler is available)
+2. Extract `sjui_tools` directory to the parent directory (or specified directory)
+3. Make the `sjui` command executable
+4. Install Ruby dependencies (if bundler is available and not skipped)
 5. Install Node.js dependencies for hot_loader (if npm is available)
-6. Create initial `config.json` file
+6. Create initial `config.json` file if an Xcode project is found
 
 By default, the tools are installed in the parent directory of where the installer is run. This means if you run the installer from `YourProject/installer/`, the tools will be installed in `YourProject/`.
+
+## Using the Unified Tool
+
+After installation, you can use the unified `sjui` command:
+
+```bash
+# Initialize configuration
+sjui_tools/bin/sjui init
+
+# Set up your project (binding mode)
+sjui_tools/bin/sjui setup
+
+# Generate a view
+sjui_tools/bin/sjui generate view MyView
+
+# Build bindings
+sjui_tools/bin/sjui build
+
+# Convert JSON to SwiftUI
+sjui_tools/bin/sjui convert swiftui input.json
+
+# See all available commands
+sjui_tools/bin/sjui help
+```
 
 ## Requirements
 
 - Bash shell
 - curl
 - tar
-- Ruby and Bundler (for binding_builder dependencies)
-- Node.js and npm (for hot_loader dependencies)
+- Ruby and Bundler (for Ruby dependencies)
+- Node.js and npm (for hot_loader functionality)
+
+## Legacy Support
+
+The installer automatically detects older versions of SwiftJsonUI and installs the legacy structure (separate binding_builder, hot_loader, and swiftui_builder directories) for backward compatibility.
 
 ## Troubleshooting
 

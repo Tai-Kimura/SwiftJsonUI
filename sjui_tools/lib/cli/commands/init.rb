@@ -1,0 +1,139 @@
+# frozen_string_literal: true
+
+require 'optparse'
+require 'fileutils'
+require_relative '../../core/config_manager'
+require_relative '../../core/project_finder'
+
+module SjuiTools
+  module CLI
+    module Commands
+      class Init
+        def run(args)
+          options = parse_options(args)
+          
+          # Detect or use specified mode
+          mode = options[:mode] || Core::ConfigManager.detect_mode
+          
+          puts "Initializing SwiftJsonUI project in #{mode} mode..."
+          
+          # Create config file
+          create_config_file(mode)
+          
+          # Create directory structure based on mode
+          case mode
+          when 'binding', 'all'
+            create_binding_structure
+          end
+          
+          if mode == 'swiftui' || mode == 'all'
+            create_swiftui_structure
+          end
+          
+          puts "Initialization complete!"
+          puts
+          puts "Next steps:"
+          puts "  1. Run 'sjui setup' to install libraries and base files"
+          puts "  2. Run 'sjui g view HomeView' to generate your first view"
+        end
+
+        private
+
+        def parse_options(args)
+          options = {}
+          
+          OptionParser.new do |opts|
+            opts.banner = "Usage: sjui init [options]"
+            
+            opts.on('--mode MODE', ['all', 'binding', 'swiftui'], 
+                    'Initialize mode (all, binding, swiftui)') do |mode|
+              options[:mode] = mode
+            end
+            
+            opts.on('-h', '--help', 'Show this help message') do
+              puts opts
+              exit
+            end
+          end.parse!(args)
+          
+          options
+        end
+
+        def create_config_file(mode)
+          config_file = 'sjui.config.json'
+          
+          if File.exist?(config_file)
+            puts "Config file already exists: #{config_file}"
+            return
+          end
+          
+          # Find project info
+          Core::ProjectFinder.setup_paths
+          project_name = if Core::ProjectFinder.project_file_path
+            File.basename(Core::ProjectFinder.project_file_path, '.*')
+          else
+            File.basename(Dir.pwd)
+          end
+          
+          config = {
+            'mode' => mode,
+            'project_name' => project_name,
+            'project_file_name' => project_name,
+            'source_directory' => Core::ProjectFinder.find_source_directory || '',
+            'layouts_directory' => 'Layouts',
+            'bindings_directory' => 'Bindings',
+            'view_directory' => 'View',
+            'styles_directory' => 'Styles',
+            'hot_loader_directory' => project_name,
+            'use_network' => true
+          }
+          
+          if mode == 'swiftui' || mode == 'all'
+            config['swiftui'] = {
+              'output_directory' => 'Generated'
+            }
+          end
+          
+          File.write(config_file, JSON.pretty_generate(config))
+          puts "Created config file: #{config_file}"
+        end
+
+        def create_binding_structure
+          directories = %w[
+            Layouts
+            Bindings
+            View
+            Styles
+            Core
+            Core/Base
+            Core/UI
+          ]
+          
+          create_directories(directories)
+        end
+
+        def create_swiftui_structure
+          directories = %w[
+            Layouts
+            Generated
+            Resources
+          ]
+          
+          create_directories(directories)
+        end
+
+        def create_directories(directories)
+          source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
+          
+          directories.each do |dir|
+            path = File.join(source_path, dir)
+            unless Dir.exist?(path)
+              FileUtils.mkdir_p(path)
+              puts "Created directory: #{dir}"
+            end
+          end
+        end
+      end
+    end
+  end
+end
