@@ -5,13 +5,18 @@
 //
 
 import UIKit
+import Combine
 
 #if DEBUG
-public class HotLoader: NSObject, URLSessionWebSocketDelegate {
+public class HotLoader: NSObject, URLSessionWebSocketDelegate, ObservableObject {
     
     private static var Instance = HotLoader()
     
     public var additionalRequestParameter = ""
+    
+    // SwiftUI用のPublished properties
+    @Published public var jsonData: [String: Data] = [:]
+    @Published public var lastUpdate = Date()
     
     public static var instance: HotLoader {
         get {
@@ -118,9 +123,17 @@ public class HotLoader: NSObject, URLSessionWebSocketDelegate {
                     }
                     fm.createFile(atPath: toPath, contents:data, attributes:nil)
                     Logger.debug("SwiftJSONUIHotloader Layout Updated")
+                    
+                    // SwiftUI用にもデータを保存
+                    self.jsonData[fileName] = data
+                    
                     DispatchQueue.main.async(execute: {
+                        // 既存のUIKit用通知
                         let notification = NSNotification.Name("layoutFileDidChanged")
                         NotificationCenter.default.post(name: notification, object: nil)
+                        
+                        // SwiftUI用の更新トリガー
+                        self.lastUpdate = Date()
                     })
                 } catch let error {
                     Logger.debug("SwiftJSONUIHotloader Error: \(error)")

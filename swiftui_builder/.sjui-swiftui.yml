@@ -1,0 +1,17 @@
+---
+version: 7.0.0-alpha
+defaults:
+  type: view
+  include_path: "./includes"
+paths:
+  layouts: "./Layouts"
+  views: "./Views"
+  components: "./Components"
+  includes: "./includes"
+generation:
+  add_previews: true
+  import_swiftjsonui: true
+  default_view_name: GeneratedView
+validation:
+  strict: false
+  warn_unknown_attributes: true

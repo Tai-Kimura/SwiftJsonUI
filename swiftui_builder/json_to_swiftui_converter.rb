@@ -46,6 +46,12 @@ class JsonToSwiftUIConverter
     output_path
   end
   
+  def convert_component(json_data, indent_level = 0)
+    @indent_level = indent_level
+    converter = @converter_factory.create_converter(json_data, @indent_level)
+    converter.convert
+  end
+  
   def process_includes(json_data, base_dir)
     return json_data unless json_data.is_a?(Hash)
     

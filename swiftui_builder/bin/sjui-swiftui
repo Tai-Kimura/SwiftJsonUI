@@ -1,0 +1,15 @@
+#!/usr/bin/env ruby
+
+require 'pathname'
+require_relative '../lib/cli'
+
+# Find the root directory of the SwiftUI builder
+root_path = Pathname.new(File.expand_path('../..', __FILE__))
+
+# Run the CLI
+begin
+  SwiftUIBuilder::CLI.start(ARGV)
+rescue => e
+  puts "Error: #{e.message}"
+  exit 1
+end

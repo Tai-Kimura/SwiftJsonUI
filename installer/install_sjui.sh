@@ -9,6 +9,7 @@ set -e
 GITHUB_REPO="Tai-Kimura/SwiftJsonUI"
 DEFAULT_BRANCH="master"
 INSTALL_DIR=".."
+MODE="default"
 
 # Colors for output
 RED='\033[0;31m'
@@ -36,6 +37,7 @@ usage() {
     echo "Options:"
     echo "  -v, --version <version>    Specify version/branch/tag to download (default: master)"
     echo "  -d, --directory <dir>      Installation directory (default: parent directory)"
+    echo "  -m, --mode <mode>          Installation mode: default or swiftui (default: default)"
     echo "  -s, --skip-bundle          Skip bundle install for Ruby dependencies"
     echo "  -h, --help                 Show this help message"
     echo ""
@@ -44,6 +46,7 @@ usage() {
     echo "  $0 -v v1.0.0               # Install specific version"
     echo "  $0 -v feature-branch       # Install from specific branch"
     echo "  $0 -d ./my-project         # Install in specific directory"
+    echo "  $0 -m swiftui              # Install SwiftUI builder mode"
     echo "  $0 -s                      # Skip bundle install"
     exit 0
 }
@@ -67,6 +70,15 @@ while [[ $# -gt 0 ]]; do
         -d|--directory)
             INSTALL_DIR="$2"
             print_info "DEBUG: Setting INSTALL_DIR to: $INSTALL_DIR"
+            shift 2
+            ;;
+        -m|--mode)
+            MODE="$2"
+            if [[ "$MODE" != "default" && "$MODE" != "swiftui" ]]; then
+                print_error "Invalid mode: $MODE. Use 'default' or 'swiftui'"
+                usage
+            fi
+            print_info "DEBUG: Setting MODE to: $MODE"
             shift 2
             ;;
         -s|--skip-bundle)
@@ -94,6 +106,7 @@ fi
 print_info "DEBUG: Final VERSION: $VERSION"
 print_info "DEBUG: Final SKIP_BUNDLE: $SKIP_BUNDLE"
 print_info "DEBUG: Final INSTALL_DIR: $INSTALL_DIR"
+print_info "DEBUG: Final MODE: $MODE"
 
 # Validate installation directory
 if [ ! -d "$INSTALL_DIR" ]; then
@@ -107,6 +120,7 @@ cd "$INSTALL_DIR"
 print_info "Installing SwiftJsonUI tools..."
 print_info "Version: $VERSION"
 print_info "Directory: $(pwd)"
+print_info "Mode: $MODE"
 
 # Check if binding_builder already exists
 if [ -d "binding_builder" ]; then
@@ -131,6 +145,19 @@ if [ -d "hot_loader" ]; then
         SKIP_HOT_LOADER=true
     else
         rm -rf hot_loader
+    fi
+fi
+
+# Check if swiftui_builder already exists (for swiftui mode)
+if [ "$MODE" = "swiftui" ] && [ -d "swiftui_builder" ]; then
+    print_warning "swiftui_builder directory already exists."
+    read -p "Do you want to overwrite it? (y/N): " -n 1 -r
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        print_info "Skipping swiftui_builder installation."
+        SKIP_SWIFTUI_BUILDER=true
+    else
+        rm -rf swiftui_builder
     fi
 fi
 
@@ -246,6 +273,50 @@ if [ -z "$SKIP_HOT_LOADER" ]; then
         print_info "✅ hot_loader installed successfully"
     else
         print_warning "hot_loader not found in the downloaded version"
+    fi
+fi
+
+# Copy swiftui_builder if mode is swiftui and not skipped
+if [ "$MODE" = "swiftui" ] && [ -z "$SKIP_SWIFTUI_BUILDER" ]; then
+    if [ -d "$EXTRACT_DIR/swiftui_builder" ]; then
+        print_info "Installing swiftui_builder..."
+        cp -r "$EXTRACT_DIR/swiftui_builder" .
+        
+        # Create VERSION file with the downloaded version
+        echo "$VERSION" > swiftui_builder/VERSION
+        print_info "Set swiftui_builder version to: $VERSION"
+        
+        # Make sjui-swiftui executable
+        if [ -f "swiftui_builder/bin/sjui-swiftui" ]; then
+            chmod +x swiftui_builder/bin/sjui-swiftui
+            print_info "Made swiftui_builder/bin/sjui-swiftui executable"
+        fi
+        
+        # Install Ruby dependencies for swiftui_builder
+        if [ -f "swiftui_builder/Gemfile" ] && [ "$SKIP_BUNDLE" != true ]; then
+            print_info "Installing swiftui_builder Ruby dependencies..."
+            cd swiftui_builder
+            if command -v bundle &> /dev/null; then
+                if bundle install; then
+                    cd ..
+                    print_info "✅ swiftui_builder Ruby dependencies installed"
+                else
+                    cd ..
+                    print_warning "Failed to install swiftui_builder Ruby dependencies"
+                    print_warning "You can install them manually later:"
+                    print_warning "  cd swiftui_builder && bundle install"
+                fi
+            else
+                cd ..
+                print_warning "bundler not found"
+                print_warning "Please install Ruby dependencies manually:"
+                print_warning "  cd swiftui_builder && bundle install"
+            fi
+        fi
+        
+        print_info "✅ swiftui_builder installed successfully"
+    else
+        print_warning "swiftui_builder not found in the downloaded version"
     fi
 fi
 
@@ -388,7 +459,17 @@ print_info ""
 print_info "🎉 Installation completed successfully!"
 print_info ""
 print_info "Next steps:"
-print_info "1. Run 'cd binding_builder && ./sjui setup' to set up your project"
-print_info "2. Run './sjui help' to see available commands"
+if [ "$MODE" = "swiftui" ]; then
+    print_info "For binding_builder:"
+    print_info "  1. Run 'cd binding_builder && ./sjui setup' to set up your project"
+    print_info "  2. Run './sjui help' to see available commands"
+    print_info ""
+    print_info "For SwiftUI builder:"
+    print_info "  1. Run 'cd swiftui_builder && bin/sjui-swiftui init' to create configuration"
+    print_info "  2. Run 'bin/sjui-swiftui help' to see available commands"
+else
+    print_info "1. Run 'cd binding_builder && ./sjui setup' to set up your project"
+    print_info "2. Run './sjui help' to see available commands"
+fi
 print_info ""
 print_info "For more information, visit: https://github.com/$GITHUB_REPO"

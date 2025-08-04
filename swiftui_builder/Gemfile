@@ -1,0 +1,10 @@
+source 'https://rubygems.org'
+
+gem 'thor', '~> 1.2'
+gem 'listen', '~> 3.7'
+gem 'json', '~> 2.6'
+
+group :development do
+  gem 'rspec', '~> 3.12'
+  gem 'rubocop', '~> 1.50'
+end
