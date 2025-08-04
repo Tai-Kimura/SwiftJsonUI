@@ -171,49 +171,14 @@ if [ -d "$EXTRACT_DIR/sjui_tools" ]; then
     
     print_info "✅ sjui_tools installed successfully"
 else
-    print_warning "sjui_tools not found in the downloaded version"
-    print_warning "This might be an older version. Trying legacy structure..."
-    
-    # Legacy support: check for old structure
-    LEGACY_INSTALLED=false
-    
-    if [ -d "$EXTRACT_DIR/binding_builder" ]; then
-        print_info "Installing binding_builder (legacy)..."
-        cp -r "$EXTRACT_DIR/binding_builder" .
-        echo "$VERSION" > binding_builder/VERSION
-        chmod +x binding_builder/sjui 2>/dev/null || true
-        LEGACY_INSTALLED=true
-    fi
-    
-    if [ -d "$EXTRACT_DIR/hot_loader" ]; then
-        print_info "Installing hot_loader (legacy)..."
-        cp -r "$EXTRACT_DIR/hot_loader" .
-        LEGACY_INSTALLED=true
-    fi
-    
-    if [ -d "$EXTRACT_DIR/swiftui_builder" ]; then
-        print_info "Installing swiftui_builder (legacy)..."
-        cp -r "$EXTRACT_DIR/swiftui_builder" .
-        echo "$VERSION" > swiftui_builder/VERSION
-        chmod +x swiftui_builder/bin/sjui-swiftui 2>/dev/null || true
-        LEGACY_INSTALLED=true
-    fi
-    
-    if [ "$LEGACY_INSTALLED" = false ]; then
-        print_error "No SwiftJsonUI tools found in the downloaded version"
-        exit 1
-    fi
+    print_error "sjui_tools not found in the downloaded version"
+    print_error "Please use version 7.0.0 or later"
+    exit 1
 fi
 
 # Install Node.js dependencies for hot_loader
-HOT_LOADER_DIR=""
-if [ -d "sjui_tools/lib/hotload" ]; then
-    HOT_LOADER_DIR="sjui_tools/lib/hotload"
-elif [ -d "hot_loader" ]; then
-    HOT_LOADER_DIR="hot_loader"
-fi
-
-if [ -n "$HOT_LOADER_DIR" ] && [ -f "$HOT_LOADER_DIR/package.json" ]; then
+if [ -d "sjui_tools/lib/hotloader" ] && [ -f "sjui_tools/lib/hotloader/package.json" ]; then
+    HOT_LOADER_DIR="sjui_tools/lib/hotloader"
     print_info "Installing hot_loader Node.js dependencies..."
     cd "$HOT_LOADER_DIR"
     if command -v npm &> /dev/null; then
@@ -234,14 +199,8 @@ if [ -n "$HOT_LOADER_DIR" ] && [ -f "$HOT_LOADER_DIR/package.json" ]; then
 fi
 
 # Install Ruby dependencies
-GEMFILE_DIR=""
-if [ -f "sjui_tools/Gemfile" ]; then
+if [ -f "sjui_tools/Gemfile" ] && [ "$SKIP_BUNDLE" != true ]; then
     GEMFILE_DIR="sjui_tools"
-elif [ -f "binding_builder/Gemfile" ]; then
-    GEMFILE_DIR="binding_builder"
-fi
-
-if [ -n "$GEMFILE_DIR" ] && [ "$SKIP_BUNDLE" != true ]; then
     print_info "Installing Ruby dependencies..."
     cd "$GEMFILE_DIR"
     
@@ -282,15 +241,9 @@ fi
 
 # Create initial config.json
 CONFIG_CREATED=false
-SJUI_BIN=""
 
 if [ -f "sjui_tools/bin/sjui" ]; then
     SJUI_BIN="sjui_tools/bin/sjui"
-elif [ -f "binding_builder/sjui" ]; then
-    SJUI_BIN="binding_builder/sjui"
-fi
-
-if [ -n "$SJUI_BIN" ]; then
     print_info "Checking for Xcode project..."
     # Search for .xcodeproj files in parent directories
     SEARCH_DIR="$(pwd)"
@@ -335,20 +288,6 @@ if [ -d "sjui_tools" ]; then
     print_info "2. Run 'sjui init' to create configuration (if not done)"
     print_info "3. Run 'sjui setup' to set up your project"
     print_info "4. Run 'sjui help' to see available commands"
-else
-    # Legacy instructions
-    if [ -d "binding_builder" ]; then
-        print_info "For binding_builder:"
-        print_info "  1. Run 'cd binding_builder && ./sjui setup' to set up your project"
-        print_info "  2. Run './sjui help' to see available commands"
-    fi
-    
-    if [ -d "swiftui_builder" ]; then
-        print_info ""
-        print_info "For SwiftUI builder:"
-        print_info "  1. Run 'cd swiftui_builder && bin/sjui-swiftui init' to create configuration"
-        print_info "  2. Run 'bin/sjui-swiftui help' to see available commands"
-    fi
 fi
 
 print_info ""
