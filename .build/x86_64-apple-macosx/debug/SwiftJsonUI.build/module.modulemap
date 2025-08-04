@@ -1,4 +1,0 @@
-module SwiftJsonUI {
-    header "/Users/like-a-rolling_stone/resource/SwiftJsonUI/.build/x86_64-apple-macosx/debug/SwiftJsonUI.build/SwiftJsonUI-Swift.h"
-    requires objc
-}
