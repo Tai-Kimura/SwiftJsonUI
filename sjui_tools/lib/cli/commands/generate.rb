@@ -131,7 +131,7 @@ module SjuiTools
             exit 1
           end
           
-          require_relative '../../binding/generators/binding_generator'
+          require_relative '../../binding/xcode_project/generators/binding_generator'
           generator = Binding::Generators::BindingGenerator.new(name)
           generator.generate
         end

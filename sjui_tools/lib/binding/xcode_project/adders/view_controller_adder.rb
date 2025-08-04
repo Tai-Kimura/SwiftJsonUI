@@ -1,6 +1,6 @@
 require "json"
 require_relative "file_adder"
-require_relative '../../project_finder'
+require_relative '../../../core/project_finder'
 
 class ViewControllerAdder < FileAdder
   def self.add_view_controller_file(project_manager, file_name, folder_name, json_file_name = nil)

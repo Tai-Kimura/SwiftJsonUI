@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
-require_relative '../../project_finder'
+require_relative '../../../core/project_finder'
 require_relative '../../pbxproj_manager'
 
 class Destroyer < PbxprojManager

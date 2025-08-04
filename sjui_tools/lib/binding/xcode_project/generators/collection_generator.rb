@@ -2,7 +2,7 @@
 
 require "fileutils"
 require_relative '../../xcode_project_manager'
-require_relative '../../project_finder'
+require_relative '../../../core/project_finder'
 require_relative '../../pbxproj_manager'
 
 class CollectionGenerator < PbxprojManager
@@ -196,7 +196,7 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
       # JsonLoaderとImportModuleManagerをrequire
       require_relative '../../json_loader'
       require_relative '../../import_module_manager'
-      require_relative '../../config_manager'
+      require_relative '../../../core/config_manager'
       
       # configから カスタムビュータイプを読み込んで設定
       base_dir = File.expand_path('../..', File.dirname(__FILE__))

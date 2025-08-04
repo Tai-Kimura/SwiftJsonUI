@@ -2,7 +2,7 @@
 
 require_relative '../../pbxproj_manager'
 require_relative "destroyer"
-require_relative '../../config_manager'
+require_relative '../../../core/config_manager'
 
 class BindingDestroyer < Destroyer
   def initialize(project_file_path = nil)

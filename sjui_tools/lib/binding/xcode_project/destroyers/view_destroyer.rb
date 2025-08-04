@@ -4,8 +4,8 @@ require "fileutils"
 require "json"
 require_relative "destroyer"
 require_relative "binding_destroyer"
-require_relative '../../project_finder'
-require_relative '../../config_manager'
+require_relative '../../../core/project_finder'
+require_relative '../../../core/config_manager'
 
 class ViewDestroyer < Destroyer
   def initialize(project_file_path = nil)

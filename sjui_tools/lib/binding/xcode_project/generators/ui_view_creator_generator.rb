@@ -2,7 +2,7 @@
 
 require "fileutils"
 require_relative '../../pbxproj_manager'
-require_relative '../../config_manager'
+require_relative '../../../core/config_manager'
 
 class UIViewCreatorGenerator < PbxprojManager
   def initialize(project_file_path)

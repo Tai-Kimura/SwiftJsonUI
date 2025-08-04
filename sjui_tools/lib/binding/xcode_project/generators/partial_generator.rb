@@ -4,7 +4,7 @@ require "fileutils"
 require "json"
 require_relative '../../pbxproj_manager'
 require_relative '../../xcode_project_manager'
-require_relative '../../project_finder'
+require_relative '../../../core/project_finder'
 
 class PartialGenerator < PbxprojManager
   def initialize(project_file_path = nil)
@@ -117,7 +117,7 @@ class PartialGenerator < PbxprojManager
       # JsonLoaderとImportModuleManagerをrequire
       require_relative '../../json_loader'
       require_relative '../../import_module_manager'
-      require_relative '../../config_manager'
+      require_relative '../../../core/config_manager'
       
       # configから カスタムビュータイプを読み込んで設定
       base_dir = File.expand_path('../..', File.dirname(__FILE__))
