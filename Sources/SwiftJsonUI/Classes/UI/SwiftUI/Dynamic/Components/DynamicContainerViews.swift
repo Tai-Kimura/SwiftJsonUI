@@ -20,7 +20,7 @@ struct DynamicViewContainer: View {
     
     @ViewBuilder
     var body: some View {
-        let children: [DynamicComponent] = component.child?.asArray ?? component.children ?? []
+        let children = getChildren()
         
         switch children.count {
         case 0:
@@ -29,6 +29,16 @@ struct DynamicViewContainer: View {
             DynamicComponentBuilder(component: children[0], viewModel: viewModel, viewId: viewId)
         default:
             multipleChildrenView(children: children)
+        }
+    }
+    
+    private func getChildren() -> [DynamicComponent] {
+        if let childArray = component.child?.asArray {
+            return childArray
+        } else if let children = component.children {
+            return children
+        } else {
+            return []
         }
     }
     
@@ -49,6 +59,16 @@ struct DynamicViewContainer: View {
             }
         }
     }
+    
+    private func getChildren() -> [DynamicComponent] {
+        if let childArray = component.child?.asArray {
+            return childArray
+        } else if let children = component.children {
+            return children
+        } else {
+            return []
+        }
+    }
 }
 
 struct DynamicScrollViewContainer: View {
@@ -65,9 +85,8 @@ struct DynamicScrollViewContainer: View {
     @ViewBuilder
     var body: some View {
         ScrollView {
-            let children: [DynamicComponent] = component.child?.asArray ?? component.children ?? []
             VStack(spacing: 0) {
-                ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                ForEach(Array(getChildren().enumerated()), id: \.offset) { _, child in
                     DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                 }
             }
