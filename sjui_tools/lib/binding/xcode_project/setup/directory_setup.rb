@@ -198,8 +198,8 @@ class DirectorySetup < PbxprojManager
         group_name = "Core"
       end
       
-      # CoreFileAdderを使用してファイルを追加（safe_add_filesは内部で実行される）
-      @xcode_manager.add_core_file(file_path, group_name)
+      # XcodeProjectManagerを使用してファイルを追加
+      @xcode_manager.add_file(file_path, "Core/#{group_name}")
     end
     puts "Added core files to Xcode project"
   end
