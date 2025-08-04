@@ -2,8 +2,8 @@
 
 require "fileutils"
 require "pathname"
-require_relative '../project_finder'
-require_relative '../config_manager'
+require_relative '../../core/project_finder'
+require_relative '../../core/config_manager'
 
 class PbxprojManager
   def initialize(project_file_path = nil)

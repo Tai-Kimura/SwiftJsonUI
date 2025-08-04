@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'fileutils'
 require_relative '../../core/project_finder'
 require_relative '../../core/config_manager'
 require_relative '../../core/template_engine'

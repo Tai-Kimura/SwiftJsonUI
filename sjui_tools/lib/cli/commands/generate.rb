@@ -64,7 +64,7 @@ module SjuiTools
           
           case mode
           when 'binding'
-            require_relative '../../binding/generators/view_generator'
+            require_relative '../../binding/xcode_project/generators/view_generator'
             generator = Binding::Generators::ViewGenerator.new(name, options)
             generator.generate
           when 'swiftui'
@@ -88,7 +88,7 @@ module SjuiTools
           
           case mode
           when 'binding'
-            require_relative '../../binding/generators/partial_generator'
+            require_relative '../../binding/xcode_project/generators/partial_generator'
             generator = Binding::Generators::PartialGenerator.new(name)
             generator.generate
           when 'swiftui'
@@ -108,7 +108,7 @@ module SjuiTools
           
           case mode
           when 'binding'
-            require_relative '../../binding/generators/collection_generator'
+            require_relative '../../binding/xcode_project/generators/collection_generator'
             generator = Binding::Generators::CollectionGenerator.new(name)
             generator.generate
           else

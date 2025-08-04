@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
-require_relative '../../core/command_base'
+require_relative '../command_base'
 require_relative '../../hotloader/server'
 
 module SjuiTools
   module CLI
     module Commands
-      class Hotload < Core::CommandBase
+      class Hotload < CommandBase
         def run(args)
           port = 8080
           
