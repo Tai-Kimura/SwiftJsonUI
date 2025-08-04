@@ -16,9 +16,9 @@ module SjuiTools
         @style_path = style_path
         @super_binding = super_binding
         @view_type_set = view_type_set
-        @binding_content = ""
-        @weak_vars_content = ""
-        @invalidate_methods_content = ""
+        @binding_content = String.new
+        @weak_vars_content = String.new
+        @invalidate_methods_content = String.new
         @data_sets = []
         @binding_processes_group = {}
         @including_files = {}
@@ -116,7 +116,7 @@ module SjuiTools
           
           # 各バインディングプロセスを処理（一時的にbinding_contentを保存）
           temp_binding_content = @binding_content
-          @binding_content = ""
+          @binding_content = String.new
           
           value.each do |binding_process|
             analyze_binding_process binding_process
