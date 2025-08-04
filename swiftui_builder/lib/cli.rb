@@ -4,13 +4,6 @@ require 'yaml'
 require 'fileutils'
 require 'pathname'
 
-require_relative 'commands/generate'
-require_relative 'commands/batch'
-require_relative 'commands/watch'
-require_relative 'commands/validate'
-require_relative 'commands/init'
-require_relative 'commands/setup'
-
 module SwiftUIBuilder
   class CLI < Thor
     def self.exit_on_failure?
@@ -21,11 +14,6 @@ module SwiftUIBuilder
     class_option :config, type: :string, default: 'config.json', 
                  desc: 'Path to configuration file'
     
-    desc "g SUBCOMMAND", "Generate various components"
-    subcommand "g", Generate
-    
-    desc "generate SUBCOMMAND", "Generate various components (alias for g)"
-    subcommand "generate", Generate
     
     desc "batch", "Generate SwiftUI code for multiple JSON files"
     method_option :input, aliases: '-i', type: :string, required: true,
@@ -90,3 +78,11 @@ module SwiftUIBuilder
     end
   end
 end
+
+# Require command files after class definitions
+require_relative 'commands/generate'
+require_relative 'commands/batch'
+require_relative 'commands/watch'
+require_relative 'commands/validate'
+require_relative 'commands/init'
+require_relative 'commands/setup'

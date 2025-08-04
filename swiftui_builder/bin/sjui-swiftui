@@ -1,15 +1,41 @@
 #!/usr/bin/env ruby
 
 require 'pathname'
-require_relative '../lib/cli'
 
 # Find the root directory of the SwiftUI builder
 root_path = Pathname.new(File.expand_path('../..', __FILE__))
 
-# Run the CLI
-begin
-  SwiftUIBuilder::CLI.start(ARGV)
-rescue => e
-  puts "Error: #{e.message}"
-  exit 1
+# Handle generate subcommands specially
+if ARGV[0] == 'g' || ARGV[0] == 'generate'
+  command = ARGV.shift
+  subcommand = ARGV.shift
+  
+  if subcommand
+    # Load and execute generate command
+    require_relative '../lib/commands/generate'
+    begin
+      SwiftUIBuilder::Commands::Generate.start([subcommand] + ARGV)
+    rescue => e
+      puts "Error: #{e.message}"
+      exit 1
+    end
+  else
+    puts "Usage: sjui-swiftui #{command} SUBCOMMAND"
+    puts "Available subcommands:"
+    puts "  view VIEW_NAME     Generate view and JSON layout file"
+    puts "  partial NAME       Generate partial JSON layout"
+    puts "  collection PATH    Generate collection view cell"
+    exit 1
+  end
+else
+  # Load main CLI for other commands
+  require_relative '../lib/cli'
+  
+  # Run the CLI
+  begin
+    SwiftUIBuilder::CLI.start(ARGV)
+  rescue => e
+    puts "Error: #{e.message}"
+    exit 1
+  end
 end
