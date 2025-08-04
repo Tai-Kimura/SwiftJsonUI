@@ -203,22 +203,108 @@ if [ -f "sjui_tools/Gemfile" ] && [ "$SKIP_BUNDLE" != true ]; then
     GEMFILE_DIR="sjui_tools"
     print_info "Installing Ruby dependencies..."
     
-    # Check Ruby version
-    if command -v ruby &> /dev/null; then
-        RUBY_VERSION=$(ruby -v | cut -d' ' -f2)
-        print_info "Ruby version: $RUBY_VERSION"
+    # Check and setup Ruby version
+    REQUIRED_RUBY_VERSION="3.2.2"
+    MINIMUM_RUBY_VERSION="2.7.0"
+    
+    # Function to compare version numbers
+    version_compare() {
+        printf '%s\n%s' "$1" "$2" | sort -V | head -n1
+    }
+    
+    # Check if rbenv is installed
+    if command -v rbenv &> /dev/null; then
+        print_info "Found rbenv"
+        CURRENT_RUBY_VERSION=$(ruby -v | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
         
-        # Check if Ruby version is at least 2.7.0
-        if ruby -e "exit RUBY_VERSION >= '2.7.0' ? 0 : 1" 2>/dev/null; then
-            print_info "Ruby version is compatible"
+        if [ "$(version_compare "$CURRENT_RUBY_VERSION" "$MINIMUM_RUBY_VERSION")" != "$MINIMUM_RUBY_VERSION" ]; then
+            print_info "Current Ruby version ($CURRENT_RUBY_VERSION) is too old"
+            print_info "Installing Ruby $REQUIRED_RUBY_VERSION with rbenv..."
+            
+            # Install required Ruby version
+            if rbenv install -s "$REQUIRED_RUBY_VERSION"; then
+                rbenv local "$REQUIRED_RUBY_VERSION"
+                print_info "Ruby $REQUIRED_RUBY_VERSION installed and set as local version"
+            else
+                print_warning "Failed to install Ruby $REQUIRED_RUBY_VERSION"
+                print_warning "Please install it manually: rbenv install $REQUIRED_RUBY_VERSION"
+            fi
         else
-            print_warning "Ruby version is older than 2.7.0"
-            print_warning "Some features may not work properly"
-            print_warning "Please consider upgrading Ruby to 2.7.0 or later"
+            print_info "Ruby version $CURRENT_RUBY_VERSION is compatible"
+        fi
+    # Check if rvm is installed
+    elif command -v rvm &> /dev/null || [ -s "$HOME/.rvm/scripts/rvm" ]; then
+        print_info "Found rvm"
+        # Source rvm if needed
+        [ -s "$HOME/.rvm/scripts/rvm" ] && source "$HOME/.rvm/scripts/rvm"
+        
+        CURRENT_RUBY_VERSION=$(ruby -v | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+        
+        if [ "$(version_compare "$CURRENT_RUBY_VERSION" "$MINIMUM_RUBY_VERSION")" != "$MINIMUM_RUBY_VERSION" ]; then
+            print_info "Current Ruby version ($CURRENT_RUBY_VERSION) is too old"
+            print_info "Installing Ruby $REQUIRED_RUBY_VERSION with rvm..."
+            
+            # Install required Ruby version
+            if rvm install "$REQUIRED_RUBY_VERSION"; then
+                rvm use "$REQUIRED_RUBY_VERSION"
+                print_info "Ruby $REQUIRED_RUBY_VERSION installed and activated"
+            else
+                print_warning "Failed to install Ruby $REQUIRED_RUBY_VERSION"
+                print_warning "Please install it manually: rvm install $REQUIRED_RUBY_VERSION"
+            fi
+        else
+            print_info "Ruby version $CURRENT_RUBY_VERSION is compatible"
+        fi
+    else
+        # No Ruby version manager found
+        if command -v ruby &> /dev/null; then
+            RUBY_VERSION=$(ruby -v | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+            print_info "Ruby version: $RUBY_VERSION"
+            
+            # Check if Ruby version is at least 2.7.0
+            if [ "$(version_compare "$RUBY_VERSION" "$MINIMUM_RUBY_VERSION")" = "$MINIMUM_RUBY_VERSION" ]; then
+                print_info "Ruby version is compatible"
+            else
+                print_warning "Ruby version is older than $MINIMUM_RUBY_VERSION"
+                print_warning "Please install rbenv or rvm to manage Ruby versions:"
+                print_warning "  rbenv: https://github.com/rbenv/rbenv"
+                print_warning "  rvm: https://rvm.io/"
+            fi
+        else
+            print_error "Ruby not found. Please install Ruby $MINIMUM_RUBY_VERSION or later"
+            exit 1
         fi
     fi
     
     cd "$GEMFILE_DIR"
+    
+    # Install correct bundler version
+    print_info "Checking bundler version..."
+    BUNDLER_VERSION=$(grep -A1 "BUNDLED WITH" Gemfile.lock 2>/dev/null | tail -1 | tr -d ' ')
+    
+    if [ -z "$BUNDLER_VERSION" ]; then
+        # No Gemfile.lock, install latest bundler
+        print_info "Installing latest bundler..."
+        if gem install bundler; then
+            print_info "Bundler installed successfully"
+        else
+            print_warning "Failed to install bundler"
+        fi
+    else
+        # Install specific bundler version
+        print_info "Installing bundler version $BUNDLER_VERSION..."
+        if gem install bundler -v "$BUNDLER_VERSION"; then
+            print_info "Bundler $BUNDLER_VERSION installed successfully"
+        else
+            # Fallback to any bundler 2.x
+            print_warning "Failed to install bundler $BUNDLER_VERSION, trying bundler 2.x"
+            if gem install bundler -v '~> 2.0'; then
+                print_info "Bundler 2.x installed successfully"
+            else
+                print_warning "Failed to install bundler"
+            fi
+        fi
+    fi
     
     if command -v bundle &> /dev/null; then
         if bundle install; then
