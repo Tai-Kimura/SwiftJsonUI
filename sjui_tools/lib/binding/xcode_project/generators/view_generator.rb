@@ -219,8 +219,7 @@ module SjuiTools
             
             # JSONファイルをLayoutsグループに追加
             if json_path
-              require_relative '../../adders/json_adder'
-              JsonAdder.add_json_file(@xcode_manager, json_path, "Layouts")
+              @xcode_manager.add_file(json_path, "Layouts")
             end
             
             puts "Added files to Xcode project"
@@ -297,7 +296,14 @@ module SjuiTools
 
         def find_scene_delegate_file(project_dir)
           # プロジェクトディレクトリから再帰的にSceneDelegate.swiftを検索
-          Dir.glob("#{project_dir}/**/SceneDelegate.swift").first
+          scene_delegate_path = Dir.glob("#{project_dir}/**/SceneDelegate.swift").first
+          
+          # ファイルであることを確認
+          if scene_delegate_path && File.file?(scene_delegate_path)
+            scene_delegate_path
+          else
+            nil
+          end
         end
 
         def safely_update_scene_delegate(content, camel_name)

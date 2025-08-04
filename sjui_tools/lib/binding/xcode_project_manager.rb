@@ -28,8 +28,13 @@ module SjuiTools
           return
         end
         
-        # Add file reference
-        file_ref = group.new_file(file_path)
+        # Calculate relative path from project directory
+        project_dir = File.dirname(@project_path)
+        relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+        
+        # Add file reference with proper relative path
+        file_ref = group.new_file(relative_path)
+        file_ref.name = file_name
         
         # Add to target if it's a source file
         if file_path.end_with?('.swift', '.m', '.mm')
@@ -47,8 +52,28 @@ module SjuiTools
       def find_or_create_group(group_name)
         # Handle nested groups
         parts = group_name.split('/')
+        
+        # Find the proper base group (considering source_directory)
+        config = Core::ConfigManager.load_config
+        source_directory = config['source_directory'] || ''
+        
         current_group = @project.main_group
         
+        # Navigate to source directory group if specified
+        unless source_directory.empty?
+          source_parts = source_directory.split('/')
+          source_parts.each do |part|
+            existing = current_group.groups.find { |g| g.name == part }
+            if existing
+              current_group = existing
+            else
+              # If source directory group doesn't exist, create it
+              current_group = current_group.new_group(part)
+            end
+          end
+        end
+        
+        # Now create the requested group structure
         parts.each do |part|
           existing = current_group.groups.find { |g| g.name == part }
           if existing
@@ -104,7 +129,13 @@ module SjuiTools
         existing = group.files.find { |f| f.path == file_name }
         
         unless existing
-          file_ref = group.new_file(file_path)
+          # Calculate relative path from project directory
+          project_dir = File.dirname(@project_path)
+          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+          
+          # Create file reference with proper relative path
+          file_ref = group.new_file(relative_path)
+          file_ref.name = file_name
           
           if file_path.end_with?('.swift', '.m', '.mm')
             main_target = @project.targets.first

@@ -118,7 +118,7 @@ module SjuiTools
 
   def add_to_xcode_project(json_file_path)
     # バックアップとエラーハンドリングを含む安全な処理
-    @xcode_manager.add_json_file(json_file_path, "Layouts")
+    @xcode_manager.add_file(json_file_path, "Layouts")
   end
 
   def generate_binding_file

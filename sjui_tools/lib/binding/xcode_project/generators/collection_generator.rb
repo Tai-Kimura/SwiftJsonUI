@@ -21,7 +21,7 @@ module SjuiTools
     # Set paths
     source_path = Core::ProjectFinder.get_full_source_path
     @view_path = File.join(source_path, config['view_directory'] || 'View')
-    @core_path = File.join(Core::ProjectFinder.project_dir, 'Core')
+    @core_path = File.join(source_path, 'Core')
     @layouts_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
     @bindings_path = File.join(source_path, config['bindings_directory'] || 'Bindings')
     
@@ -158,7 +158,7 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
     created_files = [json_file_path]
     
     safe_pbxproj_operation([], created_files) do
-      @xcode_manager.add_json_file(json_file_path, "Layouts")
+      @xcode_manager.add_file(json_file_path, "Layouts")
       puts "Added JSON layout to Xcode project"
     end
   end
