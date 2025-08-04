@@ -61,23 +61,22 @@ module SwiftUIBuilder
       def create_directory_structure
         # プロジェクトルートを探す
         project_root = find_project_root
+        source_dir = @config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
         
-        paths = @config['paths'] || {
-          'layouts' => './Layouts',
-          'views' => './Views',
-          'components' => './Components',
-          'includes' => './includes'
+        dirs = {
+          'layouts' => @config['layouts_directory'] || 'Layouts',
+          'views' => @config['views_directory'] || 'Views',
+          'components' => @config['components_directory'] || 'Components',
+          'includes' => @config['includes_directory'] || 'includes'
         }
         
-        paths.each do |key, path|
-          full_path = File.join(project_root, path)
+        dirs.each do |key, dir|
+          full_path = File.join(base_path, dir)
           FileUtils.mkdir_p(full_path)
           puts "Created directory: #{full_path}"
-        end
-        
-        # .gitkeepファイルを作成
-        paths.each do |key, path|
-          full_path = File.join(project_root, path)
+          
+          # .gitkeepファイルを作成
           gitkeep = File.join(full_path, '.gitkeep')
           File.write(gitkeep, '') unless File.exist?(gitkeep)
         end

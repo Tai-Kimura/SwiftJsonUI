@@ -25,17 +25,17 @@ module SwiftUIBuilder
         # Find project name
         project_name = find_project_name
         
-        # Default configuration
+        # Default configuration (binding_builder compatible)
         default_config = {
-          "project_file_name" => project_name,
-          "version" => "7.0.0-alpha",
+          "project_name" => project_name || "",
+          "project_file_name" => project_name || "",
+          "source_directory" => "",
+          "layouts_directory" => "Layouts",
+          "views_directory" => "Views",
+          "components_directory" => "Components",
+          "includes_directory" => "includes",
           "mode" => "swiftui",
-          "paths" => {
-            "layouts" => "./Layouts",
-            "views" => "./Views", 
-            "components" => "./Components",
-            "includes" => "./includes"
-          }
+          "version" => "7.0.0-alpha"
         }
         
         # Write configuration file
@@ -44,12 +44,12 @@ module SwiftUIBuilder
         
         # Create directory structure if requested
         if prompt_create_directories?
-          create_directory_structure(default_config['paths'])
+          create_directory_structure(default_config)
         end
         
         # Create sample files if requested
         if prompt_create_samples?
-          create_sample_files(default_config['paths'])
+          create_sample_files(default_config)
         end
         
         true
@@ -109,17 +109,29 @@ module SwiftUIBuilder
         response.chomp.downcase == 'y' || response.chomp.downcase == 'yes'
       end
       
-      def create_directory_structure(paths)
+      def create_directory_structure(config)
         project_root = find_project_root
-        paths.each do |key, path|
-          full_path = File.join(project_root, path)
+        source_dir = config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
+        
+        dirs = {
+          'layouts' => config['layouts_directory'] || 'Layouts',
+          'views' => config['views_directory'] || 'Views',
+          'components' => config['components_directory'] || 'Components',
+          'includes' => config['includes_directory'] || 'includes'
+        }
+        
+        dirs.each do |key, dir|
+          full_path = File.join(base_path, dir)
           FileUtils.mkdir_p(full_path)
           puts "Created directory: #{full_path}"
         end
       end
       
-      def create_sample_files(paths)
+      def create_sample_files(config)
         project_root = find_project_root
+        source_dir = config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
         
         # Create sample layout JSON
         sample_layout = {
@@ -156,7 +168,8 @@ module SwiftUIBuilder
           }
         }
         
-        sample_file = File.join(project_root, paths['layouts'], 'sample.json')
+        layouts_dir = config['layouts_directory'] || 'Layouts'
+        sample_file = File.join(base_path, layouts_dir, 'sample.json')
         FileUtils.mkdir_p(File.dirname(sample_file))
         File.write(sample_file, JSON.pretty_generate(sample_layout))
         puts "Created sample file: #{sample_file}"
@@ -169,7 +182,8 @@ module SwiftUIBuilder
           'fontColor' => '@{color}'
         }
         
-        include_file = File.join(project_root, paths['includes'], 'title_text.json')
+        includes_dir = config['includes_directory'] || 'includes'
+        include_file = File.join(base_path, includes_dir, 'title_text.json')
         FileUtils.mkdir_p(File.dirname(include_file))
         File.write(include_file, JSON.pretty_generate(sample_include))
         puts "Created include file: #{include_file}"

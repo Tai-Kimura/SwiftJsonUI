@@ -53,14 +53,16 @@ module SwiftUIBuilder
         
         # プロジェクトルートを探す
         project_root = find_project_root
+        source_dir = @config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
         
         # ディレクトリの作成
-        layouts_dir = @config.dig('paths', 'layouts') || './Layouts'
-        views_dir = @config.dig('paths', 'views') || './Views'
+        layouts_dir = @config['layouts_directory'] || 'Layouts'
+        views_dir = @config['views_directory'] || 'Views'
         
         # 絶対パスに変換
-        layouts_dir = File.join(project_root, layouts_dir)
-        views_dir = File.join(project_root, views_dir)
+        layouts_dir = File.join(base_path, layouts_dir)
+        views_dir = File.join(base_path, views_dir)
         
         FileUtils.mkdir_p(layouts_dir)
         FileUtils.mkdir_p(views_dir)
@@ -98,10 +100,12 @@ module SwiftUIBuilder
         
         # プロジェクトルートを探す
         project_root = find_project_root
+        source_dir = @config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
         
         # ディレクトリの作成
-        includes_dir = @config.dig('paths', 'includes') || './includes'
-        includes_dir = File.join(project_root, includes_dir)
+        includes_dir = @config['includes_directory'] || 'includes'
+        includes_dir = File.join(base_path, includes_dir)
         target_dir = subfolder ? File.join(includes_dir, subfolder) : includes_dir
         FileUtils.mkdir_p(target_dir)
         
@@ -128,14 +132,16 @@ module SwiftUIBuilder
         
         # プロジェクトルートを探す
         project_root = find_project_root
+        source_dir = @config['source_directory'] || ''
+        base_path = source_dir.empty? ? project_root : File.join(project_root, source_dir)
         
         # ディレクトリの作成
-        views_dir = @config.dig('paths', 'views') || './Views'
-        layouts_dir = @config.dig('paths', 'layouts') || './Layouts'
+        views_dir = @config['views_directory'] || 'Views'
+        layouts_dir = @config['layouts_directory'] || 'Layouts'
         
         # 絶対パスに変換
-        views_dir = File.join(project_root, views_dir)
-        layouts_dir = File.join(project_root, layouts_dir)
+        views_dir = File.join(base_path, views_dir)
+        layouts_dir = File.join(base_path, layouts_dir)
         
         view_folder = File.join(views_dir, folder_name)
         layout_folder = File.join(layouts_dir, 'cells')
