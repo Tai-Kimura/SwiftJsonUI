@@ -318,15 +318,8 @@ module SjuiTools
         def setup_library
           require_relative '../../core/setup/library_setup'
           
-          begin
-            library_setup = Core::Setup::LibrarySetup.new(Core::ProjectFinder.project_file_path)
-            library_setup.setup_libraries
-          rescue => e
-            puts "\nWarning: Could not automatically add SPM packages: #{e.message}"
-            puts "\nNote: Please add SwiftJsonUI library manually via:"
-            puts "  - Swift Package Manager: https://github.com/mcprol/SwiftJsonUI-ios"
-            puts "  - CocoaPods: pod 'SwiftJsonUI'"
-          end
+          library_setup = Core::Setup::LibrarySetup.new(Core::ProjectFinder.project_file_path)
+          library_setup.setup_libraries
         end
       end
     end
