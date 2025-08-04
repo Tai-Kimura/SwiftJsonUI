@@ -22,14 +22,15 @@ module SwiftUIBuilder
           return false
         end
         
-        # Find project name
+        # Find project name and source directory
         project_name = find_project_name
+        source_directory = find_source_directory
         
         # Default configuration (binding_builder compatible)
         default_config = {
           "project_name" => project_name || "",
           "project_file_name" => project_name || "",
-          "source_directory" => "",
+          "source_directory" => source_directory || "",
           "layouts_directory" => "Layouts",
           "views_directory" => "Views",
           "components_directory" => "Components",
@@ -91,6 +92,41 @@ module SwiftUIBuilder
         end
         
         nil
+      end
+      
+      def find_source_directory
+        # swiftui_builderの親ディレクトリから探す
+        project_root = find_project_root
+        
+        # プロジェクトルート直下にiOSアプリファイルがあるかチェック
+        ios_files = ['Info.plist', 'App.swift', 'ContentView.swift', 'AppDelegate.swift', 'SceneDelegate.swift']
+        if ios_files.any? { |file| File.exist?(File.join(project_root, file)) }
+          # ファイルがプロジェクトルートにある場合は空文字を返す
+          return ""
+        end
+        
+        # サブディレクトリを探す
+        Dir.entries(project_root).each do |entry|
+          next if entry.start_with?('.')
+          next if entry == 'swiftui_builder'
+          
+          dir_path = File.join(project_root, entry)
+          next unless File.directory?(dir_path)
+          
+          # iOSアプリファイルが含まれているディレクトリを探す
+          if ios_files.any? { |file| File.exist?(File.join(dir_path, file)) }
+            return entry
+          end
+        end
+        
+        # 見つからない場合は、プロジェクト名と同じディレクトリがあればそれを使用
+        project_name = find_project_name
+        if project_name && File.directory?(File.join(project_root, project_name))
+          return project_name
+        end
+        
+        # それでも見つからない場合は空文字を返す
+        ""
       end
       
       def prompt_create_directories?
