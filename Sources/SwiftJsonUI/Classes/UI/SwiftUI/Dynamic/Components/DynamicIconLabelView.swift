@@ -30,10 +30,9 @@ struct DynamicIconLabelView: View {
                 text: component.text ?? "",
                 iconOn: component.iconOn,
                 iconOff: component.iconOff,
-                iconColor: DynamicHelpers.colorFromHex(component.iconColor),
                 iconPosition: DynamicHelpers.iconPositionFromString(component.iconPosition),
                 fontSize: component.fontSize ?? 16,
-                fontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .primary,
+                fontColor: DynamicHelpers.colorFromHex(component.iconColor) ?? DynamicHelpers.colorFromHex(component.fontColor) ?? .primary,
                 fontName: component.font
             )
         }
