@@ -3,7 +3,7 @@
 require "fileutils"
 require "pathname"
 require "json"
-require_relative '../xcodeproj_patch'
+# require_relative '../xcodeproj_patch' # xcodeproj 1.27.0 has native Xcode 16 support
 require_relative '../../binding/xcode_project/pbxproj_manager'
 require_relative '../../binding/project_finder'
 require_relative '../config_manager'

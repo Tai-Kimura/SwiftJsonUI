@@ -111,7 +111,7 @@ DEPENDENCIES
   rubocop (~> 1.50)
   sinatra (~> 3.0)
   thin (~> 1.8)
-  xcodeproj (~> 1.22)
+  xcodeproj (~> 1.27)
 
 RUBY VERSION
    ruby 2.7.4p191
