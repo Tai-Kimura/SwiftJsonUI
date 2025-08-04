@@ -119,8 +119,7 @@ module SjuiTools
     end
     
     # SimpleApiNetworkはuse_networkがtrueの場合のみ追加
-    base_dir = File.expand_path('../..', File.dirname(__FILE__))
-    use_network = ::SjuiTools::Core::ConfigManager.get_use_network(base_dir)
+    use_network = ::SjuiTools::Core::ConfigManager.get_use_network
     
     if use_network && !(content.include?("SimpleApiNetwork") && content.include?("Tai-Kimura/SimpleApiNetwork"))
       packages_to_add << {

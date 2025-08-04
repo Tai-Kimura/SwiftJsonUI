@@ -280,15 +280,15 @@ module SjuiTools
           require_relative '../../binding/xcode_project_manager'
           
           project_path = Core::ProjectFinder.project_file_path
-          project_dir = Core::ProjectFinder.project_dir
+          source_path = Core::ProjectFinder.get_full_source_path
           
           manager = Binding::XcodeProjectManager.new(project_path)
           
           core_files = [
-            { path: File.join(project_dir, 'Core', 'Base', 'BaseViewController.swift'), group: 'Base' },
-            { path: File.join(project_dir, 'Core', 'Base', 'BaseBinding.swift'), group: 'Base' },
-            { path: File.join(project_dir, 'Core', 'Base', 'BaseCollectionViewCell.swift'), group: 'Base' },
-            { path: File.join(project_dir, 'Core', 'UI', 'UIViewCreator.swift'), group: 'UI' }
+            { path: File.join(source_path, 'Core', 'Base', 'BaseViewController.swift'), group: 'Base' },
+            { path: File.join(source_path, 'Core', 'Base', 'BaseBinding.swift'), group: 'Base' },
+            { path: File.join(source_path, 'Core', 'Base', 'BaseCollectionViewCell.swift'), group: 'Base' },
+            { path: File.join(source_path, 'Core', 'UI', 'UIViewCreator.swift'), group: 'UI' }
           ]
           
           manager.add_core_files(core_files)

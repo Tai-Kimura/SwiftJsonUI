@@ -20,9 +20,9 @@ module SjuiTools
     end
     
     # ConfigManagerを使用してプロジェクト設定を取得
-    @config = Core::ConfigManager.load_config(@binding_builder_dir)
-    @source_directory = Core::ConfigManager.get_source_directory(@binding_builder_dir)
-    @hot_loader_directory = Core::ConfigManager.get_hot_loader_directory(@binding_builder_dir)
+    @config = Core::ConfigManager.load_config
+    @source_directory = Core::ConfigManager.get_source_directory
+    @hot_loader_directory = Core::ConfigManager.get_hot_loader_directory
   end
 
   # Xcode 16の同期グループをチェックする共通メソッド
