@@ -156,6 +156,9 @@ module SjuiTools
         end
 
         def add_packages_with_xcodeproj(packages)
+          # Ensure workspace directory structure exists
+          ensure_workspace_structure
+          
           packages.each do |package_info|
             puts "Adding package: #{package_info[:name]}"
             
@@ -209,6 +212,50 @@ module SjuiTools
           end
           
           puts "Successfully added #{packages.length} packages"
+        end
+        
+        def ensure_workspace_structure
+          # Get workspace path
+          project_dir = File.dirname(@project.path)
+          project_name = File.basename(@project.path, '.xcodeproj')
+          workspace_path = File.join(project_dir, "#{project_name}.xcworkspace")
+          
+          # Create workspace directory structure
+          shared_data_path = File.join(workspace_path, 'xcshareddata')
+          swiftpm_path = File.join(shared_data_path, 'swiftpm')
+          
+          # Create directories
+          FileUtils.mkdir_p(swiftpm_path)
+          puts "Created SPM directory structure: #{swiftpm_path}"
+          
+          # Create empty Package.resolved if it doesn't exist
+          package_resolved_path = File.join(swiftpm_path, 'Package.resolved')
+          unless File.exist?(package_resolved_path)
+            initial_resolved = {
+              "object" => {
+                "pins" => []
+              },
+              "version" => 1
+            }
+            File.write(package_resolved_path, JSON.pretty_generate(initial_resolved))
+            puts "Created Package.resolved file"
+          end
+          
+          # Create workspace contents.xcworkspacedata if it doesn't exist
+          workspace_data_path = File.join(workspace_path, 'contents.xcworkspacedata')
+          unless File.exist?(workspace_data_path)
+            workspace_xml = <<~XML
+              <?xml version="1.0" encoding="UTF-8"?>
+              <Workspace
+                 version = "1.0">
+                 <FileRef
+                    location = "self:">
+                 </FileRef>
+              </Workspace>
+            XML
+            File.write(workspace_data_path, workspace_xml)
+            puts "Created workspace contents file"
+          end
         end
       end
     end

@@ -79,6 +79,7 @@ module SjuiTools
 
         def generate_partial(args, mode)
           name = args.shift
+          puts "Debug: Partial name from args: '#{name}'"
           
           if name.nil? || name.empty?
             puts "Error: Partial name is required"
