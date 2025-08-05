@@ -158,34 +158,6 @@ module SjuiTools
         end
       end
 
-      # Legacy method support for migration
-      def self.add_view_controller_to_project(project_path, view_name, parent_dir, is_root = false)
-        manager = new(project_path)
-        
-        # Construct file paths
-        view_dir = File.join(parent_dir, Core::ConfigManager.get_view_directory)
-        file_path = File.join(view_dir, "#{view_name}ViewController.swift")
-        
-        manager.add_file(file_path, 'View')
-      end
-
-      def self.add_json_to_project(project_path, json_name, parent_dir)
-        manager = new(project_path)
-        
-        layouts_dir = File.join(parent_dir, Core::ConfigManager.get_layouts_directory)
-        file_path = File.join(layouts_dir, "#{json_name}.json")
-        
-        manager.add_file(file_path, 'Layouts')
-      end
-
-      def self.add_binding_to_project(project_path, binding_name, parent_dir)
-        manager = new(project_path)
-        
-        bindings_dir = File.join(parent_dir, Core::ConfigManager.get_bindings_directory)
-        file_path = File.join(bindings_dir, "#{binding_name}Binding.swift")
-        
-        manager.add_file(file_path, 'Bindings')
-      end
     end
   end
 end
