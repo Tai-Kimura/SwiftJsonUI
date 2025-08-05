@@ -28,45 +28,38 @@ module SjuiTools
           end
 
           def generate(partial_name)
-            # 名前の正規化
-            snake_name = partial_name.downcase.gsub(/[^a-z0-9_]/, '_')
+            puts "Generating partial layout: #{partial_name}"
             
-            puts "Generating partial layout: #{snake_name}"
+            # 1. Partial JSONファイルの作成
+            json_file_path = create_partial_json(partial_name)
             
-            # 1. Partialディレクトリの確認/作成
-            ensure_partial_directory
-            
-            # 2. Partial JSONファイルの作成
-            json_file_path = create_partial_json(snake_name)
-            
-            # 3. Xcodeプロジェクトに追加
+            # 2. Xcodeプロジェクトに追加
             add_to_xcode_project(json_file_path)
             
-            # 4. Bindingファイルの生成
+            # 3. Bindingファイルの生成
             generate_binding_file
             
-            puts "\nSuccessfully generated partial: #{snake_name}"
+            puts "\nSuccessfully generated partial: #{partial_name}"
             puts "File created: #{json_file_path}"
             puts "\nTo use this partial, include it in your layout JSON:"
             puts '  {
     "type": "Partial",
-    "name": "' + snake_name + '"
+    "name": "' + partial_name + '"
   }'
           end
 
           private
 
-          def ensure_partial_directory
-            partial_dir = File.join(@layouts_path, 'Partial')
-            unless Dir.exist?(partial_dir)
-              FileUtils.mkdir_p(partial_dir)
-              puts "Created Partial directory: #{partial_dir}"
-            end
-          end
-
           def create_partial_json(partial_name)
-            partial_dir = File.join(@layouts_path, 'Partial')
-            file_path = File.join(partial_dir, "#{partial_name}.json")
+            # Handle directory structure in partial name
+            file_path = File.join(@layouts_path, "#{partial_name}.json")
+            
+            # Ensure parent directory exists
+            parent_dir = File.dirname(file_path)
+            unless Dir.exist?(parent_dir)
+              FileUtils.mkdir_p(parent_dir)
+              puts "Created directory: #{parent_dir}"
+            end
             
             if File.exist?(file_path)
               puts "Warning: Partial JSON file already exists: #{file_path}"
@@ -81,9 +74,12 @@ module SjuiTools
           end
 
           def generate_partial_json_content(partial_name)
+            # Extract just the filename part for IDs (remove directory path)
+            base_name = File.basename(partial_name)
+            
             content = {
               "type" => "View",
-              "id" => "#{partial_name}_root",
+              "id" => "#{base_name}_root",
               "width" => "matchParent",
               "height" => "wrapContent",
               "padding" => "16",
@@ -91,8 +87,8 @@ module SjuiTools
               "child" => [
                 {
                   "type" => "Label",
-                  "id" => "#{partial_name}_label",
-                  "text" => "This is the #{partial_name} partial",
+                  "id" => "#{base_name}_label",
+                  "text" => "This is the #{base_name} partial",
                   "textSize" => "14",
                   "textColor" => "000000"
                 }
