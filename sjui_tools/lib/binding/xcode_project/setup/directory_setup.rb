@@ -94,7 +94,13 @@ module SjuiTools
             end
             
             # Xcodeプロジェクトにグループが存在するか確認
-            project_content = File.read(@project_file_path)
+            # .xcodeprojディレクトリの場合は、project.pbxprojファイルを読む
+            pbxproj_path = @project_file_path
+            if @project_file_path.end_with?('.xcodeproj')
+              pbxproj_path = File.join(@project_file_path, 'project.pbxproj')
+            end
+            
+            project_content = File.read(pbxproj_path)
             group_exists = project_content.include?("/* #{name} */ = {")
             
             if !group_exists
