@@ -59,8 +59,10 @@ module SjuiTools
       end
 
       def find_or_create_group(group_name)
+        puts "Debug: find_or_create_group called with: '#{group_name}'"
         # Handle nested groups
         parts = group_name.split('/')
+        puts "Debug: Split into parts: #{parts.inspect}"
         
         # Find the proper base group (considering source_directory)
         config = Core::ConfigManager.load_config

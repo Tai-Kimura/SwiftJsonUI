@@ -101,7 +101,21 @@ module SjuiTools
 
           def add_to_xcode_project(json_file_path)
             # バックアップとエラーハンドリングを含む安全な処理
-            @xcode_manager.add_file(json_file_path, "Layouts")
+            puts "Debug: Adding partial file to Xcode: #{json_file_path}"
+            
+            # Extract subdirectory structure from the path
+            relative_to_layouts = Pathname.new(json_file_path).relative_path_from(Pathname.new(@layouts_path))
+            subdirs = relative_to_layouts.dirname.to_s
+            
+            if subdirs == '.'
+              # No subdirectory, add directly to Layouts
+              @xcode_manager.add_file(json_file_path, "Layouts")
+            else
+              # Has subdirectory, add to Layouts/subdirectory
+              group_path = "Layouts/#{subdirs}"
+              puts "Debug: Adding to group: #{group_path}"
+              @xcode_manager.add_file(json_file_path, group_path)
+            end
           end
 
           def generate_binding_file
