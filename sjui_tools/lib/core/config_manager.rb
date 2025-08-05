@@ -22,6 +22,7 @@ module SjuiTools
           'output_directory' => 'Generated'
         },
         'hotloader' => {
+          'ip' => '127.0.0.1',
           'port' => 8080,
           'watch_directories' => ['Layouts', 'Styles']
         }
@@ -170,6 +171,22 @@ module SjuiTools
 
       def self.get_custom_view_types
         load_config['custom_view_types'] || {}
+      end
+
+      def self.update_hotloader_ip(ip)
+        config_path = find_config_file
+        return unless config_path && File.exist?(config_path)
+        
+        config = load_config
+        config['hotloader'] ||= {}
+        config['hotloader']['ip'] = ip
+        
+        File.write(config_path, JSON.pretty_generate(config))
+      end
+
+      def self.get_hotloader_config
+        config = load_config
+        config['hotloader'] || DEFAULT_CONFIG['hotloader']
       end
 
       def self.get_hot_loader_directory

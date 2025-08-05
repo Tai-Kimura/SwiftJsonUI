@@ -11,7 +11,8 @@ class AppDelegateSetup
     puts "Adding HotLoader functionality to AppDelegate..."
     
     # AppDelegate.swiftファイルを探す
-    project_dir = File.dirname(File.dirname(@project_file_path))
+    # @project_file_pathは.xcodeprojディレクトリへのパスなので、その親ディレクトリから検索
+    project_dir = File.dirname(@project_file_path)
     app_delegate_path = find_app_delegate_file(project_dir)
     
     if app_delegate_path.nil?
@@ -42,7 +43,18 @@ class AppDelegateSetup
 
   def find_app_delegate_file(project_dir)
     # プロジェクトディレクトリから再帰的にAppDelegate.swiftを検索
-    Dir.glob("#{project_dir}/**/AppDelegate.swift").first
+    # ただし、DerivedData、Build、Pods、Carthageなどのディレクトリは除外
+    app_delegate_files = Dir.glob("#{project_dir}/**/AppDelegate.swift").reject do |path|
+      path.include?('DerivedData') || 
+      path.include?('Build') || 
+      path.include?('Pods') || 
+      path.include?('Carthage') ||
+      path.include?('.build') ||
+      path.include?('node_modules')
+    end
+    
+    # 最もプロジェクトルートに近いものを選択
+    app_delegate_files.min_by { |path| path.split('/').length }
   end
 
   def add_hotloader_content(content)

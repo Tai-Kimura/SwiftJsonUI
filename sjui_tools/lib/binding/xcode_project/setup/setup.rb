@@ -31,9 +31,6 @@ class Setup < PbxprojManager
     # 6. membershipExceptionsを設定
     setup_membership_exceptions
     
-    # 7. Info.plistにIPとポートを設定
-    setup_ip_and_port_in_info_plist
-    
     puts "=== SwiftJsonUI Project Setup Completed Successfully! ==="
   end
 
@@ -97,7 +94,20 @@ class Setup < PbxprojManager
 
   def find_info_plist_file(project_dir)
     # プロジェクトディレクトリから再帰的にInfo.plistを検索
-    Dir.glob("#{project_dir}/**/Info.plist").first
+    # ただし、DerivedData、Build、Pods、Carthageなどのディレクトリは除外
+    info_plist_files = Dir.glob("#{project_dir}/**/Info.plist").reject do |path|
+      path.include?('DerivedData') || 
+      path.include?('Build') || 
+      path.include?('Pods') || 
+      path.include?('Carthage') ||
+      path.include?('.build') ||
+      path.include?('node_modules') ||
+      path.include?('Tests') ||
+      path.include?('UITests')
+    end
+    
+    # 最もプロジェクトルートに近いものを選択
+    info_plist_files.min_by { |path| path.split('/').length }
   end
 
   def remove_storyboard_references(content)
@@ -106,57 +116,6 @@ class Setup < PbxprojManager
     content
   end
 
-  def setup_ip_and_port_in_info_plist
-    puts "Setting up IP and Port in Info.plist..."
-    
-    # Info.plistファイルを探す
-    project_dir = File.dirname(File.dirname(@project_file_path))
-    info_plist_path = find_info_plist_file(project_dir)
-    
-    if info_plist_path.nil?
-      puts "Warning: Could not find Info.plist file. IP and Port not set."
-      return
-    end
-
-    # 現在のIPアドレスを取得
-    current_ip = get_local_ip
-    port = "8081"
-    
-    if current_ip.nil? || current_ip.empty?
-      puts "Warning: Could not determine local IP address."
-      return
-    end
-    
-    puts "Updating Info.plist with IP: #{current_ip}, Port: #{port}"
-    
-    # CurrentIpキーの設定
-    if system("/usr/libexec/PlistBuddy -c 'Print :CurrentIp' '#{info_plist_path}' 2>/dev/null")
-      system("/usr/libexec/PlistBuddy -c 'Set :CurrentIp #{current_ip}' '#{info_plist_path}'")
-    else
-      system("/usr/libexec/PlistBuddy -c 'Add :CurrentIp string #{current_ip}' '#{info_plist_path}'")
-    end
-    
-    # HotLoader Portキーの設定（スペース入り）
-    if system("/usr/libexec/PlistBuddy -c 'Print :HotLoader\\ Port' '#{info_plist_path}' 2>/dev/null")
-      system("/usr/libexec/PlistBuddy -c 'Set :HotLoader\\ Port #{port}' '#{info_plist_path}'")
-    else
-      system("/usr/libexec/PlistBuddy -c 'Add :HotLoader\\ Port string #{port}' '#{info_plist_path}'")
-    end
-    
-    puts "✅ Info.plist updated successfully with IP and Port"
-  end
-  
-  def get_local_ip
-    # en0インターフェースからIPを取得
-    ip = `ipconfig getifaddr en0 2>/dev/null`.strip
-    
-    # en0から取得できない場合は、他のインターフェースから取得
-    if ip.empty?
-      ip = `ifconfig | grep "inet " | grep -v 127.0.0.1 | grep -v "169.254" | head -n1 | awk '{print $2}'`.strip
-    end
-    
-    ip
-  end
   
   def restore_converted_files
     # 変換情報ファイルを確認

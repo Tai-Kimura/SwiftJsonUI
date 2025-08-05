@@ -2,6 +2,7 @@
 
 require_relative '../command_base'
 require_relative '../../hotloader/server'
+require_relative '../../hotloader/ip_monitor'
 require_relative '../../core/config_manager'
 require_relative '../../core/project_finder'
 
@@ -65,19 +66,10 @@ module SjuiTools
             exit 1
           end
           
-          script_dir = File.join(File.dirname(__FILE__), '../../../../scripts')
-          ip_monitor_script = File.join(script_dir, 'ip_monitor.sh')
-          
-          # Update Info.plist with current IP
-          puts "📱 Updating Info.plist with current IP address..."
-          system("bash '#{ip_monitor_script}' update")
-          
-          # Stop any existing IP monitor
-          system("bash '#{ip_monitor_script}' stop > /dev/null 2>&1")
-          
-          # Start IP monitor daemon
-          puts "🔄 Starting IP monitor daemon..."
-          system("bash '#{ip_monitor_script}' daemon")
+          # Start IP monitor
+          puts "🔄 Starting IP address monitor..."
+          @ip_monitor = SjuiTools::Hotloader::IpMonitor.new
+          @ip_monitor.start
           
           # Start HotLoader server
           puts "🌐 Starting HotLoader server on port #{port}..."
@@ -86,19 +78,19 @@ module SjuiTools
           puts "\n✅ HotLoader is ready!"
           puts "Press Ctrl+C to stop all services"
           
+          # Trap interrupt signal to clean up
+          trap('INT') do
+            puts "\n🛑 Shutting down HotLoader..."
+            @ip_monitor&.stop
+            exit 0
+          end
+          
           # Start the server
           SjuiTools::HotLoader::Server.start(port: port)
         end
         
         def run_stop(args)
           puts "🛑 Stopping HotLoader services..."
-          
-          script_dir = File.join(File.dirname(__FILE__), '../../../../scripts')
-          ip_monitor_script = File.join(script_dir, 'ip_monitor.sh')
-          
-          # Stop IP monitor daemon
-          puts "Stopping IP monitor daemon..."
-          system("bash '#{ip_monitor_script}' stop")
           
           # Kill HotLoader server processes
           puts "Stopping HotLoader server..."
@@ -110,17 +102,9 @@ module SjuiTools
             Process.kill('TERM', pid.to_i) rescue nil
           end
           
-          # Kill Node.js processes on port 8081 (legacy)
-          node_pids = `lsof -ti:8081`.strip.split("\n")
-          node_pids.each do |pid|
-            next if pid.empty?
-            Process.kill('TERM', pid.to_i) rescue nil
-          end
-          
           # Kill processes by name
-          system("pkill -f 'server.js' 2>/dev/null")
-          system("pkill -f 'layout_loader.js' 2>/dev/null")
           system("pkill -f 'hotloader/server.rb' 2>/dev/null")
+          system("pkill -f 'hotloader/ip_monitor.rb' 2>/dev/null")
           
           puts "✅ All HotLoader services stopped"
         end
@@ -129,43 +113,34 @@ module SjuiTools
           puts "📊 HotLoader Status"
           puts "=" * 40
           
-          script_dir = File.join(File.dirname(__FILE__), '../../../../scripts')
-          ip_monitor_script = File.join(script_dir, 'ip_monitor.sh')
+          # Check current IP from config
+          config = Core::ConfigManager.get_hotloader_config
+          current_ip = config['ip'] || '127.0.0.1'
+          current_port = config['port'] || 8080
           
-          # Check IP monitor status
-          puts "\n🔄 IP Monitor:"
-          system("bash '#{ip_monitor_script}' status")
+          puts "\n📱 Configuration:"
+          puts "   IP Address: #{current_ip}"
+          puts "   Port: #{current_port}"
           
           # Check Ruby server (port 8080)
-          puts "\n🌐 HotLoader Server (Ruby):"
-          ruby_pids = `lsof -ti:8080 2>/dev/null`.strip
+          puts "\n🌐 HotLoader Server:"
+          ruby_pids = `lsof -ti:#{current_port} 2>/dev/null`.strip
           if ruby_pids.empty?
             puts "   Status: Not running"
           else
             puts "   Status: Running"
             puts "   PID(s): #{ruby_pids.split("\n").join(', ')}"
-            puts "   Port: 8080"
+            puts "   Endpoint: ws://#{current_ip}:#{current_port}/websocket"
           end
           
-          # Check Node.js server (port 8081 - legacy)
-          puts "\n🌐 Legacy Node.js Server:"
-          node_pids = `lsof -ti:8081 2>/dev/null`.strip
-          if node_pids.empty?
+          # Check IP monitor process
+          puts "\n🔄 IP Monitor:"
+          monitor_pids = `pgrep -f 'hotloader/ip_monitor.rb' 2>/dev/null`.strip
+          if monitor_pids.empty?
             puts "   Status: Not running"
           else
             puts "   Status: Running"
-            puts "   PID(s): #{node_pids.split("\n").join(', ')}"
-            puts "   Port: 8081"
-          end
-          
-          # Check for server.js and layout_loader.js processes
-          server_js_pid = `pgrep -f 'node.*server.js' 2>/dev/null`.strip
-          layout_loader_pid = `pgrep -f 'node.*layout_loader.js' 2>/dev/null`.strip
-          
-          if !server_js_pid.empty? || !layout_loader_pid.empty?
-            puts "\n📄 Node.js Processes:"
-            puts "   server.js: #{server_js_pid.empty? ? 'Not running' : "PID #{server_js_pid}"}"
-            puts "   layout_loader.js: #{layout_loader_pid.empty? ? 'Not running' : "PID #{layout_loader_pid}"}"
+            puts "   PID(s): #{monitor_pids.split("\n").join(', ')}"
           end
         end
         
