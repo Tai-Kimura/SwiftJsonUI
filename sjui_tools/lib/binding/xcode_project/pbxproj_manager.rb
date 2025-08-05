@@ -4,6 +4,7 @@ require "fileutils"
 require "pathname"
 require_relative '../../core/project_finder'
 require_relative '../../core/config_manager'
+require_relative '../../core/xcode_target_helper'
 
 module SjuiTools
   module Binding
@@ -83,6 +84,7 @@ module SjuiTools
     unsafe_chars.none? { |char| file_path.include?(char) }
   end
 
+
   def setup_membership_exceptions
     return unless File.exist?(@project_file_path)
     
@@ -101,9 +103,9 @@ module SjuiTools
       # プロジェクトを開く
       project = Xcodeproj::Project.open(xcodeproj_path)
       
-      # メインターゲットを取得
-      main_target = project.targets.first
-      return unless main_target
+      # アプリターゲットを取得
+      app_targets = Core::XcodeTargetHelper.get_app_targets(project)
+      return if app_targets.empty?
       
       # sjui_toolsディレクトリのファイルを除外
       directories_to_exclude = ['sjui_tools']
@@ -111,10 +113,12 @@ module SjuiTools
       # プロジェクトのメインルートグループを取得
       main_group = project.main_group
       
-      # 除外するディレクトリを検索
-      directories_to_exclude.each do |dir_name|
-        if group = main_group.find_subpath(dir_name, true)
-          exclude_group_from_target(group, main_target)
+      # 各ターゲットから除外
+      app_targets.each do |target|
+        directories_to_exclude.each do |dir_name|
+          if group = main_group.find_subpath(dir_name, true)
+            exclude_group_from_target(group, target)
+          end
         end
       end
       

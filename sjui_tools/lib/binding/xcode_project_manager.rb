@@ -4,6 +4,7 @@ require 'xcodeproj'
 # require_relative '../core/xcodeproj_patch' # xcodeproj 1.27.0 has native Xcode 16 support
 require_relative 'xcode_project/pbxproj_manager'
 require_relative '../core/config_manager'
+require_relative '../core/xcode_target_helper'
 
 module SjuiTools
   module Binding
@@ -14,6 +15,7 @@ module SjuiTools
         @project_path = project_path
         @project = Xcodeproj::Project.open(project_path)
       end
+
 
       def add_file(file_path, group_name)
         # Find or create group
@@ -38,8 +40,11 @@ module SjuiTools
         
         # Add to target if it's a source file
         if file_path.end_with?('.swift', '.m', '.mm')
-          main_target = @project.targets.first
-          main_target.add_file_references([file_ref]) if main_target
+          # アプリターゲットを取得して追加
+          app_targets = Core::XcodeTargetHelper.get_app_targets(@project)
+          app_targets.each do |target|
+            target.add_file_references([file_ref])
+          end
         end
         
         # Save project
@@ -144,8 +149,11 @@ module SjuiTools
           file_ref.name = file_name
           
           if file_path.end_with?('.swift', '.m', '.mm')
-            main_target = @project.targets.first
-            main_target.add_file_references([file_ref]) if main_target
+            # アプリターゲットを取得して追加
+            app_targets = Core::XcodeTargetHelper.get_app_targets(@project)
+            app_targets.each do |target|
+              target.add_file_references([file_ref])
+            end
           end
         end
       end

@@ -6,6 +6,7 @@ require "json"
 require 'xcodeproj'
 require_relative '../project_finder'
 require_relative '../config_manager'
+require_relative '../xcode_target_helper'
 
 module SjuiTools
   module Core
@@ -185,20 +186,20 @@ module SjuiTools
             @project.root_object.package_references ||= []
             @project.root_object.package_references << package_ref
             
-            # Add product dependency to main target
-            main_target = @project.targets.find { |t| t.product_type == 'com.apple.product-type.application' }
-            if main_target
+            # Add product dependency to all app targets
+            app_targets = XcodeTargetHelper.get_app_targets(@project)
+            app_targets.each do |target|
               # Create product dependency
               product_dependency = @project.new(Xcodeproj::Project::Object::XCSwiftPackageProductDependency)
               product_dependency.package = package_ref
               product_dependency.product_name = package_info[:name]
               
               # Add to target dependencies
-              main_target.package_product_dependencies ||= []
-              main_target.package_product_dependencies << product_dependency
+              target.package_product_dependencies ||= []
+              target.package_product_dependencies << product_dependency
               
               # Add to frameworks build phase
-              frameworks_phase = main_target.frameworks_build_phase
+              frameworks_phase = target.frameworks_build_phase
               if frameworks_phase
                 build_file = @project.new(Xcodeproj::Project::Object::PBXBuildFile)
                 build_file.product_ref = product_dependency
