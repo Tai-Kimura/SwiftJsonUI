@@ -51,10 +51,6 @@ module SjuiTools
           when "type"
             @import_module_manager.add_import_module_for_type(value)
             current_view["type"] = value
-            # Track if this is a Partial type
-            if value == "Partial" && json["name"]
-              track_partial_binding(json["name"])
-            end
           when "id"
             process_id_element(json, value, current_view)
           when "child"
@@ -63,6 +59,8 @@ module SjuiTools
             end
           when "include"
             process_include_element(file_name, value, json)
+            # Track this as a partial binding
+            track_partial_binding(value)
           when "onClick"
             @ui_control_event_manager.add_click_event(current_view["name"], value)
           when "onLongPress"
@@ -193,40 +191,12 @@ module SjuiTools
         end
         
         # サブディレクトリを含むパスをサポート
-        # パスを分割して、ファイル名部分に_プレフィックスを追加
-        if value.include?('/')
-          # サブディレクトリがある場合
-          dir_parts = value.split('/')
-          file_base = dir_parts.pop
-          dir_path = dir_parts.join('/')
-          
-          # まずpartial用の_プレフィックス付きファイルを探す
-          file_path = File.join(@layout_path, dir_path, "_#{file_base}.json")
-          if !File.exist?(file_path)
-            # 次に通常のファイルを探す
-            file_path = File.join(@layout_path, "#{value}.json")
-          end
-        else
-          # サブディレクトリがない場合
-          # まずpartial用の_プレフィックス付きファイルを探す
-          file_path = File.join(@layout_path, "_#{value}.json")
-          if !File.exist?(file_path)
-            # 次に通常のファイルを探す
-            file_path = File.join(@layout_path, "#{value}.json")
-          end
-        end
+        # 直接指定されたパスでファイルを探す（_プレフィックスは不要）
+        file_path = File.join(@layout_path, "#{value}.json")
         
         # ファイルが見つからない場合はエラー
         unless File.exist?(file_path)
-          if value.include?('/')
-            dir_parts = value.split('/')
-            file_base = dir_parts.pop
-            dir_path = dir_parts.join('/')
-            tried_paths = "#{File.join(@layout_path, dir_path, "_#{file_base}.json")} and #{File.join(@layout_path, "#{value}.json")}"
-          else
-            tried_paths = "#{File.join(@layout_path, "_#{value}.json")} and #{File.join(@layout_path, "#{value}.json")}"
-          end
-          raise "Include file not found: #{value} (tried #{tried_paths})"
+          raise "Include file not found: #{file_path}"
         end
         
         # ディレクトリの場合はエラー
