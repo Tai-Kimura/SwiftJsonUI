@@ -8,160 +8,146 @@ require_relative '../../../core/project_finder'
 
 module SjuiTools
   module Binding
-    module Generators
-      class PartialGenerator < SjuiTools::Binding::PbxprojManager
-  def initialize(project_file_path = nil)
-    super(project_file_path)
-    
-    # Setup paths using ProjectFinder
-    Core::ProjectFinder.setup_paths(@project_file_path)
-    
-    # Get configuration
-    config = Core::ConfigManager.load_config
-    
-    # Set layouts path
-    source_path = Core::ProjectFinder.get_full_source_path
-    @layouts_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
-    
-    @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
-  end
+    module XcodeProject
+      module Generators
+        class PartialGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+          def initialize(project_file_path = nil)
+            super(project_file_path)
+            
+            # Setup paths using ProjectFinder
+            Core::ProjectFinder.setup_paths(@project_file_path)
+            
+            # Get configuration
+            config = Core::ConfigManager.load_config
+            
+            # Set paths
+            source_path = Core::ProjectFinder.get_full_source_path
+            @layouts_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
+            
+            @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
+          end
 
-  def generate(partial_name)
-    # 引数チェック
-    if partial_name.nil? || partial_name.empty?
-      raise "Usage: sjui g partial <partial_name>\nExample: sjui g partial navigation_bar"
-    end
-    
-    # パスとファイル名を分離
-    parts = partial_name.split('/')
-    if parts.length > 1
-      # サブディレクトリがある場合
-      subdir = parts[0..-2].join('/')
-      base_name = parts[-1]
-    else
-      # サブディレクトリがない場合
-      subdir = nil
-      base_name = partial_name
-    end
-    
-    # 名前の正規化（キャメルケースをスネークケースに変換）
-    snake_name = base_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
-    
-    puts "Generating partial: #{snake_name}" + (subdir ? " in #{subdir}/" : "")
-    
-    # 1. partialのJSONファイル作成（_プレフィックス付き）
-    partial_file_path = create_partial_json_file(snake_name, subdir)
-    
-    # 2. Xcodeプロジェクトに追加（Layoutsグループに追加）
-    add_to_xcode_project(partial_file_path)
-    
-    # 3. バインディングファイルの生成
-    generate_binding_file
-    
-    puts "\nSuccessfully generated:"
-    puts "  - Partial JSON: #{partial_file_path}"
-    puts "\nNext steps:"
-    puts "  - Edit the JSON file to design your partial layout"
-    puts "  - Include it in other layouts using the partial name: '#{snake_name}'"
-  end
+          def generate(partial_name)
+            # 名前の正規化
+            snake_name = partial_name.downcase.gsub(/[^a-z0-9_]/, '_')
+            
+            puts "Generating partial layout: #{snake_name}"
+            
+            # 1. Partialディレクトリの確認/作成
+            ensure_partial_directory
+            
+            # 2. Partial JSONファイルの作成
+            json_file_path = create_partial_json(snake_name)
+            
+            # 3. Xcodeプロジェクトに追加
+            add_to_xcode_project(json_file_path)
+            
+            # 4. Bindingファイルの生成
+            generate_binding_file
+            
+            puts "\nSuccessfully generated partial: #{snake_name}"
+            puts "File created: #{json_file_path}"
+            puts "\nTo use this partial, include it in your layout JSON:"
+            puts '  {
+    "type": "Partial",
+    "name": "' + snake_name + '"
+  }'
+          end
 
-  private
+          private
 
-  def create_partial_json_file(snake_name, subdir = nil)
-    # ファイル名の最初に_を追加
-    file_name = "_#{snake_name}.json"
-    
-    # サブディレクトリがある場合はパスに含める
-    if subdir
-      dir_path = File.join(@layouts_path, subdir)
-      file_path = File.join(dir_path, file_name)
-    else
-      dir_path = @layouts_path
-      file_path = File.join(@layouts_path, file_name)
-    end
-    
-    if File.exist?(file_path)
-      puts "Partial JSON file already exists: #{file_path}"
-      return file_path
-    end
-    
-    # ディレクトリが存在しない場合は作成（サブディレクトリも含めて）
-    FileUtils.mkdir_p(dir_path) unless File.directory?(dir_path)
-    
-    content = generate_partial_json_content(snake_name)
-    File.write(file_path, content)
-    puts "Created partial JSON: #{file_path}"
-    file_path
-  end
+          def ensure_partial_directory
+            partial_dir = File.join(@layouts_path, 'Partial')
+            unless Dir.exist?(partial_dir)
+              FileUtils.mkdir_p(partial_dir)
+              puts "Created Partial directory: #{partial_dir}"
+            end
+          end
 
-  def generate_partial_json_content(snake_name)
-    # Partialの基本テンプレート（SwiftJsonUIの正しい属性を使用）
-    content = {
-      "type" => "View",
-      "id" => "#{snake_name}_container",
-      "width" => "matchParent",
-      "height" => "wrapContent",
-      "background" => "FFFFFF",
-      "padding" => "16",
-      "child" => [
-        {
-          "type" => "Label",
-          "id" => "#{snake_name}_label",
-          "text" => "#{snake_name.split('_').map(&:capitalize).join(' ')} Partial",
-          "fontSize" => "16",  # textSizeではなくfontSize
-          "fontColor" => "333333"  # textColorではなくfontColor
-        }
-      ]
-    }
-    JSON.pretty_generate(content)
-  end
+          def create_partial_json(partial_name)
+            partial_dir = File.join(@layouts_path, 'Partial')
+            file_path = File.join(partial_dir, "#{partial_name}.json")
+            
+            if File.exist?(file_path)
+              puts "Warning: Partial JSON file already exists: #{file_path}"
+              return file_path
+            end
+            
+            content = generate_partial_json_content(partial_name)
+            File.write(file_path, content)
+            puts "Created partial JSON: #{file_path}"
+            
+            file_path
+          end
 
-  def add_to_xcode_project(json_file_path)
-    # バックアップとエラーハンドリングを含む安全な処理
-    @xcode_manager.add_file(json_file_path, "Layouts")
-  end
+          def generate_partial_json_content(partial_name)
+            content = {
+              "type" => "View",
+              "id" => "#{partial_name}_root",
+              "width" => "matchParent",
+              "height" => "wrapContent",
+              "padding" => "16",
+              "background" => "FFFFFF",
+              "child" => [
+                {
+                  "type" => "Label",
+                  "id" => "#{partial_name}_label",
+                  "text" => "This is the #{partial_name} partial",
+                  "textSize" => "14",
+                  "textColor" => "000000"
+                }
+              ]
+            }
+            JSON.pretty_generate(content)
+          end
 
-  def generate_binding_file
-    begin
-      # JsonLoaderとImportModuleManagerをrequire
-      require_relative '../../json_loader'
-      require_relative '../../import_module_manager'
-      require_relative '../../../core/config_manager'
-      
-      # configから カスタムビュータイプを読み込んで設定
-      custom_view_types = Core::ConfigManager.get_custom_view_types
-      
-      # カスタムビュータイプを設定
-      view_type_mappings = {}
-      import_mappings = {}
-      
-      custom_view_types.each do |view_type, config|
-        if config['class_name']
-          view_type_mappings[view_type.to_sym] = config['class_name']
+          def add_to_xcode_project(json_file_path)
+            # バックアップとエラーハンドリングを含む安全な処理
+            @xcode_manager.add_file(json_file_path, "Layouts")
+          end
+
+          def generate_binding_file
+            begin
+              # JsonLoaderとImportModuleManagerをrequire
+              require_relative '../../json_loader'
+              require_relative '../../import_module_manager'
+              require_relative '../../../core/config_manager'
+              
+              # configから カスタムビュータイプを読み込んで設定
+              custom_view_types = Core::ConfigManager.get_custom_view_types
+              
+              # カスタムビュータイプを設定
+              view_type_mappings = {}
+              import_mappings = {}
+              
+              custom_view_types.each do |view_type, config|
+                if config['class_name']
+                  view_type_mappings[view_type.to_sym] = config['class_name']
+                end
+                if config['import_module']
+                  import_mappings[view_type] = config['import_module']
+                end
+              end
+              
+              # View typeの拡張
+              JsonLoader.view_type_set.merge!(view_type_mappings) unless view_type_mappings.empty?
+              
+              # Importマッピングの追加
+              import_mappings.each do |type, module_name|
+                ImportModuleManager.add_type_import_mapping(type, module_name)
+              end
+              
+              # JsonLoaderを実行
+              loader = JsonLoader.new(nil, @project_file_path)
+              loader.start_analyze
+              
+              puts "Successfully generated binding files"
+            rescue => e
+              puts "Warning: Could not generate binding files: #{e.message}"
+              puts "You can run 'sjui build' manually to generate binding files"
+            end
+          end
         end
-        if config['import_module']
-          import_mappings[view_type] = config['import_module']
-        end
-      end
-      
-      # View typeの拡張
-      JsonLoader.view_type_set.merge!(view_type_mappings) unless view_type_mappings.empty?
-      
-      # Importマッピングの追加
-      import_mappings.each do |type, module_name|
-        ImportModuleManager.add_type_import_mapping(type, module_name)
-      end
-      
-      # JsonLoaderを実行
-      loader = JsonLoader.new(nil, @project_file_path)
-      loader.start_analyze
-      
-      puts "Successfully generated binding files"
-    rescue => e
-      puts "Warning: Could not generate binding files: #{e.message}"
-      puts "You can run 'sjui build' manually to generate binding files"
-    end
-  end
       end
     end
   end
@@ -178,8 +164,8 @@ if __FILE__ == $0
   begin
     # binding_builderディレクトリから検索開始
     binding_builder_dir = File.expand_path("../../", __FILE__)
-    project_file_path = Core::ProjectFinder.find_project_file(binding_builder_dir)
-    generator = SjuiTools::Binding::Generators::PartialGenerator.new(project_file_path)
+    project_file_path = SjuiTools::Core::ProjectFinder.find_project_file(binding_builder_dir)
+    generator = SjuiTools::Binding::XcodeProject::Generators::PartialGenerator.new(project_file_path)
     generator.generate(ARGV[0])
   rescue => e
     puts "Error: #{e.message}"

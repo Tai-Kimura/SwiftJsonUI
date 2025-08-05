@@ -41,49 +41,49 @@ module SjuiTools
             is_root = @options[:root] || false
             # 名前の正規化
             camel_name = view_name.split('_').map(&:capitalize).join
-          snake_name = view_name.downcase
-          
-          puts "Generating view files for: #{camel_name}"
-          if is_root
-            puts "Setting as root view controller"
+            snake_name = view_name.downcase
+            
+            puts "Generating view files for: #{camel_name}"
+            if is_root
+              puts "Setting as root view controller"
+            end
+            
+            # 1. Viewフォルダの作成
+            view_folder_path = create_view_folder(camel_name)
+            
+            # 2. ViewControllerファイルの作成
+            view_controller_path = create_view_controller(view_folder_path, camel_name)
+            
+            # 3. JSONファイルの作成
+            json_path = create_json_file(snake_name)
+            
+            # 4. Xcodeプロジェクトに追加
+            add_to_xcode_project([view_controller_path, json_path])
+            
+            # 5. rootオプションが指定された場合、AppDelegateを修正
+            if is_root
+              update_app_delegate(camel_name)
+            end
+            
+            puts "Successfully generated:"
+            puts "  - View folder: #{view_folder_path}"
+            puts "  - ViewController: #{view_controller_path}"
+            puts "  - JSON layout: #{json_path}"
+            if is_root
+              puts "  - Updated AppDelegate to use #{camel_name}ViewController as root"
+            end
+            
+            # 6. 自動的にbuildコマンドを実行してbindingファイルを生成
+            puts "\nRunning build command to generate binding files..."
+            run_build_command
+            
+            puts "\nView generation completed successfully!"
+            puts "Next steps:"
+            puts "  - Edit #{json_path} to customize your layout"
+            if is_root
+              puts "  - Your app will now launch with #{camel_name}ViewController as the initial screen"
+            end
           end
-          
-          # 1. Viewフォルダの作成
-          view_folder_path = create_view_folder(camel_name)
-          
-          # 2. ViewControllerファイルの作成
-          view_controller_path = create_view_controller(view_folder_path, camel_name)
-          
-          # 3. JSONファイルの作成
-          json_path = create_json_file(snake_name)
-          
-          # 4. Xcodeプロジェクトに追加
-          add_to_xcode_project([view_controller_path, json_path])
-          
-          # 5. rootオプションが指定された場合、AppDelegateを修正
-          if is_root
-            update_app_delegate(camel_name)
-          end
-          
-          puts "Successfully generated:"
-          puts "  - View folder: #{view_folder_path}"
-          puts "  - ViewController: #{view_controller_path}"
-          puts "  - JSON layout: #{json_path}"
-          if is_root
-            puts "  - Updated AppDelegate to use #{camel_name}ViewController as root"
-          end
-          
-          # 6. 自動的にbuildコマンドを実行してbindingファイルを生成
-          puts "\nRunning build command to generate binding files..."
-          run_build_command
-          
-          puts "\nView generation completed successfully!"
-          puts "Next steps:"
-          puts "  - Edit #{json_path} to customize your layout"
-          if is_root
-            puts "  - Your app will now launch with #{camel_name}ViewController as the initial screen"
-          end
-        end
 
         private
 

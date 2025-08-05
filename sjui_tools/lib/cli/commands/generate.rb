@@ -65,7 +65,7 @@ module SjuiTools
           case mode
           when 'binding'
             require_relative '../../binding/xcode_project/generators/view_generator'
-            generator = SjuiTools::Binding::Generators::ViewGenerator.new(name, options)
+            generator = SjuiTools::Binding::XcodeProject::Generators::ViewGenerator.new(name, options)
             generator.generate
           when 'swiftui'
             require_relative '../../swiftui/converter'
@@ -90,7 +90,7 @@ module SjuiTools
           when 'binding'
             require_relative '../../binding/xcode_project/generators/partial_generator'
             project_file = Core::ProjectFinder.find_project_file
-            generator = SjuiTools::Binding::Generators::PartialGenerator.new(project_file)
+            generator = SjuiTools::Binding::XcodeProject::Generators::PartialGenerator.new(project_file)
             generator.generate(name)
           when 'swiftui'
             puts "Generating SwiftUI partial: #{name}"
@@ -111,7 +111,7 @@ module SjuiTools
           when 'binding'
             require_relative '../../binding/xcode_project/generators/collection_generator'
             project_file = Core::ProjectFinder.find_project_file
-            generator = SjuiTools::Binding::Generators::CollectionGenerator.new(project_file)
+            generator = SjuiTools::Binding::XcodeProject::Generators::CollectionGenerator.new(project_file)
             generator.generate(name)
           else
             puts "Collection generation is only available in binding mode"
@@ -134,7 +134,7 @@ module SjuiTools
           end
           
           require_relative '../../binding/xcode_project/generators/binding_generator'
-          generator = SjuiTools::Binding::Generators::BindingGenerator.new(name)
+          generator = SjuiTools::Binding::XcodeProject::Generators::BindingGenerator.new(name)
           generator.generate
         end
 
