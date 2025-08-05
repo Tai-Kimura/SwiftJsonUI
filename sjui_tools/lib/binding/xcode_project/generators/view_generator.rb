@@ -273,7 +273,8 @@ module SjuiTools
 
         def update_app_delegate(camel_name)
           # SceneDelegate.swiftファイルを探す
-          project_dir = File.dirname(File.dirname(@project_file_path))
+          # @project_file_pathは.xcodeprojディレクトリへのパスなので、その親ディレクトリから検索
+          project_dir = File.dirname(@project_file_path)
           scene_delegate_path = find_scene_delegate_file(project_dir)
           
           if scene_delegate_path.nil?
@@ -301,7 +302,20 @@ module SjuiTools
 
         def find_scene_delegate_file(project_dir)
           # プロジェクトディレクトリから再帰的にSceneDelegate.swiftを検索
-          scene_delegate_path = Dir.glob("#{project_dir}/**/SceneDelegate.swift").first
+          # ただし、DerivedData、Build、Pods、Carthageなどのディレクトリは除外
+          scene_delegate_files = Dir.glob("#{project_dir}/**/SceneDelegate.swift").reject do |path|
+            path.include?('DerivedData') || 
+            path.include?('Build') || 
+            path.include?('Pods') || 
+            path.include?('Carthage') ||
+            path.include?('.build') ||
+            path.include?('node_modules') ||
+            path.include?('Tests') ||
+            path.include?('UITests')
+          end
+          
+          # 最もプロジェクトルートに近いものを選択
+          scene_delegate_path = scene_delegate_files.min_by { |path| path.split('/').length }
           
           # ファイルであることを確認
           if scene_delegate_path && File.file?(scene_delegate_path)

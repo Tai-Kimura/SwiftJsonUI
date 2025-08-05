@@ -56,7 +56,7 @@ class Setup < PbxprojManager
     puts "Setting up HotLoader functionality..."
     require_relative 'app_delegate_setup'
     
-    app_delegate_setup = AppDelegateSetup.new(@project_file_path)
+    app_delegate_setup = SjuiTools::Binding::XcodeProject::Setup::AppDelegateSetup.new(@project_file_path)
     app_delegate_setup.add_hotloader_functionality
   end
 
