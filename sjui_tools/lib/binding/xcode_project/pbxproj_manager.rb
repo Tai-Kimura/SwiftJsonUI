@@ -724,6 +724,7 @@ module SjuiTools
     
     content
   end
+      end
     end
   end
 end
