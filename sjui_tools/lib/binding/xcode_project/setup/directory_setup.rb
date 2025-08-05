@@ -2,8 +2,10 @@
 
 require "fileutils"
 require "pathname"
+require "ostruct"
 require_relative '../../xcode_project_manager'
 require_relative '../../../core/project_finder'
+require_relative '../../../core/config_manager'
 require_relative '../pbxproj_manager'
 require_relative '../generators/ui_view_creator_generator'
 require_relative '../generators/base_view_controller_generator'
@@ -21,6 +23,24 @@ module SjuiTools
             
             # ProjectFinderを使用してパスを設定
             Core::ProjectFinder.setup_paths(@project_file_path)
+            
+            # Get configuration
+            config = Core::ConfigManager.load_config
+            
+            # Set paths based on configuration
+            source_path = Core::ProjectFinder.get_full_source_path
+            
+            # Create a simple object to hold paths
+            @paths = OpenStruct.new(
+              source_path: source_path,
+              sjui_source_path: source_path,  # For compatibility
+              view_path: File.join(source_path, config['view_directory'] || 'View'),
+              bindings_path: File.join(source_path, config['bindings_directory'] || 'Bindings'),
+              layouts_path: File.join(source_path, config['layouts_directory'] || 'Layouts'),
+              styles_path: File.join(source_path, config['styles_directory'] || 'Styles'),
+              core_path: File.join(source_path, 'Core')
+            )
+            
             @xcode_manager = ::SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
           end
 
