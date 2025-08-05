@@ -17,6 +17,9 @@ module SjuiTools
           def run_full_setup
             puts "=== Starting SwiftJsonUI Project Setup ==="
             
+            # 0. ワークスペースの存在を確認（SPM用）
+            ensure_workspace_exists
+            
             # 1. 変換後のプロジェクトの場合、既存ファイルを復元
             restore_converted_files
             
@@ -39,6 +42,39 @@ module SjuiTools
           end
 
           private
+
+          def ensure_workspace_exists
+            puts "Ensuring workspace exists..."
+            
+            # Get workspace path
+            project_dir = File.dirname(@project_file_path)
+            project_name = File.basename(@project_file_path, '.xcodeproj')
+            workspace_path = File.join(project_dir, "#{project_name}.xcworkspace")
+            
+            # Create workspace directory if it doesn't exist
+            unless Dir.exist?(workspace_path)
+              FileUtils.mkdir_p(workspace_path)
+              puts "Created workspace directory: #{workspace_path}"
+              
+              # Create basic workspace file
+              workspace_data_path = File.join(workspace_path, 'contents.xcworkspacedata')
+              unless File.exist?(workspace_data_path)
+                workspace_xml = <<~XML
+                  <?xml version="1.0" encoding="UTF-8"?>
+                  <Workspace
+                     version = "1.0">
+                     <FileRef
+                        location = "self:">
+                     </FileRef>
+                  </Workspace>
+                XML
+                File.write(workspace_data_path, workspace_xml)
+                puts "Created workspace contents file"
+              end
+            else
+              puts "Workspace already exists: #{workspace_path}"
+            end
+          end
 
           def setup_directories
             puts "Setting up project directories..."

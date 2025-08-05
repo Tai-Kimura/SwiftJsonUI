@@ -220,6 +220,14 @@ module SjuiTools
           project_name = File.basename(@project.path, '.xcodeproj')
           workspace_path = File.join(project_dir, "#{project_name}.xcworkspace")
           
+          puts "Debug: Ensuring workspace structure at: #{workspace_path}"
+          
+          # Create workspace directory if it doesn't exist
+          unless Dir.exist?(workspace_path)
+            FileUtils.mkdir_p(workspace_path)
+            puts "Created workspace directory: #{workspace_path}"
+          end
+          
           # Create workspace directory structure
           shared_data_path = File.join(workspace_path, 'xcshareddata')
           swiftpm_path = File.join(shared_data_path, 'swiftpm')
@@ -227,6 +235,13 @@ module SjuiTools
           # Create directories
           FileUtils.mkdir_p(swiftpm_path)
           puts "Created SPM directory structure: #{swiftpm_path}"
+          
+          # Verify the directory was created
+          if Dir.exist?(swiftpm_path)
+            puts "Verified: SPM directory exists at #{swiftpm_path}"
+          else
+            puts "ERROR: Failed to create SPM directory at #{swiftpm_path}"
+          end
           
           # Create empty Package.resolved if it doesn't exist
           package_resolved_path = File.join(swiftpm_path, 'Package.resolved')
