@@ -164,6 +164,8 @@ module SjuiTools
       def cleanup_empty_groups
         # Remove empty groups from main group
         remove_empty_groups_recursive(@project.main_group)
+        # Also remove any phantom references
+        remove_phantom_references
         @project.save
       end
       
@@ -189,6 +191,21 @@ module SjuiTools
         # Remove the empty groups
         groups_to_remove.each do |subgroup|
           subgroup.remove_from_project
+        end
+      end
+      
+      def remove_phantom_references
+        # Get project directory name
+        project_name = File.basename(@project_path, '.xcodeproj')
+        
+        # Remove any groups that match the project name or common phantom patterns
+        phantom_patterns = [project_name, 'sjui_tools', 'binding_builder']
+        
+        @project.main_group.groups.each do |group|
+          if phantom_patterns.include?(group.name) && group.files.empty? && group.groups.empty?
+            puts "Removing phantom reference: #{group.name}"
+            group.remove_from_project
+          end
         end
       end
 

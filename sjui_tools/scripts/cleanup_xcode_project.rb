@@ -6,13 +6,23 @@ require 'xcodeproj'
 def cleanup_project(project_path)
   project = Xcodeproj::Project.open(project_path)
   
+  # Get project name
+  project_name = File.basename(project_path, '.xcodeproj')
+  
   # Find and remove specific phantom groups
-  phantom_groups = ['sjui_tools', 'Bindings']
+  phantom_groups = ['sjui_tools', 'Bindings', 'binding_builder', project_name]
   groups_removed = []
   
-  project.main_group.groups.each do |group|
+  # Check all groups at the root level
+  project.main_group.groups.to_a.each do |group|
+    # Remove if it's a phantom group (empty and matches patterns)
     if phantom_groups.include?(group.name) && group.files.empty? && group.groups.empty?
       puts "Removing phantom group: #{group.name}"
+      groups_removed << group.name
+      group.remove_from_project
+    elsif group.name == project_name && group != project.main_group
+      # Special case: duplicate project name group
+      puts "Removing duplicate project group: #{group.name}"
       groups_removed << group.name
       group.remove_from_project
     end
