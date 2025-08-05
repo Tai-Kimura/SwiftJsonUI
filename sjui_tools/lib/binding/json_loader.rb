@@ -225,13 +225,7 @@ module SjuiTools
       def generate_class_header(binding_info)
         <<~SWIFT
         class #{binding_info[:binding_class_name]}: #{binding_info[:super_binding]} {
-            weak var viewHolder: UIViewController!
             var isInitialized = false
-            
-            override init(viewHolder: UIViewController) {
-                super.init(viewHolder: viewHolder)
-                self.viewHolder = viewHolder
-            }
             
         SWIFT
       end

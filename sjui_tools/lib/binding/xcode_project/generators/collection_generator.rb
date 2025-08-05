@@ -114,13 +114,13 @@ import SwiftJsonUI
 
 class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
     
-    override var layoutPath: String {
+    var layoutPath: String {
         return "#{snake_name}_cell"
     }
     
     private lazy var _binding = #{cell_name}CellBinding(viewHolder: self)
     
-    override var binding: BaseBinding {
+    var binding: Binding {
         return _binding
     }
     
@@ -135,7 +135,7 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
     }
     
     func setupViews() {
-        // Add your cells subview using SwiftJsonUI
+        // Add your cell's subview using SwiftJsonUI
         if let cellView = UIViewCreator.createView(layoutPath, target: self) {
             contentView.addSubview(cellView)
             
@@ -149,7 +149,7 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
             ])
         }
         
-        attachViewToProperty()
+        binding.bindView()
     }
     
     override func prepareForReuse() {
