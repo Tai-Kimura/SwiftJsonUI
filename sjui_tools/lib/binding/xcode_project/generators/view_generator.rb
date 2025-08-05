@@ -282,6 +282,9 @@ module SjuiTools
             project_dir = File.dirname(@project_file_path)
           end
           
+          puts "Debug: Project directory: #{project_dir}"
+          puts "Debug: @project_file_path: #{@project_file_path}"
+          
           scene_delegate_path = find_scene_delegate_file(project_dir)
           
           if scene_delegate_path.nil?
@@ -316,7 +319,12 @@ module SjuiTools
         def find_scene_delegate_file(project_dir)
           # プロジェクトディレクトリから再帰的にSceneDelegate.swiftを検索
           # ただし、DerivedData、Build、Pods、Carthageなどのディレクトリは除外
-          scene_delegate_files = Dir.glob("#{project_dir}/**/SceneDelegate.swift").reject do |path|
+          puts "Debug: Searching for SceneDelegate.swift in: #{project_dir}"
+          
+          all_files = Dir.glob("#{project_dir}/**/SceneDelegate.swift")
+          puts "Debug: Found #{all_files.length} SceneDelegate.swift files before filtering"
+          
+          scene_delegate_files = all_files.reject do |path|
             path.include?('DerivedData') || 
             path.include?('Build') || 
             path.include?('Pods') || 

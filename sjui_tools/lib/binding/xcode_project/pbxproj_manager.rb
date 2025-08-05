@@ -7,8 +7,9 @@ require_relative '../../core/config_manager'
 
 module SjuiTools
   module Binding
-    class PbxprojManager
-  def initialize(project_file_path = nil)
+    module XcodeProject
+      class PbxprojManager
+        def initialize(project_file_path = nil)
     if project_file_path
       @project_file_path = project_file_path
       @project_root = Core::ProjectFinder.get_project_root(@project_file_path)
