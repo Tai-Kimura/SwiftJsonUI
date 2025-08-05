@@ -20,7 +20,7 @@ module SjuiTools
             base_dir = File.expand_path('../..', File.dirname(__FILE__))
             
             # ProjectFinderを使用してパスを設定
-            @paths = Core::ProjectFinder.setup_paths(base_dir, @project_file_path)
+            Core::ProjectFinder.setup_paths(@project_file_path)
             @xcode_manager = ::SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
           end
 
