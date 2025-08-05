@@ -7,16 +7,17 @@ require_relative '../pbxproj_manager'
 
 module SjuiTools
   module Binding
-    module Generators
-      class CollectionGenerator < SjuiTools::Binding::PbxprojManager
-  def initialize(project_file_path = nil)
-    super(project_file_path)
-    
-    # Setup paths using ProjectFinder
-    Core::ProjectFinder.setup_paths(@project_file_path)
-    
-    # Get configuration
-    config = Core::ConfigManager.load_config
+    module XcodeProject
+      module Generators
+        class CollectionGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+          def initialize(project_file_path = nil)
+            super(project_file_path)
+            
+            # Setup paths using ProjectFinder
+            Core::ProjectFinder.setup_paths(@project_file_path)
+            
+            # Get configuration
+            config = Core::ConfigManager.load_config
     
     # Set paths
     source_path = Core::ProjectFinder.get_full_source_path
@@ -270,8 +271,8 @@ if __FILE__ == $0
   begin
     # binding_builderディレクトリから検索開始
     binding_builder_dir = File.expand_path("../../", __FILE__)
-    project_file_path = Core::ProjectFinder.find_project_file(binding_builder_dir)
-    generator = SjuiTools::Binding::Generators::CollectionGenerator.new(project_file_path)
+    project_file_path = SjuiTools::Core::ProjectFinder.find_project_file(binding_builder_dir)
+    generator = SjuiTools::Binding::XcodeProject::Generators::CollectionGenerator.new(project_file_path)
     generator.generate(ARGV[0])
   rescue => e
     puts "Error: #{e.message}"

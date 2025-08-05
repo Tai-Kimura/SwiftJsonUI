@@ -4,39 +4,62 @@ require "fileutils"
 require_relative '../pbxproj_manager'
 require_relative '../../../core/config_manager'
 
-class UIViewCreatorGenerator < PbxprojManager
-  def initialize(project_file_path)
-    super(project_file_path)
-  end
+module SjuiTools
+  module Binding
+    module XcodeProject
+      module Generators
+        class UIViewCreatorGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+          def initialize(project_file_path)
+            super(project_file_path)
+          end
 
-  def generate(ui_path)
-    file_path = File.join(ui_path, "UIViewCreator.swift")
-    
-    # ファイルが既に存在する場合はスキップ
-    if File.exist?(file_path)
-      puts "UIViewCreator.swift already exists, skipping creation"
-      return nil
-    end
+          # directory_setup.rbから呼ばれる静的メソッド
+          def self.check_or_generate(paths)
+            ui_path = File.join(paths.core_path, "UI")
+            file_path = File.join(ui_path, "UIViewCreator.swift")
+            
+            if File.exist?(file_path)
+              return true
+            end
+            
+            # プロジェクトファイルパスを取得
+            project_file_path = paths.instance_variable_get(:@project_file_path)
+            generator = new(project_file_path)
+            generator.generate(ui_path)
+            return true
+          rescue => e
+            puts "Error generating UIViewCreator: #{e.message}"
+            return false
+          end
 
-    content = generate_content
-    File.write(file_path, content)
-    puts "Created UIViewCreator: #{file_path}"
-    file_path
-  end
+          def generate(ui_path)
+            file_path = File.join(ui_path, "UIViewCreator.swift")
+            
+            # ファイルが既に存在する場合はスキップ
+            if File.exist?(file_path)
+              puts "UIViewCreator.swift already exists, skipping creation"
+              return nil
+            end
 
-  private
+            content = generate_content
+            File.write(file_path, content)
+            puts "Created UIViewCreator: #{file_path}"
+            file_path
+          end
 
-  def generate_content
-    # Load config values
-    base_dir = File.expand_path('../..', File.dirname(__FILE__))
-    config = ConfigManager.load_config(base_dir)
-    
-    layouts_dir = config['layouts_directory'] || 'Layouts'
-    styles_dir = config['styles_directory'] || 'Styles'
-    bindings_dir = config['bindings_directory'] || 'Bindings'
-    view_dir = config['view_directory'] || 'View'
-    
-    <<~SWIFT
+          private
+
+          def generate_content
+            # Load config values
+            base_dir = File.expand_path('../..', File.dirname(__FILE__))
+            config = Core::ConfigManager.load_config(base_dir)
+            
+            layouts_dir = config['layouts_directory'] || 'Layouts'
+            styles_dir = config['styles_directory'] || 'Styles'
+            bindings_dir = config['bindings_directory'] || 'Bindings'
+            view_dir = config['view_directory'] || 'View'
+            
+            <<~SWIFT
 import UIKit
 import SwiftJsonUI
 import WebKit
@@ -130,5 +153,9 @@ class UIViewCreator: SJUIViewCreator {
     }
 }
     SWIFT
+          end
+        end
+      end
+    end
   end
 end

@@ -9,37 +9,38 @@ require_relative '../../../core/config_manager'
 
 module SjuiTools
   module Binding
-    module Generators
-      class ViewGenerator < PbxprojManager
-        def initialize(name, options = {})
-          @name = name
-          @options = options
-          
-          # Setup project paths
-          unless Core::ProjectFinder.setup_paths
-            raise "Could not find project file (.xcodeproj or Package.swift)"
+    module XcodeProject
+      module Generators
+        class ViewGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+          def initialize(name, options = {})
+            @name = name
+            @options = options
+            
+            # Setup project paths
+            unless Core::ProjectFinder.setup_paths
+              raise "Could not find project file (.xcodeproj or Package.swift)"
+            end
+            
+            @project_file_path = Core::ProjectFinder.find_project_file
+            super(@project_file_path)
+            
+            base_dir = File.expand_path('../..', File.dirname(__FILE__))
+            
+            # Get configuration
+            config = Core::ConfigManager.load_config
+            
+            # Set paths
+            source_path = Core::ProjectFinder.get_full_source_path
+            @view_path = File.join(source_path, config['view_directory'] || 'View')
+            @layout_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
+            @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
           end
-          
-          @project_file_path = Core::ProjectFinder.find_project_file
-          super(@project_file_path)
-          
-          base_dir = File.expand_path('../..', File.dirname(__FILE__))
-          
-          # Get configuration
-          config = Core::ConfigManager.load_config
-          
-          # Set paths
-          source_path = Core::ProjectFinder.get_full_source_path
-          @view_path = File.join(source_path, config['view_directory'] || 'View')
-          @layout_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
-          @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
-        end
 
-        def generate
-          view_name = @name
-          is_root = @options[:root] || false
-          # 名前の正規化
-          camel_name = view_name.split('_').map(&:capitalize).join
+          def generate
+            view_name = @name
+            is_root = @options[:root] || false
+            # 名前の正規化
+            camel_name = view_name.split('_').map(&:capitalize).join
           snake_name = view_name.downcase
           
           puts "Generating view files for: #{camel_name}"
@@ -434,6 +435,7 @@ module SjuiTools
         def generate_scene_method_content(camel_name)
           "        // Use this method to optionally configure and attach the UIWindow `window` to the provided UIWindowScene `scene`.\n        // If using a storyboard, the `window` property will automatically be initialized and attached to the scene.\n        // This delegate does not imply the connecting scene or session are new (see `application:configurationForConnectingSceneSession` instead).\n        guard let windowScene = (scene as? UIWindowScene) else { return }\n        \n        window = UIWindow(windowScene: windowScene)\n        let rootViewController = #{camel_name}ViewController.newInstance()\n        let navigationController = UINavigationController(rootViewController: rootViewController)\n        window?.rootViewController = navigationController\n        window?.makeKeyAndVisible()\n"
         end
+        end
       end
     end
   end
@@ -450,7 +452,7 @@ if __FILE__ == $0
   view_name = ARGV[0]
   
   begin
-    generator = SjuiTools::Binding::Generators::ViewGenerator.new(view_name)
+    generator = SjuiTools::Binding::XcodeProject::Generators::ViewGenerator.new(view_name)
     generator.generate
   rescue => e
     puts "Error: #{e.message}"
