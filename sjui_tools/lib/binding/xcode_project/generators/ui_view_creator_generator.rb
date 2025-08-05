@@ -15,8 +15,7 @@ module SjuiTools
 
           # directory_setup.rbから呼ばれる静的メソッド
           def self.check_or_generate(paths)
-            ui_path = File.join(paths.core_path, "UI")
-            file_path = File.join(ui_path, "UIViewCreator.swift")
+            file_path = File.join(paths.core_path, "UIViewCreator.swift")
             
             if File.exist?(file_path)
               return true
@@ -25,15 +24,15 @@ module SjuiTools
             # プロジェクトファイルパスを取得
             project_file_path = paths.instance_variable_get(:@project_file_path)
             generator = new(project_file_path)
-            generator.generate(ui_path)
+            generator.generate(paths.core_path)
             return true
           rescue => e
             puts "Error generating UIViewCreator: #{e.message}"
             return false
           end
 
-          def generate(ui_path)
-            file_path = File.join(ui_path, "UIViewCreator.swift")
+          def generate(core_path)
+            file_path = File.join(core_path, "UIViewCreator.swift")
             
             # ファイルが既に存在する場合はスキップ
             if File.exist?(file_path)
