@@ -23,6 +23,8 @@ module SjuiTools
         
         # Check if file already exists in project
         file_name = File.basename(file_path)
+        puts "Debug: Adding file - basename: #{file_name}, full path: #{file_path}"
+        
         existing = group.files.find { |f| f.path == file_name }
         
         if existing
@@ -33,10 +35,12 @@ module SjuiTools
         # Calculate relative path from project directory
         project_dir = File.dirname(@project_path)
         relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+        puts "Debug: Relative path: #{relative_path}"
         
         # Add file reference with proper relative path
         file_ref = group.new_file(relative_path)
         file_ref.name = file_name
+        puts "Debug: File reference name set to: #{file_ref.name}"
         
         # Add to target if it's a source file
         if file_path.end_with?('.swift', '.m', '.mm')

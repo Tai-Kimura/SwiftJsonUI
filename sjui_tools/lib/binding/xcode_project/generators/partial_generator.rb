@@ -29,9 +29,11 @@ module SjuiTools
 
           def generate(partial_name)
             puts "Generating partial layout: #{partial_name}"
+            puts "Debug: Original partial name: '#{partial_name}'"
             
             # 1. Partial JSONファイルの作成
             json_file_path = create_partial_json(partial_name)
+            puts "Debug: Created file path: '#{json_file_path}'"
             
             # 2. Xcodeプロジェクトに追加
             add_to_xcode_project(json_file_path)
