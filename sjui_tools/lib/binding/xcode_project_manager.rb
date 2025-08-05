@@ -24,21 +24,7 @@ module SjuiTools
           return
         end
         
-        # Find or create group
-        group = find_or_create_group(group_name)
-        
-        # Check if file already exists in project
-        file_name = File.basename(file_path)
-        puts "Debug: Adding file - basename: #{file_name}, full path: #{file_path}"
-        
-        existing = group.files.find { |f| f.path == file_name }
-        
-        if existing
-          puts "File already in project: #{file_name}"
-          return
-        end
-        
-        # Calculate relative path from project directory
+        # Calculate relative path from project directory first
         project_dir = File.dirname(@project_path)
         begin
           relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
@@ -51,6 +37,20 @@ module SjuiTools
           end
         rescue ArgumentError => e
           puts "Error calculating relative path: #{e.message}"
+          return
+        end
+        
+        # Only create group after validation passes
+        group = find_or_create_group(group_name)
+        
+        # Check if file already exists in project
+        file_name = File.basename(file_path)
+        puts "Debug: Adding file - basename: #{file_name}, full path: #{file_path}"
+        
+        existing = group.files.find { |f| f.path == file_name || f.path == relative_path }
+        
+        if existing
+          puts "File already in project: #{file_name}"
           return
         end
         
@@ -154,9 +154,43 @@ module SjuiTools
         binding_files.each do |file_path|
           add_file(file_path, 'Bindings')
         end
+        
+        # Clean up any empty groups that might have been created
+        cleanup_empty_groups
       end
 
       private
+
+      def cleanup_empty_groups
+        # Remove empty groups from main group
+        remove_empty_groups_recursive(@project.main_group)
+        @project.save
+      end
+      
+      def remove_empty_groups_recursive(group)
+        return unless group.groups
+        
+        groups_to_remove = []
+        
+        group.groups.each do |subgroup|
+          # First, recursively clean subgroups
+          remove_empty_groups_recursive(subgroup)
+          
+          # Check if this group is empty (no files and no subgroups)
+          if subgroup.files.empty? && subgroup.groups.empty?
+            # Special handling for certain groups we want to keep
+            unless ['Products', 'Frameworks'].include?(subgroup.name)
+              groups_to_remove << subgroup
+              puts "Removing empty group: #{subgroup.name}"
+            end
+          end
+        end
+        
+        # Remove the empty groups
+        groups_to_remove.each do |subgroup|
+          subgroup.remove_from_project
+        end
+      end
 
       def add_file_to_group(file_path, group)
         file_name = File.basename(file_path)
