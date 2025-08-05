@@ -55,24 +55,61 @@ module SjuiTools
             unless Dir.exist?(workspace_path)
               FileUtils.mkdir_p(workspace_path)
               puts "Created workspace directory: #{workspace_path}"
-              
-              # Create basic workspace file
-              workspace_data_path = File.join(workspace_path, 'contents.xcworkspacedata')
-              unless File.exist?(workspace_data_path)
-                workspace_xml = <<~XML
-                  <?xml version="1.0" encoding="UTF-8"?>
-                  <Workspace
-                     version = "1.0">
-                     <FileRef
-                        location = "self:">
-                     </FileRef>
-                  </Workspace>
-                XML
-                File.write(workspace_data_path, workspace_xml)
-                puts "Created workspace contents file"
-              end
             else
               puts "Workspace already exists: #{workspace_path}"
+            end
+            
+            # Always ensure workspace contents file exists
+            workspace_data_path = File.join(workspace_path, 'contents.xcworkspacedata')
+            unless File.exist?(workspace_data_path)
+              workspace_xml = <<~XML
+                <?xml version="1.0" encoding="UTF-8"?>
+                <Workspace
+                   version = "1.0">
+                   <FileRef
+                      location = "self:">
+                   </FileRef>
+                </Workspace>
+              XML
+              File.write(workspace_data_path, workspace_xml)
+              puts "Created workspace contents file"
+            end
+            
+            # Create xcshareddata/swiftpm structure immediately
+            shared_data_path = File.join(workspace_path, 'xcshareddata')
+            swiftpm_path = File.join(shared_data_path, 'swiftpm')
+            
+            FileUtils.mkdir_p(swiftpm_path)
+            puts "Created/verified SPM directory structure: #{swiftpm_path}"
+            
+            # Create empty Package.resolved if it doesn't exist
+            package_resolved_path = File.join(swiftpm_path, 'Package.resolved')
+            unless File.exist?(package_resolved_path)
+              initial_resolved = {
+                "object" => {
+                  "pins" => []
+                },
+                "version" => 1
+              }
+              File.write(package_resolved_path, JSON.pretty_generate(initial_resolved))
+              puts "Created Package.resolved file"
+            end
+            
+            # Create workspace configuration if needed
+            workspace_settings_path = File.join(shared_data_path, 'WorkspaceSettings.xcsettings')
+            unless File.exist?(workspace_settings_path)
+              settings_xml = <<~XML
+                <?xml version="1.0" encoding="UTF-8"?>
+                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+                <plist version="1.0">
+                <dict>
+                  <key>IDEWorkspaceSharedSettings_AutocreateContextsIfNeeded</key>
+                  <false/>
+                </dict>
+                </plist>
+              XML
+              File.write(workspace_settings_path, settings_xml)
+              puts "Created workspace settings file"
             end
           end
 

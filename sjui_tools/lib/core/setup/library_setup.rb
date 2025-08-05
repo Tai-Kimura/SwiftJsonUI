@@ -211,6 +211,11 @@ module SjuiTools
             end
           end
           
+          # Save the project after adding packages
+          puts "Saving project..."
+          @project.save
+          puts "Project saved."
+          
           puts "Successfully added #{packages.length} packages"
         end
         
@@ -221,24 +226,55 @@ module SjuiTools
           workspace_path = File.join(project_dir, "#{project_name}.xcworkspace")
           
           puts "Debug: Ensuring workspace structure at: #{workspace_path}"
+          puts "Debug: Project path: #{@project.path}"
+          puts "Debug: Project dir: #{project_dir}"
+          puts "Debug: Project name: #{project_name}"
           
           # Create workspace directory if it doesn't exist
           unless Dir.exist?(workspace_path)
             FileUtils.mkdir_p(workspace_path)
             puts "Created workspace directory: #{workspace_path}"
+          else
+            puts "Debug: Workspace already exists: #{workspace_path}"
           end
           
           # Create workspace directory structure
           shared_data_path = File.join(workspace_path, 'xcshareddata')
           swiftpm_path = File.join(shared_data_path, 'swiftpm')
           
-          # Create directories
-          FileUtils.mkdir_p(swiftpm_path)
-          puts "Created SPM directory structure: #{swiftpm_path}"
+          puts "Debug: Shared data path: #{shared_data_path}"
+          puts "Debug: SwiftPM path: #{swiftpm_path}"
           
-          # Verify the directory was created
+          # Check if directories exist before creating
+          unless Dir.exist?(shared_data_path)
+            FileUtils.mkdir_p(shared_data_path)
+            puts "Created shared data directory: #{shared_data_path}"
+          else
+            puts "Debug: Shared data directory already exists"
+          end
+          
+          unless Dir.exist?(swiftpm_path)
+            FileUtils.mkdir_p(swiftpm_path)
+            puts "Created SPM directory: #{swiftpm_path}"
+          else
+            puts "Debug: SPM directory already exists"
+          end
+          
+          # List contents of workspace directory
+          puts "Debug: Workspace contents:"
+          Dir.glob("#{workspace_path}/**/*").each do |file|
+            puts "  - #{file}"
+          end
+          
+          # Verify the directory was created with proper permissions
           if Dir.exist?(swiftpm_path)
             puts "Verified: SPM directory exists at #{swiftpm_path}"
+            # Check if directory is writable
+            if File.writable?(swiftpm_path)
+              puts "Debug: SPM directory is writable"
+            else
+              puts "ERROR: SPM directory is not writable!"
+            end
           else
             puts "ERROR: Failed to create SPM directory at #{swiftpm_path}"
           end
