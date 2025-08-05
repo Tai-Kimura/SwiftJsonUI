@@ -18,6 +18,12 @@ module SjuiTools
 
 
       def add_file(file_path, group_name)
+        # Validate file path
+        unless File.exist?(file_path)
+          puts "Warning: File does not exist: #{file_path}"
+          return
+        end
+        
         # Find or create group
         group = find_or_create_group(group_name)
         
@@ -34,8 +40,19 @@ module SjuiTools
         
         # Calculate relative path from project directory
         project_dir = File.dirname(@project_path)
-        relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
-        puts "Debug: Relative path: #{relative_path}"
+        begin
+          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+          puts "Debug: Relative path: #{relative_path}"
+          
+          # Validate that the file is within the project directory
+          if relative_path.start_with?('..')
+            puts "Warning: File is outside project directory: #{file_path}"
+            return
+          end
+        rescue ArgumentError => e
+          puts "Error calculating relative path: #{e.message}"
+          return
+        end
         
         # Add file reference with proper relative path
         file_ref = group.new_file(relative_path)
