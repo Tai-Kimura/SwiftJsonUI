@@ -11,7 +11,7 @@ require_relative '../core/file_watcher'
 module SjuiTools
   module HotLoader
     class Server < Sinatra::Base
-      set :port, 8080
+      set :port, 8081
       set :public_folder, File.join(File.dirname(__FILE__), 'public')
       set :views, File.join(File.dirname(__FILE__), 'views')
       
@@ -98,7 +98,7 @@ module SjuiTools
       
       # Start server with file watching
       def self.start(options = {})
-        port = options[:port] || 8080
+        port = options[:port] || 8081
         
         # Setup project paths
         unless Core::ProjectFinder.setup_paths

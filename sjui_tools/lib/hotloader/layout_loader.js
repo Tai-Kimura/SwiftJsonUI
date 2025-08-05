@@ -2,9 +2,19 @@
 // This file is served by the Ruby server and provides layout loading functionality
 
 var HotLoader = {
-  baseUrl: 'http://localhost:8080',
+  baseUrl: null,
+  wsUrl: null,
+  
+  init: function() {
+    // Get the current host and port from the page location
+    var host = window.location.hostname || 'localhost';
+    var port = window.location.port || '8081';
+    this.baseUrl = 'http://' + host + ':' + port;
+    this.wsUrl = 'ws://' + host + ':' + port + '/websocket';
+  },
   
   loadLayout: function(layoutName, callback) {
+    if (!this.baseUrl) this.init();
     var url = this.baseUrl + '/layout/' + layoutName;
     
     fetch(url)
@@ -23,6 +33,7 @@ var HotLoader = {
   },
   
   loadLayoutFromPath: function(path, callback) {
+    if (!this.baseUrl) this.init();
     var parts = path.split('/');
     var url;
     
@@ -52,7 +63,8 @@ var HotLoader = {
   },
   
   setupWebSocket: function(onUpdate) {
-    var ws = new WebSocket('ws://localhost:8080/websocket');
+    if (!this.wsUrl) this.init();
+    var ws = new WebSocket(this.wsUrl);
     
     ws.onopen = function() {
       console.log('HotLoader WebSocket connected');

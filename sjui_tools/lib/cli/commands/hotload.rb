@@ -41,7 +41,7 @@ module SjuiTools
         private
         
         def run_listen(args)
-          port = 8080
+          port = 8081
           
           # Parse arguments
           while arg = args.shift
@@ -95,8 +95,8 @@ module SjuiTools
           # Kill HotLoader server processes
           puts "Stopping HotLoader server..."
           
-          # Kill Ruby server on port 8080
-          ruby_pids = `lsof -ti:8080`.strip.split("\n")
+          # Kill Ruby server on port 8081
+          ruby_pids = `lsof -ti:8081`.strip.split("\n")
           ruby_pids.each do |pid|
             next if pid.empty?
             Process.kill('TERM', pid.to_i) rescue nil
@@ -116,13 +116,13 @@ module SjuiTools
           # Check current IP from config
           config = Core::ConfigManager.get_hotloader_config
           current_ip = config['ip'] || '127.0.0.1'
-          current_port = config['port'] || 8080
+          current_port = config['port'] || 8081
           
           puts "\n📱 Configuration:"
           puts "   IP Address: #{current_ip}"
           puts "   Port: #{current_port}"
           
-          # Check Ruby server (port 8080)
+          # Check Ruby server (port 8081)
           puts "\n🌐 HotLoader Server:"
           ruby_pids = `lsof -ti:#{current_port} 2>/dev/null`.strip
           if ruby_pids.empty?
@@ -153,7 +153,7 @@ module SjuiTools
           puts "  status             Show status of HotLoader services"
           puts
           puts "Options:"
-          puts "  --port, -p PORT    Server port (default: 8080)"
+          puts "  --port, -p PORT    Server port (default: 8081)"
           puts "  --help, -h         Show this help message"
           puts
           puts "Examples:"
