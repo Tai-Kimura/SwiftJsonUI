@@ -196,12 +196,7 @@ module SjuiTools
         end
 
         def add_to_xcode_project(file_paths)
-          created_files = []
-          
-          # 作成されたファイルを記録
-          file_paths.each { |file_path| created_files << file_path }
-          
-          safe_pbxproj_operation([], created_files) do
+          begin
             # ViewControllerファイルを追加
             view_controller_path = nil
             json_path = nil
@@ -211,7 +206,8 @@ module SjuiTools
               if file_name.include?("ViewController.swift")
                 view_controller_path = file_path
                 folder_name = File.basename(File.dirname(file_path))
-                @xcode_manager.add_view_controller_file(file_name, folder_name, nil)
+                # View/フォルダ名 のグループ構造で追加
+                @xcode_manager.add_file(file_path, "View/#{folder_name}")
               elsif file_name.end_with?(".json")
                 json_path = file_path
               end
@@ -223,6 +219,16 @@ module SjuiTools
             end
             
             puts "Added files to Xcode project"
+          rescue => e
+            puts "Error adding files to Xcode project: #{e.message}"
+            # ファイルを削除してロールバック
+            file_paths.each do |file_path|
+              if File.exist?(file_path)
+                File.delete(file_path)
+                puts "Deleted: #{file_path}"
+              end
+            end
+            raise e
           end
         end
 

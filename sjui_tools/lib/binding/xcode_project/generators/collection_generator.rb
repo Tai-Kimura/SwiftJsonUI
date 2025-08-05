@@ -146,20 +146,33 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
   end
 
   def add_to_xcode_project(file_path, view_folder_name)
-    created_files = [file_path]
-    
-    safe_pbxproj_operation([], created_files) do
-      @xcode_manager.add_collection_cell_file(file_path, view_folder_name)
+    begin
+      # View/フォルダ名 のグループ構造で追加
+      @xcode_manager.add_file(file_path, "View/#{view_folder_name}")
       puts "Added collection cell to Xcode project"
+    rescue => e
+      puts "Error adding file to Xcode project: #{e.message}"
+      # ファイルを削除してロールバック
+      if File.exist?(file_path)
+        File.delete(file_path)
+        puts "Deleted: #{file_path}"
+      end
+      raise e
     end
   end
   
   def add_json_to_xcode_project(json_file_path)
-    created_files = [json_file_path]
-    
-    safe_pbxproj_operation([], created_files) do
+    begin
       @xcode_manager.add_file(json_file_path, "Layouts")
       puts "Added JSON layout to Xcode project"
+    rescue => e
+      puts "Error adding JSON to Xcode project: #{e.message}"
+      # ファイルを削除してロールバック
+      if File.exist?(json_file_path)
+        File.delete(json_file_path)
+        puts "Deleted: #{json_file_path}"
+      end
+      raise e
     end
   end
 
