@@ -7,7 +7,7 @@ require_relative 'string_module'
 module SjuiTools
   module Binding
     class JsonAnalyzer
-      attr_reader :binding_content, :data_sets, :binding_processes_group, :including_files, :reset_constraint_views, :weak_vars_content, :invalidate_methods_content
+      attr_reader :binding_content, :data_sets, :binding_processes_group, :including_files, :reset_constraint_views, :weak_vars_content, :invalidate_methods_content, :partial_bindings
 
       def initialize(import_module_manager, ui_control_event_manager, layout_path, style_path, super_binding, view_type_set)
         @import_module_manager = import_module_manager
@@ -24,6 +24,7 @@ module SjuiTools
         @including_files = {}
         @reset_constraint_views = {}
         @reset_text_views = {}
+        @partial_bindings = []
       end
 
       def analyze_json(file_name, loaded_json)
@@ -50,6 +51,10 @@ module SjuiTools
           when "type"
             @import_module_manager.add_import_module_for_type(value)
             current_view["type"] = value
+            # Track if this is a Partial type
+            if value == "Partial" && json["name"]
+              track_partial_binding(json["name"])
+            end
           when "id"
             process_id_element(json, value, current_view)
           when "child"
@@ -148,6 +153,23 @@ module SjuiTools
       end
 
       private
+
+      def track_partial_binding(partial_name)
+        # Convert partial name to binding class name
+        # e.g., "common/navigation_bar" -> "NavigationBarBinding"
+        # e.g., "header_section" -> "HeaderSectionBinding"
+        base_name = File.basename(partial_name)
+        binding_name = base_name.split('_').map(&:capitalize).join + "Binding"
+        
+        # Add to partial_bindings list if not already present
+        unless @partial_bindings.any? { |p| p[:name] == partial_name }
+          @partial_bindings << {
+            name: partial_name,
+            binding_class: binding_name,
+            property_name: base_name.gsub('-', '_').gsub('/', '_')
+          }
+        end
+      end
 
       def process_id_element(json, value, current_view)
         puts "id: #{value}"

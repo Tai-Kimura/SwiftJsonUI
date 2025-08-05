@@ -65,7 +65,8 @@ module SjuiTools
         end
         
         Dir.glob("#{@layout_path}/**/*.json") do |file|
-          next if File.basename(file).start_with?("_")
+          # Partial files (starting with _) are now processed too
+          # next if File.basename(file).start_with?("_")
           
           # キャッシュチェック
           unless @cache_manager.needs_update?(file, last_updated, @layout_path, last_including_files)
@@ -119,6 +120,56 @@ module SjuiTools
 
       private
 
+      def generate_partial_binding_properties
+        return "" if @json_analyzer.partial_bindings.empty?
+        
+        content = ""
+        @json_analyzer.partial_bindings.each do |partial|
+          content << "    private lazy var #{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
+        end
+        content << "\n" unless content.empty?
+        content
+      end
+
+      def generate_bind_view_with_partials
+        # Get the base bindView content from UI control event manager
+        base_content = @ui_control_event_manager.generate_bind_view_method
+        
+        # If there are no partials, return the base content
+        return base_content if @json_analyzer.partial_bindings.empty?
+        
+        # If there's already a bindView method, we need to add partial bindings to it
+        if base_content.empty?
+          # No existing bindView, create one with just partial bindings
+          content = "\n"
+          content << "    override func bindView() {\n"
+          content << "        super.bindView()\n"
+          
+          # Add partial binding calls
+          @json_analyzer.partial_bindings.each do |partial|
+            content << "        #{partial[:property_name]}Binding.bindView()\n"
+          end
+          
+          content << "    }\n"
+          content
+        else
+          # Insert partial binding calls into existing bindView
+          # Find the position after super.bindView()
+          insert_pos = base_content.index("super.bindView()\n")
+          if insert_pos
+            insert_pos += "super.bindView()\n".length
+            
+            partial_calls = ""
+            @json_analyzer.partial_bindings.each do |partial|
+              partial_calls << "        #{partial[:property_name]}Binding.bindView()\n"
+            end
+            
+            base_content.insert(insert_pos, partial_calls)
+          end
+          base_content
+        end
+      end
+
       def generate_binding_file(binding_info)
         # インポート文の生成
         import_content = @import_module_manager.generate_import_statements
@@ -132,8 +183,11 @@ module SjuiTools
         # weak変数宣言
         weak_vars_content = @json_analyzer.weak_vars_content
         
-        # bindViewメソッドの生成
-        bind_view_content = @ui_control_event_manager.generate_bind_view_method
+        # partial binding変数の生成
+        partial_binding_content = generate_partial_binding_properties
+        
+        # bindViewメソッドの生成（partial bindingsを含む）
+        bind_view_content = generate_bind_view_with_partials
         
         # invalidateメソッドの生成
         @json_analyzer.generate_invalidate_methods
@@ -144,6 +198,7 @@ module SjuiTools
                       header_content +
                       data_content +
                       weak_vars_content + "\n" +
+                      partial_binding_content +
                       bind_view_content +
                       invalidate_content +
                       "}\n"
