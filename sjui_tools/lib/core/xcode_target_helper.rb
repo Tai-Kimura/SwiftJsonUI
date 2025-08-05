@@ -20,18 +20,19 @@ module SjuiTools
         app_targets = project.targets.select do |target|
           is_app_target = target.product_type == 'com.apple.product-type.application'
           includes_project_name = project_name.empty? || target.name.include?(project_name)
-          is_not_test = !target.name.include?('Test') && !target.name.include?('UITest')
+          # Check if it's a test target by looking at the product type, not just the name
+          is_test_target = target.product_type.include?('test')
           
-          puts "Debug: Target '#{target.name}' - is_app: #{is_app_target}, includes_name: #{includes_project_name}, not_test: #{is_not_test}"
+          puts "Debug: Target '#{target.name}' - is_app: #{is_app_target}, includes_name: #{includes_project_name}, is_test: #{is_test_target}"
           
-          is_app_target && includes_project_name && is_not_test
+          is_app_target && includes_project_name && !is_test_target
         end
         
         if app_targets.empty?
           puts "Warning: No matching app targets found"
           puts "  - Looking for targets containing: '#{project_name}'"
           puts "  - With product type: 'com.apple.product-type.application'"
-          puts "  - Excluding targets with 'Test' or 'UITest' in name"
+          puts "  - Excluding targets with test product types"
         else
           puts "Found #{app_targets.count} app target(s): #{app_targets.map(&:name).join(', ')}"
         end
