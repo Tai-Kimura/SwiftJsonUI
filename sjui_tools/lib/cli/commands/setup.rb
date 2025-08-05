@@ -319,7 +319,7 @@ module SjuiTools
           require_relative '../../binding/xcode_project/setup/setup'
           
           # Use the full setup from the original setup.rb
-          setup = ::Setup.new(Core::ProjectFinder.project_file_path)
+          setup = ::SjuiTools::Binding::XcodeProject::Setup::Setup.new(Core::ProjectFinder.project_file_path)
           setup.run_full_setup
         end
       end

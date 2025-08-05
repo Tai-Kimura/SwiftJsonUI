@@ -15,8 +15,15 @@ module SjuiTools
             puts "Adding HotLoader functionality to AppDelegate..."
             
             # AppDelegate.swiftファイルを探す
-            # @project_file_pathは.xcodeprojディレクトリへのパスなので、その親ディレクトリから検索
-            project_dir = File.dirname(@project_file_path)
+            # @project_file_pathが.xcodeprojかproject.pbxprojかを確認
+            if @project_file_path.end_with?('.pbxproj')
+              # project.pbxprojの場合は2階層上がプロジェクトディレクトリ
+              project_dir = File.dirname(File.dirname(File.dirname(@project_file_path)))
+            else
+              # .xcodeprojディレクトリの場合は親ディレクトリがプロジェクトディレクトリ
+              project_dir = File.dirname(@project_file_path)
+            end
+            
             app_delegate_path = find_app_delegate_file(project_dir)
             
             if app_delegate_path.nil?

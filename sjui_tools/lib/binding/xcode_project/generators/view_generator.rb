@@ -273,8 +273,15 @@ module SjuiTools
 
         def update_app_delegate(camel_name)
           # SceneDelegate.swiftファイルを探す
-          # @project_file_pathは.xcodeprojディレクトリへのパスなので、その親ディレクトリから検索
-          project_dir = File.dirname(@project_file_path)
+          # @project_file_pathが.xcodeprojかproject.pbxprojかを確認
+          if @project_file_path.end_with?('.pbxproj')
+            # project.pbxprojの場合は2階層上がプロジェクトディレクトリ
+            project_dir = File.dirname(File.dirname(File.dirname(@project_file_path)))
+          else
+            # .xcodeprojディレクトリの場合は親ディレクトリがプロジェクトディレクトリ
+            project_dir = File.dirname(@project_file_path)
+          end
+          
           scene_delegate_path = find_scene_delegate_file(project_dir)
           
           if scene_delegate_path.nil?
@@ -287,10 +294,16 @@ module SjuiTools
           # SceneDelegate.swiftの内容を読み込む（安全チェック付き）
           unless File.file?(scene_delegate_path)
             puts "Warning: SceneDelegate path is not a file: #{scene_delegate_path}"
+            puts "  File type: #{File.ftype(scene_delegate_path)}" if File.exist?(scene_delegate_path)
             return
           end
           
-          content = File.read(scene_delegate_path)
+          begin
+            content = File.read(scene_delegate_path)
+          rescue => e
+            puts "Error reading SceneDelegate file: #{e.message}"
+            return
+          end
           
           # 安全にSceneDelegateを更新
           updated_content = safely_update_scene_delegate(content, camel_name)
