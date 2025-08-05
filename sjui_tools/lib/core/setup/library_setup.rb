@@ -38,7 +38,16 @@ module SjuiTools
         private
         
         def get_current_version
-          # Check git branch first
+          # Check VERSION file first (created by installer)
+          base_dir = File.expand_path('../../../..', File.dirname(__FILE__))
+          version_file = File.join(base_dir, 'VERSION')
+          
+          if File.exist?(version_file)
+            version = File.read(version_file).strip
+            return version unless version.empty?
+          end
+          
+          # Check git branch as fallback
           begin
             git_branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
             return git_branch unless git_branch.empty?
@@ -90,7 +99,7 @@ module SjuiTools
           
           # Get current version
           current_version = get_current_version
-          puts "Using binding_builder version: #{current_version}"
+          puts "Using sjui_tools version: #{current_version}"
           
           # Check existing packages
           existing_packages = @project.root_object.package_references.map(&:repository_url)
