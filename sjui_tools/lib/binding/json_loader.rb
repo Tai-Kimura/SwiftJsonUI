@@ -103,7 +103,17 @@ module SjuiTools
           end
           
           # Bindingファイルの生成
-          generate_binding_file(binding_info)
+          begin
+            generate_binding_file(binding_info)
+            # Success - cleanup backup
+            @binding_file_manager.cleanup_backup(binding_info[:backup_file_path])
+          rescue => e
+            puts "Error generating binding file for #{file_name}: #{e.message}"
+            puts e.backtrace.first(5).join("\n")
+            # Restore backup if generation failed
+            @binding_file_manager.restore_backup(binding_info[:backup_file_path], binding_info[:binding_file_path])
+            # Continue with next file instead of stopping completely
+          end
         end
         
         # XcodeProjectManagerが存在する場合は、新しいバインディングファイルを追加
