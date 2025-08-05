@@ -42,3 +42,6 @@ Carthage/Build
 
 # SwiftUI Builder test folder
 swiftui_builder/test/
+
+# Swift build directory
+.build/

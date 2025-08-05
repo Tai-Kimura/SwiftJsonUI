@@ -316,10 +316,11 @@ module SjuiTools
         end
 
         def setup_library
-          require_relative '../../core/setup/library_setup'
+          require_relative '../../binding/xcode_project/setup/setup'
           
-          library_setup = Core::Setup::LibrarySetup.new(Core::ProjectFinder.project_file_path)
-          library_setup.setup_libraries
+          # Use the full setup from the original setup.rb
+          setup = ::Setup.new(Core::ProjectFinder.project_file_path)
+          setup.run_full_setup
         end
       end
     end
