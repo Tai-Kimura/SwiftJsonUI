@@ -57,6 +57,12 @@ module SjuiTools
           
           puts "Setting up file exclusions..."
           
+          # Check if synchronized project first
+          if @is_synchronized
+            setup_synchronized_exceptions
+            return
+          end
+          
           begin
             require 'xcodeproj'
             
@@ -122,6 +128,133 @@ module SjuiTools
             raise LoadError, "xcodeproj gem is required for this operation"
           rescue => e
             puts "Error setting membership exceptions with xcodeproj: #{e.message}"
+            raise e
+          end
+        end
+        
+        def setup_synchronized_exceptions
+          puts "Setting up exclusions for synchronized project..."
+          
+          begin
+            # Read project file content
+            if @project_file_path.end_with?('.pbxproj')
+              pbxproj_content = File.read(@project_file_path)
+              xcodeproj_path = File.dirname(File.dirname(@project_file_path))
+            else
+              pbxproj_path = File.join(@project_file_path, 'project.pbxproj')
+              pbxproj_content = File.read(pbxproj_path)
+              xcodeproj_path = @project_file_path
+            end
+            
+            # Get project directory
+            project_dir = File.dirname(xcodeproj_path)
+            
+            # Get source directory from config
+            config = Core::ConfigManager.load_config
+            source_directory = config['source_directory'] || ''
+            
+            # The actual source path
+            if source_directory.empty?
+              source_path = project_dir
+            else
+              source_path = File.join(project_dir, source_directory)
+            end
+            
+            # Find all files that should be excluded
+            excluded_files = []
+            
+            # Directories to exclude (relative to source directory)
+            directories_to_exclude = [
+              'sjui_tools',
+              '.git',
+              '.github',
+              '.build',
+              '.swiftpm',
+              'Tests',
+              'UITests',
+              'Docs',
+              'docs',
+              'config',
+              'installer'
+            ]
+            
+            # Files to exclude
+            files_to_exclude = [
+              'README.md',
+              'LICENSE',
+              'CHANGELOG.md',
+              '.DS_Store',
+              '.gitignore',
+              'Podfile',
+              'Podfile.lock',
+              'Package.swift',
+              'Package.resolved',
+              'VERSION',
+              '.ruby-version',
+              'Gemfile',
+              'Gemfile.lock'
+            ]
+            
+            # Find all files in excluded directories
+            directories_to_exclude.each do |dir|
+              dir_path = File.join(source_path, dir)
+              if Dir.exist?(dir_path)
+                Dir.glob("#{dir_path}/**/*").each do |file_path|
+                  next if File.directory?(file_path)
+                  # Get relative path from source directory (not project directory)
+                  relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
+                  excluded_files << relative_path
+                end
+              end
+            end
+            
+            # Add standalone excluded files
+            files_to_exclude.each do |file|
+              file_path = File.join(source_path, file)
+              if File.exist?(file_path)
+                # Get relative path from source directory
+                relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
+                excluded_files << relative_path
+              end
+            end
+            
+            if excluded_files.empty?
+              puts "No files to exclude found"
+              return
+            end
+            
+            puts "Found #{excluded_files.length} files to exclude"
+            
+            # Find the exception set in the project file
+            if pbxproj_content =~ /membershipExceptions\s*=\s*\((.*?)\);/m
+              current_exceptions = $1.strip.split(",").map(&:strip)
+              
+              # Add new exclusions
+              all_exceptions = (current_exceptions + excluded_files).uniq
+              
+              # Format the exceptions list
+              formatted_exceptions = all_exceptions.map { |f| "\t\t\t\t\"#{f}\"" }.join(",\n")
+              
+              # Replace in content
+              new_content = pbxproj_content.gsub(
+                /membershipExceptions\s*=\s*\((.*?)\);/m,
+                "membershipExceptions = (\n#{formatted_exceptions}\n\t\t\t);"
+              )
+              
+              # Write back
+              if @project_file_path.end_with?('.pbxproj')
+                File.write(@project_file_path, new_content)
+              else
+                File.write(File.join(@project_file_path, 'project.pbxproj'), new_content)
+              end
+              
+              puts "✅ Updated membership exceptions for synchronized project"
+            else
+              puts "Warning: Could not find membershipExceptions in project file"
+            end
+            
+          rescue => e
+            puts "Error setting up synchronized exceptions: #{e.message}"
             raise e
           end
         end
