@@ -26,6 +26,7 @@ module SjuiTools
         @reset_constraint_views = {}
         @reset_text_views = {}
         @partial_bindings = []
+        @current_partial_depth = 0
       end
 
       def analyze_json(file_name, loaded_json)
@@ -197,10 +198,15 @@ module SjuiTools
             end
           end
           
+          # Convert to camelCase for property name
+          property_name = base_name.split(/[_-]/).map.with_index { |word, i| 
+            i == 0 ? word : word.capitalize 
+          }.join
+          
           @partial_bindings << {
             name: partial_name,
             binding_class: binding_name,
-            property_name: base_name.gsub('-', '_').gsub('/', '_'),
+            property_name: property_name,
             binding_groups: binding_groups
           }
         end
@@ -237,6 +243,10 @@ module SjuiTools
         variable_name[0] = variable_name[0].chr.downcase
         current_view["name"] = variable_name
         return if @super_binding != "Binding" && !JsonLoaderConfig::IGNORE_ID_SET[value.to_sym].nil?
+        
+        # Skip weak var generation if we're inside a partial binding
+        return if @current_partial_depth > 0
+        
         weak_var_line = "    weak var #{variable_name}: #{view_type}!\n"
         @binding_content << weak_var_line
         @weak_vars_content << weak_var_line
@@ -274,7 +284,12 @@ module SjuiTools
             end
           end
           included_json = JSON.parse(json_string)
+          
+          # Increment depth before processing included file
+          @current_partial_depth += 1
           analyze_json(file_name, included_json)
+          # Decrement depth after processing
+          @current_partial_depth -= 1
         end
       end
 

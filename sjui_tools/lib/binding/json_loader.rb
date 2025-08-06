@@ -133,12 +133,28 @@ module SjuiTools
 
       private
 
+      def generate_initializer
+        return "" if @json_analyzer.partial_bindings.empty?
+        
+        content = String.new("\n")
+        content << "    override init(viewHolder: BaseViewController) {\n"
+        content << "        super.init(viewHolder: viewHolder)\n"
+        
+        # Initialize partial bindings
+        @json_analyzer.partial_bindings.each do |partial|
+          content << "        self.#{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
+        end
+        
+        content << "    }\n"
+        content
+      end
+
       def generate_partial_binding_properties
         return "" if @json_analyzer.partial_bindings.empty?
         
         content = String.new
         @json_analyzer.partial_bindings.each do |partial|
-          content << "    lazy var #{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
+          content << "    private(set) var #{partial[:property_name]}Binding: #{partial[:binding_class]}!\n"
         end
         content << "\n" unless content.empty?
         content
@@ -201,6 +217,9 @@ module SjuiTools
         # partial binding変数の生成
         partial_binding_content = generate_partial_binding_properties
         
+        # initializerの生成
+        initializer_content = generate_initializer
+        
         # bindViewメソッドの生成（partial bindingsを含む）
         bind_view_content = generate_bind_view_with_partials
         
@@ -214,6 +233,7 @@ module SjuiTools
                       data_content +
                       weak_vars_content + "\n" +
                       partial_binding_content +
+                      initializer_content +
                       bind_view_content +
                       invalidate_content +
                       "}\n"
