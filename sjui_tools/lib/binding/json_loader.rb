@@ -255,7 +255,9 @@ module SjuiTools
               default_value = data["defaultValue"].to_s.dup
               # Handle string values with proper escaping
               if data["class"] == "String"
-                default_value = "\"#{default_value.gsub('"', '\\"')}\""
+                # First escape any existing double quotes, then convert single quotes to double quotes
+                default_value = default_value.gsub('"', '\\"').gsub("'", '"')
+                default_value = "\"#{default_value}\""
               elsif data["class"] == "Bool"
                 default_value = default_value.downcase
               end
