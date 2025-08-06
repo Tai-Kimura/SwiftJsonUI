@@ -209,15 +209,15 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
               "id" => "cell_view",
               "width" => "matchParent",
               "height" => "wrapContent",
-              "padding" => "16",
-              "background" => "FFFFFF",
+              "padding" => 16,
+              "background" => "#FFFFFF",
               "child" => [
                 {
                   "type" => "Label",
                   "id" => "title_label",
                   "text" => "#{cell_name} Cell",
-                  "textSize" => "16",
-                  "textColor" => "000000"
+                  "textSize" => 16,
+                  "textColor" => "#000000"
                 }
               ]
             }

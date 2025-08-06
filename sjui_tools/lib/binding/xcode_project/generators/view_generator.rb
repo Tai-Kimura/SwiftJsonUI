@@ -179,7 +179,7 @@ module SjuiTools
             "id" => "main_view",
             "width" => "matchParent",
             "height" => "matchParent",
-            "background" => "FFFFFF",
+            "background" => "#FFFFFF",
             "child" => [
               {
                 "type" => "Label",

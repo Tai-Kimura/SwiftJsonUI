@@ -84,15 +84,15 @@ module SjuiTools
               "id" => "#{base_name}_root",
               "width" => "matchParent",
               "height" => "wrapContent",
-              "padding" => "16",
-              "background" => "FFFFFF",
+              "padding" => 16,
+              "background" => "#FFFFFF",
               "child" => [
                 {
                   "type" => "Label",
                   "id" => "#{base_name}_label",
                   "text" => "This is the #{base_name} partial",
-                  "textSize" => "14",
-                  "textColor" => "000000"
+                  "textSize" => 14,
+                  "textColor" => "#000000"
                 }
               ]
             }
