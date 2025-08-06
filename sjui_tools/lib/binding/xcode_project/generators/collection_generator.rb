@@ -120,10 +120,6 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
     
     private lazy var _binding = #{cell_name}CellBinding(viewHolder: self)
     
-    var binding: Binding {
-        return _binding
-    }
-    
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupViews()
@@ -149,7 +145,7 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
             ])
         }
         
-        binding.bindView()
+        _binding.bindView()
     }
     
     override func prepareForReuse() {
