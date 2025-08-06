@@ -4,6 +4,7 @@ const http = require('http');
 const path = require('path');
 const fs = require('fs');
 const chokidar = require('chokidar');
+const { exec } = require('child_process');
 
 class HotLoaderServer {
   constructor(options = {}) {
@@ -162,9 +163,14 @@ class HotLoaderServer {
     
     watcher
       .on('add', path => console.log(`File ${path} has been added`))
-      .on('change', path => {
-        console.log(`File ${path} has been changed`);
-        this.notifyClients(path, 'changed');
+      .on('change', filePath => {
+        console.log(`File ${filePath} has been changed`);
+        this.notifyClients(filePath, 'changed');
+        
+        // Run sjui build if layout file changed
+        if (filePath.includes('/Layouts/') && filePath.endsWith('.json')) {
+          this.runBuildCommand();
+        }
       })
       .on('unlink', path => {
         console.log(`File ${path} has been removed`);
@@ -172,6 +178,28 @@ class HotLoaderServer {
       });
     
     console.log(`Watching directories: ${layoutsDir}, ${stylesDir}`);
+  }
+
+  runBuildCommand() {
+    console.log('Layout file changed, running sjui build...');
+    
+    // Find sjui binary path
+    const sjuiBinPath = path.join(__dirname, '..', '..', '..', 'bin', 'sjui');
+    const projectRoot = this.findProjectRoot();
+    
+    exec(`cd "${projectRoot}" && "${sjuiBinPath}" build`, (error, stdout, stderr) => {
+      if (error) {
+        console.error(`Error running sjui build: ${error.message}`);
+        return;
+      }
+      if (stderr) {
+        console.error(`sjui build stderr: ${stderr}`);
+      }
+      if (stdout) {
+        console.log(`sjui build output: ${stdout}`);
+      }
+      console.log('sjui build completed');
+    });
   }
 
   start() {
