@@ -2,8 +2,10 @@
 
 require 'sinatra/base'
 require 'thin'
+require 'rack/handler/thin'
 require 'faye/websocket'
 require 'json'
+require 'eventmachine'
 require_relative '../core/config_manager'
 require_relative '../core/project_finder'
 require_relative '../core/file_watcher'
@@ -21,6 +23,7 @@ module SjuiTools
       
       # Setup routes
       get '/' do
+        puts "HTTP request to / from: #{request.ip}"
         erb :index
       end
       
@@ -74,12 +77,21 @@ module SjuiTools
       
       # WebSocket endpoint
       get '/websocket' do
+        puts "WebSocket request received from: #{request.ip}"
+        puts "Headers: #{request.env.select {|k,v| k.start_with?('HTTP_')}.inspect}"
+        
         if Faye::WebSocket.websocket?(request.env)
-          ws = Faye::WebSocket.new(request.env, nil, { ping: 60 })
+          puts "Valid WebSocket request detected"
+          ws = Faye::WebSocket.new(request.env, nil, { 
+            ping: 60,
+            headers: {
+              'Access-Control-Allow-Origin' => '*'
+            }
+          })
           
           ws.on :open do |event|
             @@clients << ws
-            puts "WebSocket client connected (Total: #{@@clients.size})"
+            puts "WebSocket client connected from #{request.ip} (Total: #{@@clients.size})"
           end
           
           ws.on :close do |event|
@@ -136,8 +148,12 @@ module SjuiTools
         puts "Layout API: http://localhost:#{port}/layout/:name"
         puts "Press Ctrl+C to stop"
         
-        # Run server
-        Thin::Server.start('0.0.0.0', port, self)
+        # Run server with explicit Thin configuration
+        EM.run do
+          thin = Thin::Server.new('0.0.0.0', port, self)
+          thin.start
+          puts "Thin server started on 0.0.0.0:#{port}"
+        end
       end
       
       private
