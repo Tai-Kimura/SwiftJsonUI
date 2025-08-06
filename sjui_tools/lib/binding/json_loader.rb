@@ -136,7 +136,7 @@ module SjuiTools
       def generate_partial_binding_properties
         return "" if @json_analyzer.partial_bindings.empty?
         
-        content = ""
+        content = String.new
         @json_analyzer.partial_bindings.each do |partial|
           content << "    lazy var #{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
         end
@@ -154,7 +154,7 @@ module SjuiTools
         # If there's already a bindView method, we need to add partial bindings to it
         if base_content.empty?
           # No existing bindView, create one with just partial bindings
-          content = "\n"
+          content = String.new("\n")
           content << "    override func bindView() {\n"
           content << "        super.bindView()\n"
           
@@ -172,11 +172,13 @@ module SjuiTools
           if insert_pos
             insert_pos += "super.bindView()\n".length
             
-            partial_calls = ""
+            partial_calls = String.new
             @json_analyzer.partial_bindings.each do |partial|
               partial_calls << "        #{partial[:property_name]}Binding.bindView()\n"
             end
             
+            # Make a mutable copy of base_content before inserting
+            base_content = base_content.dup
             base_content.insert(insert_pos, partial_calls)
           end
           base_content
