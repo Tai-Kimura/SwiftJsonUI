@@ -183,22 +183,39 @@ class HotLoaderServer {
   runBuildCommand() {
     console.log('Layout file changed, running sjui build...');
     
-    // Find sjui binary path
-    const sjuiBinPath = path.join(__dirname, '..', '..', '..', 'bin', 'sjui');
     const projectRoot = this.findProjectRoot();
     
-    exec(`cd "${projectRoot}" && "${sjuiBinPath}" build`, (error, stdout, stderr) => {
+    // Try to use globally installed sjui first, then look for local installation
+    exec(`cd "${projectRoot}" && which sjui`, (error, stdout, stderr) => {
+      let sjuiCommand = 'sjui';
+      
       if (error) {
-        console.error(`Error running sjui build: ${error.message}`);
-        return;
+        // If global sjui not found, try to find it in the project's sjui_tools
+        const localSjuiPath = path.join(projectRoot, 'sjui_tools', 'bin', 'sjui');
+        if (fs.existsSync(localSjuiPath)) {
+          sjuiCommand = localSjuiPath;
+        } else {
+          console.error('sjui command not found. Please ensure sjui is installed.');
+          return;
+        }
+      } else {
+        sjuiCommand = stdout.trim();
       }
-      if (stderr) {
-        console.error(`sjui build stderr: ${stderr}`);
-      }
-      if (stdout) {
-        console.log(`sjui build output: ${stdout}`);
-      }
-      console.log('sjui build completed');
+      
+      // Run the build command
+      exec(`cd "${projectRoot}" && "${sjuiCommand}" build`, (error, stdout, stderr) => {
+        if (error) {
+          console.error(`Error running sjui build: ${error.message}`);
+          return;
+        }
+        if (stderr) {
+          console.error(`sjui build stderr: ${stderr}`);
+        }
+        if (stdout) {
+          console.log(`sjui build output: ${stdout}`);
+        }
+        console.log('sjui build completed');
+      });
     });
   }
 
