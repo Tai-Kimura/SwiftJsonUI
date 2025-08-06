@@ -49,7 +49,11 @@ module SjuiTools
         '.github/',
         'FUNDING.yml',
         '*.md',
-        'LICENSE*'
+        'LICENSE*',
+        '.package-lock.json',
+        'node_modules/.*',
+        'node_modules/.bin/',
+        '**/.*'
       ].freeze
 
       def initialize(project_path)

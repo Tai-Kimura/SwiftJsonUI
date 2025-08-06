@@ -220,17 +220,32 @@ module SjuiTools
             'FUNDING.yml',
             '.prettierrc',
             '.babelrc',
-            '.travis.yml'
+            '.travis.yml',
+            '.package-lock.json'
           ]
           
           removed_count = 0
           
           # Remove files matching patterns
           project.files.each do |file_ref|
-            if file_ref.path && patterns_to_remove.any? { |pattern| File.basename(file_ref.path) == pattern }
+            next unless file_ref.path
+            
+            # Check for exact matches
+            if patterns_to_remove.any? { |pattern| File.basename(file_ref.path) == pattern }
               puts "  Removing from project: #{file_ref.path}"
               file_ref.remove_from_project
               removed_count += 1
+              next
+            end
+            
+            # Check for files inside node_modules
+            if file_ref.path.include?('node_modules/')
+              # Remove any dotfiles/dotdirectories inside node_modules
+              if File.basename(file_ref.path).start_with?('.')
+                puts "  Removing from project: #{file_ref.path}"
+                file_ref.remove_from_project
+                removed_count += 1
+              end
             end
           end
           

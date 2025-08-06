@@ -198,15 +198,23 @@ module SjuiTools
               '.eslintrc',
               '.npmignore',
               '.nycrc',
-              'FUNDING.yml'
+              'FUNDING.yml',
+              '.prettierrc',
+              '.babelrc',
+              '.travis.yml',
+              '.package-lock.json'
             ]
             
             # Find all files in excluded directories
             directories_to_exclude.each do |dir|
               dir_path = File.join(source_path, dir)
               if Dir.exist?(dir_path)
-                Dir.glob("#{dir_path}/**/*").each do |file_path|
+                # Use File::FNM_DOTMATCH to include dot files
+                Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).each do |file_path|
                   next if File.directory?(file_path)
+                  # Skip . and .. entries
+                  basename = File.basename(file_path)
+                  next if basename == '.' || basename == '..'
                   # Get relative path from source directory (not project directory)
                   relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
                   excluded_files << relative_path
