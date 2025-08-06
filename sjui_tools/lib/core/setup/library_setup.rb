@@ -121,6 +121,19 @@ module SjuiTools
               # Version requirement based on configuration
               if swiftjsonui_config['branch']
                 package_info[:requirement][:branch] = swiftjsonui_config['branch']
+                # For alpha versions, also get the latest commit
+                if current_version.include?('alpha')
+                  begin
+                    latest_commit = `git ls-remote https://github.com/Tai-Kimura/SwiftJsonUI refs/heads/#{swiftjsonui_config['branch']} 2>/dev/null`.strip.split("\t").first
+                    if latest_commit && !latest_commit.empty?
+                      package_info[:requirement][:revision] = latest_commit
+                      package_info[:requirement].delete(:branch)
+                      puts "Using latest commit for alpha version: #{latest_commit}"
+                    end
+                  rescue
+                    # If git command fails, fall back to branch
+                  end
+                end
               elsif swiftjsonui_config['from']
                 package_info[:requirement][:minimum_version] = swiftjsonui_config['from']
                 package_info[:requirement][:kind] = :up_to_next_major

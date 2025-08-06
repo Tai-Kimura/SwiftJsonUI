@@ -1,0 +1,16 @@
+{
+  "version_mappings": {
+    "7.0.0-alpha": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI",
+        "branch": "7.0.0-alpha"
+      }
+    },
+    "default": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI",
+        "from": "6.3.0"
+      }
+    }
+  }
+}
