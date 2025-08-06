@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../core/config_manager'
+
 module SjuiTools
   module Binding
     class JsonLoaderConfig
@@ -32,26 +34,28 @@ module SjuiTools
         "Triangle": "TriangleView"
       }
 
-      IGNORE_ID_SET = {
-        "navi": true,
-        "title_label": true,
-        "scroll_view": true,
-        "back": true,
-        "navi_back_icon": true,
-        "navi_back_label": true,
-        "navi_right_btn": true,
-        "navi_right_label": true,
-        "navi_right_icon": true
-      }
+      IGNORE_ID_SET = {}
 
-      IGNORE_DATA_SET = {
-        "naviTitle": true,
-        "naviBackTitle": true,
-        "naviBackIcon": true,
-        "naviRightTitle": true,
-        "naviRightIcon": true,
-        "isInitialized": true
-      }
+      IGNORE_DATA_SET = {}
+      
+      # Load ignore sets from config if available
+      def self.load_ignore_sets_from_config
+        config = Core::ConfigManager.load_config
+        
+        # Load ignore_id_set from config
+        if config['ignore_id_set'].is_a?(Array)
+          config['ignore_id_set'].each do |id|
+            IGNORE_ID_SET[id] = true
+          end
+        end
+        
+        # Load ignore_data_set from config
+        if config['ignore_data_set'].is_a?(Array)
+          config['ignore_data_set'].each do |data|
+            IGNORE_DATA_SET[data] = true
+          end
+        end
+      end
     end
   end
 end

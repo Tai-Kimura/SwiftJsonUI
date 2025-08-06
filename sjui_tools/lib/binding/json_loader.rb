@@ -51,6 +51,9 @@ module SjuiTools
       end
 
       def start_analyze
+        # Load ignore sets from config
+        JsonLoaderConfig.load_ignore_sets_from_config
+        
         last_updated = @cache_manager.load_last_updated
         last_including_files = @cache_manager.load_last_including_files
         json_updated_flag = false
@@ -224,6 +227,7 @@ module SjuiTools
 
       def generate_class_header(binding_info)
         <<~SWIFT
+        @MainActor
         class #{binding_info[:binding_class_name]}: #{binding_info[:super_binding]} {
             var isInitialized = false
             

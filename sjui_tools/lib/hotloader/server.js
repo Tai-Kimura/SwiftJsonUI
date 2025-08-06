@@ -185,6 +185,20 @@ class HotLoaderServer {
     
     const projectRoot = this.findProjectRoot();
     
+    // Clear cache before build to ensure binding files are regenerated
+    const cacheDir = path.join(projectRoot, '.sjui_cache');
+    if (fs.existsSync(cacheDir)) {
+      const lastUpdatedFile = path.join(cacheDir, 'last_updated.txt');
+      if (fs.existsSync(lastUpdatedFile)) {
+        try {
+          fs.unlinkSync(lastUpdatedFile);
+          console.log('Cleared build cache');
+        } catch (err) {
+          console.error('Error clearing cache:', err);
+        }
+      }
+    }
+    
     // Try to use globally installed sjui first, then look for local installation
     exec(`cd "${projectRoot}" && which sjui`, (error, stdout, stderr) => {
       let sjuiCommand = 'sjui';
