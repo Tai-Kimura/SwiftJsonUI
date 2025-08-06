@@ -9,7 +9,7 @@
     "default": {
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI",
-        "from": "6.3.0"
+        "branch": "7.0.0-alpha"
       }
     }
   }

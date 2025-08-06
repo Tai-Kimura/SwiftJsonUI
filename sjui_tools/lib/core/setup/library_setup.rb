@@ -38,7 +38,16 @@ module SjuiTools
         private
         
         def get_current_version
-          # Check VERSION file first (created by installer)
+          # Check .sjui-version file in project root first
+          project_dir = File.dirname(File.dirname(@project_file_path))
+          sjui_version_file = File.join(project_dir, '.sjui-version')
+          
+          if File.exist?(sjui_version_file)
+            version = File.read(sjui_version_file).strip
+            return version unless version.empty?
+          end
+          
+          # Check VERSION file (created by installer)
           base_dir = File.expand_path('../../../..', File.dirname(__FILE__))
           version_file = File.join(base_dir, 'VERSION')
           
@@ -55,8 +64,8 @@ module SjuiTools
             # Git command failed, continue with other methods
           end
           
-          # Fallback to default
-          "default"
+          # Fallback to 7.0.0-alpha
+          "7.0.0-alpha"
         end
         
         def load_library_versions
@@ -140,17 +149,18 @@ module SjuiTools
               elsif swiftjsonui_config['exact']
                 package_info[:requirement][:exact_version] = swiftjsonui_config['exact']
               else
-                package_info[:requirement][:minimum_version] = "6.0.0"
-                package_info[:requirement][:kind] = :up_to_next_major
+                # Default to 7.0.0-alpha branch
+                package_info[:requirement][:branch] = "7.0.0-alpha"
               end
               
               packages_to_add << package_info
             else
               # Fallback if no config found
+              # Use branch 7.0.0-alpha for now as fallback
               packages_to_add << {
                 name: "SwiftJsonUI",
                 url: "https://github.com/Tai-Kimura/SwiftJsonUI",
-                requirement: { minimum_version: "6.0.0", kind: :up_to_next_major }
+                requirement: { branch: "7.0.0-alpha" }
               }
             end
           end
