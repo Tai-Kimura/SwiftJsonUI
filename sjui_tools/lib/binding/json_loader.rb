@@ -191,7 +191,7 @@ module SjuiTools
         header_content = generate_class_header(binding_info)
         
         # data変数の生成
-        data_content = generate_data_variables
+        data_content = generate_data_variables(binding_info)
         
         # weak変数宣言
         weak_vars_content = @json_analyzer.weak_vars_content
@@ -234,17 +234,36 @@ module SjuiTools
         SWIFT
       end
 
-      def generate_data_variables
+      def generate_data_variables(binding_info)
         return "" if @json_analyzer.data_sets.empty?
         
-        content = "    // MARK: - Data Variables\n"
+        content = ""
         @json_analyzer.data_sets.each do |data|
-          next if JsonLoaderConfig::IGNORE_DATA_SET[data.to_sym]
-          variable_name = data.camelize
-          variable_name[0] = variable_name[0].chr.downcase
-          content << "    weak var #{variable_name}: NSObject!\n"
+          # Handle both string and object formats
+          if data.is_a?(String)
+            # Simple string format - default to String type with empty default value
+            next if JsonLoaderConfig::IGNORE_DATA_SET[data.to_sym]
+            modifier = "var"
+            content << "    #{modifier} #{data}: String = \"\"\n"
+          else
+            # Object format with name, class, defaultValue, etc.
+            next if binding_info[:super_binding] != "Binding" && JsonLoaderConfig::IGNORE_DATA_SET[data["name"].to_sym]
+            modifier = data["modifier"].nil? ? "var" : data["modifier"]
+            if data["defaultValue"].nil?
+              content << "    #{modifier} #{data["name"]}: #{data["class"]}?\n"
+            else
+              default_value = data["defaultValue"].to_s
+              # Handle string values with proper escaping
+              if data["class"] == "String"
+                default_value = "\"#{default_value.gsub('"', '\"')}\""
+              elsif data["class"] == "Bool"
+                default_value = default_value.downcase
+              end
+              content << "    #{modifier} #{data["name"]}: #{data["class"]}#{data["optional"] ? "?" : ""} = #{default_value}\n"
+            end
+          end
         end
-        content << "\n"
+        content << "\n" unless content.empty?
         content
       end
     end
