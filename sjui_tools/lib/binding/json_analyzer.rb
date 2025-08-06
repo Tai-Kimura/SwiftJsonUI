@@ -124,7 +124,7 @@ module SjuiTools
           method_content << "            isInitialized = false\n"
           method_content << "        }\n"
           
-          # Call invalidate on partial bindings if they have the same method
+          # Call invalidate on partial bindings FIRST (children before parent)
           unless method_name.empty?
             @partial_bindings.each do |partial|
               # Check if partial has this binding group
@@ -139,7 +139,7 @@ module SjuiTools
               
               if partial_has_group
                 method_content << "        \n"
-                method_content << "        // Propagate invalidate to partial binding\n"
+                method_content << "        // Propagate invalidate to partial binding (child first)\n"
                 method_content << "        #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
               end
             end
@@ -159,6 +159,7 @@ module SjuiTools
           # 制約ビューのリセット処理  
           generate_constraint_view_resets
           
+          # Parent's own invalidate logic comes AFTER children
           method_content << @binding_content
           method_content << "        if formInitialized {\n"
           method_content << "            isInitialized = true\n"
