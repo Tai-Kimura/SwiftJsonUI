@@ -101,10 +101,10 @@ module SjuiTools
       end
 
       def generate_invalidate_methods
-        @invalidate_methods_content = ""
+        @invalidate_methods_content = String.new
         
         @binding_processes_group.each do |group, value|
-          method_content = ""
+          method_content = String.new
           @reset_constraint_views = {}
           @reset_text_views = {}
           
