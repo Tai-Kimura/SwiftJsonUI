@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require_relative '../command_base'
-require_relative '../../hotloader/server'
 require_relative '../../hotloader/ip_monitor'
 require_relative '../../core/config_manager'
 require_relative '../../core/project_finder'
@@ -104,7 +103,7 @@ module SjuiTools
           end
           
           # Start the server
-          SjuiTools::HotLoader::Server.start(port: port)
+          start_node_server(port)
         end
         
         def run_stop(args)
@@ -121,7 +120,8 @@ module SjuiTools
           end
           
           # Kill processes by name
-          system("pkill -f 'hotloader/server.rb' 2>/dev/null")
+          system("pkill -f 'hotloader/server.js' 2>/dev/null")
+          system("pkill -f 'node.*server.js' 2>/dev/null")
           system("pkill -f 'hotloader/ip_monitor.rb' 2>/dev/null")
           
           puts "✅ All HotLoader services stopped"
@@ -159,6 +159,42 @@ module SjuiTools
           else
             puts "   Status: Running"
             puts "   PID(s): #{monitor_pids.split("\n").join(', ')}"
+          end
+        end
+        
+        def start_node_server(port)
+          # Check if node is installed
+          unless system('which node > /dev/null 2>&1')
+            puts "❌ Error: Node.js is not installed."
+            puts "Please install Node.js from https://nodejs.org/"
+            exit 1
+          end
+          
+          # Get hotloader directory
+          hotloader_dir = File.expand_path('../../hotloader', __dir__)
+          server_js = File.join(hotloader_dir, 'server.js')
+          package_json = File.join(hotloader_dir, 'package.json')
+          
+          unless File.exist?(server_js)
+            puts "❌ Error: Node.js server file not found at #{server_js}"
+            exit 1
+          end
+          
+          # Install dependencies if needed
+          if File.exist?(package_json) && !Dir.exist?(File.join(hotloader_dir, 'node_modules'))
+            puts "📦 Installing Node.js dependencies..."
+            Dir.chdir(hotloader_dir) do
+              unless system('npm install')
+                puts "❌ Error: Failed to install dependencies"
+                exit 1
+              end
+            end
+          end
+          
+          # Start Node.js server
+          Dir.chdir(hotloader_dir) do
+            ENV['PORT'] = port.to_s
+            exec("node server.js")
           end
         end
         
