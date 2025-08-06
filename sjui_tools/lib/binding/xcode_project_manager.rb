@@ -43,10 +43,40 @@ module SjuiTools
       def initialize(project_path)
         @project_path = project_path
         @project = Xcodeproj::Project.open(project_path)
+        @is_synchronized = check_if_synchronized_project
+      end
+      
+      def check_if_synchronized_project
+        # Check if the project uses PBXFileSystemSynchronizedRootGroup
+        # This is used in Xcode 15+ for new projects
+        begin
+          project_file = File.join(@project_path, 'project.pbxproj')
+          content = File.read(project_file)
+          
+          # Look for PBXFileSystemSynchronizedRootGroup
+          is_sync = content.include?('PBXFileSystemSynchronizedRootGroup')
+          
+          if is_sync
+            puts "Detected synchronized project (Xcode 15+ format)"
+          else
+            puts "Detected traditional project format"
+          end
+          
+          return is_sync
+        rescue => e
+          puts "Warning: Could not determine project type: #{e.message}"
+          return false
+        end
       end
 
 
       def add_file(file_path, group_name)
+        # Skip if synchronized project
+        if @is_synchronized
+          puts "Skipping file addition for synchronized project: #{File.basename(file_path)}"
+          return
+        end
+        
         # Validate file path
         unless File.exist?(file_path)
           puts "Warning: File does not exist: #{file_path}"
@@ -119,6 +149,12 @@ module SjuiTools
       end
 
       def find_or_create_group(group_name)
+        # Skip if synchronized project
+        if @is_synchronized
+          puts "Skipping group creation for synchronized project: #{group_name}"
+          return nil
+        end
+        
         puts "Debug: find_or_create_group called with: '#{group_name}'"
         # Handle nested groups
         parts = group_name.split('/')
@@ -172,6 +208,12 @@ module SjuiTools
       end
 
       def add_directory(dir_path, group_name)
+        # Skip if synchronized project
+        if @is_synchronized
+          puts "Skipping directory addition for synchronized project: #{group_name}"
+          return
+        end
+        
         return unless Dir.exist?(dir_path)
         
         # Check if the entire directory should be excluded
@@ -282,6 +324,12 @@ module SjuiTools
       end
 
       def add_file_to_group(file_path, group)
+        # Skip if synchronized project
+        if @is_synchronized
+          puts "Skipping file-to-group addition for synchronized project: #{File.basename(file_path)}"
+          return
+        end
+        
         file_name = File.basename(file_path)
         existing = group.files.find { |f| f.path == file_name }
         

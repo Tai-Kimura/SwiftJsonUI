@@ -22,6 +22,27 @@ module SjuiTools
           config = Core::ConfigManager.load_config
           @source_directory = config['source_directory'] || ''
           @hot_loader_directory = config['hot_loader_directory'] || ''
+          
+          # Check if synchronized project
+          @is_synchronized = check_if_synchronized_project
+        end
+        
+        def check_if_synchronized_project
+          # Check if the project uses PBXFileSystemSynchronizedRootGroup
+          begin
+            if @project_file_path.end_with?('.pbxproj')
+              content = File.read(@project_file_path)
+            else
+              # If it's a .xcodeproj directory, read the project.pbxproj inside
+              pbxproj_path = File.join(@project_file_path, 'project.pbxproj')
+              content = File.read(pbxproj_path)
+            end
+            
+            content.include?('PBXFileSystemSynchronizedRootGroup')
+          rescue => e
+            puts "Warning: Could not check project type: #{e.message}"
+            false
+          end
         end
 
 
@@ -33,6 +54,12 @@ module SjuiTools
 
         def setup_membership_exceptions
           return unless File.exist?(@project_file_path)
+          
+          # Skip for synchronized projects
+          if @is_synchronized
+            puts "Skipping membership exceptions for synchronized project"
+            return
+          end
           
           puts "Setting up file exclusions for sjui_tools directory..."
           
