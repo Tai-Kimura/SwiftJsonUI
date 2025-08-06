@@ -152,6 +152,10 @@ module SjuiTools
           }
           
           private lazy var _binding = #{camel_name}Binding(viewHolder: self)
+          
+          override var binding: BaseBinding {
+              return _binding
+          }
               
           class func newInstance() -> #{camel_name}ViewController {
               let v = #{camel_name}ViewController()
@@ -162,7 +166,7 @@ module SjuiTools
           override func viewDidLoad() {
               super.viewDidLoad()
               self.view.addSubview(UIViewCreator.createView(layoutPath, target: self)!)
-              _binding.bindView()
+              binding.bindView()
           }
       }
           SWIFT
