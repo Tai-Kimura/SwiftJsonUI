@@ -138,7 +138,7 @@ module SjuiTools
         
         content = ""
         @json_analyzer.partial_bindings.each do |partial|
-          content << "    private lazy var #{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
+          content << "    lazy var #{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
         end
         content << "\n" unless content.empty?
         content

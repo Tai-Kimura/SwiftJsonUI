@@ -123,6 +123,15 @@ module SjuiTools
           method_content << "            isInitialized = false\n"
           method_content << "        }\n"
           
+          # Call invalidate on partial bindings if they have the same method
+          @partial_bindings.each do |partial|
+            method_content << "        \n"
+            method_content << "        // Propagate invalidate to partial binding\n"
+            method_content << "        if #{partial[:property_name]}Binding.responds(to: #selector(invalidate#{method_name})) {\n"
+            method_content << "            #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
+            method_content << "        }\n"
+          end
+          
           # 各バインディングプロセスを処理（一時的にbinding_contentを保存）
           temp_binding_content = @binding_content
           @binding_content = String.new
