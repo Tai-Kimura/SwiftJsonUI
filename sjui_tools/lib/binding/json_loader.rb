@@ -137,7 +137,7 @@ module SjuiTools
         return "" if @json_analyzer.partial_bindings.empty?
         
         content = String.new("\n")
-        content << "    override init(viewHolder: BaseViewController) {\n"
+        content << "    required init(viewHolder: BaseViewController) {\n"
         content << "        super.init(viewHolder: viewHolder)\n"
         
         # Initialize partial bindings

@@ -61,8 +61,8 @@ module SjuiTools
             end
           when "include"
             process_include_element(file_name, value, json)
-            # Track this as a partial binding
-            track_partial_binding(value)
+            # Track this as a partial binding only if we're at the top level
+            track_partial_binding(value) if @current_partial_depth == 0
           when "onClick"
             @ui_control_event_manager.add_click_event(current_view["name"], value)
           when "onLongPress"
