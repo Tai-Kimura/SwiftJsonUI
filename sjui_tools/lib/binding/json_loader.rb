@@ -237,7 +237,7 @@ module SjuiTools
       def generate_data_variables(binding_info)
         return "" if @json_analyzer.data_sets.empty?
         
-        content = ""
+        content = String.new
         @json_analyzer.data_sets.each do |data|
           # Handle both string and object formats
           if data.is_a?(String)
