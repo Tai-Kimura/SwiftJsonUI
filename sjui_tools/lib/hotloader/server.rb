@@ -142,21 +142,36 @@ module SjuiTools
         # Configure server
         set :port, port
         
+        # Get current IP address
+        ip_address = get_local_ip || '0.0.0.0'
+        
         # Start server
         puts "Starting HotLoader server on port #{port}..."
-        puts "WebSocket endpoint: ws://localhost:#{port}/websocket"
-        puts "Layout API: http://localhost:#{port}/layout/:name"
+        puts "WebSocket endpoint: ws://#{ip_address}:#{port}/websocket"
+        puts "Layout API: http://#{ip_address}:#{port}/layout/:name"
         puts "Press Ctrl+C to stop"
         
         # Run server with explicit Thin configuration
         EM.run do
-          thin = Thin::Server.new('0.0.0.0', port, self)
+          thin = Thin::Server.new(ip_address, port, self)
           thin.start
-          puts "Thin server started on 0.0.0.0:#{port}"
+          puts "Thin server started on #{ip_address}:#{port}"
         end
       end
       
       private
+      
+      def self.get_local_ip
+        # Try en0 interface first (common for macOS Wi-Fi)
+        ip = `ipconfig getifaddr en0 2>/dev/null`.strip
+        
+        # If en0 is empty, try other interfaces
+        if ip.empty?
+          ip = `ifconfig | grep "inet " | grep -v 127.0.0.1 | grep -v "169.254" | head -n1 | awk '{print $2}'`.strip
+        end
+        
+        ip.empty? ? nil : ip
+      end
       
       def self.notify_clients(file, type)
         message = {
