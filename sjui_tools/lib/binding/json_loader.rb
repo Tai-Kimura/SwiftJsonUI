@@ -252,14 +252,13 @@ module SjuiTools
             if data["defaultValue"].nil?
               content << "    #{modifier} #{data["name"]}: #{data["class"]}?\n"
             else
-              default_value = data["defaultValue"].to_s.dup
-              # Handle string values with proper escaping
               if data["class"] == "String"
-                # First escape any existing double quotes, then convert single quotes to double quotes
-                default_value = default_value.gsub('"', '\\"').gsub("'", '"')
-                default_value = "\"#{default_value}\""
+                # For string values, wrap in quotes and convert single quotes to double quotes
+                default_value = "\"#{data["defaultValue"].to_s.gsub(/'/, '"')}\""
               elsif data["class"] == "Bool"
-                default_value = default_value.downcase
+                default_value = data["defaultValue"].to_s.downcase
+              else
+                default_value = data["defaultValue"].to_s
               end
               content << "    #{modifier} #{data["name"]}: #{data["class"]}#{data["optional"] ? "?" : ""} = #{default_value}\n"
             end
