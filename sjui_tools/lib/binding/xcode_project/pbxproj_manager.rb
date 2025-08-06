@@ -175,7 +175,8 @@ module SjuiTools
               'Docs',
               'docs',
               'config',
-              'installer'
+              'installer',
+              'node_modules'
             ]
             
             # Files to exclude

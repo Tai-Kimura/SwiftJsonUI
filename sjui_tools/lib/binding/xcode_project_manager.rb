@@ -37,7 +37,8 @@ module SjuiTools
         'Gemfile',
         'Gemfile.lock',
         '.ruby-version',
-        '.gitmodules'
+        '.gitmodules',
+        'node_modules/'
       ].freeze
 
       def initialize(project_path)
