@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'set'
 require_relative 'json_loader_config'
 require_relative 'view_binding_handler_factory'
 require_relative 'string_module'
@@ -124,12 +125,24 @@ module SjuiTools
           method_content << "        }\n"
           
           # Call invalidate on partial bindings if they have the same method
-          @partial_bindings.each do |partial|
-            method_content << "        \n"
-            method_content << "        // Propagate invalidate to partial binding\n"
-            method_content << "        if #{partial[:property_name]}Binding.responds(to: #selector(invalidate#{method_name})) {\n"
-            method_content << "            #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
-            method_content << "        }\n"
+          unless method_name.empty?
+            @partial_bindings.each do |partial|
+              # Check if partial has this binding group
+              partial_has_group = case group
+                                when "all"
+                                  true  # All partials have invalidateAll
+                                when ""
+                                  true  # All partials have invalidate (no suffix)
+                                else
+                                  partial[:binding_groups].include?(group)
+                                end
+              
+              if partial_has_group
+                method_content << "        \n"
+                method_content << "        // Propagate invalidate to partial binding\n"
+                method_content << "        #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
+              end
+            end
           end
           
           # 各バインディングプロセスを処理（一時的にbinding_contentを保存）
@@ -170,12 +183,49 @@ module SjuiTools
         
         # Add to partial_bindings list if not already present
         unless @partial_bindings.any? { |p| p[:name] == partial_name }
+          # Analyze partial JSON to determine which binding groups it has
+          partial_file_path = File.join(@layout_path, "#{partial_name}.json")
+          binding_groups = []
+          
+          if File.exist?(partial_file_path)
+            begin
+              partial_json = JSON.parse(File.read(partial_file_path))
+              binding_groups = analyze_binding_groups(partial_json)
+            rescue => e
+              puts "Warning: Could not analyze partial binding groups: #{e.message}"
+            end
+          end
+          
           @partial_bindings << {
             name: partial_name,
             binding_class: binding_name,
-            property_name: base_name.gsub('-', '_').gsub('/', '_')
+            property_name: base_name.gsub('-', '_').gsub('/', '_'),
+            binding_groups: binding_groups
           }
         end
+      end
+      
+      def analyze_binding_groups(json)
+        groups = Set.new
+        
+        # Recursively find all binding_group values in the JSON
+        if json.is_a?(Hash)
+          json.each do |key, value|
+            if key == "binding_group" && value.is_a?(Array)
+              groups.merge(value)
+            elsif value.is_a?(Hash) || value.is_a?(Array)
+              groups.merge(analyze_binding_groups(value))
+            end
+          end
+        elsif json.is_a?(Array)
+          json.each do |item|
+            if item.is_a?(Hash) || item.is_a?(Array)
+              groups.merge(analyze_binding_groups(item))
+            end
+          end
+        end
+        
+        groups.to_a
       end
 
       def process_id_element(json, value, current_view)
