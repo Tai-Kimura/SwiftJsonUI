@@ -12,6 +12,7 @@ module SjuiTools
   module HotLoader
     class Server < Sinatra::Base
       set :port, 8081
+      set :bind, '0.0.0.0'
       set :public_folder, File.join(File.dirname(__FILE__), 'public')
       set :views, File.join(File.dirname(__FILE__), 'views')
       
@@ -74,7 +75,7 @@ module SjuiTools
       # WebSocket endpoint
       get '/websocket' do
         if Faye::WebSocket.websocket?(request.env)
-          ws = Faye::WebSocket.new(request.env)
+          ws = Faye::WebSocket.new(request.env, nil, { ping: 60 })
           
           ws.on :open do |event|
             @@clients << ws
