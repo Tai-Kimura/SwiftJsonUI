@@ -55,13 +55,7 @@ module SjuiTools
         def setup_membership_exceptions
           return unless File.exist?(@project_file_path)
           
-          # Skip for synchronized projects
-          if @is_synchronized
-            puts "Skipping membership exceptions for synchronized project"
-            return
-          end
-          
-          puts "Setting up file exclusions for sjui_tools directory..."
+          puts "Setting up file exclusions..."
           
           begin
             require 'xcodeproj'
