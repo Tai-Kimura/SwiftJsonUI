@@ -189,6 +189,9 @@ module SjuiTools
                 exit 1
               end
             end
+            
+            # Clean up Xcode project after npm install
+            cleanup_xcode_project_after_npm
           end
           
           # Start Node.js server
@@ -196,6 +199,63 @@ module SjuiTools
             ENV['PORT'] = port.to_s
             exec("node server.js")
           end
+        end
+        
+        def cleanup_xcode_project_after_npm
+          puts "🧹 Cleaning up Xcode project after npm install..."
+          
+          # Find Xcode project
+          project_file = Core::ProjectFinder.find_project_file
+          return unless project_file
+          
+          require 'xcodeproj'
+          project = Xcodeproj::Project.open(project_file)
+          
+          # Patterns to remove
+          patterns_to_remove = [
+            '.editorconfig',
+            '.eslintrc',
+            '.npmignore', 
+            '.nycrc',
+            'FUNDING.yml',
+            '.prettierrc',
+            '.babelrc',
+            '.travis.yml'
+          ]
+          
+          removed_count = 0
+          
+          # Remove files matching patterns
+          project.files.each do |file_ref|
+            if file_ref.path && patterns_to_remove.any? { |pattern| File.basename(file_ref.path) == pattern }
+              puts "  Removing from project: #{file_ref.path}"
+              file_ref.remove_from_project
+              removed_count += 1
+            end
+          end
+          
+          if removed_count > 0
+            project.save
+            puts "✅ Removed #{removed_count} files from Xcode project"
+          else
+            puts "✅ No cleanup needed"
+          end
+          
+          # Also update membership exceptions for synchronized projects
+          update_membership_exceptions_if_needed(project_file)
+        rescue => e
+          puts "⚠️  Warning: Could not clean up Xcode project: #{e.message}"
+        end
+        
+        def update_membership_exceptions_if_needed(project_file)
+          # Use PbxprojManager to update membership exceptions
+          require_relative '../../binding/xcode_project/pbxproj_manager'
+          
+          manager = SjuiTools::Binding::XcodeProject::PbxprojManager.new(project_file)
+          manager.setup_membership_exceptions
+          puts "✅ Updated membership exceptions"
+        rescue => e
+          puts "⚠️  Warning: Could not update membership exceptions: #{e.message}"
         end
         
         def show_help
