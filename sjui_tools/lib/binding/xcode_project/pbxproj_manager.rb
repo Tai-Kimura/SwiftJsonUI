@@ -53,35 +53,12 @@ module SjuiTools
             app_targets = Core::XcodeTargetHelper.get_app_targets(project)
             return if app_targets.empty?
             
-            # 除外すべきディレクトリとファイル
-            directories_to_exclude = [
-              'sjui_tools',
-              'binding_builder',
-              '.git',
-              '.github',
-              '.build',
-              '.swiftpm',
-              'Tests',
-              'UITests',
-              'Docs',
-              'docs',
-              'config',
-              'installer'
-            ]
+            # 除外すべきディレクトリとファイル（XcodeProjectManagerから参照）
+            excluded_patterns = ::SjuiTools::Binding::XcodeProjectManager::EXCLUDED_PATTERNS
             
-            # 除外すべきファイル（ルートレベル）
-            files_to_exclude = [
-              'README.md',
-              'LICENSE',
-              'CHANGELOG.md',
-              '.DS_Store',
-              '.gitignore',
-              'Podfile',
-              'Podfile.lock',
-              'Package.swift',
-              'Package.resolved',
-              'VERSION'
-            ]
+            # パスからディレクトリとファイルを分離
+            directories_to_exclude = excluded_patterns.select { |p| p.end_with?('/') }.map { |p| p.chomp('/') }
+            files_to_exclude = excluded_patterns.reject { |p| p.end_with?('/') }
             
             # プロジェクトのメインルートグループを取得
             main_group = project.main_group

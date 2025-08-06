@@ -10,6 +10,35 @@ module SjuiTools
   module Binding
     class XcodeProjectManager
       attr_reader :project_path, :project
+      
+      EXCLUDED_PATTERNS = [
+        'sjui_tools/',
+        'binding_builder/',
+        '.git/',
+        '.gitignore',
+        'README.md',
+        'LICENSE',
+        'CHANGELOG.md',
+        '.DS_Store',
+        'Podfile',
+        'Podfile.lock',
+        'Package.swift',
+        'Package.resolved',
+        '.swiftpm/',
+        'Tests/',
+        'UITests/',
+        'Docs/',
+        'docs/',
+        '.github/',
+        'VERSION',
+        'config/',
+        'installer/',
+        '.build/',
+        'Gemfile',
+        'Gemfile.lock',
+        '.ruby-version',
+        '.gitmodules'
+      ].freeze
 
       def initialize(project_path)
         @project_path = project_path
@@ -36,34 +65,8 @@ module SjuiTools
             return
           end
           
-          # Excluded files and patterns
-          excluded_patterns = [
-            'sjui_tools/',
-            'binding_builder/',
-            '.git/',
-            '.gitignore',
-            'README.md',
-            'LICENSE',
-            'CHANGELOG.md',
-            '.DS_Store',
-            'Podfile',
-            'Podfile.lock',
-            'Package.swift',
-            'Package.resolved',
-            '.swiftpm/',
-            'Tests/',
-            'UITests/',
-            'Docs/',
-            'docs/',
-            '.github/',
-            'VERSION',
-            'config/',
-            'installer/',
-            '.build/'
-          ]
-          
           # Check if file should be excluded
-          excluded = excluded_patterns.any? do |pattern|
+          excluded = EXCLUDED_PATTERNS.any? do |pattern|
             if pattern.end_with?('/')
               relative_path.start_with?(pattern)
             else
@@ -171,6 +174,15 @@ module SjuiTools
       def add_directory(dir_path, group_name)
         return unless Dir.exist?(dir_path)
         
+        # Check if the entire directory should be excluded
+        project_dir = File.dirname(@project_path)
+        relative_dir_path = Pathname.new(dir_path).relative_path_from(Pathname.new(project_dir)).to_s
+        
+        if EXCLUDED_PATTERNS.any? { |pattern| pattern.end_with?('/') && relative_dir_path.start_with?(pattern.chomp('/')) }
+          puts "Excluding entire directory from Xcode project: #{relative_dir_path}"
+          return
+        end
+        
         group = find_or_create_group(group_name)
         
         Dir.glob(File.join(dir_path, '**', '*.swift')).each do |file|
@@ -257,6 +269,20 @@ module SjuiTools
           # Calculate relative path from project directory
           project_dir = File.dirname(@project_path)
           relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+          
+          # Check if file should be excluded
+          excluded = EXCLUDED_PATTERNS.any? do |pattern|
+            if pattern.end_with?('/')
+              relative_path.start_with?(pattern)
+            else
+              relative_path == pattern || File.basename(relative_path) == pattern
+            end
+          end
+          
+          if excluded
+            puts "Excluding file from Xcode project: #{relative_path}"
+            return
+          end
           
           # Create file reference with proper relative path
           file_ref = group.new_file(relative_path)
