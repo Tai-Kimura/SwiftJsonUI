@@ -38,7 +38,18 @@ module SjuiTools
         'Gemfile.lock',
         '.ruby-version',
         '.gitmodules',
-        'node_modules/'
+        'node_modules/',
+        '.editorconfig',
+        '.eslintrc*',
+        '.npmignore',
+        '.nycrc',
+        '.prettierrc*',
+        '.babelrc*',
+        '.travis.yml',
+        '.github/',
+        'FUNDING.yml',
+        '*.md',
+        'LICENSE*'
       ].freeze
 
       def initialize(project_path)
@@ -100,6 +111,9 @@ module SjuiTools
           excluded = EXCLUDED_PATTERNS.any? do |pattern|
             if pattern.end_with?('/')
               relative_path.start_with?(pattern)
+            elsif pattern.include?('*')
+              # Handle wildcard patterns
+              File.fnmatch?(pattern, File.basename(relative_path)) || File.fnmatch?(pattern, relative_path)
             else
               relative_path == pattern || File.basename(relative_path) == pattern
             end
@@ -343,6 +357,9 @@ module SjuiTools
           excluded = EXCLUDED_PATTERNS.any? do |pattern|
             if pattern.end_with?('/')
               relative_path.start_with?(pattern)
+            elsif pattern.include?('*')
+              # Handle wildcard patterns
+              File.fnmatch?(pattern, File.basename(relative_path)) || File.fnmatch?(pattern, relative_path)
             else
               relative_path == pattern || File.basename(relative_path) == pattern
             end

@@ -193,7 +193,12 @@ module SjuiTools
               'VERSION',
               '.ruby-version',
               'Gemfile',
-              'Gemfile.lock'
+              'Gemfile.lock',
+              '.editorconfig',
+              '.eslintrc',
+              '.npmignore',
+              '.nycrc',
+              'FUNDING.yml'
             ]
             
             # Find all files in excluded directories
