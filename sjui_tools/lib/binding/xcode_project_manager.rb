@@ -250,14 +250,34 @@ module SjuiTools
         # Get project directory name
         project_name = File.basename(@project_path, '.xcodeproj')
         
-        # Remove any groups that match the project name or common phantom patterns
-        phantom_patterns = [project_name, 'sjui_tools', 'binding_builder']
+        # Find duplicate project references
+        # Look for groups that have the same name as the project and are at the root level
+        groups_to_remove = []
+        project_groups = @project.main_group.groups.select { |g| g.name == project_name }
+        
+        # If there are multiple groups with the project name, keep the first one and remove others
+        if project_groups.size > 1
+          puts "Found #{project_groups.size} groups named '#{project_name}'"
+          # Remove all but the first one
+          project_groups[1..-1].each do |group|
+            puts "Removing duplicate project reference: #{group.name}"
+            groups_to_remove << group
+          end
+        end
+        
+        # Also remove any phantom patterns
+        phantom_patterns = ['sjui_tools', 'binding_builder']
         
         @project.main_group.groups.each do |group|
           if phantom_patterns.include?(group.name) && group.files.empty? && group.groups.empty?
             puts "Removing phantom reference: #{group.name}"
-            group.remove_from_project
+            groups_to_remove << group
           end
+        end
+        
+        # Remove all marked groups
+        groups_to_remove.uniq.each do |group|
+          group.remove_from_project
         end
       end
 

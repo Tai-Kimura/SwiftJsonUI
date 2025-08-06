@@ -38,6 +38,9 @@ module SjuiTools
             # 6. membershipExceptionsを設定
             setup_membership_exceptions
             
+            # 7. 不要な参照をクリーンアップ
+            cleanup_project_references
+            
             puts "=== SwiftJsonUI Project Setup Completed Successfully! ==="
           end
 
@@ -195,6 +198,19 @@ module SjuiTools
             info_plist_files.min_by { |path| path.split('/').length }
           end
 
+          def cleanup_project_references
+            puts "Cleaning up project references..."
+            
+            # Use XcodeProjectManager to clean up phantom references
+            require_relative '../../xcode_project_manager'
+            xcode_manager = ::SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
+            
+            # This will trigger the cleanup
+            xcode_manager.send(:cleanup_empty_groups)
+            
+            puts "Project references cleaned up"
+          end
+          
           def remove_storyboard_references(content)
             # UISceneStoryboardFileキーとその値を削除
             content = content.gsub(/\s*<key>UISceneStoryboardFile<\/key>\s*\n\s*<string>.*?<\/string>\s*\n/, "")
