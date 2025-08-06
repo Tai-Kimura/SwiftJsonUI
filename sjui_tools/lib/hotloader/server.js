@@ -67,6 +67,37 @@ class HotLoaderServer {
         res.status(404).json({ error: `Layout not found: ${layoutName}` });
       }
     });
+    
+    // Legacy layout download endpoint (for compatibility with HotLoader client)
+    this.app.get('/*', (req, res) => {
+      const filePath = req.query.file_path;
+      const dirName = req.query.dir_name;
+      
+      if (!filePath || !dirName) {
+        return res.status(400).send('Missing file_path or dir_name parameter');
+      }
+      
+      const projectRoot = this.findProjectRoot();
+      let fullPath;
+      
+      switch(dirName) {
+        case 'styles':
+          fullPath = path.join(projectRoot, 'Styles', `${filePath}.json`);
+          break;
+        case 'scripts':
+          fullPath = path.join(projectRoot, 'Scripts', `${filePath}.js`);
+          break;
+        default:
+          fullPath = path.join(projectRoot, 'Layouts', `${filePath}.json`);
+      }
+      
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath);
+        res.type('application/octet-stream').send(content);
+      } else {
+        res.status(404).send(`File not found: ${fullPath}`);
+      }
+    });
   }
 
   setupWebSocket() {
@@ -85,12 +116,18 @@ class HotLoaderServer {
   }
 
   notifyClients(file, changeType) {
-    const message = JSON.stringify({
-      type: 'file_changed',
-      file: file,
-      change_type: changeType,
-      timestamp: Date.now()
-    });
+    // Extract file info from path
+    const relativePath = path.relative(this.findProjectRoot(), file);
+    const parts = relativePath.split(path.sep);
+    const dirName = parts[0].toLowerCase(); // "Layouts" -> "layouts"
+    const fileName = path.basename(file, path.extname(file)); // Remove extension
+    
+    // Format message as array of strings (compatible with client)
+    const message = JSON.stringify([
+      relativePath,  // layoutPath
+      dirName,       // dirName
+      fileName       // fileName without extension
+    ]);
     
     this.wss.clients.forEach(client => {
       if (client.readyState === WebSocket.OPEN) {

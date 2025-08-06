@@ -119,7 +119,8 @@ public class HotLoader: NSObject, URLSessionWebSocketDelegate, ObservableObject 
     }
     
     private func downloadLayout(layoutPath: String, dirName: String, fileName: String) {
-        if let url = URL(string: "http://\((Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String) ?? ""):3000/\(layoutPath)?file_path=\(fileName)&dir_name=\(dirName)&\(additionalRequestParameter)") {
+        let (ip, port) = getHotLoaderConfig()
+        if let url = URL(string: "http://\(ip):\(port)/\(layoutPath)?file_path=\(fileName)&dir_name=\(dirName)&\(additionalRequestParameter)") {
             Logger.debug("SwiftJSONUIHotloader \(url.absoluteString)")
             let downloader = Downloader(url: url)
             downloader.completionHandler = { data, exist in
