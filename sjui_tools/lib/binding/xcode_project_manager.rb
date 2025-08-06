@@ -35,6 +35,46 @@ module SjuiTools
             puts "Warning: File is outside project directory: #{file_path}"
             return
           end
+          
+          # Excluded files and patterns
+          excluded_patterns = [
+            'sjui_tools/',
+            'binding_builder/',
+            '.git/',
+            '.gitignore',
+            'README.md',
+            'LICENSE',
+            'CHANGELOG.md',
+            '.DS_Store',
+            'Podfile',
+            'Podfile.lock',
+            'Package.swift',
+            'Package.resolved',
+            '.swiftpm/',
+            'Tests/',
+            'UITests/',
+            'Docs/',
+            'docs/',
+            '.github/',
+            'VERSION',
+            'config/',
+            'installer/',
+            '.build/'
+          ]
+          
+          # Check if file should be excluded
+          excluded = excluded_patterns.any? do |pattern|
+            if pattern.end_with?('/')
+              relative_path.start_with?(pattern)
+            else
+              relative_path == pattern || File.basename(relative_path) == pattern
+            end
+          end
+          
+          if excluded
+            puts "Excluding file from Xcode project: #{relative_path}"
+            return
+          end
         rescue ArgumentError => e
           puts "Error calculating relative path: #{e.message}"
           return

@@ -53,17 +53,64 @@ module SjuiTools
             app_targets = Core::XcodeTargetHelper.get_app_targets(project)
             return if app_targets.empty?
             
-            # sjui_toolsディレクトリのファイルを除外
-            directories_to_exclude = ['sjui_tools']
+            # 除外すべきディレクトリとファイル
+            directories_to_exclude = [
+              'sjui_tools',
+              'binding_builder',
+              '.git',
+              '.github',
+              '.build',
+              '.swiftpm',
+              'Tests',
+              'UITests',
+              'Docs',
+              'docs',
+              'config',
+              'installer'
+            ]
+            
+            # 除外すべきファイル（ルートレベル）
+            files_to_exclude = [
+              'README.md',
+              'LICENSE',
+              'CHANGELOG.md',
+              '.DS_Store',
+              '.gitignore',
+              'Podfile',
+              'Podfile.lock',
+              'Package.swift',
+              'Package.resolved',
+              'VERSION'
+            ]
             
             # プロジェクトのメインルートグループを取得
             main_group = project.main_group
             
             # 各ターゲットから除外
             app_targets.each do |target|
+              # ディレクトリの除外
               directories_to_exclude.each do |dir_name|
                 if group = main_group.find_subpath(dir_name, true)
                   exclude_group_from_target(group, target)
+                end
+              end
+              
+              # ファイルの除外
+              files_to_exclude.each do |file_name|
+                # ルートグループ直下のファイルを探す
+                file_ref = main_group.files.find { |f| f.name == file_name || f.path == file_name }
+                if file_ref
+                  # ビルドフェーズから除外
+                  target.build_phases.each do |phase|
+                    if phase.respond_to?(:files)
+                      phase.files.each do |build_file|
+                        if build_file.file_ref == file_ref
+                          puts "Excluding file from target: #{file_name}"
+                          phase.remove_build_file(build_file)
+                        end
+                      end
+                    end
+                  end
                 end
               end
             end
