@@ -252,7 +252,7 @@ module SjuiTools
             if data["defaultValue"].nil?
               content << "    #{modifier} #{data["name"]}: #{data["class"]}?\n"
             else
-              default_value = data["defaultValue"].to_s
+              default_value = data["defaultValue"].to_s.dup
               # Handle string values with proper escaping
               if data["class"] == "String"
                 default_value = "\"#{default_value.gsub('"', '\"')}\""
