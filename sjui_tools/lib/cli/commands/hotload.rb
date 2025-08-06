@@ -60,6 +60,24 @@ module SjuiTools
           
           puts "🚀 Starting HotLoader development environment..."
           
+          # Kill existing processes on the port first
+          existing_pids = `lsof -ti:#{port} 2>/dev/null`.strip.split("\n")
+          unless existing_pids.empty?
+            puts "🛑 Stopping existing processes on port #{port}..."
+            existing_pids.each do |pid|
+              next if pid.empty?
+              begin
+                Process.kill('TERM', pid.to_i)
+              rescue Errno::ESRCH
+                # Process already dead
+              end
+            end
+            sleep 1 # Give processes time to terminate
+          end
+          
+          # Also kill any existing IP monitor processes
+          system("pkill -f 'hotloader/ip_monitor.rb' 2>/dev/null")
+          
           # Setup paths first
           unless Core::ProjectFinder.setup_paths
             puts "Error: No iOS project found. Please run this command in a directory containing a .xcodeproj file."
