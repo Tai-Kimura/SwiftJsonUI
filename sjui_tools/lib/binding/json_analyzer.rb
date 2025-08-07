@@ -128,6 +128,9 @@ module SjuiTools
           # Call invalidate on partial bindings FIRST (children before parent)
           unless method_name.empty?
             @partial_bindings.each do |partial|
+              # Skip partials that don't have any bindings
+              next unless partial[:has_bindings]
+              
               # Check if partial has this binding group
               partial_has_group = case group
                                 when "all"
@@ -188,11 +191,13 @@ module SjuiTools
           # Analyze partial JSON to determine which binding groups it has
           partial_file_path = File.join(@layout_path, "#{partial_name}.json")
           binding_groups = []
+          has_bindings = false
           
           if File.exist?(partial_file_path)
             begin
               partial_json = JSON.parse(File.read(partial_file_path))
               binding_groups = analyze_binding_groups(partial_json)
+              has_bindings = has_binding_data(partial_json)
             rescue => e
               puts "Warning: Could not analyze partial binding groups: #{e.message}"
             end
@@ -207,7 +212,8 @@ module SjuiTools
             name: partial_name,
             binding_class: binding_name,
             property_name: property_name,
-            binding_groups: binding_groups
+            binding_groups: binding_groups,
+            has_bindings: has_bindings
           }
         end
       end
@@ -233,6 +239,27 @@ module SjuiTools
         end
         
         groups.to_a
+      end
+
+      def has_binding_data(json)
+        # Check if JSON has any data bindings (@{...} patterns)
+        if json.is_a?(Hash)
+          json.each do |key, value|
+            if value.is_a?(String) && value.start_with?("@{")
+              return true
+            elsif value.is_a?(Hash) || value.is_a?(Array)
+              return true if has_binding_data(value)
+            end
+          end
+        elsif json.is_a?(Array)
+          json.each do |item|
+            if item.is_a?(Hash) || item.is_a?(Array)
+              return true if has_binding_data(item)
+            end
+          end
+        end
+        
+        false
       end
 
       def process_id_element(json, value, current_view)

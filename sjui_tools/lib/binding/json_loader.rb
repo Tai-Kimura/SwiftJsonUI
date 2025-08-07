@@ -137,7 +137,7 @@ module SjuiTools
         return "" if @json_analyzer.partial_bindings.empty?
         
         content = String.new("\n")
-        content << "    required init(viewHolder: BaseViewController) {\n"
+        content << "    required public init(viewHolder: ViewHolder) {\n"
         content << "        super.init(viewHolder: viewHolder)\n"
         
         # Initialize partial bindings
@@ -237,6 +237,11 @@ module SjuiTools
                       bind_view_content +
                       invalidate_content +
                       "}\n"
+        
+        # Debug: Check if the content already has an initializer
+        if full_content.include?("override init(viewHolder: BaseViewController)")
+          puts "WARNING: Found override init in generated content!"
+        end
         
         # ファイルに書き込み
         File.open(binding_info[:binding_file_path], "w") do |file|
