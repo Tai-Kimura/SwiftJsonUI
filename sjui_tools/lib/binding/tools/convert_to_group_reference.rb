@@ -52,11 +52,23 @@ module SjuiTools
     module Tools
       class ConvertToGroupReference
         def initialize
-          # Find project file
+          # Find project file - check current directory and parent directories
           project_files = Dir.glob('*.xcodeproj')
+          
+          # If not found in current directory, try parent directory
           if project_files.empty?
-            raise "No .xcodeproj file found in current directory"
+            project_files = Dir.glob('../*.xcodeproj')
           end
+          
+          # If still not found, try two levels up
+          if project_files.empty?
+            project_files = Dir.glob('../../*.xcodeproj')
+          end
+          
+          if project_files.empty?
+            raise "No .xcodeproj file found in current directory or parent directories"
+          end
+          
           @converter = XcodeSyncToGroupConverter.new(project_files.first)
         end
         
