@@ -8,11 +8,18 @@ module SjuiTools
     module Commands
       class Convert
         def run(args)
+          # Check for special subcommand 'to-group'
+          if args.first == 'to-group'
+            convert_to_group_reference(args[1..-1])
+            return
+          end
+          
           options = parse_options(args)
           
           if args.empty?
-            puts "Error: Input file is required"
+            puts "Error: Input file or command is required"
             puts "Usage: sjui convert <input.json> [output.swift] [options]"
+            puts "   or: sjui convert to-group [--force]"
             exit 1
           end
           
@@ -60,6 +67,31 @@ module SjuiTools
           end.parse!(args)
           
           options
+        end
+
+        def convert_to_group_reference(args)
+          require_relative '../../binding/tools/convert_to_group_reference'
+          
+          options = {}
+          OptionParser.new do |opts|
+            opts.banner = "Usage: sjui convert to-group [--force]"
+            
+            opts.on('--force', 'Force conversion even if already converted') do
+              options[:force] = true
+            end
+            
+            opts.on('-h', '--help', 'Show this help message') do
+              puts opts
+              exit
+            end
+          end.parse!(args)
+          
+          converter = SjuiTools::Binding::Tools::ConvertToGroupReference.new
+          converter.convert(options[:force])
+        rescue => e
+          puts "Error during conversion: #{e.message}"
+          puts e.backtrace if ENV['DEBUG']
+          exit 1
         end
 
         def convert_json_to_swiftui(input_file, output_file)
