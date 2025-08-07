@@ -98,11 +98,8 @@ module SjuiTools
 
         # 6. membershipExceptionsを設定
         def setup_membership_exceptions
-          if is_synchronized_project?
-            setup_synchronized_exceptions
-          else
-            setup_traditional_exceptions
-          end
+          # Call the parent class method from PbxprojManager
+          super
         end
 
         # 7. 不要な参照をクリーンアップ
