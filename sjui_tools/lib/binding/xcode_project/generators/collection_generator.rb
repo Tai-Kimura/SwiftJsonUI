@@ -1,15 +1,15 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
-require_relative '../../xcode_project_manager'
+require_relative '../../../core/xcode_project_manager'
 require_relative '../../../core/project_finder'
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 
 module SjuiTools
   module Binding
     module XcodeProject
       module Generators
-        class CollectionGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+        class CollectionGenerator < ::SjuiTools::Core::PbxprojManager
           def initialize(project_file_path = nil)
             super(project_file_path)
             
@@ -26,7 +26,7 @@ module SjuiTools
             @layouts_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
             @bindings_path = File.join(source_path, config['bindings_directory'] || 'Bindings')
             
-            @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
+            @xcode_manager = SjuiTools::Core::XcodeProjectManager.new(@project_file_path)
           end
 
           def generate(args)

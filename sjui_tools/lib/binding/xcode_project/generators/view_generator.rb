@@ -2,16 +2,16 @@
 
 require "fileutils"
 require "json"
-require_relative '../../xcode_project_manager'
+require_relative '../../../core/xcode_project_manager'
 require_relative '../../../core/project_finder'
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 require_relative '../../../core/config_manager'
 
 module SjuiTools
   module Binding
     module XcodeProject
       module Generators
-        class ViewGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+        class ViewGenerator < ::SjuiTools::Core::PbxprojManager
           def initialize(name, options = {})
             @name = name
             @options = options
@@ -33,7 +33,7 @@ module SjuiTools
             source_path = Core::ProjectFinder.get_full_source_path
             @view_path = File.join(source_path, config['view_directory'] || 'View')
             @layout_path = File.join(source_path, config['layouts_directory'] || 'Layouts')
-            @xcode_manager = SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
+            @xcode_manager = SjuiTools::Core::XcodeProjectManager.new(@project_file_path)
           end
 
           def generate

@@ -76,7 +76,7 @@ module SjuiTools
         def add_to_xcode_project(file_path, group_name)
           return unless Core::ProjectFinder.project_file_path&.end_with?('.xcodeproj')
           
-          require_relative '../xcode_project_manager'
+          require_relative '../../core/xcode_project_manager'
           manager = XcodeProjectManager.new(Core::ProjectFinder.project_file_path)
           manager.add_file(file_path, group_name)
         rescue => e

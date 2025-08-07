@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 require 'xcodeproj'
-require_relative '../xcode_project_manager'
+require_relative '../../core/xcode_project_manager'
 require_relative '../../core/project_finder'
 
 module SjuiTools
@@ -91,7 +91,7 @@ module SjuiTools
         end
         
         def should_exclude?(path)
-          excluded_patterns = ::SjuiTools::Binding::XcodeProjectManager::EXCLUDED_PATTERNS
+          excluded_patterns = ::SjuiTools::Core::XcodeProjectManager::EXCLUDED_PATTERNS
           
           excluded_patterns.any? do |pattern|
             if pattern.end_with?('/')

@@ -2,14 +2,14 @@
 
 require "fileutils"
 require "pathname"
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 require_relative '../../../core/project_finder'
 
 module SjuiTools
   module Binding
     module XcodeProject
       module Setup
-        class Setup < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+        class Setup < ::SjuiTools::Core::PbxprojManager
           def initialize(project_file_path = nil)
             super(project_file_path)
           end
@@ -202,8 +202,8 @@ module SjuiTools
             puts "Cleaning up project references..."
             
             # Use XcodeProjectManager to clean up phantom references
-            require_relative '../../xcode_project_manager'
-            xcode_manager = ::SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
+            require_relative '../../../core/xcode_project_manager'
+            xcode_manager = ::SjuiTools::Core::XcodeProjectManager.new(@project_file_path)
             
             # This will trigger the cleanup
             xcode_manager.send(:cleanup_empty_groups)

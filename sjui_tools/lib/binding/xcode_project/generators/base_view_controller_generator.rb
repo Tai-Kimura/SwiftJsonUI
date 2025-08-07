@@ -1,13 +1,13 @@
 #!/usr/bin/env ruby
 
 require "fileutils"
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 
 module SjuiTools
   module Binding
     module XcodeProject
       module Generators
-        class BaseViewControllerGenerator < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+        class BaseViewControllerGenerator < ::SjuiTools::Core::PbxprojManager
           def initialize(project_file_path)
             super(project_file_path)
           end

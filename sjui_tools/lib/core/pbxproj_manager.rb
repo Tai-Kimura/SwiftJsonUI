@@ -2,14 +2,13 @@
 
 require "fileutils"
 require "pathname"
-require_relative '../../core/project_finder'
-require_relative '../../core/config_manager'
-require_relative '../../core/xcode_target_helper'
+require_relative 'project_finder'
+require_relative 'config_manager'
+require_relative 'xcode_target_helper'
 
 module SjuiTools
-  module Binding
-    module XcodeProject
-      class PbxprojManager
+  module Core
+    class PbxprojManager
         def initialize(project_file_path = nil)
           if project_file_path
             @project_file_path = project_file_path
@@ -326,8 +325,6 @@ module SjuiTools
             end
           end
         end
-
       end
     end
   end
-end

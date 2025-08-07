@@ -3,7 +3,7 @@
 require "fileutils"
 require 'xcodeproj'
 require_relative '../../../core/project_finder'
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 require_relative '../../../core/xcode_target_helper'
 
 module SjuiTools

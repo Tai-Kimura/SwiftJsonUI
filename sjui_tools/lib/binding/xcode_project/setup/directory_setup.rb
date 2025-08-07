@@ -3,10 +3,10 @@
 require "fileutils"
 require "pathname"
 require "ostruct"
-require_relative '../../xcode_project_manager'
+require_relative '../../../core/xcode_project_manager'
 require_relative '../../../core/project_finder'
 require_relative '../../../core/config_manager'
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 require_relative '../generators/ui_view_creator_generator'
 require_relative '../generators/base_view_controller_generator'
 require_relative '../generators/base_binding_generator'
@@ -16,7 +16,7 @@ module SjuiTools
   module Binding
     module XcodeProject
       module Setup
-        class DirectorySetup < ::SjuiTools::Binding::XcodeProject::PbxprojManager
+        class DirectorySetup < ::SjuiTools::Core::PbxprojManager
           def initialize(project_file_path = nil)
             super(project_file_path)
             base_dir = File.expand_path('../..', File.dirname(__FILE__))
@@ -45,7 +45,7 @@ module SjuiTools
               base_path: File.join(source_path, 'Core', 'Base')  # Base should be at same level as UI
             )
             
-            @xcode_manager = ::SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
+            @xcode_manager = ::SjuiTools::Core::XcodeProjectManager.new(@project_file_path)
           end
 
           def create_missing_directories

@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 require 'xcodeproj'
-# require_relative '../core/xcodeproj_patch' # xcodeproj 1.27.0 has native Xcode 16 support
-require_relative 'xcode_project/pbxproj_manager'
-require_relative '../core/config_manager'
-require_relative '../core/xcode_target_helper'
+# require_relative 'xcodeproj_patch' # xcodeproj 1.27.0 has native Xcode 16 support
+require_relative 'pbxproj_manager'
+require_relative 'config_manager'
+require_relative 'xcode_target_helper'
 
 module SjuiTools
-  module Binding
+  module Core
     class XcodeProjectManager
       attr_reader :project_path, :project
       
@@ -387,7 +387,6 @@ module SjuiTools
           end
         end
       end
-
     end
   end
 end

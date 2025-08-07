@@ -266,7 +266,7 @@ module SjuiTools
           # Use PbxprojManager to update membership exceptions
           require_relative '../../binding/xcode_project/pbxproj_manager'
           
-          manager = SjuiTools::Binding::XcodeProject::PbxprojManager.new(project_file)
+          manager = SjuiTools::Core::PbxprojManager.new(project_file)
           manager.setup_membership_exceptions
           puts "✅ Updated membership exceptions"
         rescue => e

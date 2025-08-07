@@ -4,7 +4,7 @@ require "json"
 require "time"
 require "fileutils"
 require_relative "string_module"
-require_relative "xcode_project_manager"
+require_relative "../core/xcode_project_manager"
 require_relative "view_binding_handler_factory"
 require_relative "build_cache_manager"
 require_relative "json_loader_config"
@@ -35,7 +35,7 @@ module SjuiTools
         @binding_path = File.join(source_path, config['bindings_directory'])
         
         @new_binding_files = []
-        @xcode_project_manager = XcodeProjectManager.new(@project_file_path) if @project_file_path
+        @xcode_project_manager = Core::XcodeProjectManager.new(@project_file_path) if @project_file_path
         @cache_manager = BuildCacheManager.new(@project_dir)
         @binding_file_manager = BindingFileManager.new(@view_path, @binding_path)
         @import_module_manager = ImportModuleManager.new

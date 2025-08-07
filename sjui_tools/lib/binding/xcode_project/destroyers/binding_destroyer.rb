@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require_relative '../pbxproj_manager'
+require_relative '../../../core/pbxproj_manager'
 require_relative "destroyer"
 require_relative '../../../core/config_manager'
 require_relative '../../../core/project_finder'
