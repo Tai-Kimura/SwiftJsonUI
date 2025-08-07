@@ -164,6 +164,10 @@ module SjuiTools
             # The actual source path
             source_path = source_directory.empty? ? project_dir : File.join(project_dir, source_directory)
             
+            puts "  Project directory: #{project_dir}"
+            puts "  Source directory config: '#{source_directory}'"
+            puts "  Actual source path: #{source_path}"
+            
             # Find all files that should be excluded
             excluded_files = []
             
@@ -247,9 +251,9 @@ module SjuiTools
                       excluded_files << relative_path
                       file_count += 1
                       
-                      # Show progress every 1000 files
-                      if file_count % 1000 == 0
-                        puts "      Processed #{file_count} files..."
+                      # Log first few files and every 100th file for debugging
+                      if file_count <= 5 || file_count % 100 == 0
+                        puts "      Adding to exclusion: #{relative_path}"
                       end
                     end
                     
@@ -439,11 +443,26 @@ module SjuiTools
             end
             
             puts "  Found existing exceptions: #{current_exceptions.size}"
+            if current_exceptions.size > 0
+              puts "    Existing: #{current_exceptions.first(3).join(', ')}..." if current_exceptions.any?
+            end
             
             # Add our exclusions
             all_exceptions = (current_exceptions + excluded_files).uniq.sort
             
             puts "  Total exceptions after adding: #{all_exceptions.size}"
+            
+            # Show sample of what's being added
+            new_additions = all_exceptions - current_exceptions
+            if new_additions.any?
+              puts "  Sample of new additions:"
+              new_additions.first(10).each do |path|
+                puts "    - #{path}"
+              end
+              if new_additions.size > 10
+                puts "    ... and #{new_additions.size - 10} more"
+              end
+            end
             
             # Format the new exceptions list
             if all_exceptions.empty?
