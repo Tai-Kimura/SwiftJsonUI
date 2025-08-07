@@ -226,18 +226,64 @@ module SjuiTools
             # Find all files in excluded directories
             directories_to_exclude.each do |dir|
               dir_path = File.join(source_path, dir)
+              puts "  Checking directory: #{dir_path}" if ENV['DEBUG'] || dir.include?('node_modules')
               if Dir.exist?(dir_path)
-                # Use File::FNM_DOTMATCH to include dot files
-                Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).each do |file_path|
-                  next if File.directory?(file_path)
-                  # Skip . and .. entries
-                  basename = File.basename(file_path)
-                  next if basename == '.' || basename == '..'
-                  # Get relative path from source directory
-                  relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
-                  excluded_files << relative_path
+                puts "    Directory exists: #{dir_path}" if dir.include?('node_modules')
+                # Special handling for node_modules - scan ALL files efficiently
+                if dir == 'node_modules' || dir.include?('node_modules')
+                  begin
+                    puts "    Scanning all files in #{dir}..."
+                    file_count = 0
+                    
+                    # Use Find module for efficient recursive traversal
+                    require 'find'
+                    Find.find(dir_path) do |path|
+                      # Skip directories
+                      next if File.directory?(path)
+                      
+                      # Get relative path from source directory
+                      relative_path = Pathname.new(path).relative_path_from(Pathname.new(source_path)).to_s
+                      excluded_files << relative_path
+                      file_count += 1
+                      
+                      # Show progress every 1000 files
+                      if file_count % 1000 == 0
+                        puts "      Processed #{file_count} files..."
+                      end
+                    end
+                    
+                    puts "    Found #{file_count} files in #{dir}"
+                  rescue => e
+                    puts "    Error scanning #{dir}: #{e.message}"
+                    # Fallback to glob if Find fails
+                    begin
+                      files = Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).reject { |f| File.directory?(f) }
+                      files.each do |file_path|
+                        basename = File.basename(file_path)
+                        next if basename == '.' || basename == '..'
+                        relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
+                        excluded_files << relative_path
+                      end
+                      puts "    Found #{files.size} files in #{dir} (using glob fallback)"
+                    rescue => e2
+                      puts "    Glob fallback also failed: #{e2.message}"
+                    end
+                  end
+                else
+                  # For other directories, use normal glob
+                  Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).each do |file_path|
+                    next if File.directory?(file_path)
+                    # Skip . and .. entries
+                    basename = File.basename(file_path)
+                    next if basename == '.' || basename == '..'
+                    # Get relative path from source directory
+                    relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
+                    excluded_files << relative_path
+                  end
+                  puts "  Found #{Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).select{|f| !File.directory?(f)}.size} files in #{dir}"
                 end
-                puts "  Found #{Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).select{|f| !File.directory?(f)}.size} files in #{dir}" if dir.include?('node_modules')
+              else
+                puts "    Directory does not exist: #{dir_path}" if dir.include?('node_modules')
               end
             end
             
