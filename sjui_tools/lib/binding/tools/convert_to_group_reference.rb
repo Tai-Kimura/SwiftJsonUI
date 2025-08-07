@@ -121,6 +121,14 @@ class XcodeSyncToGroupConverter
     
     unless main_app_uuid
       puts "No synchronized groups found. Project may already be using group references."
+      # Still clean up any duplicate groups
+      cleanup_duplicate_groups(content, app_name)
+      
+      # Save if there were changes
+      if content != original_content
+        File.write(@pbxproj_path, content)
+        puts "Cleaned up duplicate groups"
+      end
       return
     end
     
@@ -272,8 +280,8 @@ class XcodeSyncToGroupConverter
       end
     end
     
-    # Clean up duplicate bindingTestApp groups in main group
-    cleanup_duplicate_app_groups(content, app_name)
+    # Clean up duplicate groups
+    cleanup_duplicate_groups(content, app_name)
     
     # ファイル保存
     File.write(@pbxproj_path, content)
@@ -402,6 +410,45 @@ class XcodeSyncToGroupConverter
           content.gsub!(/(#{uuid} \/\* #{name} \*\/ = \{[^}]*?path = )([^;]+)(;)/m) do
             "#{$1}#{name}#{$3}"
           end
+        end
+      end
+    end
+  end
+  
+  def cleanup_duplicate_groups(content, app_name)
+    # Find all groups with the app name
+    app_groups = []
+    content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXGroup;/m) do |uuid|
+      app_groups << uuid[0]
+    end
+    
+    if app_groups.size > 1
+      puts "Found #{app_groups.size} groups named '#{app_name}', cleaning up duplicates..."
+      
+      # Find the main group UUID dynamically
+      main_group_uuid = nil
+      if content.match(/mainGroup = ([A-F0-9]{24})/)
+        main_group_uuid = $1
+      end
+      
+      if main_group_uuid
+        # Keep the first one, remove others from main group children
+        main_group_match = content.match(/#{main_group_uuid} = \{[^}]*?children = \(([^)]*)\)/m)
+        if main_group_match
+          children_section = main_group_match[1]
+          
+          # Remove duplicate references from children
+          app_groups[1..-1].each do |duplicate_uuid|
+            children_section.gsub!(/\s*#{duplicate_uuid} \/\* #{Regexp.escape(app_name)} \*\/,?/, '')
+          end
+          
+          # Clean up any trailing commas or whitespace
+          children_section.gsub!(/,(\s*\))/, '\1')
+          children_section.gsub!(/,\s*,/, ',')
+          
+          # Replace the children section
+          content.gsub!(/#{main_group_uuid} = \{([^}]*?)children = \([^)]*\)/, 
+                       "#{main_group_uuid} = {\\1children = (#{children_section})")
         end
       end
     end
