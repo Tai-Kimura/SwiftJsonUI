@@ -59,8 +59,8 @@ module SjuiTools
             check_and_add_directory(@paths.style_path, "Styles", directories_to_create)
             check_and_add_directory(@paths.bindings_path, "Bindings", directories_to_create)
             check_and_add_directory(@paths.core_path, "Core", directories_to_create)
-            check_and_add_directory(@paths.ui_path, "UI", directories_to_create)
-            check_and_add_directory(@paths.base_path, "Base", directories_to_create)
+            check_and_add_directory(@paths.ui_path, "Core/UI", directories_to_create)
+            check_and_add_directory(@paths.base_path, "Core/Base", directories_to_create)
             
             unless directories_to_create.empty?
               # ディレクトリを作成（create_dirフラグがtrueの場合のみ）
