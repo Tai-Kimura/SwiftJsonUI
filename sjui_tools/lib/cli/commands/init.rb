@@ -68,7 +68,19 @@ module SjuiTools
             existing_config = JSON.parse(File.read(config_file))
             if existing_config['source_directory'].to_s.empty?
               Core::ProjectFinder.setup_paths
-              source_dir = Core::ProjectFinder.find_source_directory
+              # Auto-detect source directory without checking config
+              project_dir = Core::ProjectFinder.project_dir
+              common_names = ['Sources', 'Source', 'src', File.basename(project_dir)]
+              
+              source_dir = nil
+              common_names.each do |name|
+                path = File.join(project_dir, name)
+                if Dir.exist?(path)
+                  source_dir = name
+                  break
+                end
+              end
+              
               if source_dir && !source_dir.empty?
                 existing_config['source_directory'] = source_dir
                 File.write(config_file, JSON.pretty_generate(existing_config))
