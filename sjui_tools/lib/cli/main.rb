@@ -11,6 +11,8 @@ module SjuiTools
         'setup' => 'Setup library and project structure',
         'generate' => 'Generate files (view, partial, collection, binding)',
         'g' => 'Alias for generate',
+        'destroy' => 'Destroy files (view, partial, collection, binding)',
+        'd' => 'Alias for destroy',
         'build' => 'Build binding files',
         'convert' => 'Convert JSON to SwiftUI code',
         'watch' => 'Watch for file changes',
@@ -26,6 +28,7 @@ module SjuiTools
         
         # Handle shortcuts
         command = 'generate' if command == 'g'
+        command = 'destroy' if command == 'd'
         command = 'hotload' if command == 'server'
         
         case command
@@ -38,6 +41,9 @@ module SjuiTools
         when 'generate', 'g'
           require_relative 'commands/generate'
           Commands::Generate.new.run(args)
+        when 'destroy', 'd'
+          require_relative 'commands/destroy'
+          Commands::Destroy.new.run(args)
         when 'build'
           require_relative 'commands/build'
           Commands::Build.new.run(args)
@@ -87,6 +93,7 @@ module SjuiTools
         puts "  sjui init                    # Initialize a new project"
         puts "  sjui setup                   # Setup project structure"
         puts "  sjui g view HomeView         # Generate a new view"
+        puts "  sjui d view splash           # Destroy a view and its files"
         puts "  sjui build                   # Build binding files"
         puts "  sjui watch                   # Watch for changes"
         puts "  sjui hotload                 # Start HotLoader server"
