@@ -70,6 +70,13 @@ module SjuiTools
               Core::ProjectFinder.setup_paths
               # Auto-detect source directory without checking config
               project_dir = Core::ProjectFinder.project_dir
+              
+              # If project_dir is nil, fallback to finding xcodeproj
+              if project_dir.nil?
+                xcodeproj = Dir.glob('*.xcodeproj').first || Dir.glob('../*.xcodeproj').first
+                project_dir = xcodeproj ? File.dirname(File.expand_path(xcodeproj)) : Dir.pwd
+              end
+              
               common_names = ['Sources', 'Source', 'src', File.basename(project_dir)]
               
               source_dir = nil
