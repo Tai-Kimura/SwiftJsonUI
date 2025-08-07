@@ -51,8 +51,7 @@ module SjuiTools
 
           def generate_content
             # Load config values
-            base_dir = File.expand_path('../..', File.dirname(__FILE__))
-            config = Core::ConfigManager.load_config(base_dir)
+            config = Core::ConfigManager.load_config
             
             layouts_dir = config['layouts_directory'] || 'Layouts'
             styles_dir = config['styles_directory'] || 'Styles'
