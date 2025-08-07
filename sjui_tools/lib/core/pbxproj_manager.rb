@@ -296,7 +296,11 @@ module SjuiTools
             end
             
             if exception_sets.empty?
-              puts "Warning: No exception sets found. Creating them may require opening the project in Xcode first."
+              puts "Warning: No exception sets found via xcodeproj gem."
+              puts "Using direct file manipulation for Xcode 15+ synchronized projects..."
+              # For Xcode 15+ projects, xcodeproj gem doesn't recognize the new format
+              # So we directly manipulate the file
+              update_membership_exceptions_directly(excluded_files)
               return
             end
             
