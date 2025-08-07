@@ -237,6 +237,7 @@ module SjuiTools
                   relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
                   excluded_files << relative_path
                 end
+                puts "  Found #{Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).select{|f| !File.directory?(f)}.size} files in #{dir}" if dir.include?('node_modules')
               end
             end
             
@@ -256,6 +257,15 @@ module SjuiTools
             end
             
             puts "Found #{excluded_files.length} files to exclude"
+            
+            # Debug: Show some node_modules files if found
+            node_modules_files = excluded_files.select { |f| f.include?('node_modules') }
+            if node_modules_files.any?
+              puts "  Including #{node_modules_files.size} files from node_modules directories"
+              puts "  Sample: #{node_modules_files.first(3).join(', ')}" if node_modules_files.size > 0
+            else
+              puts "  Warning: No node_modules files found in exclusion list"
+            end
             
             # Use xcodeproj to update membership exceptions
             # Find the main group that represents the synchronized folder
