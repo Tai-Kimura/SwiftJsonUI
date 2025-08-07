@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require 'xcodeproj'
-# require_relative 'xcodeproj_patch' # xcodeproj 1.27.0 has native Xcode 16 support
 require_relative 'pbxproj_manager'
 require_relative 'config_manager'
 require_relative 'xcode_target_helper'
