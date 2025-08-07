@@ -319,15 +319,29 @@ class XcodeSyncToGroupConverter
     # Find the existing main app synchronized group UUID
     main_app_uuid = info[:uuid] || "B6EA59982E428BF700F81080"
     
+    # Read current content to find what's in the main group
+    content = File.read(@pbxproj_path)
+    
+    # Find the main group's children from the existing structure
+    main_children = if content =~ /B6EA598D2E428BF700F81080[^}]*?children = \(([^)]*)\)/m
+      $1.strip
+    else
+      # Default children if not found
+      "B6EA59B22E428BFA00F81080 /* bindingTestAppTests */,\n\t\t\t\tB6EA59BC2E428BFA00F81080 /* bindingTestAppUITests */,\n\t\t\t\tB6EA59972E428BF700F81080 /* Products */"
+    end
+    
+    # Ensure the bindingTestApp group is in the children list
+    unless main_children.include?("#{main_app_uuid} /* #{info[:name]} */")
+      # Add bindingTestApp as the first child
+      main_children = "#{main_app_uuid} /* #{info[:name]} */,\n\t\t\t\t#{main_children}"
+    end
+    
     <<-GROUP
 /* Begin PBXGroup section */
 		B6EA598D2E428BF700F81080 = {
 			isa = PBXGroup;
 			children = (
-				#{main_app_uuid} /* #{info[:name]} */,
-				B6EA59B22E428BFA00F81080 /* bindingTestAppTests */,
-				B6EA59BC2E428BFA00F81080 /* bindingTestAppUITests */,
-				B6EA59972E428BF700F81080 /* Products */,
+				#{main_children}
 			);
 			sourceTree = "<group>";
 		};
