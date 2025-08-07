@@ -75,8 +75,17 @@ module SjuiTools
           # First check if source_directory is defined in config
           config = ConfigManager.load_config
           if config && config['source_directory']
-            @source_directory = config['source_directory']
-            return @source_directory
+            # Check if the configured directory exists
+            configured_dir = config['source_directory']
+            path = File.join(@project_dir, configured_dir)
+            if Dir.exist?(path)
+              @source_directory = configured_dir
+              return @source_directory
+            else
+              # If configured but doesn't exist, still use it (might be intentional)
+              @source_directory = configured_dir
+              return @source_directory
+            end
           end
           
           # Common source directory names
