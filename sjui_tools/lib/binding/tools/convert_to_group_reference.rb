@@ -47,6 +47,33 @@ require 'json'
 require 'time'
 require 'xcodeproj'
 
+module SjuiTools
+  module Binding
+    module Tools
+      class ConvertToGroupReference
+        def initialize
+          # Find project file
+          project_files = Dir.glob('*.xcodeproj')
+          if project_files.empty?
+            raise "No .xcodeproj file found in current directory"
+          end
+          @converter = XcodeSyncToGroupConverter.new(project_files.first)
+        end
+        
+        def convert(force = false)
+          unless force
+            print "This will convert synchronized folders to regular groups. Continue? (y/n): "
+            response = STDIN.gets.chomp.downcase
+            return unless response == 'y'
+          end
+          
+          @converter.convert
+        end
+      end
+    end
+  end
+end
+
 class XcodeSyncToGroupConverter
   def initialize(project_path)
     @project_path = project_path
