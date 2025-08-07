@@ -33,8 +33,8 @@ module SjuiTools
             # 3. ライブラリパッケージの追加
             common_setup.setup_libraries
             
-            # 4. HotLoader機能の設定
-            common_setup.setup_hotloader
+            # 4. HotLoader機能の設定 (binding only)
+            setup_hotloader
             
             # 5. Info.plistからStoryBoard参照を削除
             remove_storyboard_from_info_plist
@@ -56,6 +56,14 @@ module SjuiTools
             
             directory_setup = DirectorySetup.new(@project_file_path)
             directory_setup.create_missing_directories
+          end
+
+          def setup_hotloader
+            puts "Setting up HotLoader functionality..."
+            require_relative 'app_delegate_setup'
+            
+            app_delegate_setup = AppDelegateSetup.new(@project_file_path)
+            app_delegate_setup.add_hotloader_functionality
           end
 
           def remove_storyboard_from_info_plist

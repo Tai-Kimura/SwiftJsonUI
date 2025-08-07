@@ -95,14 +95,6 @@ module SjuiTools
           library_setup.setup_libraries
         end
 
-        # 4. HotLoader機能の設定
-        def setup_hotloader
-          puts "Setting up HotLoader functionality..."
-          require_relative 'app_delegate_setup'
-          
-          app_delegate_setup = ::SjuiTools::Core::Setup::AppDelegateSetup.new(@project_file_path)
-          app_delegate_setup.add_hotloader_functionality
-        end
 
         # 6. membershipExceptionsを設定
         def setup_membership_exceptions
