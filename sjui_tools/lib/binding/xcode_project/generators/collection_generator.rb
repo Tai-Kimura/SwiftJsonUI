@@ -49,11 +49,11 @@ module SjuiTools
             
             puts "Generating collection cell: #{camel_cell_name} in #{camel_view_folder}"
             
-            # 1. Viewフォルダの確認/作成
-            view_folder_path = ensure_view_folder(camel_view_folder)
+            # 1. Viewフォルダ/Collectionフォルダの確認/作成
+            collection_folder_path = ensure_view_folder(camel_view_folder)
             
             # 2. Collection cellファイルの作成
-            cell_file_path = create_collection_cell(view_folder_path, camel_cell_name)
+            cell_file_path = create_collection_cell(collection_folder_path, camel_cell_name)
             
             # 3. Xcodeプロジェクトに追加
             add_to_xcode_project(cell_file_path, camel_view_folder)
@@ -80,6 +80,7 @@ module SjuiTools
           private
 
           def ensure_view_folder(view_folder_name)
+            # Create main view folder
             folder_path = File.join(@view_path, view_folder_name)
             
             unless Dir.exist?(folder_path)
@@ -87,11 +88,19 @@ module SjuiTools
               puts "Created view folder: #{folder_path}"
             end
             
-            folder_path
+            # Create Collection subfolder
+            collection_folder_path = File.join(folder_path, "Collection")
+            
+            unless Dir.exist?(collection_folder_path)
+              FileUtils.mkdir_p(collection_folder_path)
+              puts "Created collection folder: #{collection_folder_path}"
+            end
+            
+            collection_folder_path  # Return the Collection folder path
           end
 
-          def create_collection_cell(view_folder_path, cell_name)
-            file_path = File.join(view_folder_path, "#{cell_name}CollectionViewCell.swift")
+          def create_collection_cell(collection_folder_path, cell_name)
+            file_path = File.join(collection_folder_path, "#{cell_name}CollectionViewCell.swift")
             
             if File.exist?(file_path)
               puts "Warning: Collection cell file already exists: #{file_path}"
@@ -158,8 +167,8 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
 
           def add_to_xcode_project(file_path, view_folder_name)
             begin
-              # View/フォルダ名 のグループ構造で追加
-              @xcode_manager.add_file(file_path, "View/#{view_folder_name}")
+              # View/フォルダ名/Collection のグループ構造で追加
+              @xcode_manager.add_file(file_path, "View/#{view_folder_name}/Collection")
               puts "Added collection cell to Xcode project"
             rescue => e
               puts "Error adding file to Xcode project: #{e.message}"
