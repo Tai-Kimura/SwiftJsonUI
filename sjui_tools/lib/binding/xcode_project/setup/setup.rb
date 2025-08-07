@@ -18,7 +18,7 @@ module SjuiTools
             puts "=== Starting SwiftJsonUI Project Setup ==="
             
             # Use CommonSetup for shared functionality
-            require_relative '../../../../core/setup/common_setup'
+            require_relative '../../../core/setup/common_setup'
             common_setup = ::SjuiTools::Core::Setup::CommonSetup.new(@project_file_path)
             
             # 0. ワークスペースの存在を確認（SPM用）
