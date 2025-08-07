@@ -271,13 +271,38 @@ module SjuiTools
             # Simple string format - default to String type with empty default value
             next if JsonLoaderConfig::IGNORE_DATA_SET[data.to_sym]
             modifier = "var"
-            content << "    #{modifier} #{data}: String = \"\"\n"
+            
+            # Check if this data is passed to any child partials
+            has_child_bindings = check_data_passed_to_partials(data)
+            
+            if has_child_bindings
+              content << "    #{modifier} #{data}: String = \"\" {\n"
+              content << "        didSet {\n"
+              content << generate_didset_content_for_data(data)
+              content << "        }\n"
+              content << "    }\n"
+            else
+              content << "    #{modifier} #{data}: String = \"\"\n"
+            end
           else
             # Object format with name, class, defaultValue, etc.
             next if binding_info[:super_binding] != "Binding" && JsonLoaderConfig::IGNORE_DATA_SET[data["name"].to_sym]
             modifier = data["modifier"].nil? ? "var" : data["modifier"]
+            data_name = data["name"]
+            
+            # Check if this data is passed to any child partials
+            has_child_bindings = check_data_passed_to_partials(data_name)
+            
             if data["defaultValue"].nil?
-              content << "    #{modifier} #{data["name"]}: #{data["class"]}?\n"
+              if has_child_bindings
+                content << "    #{modifier} #{data_name}: #{data["class"]}? {\n"
+                content << "        didSet {\n"
+                content << generate_didset_content_for_data(data_name)
+                content << "        }\n"
+                content << "    }\n"
+              else
+                content << "    #{modifier} #{data_name}: #{data["class"]}?\n"
+              end
             else
               if data["class"] == "String"
                 # For string values, wrap in quotes and convert single quotes to double quotes
@@ -287,11 +312,46 @@ module SjuiTools
               else
                 default_value = data["defaultValue"].to_s
               end
-              content << "    #{modifier} #{data["name"]}: #{data["class"]}#{data["optional"] ? "?" : ""} = #{default_value}\n"
+              
+              if has_child_bindings
+                content << "    #{modifier} #{data_name}: #{data["class"]}#{data["optional"] ? "?" : ""} = #{default_value} {\n"
+                content << "        didSet {\n"
+                content << generate_didset_content_for_data(data_name)
+                content << "        }\n"
+                content << "    }\n"
+              else
+                content << "    #{modifier} #{data_name}: #{data["class"]}#{data["optional"] ? "?" : ""} = #{default_value}\n"
+              end
             end
           end
         end
         content << "\n" unless content.empty?
+        content
+      end
+      
+      def check_data_passed_to_partials(data_name)
+        @json_analyzer.partial_bindings.any? do |partial|
+          partial[:parent_data_bindings] && 
+          partial[:parent_data_bindings].any? do |key, value|
+            value.is_a?(String) && value.start_with?("@{") && value.sub(/^@\{/, "").sub(/\}$/, "") == data_name
+          end
+        end
+      end
+      
+      def generate_didset_content_for_data(data_name)
+        content = String.new
+        @json_analyzer.partial_bindings.each do |partial|
+          if partial[:parent_data_bindings]
+            partial[:parent_data_bindings].each do |key, value|
+              if value.is_a?(String) && value.start_with?("@{")
+                binding_var = value.sub(/^@\{/, "").sub(/\}$/, "")
+                if binding_var == data_name
+                  content << "            #{partial[:property_name]}Binding?.#{key} = #{data_name}\n"
+                end
+              end
+            end
+          end
+        end
         content
       end
     end
