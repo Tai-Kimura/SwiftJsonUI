@@ -64,6 +64,17 @@ module SjuiTools
           
           if File.exist?(config_file)
             puts "Config file already exists: #{config_file}"
+            # Check if source_directory needs to be updated
+            existing_config = JSON.parse(File.read(config_file))
+            if existing_config['source_directory'].to_s.empty?
+              Core::ProjectFinder.setup_paths
+              source_dir = Core::ProjectFinder.find_source_directory
+              if source_dir && !source_dir.empty?
+                existing_config['source_directory'] = source_dir
+                File.write(config_file, JSON.pretty_generate(existing_config))
+                puts "Updated source_directory to: #{source_dir}"
+              end
+            end
             return
           end
           
