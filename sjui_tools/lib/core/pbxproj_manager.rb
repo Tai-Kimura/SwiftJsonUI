@@ -281,12 +281,34 @@ module SjuiTools
               return
             end
             
-            synchronized_groups.each do |sync_group|
-              # Access or create membershipExceptions
-              exceptions = sync_group.instance_variable_get(:@simple_attributes_hash)['membershipExceptions'] || []
+            # For Xcode 15+ synchronized projects, we need to find the exception sets differently
+            # They are stored as PBXFileSystemSynchronizedBuildFileExceptionSet objects
+            
+            puts "Searching for exception sets in synchronized project..."
+            
+            # Find all exception set objects in the project
+            exception_sets = []
+            project.objects.each do |uuid, obj|
+              if obj.respond_to?(:isa) && obj.isa == 'PBXFileSystemSynchronizedBuildFileExceptionSet'
+                exception_sets << obj
+                puts "Found exception set: #{uuid}"
+              end
+            end
+            
+            if exception_sets.empty?
+              puts "Warning: No exception sets found. Creating them may require opening the project in Xcode first."
+              return
+            end
+            
+            # Update each exception set
+            exception_sets.each do |exception_set|
+              # Get current exceptions
+              current_exceptions = exception_set.instance_variable_get(:@simple_attributes_hash)['membershipExceptions'] || []
+              
+              puts "Current exceptions count: #{current_exceptions.size}"
               
               # Convert to set for uniqueness
-              exceptions_set = Set.new(exceptions)
+              exceptions_set = Set.new(current_exceptions)
               
               # Add our exclusions
               excluded_files.each do |file|
@@ -294,9 +316,9 @@ module SjuiTools
               end
               
               # Update the exceptions
-              sync_group.instance_variable_get(:@simple_attributes_hash)['membershipExceptions'] = exceptions_set.to_a.sort
+              exception_set.instance_variable_get(:@simple_attributes_hash)['membershipExceptions'] = exceptions_set.to_a.sort
               
-              puts "✅ Updated membership exceptions for synchronized group: #{sync_group.path || 'root'}"
+              puts "✅ Updated to #{exceptions_set.size} membership exceptions"
             end
             
             # Save the project
