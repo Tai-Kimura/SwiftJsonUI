@@ -52,12 +52,18 @@ module SjuiTools
         end
 
         def setup_membership_exceptions
+          puts "=== setup_membership_exceptions called ==="
+          puts "  Project file path: #{@project_file_path}"
+          puts "  File exists: #{File.exist?(@project_file_path)}"
+          
           return unless File.exist?(@project_file_path)
           
           puts "Setting up file exclusions..."
+          puts "  Is synchronized project: #{@is_synchronized}"
           
           # Check if synchronized project first
           if @is_synchronized
+            puts "  -> Calling setup_synchronized_exceptions"
             setup_synchronized_exceptions
             return
           end
@@ -133,6 +139,7 @@ module SjuiTools
         
         def setup_synchronized_exceptions
           puts "Setting up exclusions for synchronized project..."
+          puts "  Called from: #{caller.first(3).join("\n    ")}" if ENV['DEBUG']
           
           begin
             # Open project with xcodeproj gem
@@ -328,7 +335,8 @@ module SjuiTools
             end
             
             if synchronized_groups.empty?
-              puts "No synchronized groups found in project"
+              puts "WARNING: No synchronized groups found in project"
+              puts "  Main group children: #{project.root_object.main_group.children.map(&:class).join(', ')}"
               return
             end
             
@@ -347,8 +355,8 @@ module SjuiTools
             end
             
             if exception_sets.empty?
-              puts "Warning: No exception sets found via xcodeproj gem."
-              puts "Using direct file manipulation for Xcode 15+ synchronized projects..."
+              puts "Info: No exception sets found via xcodeproj gem (this is expected for Xcode 15+)"
+              puts "  Using direct file manipulation for synchronized projects..."
               # For Xcode 15+ projects, xcodeproj gem doesn't recognize the new format
               # So we directly manipulate the file
               update_membership_exceptions_directly(excluded_files)
