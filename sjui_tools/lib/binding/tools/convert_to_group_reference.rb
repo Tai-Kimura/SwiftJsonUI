@@ -257,20 +257,22 @@ class XcodeSyncToGroupConverter
         puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
       end
       
-      # Step 2: Check if PBXGroup section already exists
-      unless content.include?("/* Begin PBXGroup section */")
-        # Create the PBXGroup section from scratch
-        group_section = create_group_section(info)
-        
-        # Insert after PBXFileSystemSynchronizedRootGroup section
-        content.sub!(/(\/* End PBXFileSystemSynchronizedRootGroup section \*\/)/m) do
-          "#{$1}\n\n#{group_section}"
-        end
-        
-        puts "Added PBXGroup section"
-      else
-        puts "PBXGroup section already exists"
+      # Step 2: Always create/recreate the PBXGroup section
+      # Remove existing PBXGroup section if it exists
+      if content.include?("/* Begin PBXGroup section */")
+        content.gsub!(/\/\* Begin PBXGroup section \*\/.*?\/\* End PBXGroup section \*\//m, '')
+        puts "Removed existing PBXGroup section"
       end
+      
+      # Create the PBXGroup section from scratch
+      group_section = create_group_section(info)
+      
+      # Insert after PBXFileSystemSynchronizedRootGroup section
+      content.sub!(/(\/* End PBXFileSystemSynchronizedRootGroup section \*\/)/m) do
+        "#{$1}\n\n#{group_section}"
+      end
+      
+      puts "Added PBXGroup section"
       
       # Step 3: Remove synchronized group from the existing section
       # Remove the whole synchronized group definition
@@ -349,6 +351,7 @@ class XcodeSyncToGroupConverter
       
       # Generate UUIDs for new groups if they don't exist
       swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+      groups_to_add = []
       
       swiftui_dirs.each do |dir_name|
         dir_path = File.join(@app_dir, dir_name)
@@ -363,28 +366,35 @@ class XcodeSyncToGroupConverter
         # Add to children list
         children_lines << "#{new_uuid} /* #{dir_name} */"
         
-        # Add the group definition
-        group_def = <<-GROUP
-		#{new_uuid} /* #{dir_name} */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			path = #{dir_name};
-			sourceTree = "<group>";
-		};
-        GROUP
+        # Store group definition to add later
+        groups_to_add << {uuid: new_uuid, name: dir_name}
         
-        # Insert the group definition before the main group
-        content.sub!(/(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{)/m) do
-          "#{group_def}\n\t\t#{$1}"
-        end
+        puts "  Adding directory group: #{dir_name} (#{new_uuid})"
       end
       
-      # Update the children list
+      # Update the children list in the main group
       new_children = children_lines.join(",\n\t\t\t\t")
       content.sub!(/(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);)/m) do
         "#{$1}#{new_children}#{$3}"
       end
+      
+      # Add new group definitions at the end of PBXGroup section
+      groups_to_add.each do |group_info|
+        group_def = "\t\t#{group_info[:uuid]} /* #{group_info[:name]} */ = {\n" +
+                    "\t\t\tisa = PBXGroup;\n" +
+                    "\t\t\tchildren = (\n" +
+                    "\t\t\t);\n" +
+                    "\t\t\tpath = #{group_info[:name]};\n" +
+                    "\t\t\tsourceTree = \"<group>\";\n" +
+                    "\t\t};\n"
+        
+        # Insert before the end of PBXGroup section
+        content.sub!(/(\/\* End PBXGroup section \*\/)/m) do
+          "#{group_def}#{$1}"
+        end
+      end
+    else
+      puts "  Warning: Could not find group definition for UUID #{group_uuid}"
     end
     
     File.write(@pbxproj_path, content)
