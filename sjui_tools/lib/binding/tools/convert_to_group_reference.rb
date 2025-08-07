@@ -41,6 +41,7 @@ require 'fileutils'
 require 'json'
 require 'time'
 require 'securerandom'
+require 'set'
 require_relative '../../core/project_finder'
 
 module SjuiTools
@@ -186,8 +187,12 @@ class XcodeSyncToGroupConverter
     
     # 既存のグループを収集して追加（SwiftJsonUI関連を含む）
     groups_to_add = []
+    seen_names = Set.new
     content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXGroup;/) do |uuid, name|
       next if name == app_name || name == 'Products' || name.include?('Tests')
+      # Skip duplicate group names (keep only the first occurrence)
+      next if seen_names.include?(name)
+      seen_names.add(name)
       groups_to_add << { uuid: uuid, name: name }
     end
     
