@@ -41,11 +41,58 @@ require 'fileutils'
 require 'json'
 require 'time'
 require 'securerandom'
+require_relative '../../core/project_finder'
+
+module SjuiTools
+  module Binding
+    module Tools
+      class ConvertToGroupReference
+        def initialize
+          # Use ProjectFinder to locate the project file
+          Core::ProjectFinder.setup_paths(nil)
+          project_file_path = Core::ProjectFinder.project_file_path
+          
+          if project_file_path.nil? || project_file_path.empty?
+            raise "No .xcodeproj file found in current directory or parent directories"
+          end
+          
+          @converter = XcodeSyncToGroupConverter.new(project_file_path)
+        end
+        
+        def convert(force = false)
+          unless force
+            print "This will convert synchronized folders to regular groups. Continue? (y/n): "
+            response = STDIN.gets.chomp.downcase
+            return unless response == 'y'
+          end
+          
+          @converter.convert
+        end
+      end
+    end
+  end
+end
 
 class XcodeSyncToGroupConverter
-  def initialize(pbxproj_path)
-    @pbxproj_path = pbxproj_path
-    @backup_path = "#{pbxproj_path}.backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}"
+  def initialize(project_path)
+    # Determine actual paths
+    if project_path.end_with?('.xcodeproj')
+      @xcodeproj_path = project_path
+      @pbxproj_path = File.join(project_path, 'project.pbxproj')
+    elsif project_path.end_with?('.pbxproj')
+      @pbxproj_path = project_path
+      @xcodeproj_path = File.dirname(project_path)
+    else
+      # Try to find .xcodeproj in the directory
+      xcodeproj_files = Dir.glob(File.join(project_path, '*.xcodeproj'))
+      if xcodeproj_files.empty?
+        raise "No .xcodeproj file found in #{project_path}"
+      end
+      @xcodeproj_path = xcodeproj_files.first
+      @pbxproj_path = File.join(@xcodeproj_path, 'project.pbxproj')
+    end
+    
+    @backup_path = "#{@pbxproj_path}.backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}"
   end
 
   def convert
@@ -60,16 +107,8 @@ class XcodeSyncToGroupConverter
     original_content = content.dup
     
     # プロジェクト情報を取得
-    project_path = File.dirname(File.dirname(@pbxproj_path))
-    project_name = Dir.glob("#{project_path}/*.xcodeproj").first
-    
-    if project_name.nil?
-      puts "Error: Could not find .xcodeproj file in #{project_path}"
-      return false
-    end
-    
-    app_name = File.basename(project_name, ".xcodeproj")
-    project_dir = File.dirname(project_path)
+    app_name = File.basename(@xcodeproj_path, ".xcodeproj")
+    project_dir = File.dirname(@xcodeproj_path)
     
     # メインアプリグループのUUIDを探す
     main_app_uuid = nil
@@ -85,7 +124,7 @@ class XcodeSyncToGroupConverter
     end
     
     # 1. 実際のディレクトリ構造からファイルを取得
-    app_dir = File.join(project_path, app_name)
+    app_dir = File.join(project_dir, app_name)
     
     # 2. PBXFileSystemSynchronizedBuildFileExceptionSetセクションから情報を取得してから削除
     exception_files = []
