@@ -248,7 +248,7 @@ class XcodeSyncToGroupConverter
     sync_info.each do |info|
       next unless info[:type] == 'main_app'
       
-      # Remove PBXFileSystemSynchronizedBuildFileExceptionSet section
+      # Step 1: Remove PBXFileSystemSynchronizedBuildFileExceptionSet section
       if content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
         content.gsub!(
           /\/\* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section \*\/.*?\/\* End PBXFileSystemSynchronizedBuildFileExceptionSet section \*\//m,
@@ -257,10 +257,38 @@ class XcodeSyncToGroupConverter
         puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
       end
       
-      # First, insert a regular PBXGroup for bindingTestApp after the PBXFileSystemSynchronizedRootGroup section
-      # This ensures we have a proper group before removing synchronized stuff
-      if content =~ /\/\* End PBXFileSystemSynchronizedRootGroup section \*\//
-        group_definition = <<-GROUP
+      # Step 2: Check if PBXGroup section already exists
+      unless content.include?("/* Begin PBXGroup section */")
+        # Create the PBXGroup section from scratch
+        group_section = create_group_section(info)
+        
+        # Insert after PBXFileSystemSynchronizedRootGroup section
+        content.sub!(/(\/* End PBXFileSystemSynchronizedRootGroup section \*\/)/m) do
+          "#{$1}\n\n#{group_section}"
+        end
+        
+        puts "Added PBXGroup section"
+      else
+        puts "PBXGroup section already exists"
+      end
+      
+      # Step 3: Remove synchronized group from the existing section
+      # Remove the whole synchronized group definition
+      content.gsub!(/\t\t#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\};/m, '')
+      
+      # Step 4: Remove fileSystemSynchronizedGroups references from targets
+      content.gsub!(/\s*fileSystemSynchronizedGroups = \([^)]*\);\s*/m, '')
+      
+      puts "Converted #{info[:name]} from synchronized to regular group"
+    end
+    
+    # Save the converted file
+    File.write(@pbxproj_path, content)
+    puts "Saved initial conversion"
+  end
+  
+  def create_group_section(info)
+    <<-GROUP
 /* Begin PBXGroup section */
 		B6EA598D2E428BF700F81080 = {
 			isa = PBXGroup;
@@ -290,23 +318,7 @@ class XcodeSyncToGroupConverter
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
-
-        GROUP
-        
-        content.sub!(/\/\* End PBXFileSystemSynchronizedRootGroup section \*\//m) do
-          "/* End PBXFileSystemSynchronizedRootGroup section */\n\n#{group_definition}"
-        end
-      end
-      
-      # Remove fileSystemSynchronizedGroups references from targets
-      content.gsub!(/\s*fileSystemSynchronizedGroups = \([^)]*\);\s*/m, '')
-      
-      puts "Converted #{info[:name]} from synchronized to regular group"
-    end
-    
-    # Save the converted file
-    File.write(@pbxproj_path, content)
-    puts "Saved initial conversion"
+    GROUP
   end
 
   def manage_with_xcodeproj(sync_info)
