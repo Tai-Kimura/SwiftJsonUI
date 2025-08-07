@@ -24,8 +24,8 @@ module SjuiTools
             # ProjectFinderを使用してパスを設定
             Core::ProjectFinder.setup_paths(@project_file_path)
             
-            # Get configuration
-            config = Core::ConfigManager.load_config
+            # Get configuration and store as instance variable
+            @config = Core::ConfigManager.load_config
             
             # Set paths based on configuration
             source_path = Core::ProjectFinder.get_full_source_path
@@ -34,12 +34,12 @@ module SjuiTools
             @paths = OpenStruct.new(
               source_path: source_path,
               sjui_source_path: source_path,  # For compatibility
-              view_path: File.join(source_path, config['view_directory'] || 'View'),
-              bindings_path: File.join(source_path, config['bindings_directory'] || 'Bindings'),
-              layouts_path: File.join(source_path, config['layouts_directory'] || 'Layouts'),
-              layout_path: File.join(source_path, config['layouts_directory'] || 'Layouts'),  # alias
-              styles_path: File.join(source_path, config['styles_directory'] || 'Styles'),
-              style_path: File.join(source_path, config['styles_directory'] || 'Styles'),  # alias
+              view_path: File.join(source_path, @config['view_directory'] || 'View'),
+              bindings_path: File.join(source_path, @config['bindings_directory'] || 'Bindings'),
+              layouts_path: File.join(source_path, @config['layouts_directory'] || 'Layouts'),
+              layout_path: File.join(source_path, @config['layouts_directory'] || 'Layouts'),  # alias
+              styles_path: File.join(source_path, @config['styles_directory'] || 'Styles'),
+              style_path: File.join(source_path, @config['styles_directory'] || 'Styles'),  # alias
               core_path: File.join(source_path, 'Core'),
               ui_path: File.join(source_path, 'Core', 'UI'),
               base_path: File.join(source_path, 'Core', 'Base')  # Base should be at same level as UI
@@ -54,10 +54,10 @@ module SjuiTools
             directories_to_create = []
             
             # 各ディレクトリの存在をチェック（6.3.0と同じ順序）
-            check_and_add_directory(@paths.view_path, "View", directories_to_create)
-            check_and_add_directory(@paths.layout_path, "Layouts", directories_to_create)
-            check_and_add_directory(@paths.style_path, "Styles", directories_to_create)
-            check_and_add_directory(@paths.bindings_path, "Bindings", directories_to_create)
+            check_and_add_directory(@paths.view_path, @config['view_directory'] || 'View', directories_to_create)
+            check_and_add_directory(@paths.layout_path, @config['layouts_directory'] || 'Layouts', directories_to_create)
+            check_and_add_directory(@paths.style_path, @config['styles_directory'] || 'Styles', directories_to_create)
+            check_and_add_directory(@paths.bindings_path, @config['bindings_directory'] || 'Bindings', directories_to_create)
             check_and_add_directory(@paths.core_path, "Core", directories_to_create)
             check_and_add_directory(@paths.ui_path, "Core/UI", directories_to_create)
             check_and_add_directory(@paths.base_path, "Core/Base", directories_to_create)
