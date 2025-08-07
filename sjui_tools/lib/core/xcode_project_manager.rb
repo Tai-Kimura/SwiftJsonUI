@@ -196,8 +196,19 @@ module SjuiTools
         
         current_group = @project.main_group
         
-        # Navigate to source directory group if specified
-        unless source_directory.empty?
+        # If source_directory is empty, try to find the app group
+        if source_directory.empty?
+          # Look for the main app group (usually has the same name as the project)
+          app_name = File.basename(@project_path, '.xcodeproj')
+          app_group = current_group.groups.find { |g| g.name == app_name || g.path == app_name }
+          if app_group
+            current_group = app_group
+            puts "Debug: Using app group '#{app_name}' as base"
+          else
+            puts "Warning: Could not find app group '#{app_name}', using main group"
+          end
+        else
+          # Navigate to source directory group if specified
           source_parts = source_directory.split('/')
           source_parts.each do |part|
             existing = current_group.groups.find { |g| g.name == part }
