@@ -324,6 +324,10 @@ module SjuiTools
             # Save the project
             project.save
             
+            # For synchronized projects, we need to manually write the membershipExceptions
+            # because xcodeproj gem doesn't fully support Xcode 15+ format
+            update_membership_exceptions_directly(excluded_files)
+            
             puts "✅ Successfully updated membership exceptions for synchronized project"
             
           rescue LoadError
@@ -337,6 +341,68 @@ module SjuiTools
         end
         
         private
+        
+        def update_membership_exceptions_directly(excluded_files)
+          # Read the project.pbxproj file
+          pbxproj_path = if @project_file_path.end_with?('.pbxproj')
+                          @project_file_path
+                        elsif @project_file_path.end_with?('.xcodeproj')
+                          File.join(@project_file_path, 'project.pbxproj')
+                        else
+                          File.join(@project_file_path, '*.xcodeproj', 'project.pbxproj')
+                        end
+          
+          # Handle glob pattern if needed
+          if pbxproj_path.include?('*')
+            matching_files = Dir.glob(pbxproj_path)
+            pbxproj_path = matching_files.first if matching_files.any?
+          end
+          
+          unless File.exist?(pbxproj_path)
+            puts "Warning: Could not find project.pbxproj at #{pbxproj_path}"
+            return
+          end
+          
+          puts "Directly updating membership exceptions in: #{pbxproj_path}"
+          
+          # Read the file
+          content = File.read(pbxproj_path)
+          
+          # Find all PBXFileSystemSynchronizedBuildFileExceptionSet sections
+          # and update their membershipExceptions
+          updated_content = content.gsub(/membershipExceptions\s*=\s*\([^)]*\)/m) do |match|
+            # Extract current exceptions
+            current_exceptions = match.scan(/^\s*([^,\s][^,]*[^,\s])\s*,?$/m).flatten
+            
+            # Remove quotes if present
+            current_exceptions = current_exceptions.map { |e| e.gsub(/^["']|["']$/, '') }
+            
+            # Add our exclusions
+            all_exceptions = (current_exceptions + excluded_files).uniq.sort
+            
+            # Format the new exceptions list
+            exceptions_formatted = all_exceptions.map { |f| 
+              # Add quotes if the path contains spaces or special characters
+              if f.include?(' ') || f.include?('/') || f.include?('-')
+                "\"#{f}\""
+              else
+                f
+              end
+            }.join(",\n\t\t\t\t")
+            
+            # Return the updated membershipExceptions
+            if all_exceptions.empty?
+              "membershipExceptions = ("
+            else
+              "membershipExceptions = (\n\t\t\t\t#{exceptions_formatted},\n\t\t\t)"
+            end
+          end
+          
+          # Write the updated content back
+          File.write(pbxproj_path, updated_content)
+          
+          puts "✅ Directly updated #{excluded_files.size} membership exceptions in project.pbxproj"
+        end
         
         def exclude_group_from_target(group, target)
           # グループ内のすべてのファイルを再帰的に除外
