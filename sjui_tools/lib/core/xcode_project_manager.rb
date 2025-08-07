@@ -62,19 +62,31 @@ module SjuiTools
       end
       
       def check_if_synchronized_project
-        # Check if the project uses PBXFileSystemSynchronizedRootGroup
-        # This is used in Xcode 15+ for new projects
+        # Check if the main app target uses synchronized folders
+        # (Test targets can still use synchronized folders without issues)
         begin
           project_file = File.join(@project_path, 'project.pbxproj')
           content = File.read(project_file)
           
-          # Look for PBXFileSystemSynchronizedRootGroup
-          is_sync = content.include?('PBXFileSystemSynchronizedRootGroup')
+          # Get the app name from the project
+          app_name = File.basename(@project_path, '.xcodeproj')
+          
+          # Check if the main app has a synchronized root group
+          # Look for the main app's synchronized group definition
+          main_app_sync_pattern = /#{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group/m
+          is_sync = content.match?(main_app_sync_pattern)
+          
+          # Also check if main app target has fileSystemSynchronizedGroups
+          if !is_sync && content.include?('fileSystemSynchronizedGroups')
+            # Check if the main app target specifically has synchronized groups
+            target_pattern = /#{Regexp.escape(app_name)} \*\/ = \{[^}]*?fileSystemSynchronizedGroups = \(/m
+            is_sync = content.match?(target_pattern)
+          end
           
           if is_sync
-            puts "Detected synchronized project (Xcode 15+ format)"
+            puts "Detected synchronized project (Xcode 15+ format) for main app"
           else
-            puts "Detected traditional project format"
+            puts "Detected traditional project format for main app"
           end
           
           return is_sync
