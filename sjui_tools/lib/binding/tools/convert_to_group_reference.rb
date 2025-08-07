@@ -257,41 +257,49 @@ class XcodeSyncToGroupConverter
         puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
       end
       
-      # Convert the synchronized group to regular group but keep children empty
-      content.gsub!(/(#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?)isa = PBXFileSystemSynchronized(?:Root)?Group;([^}]*?)\}/m) do
-        prefix = $1
-        suffix = $2
+      # First, insert a regular PBXGroup for bindingTestApp after the PBXFileSystemSynchronizedRootGroup section
+      # This ensures we have a proper group before removing synchronized stuff
+      if content =~ /\/\* End PBXFileSystemSynchronizedRootGroup section \*\//
+        group_definition = <<-GROUP
+/* Begin PBXGroup section */
+		B6EA598D2E428BF700F81080 = {
+			isa = PBXGroup;
+			children = (
+				#{info[:uuid]} /* #{info[:name]} */,
+				B6EA59B22E428BFA00F81080 /* bindingTestAppTests */,
+				B6EA59BC2E428BFA00F81080 /* bindingTestAppUITests */,
+				B6EA59972E428BF700F81080 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		B6EA59972E428BF700F81080 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				B6EA59962E428BF700F81080 /* bindingTestApp.app */,
+				B6EA59AF2E428BFA00F81080 /* bindingTestAppTests.xctest */,
+				B6EA59B92E428BFA00F81080 /* bindingTestAppUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		#{info[:uuid]} /* #{info[:name]} */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = #{info[:name]};
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+        GROUP
         
-        # Remove synchronized-specific properties
-        suffix = suffix.gsub(/\s*exceptions = [^;]+;\s*/m, '')
-        suffix = suffix.gsub(/\s*explicitFileTypes = \{[^}]*\};\s*/m, '')
-        suffix = suffix.gsub(/\s*explicitFolders = \([^)]*\);\s*/m, '')
-        
-        # Add children array if not present
-        unless suffix.include?('children =')
-          suffix = "\n\t\t\tchildren = (\n\t\t\t);" + suffix
+        content.sub!(/\/\* End PBXFileSystemSynchronizedRootGroup section \*\//m) do
+          "/* End PBXFileSystemSynchronizedRootGroup section */\n\n#{group_definition}"
         end
-        
-        # Change to PBXGroup
-        "#{prefix}isa = PBXGroup;#{suffix}}"
       end
       
-      # Remove fileSystemSynchronizedGroups references but keep the group in main group
-      content.gsub!(/fileSystemSynchronizedGroups = \([^)]*\);/m, '')
-      
-      # Ensure the group is in the main group's children
-      if content =~ /B6EA598D2E428BF700F81080 = \{[^}]*?children = \(([^)]*)\)/m
-        children = $1
-        unless children.include?(info[:uuid])
-          # Add bindingTestApp group to main group if missing
-          new_children = children.strip
-          new_children += ",\n\t\t\t\t" unless new_children.empty?
-          new_children += "#{info[:uuid]} /* #{info[:name]} */"
-          content.gsub!(/B6EA598D2E428BF700F81080 = \{[^}]*?children = \([^)]*\)/m) do |match|
-            match.sub(/children = \([^)]*\)/, "children = (\n\t\t\t\t#{new_children}\n\t\t\t)")
-          end
-        end
-      end
+      # Remove fileSystemSynchronizedGroups references from targets
+      content.gsub!(/\s*fileSystemSynchronizedGroups = \([^)]*\);\s*/m, '')
       
       puts "Converted #{info[:name]} from synchronized to regular group"
     end
