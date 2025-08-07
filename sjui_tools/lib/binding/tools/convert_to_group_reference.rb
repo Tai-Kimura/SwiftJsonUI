@@ -216,9 +216,10 @@ class XcodeSyncToGroupConverter
     content = File.read(@pbxproj_path)
     sync_groups = []
     
-    # Find main app synchronized group
-    content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\}/m) do |match|
-      uuid = match[0]
+    # First try to find the main app synchronized group
+    # Look for any PBXFileSystemSynchronizedRootGroup that references the app name
+    if content =~ /([A-F0-9]{24}) \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\}/m
+      uuid = $1
       group_info = {
         uuid: uuid,
         name: @app_name,
@@ -237,6 +238,16 @@ class XcodeSyncToGroupConverter
       
       sync_groups << group_info
       puts "Found main app synchronized group: #{uuid}"
+    else
+      # If not found as synchronized group, check if it's missing entirely
+      # Use a default UUID that we'll create
+      puts "No synchronized group found for #{@app_name}, will create new group"
+      sync_groups << {
+        uuid: "B6EA59982E428BF700F81080",  # Use a consistent UUID
+        name: @app_name,
+        type: 'main_app',
+        create_new: true
+      }
     end
     
     sync_groups
@@ -267,16 +278,31 @@ class XcodeSyncToGroupConverter
       # Create the PBXGroup section from scratch
       group_section = create_group_section(info)
       
-      # Insert after PBXFileSystemSynchronizedRootGroup section
-      content.sub!(/(\/* End PBXFileSystemSynchronizedRootGroup section \*\/)/m) do
-        "#{$1}\n\n#{group_section}"
+      # Find the best place to insert the PBXGroup section
+      if content.include?("/* End PBXFileSystemSynchronizedRootGroup section */")
+        # Insert after PBXFileSystemSynchronizedRootGroup section
+        content.sub!(/(\/\* End PBXFileSystemSynchronizedRootGroup section \*\/)/m) do
+          "#{$1}\n\n#{group_section}"
+        end
+      elsif content.include?("/* Begin PBXFrameworksBuildPhase section */")
+        # Insert before PBXFrameworksBuildPhase section
+        content.sub!(/(\/\* Begin PBXFrameworksBuildPhase section \*\/)/m) do
+          "#{group_section}\n\n#{$1}"
+        end
+      else
+        # Fallback: Insert after PBXFileReference section
+        content.sub!(/(\/\* End PBXFileReference section \*\/)/m) do
+          "#{$1}\n\n#{group_section}"
+        end
       end
       
       puts "Added PBXGroup section"
       
-      # Step 3: Remove synchronized group from the existing section
-      # Remove the whole synchronized group definition
-      content.gsub!(/\t\t#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\};/m, '')
+      # Step 3: Remove synchronized group from the existing section (if not creating new)
+      unless info[:create_new]
+        # Remove the whole synchronized group definition
+        content.gsub!(/\t\t#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\};/m, '')
+      end
       
       # Step 4: Remove fileSystemSynchronizedGroups references from targets
       content.gsub!(/\s*fileSystemSynchronizedGroups = \([^)]*\);\s*/m, '')
@@ -290,12 +316,15 @@ class XcodeSyncToGroupConverter
   end
   
   def create_group_section(info)
+    # Find the existing main app synchronized group UUID
+    main_app_uuid = info[:uuid] || "B6EA59982E428BF700F81080"
+    
     <<-GROUP
 /* Begin PBXGroup section */
 		B6EA598D2E428BF700F81080 = {
 			isa = PBXGroup;
 			children = (
-				#{info[:uuid]} /* #{info[:name]} */,
+				#{main_app_uuid} /* #{info[:name]} */,
 				B6EA59B22E428BFA00F81080 /* bindingTestAppTests */,
 				B6EA59BC2E428BFA00F81080 /* bindingTestAppUITests */,
 				B6EA59972E428BF700F81080 /* Products */,
@@ -312,7 +341,7 @@ class XcodeSyncToGroupConverter
 			name = Products;
 			sourceTree = "<group>";
 		};
-		#{info[:uuid]} /* #{info[:name]} */ = {
+		#{main_app_uuid} /* #{info[:name]} */ = {
 			isa = PBXGroup;
 			children = (
 			);
