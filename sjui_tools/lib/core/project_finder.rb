@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative 'config_manager'
+
 module SjuiTools
   module Core
     class ProjectFinder
@@ -69,6 +71,13 @@ module SjuiTools
 
         def find_source_directory
           return @source_directory if @source_directory
+          
+          # First check if source_directory is defined in config
+          config = ConfigManager.load_config
+          if config && config['source_directory']
+            @source_directory = config['source_directory']
+            return @source_directory
+          end
           
           # Common source directory names
           common_names = ['Sources', 'Source', 'src', File.basename(@project_dir)]
