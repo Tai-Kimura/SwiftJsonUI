@@ -384,6 +384,9 @@ class XcodeSyncToGroupConverter
   end
 
   def add_subdirectories_as_groups(project, parent_group)
+    puts "Adding subdirectories to group: #{parent_group.name || parent_group.path}"
+    puts "App directory: #{@app_dir}"
+    
     # SwiftJsonUI directories and any other directories in the app folder
     all_dirs = []
     
@@ -401,9 +404,15 @@ class XcodeSyncToGroupConverter
       end
     end
     
+    puts "Directories to process: #{all_dirs.inspect}"
+    puts "Parent group children before: #{parent_group.children.map { |c| c.name || c.path }.inspect}"
+    
     all_dirs.each do |dir_name|
       dir_path = File.join(@app_dir, dir_name)
-      next unless Dir.exist?(dir_path)
+      unless Dir.exist?(dir_path)
+        puts "  Directory does not exist: #{dir_path}"
+        next
+      end
       
       # Check if group already exists by name or path
       existing_group = parent_group.children.find { |child| 
@@ -412,18 +421,20 @@ class XcodeSyncToGroupConverter
       }
       
       if existing_group
-        puts "  Group already exists: #{dir_name}"
+        puts "  Group already exists: #{dir_name} (uuid: #{existing_group.uuid})"
         # Recursively ensure files are added even if group exists
         add_files_recursively(project, existing_group, dir_path)
       else
         # Create new group
         new_group = parent_group.new_group(dir_name, dir_name)
-        puts "  Added group: #{dir_name}"
+        puts "  Added group: #{dir_name} (uuid: #{new_group.uuid})"
         
         # Recursively add files in the directory
         add_files_recursively(project, new_group, dir_path)
       end
     end
+    
+    puts "Parent group children after: #{parent_group.children.map { |c| c.name || c.path }.inspect}"
   end
 
   def add_files_recursively(project, group, dir_path)
