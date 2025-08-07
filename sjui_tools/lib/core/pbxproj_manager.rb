@@ -368,40 +368,54 @@ module SjuiTools
           # Read the file
           content = File.read(pbxproj_path)
           
-          # Find all PBXFileSystemSynchronizedBuildFileExceptionSet sections
-          # and update their membershipExceptions
-          updated_content = content.gsub(/membershipExceptions\s*=\s*\([^)]*\)/m) do |match|
-            # Extract current exceptions
-            current_exceptions = match.scan(/^\s*([^,\s][^,]*[^,\s])\s*,?$/m).flatten
+          # Count how many times we update
+          update_count = 0
+          
+          # Find and update membershipExceptions
+          updated_content = content.gsub(/membershipExceptions\s*=\s*\(([^)]*)\)/m) do |match|
+            update_count += 1
             
-            # Remove quotes if present
-            current_exceptions = current_exceptions.map { |e| e.gsub(/^["']|["']$/, '') }
+            # Extract current content between parentheses
+            current_content = $1
+            
+            # Parse existing exceptions
+            current_exceptions = []
+            unless current_content.strip.empty?
+              # Split by comma and newline, clean up each entry
+              current_exceptions = current_content.split(/,/).map do |item|
+                item.strip.gsub(/^"|"$/, '') # Remove quotes
+              end.reject(&:empty?)
+            end
+            
+            puts "  Found existing exceptions: #{current_exceptions.size}"
             
             # Add our exclusions
             all_exceptions = (current_exceptions + excluded_files).uniq.sort
             
-            # Format the new exceptions list
-            exceptions_formatted = all_exceptions.map { |f| 
-              # Add quotes if the path contains spaces or special characters
-              if f.include?(' ') || f.include?('/') || f.include?('-')
-                "\"#{f}\""
-              else
-                f
-              end
-            }.join(",\n\t\t\t\t")
+            puts "  Total exceptions after adding: #{all_exceptions.size}"
             
-            # Return the updated membershipExceptions
+            # Format the new exceptions list
             if all_exceptions.empty?
               "membershipExceptions = ("
             else
-              "membershipExceptions = (\n\t\t\t\t#{exceptions_formatted},\n\t\t\t)"
+              formatted_exceptions = all_exceptions.map do |f|
+                # Always quote paths for safety
+                "\t\t\t\t\"#{f}\""
+              end.join(",\n")
+              
+              "membershipExceptions = (\n#{formatted_exceptions},\n\t\t\t)"
             end
+          end
+          
+          if update_count == 0
+            puts "Warning: No membershipExceptions sections found to update"
+            return
           end
           
           # Write the updated content back
           File.write(pbxproj_path, updated_content)
           
-          puts "✅ Directly updated #{excluded_files.size} membership exceptions in project.pbxproj"
+          puts "✅ Directly updated #{update_count} membershipExceptions section(s) with #{excluded_files.size} exclusions"
         end
         
         def exclude_group_from_target(group, target)
