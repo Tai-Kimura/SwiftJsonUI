@@ -114,6 +114,13 @@ module SjuiTools
         project_dir = File.dirname(@project_path)
         begin
           relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+          
+          # Remove app name prefix if present (for files within the app directory)
+          app_name = File.basename(@project_path, '.xcodeproj')
+          if relative_path.start_with?("#{app_name}/")
+            relative_path = relative_path.sub(/^#{Regexp.escape(app_name)}\//, '')
+          end
+          
           puts "Debug: Relative path: #{relative_path}"
           
           # Validate that the file is within the project directory
@@ -387,6 +394,12 @@ module SjuiTools
           # Calculate relative path from project directory
           project_dir = File.dirname(@project_path)
           relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
+          
+          # Remove app name prefix if present (for files within the app directory)
+          app_name = File.basename(@project_path, '.xcodeproj')
+          if relative_path.start_with?("#{app_name}/")
+            relative_path = relative_path.sub(/^#{Regexp.escape(app_name)}\//, '')
+          end
           
           # Check if file should be excluded
           excluded = EXCLUDED_PATTERNS.any? do |pattern|
