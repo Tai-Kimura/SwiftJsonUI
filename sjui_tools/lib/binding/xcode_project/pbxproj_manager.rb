@@ -136,29 +136,34 @@ module SjuiTools
           puts "Setting up exclusions for synchronized project..."
           
           begin
-            # Read project file content
-            if @project_file_path.end_with?('.pbxproj')
-              pbxproj_content = File.read(@project_file_path)
-              xcodeproj_path = File.dirname(File.dirname(@project_file_path))
-            else
-              pbxproj_path = File.join(@project_file_path, 'project.pbxproj')
-              pbxproj_content = File.read(pbxproj_path)
-              xcodeproj_path = @project_file_path
-            end
+            # Open project with xcodeproj gem
+            require 'xcodeproj'
             
-            # Get project directory
-            project_dir = File.dirname(xcodeproj_path)
+            # Determine project path
+            if @project_file_path.end_with?('.xcodeproj')
+              project = Xcodeproj::Project.open(@project_file_path)
+              project_dir = File.dirname(@project_file_path)
+            elsif @project_file_path.end_with?('.pbxproj')
+              xcodeproj_path = File.dirname(File.dirname(@project_file_path))
+              project = Xcodeproj::Project.open(xcodeproj_path)
+              project_dir = File.dirname(xcodeproj_path)
+            else
+              # Try to find .xcodeproj in the directory
+              xcodeproj_files = Dir.glob(File.join(@project_file_path, '*.xcodeproj'))
+              if xcodeproj_files.empty?
+                puts "Error: No .xcodeproj file found in #{@project_file_path}"
+                return
+              end
+              project = Xcodeproj::Project.open(xcodeproj_files.first)
+              project_dir = @project_file_path
+            end
             
             # Get source directory from config
             config = Core::ConfigManager.load_config
             source_directory = config['source_directory'] || ''
             
             # The actual source path
-            if source_directory.empty?
-              source_path = project_dir
-            else
-              source_path = File.join(project_dir, source_directory)
-            end
+            source_path = source_directory.empty? ? project_dir : File.join(project_dir, source_directory)
             
             # Find all files that should be excluded
             excluded_files = []
@@ -176,7 +181,11 @@ module SjuiTools
               'docs',
               'config',
               'installer',
-              'node_modules'
+              'node_modules',
+              'DerivedData',
+              'build',
+              '.idea',
+              '.vscode'
             ]
             
             # Files to exclude
@@ -202,7 +211,17 @@ module SjuiTools
               '.prettierrc',
               '.babelrc',
               '.travis.yml',
-              '.package-lock.json'
+              'package-lock.json',
+              'yarn.lock',
+              '.swiftlint.yml',
+              '.jazzy.yaml',
+              'Cartfile',
+              'Cartfile.resolved',
+              'Fastfile',
+              'Appfile',
+              '.env',
+              '.env.local',
+              '.env.production'
             ]
             
             # Find all files in excluded directories
@@ -215,7 +234,7 @@ module SjuiTools
                   # Skip . and .. entries
                   basename = File.basename(file_path)
                   next if basename == '.' || basename == '..'
-                  # Get relative path from source directory (not project directory)
+                  # Get relative path from source directory
                   relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_path)).to_s
                   excluded_files << relative_path
                 end
@@ -239,36 +258,49 @@ module SjuiTools
             
             puts "Found #{excluded_files.length} files to exclude"
             
-            # Find the exception set in the project file
-            if pbxproj_content =~ /membershipExceptions\s*=\s*\((.*?)\);/m
-              current_exceptions = $1.strip.split(",").map(&:strip)
-              
-              # Add new exclusions
-              all_exceptions = (current_exceptions + excluded_files).uniq
-              
-              # Format the exceptions list
-              formatted_exceptions = all_exceptions.map { |f| "\t\t\t\t\"#{f}\"" }.join(",\n")
-              
-              # Replace in content
-              new_content = pbxproj_content.gsub(
-                /membershipExceptions\s*=\s*\((.*?)\);/m,
-                "membershipExceptions = (\n#{formatted_exceptions}\n\t\t\t);"
-              )
-              
-              # Write back
-              if @project_file_path.end_with?('.pbxproj')
-                File.write(@project_file_path, new_content)
-              else
-                File.write(File.join(@project_file_path, 'project.pbxproj'), new_content)
-              end
-              
-              puts "✅ Updated membership exceptions for synchronized project"
-            else
-              puts "Warning: Could not find membershipExceptions in project file"
+            # Use xcodeproj to update membership exceptions
+            # Find the main group that represents the synchronized folder
+            main_group = project.main_group
+            
+            # For Xcode 15+ synchronized projects, we need to find the PBXFileSystemSynchronizedRootGroup
+            synchronized_groups = project.root_object.main_group.children.select do |child|
+              child.respond_to?(:isa) && child.isa == 'PBXFileSystemSynchronizedRootGroup'
             end
             
+            if synchronized_groups.empty?
+              puts "No synchronized groups found in project"
+              return
+            end
+            
+            synchronized_groups.each do |sync_group|
+              # Access or create membershipExceptions
+              exceptions = sync_group.instance_variable_get(:@simple_attributes_hash)['membershipExceptions'] || []
+              
+              # Convert to set for uniqueness
+              exceptions_set = Set.new(exceptions)
+              
+              # Add our exclusions
+              excluded_files.each do |file|
+                exceptions_set.add(file)
+              end
+              
+              # Update the exceptions
+              sync_group.instance_variable_get(:@simple_attributes_hash)['membershipExceptions'] = exceptions_set.to_a.sort
+              
+              puts "✅ Updated membership exceptions for synchronized group: #{sync_group.path || 'root'}"
+            end
+            
+            # Save the project
+            project.save
+            
+            puts "✅ Successfully updated membership exceptions for synchronized project"
+            
+          rescue LoadError
+            puts "Error: xcodeproj gem not found. Please install it with: gem install xcodeproj"
+            raise
           rescue => e
-            puts "Error setting up synchronized exceptions: #{e.message}"
+            puts "Error setting up synchronized exceptions with xcodeproj: #{e.message}"
+            puts e.backtrace.first(5).join("\n") if ENV['DEBUG']
             raise e
           end
         end
