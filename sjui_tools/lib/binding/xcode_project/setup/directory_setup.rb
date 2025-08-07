@@ -42,7 +42,7 @@ module SjuiTools
               style_path: File.join(source_path, config['styles_directory'] || 'Styles'),  # alias
               core_path: File.join(source_path, 'Core'),
               ui_path: File.join(source_path, 'Core', 'UI'),
-              base_path: File.join(source_path, 'Core', 'UI', 'Base')
+              base_path: File.join(source_path, 'Core', 'Base')  # Base should be at same level as UI
             )
             
             @xcode_manager = ::SjuiTools::Binding::XcodeProjectManager.new(@project_file_path)
@@ -221,7 +221,11 @@ module SjuiTools
           def add_core_files_to_xcode_project(file_paths)
             file_paths.each do |file_path|
               # グループ名を決定
-              if file_path.include?("/UI/")
+              if file_path.include?("/Core/UI/")
+                group_name = "Core/UI"
+              elsif file_path.include?("/Core/Base/")
+                group_name = "Core/Base"
+              elsif file_path.include?("/UI/")
                 group_name = "UI"
               elsif file_path.include?("/Base/")
                 group_name = "Base"
@@ -230,7 +234,7 @@ module SjuiTools
               end
               
               # ファイルを追加
-              @xcode_manager.add_file(file_path, "Core/#{group_name}")
+              @xcode_manager.add_file(file_path, group_name)
             end
             puts "Added core files to Xcode project"
           end
