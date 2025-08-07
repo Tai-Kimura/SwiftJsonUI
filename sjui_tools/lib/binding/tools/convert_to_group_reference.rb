@@ -391,61 +391,120 @@ class XcodeSyncToGroupConverter
   def add_children_directly_to_pbxproj(group_uuid)
     content = File.read(@pbxproj_path)
     
-    # Find the group definition
-    if content =~ /(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);[^}]*?\})/m
-      prefix = $1
-      existing_children = $2
-      suffix = $3
+    # First, check if the bindingTestApp group exists in PBXGroup section
+    if !content.include?("#{group_uuid} /* #{@app_name} */ = {")
+      puts "  bindingTestApp group not found in PBXGroup section, adding it..."
       
-      # Parse existing children
-      children_lines = existing_children.split(",").map(&:strip).reject(&:empty?)
-      
-      # Generate UUIDs for new groups if they don't exist
+      # Add the bindingTestApp group to PBXGroup section
       swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+      children_uuids = []
       groups_to_add = []
       
+      # Generate UUIDs for SwiftJsonUI directories
       swiftui_dirs.each do |dir_name|
         dir_path = File.join(@app_dir, dir_name)
         next unless Dir.exist?(dir_path)
         
-        # Check if already in children
-        next if children_lines.any? { |line| line.include?("/* #{dir_name} */") }
-        
-        # Generate a new UUID for this group
         new_uuid = generate_uuid
-        
-        # Add to children list
-        children_lines << "#{new_uuid} /* #{dir_name} */"
-        
-        # Store group definition to add later
+        children_uuids << "#{new_uuid} /* #{dir_name} */"
         groups_to_add << {uuid: new_uuid, name: dir_name}
-        
         puts "  Adding directory group: #{dir_name} (#{new_uuid})"
       end
       
-      # Update the children list in the main group
-      new_children = children_lines.join(",\n\t\t\t\t")
-      content.sub!(/(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);)/m) do
-        "#{$1}#{new_children}#{$3}"
+      # Create bindingTestApp group definition with children
+      children_content = children_uuids.join(",\n\t\t\t\t")
+      app_group_def = "\t\t#{group_uuid} /* #{@app_name} */ = {\n" +
+                      "\t\t\tisa = PBXGroup;\n" +
+                      "\t\t\tchildren = (\n" +
+                      (children_content.empty? ? "" : "\t\t\t\t#{children_content}\n") +
+                      "\t\t\t);\n" +
+                      "\t\t\tpath = #{@app_name};\n" +
+                      "\t\t\tsourceTree = \"<group>\";\n" +
+                      "\t\t};\n"
+      
+      # Add all group definitions before the end of PBXGroup section
+      all_groups = app_group_def
+      groups_to_add.each do |group_info|
+        all_groups += "\t\t#{group_info[:uuid]} /* #{group_info[:name]} */ = {\n" +
+                     "\t\t\tisa = PBXGroup;\n" +
+                     "\t\t\tchildren = (\n" +
+                     "\t\t\t);\n" +
+                     "\t\t\tpath = #{group_info[:name]};\n" +
+                     "\t\t\tsourceTree = \"<group>\";\n" +
+                     "\t\t};\n"
       end
       
-      # Add new group definitions at the end of PBXGroup section
-      groups_to_add.each do |group_info|
-        group_def = "\t\t#{group_info[:uuid]} /* #{group_info[:name]} */ = {\n" +
-                    "\t\t\tisa = PBXGroup;\n" +
-                    "\t\t\tchildren = (\n" +
-                    "\t\t\t);\n" +
-                    "\t\t\tpath = #{group_info[:name]};\n" +
-                    "\t\t\tsourceTree = \"<group>\";\n" +
-                    "\t\t};\n"
-        
-        # Insert before the end of PBXGroup section
-        content.sub!(/(\/\* End PBXGroup section \*\/)/m) do
-          "#{group_def}#{$1}"
+      # Insert all groups before the end of PBXGroup section
+      content.sub!(/(\/\* End PBXGroup section \*\/)/m) do
+        "#{all_groups}#{$1}"
+      end
+      
+      # Also add bindingTestApp to the main group's children
+      if content =~ /(B6EA598D2E428BF700F81080[^}]*?children = \()([^)]*)(\);)/m
+        existing_children = $2
+        if !existing_children.include?("#{group_uuid} /* #{@app_name} */")
+          # Add bindingTestApp as the first child
+          new_children = "\n\t\t\t\t#{group_uuid} /* #{@app_name} */,#{existing_children}"
+          content.sub!(/(B6EA598D2E428BF700F81080[^}]*?children = \()([^)]*)(\);)/m) do
+            "#{$1}#{new_children}#{$3}"
+          end
         end
       end
     else
-      puts "  Warning: Could not find group definition for UUID #{group_uuid}"
+      # Group exists, update its children
+      if content =~ /(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);[^}]*?\})/m
+        prefix = $1
+        existing_children = $2
+        suffix = $3
+        
+        # Parse existing children
+        children_lines = existing_children.split(",").map(&:strip).reject(&:empty?)
+        
+        # Generate UUIDs for new groups if they don't exist
+        swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+        groups_to_add = []
+        
+        swiftui_dirs.each do |dir_name|
+          dir_path = File.join(@app_dir, dir_name)
+          next unless Dir.exist?(dir_path)
+          
+          # Check if already in children
+          next if children_lines.any? { |line| line.include?("/* #{dir_name} */") }
+          
+          # Generate a new UUID for this group
+          new_uuid = generate_uuid
+          
+          # Add to children list
+          children_lines << "#{new_uuid} /* #{dir_name} */"
+          
+          # Store group definition to add later
+          groups_to_add << {uuid: new_uuid, name: dir_name}
+          
+          puts "  Adding directory group: #{dir_name} (#{new_uuid})"
+        end
+        
+        # Update the children list in the main group
+        new_children = children_lines.join(",\n\t\t\t\t")
+        content.sub!(/(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);)/m) do
+          "#{$1}#{new_children}#{$3}"
+        end
+        
+        # Add new group definitions at the end of PBXGroup section
+        groups_to_add.each do |group_info|
+          group_def = "\t\t#{group_info[:uuid]} /* #{group_info[:name]} */ = {\n" +
+                      "\t\t\tisa = PBXGroup;\n" +
+                      "\t\t\tchildren = (\n" +
+                      "\t\t\t);\n" +
+                      "\t\t\tpath = #{group_info[:name]};\n" +
+                      "\t\t\tsourceTree = \"<group>\";\n" +
+                      "\t\t};\n"
+          
+          # Insert before the end of PBXGroup section
+          content.sub!(/(\/\* End PBXGroup section \*\/)/m) do
+            "#{group_def}#{$1}"
+          end
+        end
+      end
     end
     
     File.write(@pbxproj_path, content)
