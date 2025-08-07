@@ -3,10 +3,9 @@
 require "fileutils"
 
 module SjuiTools
-  module Binding
-    module XcodeProject
-      module Setup
-        class AppDelegateSetup
+  module Core
+    module Setup
+      class AppDelegateSetup
           def initialize(project_file_path)
             @project_file_path = project_file_path
           end
@@ -251,7 +250,7 @@ if __FILE__ == $0
   project_file_path = ARGV[0]
   
   begin
-    setup = SjuiTools::Binding::XcodeProject::Setup::AppDelegateSetup.new(project_file_path)
+    setup = SjuiTools::Core::Setup::AppDelegateSetup.new(project_file_path)
     setup.add_hotloader_functionality
   rescue => e
     puts "Error: #{e.message}"

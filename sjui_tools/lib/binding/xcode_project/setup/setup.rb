@@ -17,8 +17,12 @@ module SjuiTools
           def run_full_setup
             puts "=== Starting SwiftJsonUI Project Setup ==="
             
+            # Use CommonSetup for shared functionality
+            require_relative '../../../../core/setup/common_setup'
+            common_setup = ::SjuiTools::Core::Setup::CommonSetup.new(@project_file_path)
+            
             # 0. ワークスペースの存在を確認（SPM用）
-            ensure_workspace_exists
+            common_setup.ensure_workspace_exists
             
             # 1. 変換後のプロジェクトの場合、既存ファイルを復元
             restore_converted_files
@@ -27,94 +31,24 @@ module SjuiTools
             setup_directories
             
             # 3. ライブラリパッケージの追加
-            setup_libraries
+            common_setup.setup_libraries
             
             # 4. HotLoader機能の設定
-            setup_hotloader
+            common_setup.setup_hotloader
             
             # 5. Info.plistからStoryBoard参照を削除
             remove_storyboard_from_info_plist
             
             # 6. membershipExceptionsを設定
-            setup_membership_exceptions
+            common_setup.setup_membership_exceptions
             
             # 7. 不要な参照をクリーンアップ
-            cleanup_project_references
+            common_setup.cleanup_project_references
             
             puts "=== SwiftJsonUI Project Setup Completed Successfully! ==="
           end
 
           private
-
-          def ensure_workspace_exists
-            puts "Ensuring workspace exists..."
-            
-            # Get workspace path
-            project_dir = File.dirname(@project_file_path)
-            project_name = File.basename(@project_file_path, '.xcodeproj')
-            workspace_path = File.join(project_dir, "#{project_name}.xcworkspace")
-            
-            # Create workspace directory if it doesn't exist
-            unless Dir.exist?(workspace_path)
-              FileUtils.mkdir_p(workspace_path)
-              puts "Created workspace directory: #{workspace_path}"
-            else
-              puts "Workspace already exists: #{workspace_path}"
-            end
-            
-            # Always ensure workspace contents file exists
-            workspace_data_path = File.join(workspace_path, 'contents.xcworkspacedata')
-            unless File.exist?(workspace_data_path)
-              workspace_xml = <<~XML
-                <?xml version="1.0" encoding="UTF-8"?>
-                <Workspace
-                   version = "1.0">
-                   <FileRef
-                      location = "self:">
-                   </FileRef>
-                </Workspace>
-              XML
-              File.write(workspace_data_path, workspace_xml)
-              puts "Created workspace contents file"
-            end
-            
-            # Create xcshareddata/swiftpm structure immediately
-            shared_data_path = File.join(workspace_path, 'xcshareddata')
-            swiftpm_path = File.join(shared_data_path, 'swiftpm')
-            
-            FileUtils.mkdir_p(swiftpm_path)
-            puts "Created/verified SPM directory structure: #{swiftpm_path}"
-            
-            # Create empty Package.resolved if it doesn't exist
-            package_resolved_path = File.join(swiftpm_path, 'Package.resolved')
-            unless File.exist?(package_resolved_path)
-              initial_resolved = {
-                "object" => {
-                  "pins" => []
-                },
-                "version" => 1
-              }
-              File.write(package_resolved_path, JSON.pretty_generate(initial_resolved))
-              puts "Created Package.resolved file"
-            end
-            
-            # Create workspace configuration if needed
-            workspace_settings_path = File.join(shared_data_path, 'WorkspaceSettings.xcsettings')
-            unless File.exist?(workspace_settings_path)
-              settings_xml = <<~XML
-                <?xml version="1.0" encoding="UTF-8"?>
-                <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-                <plist version="1.0">
-                <dict>
-                  <key>IDEWorkspaceSharedSettings_AutocreateContextsIfNeeded</key>
-                  <false/>
-                </dict>
-                </plist>
-              XML
-              File.write(workspace_settings_path, settings_xml)
-              puts "Created workspace settings file"
-            end
-          end
 
           def setup_directories
             puts "Setting up project directories..."
@@ -123,23 +57,6 @@ module SjuiTools
             directory_setup = DirectorySetup.new(@project_file_path)
             directory_setup.create_missing_directories
           end
-
-          def setup_libraries
-            puts "Setting up required libraries..."
-            require_relative '../../../core/setup/library_setup'
-            
-            library_setup = ::SjuiTools::Core::Setup::LibrarySetup.new(@project_file_path)
-            library_setup.setup_libraries
-          end
-
-          def setup_hotloader
-            puts "Setting up HotLoader functionality..."
-            require_relative 'app_delegate_setup'
-            
-            app_delegate_setup = SjuiTools::Binding::XcodeProject::Setup::AppDelegateSetup.new(@project_file_path)
-            app_delegate_setup.add_hotloader_functionality
-          end
-
 
           def remove_storyboard_from_info_plist
             puts "Removing StoryBoard references from Info.plist..."
@@ -198,19 +115,6 @@ module SjuiTools
             info_plist_files.min_by { |path| path.split('/').length }
           end
 
-          def cleanup_project_references
-            puts "Cleaning up project references..."
-            
-            # Use XcodeProjectManager to clean up phantom references
-            require_relative '../../../core/xcode_project_manager'
-            xcode_manager = ::SjuiTools::Core::XcodeProjectManager.new(@project_file_path)
-            
-            # This will trigger the cleanup
-            xcode_manager.send(:cleanup_empty_groups)
-            
-            puts "Project references cleaned up"
-          end
-          
           def remove_storyboard_references(content)
             # UISceneStoryboardFileキーとその値を削除
             content = content.gsub(/\s*<key>UISceneStoryboardFile<\/key>\s*\n\s*<string>.*?<\/string>\s*\n/, "")
