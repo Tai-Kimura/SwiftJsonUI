@@ -46,6 +46,7 @@ require 'fileutils'
 require 'json'
 require 'time'
 require 'xcodeproj'
+require 'securerandom'
 require_relative '../../core/project_finder'
 
 module SjuiTools
@@ -292,37 +293,78 @@ class XcodeSyncToGroupConverter
   end
 
   def manage_with_xcodeproj(sync_info)
-    # Now use xcodeproj gem to properly manage the project
-    project = Xcodeproj::Project.open(@xcodeproj_path)
+    # Skip xcodeproj gem management - it's not working correctly with Xcode 16 format
+    # Instead, add children references directly to the pbxproj file
     
     sync_info.each do |info|
       next unless info[:type] == 'main_app'
       
-      # Find the converted group
-      main_group = find_group_by_uuid(project, info[:uuid])
-      next unless main_group
-      
-      puts "Managing files for group: #{info[:name]}"
-      
-      # Don't clear existing children - just add missing files and directories
-      # main_group.clear  # REMOVED: This was deleting existing directory references
-      
-      # Get list of files to add
-      files_to_add = collect_files_for_group(info)
-      
-      # Add files to the group
-      add_files_to_group(project, main_group, files_to_add)
-      
-      # Add existing subdirectories as groups
-      add_subdirectories_as_groups(project, main_group)
-      
-      # Handle build phases
-      setup_build_phases(project, main_group)
+      puts "Adding directory references for: #{info[:name]}"
+      add_children_directly_to_pbxproj(info[:uuid])
     end
     
-    # Save the project
-    project.save
-    puts "Project saved with xcodeproj gem"
+    puts "Directory references added"
+  end
+  
+  def add_children_directly_to_pbxproj(group_uuid)
+    content = File.read(@pbxproj_path)
+    
+    # Find the group definition
+    if content =~ /(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);[^}]*?\})/m
+      prefix = $1
+      existing_children = $2
+      suffix = $3
+      
+      # Parse existing children
+      children_lines = existing_children.split(",").map(&:strip).reject(&:empty?)
+      
+      # Generate UUIDs for new groups if they don't exist
+      swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+      
+      swiftui_dirs.each do |dir_name|
+        dir_path = File.join(@app_dir, dir_name)
+        next unless Dir.exist?(dir_path)
+        
+        # Check if already in children
+        next if children_lines.any? { |line| line.include?("/* #{dir_name} */") }
+        
+        # Generate a new UUID for this group
+        new_uuid = generate_uuid
+        
+        # Add to children list
+        children_lines << "#{new_uuid} /* #{dir_name} */"
+        
+        # Add the group definition
+        group_def = <<-GROUP
+		#{new_uuid} /* #{dir_name} */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = #{dir_name};
+			sourceTree = "<group>";
+		};
+        GROUP
+        
+        # Insert the group definition before the main group
+        content.sub!(/(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{)/m) do
+          "#{group_def}\n\t\t#{$1}"
+        end
+      end
+      
+      # Update the children list
+      new_children = children_lines.join(",\n\t\t\t\t")
+      content.sub!(/(#{group_uuid} \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?children = \()([^)]*)(\);)/m) do
+        "#{$1}#{new_children}#{$3}"
+      end
+    end
+    
+    File.write(@pbxproj_path, content)
+    puts "Updated pbxproj file directly"
+  end
+  
+  def generate_uuid
+    # Generate a 24-character hex UUID similar to Xcode format
+    SecureRandom.hex(12).upcase
   end
 
   def find_group_by_uuid(project, uuid)
