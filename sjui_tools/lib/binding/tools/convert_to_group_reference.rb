@@ -304,8 +304,8 @@ class XcodeSyncToGroupConverter
       
       puts "Managing files for group: #{info[:name]}"
       
-      # Clear existing children (they're from synchronized folder)
-      main_group.clear
+      # Don't clear existing children - just add missing files and directories
+      # main_group.clear  # REMOVED: This was deleting existing directory references
       
       # Get list of files to add
       files_to_add = collect_files_for_group(info)
@@ -384,20 +384,37 @@ class XcodeSyncToGroupConverter
   end
 
   def add_subdirectories_as_groups(project, parent_group)
-    # SwiftJsonUI directories
-    swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+    # SwiftJsonUI directories and any other directories in the app folder
+    all_dirs = []
     
-    swiftui_dirs.each do |dir_name|
+    # Add standard SwiftJsonUI directories
+    swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+    all_dirs.concat(swiftui_dirs)
+    
+    # Also scan for any other directories that exist
+    if Dir.exist?(@app_dir)
+      Dir.children(@app_dir).each do |item|
+        item_path = File.join(@app_dir, item)
+        if File.directory?(item_path) && !item.start_with?('.')
+          all_dirs << item unless all_dirs.include?(item)
+        end
+      end
+    end
+    
+    all_dirs.each do |dir_name|
       dir_path = File.join(@app_dir, dir_name)
       next unless Dir.exist?(dir_path)
       
-      # Check if group already exists
+      # Check if group already exists by name or path
       existing_group = parent_group.children.find { |child| 
-        child.is_a?(Xcodeproj::Project::Object::PBXGroup) && child.path == dir_name 
+        child.is_a?(Xcodeproj::Project::Object::PBXGroup) && 
+        (child.path == dir_name || child.name == dir_name)
       }
       
       if existing_group
         puts "  Group already exists: #{dir_name}"
+        # Recursively ensure files are added even if group exists
+        add_files_recursively(project, existing_group, dir_path)
       else
         # Create new group
         new_group = parent_group.new_group(dir_name, dir_name)
