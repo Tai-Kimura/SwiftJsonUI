@@ -257,7 +257,7 @@ class XcodeSyncToGroupConverter
         puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
       end
       
-      # Convert the synchronized group to regular group
+      # Convert the synchronized group to regular group but keep children empty
       content.gsub!(/(#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?)isa = PBXFileSystemSynchronized(?:Root)?Group;([^}]*?)\}/m) do
         prefix = $1
         suffix = $2
@@ -267,20 +267,29 @@ class XcodeSyncToGroupConverter
         suffix = suffix.gsub(/\s*explicitFileTypes = \{[^}]*\};\s*/m, '')
         suffix = suffix.gsub(/\s*explicitFolders = \([^)]*\);\s*/m, '')
         
+        # Add children array if not present
+        unless suffix.include?('children =')
+          suffix = "\n\t\t\tchildren = (\n\t\t\t);" + suffix
+        end
+        
         # Change to PBXGroup
         "#{prefix}isa = PBXGroup;#{suffix}}"
       end
       
-      # Remove fileSystemSynchronizedGroups references
-      content.gsub!(/fileSystemSynchronizedGroups = \([^)]*#{info[:uuid]}[^)]*\);/m) do |match|
-        # Check if there are other groups in the list
-        other_groups = match.gsub(/#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/,?/, '').strip
-        if other_groups.match(/\((\s*)\)/)
-          # Empty list, remove the entire property
-          ''
-        else
-          # Keep other groups
-          other_groups
+      # Remove fileSystemSynchronizedGroups references but keep the group in main group
+      content.gsub!(/fileSystemSynchronizedGroups = \([^)]*\);/m, '')
+      
+      # Ensure the group is in the main group's children
+      if content =~ /B6EA598D2E428BF700F81080 = \{[^}]*?children = \(([^)]*)\)/m
+        children = $1
+        unless children.include?(info[:uuid])
+          # Add bindingTestApp group to main group if missing
+          new_children = children.strip
+          new_children += ",\n\t\t\t\t" unless new_children.empty?
+          new_children += "#{info[:uuid]} /* #{info[:name]} */"
+          content.gsub!(/B6EA598D2E428BF700F81080 = \{[^}]*?children = \([^)]*\)/m) do |match|
+            match.sub(/children = \([^)]*\)/, "children = (\n\t\t\t\t#{new_children}\n\t\t\t)")
+          end
         end
       end
       
