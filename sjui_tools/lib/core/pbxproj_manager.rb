@@ -226,11 +226,12 @@ module SjuiTools
             # Find all files in excluded directories
             directories_to_exclude.each do |dir|
               dir_path = File.join(source_path, dir)
-              puts "  Checking directory: #{dir_path}" if ENV['DEBUG'] || dir.include?('node_modules')
+              puts "  Checking directory: #{dir_path}" if ENV['DEBUG'] || dir == 'sjui_tools' || dir.include?('node_modules')
               if Dir.exist?(dir_path)
-                puts "    Directory exists: #{dir_path}" if dir.include?('node_modules')
-                # Special handling for node_modules - scan ALL files efficiently
-                if dir == 'node_modules' || dir.include?('node_modules')
+                puts "    Directory exists: #{dir_path}" if dir == 'sjui_tools' || dir.include?('node_modules')
+                # Special handling for directories that need ALL files scanned (sjui_tools, node_modules)
+                # sjui_tools contains node_modules and other files that should all be excluded
+                if dir == 'sjui_tools' || dir == 'node_modules' || dir.include?('node_modules')
                   begin
                     puts "    Scanning all files in #{dir}..."
                     file_count = 0
@@ -252,7 +253,7 @@ module SjuiTools
                       end
                     end
                     
-                    puts "    Found #{file_count} files in #{dir}"
+                    puts "    Found #{file_count} files in #{dir} (including all subdirectories)"
                   rescue => e
                     puts "    Error scanning #{dir}: #{e.message}"
                     # Fallback to glob if Find fails
@@ -283,7 +284,7 @@ module SjuiTools
                   puts "  Found #{Dir.glob("#{dir_path}/**/*", File::FNM_DOTMATCH).select{|f| !File.directory?(f)}.size} files in #{dir}"
                 end
               else
-                puts "    Directory does not exist: #{dir_path}" if dir.include?('node_modules')
+                puts "    Directory does not exist: #{dir_path}" if dir == 'sjui_tools' || dir.include?('node_modules')
               end
             end
             
