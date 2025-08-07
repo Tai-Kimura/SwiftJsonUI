@@ -110,16 +110,13 @@ module SjuiTools
           return
         end
         
-        # Calculate relative path from project directory first
+        # Calculate relative path from source directory
         project_dir = File.dirname(@project_path)
+        source_dir = Core::ProjectFinder.get_full_source_path || project_dir
+        
         begin
-          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
-          
-          # Remove app name prefix if present (for files within the app directory)
-          app_name = File.basename(@project_path, '.xcodeproj')
-          if relative_path.start_with?("#{app_name}/")
-            relative_path = relative_path.sub(/^#{Regexp.escape(app_name)}\//, '')
-          end
+          # Calculate relative path from source directory for proper Xcode references
+          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_dir)).to_s
           
           puts "Debug: Relative path: #{relative_path}"
           
@@ -391,15 +388,10 @@ module SjuiTools
         existing = group.files.find { |f| f.path == file_name }
         
         unless existing
-          # Calculate relative path from project directory
+          # Calculate relative path from source directory
           project_dir = File.dirname(@project_path)
-          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(project_dir)).to_s
-          
-          # Remove app name prefix if present (for files within the app directory)
-          app_name = File.basename(@project_path, '.xcodeproj')
-          if relative_path.start_with?("#{app_name}/")
-            relative_path = relative_path.sub(/^#{Regexp.escape(app_name)}\//, '')
-          end
+          source_dir = Core::ProjectFinder.get_full_source_path || project_dir
+          relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_dir)).to_s
           
           # Check if file should be excluded
           excluded = EXCLUDED_PATTERNS.any? do |pattern|
