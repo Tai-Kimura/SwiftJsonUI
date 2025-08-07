@@ -272,6 +272,9 @@ class XcodeSyncToGroupConverter
       end
     end
     
+    # Clean up duplicate bindingTestApp groups in main group
+    cleanup_duplicate_app_groups(content, app_name)
+    
     # ファイル保存
     File.write(@pbxproj_path, content)
     puts "✅ Conversion completed!"

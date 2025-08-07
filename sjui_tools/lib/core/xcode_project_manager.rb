@@ -211,12 +211,21 @@ module SjuiTools
           # Navigate to source directory group if specified
           source_parts = source_directory.split('/')
           source_parts.each do |part|
-            existing = current_group.groups.find { |g| g.name == part }
+            existing = current_group.groups.find { |g| g.name == part || g.path == part }
             if existing
               current_group = existing
+              puts "Debug: Found existing group '#{part}'"
             else
-              # If source directory group doesn't exist, create it
-              current_group = current_group.new_group(part)
+              # Check again with display_name
+              existing = current_group.groups.find { |g| g.display_name == part }
+              if existing
+                current_group = existing
+                puts "Debug: Found existing group by display_name '#{part}'"
+              else
+                # If source directory group doesn't exist, create it
+                puts "Warning: Creating new group '#{part}' - this might create duplicates!"
+                current_group = current_group.new_group(part)
+              end
             end
           end
         end
