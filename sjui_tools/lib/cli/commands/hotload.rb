@@ -208,63 +208,79 @@ module SjuiTools
           project_file = Core::ProjectFinder.find_project_file
           return unless project_file
           
-          require 'xcodeproj'
-          project = Xcodeproj::Project.open(project_file)
+          # Check if this is a synchronized project (Xcode 15+)
+          is_synchronized = false
+          begin
+            pbxproj_path = project_file.end_with?('.xcodeproj') ? 
+                          File.join(project_file, 'project.pbxproj') : 
+                          project_file
+            content = File.read(pbxproj_path)
+            is_synchronized = content.include?('PBXFileSystemSynchronizedRootGroup')
+          rescue => e
+            puts "⚠️  Warning: Could not check project type: #{e.message}"
+          end
           
-          # Patterns to remove
-          patterns_to_remove = [
-            '.editorconfig',
-            '.eslintrc',
-            '.npmignore', 
-            '.nycrc',
-            'FUNDING.yml',
-            '.prettierrc',
-            '.babelrc',
-            '.travis.yml',
-            '.package-lock.json'
-          ]
-          
-          removed_count = 0
-          
-          # Remove files matching patterns
-          project.files.each do |file_ref|
-            next unless file_ref.path
+          if is_synchronized
+            # For synchronized projects, use PbxprojManager to update membership exceptions
+            puts "  Detected synchronized project - updating membership exceptions..."
+            update_membership_exceptions_if_needed(project_file)
+          else
+            # For older projects, manually remove files
+            require 'xcodeproj'
+            project = Xcodeproj::Project.open(project_file)
             
-            # Check for exact matches
-            if patterns_to_remove.any? { |pattern| File.basename(file_ref.path) == pattern }
-              puts "  Removing from project: #{file_ref.path}"
-              file_ref.remove_from_project
-              removed_count += 1
-              next
-            end
+            # Patterns to remove
+            patterns_to_remove = [
+              '.editorconfig',
+              '.eslintrc',
+              '.npmignore', 
+              '.nycrc',
+              'FUNDING.yml',
+              '.prettierrc',
+              '.babelrc',
+              '.travis.yml',
+              '.package-lock.json'
+            ]
             
-            # Check for files inside node_modules
-            if file_ref.path.include?('node_modules/')
-              # Remove any dotfiles/dotdirectories inside node_modules
-              if File.basename(file_ref.path).start_with?('.')
+            removed_count = 0
+            
+            # Remove files matching patterns
+            project.files.each do |file_ref|
+              next unless file_ref.path
+              
+              # Check for exact matches
+              if patterns_to_remove.any? { |pattern| File.basename(file_ref.path) == pattern }
                 puts "  Removing from project: #{file_ref.path}"
                 file_ref.remove_from_project
                 removed_count += 1
+                next
+              end
+              
+              # Check for files inside node_modules
+              if file_ref.path.include?('node_modules/')
+                # Remove any dotfiles/dotdirectories inside node_modules
+                if File.basename(file_ref.path).start_with?('.')
+                  puts "  Removing from project: #{file_ref.path}"
+                  file_ref.remove_from_project
+                  removed_count += 1
+                end
               end
             end
+            
+            if removed_count > 0
+              project.save
+              puts "✅ Removed #{removed_count} files from Xcode project"
+            else
+              puts "✅ No cleanup needed"
+            end
           end
-          
-          if removed_count > 0
-            project.save
-            puts "✅ Removed #{removed_count} files from Xcode project"
-          else
-            puts "✅ No cleanup needed"
-          end
-          
-          # Also update membership exceptions for synchronized projects
-          update_membership_exceptions_if_needed(project_file)
         rescue => e
           puts "⚠️  Warning: Could not clean up Xcode project: #{e.message}"
         end
         
         def update_membership_exceptions_if_needed(project_file)
           # Use PbxprojManager to update membership exceptions
-          require_relative '../../binding/xcode_project/pbxproj_manager'
+          require_relative '../../core/pbxproj_manager'
           
           manager = SjuiTools::Core::PbxprojManager.new(project_file)
           manager.setup_membership_exceptions
