@@ -38,8 +38,7 @@ module SjuiTools
               bindings_path: File.join(source_path, @config['bindings_directory'] || 'Bindings'),
               layouts_path: File.join(source_path, @config['layouts_directory'] || 'Layouts'),
               layout_path: File.join(source_path, @config['layouts_directory'] || 'Layouts'),  # alias
-              styles_path: File.join(source_path, @config['styles_directory'] || 'Styles'),
-              style_path: File.join(source_path, @config['styles_directory'] || 'Styles'),  # alias
+              style_path: File.join(source_path, @config['styles_directory'] || 'Styles'),
               core_path: File.join(source_path, 'Core'),
               ui_path: File.join(source_path, 'Core', 'UI'),
               base_path: File.join(source_path, 'Core', 'Base')  # Base should be at same level as UI
