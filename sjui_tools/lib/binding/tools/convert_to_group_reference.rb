@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-# convert_to_group_reference.rb - Xcode 16 Synchronized Folder to Group Reference Converter
+# convert_to_group_reference.rb - Xcode 16 Synchronized Folder to Group Reference Converter (Hybrid Version)
 #
 # Purpose:
 # This tool converts Xcode 16's new synchronized folder references back to traditional group references.
@@ -18,6 +18,11 @@
 # 3. Removes exceptions and fileSystemSynchronizedGroups references
 # 4. Preserves test targets as synchronized (they don't have the same issues)
 # 5. Maintains all existing file references in the project
+#
+# Implementation:
+# This hybrid version uses:
+# - Direct file manipulation for Xcode 16 synchronized folder detection and initial conversion
+# - xcodeproj gem for managing files and build phases after conversion
 #
 # Usage:
 # - Run via: sjui convert to-group [--force]
@@ -40,205 +45,74 @@
 require 'fileutils'
 require 'json'
 require 'time'
-require 'securerandom'
+require 'xcodeproj'
 
 class XcodeSyncToGroupConverter
-  def initialize(pbxproj_path)
-    @pbxproj_path = pbxproj_path
-    @backup_path = "#{pbxproj_path}.backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}"
+  def initialize(project_path)
+    @project_path = project_path
+    
+    # Determine actual paths
+    if project_path.end_with?('.xcodeproj')
+      @xcodeproj_path = project_path
+      @pbxproj_path = File.join(project_path, 'project.pbxproj')
+    elsif project_path.end_with?('.pbxproj')
+      @pbxproj_path = project_path
+      @xcodeproj_path = File.dirname(project_path)
+    else
+      # Try to find .xcodeproj in the directory
+      xcodeproj_files = Dir.glob(File.join(project_path, '*.xcodeproj'))
+      if xcodeproj_files.empty?
+        raise "No .xcodeproj file found in #{project_path}"
+      end
+      @xcodeproj_path = xcodeproj_files.first
+      @pbxproj_path = File.join(@xcodeproj_path, 'project.pbxproj')
+    end
+    
+    @backup_path = "#{@pbxproj_path}.backup_#{Time.now.strftime('%Y%m%d_%H%M%S')}"
+    @app_name = File.basename(@xcodeproj_path, '.xcodeproj')
+    @project_dir = File.dirname(@xcodeproj_path)
+    @app_dir = File.join(@project_dir, @app_name)
   end
 
   def convert
     puts "Converting Xcode 16 synchronized folders to group references..."
     
-    # バックアップ作成
-    FileUtils.copy(@pbxproj_path, @backup_path)
-    puts "Backup created: #{@backup_path}"
-    
-    # ファイル読み込み
-    content = File.read(@pbxproj_path)
-    original_content = content.dup
-    
-    # プロジェクト情報を取得
-    project_path = File.dirname(File.dirname(@pbxproj_path))
-    project_name = Dir.glob("#{project_path}/*.xcodeproj").first
-    
-    if project_name.nil?
-      puts "Error: Could not find .xcodeproj file in #{project_path}"
+    # Step 1: Check if conversion is needed
+    unless needs_conversion?
+      puts "No synchronized groups found. Project may already be using group references."
       return false
     end
     
-    app_name = File.basename(project_name, ".xcodeproj")
-    project_dir = File.dirname(project_path)
+    # Step 2: Create backup
+    create_backup
     
-    # メインアプリグループのUUIDを探す
-    main_app_uuid = nil
-    content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;/m) do |uuid|
-      main_app_uuid = uuid[0]
-      puts "Found main app synchronized group: #{main_app_uuid}"
-      break
+    # Step 3: Detect synchronized groups and collect information
+    sync_info = detect_synchronized_groups
+    
+    if sync_info.empty?
+      puts "No main app synchronized group found."
+      return false
     end
     
-    unless main_app_uuid
-      puts "No synchronized groups found. Project may already be using group references."
-      return
-    end
+    # Step 4: Convert synchronized groups to regular groups (direct manipulation)
+    convert_synchronized_to_regular_groups(sync_info)
     
-    # 1. 実際のディレクトリ構造からファイルを取得
-    app_dir = File.join(project_path, app_name)
+    # Step 5: Use xcodeproj gem to manage files and build phases
+    manage_with_xcodeproj(sync_info)
     
-    # 2. PBXFileSystemSynchronizedBuildFileExceptionSetセクションから情報を取得してから削除
-    exception_files = []
-    content.scan(/membershipExceptions = \(([^)]*)\)/m) do |exceptions|
-      files = exceptions[0].scan(/([^,\s]+)[,\s]*/).flatten.reject { |f| f.strip.empty? }
-      exception_files.concat(files)
-    end
+    # Step 6: Validate the conversion
+    validate
     
-    if content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
-      content.gsub!(
-        /\/\* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section \*\/.*?\/\* End PBXFileSystemSynchronizedBuildFileExceptionSet section \*\//m,
-        ''
-      )
-      puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
-    end
-    
-    # 3. ファイルリストを作成（実際のファイルまたは標準セット）
-    files_to_add = if app_dir && Dir.exist?(app_dir)
-      # 実際のディレクトリから取得（第一階層のみ）
-      Dir.children(app_dir).select do |item|
-        path = File.join(app_dir, item)
-        # ファイルのみ（ディレクトリは除外）
-        File.file?(path) && 
-        # 隠しファイルを除外
-        !item.start_with?('.') &&
-        # 特定の拡張子のみ
-        item.match?(/\.(swift|plist|xcassets|storyboard|xcdatamodeld)$/)
-      end
-    else
-      # テスト環境または新規プロジェクトの場合は標準セット
-      standard_files = ['AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist', 
-                       'Assets.xcassets', 'LaunchScreen.storyboard', 'Main.storyboard']
-      # exceptionsに含まれているファイルも追加
-      (standard_files + exception_files).uniq
-    end
-    
-    puts "Found #{files_to_add.size} files to add: #{files_to_add.join(', ')}"
-    
-    # 4. PBXFileReferenceを作成
-    file_references = create_file_references(files_to_add, app_name)
-    
-    # PBXFileReferenceセクションに追加
-    if file_references.any? && content.include?("/* Begin PBXFileReference section */")
-      # セクションの最後に追加
-      content.gsub!(/(\/\* End PBXFileReference section \*\/)/) do |match|
-        refs = file_references.map { |ref| ref[:definition] }.join("\n")
-        "#{refs}\n#{match}"
-      end
-      puts "Added #{file_references.size} file references"
-    end
-    
-    # 5. メインアプリグループをPBXGroupに変換
-    children_items = []
-    
-    # ファイル参照を追加
-    file_references.each do |ref|
-      children_items << "\t\t\t\t#{ref[:uuid]} /* #{ref[:name]} */,"
-    end
-    
-    # 既存のグループを収集して追加（SwiftJsonUI関連を含む）
-    groups_to_add = []
-    content.scan(/([A-F0-9]{24}) \/\* ([^*]+) \*\/ = \{[^}]*?isa = PBXGroup;/) do |uuid, name|
-      next if name == app_name || name == 'Products' || name.include?('Tests')
-      groups_to_add << { uuid: uuid, name: name }
-    end
-    
-    # グループを特定の順序で追加（SwiftJsonUIのグループを優先）
-    swiftjsonui_groups = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
-    
-    # SwiftJsonUIグループを順番に追加し、パスも修正
-    swiftjsonui_groups.each do |group_name|
-      group = groups_to_add.find { |g| g[:name] == group_name }
-      if group
-        children_items << "\t\t\t\t#{group[:uuid]} /* #{group[:name]} */,"
-        groups_to_add.delete(group)
-        
-        # グループのパスを修正
-        fix_group_path(content, group[:uuid], group[:name])
-      end
-    end
-    
-    # その他のグループを追加
-    groups_to_add.each do |group|
-      children_items << "\t\t\t\t#{group[:uuid]} /* #{group[:name]} */,"
-    end
-    
-    # メインアプリグループを変換
-    content.gsub!(/(#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{)([^}]*?)(isa = PBXFileSystemSynchronized(?:Root)?Group;)([^}]*?)(\};)/m) do |match|
-      prefix = $1
-      before_isa = $2
-      isa = $3
-      after_isa = $4
-      suffix = $5
-      
-      # isaをPBXGroupに変更
-      new_isa = "isa = PBXGroup;"
-      
-      # exceptionsを削除
-      after_isa = after_isa.gsub(/\s*exceptions = [^;]+;\s*/m, '')
-      
-      # explicitFileTypesとexplicitFoldersを削除
-      after_isa = after_isa.gsub(/\s*explicitFileTypes = \{[^}]*\};\s*explicitFolders = \([^)]*\);\s*/m, '')
-      
-      # childrenを追加
-      children_str = "\n\t\t\tchildren = (\n#{children_items.join("\n")}\n\t\t\t);"
-      
-      "#{prefix}#{before_isa}#{new_isa}#{children_str}#{after_isa}#{suffix}"
-    end
-    
-    # 4. ビルドフェーズにファイルを追加
-    add_files_to_build_phases(content, file_references, app_name) if file_references.any?
-    
-    # 5. fileSystemSynchronizedGroupsを削除（メインアプリのみ）
-    content.gsub!(/fileSystemSynchronizedGroups = \(\s*#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/,?\s*\);/m, '')
-    
-    # PBXFileSystemSynchronizedRootGroupセクションをPBXGroupセクションに移動
-    if content.include?("/* Begin PBXFileSystemSynchronizedRootGroup section */")
-      # メインアプリグループの定義を抽出
-      main_group_def = nil
-      content.scan(/(#{main_app_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?\};)/m) do |match|
-        main_group_def = match[0]
-        break
-      end
-      
-      if main_group_def
-        # 元の場所から削除
-        content.gsub!(main_group_def, '')
-        
-        # PBXGroupセクションに追加
-        if content.include?("/* Begin PBXGroup section */")
-          content.gsub!(/(\/\* End PBXGroup section \*\/)/) do |match|
-            "\t\t#{main_group_def}\n#{match}"
-          end
-        else
-          # PBXGroupセクションがない場合は作成
-          content.gsub!(/(\/\* End PBXFileReference section \*\/\n)/) do |match|
-            "#{match}\n/* Begin PBXGroup section */\n\t\t#{main_group_def}\n/* End PBXGroup section */\n"
-          end
-        end
-      end
-    end
-    
-    # ファイル保存
-    File.write(@pbxproj_path, content)
-    puts "✅ Conversion completed!"
+    puts "✅ Conversion completed successfully!"
     puts "ℹ️  Main app synchronized folder has been converted to regular group"
     puts "ℹ️  Test targets remain as synchronized folders (no issues there)"
     
-    # 変更があったか確認
-    if content != original_content
-      puts "\nChanges made to: #{@pbxproj_path}"
-      puts "Backup saved as: #{@backup_path}"
-    end
+    true
+  rescue => e
+    puts "Error during conversion: #{e.message}"
+    puts e.backtrace.first(5).join("\n") if ENV['DEBUG']
+    restore_backup if File.exist?(@backup_path)
+    false
   end
   
   def validate
@@ -260,164 +134,315 @@ class XcodeSyncToGroupConverter
     end
     
     if sync_exceptions > 0
-      puts "⚠️  Still has #{sync_exceptions} exception sets"
-      false
+      puts "⚠️  Warning: Still has #{sync_exceptions} exception sets"
     else
       puts "✅ Main app group is now a regular PBXGroup"
-      true
-    end
-  end
-  
-  private
-  
-  def create_file_references(files, app_name)
-    references = []
-    
-    files.each do |filename|
-      # ファイルタイプを推測
-      file_type = case filename
-      when /\.swift$/
-        'sourcecode.swift'
-      when /\.plist$/
-        'text.plist.xml'
-      when /\.xcassets$/
-        'folder.assetcatalog'
-      when /\.storyboard$/
-        'file.storyboard'
-      when /\.xcdatamodeld$/
-        'wrapper.xcdatamodel'
-      else
-        'text'
-      end
-      
-      uuid = generate_uuid
-      
-      definition = "\t\t#{uuid} /* #{filename} */ = {"
-      definition += "isa = PBXFileReference; "
-      definition += "lastKnownFileType = #{file_type}; "
-      definition += "path = #{filename}; "
-      definition += "sourceTree = \"<group>\"; };"
-      
-      references << {
-        uuid: uuid,
-        name: filename,
-        definition: definition
-      }
     end
     
-    # xcdatamodeldファイルが見つからない場合は追加（新規プロジェクトで必要）
-    if !files.any? { |f| f.end_with?('.xcdatamodeld') }
-      xcdatamodeld_name = "#{app_name}.xcdatamodeld"
-      uuid = generate_uuid
-      
-      definition = "\t\t#{uuid} /* #{xcdatamodeld_name} */ = {"
-      definition += "isa = PBXFileReference; "
-      definition += "lastKnownFileType = wrapper.xcdatamodel; "
-      definition += "path = #{xcdatamodeld_name}; "
-      definition += "sourceTree = \"<group>\"; };"
-      
-      references << {
-        uuid: uuid,
-        name: xcdatamodeld_name,
-        definition: definition
-      }
-    end
-    
-    references
-  end
-  
-  def generate_uuid
-    # Xcodeスタイルの24文字のUUID生成
-    SecureRandom.hex(12).upcase
-  end
-  
-  def fix_group_path(content, group_uuid, group_name)
-    # グループのパスを正しく設定（親グループからの相対パス）
-    content.gsub!(/(#{group_uuid} \/\* #{Regexp.escape(group_name)} \*\/ = \{[^}]*?path = )([^;]+)(;)/m) do
-      prefix = $1
-      suffix = $3
-      # SwiftJsonUIグループは単純なグループ名をパスとして使用
-      if ['View', 'Layouts', 'Styles', 'Bindings', 'Core'].include?(group_name)
-        "#{prefix}#{group_name}#{suffix}"
-      else
-        # その他のグループは元のパスを保持
-        "#{prefix}#{$2}#{suffix}"
-      end
-    end
-    
-    # Core内のUI/Baseグループのパスも修正
-    if group_name == "Core"
-      # Coreグループ内のUI/Baseを探す
-      if content.match(/(#{group_uuid} \/\* Core \*\/ = \{[^}]*?children = \([^)]*\))/m)
-        core_section = $1
-        # UI/Baseグループを探す
-        core_section.scan(/([A-F0-9]{24}) \/\* (UI|Base) \*\//).each do |uuid, name|
-          content.gsub!(/(#{uuid} \/\* #{name} \*\/ = \{[^}]*?path = )([^;]+)(;)/m) do
-            "#{$1}#{name}#{$3}"
+    # Validate with xcodeproj
+    begin
+      project = Xcodeproj::Project.open(@xcodeproj_path)
+      main_group = project.main_group[@app_name]
+      if main_group
+        puts "✅ Main app group found with #{main_group.children.size} children"
+        
+        # Check for SwiftJsonUI directories
+        swiftui_groups = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+        swiftui_groups.each do |group_name|
+          if main_group[group_name]
+            puts "  ✓ #{group_name} group exists"
           end
+        end
+      end
+      true
+    rescue => e
+      puts "⚠️  Could not validate with xcodeproj: #{e.message}"
+      false
+    end
+  end
+
+  private
+
+  def needs_conversion?
+    content = File.read(@pbxproj_path)
+    content.include?('PBXFileSystemSynchronizedRootGroup')
+  end
+
+  def create_backup
+    FileUtils.copy(@pbxproj_path, @backup_path)
+    puts "Backup created: #{@backup_path}"
+  end
+
+  def restore_backup
+    if File.exist?(@backup_path)
+      FileUtils.copy(@backup_path, @pbxproj_path)
+      puts "Restored from backup: #{@backup_path}"
+    end
+  end
+
+  def detect_synchronized_groups
+    content = File.read(@pbxproj_path)
+    sync_groups = []
+    
+    # Find main app synchronized group
+    content.scan(/([A-F0-9]{24}) \/\* #{Regexp.escape(@app_name)} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\}/m) do |match|
+      uuid = match[0]
+      group_info = {
+        uuid: uuid,
+        name: @app_name,
+        type: 'main_app'
+      }
+      
+      # Extract exception files
+      if content.match(/#{uuid}[^}]*?exceptions = \(([^)]*)\)/m)
+        exception_ref = $1.strip
+        # Find the actual exception set
+        if content.match(/#{exception_ref}[^}]*?membershipExceptions = \(([^)]*)\)/m)
+          exceptions = $1.scan(/([^,\s]+)[,\s]*/).flatten.reject(&:empty?)
+          group_info[:exceptions] = exceptions
+        end
+      end
+      
+      sync_groups << group_info
+      puts "Found main app synchronized group: #{uuid}"
+    end
+    
+    sync_groups
+  end
+
+  def convert_synchronized_to_regular_groups(sync_info)
+    content = File.read(@pbxproj_path)
+    
+    sync_info.each do |info|
+      next unless info[:type] == 'main_app'
+      
+      # Remove PBXFileSystemSynchronizedBuildFileExceptionSet section
+      if content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
+        content.gsub!(
+          /\/\* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section \*\/.*?\/\* End PBXFileSystemSynchronizedBuildFileExceptionSet section \*\//m,
+          ''
+        )
+        puts "Removed PBXFileSystemSynchronizedBuildFileExceptionSet section"
+      end
+      
+      # Convert the synchronized group to regular group
+      content.gsub!(/(#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?)isa = PBXFileSystemSynchronized(?:Root)?Group;([^}]*?)\}/m) do
+        prefix = $1
+        suffix = $2
+        
+        # Remove synchronized-specific properties
+        suffix = suffix.gsub(/\s*exceptions = [^;]+;\s*/m, '')
+        suffix = suffix.gsub(/\s*explicitFileTypes = \{[^}]*\};\s*/m, '')
+        suffix = suffix.gsub(/\s*explicitFolders = \([^)]*\);\s*/m, '')
+        
+        # Change to PBXGroup
+        "#{prefix}isa = PBXGroup;#{suffix}}"
+      end
+      
+      # Remove fileSystemSynchronizedGroups references
+      content.gsub!(/fileSystemSynchronizedGroups = \([^)]*#{info[:uuid]}[^)]*\);/m) do |match|
+        # Check if there are other groups in the list
+        other_groups = match.gsub(/#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/,?/, '').strip
+        if other_groups.match(/\((\s*)\)/)
+          # Empty list, remove the entire property
+          ''
+        else
+          # Keep other groups
+          other_groups
+        end
+      end
+      
+      puts "Converted #{info[:name]} from synchronized to regular group"
+    end
+    
+    # Save the converted file
+    File.write(@pbxproj_path, content)
+    puts "Saved initial conversion"
+  end
+
+  def manage_with_xcodeproj(sync_info)
+    # Now use xcodeproj gem to properly manage the project
+    project = Xcodeproj::Project.open(@xcodeproj_path)
+    
+    sync_info.each do |info|
+      next unless info[:type] == 'main_app'
+      
+      # Find the converted group
+      main_group = find_group_by_uuid(project, info[:uuid])
+      next unless main_group
+      
+      puts "Managing files for group: #{info[:name]}"
+      
+      # Clear existing children (they're from synchronized folder)
+      main_group.clear
+      
+      # Get list of files to add
+      files_to_add = collect_files_for_group(info)
+      
+      # Add files to the group
+      add_files_to_group(project, main_group, files_to_add)
+      
+      # Add existing subdirectories as groups
+      add_subdirectories_as_groups(project, main_group)
+      
+      # Handle build phases
+      setup_build_phases(project, main_group)
+    end
+    
+    # Save the project
+    project.save
+    puts "Project saved with xcodeproj gem"
+  end
+
+  def find_group_by_uuid(project, uuid)
+    project.objects.select { |obj| obj.uuid == uuid }.first
+  end
+
+  def collect_files_for_group(info)
+    files = []
+    
+    # Add files from the actual directory
+    if Dir.exist?(@app_dir)
+      Dir.children(@app_dir).each do |item|
+        path = File.join(@app_dir, item)
+        next unless File.file?(path)
+        next if item.start_with?('.')
+        next unless item.match?(/\.(swift|plist|xcassets|storyboard|xcdatamodeld)$/)
+        
+        files << item
+      end
+    end
+    
+    # Add exception files if they don't exist in the directory
+    if info[:exceptions]
+      info[:exceptions].each do |exception_file|
+        files << exception_file unless files.include?(exception_file)
+      end
+    end
+    
+    # Ensure standard files are included
+    standard_files = ['AppDelegate.swift', 'SceneDelegate.swift', 'Info.plist']
+    standard_files.each do |std_file|
+      files << std_file unless files.include?(std_file)
+    end
+    
+    files.uniq
+  end
+
+  def add_files_to_group(project, group, files)
+    files.each do |filename|
+      file_path = File.join(@app_dir, filename)
+      
+      # Check if file reference already exists
+      existing_ref = group.files.find { |f| f.path == filename }
+      next if existing_ref
+      
+      # Add new file reference
+      file_ref = group.new_file(filename)
+      file_ref.source_tree = '<group>'
+      
+      puts "  Added file reference: #{filename}"
+      
+      # Add to appropriate build phase if it's a source file
+      if filename.end_with?('.swift', '.m', '.mm')
+        add_to_sources_build_phase(project, file_ref)
+      elsif filename.end_with?('.xcassets', '.storyboard', '.xib')
+        add_to_resources_build_phase(project, file_ref)
+      end
+    end
+  end
+
+  def add_subdirectories_as_groups(project, parent_group)
+    # SwiftJsonUI directories
+    swiftui_dirs = ['View', 'Layouts', 'Styles', 'Bindings', 'Core']
+    
+    swiftui_dirs.each do |dir_name|
+      dir_path = File.join(@app_dir, dir_name)
+      next unless Dir.exist?(dir_path)
+      
+      # Check if group already exists
+      existing_group = parent_group.children.find { |child| 
+        child.is_a?(Xcodeproj::Project::Object::PBXGroup) && child.path == dir_name 
+      }
+      
+      if existing_group
+        puts "  Group already exists: #{dir_name}"
+      else
+        # Create new group
+        new_group = parent_group.new_group(dir_name, dir_name)
+        puts "  Added group: #{dir_name}"
+        
+        # Recursively add files in the directory
+        add_files_recursively(project, new_group, dir_path)
+      end
+    end
+  end
+
+  def add_files_recursively(project, group, dir_path)
+    Dir.children(dir_path).each do |item|
+      item_path = File.join(dir_path, item)
+      
+      if File.directory?(item_path)
+        # Create subgroup
+        subgroup = group.new_group(item, item)
+        add_files_recursively(project, subgroup, item_path)
+      elsif File.file?(item_path) && !item.start_with?('.')
+        # Add file
+        file_ref = group.new_file(item)
+        file_ref.source_tree = '<group>'
+        
+        # Add to build phases if needed
+        if item.end_with?('.swift')
+          add_to_sources_build_phase(project, file_ref)
         end
       end
     end
   end
-  
-  def add_files_to_build_phases(content, file_references, app_name)
-    # ソースファイルのみをフィルタリング
-    source_files = file_references.select do |ref|
-      ref[:name].end_with?('.swift', '.m', '.mm', '.c', '.cpp')
-    end
+
+  def add_to_sources_build_phase(project, file_ref)
+    app_target = project.targets.find { |t| t.name == @app_name && t.product_type == 'com.apple.product-type.application' }
+    return unless app_target
     
-    return if source_files.empty?
+    sources_phase = app_target.source_build_phase
+    return unless sources_phase
     
-    # メインアプリターゲットを探す
-    target_match = content.match(/([A-F0-9]{24}) \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?isa = PBXNativeTarget[^}]*?productType = "com\.apple\.product-type\.application"[^}]*?\}/m)
-    return unless target_match
+    # Check if already in build phase
+    existing = sources_phase.files.find { |bf| bf.file_ref == file_ref }
+    return if existing
     
-    target_uuid = target_match[1]
+    sources_phase.add_file_reference(file_ref)
+  end
+
+  def add_to_resources_build_phase(project, file_ref)
+    app_target = project.targets.find { |t| t.name == @app_name && t.product_type == 'com.apple.product-type.application' }
+    return unless app_target
     
-    # ターゲットのSources build phaseを探す
-    build_phases_match = content.match(/#{target_uuid} \/\* #{Regexp.escape(app_name)} \*\/ = \{[^}]*?buildPhases = \(\s*(.*?)\s*\);/m)
-    return unless build_phases_match
+    resources_phase = app_target.resources_build_phase
+    return unless resources_phase
     
-    build_phases = build_phases_match[1]
-    sources_phase_match = build_phases.match(/([A-F0-9]{24}) \/\* Sources \*\//)
-    return unless sources_phase_match
+    # Check if already in build phase
+    existing = resources_phase.files.find { |bf| bf.file_ref == file_ref }
+    return if existing
     
-    sources_phase_uuid = sources_phase_match[1]
+    resources_phase.add_file_reference(file_ref)
+  end
+
+  def setup_build_phases(project, main_group)
+    app_target = project.targets.find { |t| t.name == @app_name && t.product_type == 'com.apple.product-type.application' }
+    return unless app_target
     
-    # PBXBuildFileセクションに追加
-    build_file_entries = []
-    build_file_uuids = []
-    
-    source_files.each do |file_ref|
-      build_file_uuid = generate_uuid
-      build_file_uuids << { uuid: build_file_uuid, file_ref: file_ref }
-      build_file_entries << "\t\t#{build_file_uuid} /* #{file_ref[:name]} in Sources */ = {isa = PBXBuildFile; fileRef = #{file_ref[:uuid]} /* #{file_ref[:name]} */; };"
-    end
-    
-    # PBXBuildFileセクションに追加
-    if content.include?("/* Begin PBXBuildFile section */")
-      content.gsub!(/(\/* Begin PBXBuildFile section \*\/\n)/, "\\1#{build_file_entries.join("\n")}\n")
-    else
-      # セクションがない場合は作成
-      content.gsub!(/(objects = \{\n)/, "\\1\n/* Begin PBXBuildFile section */\n#{build_file_entries.join("\n")}\n/* End PBXBuildFile section */\n")
-    end
-    
-    # Sources build phaseのfilesセクションに追加
-    content.gsub!(/(#{sources_phase_uuid} \/\* Sources \*\/ = \{[^}]*?files = \(\s*)(.*?)(\s*\);)/m) do
-      prefix = $1
-      existing_files = $2
-      suffix = $3
-      
-      new_files = build_file_uuids.map { |bf| "\t\t\t\t#{bf[:uuid]} /* #{bf[:file_ref][:name]} in Sources */," }.join("\n")
-      
-      if existing_files.strip.empty?
-        "#{prefix}#{new_files}#{suffix}"
-      else
-        "#{prefix}#{existing_files}\n#{new_files}#{suffix}"
+    # Ensure all Swift files in the group are in Sources build phase
+    main_group.recursive_children.each do |child|
+      if child.is_a?(Xcodeproj::Project::Object::PBXFileReference)
+        if child.path&.end_with?('.swift', '.m', '.mm')
+          add_to_sources_build_phase(project, child)
+        elsif child.path&.end_with?('.xcassets', '.storyboard', '.xib', '.json')
+          add_to_resources_build_phase(project, child)
+        end
       end
     end
     
-    puts "Added #{source_files.size} source files to build phases"
+    puts "Build phases configured"
   end
 end
 
