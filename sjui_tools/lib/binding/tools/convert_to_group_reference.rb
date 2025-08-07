@@ -298,10 +298,13 @@ class XcodeSyncToGroupConverter
       
       puts "Added PBXGroup section"
       
-      # Step 3: Remove synchronized group from the existing section (if not creating new)
-      unless info[:create_new]
-        # Remove the whole synchronized group definition
-        content.gsub!(/\t\t#{info[:uuid]} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\};/m, '')
+      # Step 3: Remove synchronized group from the existing section
+      # Always remove the synchronized group definition, whether creating new or not
+      if content.include?("#{info[:uuid]} /* #{info[:name]} */")
+        # Remove the whole synchronized group definition with proper indentation
+        pattern = /^\t\t#{Regexp.escape(info[:uuid])} \/\* #{Regexp.escape(info[:name])} \*\/ = \{[^}]*?isa = PBXFileSystemSynchronized(?:Root)?Group;[^}]*?\};\n/m
+        content.gsub!(pattern, '')
+        puts "Removed synchronized group definition for #{info[:name]}"
       end
       
       # Step 4: Remove fileSystemSynchronizedGroups references from targets
@@ -310,9 +313,8 @@ class XcodeSyncToGroupConverter
       puts "Converted #{info[:name]} from synchronized to regular group"
     end
     
-    # Save the converted file
-    File.write(@pbxproj_path, content)
-    puts "Saved initial conversion"
+    # Don't save here - let manage_with_xcodeproj save after adding children
+    @content_to_save = content
   end
   
   def create_group_section(info)
@@ -369,6 +371,12 @@ class XcodeSyncToGroupConverter
   def manage_with_xcodeproj(sync_info)
     # Skip xcodeproj gem management - it's not working correctly with Xcode 16 format
     # Instead, add children references directly to the pbxproj file
+    
+    # First save the converted content
+    if @content_to_save
+      File.write(@pbxproj_path, @content_to_save)
+      puts "Saved initial conversion"
+    end
     
     sync_info.each do |info|
       next unless info[:type] == 'main_app'
