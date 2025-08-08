@@ -49,13 +49,18 @@ module SjuiTools
           end
           
           # Check VERSION file (created by installer)
-          base_dir = File.expand_path('../../../..', File.dirname(__FILE__))
+          # __FILE__ is .../sjui_tools/lib/core/setup/library_setup.rb
+          # We need to go up to sjui_tools directory
+          base_dir = File.expand_path('../../../..', __FILE__)  # Goes up to sjui_tools
           version_file = File.join(base_dir, 'VERSION')
           
+          puts "Checking VERSION file at: #{version_file}"
           if File.exist?(version_file)
             version = File.read(version_file).strip
             puts "Using version from VERSION file: #{version}" unless version.empty?
             return version unless version.empty?
+          else
+            puts "VERSION file not found at: #{version_file}"
           end
           
           # Check git branch as fallback
@@ -122,14 +127,13 @@ module SjuiTools
           # Determine packages to add
           packages_to_add = []
           
-          # SwiftJsonUI
-          if !existing_packages.any? { |url| url.include?("SwiftJsonUI") }
-            swiftjsonui_config = get_library_config("SwiftJsonUI", current_version)
-            
-            if swiftjsonui_config
-              package_info = {
-                name: "SwiftJsonUI",
-                url: swiftjsonui_config['git'] || "https://github.com/Tai-Kimura/SwiftJsonUI",
+          # SwiftJsonUI - always check/update even if exists
+          swiftjsonui_config = get_library_config("SwiftJsonUI", current_version)
+          
+          if swiftjsonui_config
+            package_info = {
+              name: "SwiftJsonUI",
+              url: swiftjsonui_config['git'] || "https://github.com/Tai-Kimura/SwiftJsonUI",
                 requirement: {}
               }
               
@@ -155,21 +159,11 @@ module SjuiTools
               elsif swiftjsonui_config['exact']
                 package_info[:requirement][:exact_version] = swiftjsonui_config['exact']
               else
-                # Default to 7.0.0-alpha branch
-                package_info[:requirement][:branch] = "7.0.0-alpha"
+                # Default to 7.0.0-beta branch
+                package_info[:requirement][:branch] = "7.0.0-beta"
               end
               
               packages_to_add << package_info
-            else
-              # Fallback if no config found
-              # Use branch 7.0.0-alpha for now as fallback
-              packages_to_add << {
-                name: "SwiftJsonUI",
-                url: "https://github.com/Tai-Kimura/SwiftJsonUI",
-                requirement: { branch: "7.0.0-alpha" }
-              }
-            end
-          end
           
           # SimpleApiNetwork (only if use_network is true)
           use_network = Core::ConfigManager.get_use_network
@@ -198,7 +192,36 @@ module SjuiTools
           ensure_workspace_structure
           
           packages.each do |package_info|
-            puts "Adding package: #{package_info[:name]}"
+            # Check if package already exists and update it
+            existing_package = @project.root_object.package_references.find { |p| 
+              p.repository_url&.include?(package_info[:name])
+            }
+            
+            if existing_package
+              puts "Updating existing package: #{package_info[:name]}"
+              # Update the requirement
+              requirement = package_info[:requirement]
+              if requirement[:branch]
+                existing_package.requirement = {
+                  'branch' => requirement[:branch],
+                  'kind' => 'branch'
+                }
+                puts "  Updated to branch: #{requirement[:branch]}"
+              elsif requirement[:exact_version]
+                existing_package.requirement = {
+                  'kind' => 'exactVersion',
+                  'version' => requirement[:exact_version]
+                }
+              elsif requirement[:from_version]
+                existing_package.requirement = {
+                  'kind' => 'upToNextMajorVersion',
+                  'minimumVersion' => requirement[:from_version]
+                }
+              end
+              next  # Skip to next package
+            end
+            
+            puts "Adding new package: #{package_info[:name]}"
             
             # Create package reference
             package_ref = @project.new(Xcodeproj::Project::Object::XCRemoteSwiftPackageReference)
