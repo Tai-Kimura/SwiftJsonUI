@@ -97,62 +97,11 @@ module SjuiTools
         end
 
         def setup_swiftui_project
-          puts "=== Starting SwiftUI Project Setup ==="
+          require_relative '../../swiftui/setup/swiftui_setup'
           
-          # Use CommonSetup for shared functionality
-          require_relative '../../core/setup/common_setup'
-          common_setup = ::SjuiTools::Core::Setup::CommonSetup.new(Core::ProjectFinder.project_file_path)
-          
-          # 1. Ensure workspace exists (for SPM)
-          common_setup.ensure_workspace_exists
-          
-          # 2. Create directories for SwiftUI mode
-          create_swiftui_directories
-          
-          # 3. Setup libraries (same as binding mode)
-          common_setup.setup_libraries
-          
-          # 4. Setup membership exceptions
-          common_setup.setup_membership_exceptions
-          
-          # 5. Cleanup project references
-          common_setup.cleanup_project_references
-          
-          puts "=== SwiftUI Project Setup Completed Successfully! ==="
-        end
-
-        def create_swiftui_directories
-          puts "Creating SwiftUI project directories..."
-          
-          # Load config to get directory names
-          config = Core::ConfigManager.load_config
-          source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
-          
-          # Create Layouts directory
-          layouts_dir = config['layouts_directory'] || 'Layouts'
-          layouts_path = File.join(source_path, layouts_dir)
-          unless Dir.exist?(layouts_path)
-            FileUtils.mkdir_p(layouts_path)
-            puts "Created directory: #{layouts_dir}"
-          end
-          
-          # Create Styles directory
-          styles_dir = config['styles_directory'] || 'Styles'
-          styles_path = File.join(source_path, styles_dir)
-          unless Dir.exist?(styles_path)
-            FileUtils.mkdir_p(styles_path)
-            puts "Created directory: #{styles_dir}"
-          end
-          
-          # Create Generated directory for SwiftUI output
-          if config['swiftui'] && config['swiftui']['output_directory']
-            output_dir = config['swiftui']['output_directory']
-            output_path = File.join(source_path, output_dir)
-            unless Dir.exist?(output_path)
-              FileUtils.mkdir_p(output_path)
-              puts "Created directory: #{output_dir}"
-            end
-          end
+          # Use the SwiftUI-specific setup
+          setup = ::SjuiTools::SwiftUI::Setup::SwiftUISetup.new(Core::ProjectFinder.project_file_path)
+          setup.run_full_setup
         end
       end
     end
