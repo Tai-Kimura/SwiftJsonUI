@@ -192,25 +192,10 @@ else
     exit 1
 fi
 
-# Install SwiftUI-specific components if in SwiftUI mode
+# SwiftUI mode uses the same sjui_tools - no additional components needed
 if [ "$MODE" = "swiftui" ]; then
     print_info "SwiftUI mode selected"
     print_info "SwiftUI support is integrated into sjui_tools"
-    
-    # Check if swiftui_builder exists in the downloaded archive (for future use)
-    if [ -d "$EXTRACT_DIR/swiftui_builder" ]; then
-        print_info "Installing swiftui_builder..."
-        cp -r "$EXTRACT_DIR/swiftui_builder" .
-        
-        # Make swiftui_builder executables
-        if [ -f "swiftui_builder/bin/sjui-swiftui" ]; then
-            chmod +x swiftui_builder/bin/sjui-swiftui
-            print_info "Made swiftui_builder/bin/sjui-swiftui executable"
-        fi
-        
-        print_info "✅ swiftui_builder installed successfully"
-    fi
-    # Don't create placeholder swiftui_builder anymore - SwiftUI support is in sjui_tools
 fi
 
 # Install Node.js dependencies for hot_loader
