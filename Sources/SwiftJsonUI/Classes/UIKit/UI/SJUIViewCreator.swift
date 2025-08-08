@@ -761,3 +761,10 @@ public protocol ViewHolder: AnyObject {
     }
 }
 
+// Extension to provide default implementation for getView
+public extension ViewHolder {
+    func getView<T>(_ id: String) -> T? {
+        return _views[id] as? T
+    }
+}
+

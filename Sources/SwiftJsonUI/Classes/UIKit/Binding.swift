@@ -19,7 +19,7 @@ open class Binding: NSObject {
     // Helper method to get view with optional binding_id prefix
     public func getView<T>(_ id: String, bindingId: String? = nil) -> T? {
         let actualId = bindingId != nil ? "\(bindingId!)_\(id)" : id
-        return _viewHolder?.getView(actualId) as? T
+        return _viewHolder?.getView(actualId)
     }
     
     required public init(viewHolder: ViewHolder) {
