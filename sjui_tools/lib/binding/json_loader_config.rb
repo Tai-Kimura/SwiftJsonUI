@@ -38,6 +38,8 @@ module SjuiTools
 
       IGNORE_DATA_SET = {}
       
+      IGNORE_BINDING_SET = {}
+      
       # Load ignore sets from config if available
       def self.load_ignore_sets_from_config
         config = Core::ConfigManager.load_config
@@ -53,6 +55,13 @@ module SjuiTools
         if config['ignore_data_set'].is_a?(Array)
           config['ignore_data_set'].each do |data|
             IGNORE_DATA_SET[data] = true
+          end
+        end
+        
+        # Load ignore_binding_set from config
+        if config['ignore_binding_set'].is_a?(Array)
+          config['ignore_binding_set'].each do |binding|
+            IGNORE_BINDING_SET[binding] = true
           end
         end
       end

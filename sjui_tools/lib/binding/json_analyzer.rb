@@ -197,6 +197,9 @@ module SjuiTools
       private
 
       def track_partial_binding(partial_name, parent_data_bindings = {}, binding_id = nil)
+        # Check if this partial binding should be ignored
+        return if JsonLoaderConfig::IGNORE_BINDING_SET[partial_name]
+        
         # Convert partial name to binding class name
         # e.g., "common/navigation_bar" -> "NavigationBarBinding"
         # e.g., "header_section" -> "HeaderSectionBinding"
