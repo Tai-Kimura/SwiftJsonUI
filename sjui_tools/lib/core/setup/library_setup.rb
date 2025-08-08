@@ -134,11 +134,11 @@ module SjuiTools
             package_info = {
               name: "SwiftJsonUI",
               url: swiftjsonui_config['git'] || "https://github.com/Tai-Kimura/SwiftJsonUI",
-                requirement: {}
-              }
-              
-              # Version requirement based on configuration
-              if swiftjsonui_config['branch']
+              requirement: {}
+            }
+            
+            # Version requirement based on configuration
+            if swiftjsonui_config['branch']
                 package_info[:requirement][:branch] = swiftjsonui_config['branch']
                 # For alpha versions, also get the latest commit
                 if current_version.include?('alpha')
@@ -164,7 +164,6 @@ module SjuiTools
               end
               
               packages_to_add << package_info
-            end
           end
           
           # SimpleApiNetwork (only if use_network is true)
