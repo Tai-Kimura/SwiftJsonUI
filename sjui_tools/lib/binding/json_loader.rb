@@ -58,6 +58,9 @@ module SjuiTools
         last_including_files = @cache_manager.load_last_including_files
         json_updated_flag = false
         
+        # 全ファイルのincluding_filesを集約するためのハッシュ
+        all_including_files = {}
+        
         puts @layout_path
         
         # ディレクトリが存在しない場合は警告を表示して終了
@@ -110,6 +113,9 @@ module SjuiTools
             generate_binding_file(binding_info)
             # Success - cleanup backup
             @binding_file_manager.cleanup_backup(binding_info[:backup_file_path])
+            
+            # このファイルのincluding_filesを全体のハッシュにマージ
+            all_including_files.merge!(@json_analyzer.including_files)
           rescue => e
             puts "Error generating binding file for #{file_name}: #{e.message}"
             puts e.backtrace.first(5).join("\n")
@@ -125,8 +131,8 @@ module SjuiTools
           @xcode_project_manager.add_binding_files(@new_binding_files, @project_dir)
         end
         
-        # キャッシュの保存
-        @cache_manager.save_cache(@json_analyzer.including_files) if json_updated_flag
+        # キャッシュの保存（集約された全ファイルのincluding_filesを保存）
+        @cache_manager.save_cache(all_including_files) if json_updated_flag
         
         puts "Build completed successfully!"
       end
