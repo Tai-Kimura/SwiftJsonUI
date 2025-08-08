@@ -122,6 +122,11 @@ module SjuiTools
       def generate_invalidate_methods
         @invalidate_methods_content = String.new
         
+        # If any partial binding has bindings (grandchildren), ensure invalidateAll exists
+        if @partial_bindings.any? { |p| p[:has_bindings] } && !@binding_processes_group.has_key?("all")
+          @binding_processes_group["all"] = []
+        end
+        
         @binding_processes_group.each do |group, value|
           method_content = String.new
           @reset_constraint_views = {}
