@@ -11,6 +11,11 @@ import UIKit
 open class Binding: NSObject {
     private weak var _viewHolder: ViewHolder?
     
+    // Provide public getter for subclasses
+    public var viewHolder: ViewHolder? {
+        return _viewHolder
+    }
+    
     required public init(viewHolder: ViewHolder) {
         super.init()
         self._viewHolder = viewHolder

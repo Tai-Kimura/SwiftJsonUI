@@ -293,14 +293,9 @@ module SjuiTools
             var isInitialized = false
             private let bindingId: String?
             
-            // Provide getter for _viewHolder from parent class
-            var viewHolder: ViewHolder {
-                return _viewHolder
-            }
-            
             private func getView<T>(_ id: String) -> T? {
                 let actualId = bindingId != nil ? "\\(bindingId!)_\\(id)" : id
-                return viewHolder.getView(actualId) as? T
+                return viewHolder?.getView(actualId) as? T
             }
             
         SWIFT
