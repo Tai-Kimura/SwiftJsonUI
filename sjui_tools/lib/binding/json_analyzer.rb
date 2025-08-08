@@ -80,13 +80,14 @@ module SjuiTools
             # Track this as a partial binding only if we're at the top level
             track_partial_binding(value, nil, binding_id) if @current_partial_depth == 0
           when "onClick"
-            @ui_control_event_manager.add_click_event(current_view["name"], value)
+            # Skip event handlers if we're inside a partial include
+            @ui_control_event_manager.add_click_event(current_view["name"], value) if @current_partial_depth == 0
           when "onLongPress"
-            @ui_control_event_manager.add_long_press_event(current_view["name"], value)
+            @ui_control_event_manager.add_long_press_event(current_view["name"], value) if @current_partial_depth == 0
           when "onPan"
-            @ui_control_event_manager.add_pan_event(current_view["name"], value)
+            @ui_control_event_manager.add_pan_event(current_view["name"], value) if @current_partial_depth == 0
           when "onPinch"
-            @ui_control_event_manager.add_pinch_event(current_view["name"], value)
+            @ui_control_event_manager.add_pinch_event(current_view["name"], value) if @current_partial_depth == 0
           else
             process_binding_element(json, key, value, current_view)
           end
