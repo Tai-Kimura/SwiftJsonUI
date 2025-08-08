@@ -202,7 +202,25 @@ module SjuiTools
         # Add to partial_bindings list if not already present
         unless @partial_bindings.any? { |p| p[:name] == partial_name }
           # Analyze partial JSON to determine which binding groups it has
+          # Try both with and without underscore prefix
           partial_file_path = File.join(@layout_path, "#{partial_name}.json")
+          
+          # If file doesn't exist, try with underscore prefix on the filename part only
+          unless File.exist?(partial_file_path)
+            # Handle subdirectories properly (e.g., "common/navigation_bar" -> "common/_navigation_bar")
+            if partial_name.include?('/')
+              dir_parts = partial_name.split('/')
+              dir_parts[-1] = "_#{dir_parts[-1]}"
+              partial_file_path_with_underscore = File.join(@layout_path, "#{dir_parts.join('/')}.json")
+            else
+              partial_file_path_with_underscore = File.join(@layout_path, "_#{partial_name}.json")
+            end
+            
+            if File.exist?(partial_file_path_with_underscore)
+              partial_file_path = partial_file_path_with_underscore
+            end
+          end
+          
           binding_groups = []
           has_bindings = false
           
