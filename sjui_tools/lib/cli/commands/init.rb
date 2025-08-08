@@ -127,6 +127,7 @@ module SjuiTools
             'project_file_name' => project_name,
             'source_directory' => Core::ProjectFinder.find_source_directory || '',
             'layouts_directory' => 'Layouts',
+            'styles_directory' => 'Styles',  # Styles directory is used in both modes
             'hot_loader_directory' => project_name,
             'use_network' => true
           }
@@ -135,8 +136,7 @@ module SjuiTools
           if mode != 'swiftui'
             config.merge!({
               'bindings_directory' => 'Bindings',
-              'view_directory' => 'View',
-              'styles_directory' => 'Styles'
+              'view_directory' => 'View'
             })
           end
           
