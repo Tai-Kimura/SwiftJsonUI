@@ -145,7 +145,7 @@ module SjuiTools
         content = String.new("\n")
         
         # Add convenience init without bindingId
-        content << "    convenience init(viewHolder: ViewHolder) {\n"
+        content << "    required convenience init(viewHolder: ViewHolder) {\n"
         content << "        self.init(viewHolder: viewHolder, bindingId: nil)\n"
         content << "    }\n"
         content << "\n"
@@ -292,6 +292,11 @@ module SjuiTools
         class #{binding_info[:binding_class_name]}: #{binding_info[:super_binding]} {
             var isInitialized = false
             private let bindingId: String?
+            
+            // Provide getter for _viewHolder from parent class
+            var viewHolder: ViewHolder {
+                return _viewHolder
+            }
             
             private func getView<T>(_ id: String) -> T? {
                 let actualId = bindingId != nil ? "\\(bindingId!)_\\(id)" : id
