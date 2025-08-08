@@ -145,7 +145,8 @@ setup_ruby_environment
 print_info "Downloading installer from branch/tag: $VERSION"
 
 # Download the installer script
-INSTALLER_URL="https://raw.githubusercontent.com/$GITHUB_REPO/$VERSION/$INSTALLER_PATH"
+# Add cache busting parameter to avoid GitHub's CDN cache
+INSTALLER_URL="https://raw.githubusercontent.com/$GITHUB_REPO/$VERSION/$INSTALLER_PATH?$(date +%s)"
 TEMP_INSTALLER=$(mktemp)
 
 if ! curl -L -f -o "$TEMP_INSTALLER" "$INSTALLER_URL"; then
