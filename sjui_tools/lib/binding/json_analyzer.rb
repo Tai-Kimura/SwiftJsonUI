@@ -263,9 +263,6 @@ module SjuiTools
             parent_data_bindings: parent_data_bindings,
             binding_id: binding_id
           }
-          puts "Added partial binding: key=#{partial_key}, property_name=#{property_name}, binding_id=#{binding_id}"
-        else
-          puts "Skipping duplicate partial: key=#{partial_key}"
         end
       end
       
@@ -322,9 +319,11 @@ module SjuiTools
         variable_name = value.camelize
         if @current_binding_id && @current_partial_depth > 0
           prefix = @current_binding_id.camelize
+          prefix = String.new(prefix)
           prefix[0] = prefix[0].chr.downcase
           variable_name = "#{prefix}#{variable_name}"
         end
+        variable_name = String.new(variable_name)
         variable_name[0] = variable_name[0].chr.downcase
         
         current_view["name"] = variable_name
@@ -333,7 +332,7 @@ module SjuiTools
         # Skip weak var generation if we're inside a partial binding
         return if @current_partial_depth > 0
         
-        weak_var_line = "    weak var #{variable_name}: #{view_type}!\n"
+        weak_var_line = String.new("    weak var #{variable_name}: #{view_type}!\n")
         @binding_content << weak_var_line
         @weak_vars_content << weak_var_line
       end
