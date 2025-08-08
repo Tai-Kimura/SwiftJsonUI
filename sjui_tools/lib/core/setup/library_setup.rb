@@ -164,6 +164,8 @@ module SjuiTools
               end
               
               packages_to_add << package_info
+            end
+          end
           
           # SimpleApiNetwork (only if use_network is true)
           use_network = Core::ConfigManager.get_use_network
