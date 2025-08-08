@@ -112,14 +112,19 @@ ARGS="$@"
 
 # Default to master branch if no version specified
 VERSION="master"
+MODE=""
 
-# Parse arguments to extract version
+# Parse arguments to extract version and mode
 # Use a separate array to avoid modifying the original arguments
 set -- "$@"
 while [[ $# -gt 0 ]]; do
     case $1 in
         -v|--version)
             VERSION="$2"
+            shift 2
+            ;;
+        -m|--mode)
+            MODE="$2"
             shift 2
             ;;
         *)
@@ -130,6 +135,9 @@ done
 
 print_info "SwiftJsonUI Bootstrap"
 print_info "Version: $VERSION"
+if [ -n "$MODE" ]; then
+    print_info "Mode: $MODE"
+fi
 
 # Setup Ruby environment first
 setup_ruby_environment

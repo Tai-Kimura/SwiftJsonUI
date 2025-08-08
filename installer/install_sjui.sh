@@ -36,6 +36,7 @@ usage() {
     echo "Options:"
     echo "  -v, --version <version>    Specify version/branch/tag to download (default: master)"
     echo "  -d, --directory <dir>      Installation directory (default: parent directory)"
+    echo "  -m, --mode <mode>          Installation mode: uikit or swiftui (default: uikit)"
     echo "  -s, --skip-bundle          Skip bundle install for Ruby dependencies"
     echo "  -h, --help                 Show this help message"
     echo ""
@@ -44,6 +45,7 @@ usage() {
     echo "  $0 -v v7.0.0               # Install specific version"
     echo "  $0 -v feature-branch       # Install from specific branch"
     echo "  $0 -d ./my-project         # Install in specific directory"
+    echo "  $0 -m swiftui              # Install for SwiftUI mode"
     echo "  $0 -s                      # Skip bundle install"
     exit 0
 }
@@ -51,6 +53,7 @@ usage() {
 # Parse command line arguments
 VERSION=""
 SKIP_BUNDLE=false
+MODE="uikit"
 
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -60,6 +63,14 @@ while [[ $# -gt 0 ]]; do
             ;;
         -d|--directory)
             INSTALL_DIR="$2"
+            shift 2
+            ;;
+        -m|--mode)
+            MODE="$2"
+            if [[ "$MODE" != "uikit" && "$MODE" != "swiftui" ]]; then
+                print_error "Invalid mode: $MODE. Must be 'uikit' or 'swiftui'"
+                usage
+            fi
             shift 2
             ;;
         -s|--skip-bundle)
@@ -92,6 +103,7 @@ cd "$INSTALL_DIR"
 
 print_info "Installing SwiftJsonUI tools..."
 print_info "Version: $VERSION"
+print_info "Mode: $MODE"
 print_info "Directory: $(pwd)"
 
 # Check if sjui_tools already exists
@@ -160,6 +172,10 @@ if [ -d "$EXTRACT_DIR/sjui_tools" ]; then
     echo "$VERSION" > sjui_tools/VERSION
     print_info "Set sjui_tools version to: $VERSION"
     
+    # Create MODE file to track installation mode
+    echo "$MODE" > sjui_tools/MODE
+    print_info "Set installation mode to: $MODE"
+    
     # Make sjui executable
     if [ -f "sjui_tools/bin/sjui" ]; then
         chmod +x sjui_tools/bin/sjui
@@ -174,6 +190,45 @@ else
     print_error "sjui_tools not found in the downloaded version"
     print_error "Please use version 7.0.0 or later"
     exit 1
+fi
+
+# Install SwiftUI-specific components if in SwiftUI mode
+if [ "$MODE" = "swiftui" ]; then
+    print_info "Installing SwiftUI-specific components..."
+    
+    # Check if swiftui_builder exists in the downloaded archive
+    if [ -d "$EXTRACT_DIR/swiftui_builder" ]; then
+        print_info "Installing swiftui_builder..."
+        cp -r "$EXTRACT_DIR/swiftui_builder" .
+        
+        # Make swiftui_builder executables
+        if [ -f "swiftui_builder/bin/sjui-swiftui" ]; then
+            chmod +x swiftui_builder/bin/sjui-swiftui
+            print_info "Made swiftui_builder/bin/sjui-swiftui executable"
+        fi
+        
+        print_info "✅ swiftui_builder installed successfully"
+    else
+        print_warning "swiftui_builder not found in the downloaded version"
+        print_warning "SwiftUI mode requires additional components that will be set up later"
+        
+        # Create a stub swiftui_builder directory
+        mkdir -p swiftui_builder/bin
+        mkdir -p swiftui_builder/lib
+        
+        # Create a stub executable that explains SwiftUI mode is in development
+        cat > swiftui_builder/bin/sjui-swiftui << 'EOF'
+#!/usr/bin/env ruby
+puts "SwiftUI mode is currently under development."
+puts "The SwiftUI builder will be available in a future release."
+puts ""
+puts "For now, you can use the standard sjui_tools with SwiftUI projects."
+puts "Run: sjui_tools/bin/sjui help"
+EOF
+        chmod +x swiftui_builder/bin/sjui-swiftui
+        
+        print_info "Created placeholder swiftui_builder directory"
+    fi
 fi
 
 # Install Node.js dependencies for hot_loader
@@ -383,13 +438,28 @@ fi
 print_info ""
 print_info "🎉 Installation completed successfully!"
 print_info ""
+print_info "Installation mode: $MODE"
+print_info ""
 print_info "Next steps:"
 
-if [ -d "sjui_tools" ]; then
-    print_info "1. Add sjui_tools/bin to your PATH or use the full path"
-    print_info "2. Run 'sjui init' to create configuration (if not done)"
-    print_info "3. Run 'sjui setup' to set up your project"
-    print_info "4. Run 'sjui help' to see available commands"
+if [ "$MODE" = "swiftui" ]; then
+    if [ -d "swiftui_builder" ]; then
+        print_info "1. Add swiftui_builder/bin to your PATH or use the full path"
+        print_info "2. Run 'sjui-swiftui init' to create SwiftUI configuration"
+        print_info "3. Run 'sjui-swiftui help' to see available SwiftUI commands"
+    fi
+    if [ -d "sjui_tools" ]; then
+        print_info ""
+        print_info "Standard tools are also available:"
+        print_info "  - sjui_tools/bin/sjui for general commands"
+    fi
+else
+    if [ -d "sjui_tools" ]; then
+        print_info "1. Add sjui_tools/bin to your PATH or use the full path"
+        print_info "2. Run 'sjui init' to create configuration (if not done)"
+        print_info "3. Run 'sjui setup' to set up your project"
+        print_info "4. Run 'sjui help' to see available commands"
+    fi
 fi
 
 print_info ""
