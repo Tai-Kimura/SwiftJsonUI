@@ -260,7 +260,8 @@ module SjuiTools
             prefix = binding_id.split(/[_-]/).map.with_index { |word, i|
               i == 0 ? word : word.capitalize
             }.join
-            property_name = "#{prefix}#{property_name.capitalize}"
+            # Capitalize only the first character, preserve the rest
+            property_name = "#{prefix}#{property_name[0].upcase}#{property_name[1..-1]}"
           end
           
           @partial_bindings << {
