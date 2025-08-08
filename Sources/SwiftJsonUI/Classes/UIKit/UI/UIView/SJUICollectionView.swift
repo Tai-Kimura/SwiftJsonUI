@@ -105,6 +105,15 @@ open class SJUICollectionView: UICollectionView {
         if attr["setTargetAsDataSource"].boolValue {
             c.dataSource = target as? UICollectionViewDataSource
         }
+        
+        // Enable keyboard avoidance if specified in JSON
+        if let keyboardAvoidance = attr["keyboardAvoidance"].bool {
+            c.isKeyboardAvoidanceEnabled = keyboardAvoidance
+        } else {
+            // Use global configuration default
+            c.isKeyboardAvoidanceEnabled = KeyboardAvoidanceConfig.shared.isEnabledByDefault
+        }
+        
         return c
     }
     

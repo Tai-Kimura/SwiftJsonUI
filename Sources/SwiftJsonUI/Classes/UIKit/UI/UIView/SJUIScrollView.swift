@@ -59,6 +59,15 @@ open class SJUIScrollView: UIScrollView {
         if let scroll = attr["scrollEnabled"].bool {
             s.isScrollEnabled = scroll
         }
+        
+        // Enable keyboard avoidance if specified in JSON
+        if let keyboardAvoidance = attr["keyboardAvoidance"].bool {
+            s.isKeyboardAvoidanceEnabled = keyboardAvoidance
+        } else {
+            // Use global configuration default
+            s.isKeyboardAvoidanceEnabled = KeyboardAvoidanceConfig.shared.isEnabledByDefault
+        }
+        
         return s
     }
 
