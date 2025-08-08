@@ -122,7 +122,10 @@ module SjuiTools
           puts "Using sjui_tools version: #{current_version}"
           
           # Check existing packages
-          existing_packages = @project.root_object.package_references.map(&:repository_url)
+          existing_packages = @project.root_object.package_references || []
+          existing_urls = existing_packages.map(&:repository_url)
+          
+          puts "Existing packages: #{existing_urls.inspect}"
           
           # Determine packages to add
           packages_to_add = []
@@ -177,7 +180,7 @@ module SjuiTools
           # SimpleApiNetwork (only if use_network is true)
           use_network = Core::ConfigManager.get_use_network
           
-          if use_network && !existing_packages.any? { |url| url.include?("SimpleApiNetwork") }
+          if use_network && !existing_urls.any? { |url| url && url.include?("SimpleApiNetwork") }
             packages_to_add << {
               name: "SimpleApiNetwork",
               url: "https://github.com/Tai-Kimura/SimpleApiNetwork",
