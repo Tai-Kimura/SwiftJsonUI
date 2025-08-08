@@ -162,7 +162,7 @@ module SjuiTools
         @json_analyzer.partial_bindings.each do |partial|
           content << "    private(set) var #{partial[:property_name]}Binding: #{partial[:binding_class]}!\n"
         end
-        content << "\n" unless content.empty?
+        content << String.new("\n") unless content.empty?
         content
       end
 
@@ -331,7 +331,7 @@ module SjuiTools
             end
           end
         end
-        content << "\n" unless content.empty?
+        content << String.new("\n") unless content.empty?
         content
       end
       

@@ -33,7 +33,7 @@ module SjuiTools
       end
 
       def generate_import_statements
-        import_content = "import UIKit\nimport SwiftJsonUI\n"
+        import_content = String.new("import UIKit\nimport SwiftJsonUI\n")
         @import_modules.each do |import_module, v|
           import_content << "import #{import_module}\n"
         end

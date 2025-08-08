@@ -132,7 +132,7 @@ module SjuiTools
                          group.capitalize.camelize
                        end
           
-          method_content << "\n"
+          method_content << String.new("\n")
           method_content << "    func invalidate#{method_name}(resetForm: Bool = false, formInitialized: Bool = false) {\n"
           method_content << "        if resetForm {\n"
           method_content << "            isInitialized = false\n"

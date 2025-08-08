@@ -51,7 +51,7 @@ module SjuiTools
       def generate_bind_view_method
         return "" if @ui_control_events.size == 0
 
-        content = "\n"
+        content = String.new("\n")
         content << "    override func bindView() {\n"
         content << "        super.bindView()\n"
         
