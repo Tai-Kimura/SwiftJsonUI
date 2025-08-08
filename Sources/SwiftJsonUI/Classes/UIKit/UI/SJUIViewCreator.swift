@@ -21,8 +21,47 @@ open class SJUIViewCreator:NSObject {
     nonisolated(unsafe) public static var stylesDirectoryName = "Styles"
     nonisolated(unsafe) public static var scriptsDirectoryName = "Scripts"
     
+    // Configuration loading
+    nonisolated(unsafe) private static var isConfigLoaded = false
+    
+    private static func loadConfigurationIfNeeded() {
+        guard !isConfigLoaded else { return }
+        isConfigLoaded = true
+        
+        // Try to load sjui.config.json from bundle
+        if let configPath = Bundle.main.path(forResource: "sjui.config", ofType: "json") {
+            do {
+                let jsonString = try String(contentsOfFile: configPath, encoding: .utf8)
+                let configJson = try JSON(data: jsonString.data(using: .utf8)!)
+                
+                // Load directory names from config
+                if let layoutsDir = configJson["layouts_directory"].string {
+                    layoutsDirectoryName = layoutsDir
+                    Logger.debug("[SwiftJsonUI] Loaded layouts_directory from config: \(layoutsDir)")
+                }
+                
+                if let stylesDir = configJson["styles_directory"].string {
+                    stylesDirectoryName = stylesDir
+                    Logger.debug("[SwiftJsonUI] Loaded styles_directory from config: \(stylesDir)")
+                }
+                
+                if let scriptsDir = configJson["scripts_directory"].string {
+                    scriptsDirectoryName = scriptsDir
+                    Logger.debug("[SwiftJsonUI] Loaded scripts_directory from config: \(scriptsDir)")
+                }
+                
+                Logger.debug("[SwiftJsonUI] Configuration loaded from sjui.config.json")
+            } catch {
+                Logger.debug("[SwiftJsonUI] Failed to load sjui.config.json: \(error)")
+            }
+        } else {
+            Logger.debug("[SwiftJsonUI] sjui.config.json not found in bundle, using default directories")
+        }
+    }
+    
     @MainActor
     @discardableResult open class func createView(_ path: String, target: ViewHolder, onView view: UIView? = nil) -> UIView? {
+        loadConfigurationIfNeeded()
         let url = getURL(path: path)
         
         do {
@@ -71,6 +110,7 @@ open class SJUIViewCreator:NSObject {
     }
     
     open class func getURL(path: String) -> String {
+        loadConfigurationIfNeeded()
         #if DEBUG
         return getLayoutFileDirPath() + "/\(path).json"
         #else
@@ -79,6 +119,7 @@ open class SJUIViewCreator:NSObject {
     }
     
     open class func getStyleURL(path: String) -> String {
+        loadConfigurationIfNeeded()
         #if DEBUG
         return getStyleFileDirPath() + "/\(path).json"
         #else
@@ -586,6 +627,7 @@ open class SJUIViewCreator:NSObject {
     }
     
     open class func copyResourcesToDocuments() {
+        loadConfigurationIfNeeded()
         #if DEBUG
         let fm = FileManager.default
         let bundlePath = Bundle.main.bundlePath
@@ -626,6 +668,8 @@ open class SJUIViewCreator:NSObject {
             }
             
             let contents = Bundle.main.paths(forResourcesOfType: "json", inDirectory: stylesDirectoryName)
+            Logger.debug("[SwiftJsonUI] Found \(contents.count) style files in bundle directory '\(stylesDirectoryName)'")
+            
             for content in contents {
                 if (content.hasSuffix("json")) {
                     let toPath = "\(styleFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
@@ -633,6 +677,7 @@ open class SJUIViewCreator:NSObject {
                         try fm.removeItem(atPath: toPath)
                     }
                     try fm.copyItem(atPath: "\(content)", toPath:toPath)
+                    Logger.debug("[SwiftJsonUI] Copied style: \(content.components(separatedBy: "/").last ?? "") to cache")
                 }
             }
         } catch let error {
@@ -750,6 +795,7 @@ open class SJUIViewCreator:NSObject {
     }
     
     open class func getLayoutFileDirPath() -> String {
+        loadConfigurationIfNeeded()
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         let layoutPath = "\(cachesDirPath)/\(layoutsDirectoryName)"
@@ -761,12 +807,14 @@ open class SJUIViewCreator:NSObject {
     }
     
     open class func getStyleFileDirPath() -> String {
+        loadConfigurationIfNeeded()
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         return "\(cachesDirPath)/\(stylesDirectoryName)"
     }
     
     open class func getScriptFileDirPath() -> String {
+        loadConfigurationIfNeeded()
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         return "\(cachesDirPath)/\(scriptsDirectoryName)"
