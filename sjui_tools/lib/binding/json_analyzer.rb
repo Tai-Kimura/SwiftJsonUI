@@ -27,6 +27,7 @@ module SjuiTools
         @reset_text_views = {}
         @partial_bindings = []
         @current_partial_depth = 0
+        @current_binding_id = nil
       end
 
       def analyze_json(file_name, loaded_json)
@@ -37,9 +38,10 @@ module SjuiTools
         if json["include"] && !json["type"]
           include_name = json["include"]
           data_bindings = json["data"]
-          process_include_element(file_name, include_name, json, data_bindings)
+          binding_id = json["binding_id"]
+          process_include_element(file_name, include_name, json, data_bindings, binding_id)
           # Track this as a partial binding only if we're at the top level
-          track_partial_binding(include_name, data_bindings) if @current_partial_depth == 0
+          track_partial_binding(include_name, data_bindings, binding_id) if @current_partial_depth == 0
           return
         end
         
@@ -72,9 +74,10 @@ module SjuiTools
               analyze_json(file_name, child_json)
             end
           when "include"
-            process_include_element(file_name, value, json, nil)
+            binding_id = json["binding_id"]
+            process_include_element(file_name, value, json, nil, binding_id)
             # Track this as a partial binding only if we're at the top level
-            track_partial_binding(value) if @current_partial_depth == 0
+            track_partial_binding(value, nil, binding_id) if @current_partial_depth == 0
           when "onClick"
             @ui_control_event_manager.add_click_event(current_view["name"], value)
           when "onLongPress"
@@ -192,15 +195,18 @@ module SjuiTools
 
       private
 
-      def track_partial_binding(partial_name, parent_data_bindings = {})
+      def track_partial_binding(partial_name, parent_data_bindings = {}, binding_id = nil)
         # Convert partial name to binding class name
         # e.g., "common/navigation_bar" -> "NavigationBarBinding"
         # e.g., "header_section" -> "HeaderSectionBinding"
         base_name = File.basename(partial_name)
         binding_name = base_name.split('_').map(&:capitalize).join + "Binding"
         
+        # Create unique key for this partial binding instance
+        partial_key = binding_id ? "#{partial_name}_#{binding_id}" : partial_name
+        
         # Add to partial_bindings list if not already present
-        unless @partial_bindings.any? { |p| p[:name] == partial_name }
+        unless @partial_bindings.any? { |p| p[:key] == partial_key }
           # Analyze partial JSON to determine which binding groups it has
           # Try both with and without underscore prefix
           partial_file_path = File.join(@layout_path, "#{partial_name}.json")
@@ -239,14 +245,27 @@ module SjuiTools
             i == 0 ? word : word.capitalize 
           }.join
           
+          # Apply binding_id prefix to property name if present
+          if binding_id
+            prefix = binding_id.split(/[_-]/).map.with_index { |word, i|
+              i == 0 ? word : word.capitalize
+            }.join
+            property_name = "#{prefix}#{property_name.capitalize}"
+          end
+          
           @partial_bindings << {
+            key: partial_key,
             name: partial_name,
             binding_class: binding_name,
             property_name: property_name,
             binding_groups: binding_groups,
             has_bindings: has_bindings,
-            parent_data_bindings: parent_data_bindings
+            parent_data_bindings: parent_data_bindings,
+            binding_id: binding_id
           }
+          puts "Added partial binding: key=#{partial_key}, property_name=#{property_name}, binding_id=#{binding_id}"
+        else
+          puts "Skipping duplicate partial: key=#{partial_key}"
         end
       end
       
@@ -298,8 +317,16 @@ module SjuiTools
         puts "id: #{value}"
         view_type = @view_type_set[json["type"].to_sym]
         raise "View Type Not found" if view_type.nil?
+        
+        # Apply binding_id prefix if present
         variable_name = value.camelize
+        if @current_binding_id && @current_partial_depth > 0
+          prefix = @current_binding_id.camelize
+          prefix[0] = prefix[0].chr.downcase
+          variable_name = "#{prefix}#{variable_name}"
+        end
         variable_name[0] = variable_name[0].chr.downcase
+        
         current_view["name"] = variable_name
         return if @super_binding != "Binding" && !JsonLoaderConfig::IGNORE_ID_SET[value.to_sym].nil?
         
@@ -311,7 +338,7 @@ module SjuiTools
         @weak_vars_content << weak_var_line
       end
 
-      def process_include_element(file_name, value, json, data_bindings = nil)
+      def process_include_element(file_name, value, json, data_bindings = nil, binding_id = nil)
         if @including_files[file_name].nil?
           @including_files[file_name] = [value]
         else
@@ -353,7 +380,14 @@ module SjuiTools
           
           # Increment depth before processing included file
           @current_partial_depth += 1
+          # Set binding_id for this include context
+          prev_binding_id = @current_binding_id
+          @current_binding_id = binding_id
+          
           analyze_json(file_name, included_json)
+          
+          # Restore previous binding_id
+          @current_binding_id = prev_binding_id
           # Decrement depth after processing
           @current_partial_depth -= 1
         end
