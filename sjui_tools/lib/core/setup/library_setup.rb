@@ -97,17 +97,20 @@ module SjuiTools
         
         def get_library_config(library_name, current_version)
           versions_config = load_library_versions
+          puts "Loaded versions config: #{versions_config ? 'yes' : 'no'}"
           return nil unless versions_config
           
           version_mappings = versions_config['version_mappings'] || {}
           
           # Try exact version match first
           if version_mappings[current_version] && version_mappings[current_version][library_name]
+            puts "Found exact match for #{library_name} at version #{current_version}"
             return version_mappings[current_version][library_name]
           end
           
           # Fallback to default
           if version_mappings['default'] && version_mappings['default'][library_name]
+            puts "Using default config for #{library_name}"
             return version_mappings['default'][library_name]
           end
           
@@ -132,6 +135,8 @@ module SjuiTools
           
           # SwiftJsonUI - always check/update even if exists
           swiftjsonui_config = get_library_config("SwiftJsonUI", current_version)
+          
+          puts "SwiftJsonUI config: #{swiftjsonui_config.inspect}"
           
           if swiftjsonui_config
             package_info = {
@@ -187,6 +192,8 @@ module SjuiTools
               requirement: { minimum_version: "2.1.8", kind: :up_to_next_major }
             }
           end
+          
+          puts "Packages to add: #{packages_to_add.inspect}"
           
           if packages_to_add.empty?
             puts "All required packages already exist in the project"
