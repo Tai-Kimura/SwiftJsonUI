@@ -203,7 +203,7 @@ module SjuiTools
             content << "        \n"
             content << "        // Assign views from ViewHolder\n"
             @json_analyzer.view_variables.each do |view_var|
-              content << "        #{view_var[:variable_name]} = getView(\"#{view_var[:original_id]}\")\n"
+              content << "        #{view_var[:variable_name]} = getView(\"#{view_var[:original_id]}\", bindingId: bindingId)\n"
             end
             content << "        \n"
           end
@@ -292,11 +292,6 @@ module SjuiTools
         class #{binding_info[:binding_class_name]}: #{binding_info[:super_binding]} {
             var isInitialized = false
             private let bindingId: String?
-            
-            private func getView<T>(_ id: String) -> T? {
-                let actualId = bindingId != nil ? "\\(bindingId!)_\\(id)" : id
-                return viewHolder?.getView(actualId) as? T
-            }
             
         SWIFT
       end
