@@ -340,14 +340,26 @@ module SjuiTools
               end
             else
               if data["class"] == "String"
-                # For string values, handle empty string and convert single quotes to double quotes
+                # For string values, handle various quote patterns
                 value_str = data["defaultValue"].to_s
-                # Check if it's just two single quotes (empty string)
+                
+                # Handle different quote patterns
                 if value_str == "''"
+                  # Empty string with single quotes
                   default_value = '""'
+                elsif value_str.start_with?("'") && value_str.end_with?("'") && value_str.length > 1
+                  # String wrapped in single quotes - remove outer quotes and use inner content
+                  inner_content = value_str[1...-1]
+                  # Escape any backslashes and double quotes for Swift string literal
+                  escaped_content = inner_content.gsub('\\', '\\\\').gsub('"', '\\"')
+                  default_value = "\"#{escaped_content}\""
+                elsif value_str.start_with?('"') && value_str.end_with?('"')
+                  # Already a complete Swift string literal - use as is
+                  default_value = value_str
                 else
-                  # Replace single quotes with double quotes and wrap in double quotes
-                  default_value = "\"#{value_str.gsub(/'/, '"')}\""
+                  # No quotes or other pattern - wrap in double quotes and escape
+                  escaped_content = value_str.gsub('\\', '\\\\').gsub('"', '\\"')
+                  default_value = "\"#{escaped_content}\""
                 end
               elsif data["class"] == "Bool"
                 default_value = data["defaultValue"].to_s.downcase
