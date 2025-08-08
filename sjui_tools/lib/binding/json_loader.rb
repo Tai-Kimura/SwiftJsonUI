@@ -140,15 +140,33 @@ module SjuiTools
       private
 
       def generate_initializer
-        return "" if @json_analyzer.partial_bindings.empty?
+        has_partials = !@json_analyzer.partial_bindings.empty?
         
         content = String.new("\n")
-        content << "    required public init(viewHolder: ViewHolder) {\n"
-        content << "        super.init(viewHolder: viewHolder)\n"
         
-        # Initialize partial bindings
-        @json_analyzer.partial_bindings.each do |partial|
-          content << "        self.#{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
+        # Add convenience init without bindingId
+        content << "    convenience init(viewHolder: ViewHolder) {\n"
+        content << "        self.init(viewHolder: viewHolder, bindingId: nil)\n"
+        content << "    }\n"
+        content << "\n"
+        
+        # Main initializer with bindingId parameter
+        content << "    required public init(viewHolder: ViewHolder, bindingId: String? = nil) {\n"
+        content << "        self.bindingId = bindingId\n"
+        
+        if has_partials
+          content << "        super.init(viewHolder: viewHolder)\n"
+          
+          # Initialize partial bindings
+          @json_analyzer.partial_bindings.each do |partial|
+            if partial[:binding_id]
+              content << "        self.#{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder, bindingId: \"#{partial[:binding_id]}\")\n"
+            else
+              content << "        self.#{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
+            end
+          end
+        else
+          content << "        super.init(viewHolder: viewHolder)\n"
         end
         
         content << "    }\n"
@@ -175,10 +193,20 @@ module SjuiTools
         
         # If there's already a bindView method, we need to add partial bindings to it
         if base_content.empty?
-          # No existing bindView, create one with just partial bindings
+          # No existing bindView, create one with view assignments and partial bindings
           content = String.new("\n")
           content << "    override func bindView() {\n"
           content << "        super.bindView()\n"
+          
+          # Add view assignments from weak vars
+          unless @json_analyzer.view_variables.empty?
+            content << "        \n"
+            content << "        // Assign views from ViewHolder\n"
+            @json_analyzer.view_variables.each do |view_var|
+              content << "        #{view_var[:variable_name]} = getView(\"#{view_var[:original_id]}\")\n"
+            end
+            content << "        \n"
+          end
           
           # Add partial binding calls
           @json_analyzer.partial_bindings.each do |partial|
@@ -263,6 +291,12 @@ module SjuiTools
         @MainActor
         class #{binding_info[:binding_class_name]}: #{binding_info[:super_binding]} {
             var isInitialized = false
+            private let bindingId: String?
+            
+            private func getView<T>(_ id: String) -> T? {
+                let actualId = bindingId != nil ? "\\(bindingId!)_\\(id)" : id
+                return viewHolder.getView(actualId) as? T
+            }
             
         SWIFT
       end

@@ -8,7 +8,7 @@ require_relative 'string_module'
 module SjuiTools
   module Binding
     class JsonAnalyzer
-      attr_reader :binding_content, :data_sets, :binding_processes_group, :including_files, :reset_constraint_views, :weak_vars_content, :invalidate_methods_content, :partial_bindings
+      attr_reader :binding_content, :data_sets, :binding_processes_group, :including_files, :reset_constraint_views, :weak_vars_content, :invalidate_methods_content, :partial_bindings, :view_variables
 
       def initialize(import_module_manager, ui_control_event_manager, layout_path, style_path, super_binding, view_type_set)
         @import_module_manager = import_module_manager
@@ -28,6 +28,7 @@ module SjuiTools
         @partial_bindings = []
         @current_partial_depth = 0
         @current_binding_id = nil
+        @view_variables = []  # Store view variables for computed property generation
       end
 
       def analyze_json(file_name, loaded_json)
@@ -315,14 +316,9 @@ module SjuiTools
         view_type = @view_type_set[json["type"].to_sym]
         raise "View Type Not found" if view_type.nil?
         
-        # Apply binding_id prefix if present
+        # Don't apply prefix to variable names, just use the ID as-is
+        # The ID in the JSON has already been prefixed if needed
         variable_name = value.camelize
-        if @current_binding_id && @current_partial_depth > 0
-          prefix = @current_binding_id.camelize
-          prefix = String.new(prefix)
-          prefix[0] = prefix[0].chr.downcase
-          variable_name = "#{prefix}#{variable_name}"
-        end
         variable_name = String.new(variable_name)
         variable_name[0] = variable_name[0].chr.downcase
         
@@ -331,6 +327,13 @@ module SjuiTools
         
         # Skip weak var generation if we're inside a partial binding
         return if @current_partial_depth > 0
+        
+        # Store the mapping of variable name to original ID
+        @view_variables << {
+          variable_name: variable_name,
+          original_id: value,
+          view_type: view_type
+        }
         
         weak_var_line = String.new("    weak var #{variable_name}: #{view_type}!\n")
         @binding_content << weak_var_line
@@ -372,6 +375,11 @@ module SjuiTools
           end
           
           included_json = JSON.parse(json_string)
+          
+          # Apply binding_id prefix to all IDs in the JSON if binding_id is specified
+          if binding_id
+            included_json = apply_binding_id_prefix(included_json, binding_id)
+          end
           
           # If data bindings are provided, store them for later processing
           # but don't add them to the JSON structure itself
@@ -422,6 +430,66 @@ module SjuiTools
       def generate_constraint_view_resets
         @reset_constraint_views.keys.each do |key|
           @binding_content << "        #{key}.resetConstraintInfo()\n"
+        end
+      end
+      
+      def apply_binding_id_prefix(json, binding_id)
+        return json unless binding_id
+        
+        # Create prefix in camelCase
+        prefix = binding_id.split(/[_-]/).map.with_index { |word, i|
+          i == 0 ? word : word.capitalize
+        }.join
+        
+        # Recursively process the JSON to add prefix to all IDs
+        process_json_for_binding_id(json, prefix)
+      end
+      
+      def process_json_for_binding_id(obj, prefix)
+        case obj
+        when Hash
+          new_obj = {}
+          obj.each do |key, value|
+            if key == "id" && value.is_a?(String)
+              # Add prefix to ID with underscore separator
+              new_obj[key] = "#{prefix}_#{value}"
+            elsif key == "onClick" || key == "onLongPress" || key == "onPan" || key == "onPinch"
+              # These are event handlers, don't modify
+              new_obj[key] = value
+            elsif value.is_a?(String) && value.start_with?("@{") && value.end_with?("}")
+              # This is a binding reference, need to update ID references inside
+              inner = value[2...-1]  # Remove @{ and }
+              
+              # Check if this references an ID (contains 'this' or view ID)
+              if inner.include?("this.")
+                # Don't modify 'this' references as they refer to data, not views
+                new_obj[key] = value
+              else
+                # Check for direct ID references and add prefix
+                # For example: @{some_label.text} -> @{prefix_some_label.text}
+                parts = inner.split('.')
+                if parts.length > 1
+                  # Might be a view ID reference
+                  first_part = parts[0]
+                  # Add prefix to the ID part
+                  prefixed_id = "#{prefix}_#{first_part}"
+                  parts[0] = prefixed_id
+                  new_obj[key] = "@{#{parts.join('.')}}"
+                else
+                  new_obj[key] = value
+                end
+              end
+            elsif value.is_a?(Hash) || value.is_a?(Array)
+              new_obj[key] = process_json_for_binding_id(value, prefix)
+            else
+              new_obj[key] = value
+            end
+          end
+          new_obj
+        when Array
+          obj.map { |item| process_json_for_binding_id(item, prefix) }
+        else
+          obj
         end
       end
     end
