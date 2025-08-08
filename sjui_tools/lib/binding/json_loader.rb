@@ -340,8 +340,15 @@ module SjuiTools
               end
             else
               if data["class"] == "String"
-                # For string values, wrap in quotes and convert single quotes to double quotes
-                default_value = "\"#{data["defaultValue"].to_s.gsub(/'/, '"')}\""
+                # For string values, handle empty string and convert single quotes to double quotes
+                value_str = data["defaultValue"].to_s
+                # Check if it's just two single quotes (empty string)
+                if value_str == "''"
+                  default_value = '""'
+                else
+                  # Replace single quotes with double quotes and wrap in double quotes
+                  default_value = "\"#{value_str.gsub(/'/, '"')}\""
+                end
               elsif data["class"] == "Bool"
                 default_value = data["defaultValue"].to_s.downcase
               else
