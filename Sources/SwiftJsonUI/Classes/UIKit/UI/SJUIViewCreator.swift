@@ -36,9 +36,9 @@ open class SJUIViewCreator:NSObject {
             } else if let v = getOnView(target: target) {
                 parentView = v
             } else {
-                return createView(json, parentView: nil, target: target, views: &target._views, isRootView: true)
+                return createView(json, parentView: nil, target: target, views: &target._views, isRootView: true, bindingId: nil)
             }
-            return createView(json, parentView: parentView, target: target, views: &target._views, isRootView: true)
+            return createView(json, parentView: parentView, target: target, views: &target._views, isRootView: true, bindingId: nil)
         } catch let error {
             return createErrorView("\(error)")
         }
@@ -95,7 +95,7 @@ open class SJUIViewCreator:NSObject {
     }
     
     @MainActor
-    @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool) -> UIView {
+    @discardableResult open class func createView(_ json: JSON, parentView: UIView!, target: Any, views: inout [String: UIView], isRootView: Bool, bindingId: String? = nil) -> UIView {
         var attr = json
         
         // Log when processing JSON (only in DEBUG)
@@ -104,6 +104,18 @@ open class SJUIViewCreator:NSObject {
         }
         
         if let include = attr["include"].string {
+            // Check for binding_id and combine with parent bindingId
+            var currentBindingId = bindingId
+            if let newBindingId = attr["binding_id"].string {
+                let camelCaseBindingId = convertBindingIdToCamelCase(newBindingId)
+                if let parentBindingId = bindingId {
+                    // Combine parent and new binding_id for nested includes
+                    currentBindingId = "\(parentBindingId)_\(camelCaseBindingId)"
+                } else {
+                    currentBindingId = camelCaseBindingId
+                }
+            }
+            
             // サブディレクトリを考慮してpartialファイルを探す
             var url: String
             if include.contains("/") {
@@ -154,7 +166,7 @@ open class SJUIViewCreator:NSObject {
                 }
                 let enc:String.Encoding = String.Encoding.utf8
                 let json = try JSON(data: jsonString.data(using: enc)!)
-                return createView(json, parentView: parentView, target: target, views: &views, isRootView: false)
+                return createView(json, parentView: parentView, target: target, views: &views, isRootView: false, bindingId: currentBindingId)
             } catch let error {
                 return createErrorView("Include error for '\(include)': \(error)")
             }
@@ -323,9 +335,10 @@ open class SJUIViewCreator:NSObject {
         }
         
         if let id = attr["id"].string {
-            views[id] = view
-            view.viewId = id
-            view.propertyName = id.toCamel()
+            let actualId = bindingId != nil ? "\(bindingId!)_\(id)" : id
+            views[actualId] = view
+            view.viewId = actualId
+            view.propertyName = id.toCamel()  // propertyName is original ID without prefix
         }
         if let propertyName = attr["propertyName"].string {
             view.propertyName = propertyName
@@ -363,7 +376,7 @@ open class SJUIViewCreator:NSObject {
         if let children = attr["child"].array {
             
             for child in children {
-                createView(child, parentView: view, target: target, views: &views, isRootView: false)
+                createView(child, parentView: view, target: target, views: &views, isRootView: false, bindingId: bindingId)
             }
             var prevView: UIView? = nil
             for subview in view.subviews {
@@ -748,6 +761,14 @@ open class SJUIViewCreator:NSObject {
     
     public class func cleanStyleCache() {
         styleCache = [String:JSON]()
+    }
+    
+    // Helper method to convert binding_id to camelCase (same logic as Ruby)
+    private class func convertBindingIdToCamelCase(_ bindingId: String) -> String {
+        let components = bindingId.split(separator: "_")
+        return components.enumerated().map { index, component in
+            index == 0 ? String(component) : component.capitalized
+        }.joined()
     }
     
 }

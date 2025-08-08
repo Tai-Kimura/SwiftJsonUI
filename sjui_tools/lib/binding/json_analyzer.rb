@@ -97,8 +97,6 @@ module SjuiTools
       def analyze_binding_process(binding_process)
         view = binding_process[:view]
         view_name = view["name"]
-        puts "Analyzing binding process: #{binding_process.inspect}"
-        puts view
         raise "View Id should be set. #{binding_process}" if view_name.nil?
         key = binding_process[:key]
 
@@ -322,7 +320,6 @@ module SjuiTools
       end
 
       def process_id_element(json, value, current_view)
-        puts "id: #{value}"
         view_type = @view_type_set[json["type"].to_sym]
         raise "View Type Not found" if view_type.nil?
         
@@ -378,8 +375,6 @@ module SjuiTools
           # Replace variables from parent
           unless json["variables"].nil?
             json["variables"].each do |k,v|
-              puts k
-              puts v
               json_string.gsub!(k,v.to_s)
             end
           end
