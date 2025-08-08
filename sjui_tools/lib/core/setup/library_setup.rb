@@ -80,9 +80,12 @@ module SjuiTools
         end
         
         def load_library_versions
-          base_dir = File.expand_path('../../../..', File.dirname(__FILE__))
+          # __FILE__ is .../sjui_tools/lib/core/setup/library_setup.rb
+          # We need to go up to sjui_tools directory
+          base_dir = File.expand_path('../../../..', __FILE__)
           versions_file = File.join(base_dir, 'config', 'library_versions.json')
           
+          puts "Looking for library_versions.json at: #{versions_file}"
           if File.exist?(versions_file)
             begin
               JSON.parse(File.read(versions_file))
@@ -91,6 +94,7 @@ module SjuiTools
               nil
             end
           else
+            puts "library_versions.json not found at: #{versions_file}"
             nil
           end
         end
@@ -126,7 +130,7 @@ module SjuiTools
           
           # Check existing packages
           existing_packages = @project.root_object.package_references || []
-          existing_urls = existing_packages.map(&:repository_url)
+          existing_urls = existing_packages.map(&:repositoryURL)
           
           puts "Existing packages: #{existing_urls.inspect}"
           
@@ -213,7 +217,7 @@ module SjuiTools
           packages.each do |package_info|
             # Check if package already exists and update it
             existing_package = @project.root_object.package_references.find { |p| 
-              p.repository_url&.include?(package_info[:name])
+              p.repositoryURL&.include?(package_info[:name])
             }
             
             if existing_package
