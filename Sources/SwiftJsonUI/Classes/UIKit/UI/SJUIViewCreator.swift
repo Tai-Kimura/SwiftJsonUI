@@ -552,6 +552,29 @@ open class SJUIViewCreator:NSObject {
         }
     }
     
+    open class func clearLayoutCache() {
+        #if DEBUG
+        let fm = FileManager.default
+        let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
+        let cachesDirPath = paths[0]
+        let layoutFileDirPath = "\(cachesDirPath)/\(layoutsDirectoryName)"
+        let styleFileDirPath = "\(cachesDirPath)/\(stylesDirectoryName)"
+        
+        do {
+            if fm.fileExists(atPath: layoutFileDirPath) {
+                Logger.debug("[SwiftJsonUI] Clearing layout cache at: \(layoutFileDirPath)")
+                try fm.removeItem(atPath: layoutFileDirPath)
+            }
+            if fm.fileExists(atPath: styleFileDirPath) {
+                Logger.debug("[SwiftJsonUI] Clearing style cache at: \(styleFileDirPath)")
+                try fm.removeItem(atPath: styleFileDirPath)
+            }
+        } catch {
+            Logger.debug("[SwiftJsonUI] Failed to clear cache: \(error)")
+        }
+        #endif
+    }
+    
     open class func copyResourcesToDocuments() {
         #if DEBUG
         let fm = FileManager.default
@@ -559,12 +582,17 @@ open class SJUIViewCreator:NSObject {
         let paths = NSSearchPathForDirectoriesInDomains(FileManager.SearchPathDirectory.cachesDirectory, FileManager.SearchPathDomainMask.userDomainMask, true)
         let cachesDirPath = paths[0]
         let layoutFileDirPath = "\(cachesDirPath)/\(layoutsDirectoryName)"
+        
+        // Clear all existing cache first to ensure fresh copy
+        clearLayoutCache()
+        
         do {
             if (!fm.fileExists(atPath: layoutFileDirPath)) {
                 try fm.createDirectory(atPath: layoutFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
             let contents = try fm.contentsOfDirectory(atPath: bundlePath)
+            Logger.debug("[SwiftJsonUI] Copying \(contents.filter { $0.hasSuffix("json") }.count) JSON files to cache")
             for content:String in contents {
                 if (content.hasSuffix("json")) {
                     let toPath = "\(layoutFileDirPath)/\(content)"
@@ -594,7 +622,7 @@ open class SJUIViewCreator:NSObject {
                 }
             }
         } catch let error {
-            Logger.debug("\(error)")
+            Logger.debug("[SwiftJsonUI] Error copying styles: \(error)")
         }
         let scriptFileDirPath = "\(cachesDirPath)/\(scriptsDirectoryName)"
         do {
