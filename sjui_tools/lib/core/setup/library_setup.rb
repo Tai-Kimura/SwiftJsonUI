@@ -44,6 +44,7 @@ module SjuiTools
           
           if File.exist?(sjui_version_file)
             version = File.read(sjui_version_file).strip
+            puts "Using version from .sjui-version: #{version}" unless version.empty?
             return version unless version.empty?
           end
           
@@ -53,19 +54,24 @@ module SjuiTools
           
           if File.exist?(version_file)
             version = File.read(version_file).strip
+            puts "Using version from VERSION file: #{version}" unless version.empty?
             return version unless version.empty?
           end
           
           # Check git branch as fallback
           begin
             git_branch = `git rev-parse --abbrev-ref HEAD 2>/dev/null`.strip
-            return git_branch unless git_branch.empty?
+            unless git_branch.empty?
+              puts "Using version from git branch: #{git_branch}"
+              return git_branch
+            end
           rescue
             # Git command failed, continue with other methods
           end
           
-          # Fallback to 7.0.0-alpha
-          "7.0.0-alpha"
+          # Fallback to 7.0.0-beta
+          puts "Using fallback version: 7.0.0-beta"
+          "7.0.0-beta"
         end
         
         def load_library_versions
