@@ -185,7 +185,7 @@ module SjuiTools
                 "type" => "Label",
                 "id" => "title_label",
                 "text" => "Welcome to your new view!",
-                "textAlignment" => "center"
+                "textAlign" => "center"
               }
             ]
           }

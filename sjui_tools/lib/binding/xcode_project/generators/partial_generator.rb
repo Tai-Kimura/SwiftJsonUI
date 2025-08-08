@@ -91,8 +91,8 @@ module SjuiTools
                   "type" => "Label",
                   "id" => "#{base_name}_label",
                   "text" => "This is the #{base_name} partial",
-                  "textSize" => 14,
-                  "textColor" => "#000000"
+                  "fontSize" => 14,
+                  "fontColor" => "#000000"
                 }
               ]
             }

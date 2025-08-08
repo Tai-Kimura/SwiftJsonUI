@@ -224,9 +224,9 @@ class #{cell_name}CollectionViewCell: BaseCollectionViewCell {
                 {
                   "type" => "Label",
                   "id" => "title_label",
-                  "text" => "#{cell_name} Cell",
-                  "textSize" => 16,
-                  "textColor" => "#000000"
+                  "text" => "Cell Item",
+                  "fontSize" => 16,
+                  "fontColor" => "#000000"
                 }
               ]
             }
