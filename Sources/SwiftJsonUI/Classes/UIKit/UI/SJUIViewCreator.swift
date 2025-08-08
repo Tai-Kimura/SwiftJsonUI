@@ -175,16 +175,26 @@ open class SJUIViewCreator:NSObject {
         if let style = attr["style"].string {
             do {
                 if let cachedStyle = styleCache[style] {
+                    Logger.debug("[SwiftJsonUI] Using cached style: \(style)")
+                    let originalAttr = attr
+                    // Style as base, original attributes override
                     attr = try cachedStyle.merged(with: attr)
+                    Logger.debug("[SwiftJsonUI] After merging cached style - original id: \(originalAttr["id"]), merged id: \(attr["id"])")
                 } else {
                     let url = getStyleURL(path: style)
+                    Logger.debug("[SwiftJsonUI] Loading style '\(style)' from: \(url)")
                     let jsonString = try String(contentsOfFile: url, encoding: String.Encoding.utf8)
                     let enc:String.Encoding = String.Encoding.utf8
                     let jsonStyle = try JSON(data: jsonString.data(using: enc)!)
+                    Logger.debug("[SwiftJsonUI] Style '\(style)' content has id: \(jsonStyle["id"])")
                     styleCache[style] = jsonStyle
+                    let originalAttr = attr
+                    // Style as base, original attributes override
                     attr = try jsonStyle.merged(with: attr)
+                    Logger.debug("[SwiftJsonUI] After merging style - original id: \(originalAttr["id"]), merged id: \(attr["id"])")
                 }
             } catch let error {
+                Logger.debug("[SwiftJsonUI] Error loading style '\(style)': \(error)")
                 return createErrorView("\(error)")
             }
         }
@@ -585,6 +595,10 @@ open class SJUIViewCreator:NSObject {
         
         // Clear all existing cache first to ensure fresh copy
         clearLayoutCache()
+        
+        // Also clear the in-memory style cache
+        cleanStyleCache()
+        Logger.debug("[SwiftJsonUI] Cleared style cache")
         
         do {
             if (!fm.fileExists(atPath: layoutFileDirPath)) {
