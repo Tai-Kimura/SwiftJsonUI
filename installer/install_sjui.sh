@@ -194,9 +194,10 @@ fi
 
 # Install SwiftUI-specific components if in SwiftUI mode
 if [ "$MODE" = "swiftui" ]; then
-    print_info "Installing SwiftUI-specific components..."
+    print_info "SwiftUI mode selected"
+    print_info "SwiftUI support is integrated into sjui_tools"
     
-    # Check if swiftui_builder exists in the downloaded archive
+    # Check if swiftui_builder exists in the downloaded archive (for future use)
     if [ -d "$EXTRACT_DIR/swiftui_builder" ]; then
         print_info "Installing swiftui_builder..."
         cp -r "$EXTRACT_DIR/swiftui_builder" .
@@ -208,27 +209,8 @@ if [ "$MODE" = "swiftui" ]; then
         fi
         
         print_info "✅ swiftui_builder installed successfully"
-    else
-        print_warning "swiftui_builder not found in the downloaded version"
-        print_warning "SwiftUI mode requires additional components that will be set up later"
-        
-        # Create a stub swiftui_builder directory
-        mkdir -p swiftui_builder/bin
-        mkdir -p swiftui_builder/lib
-        
-        # Create a stub executable that explains SwiftUI mode is in development
-        cat > swiftui_builder/bin/sjui-swiftui << 'EOF'
-#!/usr/bin/env ruby
-puts "SwiftUI mode is currently under development."
-puts "The SwiftUI builder will be available in a future release."
-puts ""
-puts "For now, you can use the standard sjui_tools with SwiftUI projects."
-puts "Run: sjui_tools/bin/sjui help"
-EOF
-        chmod +x swiftui_builder/bin/sjui-swiftui
-        
-        print_info "Created placeholder swiftui_builder directory"
     fi
+    # Don't create placeholder swiftui_builder anymore - SwiftUI support is in sjui_tools
 fi
 
 # Install Node.js dependencies for hot_loader
@@ -443,15 +425,12 @@ print_info ""
 print_info "Next steps:"
 
 if [ "$MODE" = "swiftui" ]; then
-    if [ -d "swiftui_builder" ]; then
-        print_info "1. Add swiftui_builder/bin to your PATH or use the full path"
-        print_info "2. Run 'sjui-swiftui init' to create SwiftUI configuration"
-        print_info "3. Run 'sjui-swiftui help' to see available SwiftUI commands"
-    fi
     if [ -d "sjui_tools" ]; then
-        print_info ""
-        print_info "Standard tools are also available:"
-        print_info "  - sjui_tools/bin/sjui for general commands"
+        print_info "1. Add sjui_tools/bin to your PATH or use the full path"
+        print_info "2. Run 'sjui init' to create SwiftUI configuration (if not done)"
+        print_info "3. Run 'sjui setup' to set up your SwiftUI project"
+        print_info "4. Run 'sjui convert' to convert JSON layouts to SwiftUI code"
+        print_info "5. Run 'sjui help' to see available commands"
     fi
 else
     if [ -d "sjui_tools" ]; then
