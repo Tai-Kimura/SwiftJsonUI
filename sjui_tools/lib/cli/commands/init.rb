@@ -12,29 +12,45 @@ module SjuiTools
         def run(args)
           options = parse_options(args)
           
+          # Check if MODE file exists (set by installer)
+          installer_mode = nil
+          mode_file = File.join(File.dirname(__FILE__), '../../../../MODE')
+          if File.exist?(mode_file)
+            installer_mode = File.read(mode_file).strip
+          end
+          
           # Detect or use specified mode
-          mode = options[:mode] || Core::ConfigManager.detect_mode
+          mode = options[:mode] || installer_mode || Core::ConfigManager.detect_mode
           
           puts "Initializing SwiftJsonUI project in #{mode} mode..."
           
           # Create config file
           create_config_file(mode)
           
-          # Create directory structure based on mode
-          case mode
-          when 'binding', 'all'
-            create_binding_structure
-          end
-          
-          if mode == 'swiftui' || mode == 'all'
-            create_swiftui_structure
+          # Only create directory structure if not in SwiftUI-only mode
+          if mode != 'swiftui'
+            # Create directory structure based on mode
+            case mode
+            when 'binding', 'all'
+              create_binding_structure
+            end
+            
+            if mode == 'all'
+              create_swiftui_structure
+            end
+          else
+            puts "Skipping directory creation for SwiftUI mode"
           end
           
           puts "Initialization complete!"
           puts
-          puts "Next steps:"
-          puts "  1. Run 'sjui setup' to install libraries and base files"
-          puts "  2. Run 'sjui g view HomeView' to generate your first view"
+          if mode == 'swiftui'
+            puts "SwiftUI mode initialized. Use SwiftUI-specific commands for your project."
+          else
+            puts "Next steps:"
+            puts "  1. Run 'sjui setup' to install libraries and base files"
+            puts "  2. Run 'sjui g view HomeView' to generate your first view"
+          end
         end
 
         private
@@ -111,12 +127,18 @@ module SjuiTools
             'project_file_name' => project_name,
             'source_directory' => Core::ProjectFinder.find_source_directory || '',
             'layouts_directory' => 'Layouts',
-            'bindings_directory' => 'Bindings',
-            'view_directory' => 'View',
-            'styles_directory' => 'Styles',
             'hot_loader_directory' => project_name,
             'use_network' => true
           }
+          
+          # Add UIKit-specific config only if not in SwiftUI-only mode
+          if mode != 'swiftui'
+            config.merge!({
+              'bindings_directory' => 'Bindings',
+              'view_directory' => 'View',
+              'styles_directory' => 'Styles'
+            })
+          end
           
           if mode == 'swiftui' || mode == 'all'
             config['swiftui'] = {
