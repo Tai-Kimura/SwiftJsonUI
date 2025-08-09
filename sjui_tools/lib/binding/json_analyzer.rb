@@ -52,7 +52,7 @@ module SjuiTools
           if File.exist?(file_path) && File.file?(file_path)
             File.open(file_path, "r") do |file|
               json_string = file.read
-              style_json = JSON.parse(json_string)
+              style_json = JSON.parse(json_string, allow_duplicate_names: true)
               # Merge style first, then original JSON to preserve original values
               json = style_json.merge(json)
             end
