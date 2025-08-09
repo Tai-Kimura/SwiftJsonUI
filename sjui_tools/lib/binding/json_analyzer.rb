@@ -174,6 +174,8 @@ module SjuiTools
                   partial[:data_bindings].each do |key, value|
                     # Remove @{} if present
                     clean_value = value.to_s.gsub(/^@\{/, '').gsub(/\}$/, '')
+                    # Replace single quotes with double quotes for string literals
+                    clean_value = clean_value.gsub("'", '"')
                     method_content << "        #{partial[:property_name]}Binding.#{key} = #{clean_value}\n"
                   end
                 end
