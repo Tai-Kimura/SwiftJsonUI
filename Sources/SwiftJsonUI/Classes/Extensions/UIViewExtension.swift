@@ -169,7 +169,13 @@ public extension UIView {
         set {
             if isActiveForConstraint != newValue {
                 objc_setAssociatedObject(self, &ActivatedConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
-                setVisibility(oldValue: .visible, newValue: self.visibility)
+                // When becoming active, re-apply visibility to ensure proper state
+                if newValue && self.visibility == .gone {
+                    // Force removal if visibility is gone
+                    setVisibility(oldValue: .visible, newValue: .gone)
+                } else {
+                    setVisibility(oldValue: .visible, newValue: self.visibility)
+                }
             }
         }
     }
