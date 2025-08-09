@@ -387,13 +387,21 @@ if [ -f "sjui_tools/bin/sjui" ]; then
     
     if [ -n "$FOUND_XCODEPROJ" ]; then
         print_info "Creating initial configuration..."
-        if $SJUI_BIN init 2>/dev/null; then
+        # Pass the mode to init command based on installer mode
+        INIT_MODE_FLAG=""
+        if [ "$MODE" = "swiftui" ]; then
+            INIT_MODE_FLAG="--mode swiftui"
+        else
+            INIT_MODE_FLAG="--mode binding"
+        fi
+        
+        if $SJUI_BIN init $INIT_MODE_FLAG 2>/dev/null; then
             CONFIG_CREATED=true
-            print_info "✅ Initial configuration created"
+            print_info "✅ Initial configuration created with mode: $MODE"
         else
             print_warning "Failed to create initial configuration"
             print_warning "You can create it manually later with:"
-            print_warning "  $SJUI_BIN init"
+            print_warning "  $SJUI_BIN init $INIT_MODE_FLAG"
         fi
     else
         print_warning "No Xcode project found in parent directories"

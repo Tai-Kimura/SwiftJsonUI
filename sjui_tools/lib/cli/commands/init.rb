@@ -117,31 +117,43 @@ module SjuiTools
             File.basename(Dir.pwd)
           end
           
-          config = {
-            'mode' => mode,
-            'project_name' => project_name,
-            'project_file_name' => project_name,
-            'source_directory' => Core::ProjectFinder.find_source_directory || '',
-            'layouts_directory' => 'Layouts',
-            'styles_directory' => 'Styles',  # Styles directory is used in both modes
-            'hot_loader_directory' => project_name,
-            'use_network' => true
-          }
-          
-          # Add UIKit-specific config only if not in SwiftUI-only mode
-          if mode != 'swiftui'
-            config.merge!({
-              'bindings_directory' => 'Bindings'
-            })
-          end
-          
-          # View directory is used in all modes
-          config['view_directory'] = 'View'
-          
-          if mode == 'swiftui' || mode == 'all'
-            config['swiftui'] = {
-              'output_directory' => 'Generated'
+          # Create base config based on mode
+          if mode == 'swiftui'
+            # SwiftUI-specific config with appropriate defaults
+            config = {
+              'mode' => mode,
+              'project_name' => project_name,
+              'project_file_name' => project_name,
+              'source_directory' => project_name,  # For SwiftUI, typically the project name directory
+              'layouts_directory' => 'Layouts',
+              'styles_directory' => 'Styles',
+              'view_directory' => 'View',
+              'swiftui' => {
+                'output_directory' => 'Generated'
+              },
+              'use_network' => false  # SwiftUI mode typically doesn't need hotloader
             }
+          else
+            # Binding mode or all mode config
+            config = {
+              'mode' => mode,
+              'project_name' => project_name,
+              'project_file_name' => project_name,
+              'source_directory' => Core::ProjectFinder.find_source_directory || '',
+              'layouts_directory' => 'Layouts',
+              'styles_directory' => 'Styles',
+              'view_directory' => 'View',
+              'bindings_directory' => 'Bindings',
+              'hot_loader_directory' => project_name,
+              'use_network' => true
+            }
+            
+            # Add SwiftUI config if mode is 'all'
+            if mode == 'all'
+              config['swiftui'] = {
+                'output_directory' => 'Generated'
+              }
+            end
           end
           
           File.write(config_file, JSON.pretty_generate(config))
