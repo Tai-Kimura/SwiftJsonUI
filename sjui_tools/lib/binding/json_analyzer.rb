@@ -315,8 +315,13 @@ module SjuiTools
       end
 
       def has_binding_data(json)
-        # Check if JSON has any data bindings (@{...} patterns)
+        # Check if JSON has any data bindings (@{...} patterns) or includes with data
         if json.is_a?(Hash)
+          # Check if this is an include with data assignments
+          if json["include"] && json["data"]
+            return true
+          end
+          
           json.each do |key, value|
             if value.is_a?(String) && value.start_with?("@{")
               return true
