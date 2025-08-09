@@ -122,21 +122,13 @@ module SjuiTools
           template = <<~SWIFT
             import SwiftUI
             import SwiftJsonUI
+            import Combine
 
             struct #{view_name}View: View {
                 @StateObject private var viewModel = #{view_name}ViewModel()
                 
                 var body: some View {
-                    #if DEBUG
-                    // Hot reload enabled in DEBUG mode
-                    DynamicComponent(
-                        jsonName: "#{json_reference}",
-                        viewModel: viewModel
-                    )
-                    #else
-                    // Production build uses generated code
                     generatedBody
-                    #endif
                 }
                 
                 // Generated SwiftUI code from #{json_reference}.json
