@@ -513,7 +513,23 @@ module SjuiTools
           
           content = File.read(pbxproj_path)
           
-          # Find the main synchronized root group
+          # First check if there's already an exception set reference
+          existing_exception_pattern = /(\w+)\s+\/\*\s+(\w+)\s+\*\/\s+=\s+\{\s*\n\s+isa\s+=\s+PBXFileSystemSynchronizedRootGroup;\s*\n\s+exceptions\s+=\s+\(\s*\n\s+(\w+)\s+\/\*[^*]+\*\/,?\s*\n\s*\);/m
+          existing_match = content.match(existing_exception_pattern)
+          
+          if existing_match
+            # Already has an exception set, just update it
+            group_id = existing_match[1]
+            folder_name = existing_match[2]
+            exception_ref = existing_match[3]
+            
+            puts "Found existing exception set: #{exception_ref} for #{folder_name}"
+            
+            # Just update the existing membershipExceptions
+            return update_membership_exceptions_directly(excluded_files)
+          end
+          
+          # Find the main synchronized root group with empty exceptions
           # Pattern: B62F75162E4049C500D73687 /* swiftUITestApp */ = {
           #          isa = PBXFileSystemSynchronizedRootGroup;
           #          exceptions = (
