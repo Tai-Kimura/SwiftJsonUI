@@ -170,8 +170,14 @@ module SjuiTools
           @json_analyzer.partial_bindings.each do |partial|
             if partial[:shared_data_bindings]
               partial[:shared_data_bindings].each do |key, value|
-                if value.is_a?(String) && value.start_with?("@{")
-                  binding_var = value.sub(/^@\{/, "").sub(/\}$/, "")
+                # shared_data values can be either simple property names or binding expressions
+                if value.is_a?(String)
+                  binding_var = if value.start_with?("@{")
+                    value.sub(/^@\{/, "").sub(/\}$/, "")
+                  else
+                    value
+                  end
+                  
                   # Check if this data has a default value
                   data_with_default = @json_analyzer.data_sets.find do |data|
                     if data.is_a?(Hash)
@@ -197,6 +203,8 @@ module SjuiTools
                         elsif !value_str.start_with?('"') || !value_str.end_with?('"')
                           escaped_content = value_str.gsub('\\', '\\\\').gsub('"', '\\"')
                           default_value = "\"#{escaped_content}\""
+                        else
+                          default_value = value_str
                         end
                       elsif data_with_default["class"] == "Bool"
                         default_value = default_value.to_s.downcase
