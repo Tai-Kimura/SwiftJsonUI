@@ -377,8 +377,9 @@ module SjuiTools
         view_type = @view_type_set[json["type"].to_sym]
         raise "View Type Not found" if view_type.nil?
         
-        # Apply binding_id prefix if we're inside a partial with binding_id
-        actual_id = if @current_binding_id && @current_partial_depth > 0
+        # Apply binding_id prefix if we have a current binding_id
+        # (not just when inside a partial)
+        actual_id = if @current_binding_id
           "#{@current_binding_id}_#{value}"
         else
           value
