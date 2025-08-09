@@ -53,7 +53,8 @@ module SjuiTools
             File.open(file_path, "r") do |file|
               json_string = file.read
               style_json = JSON.parse(json_string)
-              json = json.merge(style_json)
+              # Merge style first, then original JSON to preserve original values
+              json = style_json.merge(json)
             end
           elsif File.exist?(file_path)
             puts "Warning: Style path is not a file: #{file_path}"
