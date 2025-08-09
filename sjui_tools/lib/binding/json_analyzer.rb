@@ -31,9 +31,9 @@ module SjuiTools
         @view_variables = []  # Store view variables for computed property generation
       end
 
-      def analyze_json(file_name, loaded_json)
+      def analyze_json(file_name, loaded_json, element_path = [])
         json = loaded_json
-        current_view = {"name": "", "type": ""}
+        current_view = {"name": "", "type": "", "element_path": element_path, "file_name": file_name}
         
         # Check if this is an include element with data
         if json["include"] && !json["type"]
@@ -73,8 +73,10 @@ module SjuiTools
           when "id"
             process_id_element(json, value, current_view)
           when "child"
-            value.each do |child_json|
-              analyze_json(file_name, child_json)
+            value.each_with_index do |child_json, index|
+              child_type = child_json["type"] || "element"
+              child_path = element_path + ["child[#{index}] (#{child_type})"]
+              analyze_json(file_name, child_json, child_path)
             end
           when "include"
             binding_id = json["binding_id"]
@@ -93,7 +95,7 @@ module SjuiTools
           when "onPinch"
             @ui_control_event_manager.add_pinch_event(current_view["name"], value) if @current_partial_depth == 0
           else
-            process_binding_element(json, key, value, current_view)
+            process_binding_element(json, key, value, current_view, file_name, element_path)
           end
         end
       end
@@ -101,7 +103,28 @@ module SjuiTools
       def analyze_binding_process(binding_process)
         view = binding_process[:view]
         view_name = view["name"]
-        raise "View Id should be set. #{binding_process}" if view_name.nil?
+        if view_name.nil?
+          # Create detailed error message
+          view_type = view["type"] || "Unknown"
+          key = binding_process[:key]
+          value = binding_process[:value]
+          element_path = binding_process[:element_path] || []
+          file_name = binding_process[:file_name] || "unknown"
+          
+          error_msg = "\n\n" + "=" * 60 + "\n"
+          error_msg += "ERROR: View ID is missing for element with binding\n"
+          error_msg += "=" * 60 + "\n"
+          error_msg += "File: #{file_name}.json\n"
+          error_msg += "Location: #{element_path.join(' > ')}\n" unless element_path.empty?
+          error_msg += "View Type: #{view_type}\n"
+          error_msg += "Binding: @{#{value}} → #{key}\n"
+          error_msg += "\n"
+          error_msg += "Solution: Add an 'id' attribute to this #{view_type} element\n"
+          error_msg += "Example: \"id\": \"my_#{view_type.downcase}_id\"\n"
+          error_msg += "=" * 60 + "\n"
+          
+          raise error_msg
+        end
         key = binding_process[:key]
 
         value = binding_process[:value]
@@ -435,7 +458,7 @@ module SjuiTools
         end
       end
 
-      def process_binding_element(json, key, value, current_view)
+      def process_binding_element(json, key, value, current_view, file_name = nil, element_path = [])
         if value.is_a?(String) && value.start_with?("@{")
           # Skip adding to binding processes if we're inside a partial
           # Partials handle their own binding processes
@@ -452,7 +475,7 @@ module SjuiTools
             unless json["partialAttributes"].nil?
               group << {"view": current_view, "key": "partialAttributes", "value": json["partialAttributes"]} 
             end
-            group << {"view": current_view, "key": key, "value": v} 
+            group << {"view": current_view, "key": key, "value": v, "file_name": file_name, "element_path": element_path} 
             @binding_processes_group[group_name] = group
           end
         end
