@@ -442,6 +442,17 @@ open class SJUIViewCreator:NSObject {
         
         if let id = attr["id"].string {
             let actualId = bindingId != nil ? "\(bindingId!)_\(id)" : id
+            
+            // Check for duplicate view ID and log warning
+            if let existingView = views[actualId] {
+                Logger.debug("[SwiftJsonUI] Warning: Duplicate view ID '\(actualId)' detected. Previous view will be replaced.")
+                // Remove the existing view from its parent to avoid orphaned views
+                if existingView.superview != nil {
+                    Logger.debug("[SwiftJsonUI] Removing existing view with ID '\(actualId)' from superview")
+                    existingView.removeFromSuperview()
+                }
+            }
+            
             views[actualId] = view
             view.viewId = actualId
             view.propertyName = id.toCamel()  // propertyName is original ID without prefix
