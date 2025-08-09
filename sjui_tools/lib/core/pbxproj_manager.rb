@@ -575,13 +575,19 @@ module SjuiTools
             "#{group_id} /* #{folder_name} */ = {\n\t\t\tisa = PBXFileSystemSynchronizedRootGroup;\n\t\t\texceptions = (\n\t\t\t\t#{exception_ref} /* Exceptions for \"#{folder_name}\" folder in \"#{folder_name}\" target */,\n\t\t\t);"
           )
           
-          # Insert the exception set section before the first PBXFileSystemSynchronizedRootGroup section
-          if updated_content.match(/(\/\*\s+Begin\s+PBXFileSystemSynchronizedRootGroup\s+section\s+\*\/)/m)
-            insertion_point = $1
-            updated_content = updated_content.sub(insertion_point, exception_set_section + "\n" + insertion_point)
+          # Check if exception set section already exists
+          if updated_content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
+            # Section already exists, don't add it again
+            puts "Exception set section already exists, skipping insertion"
           else
-            puts "Could not find insertion point for exception set section"
-            return false
+            # Insert the exception set section before the first PBXFileSystemSynchronizedRootGroup section
+            if updated_content.match(/(\/\*\s+Begin\s+PBXFileSystemSynchronizedRootGroup\s+section\s+\*\/)/m)
+              insertion_point = $1
+              updated_content = updated_content.sub(insertion_point, exception_set_section + "\n" + insertion_point)
+            else
+              puts "Could not find insertion point for exception set section"
+              return false
+            end
           end
           
           # Write the updated content
