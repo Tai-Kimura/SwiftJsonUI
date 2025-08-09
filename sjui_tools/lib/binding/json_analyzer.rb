@@ -441,10 +441,9 @@ module SjuiTools
       def apply_binding_id_prefix(json, binding_id)
         return json unless binding_id
         
-        # Create prefix in camelCase
-        prefix = binding_id.split(/[_-]/).map.with_index { |word, i|
-          i == 0 ? word : word.capitalize
-        }.join
+        # Use the binding_id as-is (snake_case) for prefix
+        # This matches what SwiftJsonUI's getView method expects
+        prefix = binding_id
         
         # Recursively process the JSON to add prefix to all IDs
         process_json_for_binding_id(json, prefix)
