@@ -110,7 +110,26 @@ open class SJUIViewCreator:NSObject {
     }
     
     private class func findResourceInBundle(name: String, directory: String, fileType: String = "json") -> String? {
-        // Try using url(forResource:withExtension:subdirectory:) first
+        // Check if the name contains a path separator (subdirectory)
+        if name.contains("/") {
+            // Split the path to get subdirectory and filename
+            let components = name.split(separator: "/")
+            let fileName = String(components.last ?? "")
+            let subPath = components.dropLast().joined(separator: "/")
+            let fullSubdirectory = "\(directory)/\(subPath)"
+            
+            // Try with full subdirectory path
+            if let url = Bundle.main.url(forResource: fileName, withExtension: fileType, subdirectory: fullSubdirectory) {
+                return url.path
+            }
+            
+            // Try with path(forResource:ofType:inDirectory:)
+            if let pathWithDir = Bundle.main.path(forResource: fileName, ofType: fileType, inDirectory: fullSubdirectory) {
+                return pathWithDir
+            }
+        }
+        
+        // Try using url(forResource:withExtension:subdirectory:) for simple names
         if let url = Bundle.main.url(forResource: name, withExtension: fileType, subdirectory: directory) {
             return url.path
         }
@@ -684,16 +703,47 @@ open class SJUIViewCreator:NSObject {
                 try fm.createDirectory(atPath: layoutFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
-            // Try to get layout files from the layouts directory
-            if let layoutURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: layoutsDirectoryName) {
+            // Try to get layout files from the layouts directory (including subdirectories)
+            var layoutURLs: [URL] = []
+            
+            // First try to get the directory URL
+            if let layoutsDirURL = Bundle.main.url(forResource: layoutsDirectoryName, withExtension: nil) {
+                // Enumerate all files recursively
+                if let enumerator = fm.enumerator(at: layoutsDirURL, includingPropertiesForKeys: nil) {
+                    for case let fileURL as URL in enumerator {
+                        if fileURL.pathExtension == "json" {
+                            layoutURLs.append(fileURL)
+                        }
+                    }
+                }
+            }
+            
+            // Fallback to urls(forResourcesWithExtension:subdirectory:) if enumeration didn't work
+            if layoutURLs.isEmpty, let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: layoutsDirectoryName) {
+                layoutURLs = urls
+            }
+            
+            if !layoutURLs.isEmpty {
                 Logger.debug("[SwiftJsonUI] Found \(layoutURLs.count) layout files in \(layoutsDirectoryName)")
                 for url in layoutURLs {
-                    let fileName = url.lastPathComponent
-                    let toPath = "\(layoutFileDirPath)/\(fileName)"
+                    // Preserve subdirectory structure in cache
+                    let bundleURL = Bundle.main.bundleURL
+                    let relativePath = url.path.replacingOccurrences(of: bundleURL.path + "/", with: "")
+                        .replacingOccurrences(of: "\(layoutsDirectoryName)/", with: "")
+                    
+                    let toPath = "\(layoutFileDirPath)/\(relativePath)"
+                    let toURL = URL(fileURLWithPath: toPath)
+                    
+                    // Create subdirectories if needed
+                    let toDir = toURL.deletingLastPathComponent().path
+                    if !fm.fileExists(atPath: toDir) {
+                        try fm.createDirectory(atPath: toDir, withIntermediateDirectories: true, attributes: nil)
+                    }
+                    
                     if fm.fileExists(atPath: toPath) {
                         try fm.removeItem(atPath: toPath)
                     }
-                    try fm.copyItem(at: url, to: URL(fileURLWithPath: toPath))
+                    try fm.copyItem(at: url, to: toURL)
                 }
             } else {
                 // Fallback for Synchronized projects - copy all JSON files from bundle root
@@ -719,16 +769,47 @@ open class SJUIViewCreator:NSObject {
                 try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
-            // Try to get style files from the styles directory
-            if let styleURLs = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: stylesDirectoryName) {
+            // Try to get style files from the styles directory (including subdirectories)
+            var styleURLs: [URL] = []
+            
+            // First try to get the directory URL
+            if let stylesDirURL = Bundle.main.url(forResource: stylesDirectoryName, withExtension: nil) {
+                // Enumerate all files recursively
+                if let enumerator = fm.enumerator(at: stylesDirURL, includingPropertiesForKeys: nil) {
+                    for case let fileURL as URL in enumerator {
+                        if fileURL.pathExtension == "json" {
+                            styleURLs.append(fileURL)
+                        }
+                    }
+                }
+            }
+            
+            // Fallback to urls(forResourcesWithExtension:subdirectory:) if enumeration didn't work
+            if styleURLs.isEmpty, let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: stylesDirectoryName) {
+                styleURLs = urls
+            }
+            
+            if !styleURLs.isEmpty {
                 Logger.debug("[SwiftJsonUI] Found \(styleURLs.count) style files in \(stylesDirectoryName)")
                 for url in styleURLs {
-                    let fileName = url.lastPathComponent
-                    let toPath = "\(styleFileDirPath)/\(fileName)"
+                    // Preserve subdirectory structure in cache
+                    let bundleURL = Bundle.main.bundleURL
+                    let relativePath = url.path.replacingOccurrences(of: bundleURL.path + "/", with: "")
+                        .replacingOccurrences(of: "\(stylesDirectoryName)/", with: "")
+                    
+                    let toPath = "\(styleFileDirPath)/\(relativePath)"
+                    let toURL = URL(fileURLWithPath: toPath)
+                    
+                    // Create subdirectories if needed
+                    let toDir = toURL.deletingLastPathComponent().path
+                    if !fm.fileExists(atPath: toDir) {
+                        try fm.createDirectory(atPath: toDir, withIntermediateDirectories: true, attributes: nil)
+                    }
+                    
                     if fm.fileExists(atPath: toPath) {
                         try fm.removeItem(atPath: toPath)
                     }
-                    try fm.copyItem(at: url, to: URL(fileURLWithPath: toPath))
+                    try fm.copyItem(at: url, to: toURL)
                 }
             } else {
                 // Fallback for Synchronized projects - copy all JSON files to style cache as well
@@ -749,24 +830,55 @@ open class SJUIViewCreator:NSObject {
         }
         // Copy script files
         let scriptFileDirPath = "\(cachesDirPath)/\(scriptsDirectoryName)"
-        if let scriptURLs = Bundle.main.urls(forResourcesWithExtension: "js", subdirectory: scriptsDirectoryName) {
-            do {
-                if !fm.fileExists(atPath: scriptFileDirPath) {
-                    try fm.createDirectory(atPath: scriptFileDirPath, withIntermediateDirectories: false, attributes: nil)
+        do {
+            if !fm.fileExists(atPath: scriptFileDirPath) {
+                try fm.createDirectory(atPath: scriptFileDirPath, withIntermediateDirectories: false, attributes: nil)
+            }
+            
+            var scriptURLs: [URL] = []
+            
+            // First try to get the directory URL
+            if let scriptsDirURL = Bundle.main.url(forResource: scriptsDirectoryName, withExtension: nil) {
+                // Enumerate all files recursively
+                if let enumerator = fm.enumerator(at: scriptsDirURL, includingPropertiesForKeys: nil) {
+                    for case let fileURL as URL in enumerator {
+                        if fileURL.pathExtension == "js" {
+                            scriptURLs.append(fileURL)
+                        }
+                    }
                 }
-                
+            }
+            
+            // Fallback to urls(forResourcesWithExtension:subdirectory:) if enumeration didn't work
+            if scriptURLs.isEmpty, let urls = Bundle.main.urls(forResourcesWithExtension: "js", subdirectory: scriptsDirectoryName) {
+                scriptURLs = urls
+            }
+            
+            if !scriptURLs.isEmpty {
                 Logger.debug("[SwiftJsonUI] Found \(scriptURLs.count) script files in \(scriptsDirectoryName)")
                 for url in scriptURLs {
-                    let fileName = url.lastPathComponent
-                    let toPath = "\(scriptFileDirPath)/\(fileName)"
+                    // Preserve subdirectory structure in cache
+                    let bundleURL = Bundle.main.bundleURL
+                    let relativePath = url.path.replacingOccurrences(of: bundleURL.path + "/", with: "")
+                        .replacingOccurrences(of: "\(scriptsDirectoryName)/", with: "")
+                    
+                    let toPath = "\(scriptFileDirPath)/\(relativePath)"
+                    let toURL = URL(fileURLWithPath: toPath)
+                    
+                    // Create subdirectories if needed
+                    let toDir = toURL.deletingLastPathComponent().path
+                    if !fm.fileExists(atPath: toDir) {
+                        try fm.createDirectory(atPath: toDir, withIntermediateDirectories: true, attributes: nil)
+                    }
+                    
                     if fm.fileExists(atPath: toPath) {
                         try fm.removeItem(atPath: toPath)
                     }
-                    try fm.copyItem(at: url, to: URL(fileURLWithPath: toPath))
+                    try fm.copyItem(at: url, to: toURL)
                 }
-            } catch let error {
-                Logger.debug("[SwiftJsonUI] Error copying script files: \(error)")
             }
+        } catch let error {
+            Logger.debug("[SwiftJsonUI] Error copying script files: \(error)")
         }
         #endif
     }
