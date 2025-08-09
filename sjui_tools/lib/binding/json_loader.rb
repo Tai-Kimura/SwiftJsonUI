@@ -115,7 +115,12 @@ module SjuiTools
             @binding_file_manager.cleanup_backup(binding_info[:backup_file_path])
             
             # このファイルのincluding_filesを全体のハッシュにマージ
-            all_including_files.merge!(@json_analyzer.including_files)
+            # 各ファイルのincluding情報を追加（上書きではなく追加）
+            @json_analyzer.including_files.each do |key, values|
+              all_including_files[key] ||= []
+              all_including_files[key].concat(values)
+              all_including_files[key].uniq!
+            end
           rescue => e
             puts "Error generating binding file for #{file_name}: #{e.message}"
             puts e.backtrace.first(5).join("\n")
