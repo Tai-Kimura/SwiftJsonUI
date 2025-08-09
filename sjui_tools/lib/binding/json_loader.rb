@@ -40,8 +40,7 @@ module SjuiTools
         @binding_file_manager = BindingFileManager.new(@view_path, @binding_path)
         @import_module_manager = ImportModuleManager.new
         @ui_control_event_manager = UIControlEventManager.new
-        @global_registered_view_ids = {}  # Track IDs across all files
-        @json_analyzer = JsonAnalyzer.new(@import_module_manager, @ui_control_event_manager, @layout_path, @style_path, nil, @@view_type_set, @global_registered_view_ids)
+        @json_analyzer = JsonAnalyzer.new(@import_module_manager, @ui_control_event_manager, @layout_path, @style_path, nil, @@view_type_set)
         @including_files = {}
       end
 
@@ -92,15 +91,14 @@ module SjuiTools
           file_name = File.basename(file, ".*")
           binding_info = @binding_file_manager.setup_binding_file_info(file_name)
           
-          # JSONアナライザーの初期化（グローバルID登録を渡す）
+          # JSONアナライザーの初期化（各ファイルごとに新しいID登録で開始）
           @json_analyzer = JsonAnalyzer.new(
             @import_module_manager,
             @ui_control_event_manager,
             @layout_path,
             @style_path,
             binding_info[:super_binding],
-            @@view_type_set,
-            @global_registered_view_ids
+            @@view_type_set
           )
           
           # JSONファイルの読み込みと解析
