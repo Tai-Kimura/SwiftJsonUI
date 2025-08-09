@@ -301,8 +301,13 @@ module SjuiTools
         # Recursively find all binding_group values in the JSON
         if json.is_a?(Hash)
           json.each do |key, value|
-            if key == "binding_group" && value.is_a?(Array)
-              groups.merge(value)
+            if key == "binding_group"
+              # Handle both string and array values
+              if value.is_a?(Array)
+                groups.merge(value)
+              elsif value.is_a?(String)
+                groups.add(value)
+              end
             elsif value.is_a?(Hash) || value.is_a?(Array)
               groups.merge(analyze_binding_groups(value))
             end
@@ -437,7 +442,10 @@ module SjuiTools
           return if @current_partial_depth > 0
           
           v = value.sub(/^@\{/, "").sub(/\}$/, "")
-          group_names = json["binding_group"].nil? ? ["all",""] : ["all"] + json["binding_group"]
+          # Handle both string and array values for binding_group
+          bg = json["binding_group"]
+          group_list = bg.nil? ? [] : (bg.is_a?(Array) ? bg : [bg])
+          group_names = json["binding_group"].nil? ? ["all",""] : ["all"] + group_list
           group_names.each do |group_name|
             group = @binding_processes_group[group_name]
             group = [] if group.nil?
