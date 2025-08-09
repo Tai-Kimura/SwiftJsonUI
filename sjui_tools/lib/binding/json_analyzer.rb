@@ -38,11 +38,12 @@ module SjuiTools
         # Check if this is an include element with data
         if json["include"] && !json["type"]
           include_name = json["include"]
-          data_bindings = json["data"]
+          shared_data_bindings = json["shared_data"]  # Automatic binding (old behavior)
+          data_bindings = json["data"]  # Manual assignment in invalidate (new behavior)
           binding_id = json["binding_id"]
-          process_include_element(file_name, include_name, json, data_bindings, binding_id)
+          process_include_element(file_name, include_name, json, shared_data_bindings, binding_id, data_bindings)
           # Track this as a partial binding only if we're at the top level
-          track_partial_binding(include_name, data_bindings, binding_id) if @current_partial_depth == 0
+          track_partial_binding(include_name, shared_data_bindings, binding_id, data_bindings) if @current_partial_depth == 0
           return
         end
         
@@ -76,9 +77,11 @@ module SjuiTools
             end
           when "include"
             binding_id = json["binding_id"]
-            process_include_element(file_name, value, json, nil, binding_id)
+            shared_data_bindings = json["shared_data"]
+            data_bindings = json["data"]
+            process_include_element(file_name, value, json, shared_data_bindings, binding_id, data_bindings)
             # Track this as a partial binding only if we're at the top level
-            track_partial_binding(value, nil, binding_id) if @current_partial_depth == 0
+            track_partial_binding(value, shared_data_bindings, binding_id, data_bindings) if @current_partial_depth == 0
           when "onClick"
             # Skip event handlers if we're inside a partial include
             @ui_control_event_manager.add_click_event(current_view["name"], value) if @current_partial_depth == 0
@@ -165,6 +168,16 @@ module SjuiTools
               if partial_has_group
                 method_content << "        \n"
                 method_content << "        // Propagate invalidate to partial binding (child first)\n"
+                
+                # Add data assignments if data_bindings are present
+                if partial[:data_bindings] && !partial[:data_bindings].empty?
+                  partial[:data_bindings].each do |key, value|
+                    # Remove @{} if present
+                    clean_value = value.to_s.gsub(/^@\{/, '').gsub(/\}$/, '')
+                    method_content << "        #{partial[:property_name]}Binding.#{key} = #{clean_value}\n"
+                  end
+                end
+                
                 method_content << "        #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
               end
             end
@@ -200,7 +213,7 @@ module SjuiTools
 
       private
 
-      def track_partial_binding(partial_name, parent_data_bindings = {}, binding_id = nil)
+      def track_partial_binding(partial_name, shared_data_bindings = {}, binding_id = nil, data_bindings = {})
         # Check if this partial binding should be ignored
         return if JsonLoaderConfig::IGNORE_BINDING_SET[partial_name]
         
@@ -269,7 +282,8 @@ module SjuiTools
             property_name: property_name,
             binding_groups: binding_groups,
             has_bindings: has_bindings,
-            parent_data_bindings: parent_data_bindings,
+            shared_data_bindings: shared_data_bindings,
+            data_bindings: data_bindings,
             binding_id: binding_id
           }
         end
@@ -347,7 +361,7 @@ module SjuiTools
         @weak_vars_content << weak_var_line
       end
 
-      def process_include_element(file_name, value, json, data_bindings = nil, binding_id = nil)
+      def process_include_element(file_name, value, json, shared_data_bindings = nil, binding_id = nil, data_bindings = nil)
         if @including_files[file_name].nil?
           @including_files[file_name] = [value]
         else

@@ -388,8 +388,8 @@ module SjuiTools
       
       def check_data_passed_to_partials(data_name)
         @json_analyzer.partial_bindings.any? do |partial|
-          partial[:parent_data_bindings] && 
-          partial[:parent_data_bindings].any? do |key, value|
+          partial[:shared_data_bindings] && 
+          partial[:shared_data_bindings].any? do |key, value|
             value.is_a?(String) && value.start_with?("@{") && value.sub(/^@\{/, "").sub(/\}$/, "") == data_name
           end
         end
@@ -398,8 +398,8 @@ module SjuiTools
       def generate_didset_content_for_data(data_name)
         content = String.new
         @json_analyzer.partial_bindings.each do |partial|
-          if partial[:parent_data_bindings]
-            partial[:parent_data_bindings].each do |key, value|
+          if partial[:shared_data_bindings]
+            partial[:shared_data_bindings].each do |key, value|
               if value.is_a?(String) && value.start_with?("@{")
                 binding_var = value.sub(/^@\{/, "").sub(/\}$/, "")
                 if binding_var == data_name
