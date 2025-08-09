@@ -94,16 +94,20 @@ extension UIScrollView: KeyboardAvoidanceScrollView {
               let keyboardFrameEndValue = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue,
               let window = self.window else { return }
         
-        var keyboardFrameEnd = keyboardFrameEndValue.cgRectValue
-        keyboardFrameEnd = self.convert(keyboardFrameEnd, from: window)
+        let keyboardFrameEndInWindow = keyboardFrameEndValue.cgRectValue
         
         // Store original content inset if not already stored
         if originalContentInset == nil {
             originalContentInset = self.contentInset
         }
         
-        // Calculate the keyboard height relative to the scroll view
-        if keyboardFrameEnd.origin.y >= self.bounds.height {
+        // Convert scroll view bounds to window coordinates for accurate comparison
+        let scrollViewFrameInWindow = self.convert(self.bounds, to: window)
+        let scrollViewBottom = scrollViewFrameInWindow.origin.y + scrollViewFrameInWindow.size.height
+        let keyboardTop = keyboardFrameEndInWindow.origin.y
+        
+        // Check if keyboard is hidden (keyboard top is at or below screen bottom)
+        if keyboardTop >= UIScreen.main.bounds.height {
             // Keyboard is hidden
             if let original = originalContentInset {
                 UIView.animate(withDuration: KeyboardAvoidanceConfig.shared.animationDuration) {
@@ -112,10 +116,6 @@ extension UIScrollView: KeyboardAvoidanceScrollView {
             }
         } else {
             // Keyboard is visible - calculate the overlap
-            let scrollViewFrame = self.convert(self.bounds, to: window)
-            let scrollViewBottom = scrollViewFrame.origin.y + scrollViewFrame.size.height
-            let keyboardTop = keyboardFrameEnd.origin.y
-            
             if keyboardTop < scrollViewBottom {
                 let overlap = scrollViewBottom - keyboardTop
                 UIView.animate(withDuration: KeyboardAvoidanceConfig.shared.animationDuration) {
@@ -125,6 +125,13 @@ extension UIScrollView: KeyboardAvoidanceScrollView {
                 // Scroll to make the first responder visible
                 if KeyboardAvoidanceConfig.shared.autoScrollToFirstResponder {
                     scrollToFirstResponder(keyboardTop: keyboardTop)
+                }
+            } else {
+                // No overlap - reset to original inset
+                if let original = originalContentInset {
+                    UIView.animate(withDuration: KeyboardAvoidanceConfig.shared.animationDuration) {
+                        self.contentInset.bottom = original.bottom
+                    }
                 }
             }
         }
@@ -149,18 +156,26 @@ extension UIScrollView: KeyboardAvoidanceScrollView {
     
     private func scrollToFirstResponder(keyboardTop: CGFloat) {
         // Find the first responder in the scroll view
-        guard let firstResponder = findFirstResponder(in: self) else { return }
+        guard let firstResponder = findFirstResponder(in: self),
+              let window = self.window else { return }
         
-        // Convert first responder frame to scroll view coordinates
-        let responderFrame = firstResponder.convert(firstResponder.bounds, to: self)
-        let responderBottom = responderFrame.origin.y + responderFrame.size.height + KeyboardAvoidanceConfig.shared.additionalBottomPadding
+        // Convert first responder frame to window coordinates
+        let responderFrameInScrollView = firstResponder.convert(firstResponder.bounds, to: self)
+        let responderFrameInWindow = self.convert(responderFrameInScrollView, to: window)
+        let responderBottom = responderFrameInWindow.origin.y + responderFrameInWindow.size.height + KeyboardAvoidanceConfig.shared.additionalBottomPadding
         
-        // Check if the responder is hidden by keyboard
-        let visibleHeight = keyboardTop - self.frame.origin.y
-        if responderBottom > visibleHeight {
-            let offsetY = responderBottom - visibleHeight + contentOffset.y
-            if offsetY > 0 {
-                setContentOffset(CGPoint(x: contentOffset.x, y: offsetY), animated: true)
+        // Check if the responder is hidden by keyboard (both in window coordinates)
+        if responderBottom > keyboardTop {
+            // Calculate how much we need to scroll
+            let overlap = responderBottom - keyboardTop
+            let newOffset = contentOffset.y + overlap
+            
+            // Ensure we don't scroll beyond content bounds
+            let maxOffsetY = max(0, contentSize.height - bounds.height + contentInset.bottom)
+            let targetOffsetY = min(newOffset, maxOffsetY)
+            
+            if targetOffsetY > contentOffset.y {
+                setContentOffset(CGPoint(x: contentOffset.x, y: targetOffsetY), animated: true)
             }
         }
     }
