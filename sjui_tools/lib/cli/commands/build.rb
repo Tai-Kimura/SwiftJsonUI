@@ -93,8 +93,64 @@ module SjuiTools
 
         def build_swiftui
           puts "Building SwiftUI files..."
-          # TODO: Implement SwiftUI build
-          puts "SwiftUI build not yet implemented"
+          
+          # Setup project paths
+          unless Core::ProjectFinder.setup_paths
+            puts "Error: Could not find project file (.xcodeproj or Package.swift)"
+            exit 1
+          end
+          
+          require_relative '../../swiftui/json_to_swiftui_converter'
+          require_relative '../../swiftui/view_updater'
+          
+          config = Core::ConfigManager.load_config
+          source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
+          layouts_dir = File.join(source_path, config['layouts_directory'] || 'Layouts')
+          view_dir = File.join(source_path, config['view_directory'] || 'View')
+          
+          # Process all JSON files in Layouts directory
+          json_files = Dir.glob(File.join(layouts_dir, '**/*.json'))
+          
+          if json_files.empty?
+            puts "No JSON files found in #{layouts_dir}"
+            return
+          end
+          
+          converter = SjuiTools::SwiftUI::JsonToSwiftUIConverter.new
+          updater = SjuiTools::SwiftUI::ViewUpdater.new
+          
+          json_files.each do |json_file|
+            # Get relative path from layouts directory
+            relative_path = Pathname.new(json_file).relative_path_from(Pathname.new(layouts_dir)).to_s
+            base_name = File.basename(relative_path, '.json')
+            dir_path = File.dirname(relative_path)
+            
+            # Convert to PascalCase for Swift file
+            view_name = base_name.split(/[_\-]/).map(&:capitalize).join
+            
+            # Determine Swift file path
+            swift_file = if dir_path == '.'
+              File.join(view_dir, "#{view_name}View.swift")
+            else
+              File.join(view_dir, dir_path, "#{view_name}View.swift")
+            end
+            
+            if File.exist?(swift_file)
+              puts "Processing: #{relative_path}"
+              
+              # Convert JSON to SwiftUI code
+              swiftui_code = converter.convert_json_to_view(json_file)
+              
+              # Update the existing Swift file's generatedBody
+              updater.update_generated_body(swift_file, swiftui_code)
+              
+              puts "  Updated: #{swift_file}"
+            else
+              puts "  Skipping: #{relative_path} (no corresponding Swift file)"
+            end
+          end
+          
+          puts "SwiftUI build completed!"
         end
       end
     end

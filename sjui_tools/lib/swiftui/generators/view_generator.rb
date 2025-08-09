@@ -127,14 +127,29 @@ module SjuiTools
                 @StateObject private var viewModel = #{view_name}ViewModel()
                 
                 var body: some View {
-                    // This view will be generated from #{json_reference}.json
-                    // Run 'sjui build' to generate the SwiftUI code
+                    #if DEBUG
+                    // Hot reload enabled in DEBUG mode
+                    DynamicComponent(
+                        jsonName: "#{json_reference}",
+                        viewModel: viewModel
+                    )
+                    #else
+                    // Production build uses generated code
+                    generatedBody
+                    #endif
+                }
+                
+                // Generated SwiftUI code from #{json_reference}.json
+                // This will be updated when you run 'sjui build'
+                @ViewBuilder
+                private var generatedBody: some View {
+                    // TODO: Run 'sjui build' to generate SwiftUI code from JSON
                     VStack {
-                        Text("#{view_name}")
+                        Text(viewModel.title)
                             .font(.title)
                             .padding()
                         
-                        Text("This view will be generated from \\(viewModel.jsonFileName)")
+                        Text("Generated from #{json_reference}.json")
                             .font(.caption)
                             .foregroundColor(.gray)
                     }
@@ -142,17 +157,24 @@ module SjuiTools
             }
 
             class #{view_name}ViewModel: ObservableObject {
+                // JSON file reference for hot reload
                 let jsonFileName = "#{json_reference}"
                 
-                // Add your view model properties here
+                // Data properties from JSON
                 @Published var title: String = "#{view_name}"
                 
-                // Add your view model methods here
+                // Action handlers
                 func onAppear() {
                     // Called when view appears
                 }
+                
+                // Add more action handlers as needed
+                func onTap() {
+                    // Handle tap events
+                }
             }
 
+            // MARK: - Preview
             struct #{view_name}View_Previews: PreviewProvider {
                 static var previews: some View {
                     #{view_name}View()

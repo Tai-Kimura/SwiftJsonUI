@@ -15,6 +15,8 @@ module SjuiTools
           child_data = @component['child'] || []
           # childが単一要素の場合は配列に変換
           children = child_data.is_a?(Array) ? child_data : [child_data]
+          # Filter out data declarations
+          children = children.reject { |child| child['data'] }
           
           if children.empty?
             # 子要素がない場合は空のビュー
@@ -63,7 +65,6 @@ module SjuiTools
                   if !orientation
                     # ZStackでの子要素をグループ化
                     add_line "Group {"
-                    indent do
                   end
                   
                   # weightプロパティの処理
@@ -73,7 +74,14 @@ module SjuiTools
                   child_code = child_converter.convert
                   child_lines = child_code.split("\n")
                   
-                  child_lines.each { |line| @generated_code << line }
+                  # Indent child code if inside Group (ZStack)
+                  if !orientation
+                    indent do
+                      child_lines.each { |line| @generated_code << line }
+                    end
+                  else
+                    child_lines.each { |line| @generated_code << line }
+                  end
                   
                   # Propagate state variables
                   if child_converter.respond_to?(:state_variables) && child_converter.state_variables
@@ -89,7 +97,9 @@ module SjuiTools
                   
                   # ZStackの場合、位置調整を適用
                   if !orientation
-                    apply_zstack_positioning(child, index)
+                    indent do
+                      apply_zstack_positioning(child, index)
+                    end
                     add_line "}"  # Group終了
                   end
                 end

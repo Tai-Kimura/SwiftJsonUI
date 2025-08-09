@@ -76,7 +76,16 @@ module SjuiTools
             end
             
             if width_value && height_value
-              add_modifier_line ".frame(width: #{width_param}, height: #{height_param})"
+              # Check if either dimension is .infinity
+              if width_value == '.infinity' && height_value == '.infinity'
+                add_modifier_line ".frame(maxWidth: #{width_param}, maxHeight: #{height_param})"
+              elsif width_value == '.infinity'
+                add_modifier_line ".frame(maxWidth: #{width_param}, height: #{height_param})"
+              elsif height_value == '.infinity'
+                add_modifier_line ".frame(width: #{width_param}, maxHeight: #{height_param})"
+              else
+                add_modifier_line ".frame(width: #{width_param}, height: #{height_param})"
+              end
             elsif width_value
               if width_value == '.infinity'
                 add_modifier_line ".frame(maxWidth: #{width_param})"
@@ -84,7 +93,11 @@ module SjuiTools
                 add_modifier_line ".frame(width: #{width_param})"
               end
             elsif height_value
-              add_modifier_line ".frame(height: #{height_param})"
+              if height_value == '.infinity'
+                add_modifier_line ".frame(maxHeight: #{height_param})"
+              else
+                add_modifier_line ".frame(height: #{height_param})"
+              end
             end
           end
           

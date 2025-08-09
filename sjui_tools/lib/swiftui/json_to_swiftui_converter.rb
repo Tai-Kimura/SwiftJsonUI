@@ -64,6 +64,29 @@ module SjuiTools
         result
       end
       
+      # Simple method to convert JSON file to SwiftUI view code only
+      def convert_json_to_view(json_file_path)
+        unless File.exist?(json_file_path)
+          raise "JSON file not found: #{json_file_path}"
+        end
+        
+        # Read and parse JSON
+        json_content = File.read(json_file_path)
+        json_data = JSON.parse(json_content)
+        
+        # Process includes
+        json_data = process_includes(json_data, File.dirname(json_file_path))
+        
+        # Convert to SwiftUI code
+        @state_variables = []
+        @action_manager = ActionManager.new
+        
+        # Convert the main component
+        view_code = convert_component(json_data, 2)  # Indent level 2 for inside generatedBody
+        
+        view_code
+      end
+      
       def process_includes(json_data, base_dir)
         return json_data unless json_data.is_a?(Hash)
         

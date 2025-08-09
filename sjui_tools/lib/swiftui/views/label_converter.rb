@@ -12,7 +12,7 @@ module SjuiTools
           # テンプレート変数の処理
           processed_text = process_template_value(text)
           if processed_text.is_a?(Hash) && processed_text[:template_var]
-            add_line "Text(#{to_camel_case(processed_text[:template_var])})"
+            add_line "Text(viewModel.#{to_camel_case(processed_text[:template_var])})"
           else
             add_line "Text(\"#{text}\")"
           end
