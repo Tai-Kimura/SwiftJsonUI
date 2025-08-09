@@ -381,11 +381,6 @@ module SjuiTools
         # So we just use the value as-is
         actual_id = value
         
-        # Debug logging (can be removed later)
-        if value.include?("login")
-          puts "[DEBUG] Processing ID: value='#{value}', file='#{current_view[:file_name]}'"
-        end
-        
         # Check for duplicate ID
         if @registered_view_ids[actual_id]
           existing_info = @registered_view_ids[actual_id]

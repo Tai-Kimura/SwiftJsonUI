@@ -219,16 +219,35 @@ class HotLoaderServer {
       // Run the build command
       exec(`cd "${projectRoot}" && "${sjuiCommand}" build`, (error, stdout, stderr) => {
         if (error) {
-          console.error(`Error running sjui build: ${error.message}`);
+          console.error('\n============================================================');
+          console.error('Build Error Occurred');
+          console.error('============================================================');
+          console.error(`Error: ${error.message}`);
+          
+          // Show stdout even on error (it often contains the actual error details)
+          if (stdout) {
+            console.error('\nBuild Output:');
+            console.error(stdout);
+          }
+          
+          // Show stderr if available
+          if (stderr) {
+            console.error('\nError Output:');
+            console.error(stderr);
+          }
+          
+          console.error('============================================================\n');
           return;
         }
+        
+        // Success case
         if (stderr) {
-          console.error(`sjui build stderr: ${stderr}`);
+          console.warn(`Build warnings: ${stderr}`);
         }
-        if (stdout) {
-          console.log(`sjui build output: ${stdout}`);
+        if (stdout && stdout.trim()) {
+          console.log(`Build output: ${stdout}`);
         }
-        console.log('sjui build completed');
+        console.log('✅ sjui build completed successfully');
       });
     });
   }
