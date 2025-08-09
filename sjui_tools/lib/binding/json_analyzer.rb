@@ -10,7 +10,7 @@ module SjuiTools
     class JsonAnalyzer
       attr_reader :binding_content, :data_sets, :binding_processes_group, :including_files, :reset_constraint_views, :weak_vars_content, :invalidate_methods_content, :partial_bindings, :view_variables
 
-      def initialize(import_module_manager, ui_control_event_manager, layout_path, style_path, super_binding, view_type_set)
+      def initialize(import_module_manager, ui_control_event_manager, layout_path, style_path, super_binding, view_type_set, global_registered_view_ids = nil)
         @import_module_manager = import_module_manager
         @ui_control_event_manager = ui_control_event_manager
         @layout_path = layout_path
@@ -29,7 +29,7 @@ module SjuiTools
         @current_partial_depth = 0
         @current_binding_id = nil
         @view_variables = []  # Store view variables for computed property generation
-        @registered_view_ids = {}  # Track all registered view IDs for duplicate detection
+        @registered_view_ids = global_registered_view_ids || {}  # Use global tracker if provided, otherwise create new
       end
 
       def analyze_json(file_name, loaded_json, element_path = [])
