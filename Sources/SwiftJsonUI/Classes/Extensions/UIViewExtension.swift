@@ -169,16 +169,7 @@ public extension UIView {
         set {
             if isActiveForConstraint != newValue {
                 objc_setAssociatedObject(self, &ActivatedConstraintInfoKey, newValue, .OBJC_ASSOCIATION_RETAIN)
-                // When constraints become active, apply the current visibility state properly
-                if newValue == true {
-                    let currentVisibility = self.visibility
-                    // Force re-apply visibility to ensure proper state
-                    if currentVisibility == .gone {
-                        setVisibility(oldValue: .visible, newValue: currentVisibility)
-                    } else {
-                        setVisibility(oldValue: .visible, newValue: currentVisibility)
-                    }
-                }
+                setVisibility(oldValue: .visible, newValue: self.visibility)
             }
         }
     }
@@ -196,18 +187,6 @@ public extension UIView {
                 objc_setAssociatedObject(self, &VisibilityKey, newValue, .OBJC_ASSOCIATION_RETAIN)
                 if self.isActiveForConstraint {
                     setVisibility(oldValue: oldValue, newValue: newValue)
-                } else {
-                    // If constraints are not active yet, defer the visibility change
-                    // This happens when visibility is set from bindings before view setup is complete
-                    if newValue == .gone {
-                        // For .gone, we can simply hide the view for now
-                        // It will be properly removed when constraints are activated
-                        self.isHidden = true
-                    } else if newValue == .invisible {
-                        self.isHidden = true
-                    } else {
-                        self.isHidden = false
-                    }
                 }
             }
         }
