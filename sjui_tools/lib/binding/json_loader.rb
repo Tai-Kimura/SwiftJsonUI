@@ -165,6 +165,54 @@ module SjuiTools
               content << "        self.#{partial[:property_name]}Binding = #{partial[:binding_class]}(viewHolder: viewHolder)\n"
             end
           end
+          
+          # Set default values for shared_data in partial bindings
+          @json_analyzer.partial_bindings.each do |partial|
+            if partial[:shared_data_bindings]
+              partial[:shared_data_bindings].each do |key, value|
+                if value.is_a?(String) && value.start_with?("@{")
+                  binding_var = value.sub(/^@\{/, "").sub(/\}$/, "")
+                  # Check if this data has a default value
+                  data_with_default = @json_analyzer.data_sets.find do |data|
+                    if data.is_a?(Hash)
+                      data["name"] == binding_var && data.has_key?("defaultValue")
+                    elsif data.is_a?(String)
+                      # Simple string format doesn't have explicit default, but String defaults to ""
+                      data == binding_var
+                    end
+                  end
+                  
+                  if data_with_default
+                    if data_with_default.is_a?(Hash) && data_with_default.has_key?("defaultValue")
+                      default_value = data_with_default["defaultValue"]
+                      if data_with_default["class"] == "String"
+                        # Handle string default values
+                        value_str = default_value.to_s
+                        if value_str == "''"
+                          default_value = '""'
+                        elsif value_str.start_with?("'") && value_str.end_with?("'") && value_str.length > 1
+                          inner_content = value_str[1...-1]
+                          escaped_content = inner_content.gsub('\\', '\\\\').gsub('"', '\\"')
+                          default_value = "\"#{escaped_content}\""
+                        elsif !value_str.start_with?('"') || !value_str.end_with?('"')
+                          escaped_content = value_str.gsub('\\', '\\\\').gsub('"', '\\"')
+                          default_value = "\"#{escaped_content}\""
+                        end
+                      elsif data_with_default["class"] == "Bool"
+                        default_value = default_value.to_s.downcase
+                      else
+                        default_value = default_value.to_s
+                      end
+                      content << "        self.#{partial[:property_name]}Binding.#{key} = #{default_value}\n"
+                    elsif data_with_default.is_a?(String)
+                      # Simple string defaults to empty string
+                      content << "        self.#{partial[:property_name]}Binding.#{key} = \"\"\n"
+                    end
+                  end
+                end
+              end
+            end
+          end
         else
           content << "        super.init(viewHolder: viewHolder)\n"
         end
