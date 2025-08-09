@@ -196,7 +196,8 @@ open class SJUIViewCreator:NSObject {
         
         // Log when processing JSON (only in DEBUG)
         if let includeValue = attr["include"].string {
-            Logger.debug("[SwiftJsonUI] Processing include: '\(includeValue)'")
+            let bindingContext = bindingId != nil ? " (binding_id: \(bindingId!))" : ""
+            Logger.debug("[SwiftJsonUI] Processing include: '\(includeValue)'\(bindingContext)")
         }
         
         if let include = attr["include"].string {
@@ -445,7 +446,8 @@ open class SJUIViewCreator:NSObject {
             
             // Check for duplicate view ID and log warning
             if let existingView = views[actualId] {
-                Logger.debug("[SwiftJsonUI] Warning: Duplicate view ID '\(actualId)' detected. Previous view will be replaced.")
+                let bindingContext = bindingId != nil ? " (current binding_id: \(bindingId!))" : ""
+                Logger.debug("[SwiftJsonUI] Warning: Duplicate view ID '\(actualId)' detected\(bindingContext). Previous view will be replaced.")
                 // Remove the existing view from its parent to avoid orphaned views
                 if existingView.superview != nil {
                     Logger.debug("[SwiftJsonUI] Removing existing view with ID '\(actualId)' from superview")

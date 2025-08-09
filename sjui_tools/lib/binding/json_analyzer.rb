@@ -29,6 +29,7 @@ module SjuiTools
         @current_partial_depth = 0
         @current_binding_id = nil
         @view_variables = []  # Store view variables for computed property generation
+        @registered_view_ids = {}  # Track all registered view IDs for duplicate detection
       end
 
       def analyze_json(file_name, loaded_json, element_path = [])
@@ -375,6 +376,50 @@ module SjuiTools
       def process_id_element(json, value, current_view)
         view_type = @view_type_set[json["type"].to_sym]
         raise "View Type Not found" if view_type.nil?
+        
+        # Apply binding_id prefix if we're inside a partial with binding_id
+        actual_id = if @current_binding_id && @current_partial_depth > 0
+          "#{@current_binding_id}_#{value}"
+        else
+          value
+        end
+        
+        # Check for duplicate ID
+        if @registered_view_ids[actual_id]
+          existing_info = @registered_view_ids[actual_id]
+          error_msg = "\n\n" + "=" * 60 + "\n"
+          error_msg += "ERROR: Duplicate view ID detected\n"
+          error_msg += "=" * 60 + "\n"
+          error_msg += "Duplicate ID: '#{actual_id}'\n"
+          error_msg += "\n"
+          error_msg += "First occurrence:\n"
+          error_msg += "  File: #{existing_info[:file_name]}\n"
+          error_msg += "  Location: #{existing_info[:element_path].join(' > ')}\n" unless existing_info[:element_path].empty?
+          error_msg += "  View Type: #{existing_info[:view_type]}\n"
+          error_msg += "\n"
+          error_msg += "Second occurrence:\n"
+          error_msg += "  File: #{current_view[:file_name]}\n"
+          error_msg += "  Location: #{current_view[:element_path].join(' > ')}\n" unless current_view[:element_path].empty?
+          error_msg += "  View Type: #{json["type"]}\n"
+          
+          if @current_binding_id
+            error_msg += "\n"
+            error_msg += "Note: This ID includes binding_id prefix: '#{@current_binding_id}'\n"
+          end
+          
+          error_msg += "\n"
+          error_msg += "Solution: Use unique IDs for each view element\n"
+          error_msg += "=" * 60 + "\n"
+          
+          raise error_msg
+        end
+        
+        # Register this ID
+        @registered_view_ids[actual_id] = {
+          file_name: current_view[:file_name],
+          element_path: current_view[:element_path].dup,
+          view_type: json["type"]
+        }
         
         # Don't apply prefix to variable names, just use the ID as-is
         # The ID in the JSON has already been prefixed if needed
