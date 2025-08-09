@@ -129,6 +129,9 @@ module SjuiTools
         end
         
         @binding_processes_group.each do |group, value|
+          # Skip generating invalidate (empty group) - only keep invalidateAll and other named groups
+          next if group == ""
+          
           method_content = String.new
           @reset_constraint_views = {}
           @reset_text_views = {}
