@@ -18,8 +18,22 @@ open class Binding: NSObject {
     
     // Helper method to get view with optional binding_id prefix
     public func getView<T>(_ id: String, bindingId: String? = nil) -> T? {
-        let actualId = bindingId != nil ? "\(bindingId!)_\(id)" : id
-        return _viewHolder?.getView(actualId)
+        if let bindingId = bindingId {
+            // Convert binding_id from snake_case to camelCase to match the prefix format
+            let components = bindingId.split(separator: "_")
+            let camelCasePrefix = components.enumerated().map { index, word in
+                if index == 0 {
+                    return String(word)
+                } else {
+                    return String(word).capitalized
+                }
+            }.joined()
+            
+            let actualId = "\(camelCasePrefix)_\(id)"
+            return _viewHolder?.getView(actualId)
+        } else {
+            return _viewHolder?.getView(id)
+        }
     }
     
     required public init(viewHolder: ViewHolder) {
