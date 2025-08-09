@@ -310,6 +310,13 @@ module SjuiTools
       private
 
       def cleanup_empty_groups
+        # Skip cleanup for synchronized projects (Xcode 15+ format)
+        if @is_synchronized
+          puts "Detected synchronized project (Xcode 15+ format) for main app"
+          puts "Skipping empty group cleanup for synchronized projects"
+          return
+        end
+        
         # Remove empty groups from main group
         remove_empty_groups_recursive(@project.main_group)
         # Also remove any phantom references
@@ -323,15 +330,22 @@ module SjuiTools
         groups_to_remove = []
         
         group.groups.each do |subgroup|
+          # Skip if this is a synchronized group (Xcode 15+ format)
+          next if subgroup.respond_to?(:isa) && subgroup.isa == 'PBXFileSystemSynchronizedRootGroup'
+          
           # First, recursively clean subgroups
           remove_empty_groups_recursive(subgroup)
           
           # Check if this group is empty (no files and no subgroups)
           if subgroup.files.empty? && subgroup.groups.empty?
+            # Skip if name is nil
+            group_name = subgroup.name
+            next unless group_name
+            
             # Special handling for certain groups we want to keep
-            unless ['Products', 'Frameworks'].include?(subgroup.name)
+            unless ['Products', 'Frameworks'].include?(group_name)
               groups_to_remove << subgroup
-              puts "Removing empty group: #{subgroup.name}"
+              puts "Removing empty group: #{group_name}"
             end
           end
         end
