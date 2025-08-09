@@ -173,7 +173,15 @@ module SjuiTools
                 method_content << "        \n"
                 method_content << "        // Propagate invalidate to partial binding (child first)\n"
                 
-                # Add data assignments if data_bindings are present
+                # Add shared_data assignments (automatic binding)
+                if partial[:shared_data_bindings] && !partial[:shared_data_bindings].empty?
+                  partial[:shared_data_bindings].each do |key, value|
+                    # shared_data values are simple property names
+                    method_content << "        #{partial[:property_name]}Binding.#{key} = #{value}\n"
+                  end
+                end
+                
+                # Add data assignments if data_bindings are present (manual assignment)
                 if partial[:data_bindings] && !partial[:data_bindings].empty?
                   partial[:data_bindings].each do |key, value|
                     # Remove @{} if present
