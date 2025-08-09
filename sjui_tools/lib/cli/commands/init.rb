@@ -27,19 +27,15 @@ module SjuiTools
           # Create config file
           create_config_file(mode)
           
-          # Only create directory structure if not in SwiftUI-only mode
-          if mode != 'swiftui'
-            # Create directory structure based on mode
-            case mode
-            when 'binding', 'all'
-              create_binding_structure
-            end
-            
-            if mode == 'all'
-              create_swiftui_structure
-            end
-          else
-            puts "Skipping directory creation for SwiftUI mode"
+          # Create directory structure based on mode
+          case mode
+          when 'binding'
+            create_binding_structure
+          when 'swiftui'
+            create_swiftui_structure
+          when 'all'
+            create_binding_structure
+            create_swiftui_structure
           end
           
           puts "Initialization complete!"
@@ -135,10 +131,12 @@ module SjuiTools
           # Add UIKit-specific config only if not in SwiftUI-only mode
           if mode != 'swiftui'
             config.merge!({
-              'bindings_directory' => 'Bindings',
-              'view_directory' => 'View'
+              'bindings_directory' => 'Bindings'
             })
           end
+          
+          # View directory is used in all modes
+          config['view_directory'] = 'View'
           
           if mode == 'swiftui' || mode == 'all'
             config['swiftui'] = {
@@ -165,11 +163,19 @@ module SjuiTools
         end
 
         def create_swiftui_structure
-          directories = %w[
-            Layouts
-            Generated
-            Resources
+          # Read config to get directory names
+          config = Core::ConfigManager.load_config
+          
+          directories = [
+            config['layouts_directory'] || 'Layouts',
+            config['view_directory'] || 'View',
+            config['styles_directory'] || 'Styles'
           ]
+          
+          # Add SwiftUI-specific directories if configured
+          if config['swiftui'] && config['swiftui']['output_directory']
+            directories << config['swiftui']['output_directory']
+          end
           
           create_directories(directories)
         end

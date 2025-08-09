@@ -68,9 +68,9 @@ module SjuiTools
             generator = SjuiTools::Binding::XcodeProject::Generators::ViewGenerator.new(name, options)
             generator.generate
           when 'swiftui'
-            require_relative '../../swiftui/converter'
-            puts "Generating SwiftUI view: #{name}"
-            # TODO: Implement SwiftUI view generation
+            require_relative '../../swiftui/generators/view_generator'
+            generator = SjuiTools::SwiftUI::Generators::ViewGenerator.new(name, options)
+            generator.generate
           else
             puts "Error: Unknown mode: #{mode}"
             exit 1
