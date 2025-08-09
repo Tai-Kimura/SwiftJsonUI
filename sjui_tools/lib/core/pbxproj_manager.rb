@@ -578,11 +578,15 @@ module SjuiTools
           if has_exception_section
             puts "Exception set section already exists, skipping insertion"
           else
-            # Insert the exception set section immediately before PBXFileSystemSynchronizedRootGroup section
-            if updated_content.match(/(\/\*\s+Begin\s+PBXFileSystemSynchronizedRootGroup\s+section\s+\*\/)/m)
-              insertion_point = $1
-              # Insert with no extra newline to maintain proper structure
-              updated_content = updated_content.sub(insertion_point, exception_set_section + insertion_point)
+            # Find the exact position before PBXFileSystemSynchronizedRootGroup section
+            # Look for any End section followed by Begin PBXFileSystemSynchronizedRootGroup
+            pattern = /(\/\*\s+End\s+\w+\s+section\s+\*\/\s*\n+)(\/\*\s+Begin\s+PBXFileSystemSynchronizedRootGroup\s+section\s+\*\/)/m
+            
+            if updated_content.match(pattern)
+              # Insert between the End section and Begin PBXFileSystemSynchronizedRootGroup
+              updated_content = updated_content.gsub(pattern) do |match|
+                $1 + exception_set_section + $2
+              end
             else
               puts "Could not find insertion point for exception set section"
               return false
