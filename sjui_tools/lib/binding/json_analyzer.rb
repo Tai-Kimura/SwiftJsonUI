@@ -377,12 +377,13 @@ module SjuiTools
         view_type = @view_type_set[json["type"].to_sym]
         raise "View Type Not found" if view_type.nil?
         
-        # Apply binding_id prefix if we have a current binding_id
-        # (not just when inside a partial)
-        actual_id = if @current_binding_id
-          "#{@current_binding_id}_#{value}"
-        else
-          value
+        # The ID already has binding_id prefix applied at JSON level by apply_binding_id_prefix
+        # So we just use the value as-is
+        actual_id = value
+        
+        # Debug logging (can be removed later)
+        if value.include?("login")
+          puts "[DEBUG] Processing ID: value='#{value}', file='#{current_view[:file_name]}'"
         end
         
         # Check for duplicate ID
@@ -403,10 +404,6 @@ module SjuiTools
           error_msg += "  Location: #{current_view[:element_path].join(' > ')}\n" unless current_view[:element_path].empty?
           error_msg += "  View Type: #{json["type"]}\n"
           
-          if @current_binding_id
-            error_msg += "\n"
-            error_msg += "Note: This ID includes binding_id prefix: '#{@current_binding_id}'\n"
-          end
           
           error_msg += "\n"
           error_msg += "Solution: Use unique IDs for each view element\n"
