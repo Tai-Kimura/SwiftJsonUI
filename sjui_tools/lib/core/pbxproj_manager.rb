@@ -551,23 +551,22 @@ module SjuiTools
           exception_ref = SecureRandom.hex(12).upcase
           
           # Create the exception set section
-          exception_set_section = <<~SECTION
-          /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-          \t\t#{exception_ref} /* Exceptions for "#{folder_name}" folder in "#{folder_name}" target */ = {
-          \t\t\tisa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-          \t\t\tmembershipExceptions = (
-          SECTION
+          exception_set_section = "/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */\n"
+          exception_set_section += "\t\t#{exception_ref} /* Exceptions for \"#{folder_name}\" folder in \"#{folder_name}\" target */ = {\n"
+          exception_set_section += "\t\t\tisa = PBXFileSystemSynchronizedBuildFileExceptionSet;\n"
+          exception_set_section += "\t\t\tmembershipExceptions = (\n"
           
           # Add all excluded files
           excluded_files.sort.each do |file|
             exception_set_section += "\t\t\t\t\"#{file}\",\n"
           end
           
-          exception_set_section += <<~SECTION
-          \t\t\t);
-          \t\t};
-          /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-          SECTION
+          exception_set_section += "\t\t\t);\n"
+          exception_set_section += "\t\t};\n"
+          exception_set_section += "/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */\n\n"
+          
+          # Check if exception set section already exists in original content
+          has_exception_section = content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
           
           # Update the exceptions reference in the synchronized group
           updated_content = content.gsub(
@@ -575,15 +574,15 @@ module SjuiTools
             "#{group_id} /* #{folder_name} */ = {\n\t\t\tisa = PBXFileSystemSynchronizedRootGroup;\n\t\t\texceptions = (\n\t\t\t\t#{exception_ref} /* Exceptions for \"#{folder_name}\" folder in \"#{folder_name}\" target */,\n\t\t\t);"
           )
           
-          # Check if exception set section already exists
-          if updated_content.include?("/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */")
-            # Section already exists, don't add it again
+          # Only insert the exception set section if it doesn't already exist
+          if has_exception_section
             puts "Exception set section already exists, skipping insertion"
           else
-            # Insert the exception set section before the first PBXFileSystemSynchronizedRootGroup section
+            # Insert the exception set section immediately before PBXFileSystemSynchronizedRootGroup section
             if updated_content.match(/(\/\*\s+Begin\s+PBXFileSystemSynchronizedRootGroup\s+section\s+\*\/)/m)
               insertion_point = $1
-              updated_content = updated_content.sub(insertion_point, exception_set_section + "\n" + insertion_point)
+              # Insert with no extra newline to maintain proper structure
+              updated_content = updated_content.sub(insertion_point, exception_set_section + insertion_point)
             else
               puts "Could not find insertion point for exception set section"
               return false
