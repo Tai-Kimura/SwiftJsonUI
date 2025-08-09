@@ -109,26 +109,33 @@ open class SJUIViewCreator:NSObject {
         return view
     }
     
+    private class func findResourceInBundle(name: String, directory: String, fileType: String = "json") -> String? {
+        // Try using url(forResource:withExtension:subdirectory:) first
+        if let url = Bundle.main.url(forResource: name, withExtension: fileType, subdirectory: directory) {
+            return url.path
+        }
+        
+        // Fallback to path(forResource:ofType:inDirectory:)
+        if let pathWithDir = Bundle.main.path(forResource: name, ofType: fileType, inDirectory: directory) {
+            return pathWithDir
+        }
+        
+        // Final fallback without directory (for Synchronized projects)
+        if let pathWithoutDir = Bundle.main.path(forResource: name, ofType: fileType) {
+            return pathWithoutDir
+        }
+        
+        return nil
+    }
+    
     open class func getURL(path: String) -> String {
         loadConfigurationIfNeeded()
         #if DEBUG
         return getLayoutFileDirPath() + "/\(path).json"
         #else
-        // Try using url(forResource:withExtension:subdirectory:) first
-        if let url = Bundle.main.url(forResource: path, withExtension: "json", subdirectory: layoutsDirectoryName) {
-            return url.path
+        if let foundPath = findResourceInBundle(name: path, directory: layoutsDirectoryName) {
+            return foundPath
         }
-        
-        // Fallback to path(forResource:ofType:inDirectory:)
-        if let pathWithDir = Bundle.main.path(forResource: path, ofType: "json", inDirectory: layoutsDirectoryName) {
-            return pathWithDir
-        }
-        
-        // Final fallback without directory
-        if let pathWithoutDir = Bundle.main.path(forResource: path, ofType: "json") {
-            return pathWithoutDir
-        }
-        
         Logger.debug("[SwiftJsonUI] Warning: Layout file '\(path).json' not found")
         return ""
         #endif
@@ -145,21 +152,9 @@ open class SJUIViewCreator:NSObject {
         // Fall through to bundle loading if not in cache
         #endif
         
-        // Try using url(forResource:withExtension:subdirectory:) first
-        if let url = Bundle.main.url(forResource: path, withExtension: "json", subdirectory: stylesDirectoryName) {
-            return url.path
+        if let foundPath = findResourceInBundle(name: path, directory: stylesDirectoryName) {
+            return foundPath
         }
-        
-        // Fallback to path(forResource:ofType:inDirectory:)
-        if let pathWithDir = Bundle.main.path(forResource: path, ofType: "json", inDirectory: stylesDirectoryName) {
-            return pathWithDir
-        }
-        
-        // Final fallback without directory (for Synchronized projects)
-        if let pathWithoutDir = Bundle.main.path(forResource: path, ofType: "json") {
-            return pathWithoutDir
-        }
-        
         Logger.debug("[SwiftJsonUI] Warning: Style file '\(path).json' not found")
         return ""
     }
@@ -168,7 +163,11 @@ open class SJUIViewCreator:NSObject {
         #if DEBUG
         return getScriptFileDirPath() + "/\(path).js"
         #else
-        return Bundle.main.path(forResource: path, ofType: "js", inDirectory: scriptsDirectoryName) ?? ""
+        if let foundPath = findResourceInBundle(name: path, directory: scriptsDirectoryName, fileType: "js") {
+            return foundPath
+        }
+        Logger.debug("[SwiftJsonUI] Warning: Script file '\(path).js' not found")
+        return ""
         #endif
     }
     
@@ -663,6 +662,30 @@ open class SJUIViewCreator:NSObject {
         #endif
     }
     
+    private class func copyFilesToCache(from sourcePaths: [String], to cacheDir: String, fileType: String) {
+        let fm = FileManager.default
+        
+        do {
+            if !fm.fileExists(atPath: cacheDir) {
+                try fm.createDirectory(atPath: cacheDir, withIntermediateDirectories: false, attributes: nil)
+            }
+            
+            for sourcePath in sourcePaths {
+                if sourcePath.hasSuffix(fileType) {
+                    let fileName = sourcePath.components(separatedBy: "/").last ?? ""
+                    let toPath = "\(cacheDir)/\(fileName)"
+                    if fm.fileExists(atPath: toPath) {
+                        try fm.removeItem(atPath: toPath)
+                    }
+                    try fm.copyItem(atPath: sourcePath, toPath: toPath)
+                    Logger.debug("[SwiftJsonUI] Copied: \(fileName) to cache")
+                }
+            }
+        } catch let error {
+            Logger.debug("[SwiftJsonUI] Error copying files: \(error)")
+        }
+    }
+    
     open class func copyResourcesToDocuments() {
         loadConfigurationIfNeeded()
         #if DEBUG
@@ -679,109 +702,64 @@ open class SJUIViewCreator:NSObject {
         cleanStyleCache()
         Logger.debug("[SwiftJsonUI] Cleared style cache")
         
+        // Copy layout files
         do {
-            if (!fm.fileExists(atPath: layoutFileDirPath)) {
+            if !fm.fileExists(atPath: layoutFileDirPath) {
                 try fm.createDirectory(atPath: layoutFileDirPath, withIntermediateDirectories: false, attributes: nil)
             }
             
             let contents = try fm.contentsOfDirectory(atPath: bundlePath)
             Logger.debug("[SwiftJsonUI] Copying \(contents.filter { $0.hasSuffix("json") }.count) JSON files to cache")
-            for content:String in contents {
-                if (content.hasSuffix("json")) {
-                    let toPath = "\(layoutFileDirPath)/\(content)"
-                    if (fm.fileExists(atPath: toPath)) {
-                        try fm.removeItem(atPath: toPath)
-                    }
-                    try fm.copyItem(atPath: "\(bundlePath)/\(content)", toPath:toPath)
-                }
-            }
-        } catch let error {
-            Logger.debug("\(error)")
-        }
-        let styleFileDirPath = "\(cachesDirPath)/\(stylesDirectoryName)"
-        do {
-            if (!fm.fileExists(atPath: styleFileDirPath)) {
-                try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
-            }
-            
-            // First try to enumerate files using url approach
-            var styleFiles: [URL] = []
-            if let stylesURL = Bundle.main.url(forResource: nil, withExtension: nil, subdirectory: stylesDirectoryName) {
-                // Try to enumerate contents of the styles directory
-                let enumerator = fm.enumerator(at: stylesURL, includingPropertiesForKeys: nil)
-                while let fileURL = enumerator?.nextObject() as? URL {
-                    if fileURL.pathExtension == "json" {
-                        styleFiles.append(fileURL)
-                    }
-                }
-                Logger.debug("[SwiftJsonUI] Found \(styleFiles.count) style files using URL enumeration")
-            }
-            
-            // If URL approach didn't work, fall back to paths approach
-            if styleFiles.isEmpty {
-                let contents = Bundle.main.paths(forResourcesOfType: "json", inDirectory: stylesDirectoryName)
-                
-                if contents.isEmpty {
-                    // For Synchronized projects, copy all JSON files from bundle root
-                    Logger.debug("[SwiftJsonUI] No style files found in directory, copying all JSON files (Synchronized project)")
-                    let bundleContents = try fm.contentsOfDirectory(atPath: bundlePath)
-                    for content in bundleContents {
-                        if content.hasSuffix(".json") && content != "sjui.config.json" {
-                            let sourcePath = "\(bundlePath)/\(content)"
-                            let toPath = "\(styleFileDirPath)/\(content)"
-                            if fm.fileExists(atPath: toPath) {
-                                try fm.removeItem(atPath: toPath)
-                            }
-                            try fm.copyItem(atPath: sourcePath, toPath: toPath)
-                            Logger.debug("[SwiftJsonUI] Copied: \(content) to style cache")
-                        }
-                    }
-                } else {
-                    Logger.debug("[SwiftJsonUI] Found \(contents.count) style files using paths approach")
-                    for content in contents {
-                        if (content.hasSuffix("json")) {
-                            let toPath = "\(styleFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
-                            if (fm.fileExists(atPath: toPath)) {
-                                try fm.removeItem(atPath: toPath)
-                            }
-                            try fm.copyItem(atPath: "\(content)", toPath:toPath)
-                            Logger.debug("[SwiftJsonUI] Copied style: \(content.components(separatedBy: "/").last ?? "") to cache")
-                        }
-                    }
-                }
-            } else {
-                // Copy files found via URL enumeration
-                for fileURL in styleFiles {
-                    let fileName = fileURL.lastPathComponent
-                    let toPath = "\(styleFileDirPath)/\(fileName)"
-                    if (fm.fileExists(atPath: toPath)) {
-                        try fm.removeItem(atPath: toPath)
-                    }
-                    try fm.copyItem(at: fileURL, to: URL(fileURLWithPath: toPath))
-                    Logger.debug("[SwiftJsonUI] Copied style: \(fileName) to cache")
-                }
-            }
-        } catch let error {
-            Logger.debug("[SwiftJsonUI] Error copying styles: \(error)")
-        }
-        let scriptFileDirPath = "\(cachesDirPath)/\(scriptsDirectoryName)"
-        do {
-            if (!fm.fileExists(atPath: scriptFileDirPath)) {
-                try fm.createDirectory(atPath: scriptFileDirPath, withIntermediateDirectories: false, attributes: nil)
-            }
-            
-            let contents = Bundle.main.paths(forResourcesOfType: "js", inDirectory: scriptsDirectoryName)
             for content in contents {
-                if (content.hasSuffix("js")) {
-                    let toPath = "\(scriptFileDirPath)/\(content.components(separatedBy: "/").last ?? "")"
-                    if (fm.fileExists(atPath: toPath)) {
+                if content.hasSuffix("json") {
+                    let toPath = "\(layoutFileDirPath)/\(content)"
+                    if fm.fileExists(atPath: toPath) {
                         try fm.removeItem(atPath: toPath)
                     }
-                    try fm.copyItem(atPath: "\(content)", toPath:toPath)
+                    try fm.copyItem(atPath: "\(bundlePath)/\(content)", toPath: toPath)
                 }
             }
         } catch let error {
             Logger.debug("\(error)")
+        }
+        // Copy style files
+        let styleFileDirPath = "\(cachesDirPath)/\(stylesDirectoryName)"
+        let stylePaths = Bundle.main.paths(forResourcesOfType: "json", inDirectory: stylesDirectoryName)
+        
+        if stylePaths.isEmpty {
+            // For Synchronized projects, copy all JSON files to style cache as well
+            Logger.debug("[SwiftJsonUI] No style files found in directory, copying all JSON files (Synchronized project)")
+            do {
+                if !fm.fileExists(atPath: styleFileDirPath) {
+                    try fm.createDirectory(atPath: styleFileDirPath, withIntermediateDirectories: false, attributes: nil)
+                }
+                
+                let contents = try fm.contentsOfDirectory(atPath: bundlePath)
+                for content in contents {
+                    if content.hasSuffix(".json") && content != "sjui.config.json" {
+                        let sourcePath = "\(bundlePath)/\(content)"
+                        let toPath = "\(styleFileDirPath)/\(content)"
+                        if fm.fileExists(atPath: toPath) {
+                            try fm.removeItem(atPath: toPath)
+                        }
+                        try fm.copyItem(atPath: sourcePath, toPath: toPath)
+                    }
+                }
+                Logger.debug("[SwiftJsonUI] Copied JSON files to style cache")
+            } catch let error {
+                Logger.debug("[SwiftJsonUI] Error copying styles: \(error)")
+            }
+        } else {
+            Logger.debug("[SwiftJsonUI] Found \(stylePaths.count) style files")
+            copyFilesToCache(from: stylePaths, to: styleFileDirPath, fileType: "json")
+        }
+        // Copy script files
+        let scriptFileDirPath = "\(cachesDirPath)/\(scriptsDirectoryName)"
+        let scriptPaths = Bundle.main.paths(forResourcesOfType: "js", inDirectory: scriptsDirectoryName)
+        
+        if !scriptPaths.isEmpty {
+            Logger.debug("[SwiftJsonUI] Found \(scriptPaths.count) script files")
+            copyFilesToCache(from: scriptPaths, to: scriptFileDirPath, fileType: "js")
         }
         #endif
     }
