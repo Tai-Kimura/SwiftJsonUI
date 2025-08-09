@@ -188,10 +188,13 @@ module SjuiTools
         # Get the base bindView content from UI control event manager
         base_content = @ui_control_event_manager.generate_bind_view_method
         
-        # If there are no partials, return the base content
-        return base_content if @json_analyzer.partial_bindings.empty?
+        # Check if we need to generate bindView
+        needs_bind_view = !@json_analyzer.partial_bindings.empty? || !@json_analyzer.view_variables.empty?
         
-        # If there's already a bindView method, we need to add partial bindings to it
+        # If there's nothing to add, return the base content
+        return base_content unless needs_bind_view
+        
+        # If there's already a bindView method, we need to add to it
         if base_content.empty?
           # No existing bindView, create one with view assignments and partial bindings
           content = String.new("\n")
