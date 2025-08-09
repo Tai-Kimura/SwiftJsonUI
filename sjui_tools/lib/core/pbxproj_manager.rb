@@ -486,12 +486,19 @@ module SjuiTools
           end
           
           if update_count == 0
-            puts "Warning: No membershipExceptions sections found in project file"
-            puts "For Xcode 15+ synchronized projects, you may need to:"
-            puts "  1. Open the project in Xcode"
-            puts "  2. Right-click on sjui_tools folder"
-            puts "  3. Select 'Remove Reference' (don't delete files)"
-            puts "  4. This will prevent sjui_tools from being included in the build"
+            puts "No existing membershipExceptions sections found, creating new structure..."
+            
+            # Create the exception structure for synchronized projects
+            if create_membership_exceptions_section(pbxproj_path, excluded_files)
+              puts "✅ Successfully created membershipExceptions structure"
+            else
+              puts "Warning: Could not create membershipExceptions structure"
+              puts "For Xcode 15+ synchronized projects, you may need to:"
+              puts "  1. Open the project in Xcode"
+              puts "  2. Right-click on sjui_tools folder"
+              puts "  3. Select 'Remove Reference' (don't delete files)"
+              puts "  4. This will prevent sjui_tools from being included in the build"
+            end
             return
           end
           
@@ -499,6 +506,76 @@ module SjuiTools
           File.write(pbxproj_path, updated_content)
           
           puts "✅ Directly updated #{update_count} membershipExceptions section(s) with #{excluded_files.size} exclusions"
+        end
+        
+        def create_membership_exceptions_section(pbxproj_path, excluded_files)
+          require 'securerandom'
+          
+          content = File.read(pbxproj_path)
+          
+          # Find the main synchronized root group
+          # Pattern: B62F75162E4049C500D73687 /* swiftUITestApp */ = {
+          #          isa = PBXFileSystemSynchronizedRootGroup;
+          #          exceptions = (
+          #          );
+          main_group_pattern = /(\w+)\s+\/\*\s+(\w+)\s+\*\/\s+=\s+\{\s*\n\s+isa\s+=\s+PBXFileSystemSynchronizedRootGroup;\s*\n\s+exceptions\s+=\s+\(\s*\n\s*\);/m
+          
+          main_group_match = content.match(main_group_pattern)
+          unless main_group_match
+            puts "Could not find synchronized root group with empty exceptions"
+            return false
+          end
+          
+          group_id = main_group_match[1]
+          folder_name = main_group_match[2]
+          
+          puts "Found synchronized group: #{folder_name} (#{group_id})"
+          
+          # Generate UUID for exception set
+          exception_ref = SecureRandom.hex(12).upcase
+          
+          # Create the exception set section
+          exception_set_section = <<~SECTION
+          /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+          \t\t#{exception_ref} /* Exceptions for "#{folder_name}" folder in "#{folder_name}" target */ = {
+          \t\t\tisa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+          \t\t\tmembershipExceptions = (
+          SECTION
+          
+          # Add all excluded files
+          excluded_files.sort.each do |file|
+            exception_set_section += "\t\t\t\t\"#{file}\",\n"
+          end
+          
+          exception_set_section += <<~SECTION
+          \t\t\t);
+          \t\t};
+          /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+          SECTION
+          
+          # Update the exceptions reference in the synchronized group
+          updated_content = content.gsub(
+            /#{Regexp.escape(group_id)}\s+\/\*[^*]+\*\/\s+=\s+\{\s*\n\s+isa\s+=\s+PBXFileSystemSynchronizedRootGroup;\s*\n\s+exceptions\s+=\s+\(\s*\n\s*\);/m,
+            "#{group_id} /* #{folder_name} */ = {\n\t\t\tisa = PBXFileSystemSynchronizedRootGroup;\n\t\t\texceptions = (\n\t\t\t\t#{exception_ref} /* Exceptions for \"#{folder_name}\" folder in \"#{folder_name}\" target */,\n\t\t\t);"
+          )
+          
+          # Insert the exception set section before the first PBXFileSystemSynchronizedRootGroup section
+          if updated_content.match(/(\/\*\s+Begin\s+PBXFileSystemSynchronizedRootGroup\s+section\s+\*\/)/m)
+            insertion_point = $1
+            updated_content = updated_content.sub(insertion_point, exception_set_section + "\n" + insertion_point)
+          else
+            puts "Could not find insertion point for exception set section"
+            return false
+          end
+          
+          # Write the updated content
+          File.write(pbxproj_path, updated_content)
+          
+          puts "Created exception set with #{excluded_files.size} exclusions"
+          true
+        rescue => e
+          puts "Error creating membership exceptions section: #{e.message}"
+          false
         end
         
         def exclude_group_from_target(group, target)
