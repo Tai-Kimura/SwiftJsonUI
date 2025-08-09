@@ -187,6 +187,10 @@ public extension UIView {
                 objc_setAssociatedObject(self, &VisibilityKey, newValue, .OBJC_ASSOCIATION_RETAIN)
                 if self.isActiveForConstraint {
                     setVisibility(oldValue: oldValue, newValue: newValue)
+                } else if newValue == .gone && self.superview != nil {
+                    // If trying to set gone but constraints aren't active yet,
+                    // at least remove from superview if it exists
+                    self.removeFromSuperview()
                 }
             }
         }
