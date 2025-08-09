@@ -438,7 +438,18 @@ module SjuiTools
         @json_analyzer.partial_bindings.any? do |partial|
           partial[:shared_data_bindings] && 
           partial[:shared_data_bindings].any? do |key, value|
-            value.is_a?(String) && value.start_with?("@{") && value.sub(/^@\{/, "").sub(/\}$/, "") == data_name
+            # shared_data values can be either simple property names (e.g., "review": "review")
+            # or binding expressions (e.g., "review": "@{review}")
+            if value.is_a?(String)
+              if value.start_with?("@{")
+                binding_var = value.sub(/^@\{/, "").sub(/\}$/, "")
+                binding_var == data_name
+              else
+                value == data_name
+              end
+            else
+              false
+            end
           end
         end
       end
@@ -448,8 +459,14 @@ module SjuiTools
         @json_analyzer.partial_bindings.each do |partial|
           if partial[:shared_data_bindings]
             partial[:shared_data_bindings].each do |key, value|
-              if value.is_a?(String) && value.start_with?("@{")
-                binding_var = value.sub(/^@\{/, "").sub(/\}$/, "")
+              # shared_data values can be either simple property names (e.g., "review": "review")
+              # or binding expressions (e.g., "review": "@{review}")
+              if value.is_a?(String)
+                binding_var = if value.start_with?("@{")
+                  value.sub(/^@\{/, "").sub(/\}$/, "")
+                else
+                  value
+                end
                 if binding_var == data_name
                   content << "            #{partial[:property_name]}Binding?.#{key} = #{data_name}\n"
                 end
