@@ -486,91 +486,19 @@ module SjuiTools
           end
           
           if update_count == 0
-            puts "No existing membershipExceptions sections found"
-            # Try to create new exception structure for synchronized projects
-            if create_exception_structure_for_synchronized_project(pbxproj_path, excluded_files)
-              puts "✅ Created new exception structure with #{excluded_files.size} exclusions"
-              return
-            else
-              puts "Warning: Could not create membershipExceptions structure"
-              return
-            end
+            puts "Warning: No membershipExceptions sections found in project file"
+            puts "For Xcode 15+ synchronized projects, you may need to:"
+            puts "  1. Open the project in Xcode"
+            puts "  2. Right-click on sjui_tools folder"
+            puts "  3. Select 'Remove Reference' (don't delete files)"
+            puts "  4. This will prevent sjui_tools from being included in the build"
+            return
           end
           
           # Write the updated content back
           File.write(pbxproj_path, updated_content)
           
           puts "✅ Directly updated #{update_count} membershipExceptions section(s) with #{excluded_files.size} exclusions"
-        end
-        
-        def create_exception_structure_for_synchronized_project(pbxproj_path, excluded_files)
-          require 'securerandom'
-          
-          content = File.read(pbxproj_path)
-          
-          # Find the main synchronized root group
-          main_group_match = content.match(/(\w+)\s+\/\*\s+\w+\s+\*\/\s+=\s+\{\s+isa\s+=\s+PBXFileSystemSynchronizedRootGroup;[^}]*path\s+=\s+(\w+);/m)
-          
-          unless main_group_match
-            puts "Could not find main synchronized root group"
-            return false
-          end
-          
-          group_id = main_group_match[1]
-          folder_name = main_group_match[2]
-          
-          # Check if exceptions already has a reference
-          if content.match(/#{group_id}[^}]*exceptions\s*=\s*\([^)]*\w+[^)]*\)/m)
-            puts "Exception reference already exists in group"
-            return false
-          end
-          
-          # Generate new UUID for exception set
-          exception_ref = SecureRandom.hex(12).upcase
-          target_name = folder_name.gsub('TestApp', '')  # Get target name from folder
-          
-          puts "Creating exception structure for #{folder_name}"
-          puts "  Exception reference: #{exception_ref}"
-          
-          # Create the exception set object
-          exception_object = <<~OBJECT
-          /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-          \t\t#{exception_ref} /* Exceptions for "#{folder_name}" folder in "#{folder_name}" target */ = {
-          \t\t\tisa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-          \t\t\tmembershipExceptions = (
-          OBJECT
-          
-          # Add all excluded files
-          excluded_files.sort.each do |file|
-            exception_object += "\t\t\t\t\"#{file}\",\n"
-          end
-          
-          exception_object += <<~OBJECT
-          \t\t\t);
-          \t\t};
-          /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-          OBJECT
-          
-          # Update the synchronized root group to include the exception reference
-          updated_content = content.gsub(
-            /(#{group_id}[^}]*exceptions\s*=\s*\(\s*)\);/m,
-            "\\1\n\t\t\t\t#{exception_ref} /* Exceptions for \"#{folder_name}\" folder in \"#{folder_name}\" target */,\n\t\t\t);"
-          )
-          
-          # Find where to insert the new section
-          if updated_content.match(/(\/\*\s+Begin\s+PBXFileSystemSynchronized.*?\s+section\s+\*\/)/m)
-            section_start = $1
-            # Insert the new exception set section before the first synchronized section
-            updated_content.sub!(section_start, exception_object + "\n" + section_start)
-          else
-            puts "Could not find proper location to insert exception set"
-            return false
-          end
-          
-          # Write the updated content back
-          File.write(pbxproj_path, updated_content)
-          
-          true
         end
         
         def exclude_group_from_target(group, target)
