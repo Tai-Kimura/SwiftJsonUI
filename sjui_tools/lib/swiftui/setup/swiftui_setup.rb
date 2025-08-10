@@ -33,10 +33,13 @@ module SjuiTools
           # 4. Generate HotLoader setup file for SwiftUI
           generate_hotloader_setup
           
-          # 5. Cleanup project references (before membership exceptions)
+          # 5. Add sjui.config.json to Xcode project for bundle access
+          add_config_to_project
+          
+          # 6. Cleanup project references (before membership exceptions)
           common_setup.cleanup_project_references
           
-          # 6. Setup membership exceptions (MUST be last - after all project.save calls)
+          # 7. Setup membership exceptions (MUST be last - after all project.save calls)
           common_setup.setup_membership_exceptions
           
           puts "=== SwiftUI Project Setup Completed Successfully! ==="
@@ -113,11 +116,30 @@ module SjuiTools
             # Add file reference to project
             file_ref = main_group.new_file(file_path)
             
-            # Add to target's compile sources
-            target.add_file_references([file_ref])
+            # Add to target's compile sources or resources based on file type
+            if file_path.end_with?('.swift')
+              target.add_file_references([file_ref])
+            else
+              # Add as resource for non-Swift files (like .json)
+              target.add_resources([file_ref])
+            end
             
             project.save
             puts "Added #{file_name} to Xcode project"
+          end
+        end
+        
+        def add_config_to_project
+          puts "Adding sjui.config.json to Xcode project as resource..."
+          
+          # Get the source path
+          source_path = ::SjuiTools::Core::ProjectFinder.get_full_source_path || Dir.pwd
+          config_path = File.join(source_path, '..', 'sjui.config.json')
+          
+          if File.exist?(config_path)
+            add_file_to_project(config_path)
+          else
+            puts "Warning: sjui.config.json not found at #{config_path}"
           end
         end
       end

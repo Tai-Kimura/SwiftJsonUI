@@ -47,22 +47,8 @@ public class HotLoader: NSObject, URLSessionWebSocketDelegate, ObservableObject 
     }
     
     private func getHotLoaderConfig() -> (ip: String, port: String) {
-        // Try to read from sjui.config in Documents directory
-        let documentsPath = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true).first!
-        let configPath = (documentsPath as NSString).appendingPathComponent("sjui.config")
-        
-        if let data = try? Data(contentsOf: URL(fileURLWithPath: configPath)),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-           let hotloader = json["hotloader"] as? [String: Any] {
-            let ip = hotloader["ip"] as? String ?? "127.0.0.1"
-            let port = String(hotloader["port"] as? Int ?? 8081)
-            return (ip, port)
-        }
-        
-        // Fallback to Info.plist
-        let ip = Bundle.main.object(forInfoDictionaryKey: "CurrentIp") as? String ?? "127.0.0.1"
-        let port = Bundle.main.object(forInfoDictionaryKey: "HotLoader Port") as? String ?? "8081"
-        return (ip, port)
+        let config = HotLoaderConfigReader.getHotLoaderConfig()
+        return (config.ip, String(config.port))
     }
     
     private func receiveMessage() {
