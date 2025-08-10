@@ -131,7 +131,12 @@ module SjuiTools
               'swiftui' => {
                 'output_directory' => 'Generated'
               },
-              'use_network' => true  # SwiftUI mode can use network for API calls
+              'use_network' => true,  # SwiftUI mode can use network for API calls
+              'hotloader' => {
+                'ip' => '127.0.0.1',
+                'port' => 8081,
+                'watch_directories' => ['Layouts', 'Styles']
+              }
             }
           else
             # Binding mode or all mode config
@@ -145,7 +150,12 @@ module SjuiTools
               'view_directory' => 'View',
               'bindings_directory' => 'Bindings',
               'hot_loader_directory' => project_name,
-              'use_network' => true
+              'use_network' => true,
+              'hotloader' => {
+                'ip' => '127.0.0.1',
+                'port' => 8081,
+                'watch_directories' => ['Layouts', 'Styles']
+              }
             }
             
             # Add SwiftUI config if mode is 'all'
