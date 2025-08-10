@@ -132,7 +132,10 @@ public class HotLoader: NSObject, URLSessionWebSocketDelegate, ObservableObject 
                     Logger.debug("SwiftJSONUIHotloader Layout Updated")
                     
                     // SwiftUI用にもデータを保存
-                    self.jsonData[fileName] = data
+                    // fileNameから拡張子を除去
+                    let jsonName = fileName.replacingOccurrences(of: ".json", with: "")
+                    self.jsonData[jsonName] = data
+                    Logger.debug("[HotLoader] Saved JSON with key: \(jsonName)")
                     
                     DispatchQueue.main.async(execute: {
                         // 既存のUIKit用通知
@@ -141,6 +144,7 @@ public class HotLoader: NSObject, URLSessionWebSocketDelegate, ObservableObject 
                         
                         // SwiftUI用の更新トリガー
                         self.lastUpdate = Date()
+                        Logger.debug("[HotLoader] Updated lastUpdate trigger")
                     })
                 } catch let error {
                     Logger.debug("SwiftJSONUIHotloader Error: \(error)")

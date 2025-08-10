@@ -13,11 +13,18 @@ public class JSONLayoutLoader {
     #if DEBUG
     // DEBUGビルドではHotLoaderから取得
     public static func loadJSON(named name: String) -> Data? {
-        if HotLoader.instance.isHotLoadEnabled,
-           let data = HotLoader.instance.jsonData[name] {
-            return data
+        if HotLoader.instance.isHotLoadEnabled {
+            // Debug: Check available keys
+            Logger.debug("[JSONLayoutLoader] Looking for: \(name)")
+            Logger.debug("[JSONLayoutLoader] Available keys: \(HotLoader.instance.jsonData.keys)")
+            
+            if let data = HotLoader.instance.jsonData[name] {
+                Logger.debug("[JSONLayoutLoader] Found in HotLoader cache")
+                return data
+            }
         }
         // フォールバック: ローカルファイルから読み込み
+        Logger.debug("[JSONLayoutLoader] Falling back to bundle")
         return loadFromBundle(named: name)
     }
     #else
