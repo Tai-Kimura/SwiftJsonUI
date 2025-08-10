@@ -12,7 +12,7 @@ struct DynamicTextView: View {
     @ObservedObject var viewModel: DynamicViewModel
     
     var body: some View {
-        Text(component.text ?? "")
+        Text(viewModel.processText(component.text))
             .font(DynamicHelpers.fontFromComponent(component))
             .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor))
             .multilineTextAlignment(DynamicHelpers.textAlignmentFromString(component.textAlign))
@@ -27,7 +27,7 @@ struct DynamicButtonView: View {
         Button(action: {
             viewModel.handleAction(component.action)
         }) {
-            Text(component.text ?? "")
+            Text(viewModel.processText(component.text))
                 .font(DynamicHelpers.fontFromComponent(component))
                 .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor))
         }

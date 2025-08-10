@@ -13,6 +13,7 @@ public class DynamicViewModel: ObservableObject {
     @Published public var rootComponent: DynamicComponent?
     @Published public var textFieldValues: [String: String] = [:]
     @Published public var toggleValues: [String: Bool] = [:]
+    @Published public var variables: [String: Any] = [:]
     
     private let jsonName: String?
     private var cancellables = Set<AnyCancellable>()
@@ -67,5 +68,57 @@ public class DynamicViewModel: ObservableObject {
             object: nil,
             userInfo: ["action": action, "viewModel": self]
         )
+    }
+    
+    // MARK: - Variable Processing
+    
+    /// Process text with @{} variable placeholders
+    public func processText(_ text: String?) -> String {
+        guard let text = text else { return "" }
+        
+        // Check if text contains @{} pattern
+        guard text.contains("@{") else { return text }
+        
+        var result = text
+        
+        // Find all @{...} patterns
+        let pattern = "@\\{([^}]+)\\}"
+        if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
+            let matches = regex.matches(in: text, options: [], range: NSRange(location: 0, length: text.count))
+            
+            // Process matches in reverse order to maintain string indices
+            for match in matches.reversed() {
+                if let range = Range(match.range, in: text),
+                   let varRange = Range(match.range(at: 1), in: text) {
+                    let varName = String(text[varRange])
+                    
+                    // Remove optional markers
+                    let cleanVarName = varName
+                        .replacingOccurrences(of: " ?? ''", with: "")
+                        .replacingOccurrences(of: "?", with: "")
+                        .trimmingCharacters(in: .whitespaces)
+                    
+                    // Get variable value
+                    let value: String
+                    if let varValue = variables[cleanVarName] {
+                        value = String(describing: varValue)
+                    } else {
+                        // Default values for common variables
+                        switch cleanVarName {
+                        case "title":
+                            value = "Dynamic Title"
+                        case "message":
+                            value = "Dynamic Message"
+                        default:
+                            value = ""
+                        }
+                    }
+                    
+                    result.replaceSubrange(range, with: value)
+                }
+            }
+        }
+        
+        return result
     }
 }
