@@ -310,6 +310,13 @@ module SjuiTools
       private
 
       def cleanup_empty_groups
+        # Skip cleanup for synchronized projects
+        if @is_synchronized
+          puts "Detected synchronized project (Xcode 15+ format) for main app"
+          puts "Skipping empty group cleanup for synchronized projects"
+          return
+        end
+        
         # Remove empty groups from main group
         remove_empty_groups_recursive(@project.main_group)
         # Also remove any phantom references

@@ -30,11 +30,11 @@ module SjuiTools
           # 3. Setup libraries (same as binding mode)
           common_setup.setup_libraries
           
-          # 4. Setup membership exceptions
-          common_setup.setup_membership_exceptions
-          
-          # 5. Cleanup project references
+          # 4. Cleanup project references (before membership exceptions)
           common_setup.cleanup_project_references
+          
+          # 5. Setup membership exceptions (MUST be last - after all project.save calls)
+          common_setup.setup_membership_exceptions
           
           puts "=== SwiftUI Project Setup Completed Successfully! ==="
         end
