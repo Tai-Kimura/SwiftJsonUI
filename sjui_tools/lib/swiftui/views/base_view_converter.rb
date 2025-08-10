@@ -178,16 +178,13 @@ module SjuiTools
           if click_action
             add_modifier_line ".onTapGesture {"
             indent do
-              if @action_manager
-                handler_name = @action_manager.register_action(click_action, 'view')
-                # Check if it's a parameterized action (ends with ':')
-                if click_action.end_with?(':')
-                  add_line "viewModel.#{handler_name}(self)"
-                else
-                  add_line "viewModel.#{handler_name}()"
-                end
+              # パラメータ付きメソッドの場合（例: "toggleMode:"）
+              if click_action.include?(':')
+                method_name = click_action.gsub(':', '')
+                add_line "viewModel.#{method_name}(self)"
               else
-                add_line "// TODO: Handle #{click_action} action"
+                # パラメータなしメソッドの場合
+                add_line "viewModel.#{click_action}()"
               end
             end
             add_line "}"

@@ -9,27 +9,38 @@ module SjuiTools
           return false
         end
         
-        content = File.read(swift_file_path)
+        # GeneratedViewファイルを完全に再生成する
+        view_name = File.basename(File.dirname(swift_file_path))
+        json_name = view_name.gsub(/([A-Z])/, '_\1').downcase.gsub(/^_/, '')
         
-        # Find the generated code section between markers
-        pattern = /(\/\/ >>> GENERATED_CODE_START\n)(.*?)(\/\/ >>> GENERATED_CODE_END)/m
+        # GeneratedViewファイルの内容を完全に作り直す
+        content = <<~SWIFT
+        import SwiftUI
+        import SwiftJsonUI
+        import Combine
+
+        struct #{view_name}GeneratedView: View {
+            @EnvironmentObject var viewModel: #{view_name}ViewModel
+            @StateObject private var dynamicViewModel = DynamicViewModel(jsonName: "#{json_name}")
+            
+            var body: some View {
+                if ViewSwitcher.isDynamicMode {
+                    DynamicView(jsonName: "#{json_name}", viewId: "#{json_name}_view")
+                        .environmentObject(dynamicViewModel)
+                } else {
+                    // Generated SwiftUI code from #{json_name}.json
+                    // This will be updated when you run 'sjui build'
+                    // >>> GENERATED_CODE_START
+        #{indent_body_code(new_body_code, "            ")}
+                    // >>> GENERATED_CODE_END
+                }
+            }
+        }
+        SWIFT
         
-        if content =~ pattern
-          # Indent the new body code properly (12 spaces for inside the else block)
-          indented_body = indent_body_code(new_body_code, "            ")
-          
-          # Replace the old body with the new one
-          updated_content = content.gsub(pattern) do
-            "#{$1}#{indented_body}\n            #{$3}"
-          end
-          
-          # Write back to file
-          File.write(swift_file_path, updated_content)
-          return true
-        else
-          puts "Warning: Could not find GENERATED_CODE markers in #{swift_file_path}"
-          return false
-        end
+        # ファイルに書き込む
+        File.write(swift_file_path, content)
+        return true
       end
       
       def convert_json_to_view(json_file_path)
