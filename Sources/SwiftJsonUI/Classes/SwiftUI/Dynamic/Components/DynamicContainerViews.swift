@@ -45,14 +45,20 @@ struct DynamicViewContainer: View {
                 }
                 return componentArray
             }
-            // Check if value is array of AnyCodable (which may contain DynamicComponents)
+            // Check if value is array of AnyCodable (which may contain DynamicComponents and/or data objects)
             else if let anyCodableArray = child.value as? [AnyCodable] {
                 let _ = Logger.debug("[DynamicViewContainer] Found array of AnyCodable, extracting components...")
                 var components: [DynamicComponent] = []
-                for item in anyCodableArray {
+                for (index, item) in anyCodableArray.enumerated() {
                     if let comp = item.value as? DynamicComponent {
                         components.append(comp)
-                        let _ = Logger.debug("[DynamicViewContainer]   Extracted component: type=\(comp.type)")
+                        let _ = Logger.debug("[DynamicViewContainer]   Item \(index): Component with type=\(comp.type)")
+                    } else if let dict = item.value as? [String: AnyCodable],
+                              dict["data"] != nil {
+                        // This is a data binding definition, skip it
+                        let _ = Logger.debug("[DynamicViewContainer]   Item \(index): Data binding definition (skipped)")
+                    } else {
+                        let _ = Logger.debug("[DynamicViewContainer]   Item \(index): Unknown type (skipped)")
                     }
                 }
                 if !components.isEmpty {
@@ -133,14 +139,20 @@ struct DynamicScrollViewContainer: View {
                 }
                 return componentArray
             }
-            // Check if value is array of AnyCodable (which may contain DynamicComponents)
+            // Check if value is array of AnyCodable (which may contain DynamicComponents and/or data objects)
             else if let anyCodableArray = child.value as? [AnyCodable] {
                 let _ = Logger.debug("[DynamicViewContainer] Found array of AnyCodable, extracting components...")
                 var components: [DynamicComponent] = []
-                for item in anyCodableArray {
+                for (index, item) in anyCodableArray.enumerated() {
                     if let comp = item.value as? DynamicComponent {
                         components.append(comp)
-                        let _ = Logger.debug("[DynamicViewContainer]   Extracted component: type=\(comp.type)")
+                        let _ = Logger.debug("[DynamicViewContainer]   Item \(index): Component with type=\(comp.type)")
+                    } else if let dict = item.value as? [String: AnyCodable],
+                              dict["data"] != nil {
+                        // This is a data binding definition, skip it
+                        let _ = Logger.debug("[DynamicViewContainer]   Item \(index): Data binding definition (skipped)")
+                    } else {
+                        let _ = Logger.debug("[DynamicViewContainer]   Item \(index): Unknown type (skipped)")
                     }
                 }
                 if !components.isEmpty {

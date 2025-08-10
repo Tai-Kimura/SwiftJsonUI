@@ -118,21 +118,37 @@ public struct AnyCodable: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         
-        // Try to decode as array of DynamicComponent first (since child is always an array)
-        if let components = try? container.decode([DynamicComponent].self) {
-            self.value = components
+        // Try to decode as array first
+        if let array = try? container.decode([AnyCodable].self) {
+            // Check if this is an array of DynamicComponents or mixed content (including data objects)
+            var components: [DynamicComponent] = []
+            var hasDataObject = false
+            
+            for item in array {
+                if let component = item.value as? DynamicComponent {
+                    components.append(component)
+                } else if let dict = item.value as? [String: AnyCodable],
+                          dict["data"] != nil {
+                    // This is a data binding object, skip it
+                    hasDataObject = true
+                }
+            }
+            
+            // If we found DynamicComponents and no data objects, store as component array
+            if !components.isEmpty && !hasDataObject {
+                self.value = components
+            } else {
+                // Store as raw array (might contain data objects)
+                self.value = array
+            }
         }
         // Try to decode as single DynamicComponent
         else if let component = try? container.decode(DynamicComponent.self) {
             self.value = component
         }
-        // Try to decode as dictionary (for nested object)
+        // Try to decode as dictionary (for nested object or data binding)
         else if let dict = try? container.decode([String: AnyCodable].self) {
             self.value = dict
-        }
-        // Try to decode as array
-        else if let array = try? container.decode([AnyCodable].self) {
-            self.value = array
         }
         // Try primitive types
         else if let string = try? container.decode(String.self) {
