@@ -384,8 +384,8 @@ module SjuiTools
               puts "✅ Updated to #{exceptions_set.size} membership exceptions"
             end
             
-            # Save the project
-            project.save
+            # Don't save with xcodeproj yet - let update_membership_exceptions_directly handle everything
+            # project.save
             
             # For synchronized projects, we need to manually write the membershipExceptions
             # because xcodeproj gem doesn't fully support Xcode 15+ format
