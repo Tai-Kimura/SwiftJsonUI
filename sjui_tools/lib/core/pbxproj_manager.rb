@@ -595,10 +595,28 @@ SECTION
             content = content.sub(insertion_point, "#{insertion_point}\n#{exception_set_section}\n")
             
             # Now update the synchronized root group to reference the exception set
-            content = content.sub(
-              /(#{Regexp.escape(sync_group_uuid)}\s*\/\*[^*]*\*\/\s*=\s*\{[^}]*isa\s*=\s*PBXFileSystemSynchronizedRootGroup;)/,
-              "\\1\n\t\t\texceptions = (\n\t\t\t\t#{exception_set_uuid} /* Exceptions for \"#{project_name}\" folder in \"#{project_name}\" target */,\n\t\t\t);"
-            )
+            # First, find the synchronized root group section
+            group_pattern = /(#{Regexp.escape(sync_group_uuid)}\s*\/\*[^*]*\*\/\s*=\s*\{[^}]*?\})/m
+            if content =~ group_pattern
+              group_content = $1
+              
+              # Check if there's already an exceptions entry
+              if group_content =~ /exceptions\s*=\s*\([^)]*\);/
+                # Replace the existing exceptions entry
+                updated_group = group_content.gsub(
+                  /exceptions\s*=\s*\([^)]*\);/,
+                  "exceptions = (\n\t\t\t\t#{exception_set_uuid} /* Exceptions for \"#{project_name}\" folder in \"#{project_name}\" target */,\n\t\t\t);"
+                )
+              else
+                # Add exceptions after isa line
+                updated_group = group_content.sub(
+                  /(isa\s*=\s*PBXFileSystemSynchronizedRootGroup;)/,
+                  "\\1\n\t\t\texceptions = (\n\t\t\t\t#{exception_set_uuid} /* Exceptions for \"#{project_name}\" folder in \"#{project_name}\" target */,\n\t\t\t);"
+                )
+              end
+              
+              content = content.sub(group_pattern, updated_group)
+            end
             
             # Write the updated content
             File.write(pbxproj_path, content)
