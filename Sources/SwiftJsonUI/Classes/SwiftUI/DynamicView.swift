@@ -23,37 +23,32 @@ public struct DynamicView: View {
         self.viewId = viewId ?? UUID().uuidString
     }
     
-    @ViewBuilder
     public var body: some View {
-        if let component = viewModel.rootComponent {
-            DynamicComponentBuilder(
-                component: component,
-                viewModel: viewModel,
-                viewId: viewId
-            )
-            .onAppear {
-                Logger.debug("[DynamicView] Rendering component: \(component.type)")
-            }
-            #if DEBUG
-            .onReceive(HotLoader.instance.$lastUpdate) { date in
-                Logger.debug("[DynamicView] HotLoader update received: \(date)")
-                viewModel.reload()
-            }
-            #endif
-        } else {
-            ProgressView("Loading...")
+        Group {
+            if let component = viewModel.rootComponent {
+                DynamicComponentBuilder(
+                    component: component,
+                    viewModel: viewModel,
+                    viewId: viewId
+                )
                 .onAppear {
-                    Logger.debug("[DynamicView] No rootComponent, showing loading...")
-                    Logger.debug("[DynamicView] ProgressView appeared, attempting to load...")
-                    viewModel.loadJSON()
+                    Logger.debug("[DynamicView] Rendering component: \(component.type)")
                 }
-                #if DEBUG
-                .onReceive(HotLoader.instance.$lastUpdate) { date in
-                    Logger.debug("[DynamicView] HotLoader update received: \(date)")
-                    viewModel.reload()
-                }
-                #endif
+            } else {
+                ProgressView("Loading...")
+                    .onAppear {
+                        Logger.debug("[DynamicView] No rootComponent, showing loading...")
+                        Logger.debug("[DynamicView] ProgressView appeared, attempting to load...")
+                        viewModel.loadJSON()
+                    }
+            }
         }
+        #if DEBUG
+        .onReceive(HotLoader.instance.$lastUpdate) { date in
+            Logger.debug("[DynamicView] HotLoader update received: \(date)")
+            viewModel.reload()
+        }
+        #endif
     }
 }
 
