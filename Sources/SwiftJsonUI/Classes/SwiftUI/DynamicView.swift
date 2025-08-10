@@ -26,17 +26,24 @@ public struct DynamicView: View {
     public var body: some View {
         Group {
             if let component = viewModel.rootComponent {
+                Logger.debug("[DynamicView] Rendering component: \(component.type)")
                 DynamicComponentBuilder(
                     component: component,
                     viewModel: viewModel,
                     viewId: viewId
                 )
             } else {
+                Logger.debug("[DynamicView] No rootComponent, showing loading...")
                 ProgressView("Loading...")
+                    .onAppear {
+                        Logger.debug("[DynamicView] ProgressView appeared, attempting to load...")
+                        viewModel.loadJSON()
+                    }
             }
         }
         #if DEBUG
-        .onReceive(HotLoader.instance.$lastUpdate) { _ in
+        .onReceive(HotLoader.instance.$lastUpdate) { date in
+            Logger.debug("[DynamicView] HotLoader update received: \(date)")
             viewModel.reload()
         }
         #endif

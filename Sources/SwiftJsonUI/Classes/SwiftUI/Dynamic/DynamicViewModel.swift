@@ -28,15 +28,27 @@ public class DynamicViewModel: ObservableObject {
     }
     
     public func loadJSON() {
-        guard let jsonName = jsonName else { return }
+        guard let jsonName = jsonName else { 
+            Logger.debug("[DynamicViewModel] No jsonName provided")
+            return 
+        }
+        
+        Logger.debug("[DynamicViewModel] Loading JSON: \(jsonName)")
         
         if let data = JSONLayoutLoader.loadJSON(named: jsonName) {
+            Logger.debug("[DynamicViewModel] JSON data loaded, size: \(data.count) bytes")
             do {
                 let decoder = JSONDecoder()
                 rootComponent = try decoder.decode(DynamicComponent.self, from: data)
+                Logger.debug("[DynamicViewModel] Successfully decoded component: \(rootComponent?.type ?? "nil")")
             } catch {
-                Logger.debug("[DynamicView] Decode error: \(error)")
+                Logger.debug("[DynamicViewModel] Decode error: \(error)")
+                if let jsonString = String(data: data, encoding: .utf8) {
+                    Logger.debug("[DynamicViewModel] JSON content: \(jsonString.prefix(200))...")
+                }
             }
+        } else {
+            Logger.debug("[DynamicViewModel] Failed to load JSON data for: \(jsonName)")
         }
     }
     

@@ -27,12 +27,17 @@ public struct DynamicComponentBuilder: View {
     
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
+        Logger.debug("[DynamicComponentBuilder] Building view for type: \(component.type)")
+        
         switch component.type {
         case "View":
+            Logger.debug("[DynamicComponentBuilder] Creating DynamicViewContainer")
             DynamicViewContainer(component: component, viewModel: viewModel, viewId: viewId)
         case "Text", "Label":
+            Logger.debug("[DynamicComponentBuilder] Creating DynamicTextView")
             DynamicTextView(component: component, viewModel: viewModel)
         case "Button":
+            Logger.debug("[DynamicComponentBuilder] Creating DynamicButtonView")
             DynamicButtonView(component: component, viewModel: viewModel)
         case "TextField":
             DynamicTextFieldView(component: component, viewModel: viewModel)

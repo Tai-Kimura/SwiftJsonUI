@@ -34,18 +34,25 @@ struct DynamicViewContainer: View {
     
     private func getChildren() -> [DynamicComponent] {
         if let child = component.child {
+            Logger.debug("[DynamicViewContainer] Processing child field...")
             // child is AnyCodable, can be single component or array
             if let singleComponent = child.asDynamicComponent {
+                Logger.debug("[DynamicViewContainer] Found single component: \(singleComponent.type)")
                 return [singleComponent]
             } else if let componentArray = child.asDynamicComponentArray {
+                Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
                 return componentArray
+            } else {
+                Logger.debug("[DynamicViewContainer] child field exists but couldn't decode as component")
             }
         }
         
         if let children = component.children {
+            Logger.debug("[DynamicViewContainer] Found children array with \(children.count) items")
             return children
         }
         
+        Logger.debug("[DynamicViewContainer] No children found")
         return []
     }
     
@@ -92,18 +99,25 @@ struct DynamicScrollViewContainer: View {
     
     private func getChildren() -> [DynamicComponent] {
         if let child = component.child {
+            Logger.debug("[DynamicViewContainer] Processing child field...")
             // child is AnyCodable, can be single component or array
             if let singleComponent = child.asDynamicComponent {
+                Logger.debug("[DynamicViewContainer] Found single component: \(singleComponent.type)")
                 return [singleComponent]
             } else if let componentArray = child.asDynamicComponentArray {
+                Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
                 return componentArray
+            } else {
+                Logger.debug("[DynamicViewContainer] child field exists but couldn't decode as component")
             }
         }
         
         if let children = component.children {
+            Logger.debug("[DynamicViewContainer] Found children array with \(children.count) items")
             return children
         }
         
+        Logger.debug("[DynamicViewContainer] No children found")
         return []
     }
 }
