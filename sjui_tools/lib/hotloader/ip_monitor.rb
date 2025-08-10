@@ -15,10 +15,13 @@ module SjuiTools
 
       def start
         @running = true
+        # Check IP immediately on start
+        check_and_update_ip
+        
         @monitor_thread = Thread.new do
           while @running
-            check_and_update_ip
             sleep @check_interval
+            check_and_update_ip if @running
           end
         end
         puts "IP address monitoring started"

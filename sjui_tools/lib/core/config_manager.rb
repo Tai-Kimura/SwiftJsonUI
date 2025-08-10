@@ -175,13 +175,17 @@ module SjuiTools
 
       def self.update_hotloader_ip(ip)
         config_path = find_config_file
-        return unless config_path && File.exist?(config_path)
+        unless config_path && File.exist?(config_path)
+          puts "Warning: Config file not found, cannot update IP address"
+          return
+        end
         
         config = load_config
         config['hotloader'] ||= {}
         config['hotloader']['ip'] = ip
         
         File.write(config_path, JSON.pretty_generate(config))
+        puts "Updated config file with IP: #{ip} -> #{config_path}"
       end
 
       def self.get_hotloader_config
