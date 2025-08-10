@@ -131,7 +131,7 @@ module SjuiTools
               'swiftui' => {
                 'output_directory' => 'Generated'
               },
-              'use_network' => false  # SwiftUI mode typically doesn't need hotloader
+              'use_network' => true  # SwiftUI mode can use network for API calls
             }
           else
             # Binding mode or all mode config
