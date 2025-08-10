@@ -155,8 +155,10 @@ module SjuiTools
         # Reset state for new view
         @state_variables = []
         
-        # SwiftUIのインポート
-        code = "import SwiftUI\n\n"
+        # SwiftUIとSwiftJsonUIのインポート
+        code = "import SwiftUI\n"
+        code += "import SwiftJsonUI\n"
+        code += "\n"
         
         # 相対配置が必要な場合はPreferenceKeyを定義
         if needs_preference_key?(json_data)

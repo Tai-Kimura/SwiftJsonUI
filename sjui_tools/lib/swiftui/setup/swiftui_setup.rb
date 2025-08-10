@@ -30,10 +30,13 @@ module SjuiTools
           # 3. Setup libraries (same as binding mode)
           common_setup.setup_libraries
           
-          # 4. Cleanup project references (before membership exceptions)
+          # 4. Generate HotLoader setup file for SwiftUI
+          generate_hotloader_setup
+          
+          # 5. Cleanup project references (before membership exceptions)
           common_setup.cleanup_project_references
           
-          # 5. Setup membership exceptions (MUST be last - after all project.save calls)
+          # 6. Setup membership exceptions (MUST be last - after all project.save calls)
           common_setup.setup_membership_exceptions
           
           puts "=== SwiftUI Project Setup Completed Successfully! ==="
@@ -72,6 +75,49 @@ module SjuiTools
               FileUtils.mkdir_p(output_path)
               puts "Created directory: #{output_dir}"
             end
+          end
+        end
+        
+        def generate_hotloader_setup
+          puts "Generating HotLoader setup for SwiftUI..."
+          
+          require_relative 'hotloader_generator'
+          
+          # Get the source path
+          source_path = ::SjuiTools::Core::ProjectFinder.get_full_source_path || Dir.pwd
+          
+          # Generate HotLoaderSetup.swift in the main app directory
+          hotloader_path = File.join(source_path, 'HotLoaderSetup.swift')
+          ::SjuiTools::SwiftUI::Setup::HotLoaderGenerator.generate(hotloader_path)
+          
+          # Add the file to Xcode project if not already there
+          add_file_to_project(hotloader_path)
+        end
+        
+        def add_file_to_project(file_path)
+          return unless File.exist?(file_path)
+          
+          require 'xcodeproj'
+          project_path = @project_file_path
+          project = Xcodeproj::Project.open(project_path)
+          
+          # Find the main group
+          main_group = project.main_group
+          target = project.targets.first
+          
+          # Check if file already exists in project
+          file_name = File.basename(file_path)
+          existing_file = main_group.files.find { |f| f.display_name == file_name }
+          
+          unless existing_file
+            # Add file reference to project
+            file_ref = main_group.new_file(file_path)
+            
+            # Add to target's compile sources
+            target.add_file_references([file_ref])
+            
+            project.save
+            puts "Added #{file_name} to Xcode project"
           end
         end
       end

@@ -20,6 +20,7 @@ require_relative 'views/network_image_converter'
 require_relative 'views/blur_converter'
 require_relative 'views/gradient_view_converter'
 require_relative 'views/icon_label_converter'
+require_relative 'views/dynamic_component_converter'
 
 module SjuiTools
   module SwiftUI
@@ -72,6 +73,8 @@ module SjuiTools
           Views::SelectBoxConverter.new(component, indent_level, action_manager)
         when 'Web'
           Views::WebConverter.new(component, indent_level, action_manager)
+        when 'DynamicComponent'
+          Views::DynamicComponentConverter.new(component, indent_level, action_manager)
         else
           # デフォルトコンバーター
           DefaultConverter.new(component, indent_level, action_manager)
