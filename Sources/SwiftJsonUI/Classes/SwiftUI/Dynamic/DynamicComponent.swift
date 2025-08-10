@@ -118,13 +118,13 @@ public struct AnyCodable: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         
-        // Try to decode as DynamicComponent first
-        if let component = try? container.decode(DynamicComponent.self) {
-            self.value = component
-        }
-        // Try to decode as array of DynamicComponent
-        else if let components = try? container.decode([DynamicComponent].self) {
+        // Try to decode as array of DynamicComponent first (since child is always an array)
+        if let components = try? container.decode([DynamicComponent].self) {
             self.value = components
+        }
+        // Try to decode as single DynamicComponent
+        else if let component = try? container.decode(DynamicComponent.self) {
+            self.value = component
         }
         // Try to decode as dictionary (for nested object)
         else if let dict = try? container.decode([String: AnyCodable].self) {

@@ -35,15 +35,21 @@ struct DynamicViewContainer: View {
     private func getChildren() -> [DynamicComponent] {
         if let child = component.child {
             let _ = Logger.debug("[DynamicViewContainer] Processing child field...")
+            let _ = Logger.debug("[DynamicViewContainer] child value type: \(type(of: child.value))")
+            
             // child is AnyCodable, can be single component or array
-            if let singleComponent = child.asDynamicComponent {
+            if let componentArray = child.asDynamicComponentArray {
+                let _ = Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
+                for (index, comp) in componentArray.enumerated() {
+                    let _ = Logger.debug("[DynamicViewContainer]   Item \(index): type=\(comp.type)")
+                }
+                return componentArray
+            } else if let singleComponent = child.asDynamicComponent {
                 let _ = Logger.debug("[DynamicViewContainer] Found single component: \(singleComponent.type)")
                 return [singleComponent]
-            } else if let componentArray = child.asDynamicComponentArray {
-                let _ = Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
-                return componentArray
             } else {
                 let _ = Logger.debug("[DynamicViewContainer] child field exists but couldn't decode as component")
+                let _ = Logger.debug("[DynamicViewContainer] child.value: \(child.value)")
             }
         }
         
@@ -100,15 +106,21 @@ struct DynamicScrollViewContainer: View {
     private func getChildren() -> [DynamicComponent] {
         if let child = component.child {
             let _ = Logger.debug("[DynamicViewContainer] Processing child field...")
+            let _ = Logger.debug("[DynamicViewContainer] child value type: \(type(of: child.value))")
+            
             // child is AnyCodable, can be single component or array
-            if let singleComponent = child.asDynamicComponent {
+            if let componentArray = child.asDynamicComponentArray {
+                let _ = Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
+                for (index, comp) in componentArray.enumerated() {
+                    let _ = Logger.debug("[DynamicViewContainer]   Item \(index): type=\(comp.type)")
+                }
+                return componentArray
+            } else if let singleComponent = child.asDynamicComponent {
                 let _ = Logger.debug("[DynamicViewContainer] Found single component: \(singleComponent.type)")
                 return [singleComponent]
-            } else if let componentArray = child.asDynamicComponentArray {
-                let _ = Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
-                return componentArray
             } else {
                 let _ = Logger.debug("[DynamicViewContainer] child field exists but couldn't decode as component")
+                let _ = Logger.debug("[DynamicViewContainer] child.value: \(child.value)")
             }
         }
         
