@@ -11,10 +11,21 @@ module SjuiTools
           # onclickを使用（SwiftJsonUIの属性）
           action = @component['onclick']
           
-          # Buttonの基本構造（アクションは空にする）
+          # Buttonの基本構造（アクションを設定）
           add_line "Button(action: {"
           indent do
-            add_line "// No action specified"
+            if action
+              # パラメータ付きメソッドの場合（例: "toggleMode:"）
+              if action.include?(':')
+                method_name = action.gsub(':', '')
+                add_line "viewModel.#{method_name}(self)"
+              else
+                # パラメータなしメソッドの場合
+                add_line "viewModel.#{action}()"
+              end
+            else
+              add_line "// No action specified"
+            end
           end
           add_line "}) {"
           
@@ -52,29 +63,8 @@ module SjuiTools
             add_modifier_line ".buttonStyle(#{style})"
           end
           
-          # 共通のモディファイアを適用
+          # 共通のモディファイアを適用（onTapGestureはここで追加される）
           apply_modifiers
-          
-          # onclickがある場合はonTapGestureを追加
-          if @component['onclick']
-            action_name = @component['onclick']
-            # パラメータ付きメソッドの場合（例: "toggleMode:"）
-            if action_name.include?(':')
-              method_name = action_name.gsub(':', '')
-              add_modifier_line ".onTapGesture {"
-              indent do
-                add_line "viewModel.#{method_name}(self)"
-              end
-              add_line "}"
-            else
-              # パラメータなしメソッドの場合
-              add_modifier_line ".onTapGesture {"
-              indent do
-                add_line "viewModel.#{action_name}()"
-              end
-              add_line "}"
-            end
-          end
           
           generated_code
         end

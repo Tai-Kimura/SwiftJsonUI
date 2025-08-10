@@ -174,20 +174,23 @@ module SjuiTools
           end
           
           # クリックイベント (onclickとonClick両方をサポート)
-          click_action = @component['onclick'] || @component['onClick']
-          if click_action
-            add_modifier_line ".onTapGesture {"
-            indent do
-              # パラメータ付きメソッドの場合（例: "toggleMode:"）
-              if click_action.include?(':')
-                method_name = click_action.gsub(':', '')
-                add_line "viewModel.#{method_name}(self)"
-              else
-                # パラメータなしメソッドの場合
-                add_line "viewModel.#{click_action}()"
+          # ただし、Buttonの場合は既にactionで処理しているのでスキップ
+          unless @component['type'] == 'Button'
+            click_action = @component['onclick'] || @component['onClick']
+            if click_action
+              add_modifier_line ".onTapGesture {"
+              indent do
+                # パラメータ付きメソッドの場合（例: "toggleMode:"）
+                if click_action.include?(':')
+                  method_name = click_action.gsub(':', '')
+                  add_line "viewModel.#{method_name}(self)"
+                else
+                  # パラメータなしメソッドの場合
+                  add_line "viewModel.#{click_action}()"
+                end
               end
+              add_line "}"
             end
-            add_line "}"
           end
         end
 
