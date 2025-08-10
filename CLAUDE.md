@@ -10,7 +10,7 @@ When implementing SwiftUI support features:
 
 2. **After Testing Success**:
    - Apply the same modifications to main SwiftJsonUI repository
-   - Location: `/Users/like-a-rolling_stone/resource/SwiftJsonUI`
+   - Location: `~/resource/SwiftJsonUI`
 
 3. **Deployment**:
    - Push changes to `7.0.0-beta` branch
@@ -24,7 +24,7 @@ cd ~/resource/swiftUITestApp/swiftUITestApp
 ./sjui_tools/bin/sjui build
 
 # After testing, apply to main repo
-cd /Users/like-a-rolling_stone/resource/SwiftJsonUI
+cd ~/resource/SwiftJsonUI
 # Apply same changes
 git add -A
 git commit -m "Your commit message"
@@ -38,9 +38,9 @@ git push origin 7.0.0-beta --force
 ## Other Important Workflows
 
 ### Pango iOS Testing
-- Test binding changes in: `/Users/like-a-rolling_stone/resource/pango_ios/pango`
+- Test binding changes in: `~/resource/pango_ios/pango`
 - Pango has its own copy of sjui_tools that may need updates
 
 ### Binding Test App
-- Location: `/Users/like-a-rolling_stone/resource/bindingTestApp/bindingTestApp`
+- Location: `~/resource/bindingTestApp/bindingTestApp`
 - Used for testing binding generation and functionality
