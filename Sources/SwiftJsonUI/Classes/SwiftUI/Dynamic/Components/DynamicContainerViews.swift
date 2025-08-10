@@ -37,14 +37,31 @@ struct DynamicViewContainer: View {
             let _ = Logger.debug("[DynamicViewContainer] Processing child field...")
             let _ = Logger.debug("[DynamicViewContainer] child value type: \(type(of: child.value))")
             
-            // child is AnyCodable, can be single component or array
+            // Check if value is array of DynamicComponent directly
             if let componentArray = child.asDynamicComponentArray {
                 let _ = Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
                 for (index, comp) in componentArray.enumerated() {
                     let _ = Logger.debug("[DynamicViewContainer]   Item \(index): type=\(comp.type)")
                 }
                 return componentArray
-            } else if let singleComponent = child.asDynamicComponent {
+            }
+            // Check if value is array of AnyCodable (which may contain DynamicComponents)
+            else if let anyCodableArray = child.value as? [AnyCodable] {
+                let _ = Logger.debug("[DynamicViewContainer] Found array of AnyCodable, extracting components...")
+                var components: [DynamicComponent] = []
+                for item in anyCodableArray {
+                    if let comp = item.value as? DynamicComponent {
+                        components.append(comp)
+                        let _ = Logger.debug("[DynamicViewContainer]   Extracted component: type=\(comp.type)")
+                    }
+                }
+                if !components.isEmpty {
+                    let _ = Logger.debug("[DynamicViewContainer] Extracted \(components.count) components from AnyCodable array")
+                    return components
+                }
+            }
+            // Check if single component
+            else if let singleComponent = child.asDynamicComponent {
                 let _ = Logger.debug("[DynamicViewContainer] Found single component: \(singleComponent.type)")
                 return [singleComponent]
             } else {
@@ -108,14 +125,31 @@ struct DynamicScrollViewContainer: View {
             let _ = Logger.debug("[DynamicViewContainer] Processing child field...")
             let _ = Logger.debug("[DynamicViewContainer] child value type: \(type(of: child.value))")
             
-            // child is AnyCodable, can be single component or array
+            // Check if value is array of DynamicComponent directly
             if let componentArray = child.asDynamicComponentArray {
                 let _ = Logger.debug("[DynamicViewContainer] Found component array with \(componentArray.count) items")
                 for (index, comp) in componentArray.enumerated() {
                     let _ = Logger.debug("[DynamicViewContainer]   Item \(index): type=\(comp.type)")
                 }
                 return componentArray
-            } else if let singleComponent = child.asDynamicComponent {
+            }
+            // Check if value is array of AnyCodable (which may contain DynamicComponents)
+            else if let anyCodableArray = child.value as? [AnyCodable] {
+                let _ = Logger.debug("[DynamicViewContainer] Found array of AnyCodable, extracting components...")
+                var components: [DynamicComponent] = []
+                for item in anyCodableArray {
+                    if let comp = item.value as? DynamicComponent {
+                        components.append(comp)
+                        let _ = Logger.debug("[DynamicViewContainer]   Extracted component: type=\(comp.type)")
+                    }
+                }
+                if !components.isEmpty {
+                    let _ = Logger.debug("[DynamicViewContainer] Extracted \(components.count) components from AnyCodable array")
+                    return components
+                }
+            }
+            // Check if single component
+            else if let singleComponent = child.asDynamicComponent {
                 let _ = Logger.debug("[DynamicViewContainer] Found single component: \(singleComponent.type)")
                 return [singleComponent]
             } else {
