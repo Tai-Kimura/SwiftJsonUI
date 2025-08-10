@@ -82,7 +82,7 @@ module SjuiTools
         @action_manager = ActionManager.new
         
         # Convert the main component
-        view_code = convert_component(json_data, 2)  # Indent level 2 for inside generatedBody
+        view_code = convert_component(json_data, 0)  # Indent level 0, will be indented by view_updater
         
         view_code
       end

@@ -16,11 +16,11 @@ module SjuiTools
         
         if content =~ pattern
           # Indent the new body code properly (12 spaces for inside the else block)
-          indented_body = indent_body_code(new_body_code, "                        ")
+          indented_body = indent_body_code(new_body_code, "            ")
           
           # Replace the old body with the new one
           updated_content = content.gsub(pattern) do
-            "#{$1}#{indented_body}\n                        #{$3}"
+            "#{$1}#{indented_body}\n            #{$3}"
           end
           
           # Write back to file
