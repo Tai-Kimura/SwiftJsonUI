@@ -26,16 +26,18 @@ public struct DynamicView: View {
     public var body: some View {
         Group {
             if let component = viewModel.rootComponent {
-                Logger.debug("[DynamicView] Rendering component: \(component.type)")
                 DynamicComponentBuilder(
                     component: component,
                     viewModel: viewModel,
                     viewId: viewId
                 )
+                .onAppear {
+                    Logger.debug("[DynamicView] Rendering component: \(component.type)")
+                }
             } else {
-                Logger.debug("[DynamicView] No rootComponent, showing loading...")
                 ProgressView("Loading...")
                     .onAppear {
+                        Logger.debug("[DynamicView] No rootComponent, showing loading...")
                         Logger.debug("[DynamicView] ProgressView appeared, attempting to load...")
                         viewModel.loadJSON()
                     }
