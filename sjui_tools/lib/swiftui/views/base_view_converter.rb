@@ -80,7 +80,9 @@ module SjuiTools
               if width_value == '.infinity' && height_value == '.infinity'
                 add_modifier_line ".frame(maxWidth: #{width_param}, maxHeight: #{height_param})"
               elsif width_value == '.infinity'
-                add_modifier_line ".frame(maxWidth: #{width_param}, height: #{height_param})"
+                # Split into two frame calls for maxWidth with fixed height
+                add_modifier_line ".frame(maxWidth: #{width_param})"
+                add_modifier_line ".frame(height: #{height_param})"
               elsif height_value == '.infinity'
                 add_modifier_line ".frame(width: #{width_param}, maxHeight: #{height_param})"
               else
@@ -101,8 +103,8 @@ module SjuiTools
             end
           end
           
-          # 背景色
-          if @component['background']
+          # 背景色（Rectangleの場合はfillで設定済みなのでスキップ）
+          if @component['background'] && !@skip_background
             processed_bg = process_template_value(@component['background'])
             if processed_bg.is_a?(Hash) && processed_bg[:template_var]
               add_modifier_line ".background(#{to_camel_case(processed_bg[:template_var])})"

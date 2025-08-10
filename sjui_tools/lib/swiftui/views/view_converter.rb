@@ -19,8 +19,16 @@ module SjuiTools
           children = children.reject { |child| child['data'] }
           
           if children.empty?
-            # 子要素がない場合は空のビュー
-            add_line "EmptyView()"
+            # 子要素がない場合
+            # backgroundが設定されている場合はRectangleを使用（dividerなど）
+            if @component['background']
+              add_line "Rectangle()"
+              add_modifier_line ".fill(#{hex_to_swiftui_color(@component['background'])})"
+              # Rectangleの場合はbackgroundを適用しない
+              @skip_background = true
+            else
+              add_line "EmptyView()"
+            end
           elsif children.length == 1
             # 子要素が1つの場合は直接生成
             if @converter_factory
