@@ -35,11 +35,13 @@ module SjuiTools
           # Create full paths with subdirectory support
           if subdirectory
             json_path = File.join(source_path, layouts_dir, subdirectory)
-            swift_path = File.join(source_path, view_dir, subdirectory)
+            # Create folder for the view in View directory
+            swift_path = File.join(source_path, view_dir, subdirectory, view_class_name)
             viewmodel_path = File.join(source_path, viewmodel_dir, subdirectory)
           else
             json_path = File.join(source_path, layouts_dir)
-            swift_path = File.join(source_path, view_dir)
+            # Create folder for the view in View directory
+            swift_path = File.join(source_path, view_dir, view_class_name)
             viewmodel_path = File.join(source_path, viewmodel_dir)
           end
           
@@ -52,9 +54,13 @@ module SjuiTools
           json_file = File.join(json_path, "#{json_file_name}.json")
           create_json_template(json_file, view_class_name)
           
-          # Create Swift View file
-          swift_file = File.join(swift_path, "#{view_class_name}View.swift")
-          create_swift_template(swift_file, view_class_name, json_file_name, subdirectory)
+          # Create Main View file (wrapper)
+          main_swift_file = File.join(swift_path, "#{view_class_name}View.swift")
+          create_main_view_template(main_swift_file, view_class_name, json_file_name, subdirectory)
+          
+          # Create Generated View file (for JSON generation)
+          generated_swift_file = File.join(swift_path, "#{view_class_name}GeneratedView.swift")
+          create_generated_view_template(generated_swift_file, view_class_name, json_file_name, subdirectory)
           
           # Create ViewModel file
           viewmodel_file = File.join(viewmodel_path, "#{view_class_name}ViewModel.swift")
@@ -66,9 +72,10 @@ module SjuiTools
           end
           
           Core::Logger.info "Generated SwiftUI view:"
-          Core::Logger.info "  JSON:      #{json_file}"
-          Core::Logger.info "  View:      #{swift_file}"
-          Core::Logger.info "  ViewModel: #{viewmodel_file}"
+          Core::Logger.info "  JSON:          #{json_file}"
+          Core::Logger.info "  Main View:     #{main_swift_file}"
+          Core::Logger.info "  Generated View: #{generated_swift_file}"
+          Core::Logger.info "  ViewModel:     #{viewmodel_file}"
           
           if @options[:root]
             Core::Logger.info "  Updated App.swift to use #{view_class_name}View as root"
@@ -173,7 +180,37 @@ module SjuiTools
           end
         end
         
-        def create_swift_template(file_path, view_name, json_name, subdirectory)
+        def create_main_view_template(file_path, view_name, json_name, subdirectory)
+          return if File.exist?(file_path)
+          
+          template = <<~SWIFT
+            import SwiftUI
+            import SwiftJsonUI
+            import Combine
+
+            struct #{view_name}View: View {
+                @StateObject private var viewModel = #{view_name}ViewModel()
+                
+                var body: some View {
+                    #{view_name}GeneratedView()
+                        .environmentObject(viewModel)
+                        // Add navigation destinations, sheets, or other view-level modifiers here
+                }
+            }
+
+            // MARK: - Preview
+            struct #{view_name}View_Previews: PreviewProvider {
+                static var previews: some View {
+                    #{view_name}View()
+                }
+            }
+          SWIFT
+          
+          File.write(file_path, template)
+          Core::Logger.debug "Created Main View template: #{file_path}"
+        end
+        
+        def create_generated_view_template(file_path, view_name, json_name, subdirectory)
           return if File.exist?(file_path)
           
           # Determine the JSON path reference for loading
@@ -184,8 +221,8 @@ module SjuiTools
             import SwiftJsonUI
             import Combine
 
-            struct #{view_name}View: View {
-                @StateObject private var viewModel = #{view_name}ViewModel()
+            struct #{view_name}GeneratedView: View {
+                @EnvironmentObject var viewModel: #{view_name}ViewModel
                 @StateObject private var dynamicViewModel = DynamicViewModel(jsonName: "#{json_reference}")
                 
                 var body: some View {
@@ -209,17 +246,10 @@ module SjuiTools
                     }
                 }
             }
-
-            // MARK: - Preview
-            struct #{view_name}View_Previews: PreviewProvider {
-                static var previews: some View {
-                    #{view_name}View()
-                }
-            }
           SWIFT
           
           File.write(file_path, template)
-          Core::Logger.debug "Created Swift View template: #{file_path}"
+          Core::Logger.debug "Created Generated View template: #{file_path}"
         end
         
         def create_viewmodel_template(file_path, view_name, json_name, subdirectory)

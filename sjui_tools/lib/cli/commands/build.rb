@@ -128,11 +128,11 @@ module SjuiTools
             # Convert to PascalCase for Swift file
             view_name = base_name.split(/[_\-]/).map(&:capitalize).join
             
-            # Determine Swift file path
+            # Determine Swift file path - now targeting GeneratedView in view folder
             swift_file = if dir_path == '.'
-              File.join(view_dir, "#{view_name}View.swift")
+              File.join(view_dir, view_name, "#{view_name}GeneratedView.swift")
             else
-              File.join(view_dir, dir_path, "#{view_name}View.swift")
+              File.join(view_dir, dir_path, view_name, "#{view_name}GeneratedView.swift")
             end
             
             if File.exist?(swift_file)

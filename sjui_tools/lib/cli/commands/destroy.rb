@@ -91,14 +91,31 @@ module SjuiTools
           end
           files_to_delete << json_path if File.exist?(json_path)
           
-          # Swift View file path
-          swift_file_name = "#{view_class_name}View.swift"
-          swift_path = if name_parts.length > 1
-            File.join(base_path, view_dir, *name_parts[0..-2], swift_file_name)
+          # Swift View folder path (new structure - folder contains all view files)
+          swift_folder_path = if name_parts.length > 1
+            File.join(base_path, view_dir, *name_parts[0..-2], view_class_name)
           else
-            File.join(base_path, view_dir, swift_file_name)
+            File.join(base_path, view_dir, view_class_name)
           end
-          files_to_delete << swift_path if File.exist?(swift_path)
+          
+          # Check if folder exists (new structure)
+          if Dir.exist?(swift_folder_path)
+            # Add all files in the folder to delete list
+            Dir.glob(File.join(swift_folder_path, '**/*')).each do |file|
+              files_to_delete << file if File.file?(file)
+            end
+            # Mark folder itself for deletion
+            files_to_delete << swift_folder_path
+          else
+            # Fallback to old structure (single file)
+            swift_file_name = "#{view_class_name}View.swift"
+            swift_path = if name_parts.length > 1
+              File.join(base_path, view_dir, *name_parts[0..-2], swift_file_name)
+            else
+              File.join(base_path, view_dir, swift_file_name)
+            end
+            files_to_delete << swift_path if File.exist?(swift_path)
+          end
           
           # ViewModel file path
           viewmodel_file_name = "#{view_class_name}ViewModel.swift"
@@ -140,17 +157,22 @@ module SjuiTools
             end
           end
           
-          # Delete files
+          # Delete files and folders
           files_to_delete.each do |file|
-            FileUtils.rm_f(file)
-            Core::Logger.info "Deleted: #{file}"
+            if File.directory?(file)
+              FileUtils.rm_rf(file)
+              Core::Logger.info "Deleted folder: #{file}"
+            else
+              FileUtils.rm_f(file)
+              Core::Logger.info "Deleted: #{file}"
+            end
           end
           
           Core::Logger.info ""
           Core::Logger.info "✅ Successfully destroyed #{type} '#{name}'"
         end
         
-        def destroy_view(type, name, force = false)
+        def destroy_view(type, name)
           config = Core::ConfigManager.load_config
           
           # Get paths from config
