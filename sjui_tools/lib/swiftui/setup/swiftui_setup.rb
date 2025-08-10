@@ -70,6 +70,14 @@ module SjuiTools
             puts "Created directory: #{styles_dir}"
           end
           
+          # Create ViewModel directory
+          viewmodel_dir = config['viewmodel_directory'] || 'ViewModel'
+          viewmodel_path = File.join(source_path, viewmodel_dir)
+          unless Dir.exist?(viewmodel_path)
+            FileUtils.mkdir_p(viewmodel_path)
+            puts "Created directory: #{viewmodel_dir}"
+          end
+          
           # Create Generated directory for SwiftUI output
           if config['swiftui'] && config['swiftui']['output_directory']
             output_dir = config['swiftui']['output_directory']

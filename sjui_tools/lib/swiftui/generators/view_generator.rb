@@ -30,27 +30,35 @@ module SjuiTools
           source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
           layouts_dir = @config['layouts_directory'] || 'Layouts'
           view_dir = @config['view_directory'] || 'View'
+          viewmodel_dir = @config['viewmodel_directory'] || 'ViewModel'
           
           # Create full paths with subdirectory support
           if subdirectory
             json_path = File.join(source_path, layouts_dir, subdirectory)
             swift_path = File.join(source_path, view_dir, subdirectory)
+            viewmodel_path = File.join(source_path, viewmodel_dir, subdirectory)
           else
             json_path = File.join(source_path, layouts_dir)
             swift_path = File.join(source_path, view_dir)
+            viewmodel_path = File.join(source_path, viewmodel_dir)
           end
           
           # Create directories if they don't exist
           FileUtils.mkdir_p(json_path)
           FileUtils.mkdir_p(swift_path)
+          FileUtils.mkdir_p(viewmodel_path)
           
           # Create JSON file
           json_file = File.join(json_path, "#{json_file_name}.json")
           create_json_template(json_file, view_class_name)
           
-          # Create Swift file
+          # Create Swift View file
           swift_file = File.join(swift_path, "#{view_class_name}View.swift")
           create_swift_template(swift_file, view_class_name, json_file_name, subdirectory)
+          
+          # Create ViewModel file
+          viewmodel_file = File.join(viewmodel_path, "#{view_class_name}ViewModel.swift")
+          create_viewmodel_template(viewmodel_file, view_class_name, json_file_name, subdirectory)
           
           # Update App.swift if --root option is specified
           if @options[:root]
@@ -58,8 +66,9 @@ module SjuiTools
           end
           
           Core::Logger.info "Generated SwiftUI view:"
-          Core::Logger.info "  JSON:  #{json_file}"
-          Core::Logger.info "  Swift: #{swift_file}"
+          Core::Logger.info "  JSON:      #{json_file}"
+          Core::Logger.info "  View:      #{swift_file}"
+          Core::Logger.info "  ViewModel: #{viewmodel_file}"
           
           if @options[:root]
             Core::Logger.info "  Updated App.swift to use #{view_class_name}View as root"
@@ -201,6 +210,29 @@ module SjuiTools
                 }
             }
 
+            // MARK: - Preview
+            struct #{view_name}View_Previews: PreviewProvider {
+                static var previews: some View {
+                    #{view_name}View()
+                }
+            }
+          SWIFT
+          
+          File.write(file_path, template)
+          Core::Logger.debug "Created Swift View template: #{file_path}"
+        end
+        
+        def create_viewmodel_template(file_path, view_name, json_name, subdirectory)
+          return if File.exist?(file_path)
+          
+          # Determine the JSON path reference for loading
+          json_reference = subdirectory ? "#{subdirectory}/#{json_name}" : json_name
+          
+          template = <<~SWIFT
+            import Foundation
+            import Combine
+            import SwiftJsonUI
+
             class #{view_name}ViewModel: ObservableObject {
                 // JSON file reference for hot reload
                 let jsonFileName = "#{json_reference}"
@@ -218,17 +250,10 @@ module SjuiTools
                     // Handle tap events
                 }
             }
-
-            // MARK: - Preview
-            struct #{view_name}View_Previews: PreviewProvider {
-                static var previews: some View {
-                    #{view_name}View()
-                }
-            }
           SWIFT
           
           File.write(file_path, template)
-          Core::Logger.debug "Created Swift template: #{file_path}"
+          Core::Logger.debug "Created ViewModel template: #{file_path}"
         end
       end
     end
