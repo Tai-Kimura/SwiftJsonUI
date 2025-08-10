@@ -126,24 +126,26 @@ module SjuiTools
 
             struct #{view_name}View: View {
                 @StateObject private var viewModel = #{view_name}ViewModel()
+                @StateObject private var dynamicViewModel = DynamicViewModel(jsonName: "#{json_reference}")
                 
                 var body: some View {
-                    generatedBody
-                }
-                
-                // Generated SwiftUI code from #{json_reference}.json
-                // This will be updated when you run 'sjui build'
-                @ViewBuilder
-                private var generatedBody: some View {
-                    // TODO: Run 'sjui build' to generate SwiftUI code from JSON
-                    VStack {
-                        Text(viewModel.title)
-                            .font(.title)
-                            .padding()
-                        
-                        Text("Generated from #{json_reference}.json")
-                            .font(.caption)
-                            .foregroundColor(.gray)
+                    if ViewSwitcher.isDynamicMode {
+                        DynamicView(jsonName: "#{json_reference}", viewId: "#{json_name}_view")
+                            .environmentObject(dynamicViewModel)
+                    } else {
+                        // Generated SwiftUI code from #{json_reference}.json
+                        // This will be updated when you run 'sjui build'
+                        // >>> GENERATED_CODE_START
+                        VStack {
+                            Text(viewModel.title)
+                                .font(.title)
+                                .padding()
+                            
+                            Text("Run 'sjui build' to generate SwiftUI code")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        // >>> GENERATED_CODE_END
                     }
                 }
             }
