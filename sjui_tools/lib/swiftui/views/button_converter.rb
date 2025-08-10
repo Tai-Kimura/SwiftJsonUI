@@ -15,7 +15,13 @@ module SjuiTools
             handler_name = @action_manager.register_action(action, 'button')
             add_line "Button(action: {"
             indent do
-              add_line "#{handler_name}()"
+              # Check if action needs a parameter (ends with ':')
+              if action.end_with?(':')
+                # Pass the button itself as parameter
+                add_line "#{handler_name}(\"#{@component['id'] || 'button'}\")"
+              else
+                add_line "#{handler_name}()"
+              end
             end
             add_line("}) {")
           else
