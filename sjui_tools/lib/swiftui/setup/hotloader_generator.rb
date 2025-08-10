@@ -24,6 +24,9 @@ module SjuiTools
           public struct HotLoaderSetup {
               public static func configure() {
                   #if DEBUG
+                  // Copy JSON files to cache directory
+                  JSONLayoutLoader.copyResourcesToCache()
+                  
                   // Enable HotLoader for debug builds
                   HotLoader.instance.isHotLoadEnabled = true
                   
