@@ -4,6 +4,7 @@ require 'json'
 require 'fileutils'
 require_relative '../../core/config_manager'
 require_relative '../../core/project_finder'
+require_relative '../../core/logger'
 
 module SjuiTools
   module SwiftUI
@@ -51,13 +52,23 @@ module SjuiTools
           swift_file = File.join(swift_path, "#{view_class_name}View.swift")
           create_swift_template(swift_file, view_class_name, json_file_name, subdirectory)
           
-          puts "Generated SwiftUI view:"
-          puts "  JSON:  #{json_file}"
-          puts "  Swift: #{swift_file}"
-          puts
-          puts "Next steps:"
-          puts "  1. Edit the JSON layout in #{json_file}"
-          puts "  2. Run 'sjui build' to generate the SwiftUI code"
+          # Update App.swift if --root option is specified
+          if @options[:root]
+            update_app_file(view_class_name)
+          end
+          
+          Core::Logger.info "Generated SwiftUI view:"
+          Core::Logger.info "  JSON:  #{json_file}"
+          Core::Logger.info "  Swift: #{swift_file}"
+          
+          if @options[:root]
+            Core::Logger.info "  Updated App.swift to use #{view_class_name}View as root"
+          end
+          
+          Core::Logger.info ""
+          Core::Logger.info "Next steps:"
+          Core::Logger.info "  1. Edit the JSON layout in #{json_file}"
+          Core::Logger.info "  2. Run 'sjui build' to generate the SwiftUI code"
         end
 
         private
@@ -110,9 +121,45 @@ module SjuiTools
           }
           
           File.write(file_path, JSON.pretty_generate(template))
-          puts "Created JSON template: #{file_path}"
+          Core::Logger.debug "Created JSON template: #{file_path}"
         end
 
+        def update_app_file(view_name)
+          source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
+          
+          # Find App.swift file
+          app_files = Dir.glob(File.join(source_path, '**/*App.swift'))
+          if app_files.empty?
+            Core::Logger.warn "Could not find App.swift file to update"
+            return
+          end
+          
+          app_file = app_files.first
+          content = File.read(app_file)
+          
+          # Update WindowGroup content
+          # Match patterns like: WindowGroup { SomeView() }
+          updated = false
+          
+          # Pattern 1: Direct view in WindowGroup
+          if content =~ /WindowGroup\s*\{[^}]*\w+View\(\)[^}]*\}/m
+            content.gsub!(/WindowGroup\s*\{[^}]*\}/m, "WindowGroup {\n            #{view_name}View()\n        }")
+            updated = true
+          # Pattern 2: View with modifiers
+          elsif content =~ /WindowGroup\s*\{[^}]*\w+View\(\)[\s\S]*?\n\s*\}/m
+            content.gsub!(/(WindowGroup\s*\{)[^}]*(\})/m, "\\1\n            #{view_name}View()\n        \\2")
+            updated = true
+          end
+          
+          if updated
+            File.write(app_file, content)
+            Core::Logger.debug "Updated #{app_file}"
+          else
+            Core::Logger.warn "Could not update App.swift automatically"
+            Core::Logger.info "Please manually update your App.swift to use #{view_name}View()"
+          end
+        end
+        
         def create_swift_template(file_path, view_name, json_name, subdirectory)
           return if File.exist?(file_path)
           
@@ -177,7 +224,7 @@ module SjuiTools
           SWIFT
           
           File.write(file_path, template)
-          puts "Created Swift template: #{file_path}"
+          Core::Logger.debug "Created Swift template: #{file_path}"
         end
       end
     end
