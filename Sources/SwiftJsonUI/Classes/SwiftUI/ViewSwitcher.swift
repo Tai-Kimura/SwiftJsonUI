@@ -10,13 +10,11 @@ import SwiftUI
 /// Simple configuration for Dynamic mode switching
 public struct ViewSwitcher {
     /// Global flag to enable/disable Dynamic mode
-    public static var isDynamicMode: Bool = {
-        #if DEBUG
-        return true  // Default to true in debug mode
-        #else
-        return false // Default to false in release mode
-        #endif
-    }()
+    #if DEBUG
+    public static var isDynamicMode: Bool = true  // Default to true in debug mode, can be toggled
+    #else
+    public static var isDynamicMode: Bool = false  // Always false in release mode
+    #endif
     
     /// Set the dynamic mode
     public static func setDynamicMode(_ enabled: Bool) {
