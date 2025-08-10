@@ -50,6 +50,24 @@ module SjuiTools
           apply_center_alignment
           apply_edge_alignment
           
+          # サイズ制約（minWidth, maxWidth, minHeight, maxHeight）
+          if @component['minWidth'] || @component['maxWidth'] || @component['minHeight'] || @component['maxHeight']
+            min_width = @component['minWidth']
+            max_width = @component['maxWidth']
+            min_height = @component['minHeight'] 
+            max_height = @component['maxHeight']
+            
+            frame_params = []
+            frame_params << "minWidth: #{min_width}" if min_width
+            frame_params << "maxWidth: #{max_width == 'matchParent' ? '.infinity' : max_width}" if max_width
+            frame_params << "minHeight: #{min_height}" if min_height
+            frame_params << "maxHeight: #{max_height == 'matchParent' ? '.infinity' : max_height}" if max_height
+            
+            if frame_params.any?
+              add_modifier_line ".frame(#{frame_params.join(', ')})"
+            end
+          end
+          
           # サイズ
           if @component['width'] || @component['height']
             # widthの処理
@@ -148,6 +166,26 @@ module SjuiTools
             end
           end
           
+          # 個別のパディング設定（leftPadding, rightPadding, paddingLeft など）
+          # paddingLeft と leftPadding の両方をサポート
+          left_pad = @component['leftPadding'] || @component['paddingLeft']
+          right_pad = @component['rightPadding'] || @component['paddingRight']
+          top_pad = @component['topPadding'] || @component['paddingTop']
+          bottom_pad = @component['bottomPadding'] || @component['paddingBottom']
+          
+          if left_pad
+            add_modifier_line ".padding(.leading, #{left_pad.to_i})"
+          end
+          if right_pad
+            add_modifier_line ".padding(.trailing, #{right_pad.to_i})"
+          end
+          if top_pad
+            add_modifier_line ".padding(.top, #{top_pad.to_i})"
+          end
+          if bottom_pad
+            add_modifier_line ".padding(.bottom, #{bottom_pad.to_i})"
+          end
+          
           # コーナー半径
           if @component['cornerRadius']
             add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
@@ -190,6 +228,13 @@ module SjuiTools
               add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth'].to_i})"
             end
             add_line ")"
+          end
+          
+          # オフセット（offsetX, offsetY）
+          if @component['offsetX'] || @component['offsetY']
+            offset_x = @component['offsetX'] || 0
+            offset_y = @component['offsetY'] || 0
+            add_modifier_line ".offset(x: #{offset_x}, y: #{offset_y})"
           end
           
           # 表示/非表示

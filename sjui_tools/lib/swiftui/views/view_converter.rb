@@ -63,11 +63,6 @@ module SjuiTools
               # SwiftJsonUIのデフォルトは左上なので、.topLeadingを使用
               alignment = get_zstack_alignment
               add_line "ZStack(alignment: #{alignment}) {"
-              
-              # 相対配置が必要な場合はcoordinateSpaceを設定
-              if has_relative_positioning?(children)
-                add_modifier_line ".coordinateSpace(name: \"ZStackCoordinateSpace\")"
-              end
             end
             
             indent do
@@ -118,6 +113,11 @@ module SjuiTools
               end
             end
             add_line "}"
+            
+            # ZStackで相対配置が必要な場合はcoordinateSpaceを設定
+            if !orientation && has_relative_positioning?(children)
+              add_modifier_line ".coordinateSpace(name: \"ZStackCoordinateSpace\")"
+            end
           end
           
           # 共通のモディファイアを適用
@@ -141,7 +141,9 @@ module SjuiTools
         def has_relative_positioning?(children)
           children.any? do |child|
             child['alignTopOfView'] || child['alignBottomOfView'] || 
-            child['alignLeftOfView'] || child['alignRightOfView']
+            child['alignLeftOfView'] || child['alignRightOfView'] ||
+            child['alignTopView'] || child['alignBottomView'] ||
+            child['alignLeftView'] || child['alignRightView']
           end
         end
         
@@ -264,36 +266,38 @@ module SjuiTools
           top_margin = child['topMargin'] || 0
           bottom_margin = child['bottomMargin'] || 0
           
-          # 相対配置属性の処理
+          # 相対配置属性の処理（alignTopOfView, alignBottomOfView, alignLeftOfView, alignRightOfView）
+          # または代替形式（alignTopView, alignBottomView, alignLeftView, alignRightView）
           if child['alignTopOfView'] || child['alignBottomOfView'] || 
-             child['alignLeftOfView'] || child['alignRightOfView']
-            # GeometryReaderを使用して相対配置を実装
-            add_line "GeometryReader { geometry in"
-            indent do
-              add_line "Color.clear"
-              add_modifier_line ".preference(key: ViewOffsetKey.self, value: geometry.frame(in: .named(\"ZStackCoordinateSpace\")).origin)"
-            end
-            add_line "}"
-            add_modifier_line ".onPreferenceChange(ViewOffsetKey.self) { offset in"
-            indent do
-              add_line "// Store offset for view id: #{child['id'] || "view_#{index}"}"
-            end
-            add_line "}"
+             child['alignLeftOfView'] || child['alignRightOfView'] ||
+             child['alignTopView'] || child['alignBottomView'] ||
+             child['alignLeftView'] || child['alignRightView']
             
-            # 相対配置のコメントを追加
-            if child['alignTopOfView']
-              add_line "// Align to top of view: #{child['alignTopOfView']}"
+            # TODO: 相対配置の実装
+            # 現在はコメントとして出力
+            if child['alignTopOfView'] || child['alignTopView']
+              target_view = child['alignTopOfView'] || child['alignTopView']
+              add_line "// TODO: Align to top of view: #{target_view}"
             end
-            if child['alignBottomOfView']
-              add_line "// Align to bottom of view: #{child['alignBottomOfView']}"
+            if child['alignBottomOfView'] || child['alignBottomView']
+              target_view = child['alignBottomOfView'] || child['alignBottomView']
+              add_line "// TODO: Align to bottom of view: #{target_view}"
             end
-            if child['alignLeftOfView']
-              add_line "// Align to left of view: #{child['alignLeftOfView']}"
+            if child['alignLeftOfView'] || child['alignLeftView']
+              target_view = child['alignLeftOfView'] || child['alignLeftView']
+              add_line "// TODO: Align to left of view: #{target_view}"
             end
-            if child['alignRightOfView']
-              add_line "// Align to right of view: #{child['alignRightOfView']}"
+            if child['alignRightOfView'] || child['alignRightView']
+              target_view = child['alignRightOfView'] || child['alignRightView']
+              add_line "// TODO: Align to right of view: #{target_view}"
             end
-          else
+            
+            # 相対配置が指定されている場合も通常のoffset計算を行う
+            # （将来的に相対配置が実装されるまでの暫定処理）
+          end
+          
+          # 通常のoffset計算を常に実行
+          if true  # elseを削除して常に実行
             # 通常のoffset計算
             # ZStackでは左上を基準にoffsetを計算
             offset_x = left_margin - right_margin
