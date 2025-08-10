@@ -34,18 +34,19 @@ struct DynamicViewContainer: View {
     
     private func getChildren() -> [DynamicComponent] {
         if let child = component.child {
-            // child is Dynamic<[DynamicComponent]>, so we need to handle it differently
-            switch child {
-            case .single(let array):
-                return array
-            case .array(let arrays):
-                return arrays.flatMap { $0 }
+            // child is AnyCodable, can be single component or array
+            if let singleComponent = child.asDynamicComponent {
+                return [singleComponent]
+            } else if let componentArray = child.asDynamicComponentArray {
+                return componentArray
             }
-        } else if let children = component.children {
-            return children
-        } else {
-            return []
         }
+        
+        if let children = component.children {
+            return children
+        }
+        
+        return []
     }
     
     @ViewBuilder
@@ -91,17 +92,18 @@ struct DynamicScrollViewContainer: View {
     
     private func getChildren() -> [DynamicComponent] {
         if let child = component.child {
-            // child is Dynamic<[DynamicComponent]>, so we need to handle it differently
-            switch child {
-            case .single(let array):
-                return array
-            case .array(let arrays):
-                return arrays.flatMap { $0 }
+            // child is AnyCodable, can be single component or array
+            if let singleComponent = child.asDynamicComponent {
+                return [singleComponent]
+            } else if let componentArray = child.asDynamicComponentArray {
+                return componentArray
             }
-        } else if let children = component.children {
-            return children
-        } else {
-            return []
         }
+        
+        if let children = component.children {
+            return children
+        }
+        
+        return []
     }
 }

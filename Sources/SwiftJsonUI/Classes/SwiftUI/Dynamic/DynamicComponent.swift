@@ -39,7 +39,7 @@ public struct DynamicComponent: Decodable {
     let weight: CGFloat?
     
     // Component specific
-    let child: Dynamic<[DynamicComponent]>?
+    let child: AnyCodable?
     let children: [DynamicComponent]?
     let orientation: String?
     let contentMode: String?
@@ -117,7 +117,25 @@ public struct AnyCodable: Codable {
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
-        if let string = try? container.decode(String.self) {
+        
+        // Try to decode as DynamicComponent first
+        if let component = try? container.decode(DynamicComponent.self) {
+            self.value = component
+        }
+        // Try to decode as array of DynamicComponent
+        else if let components = try? container.decode([DynamicComponent].self) {
+            self.value = components
+        }
+        // Try to decode as dictionary (for nested object)
+        else if let dict = try? container.decode([String: AnyCodable].self) {
+            self.value = dict
+        }
+        // Try to decode as array
+        else if let array = try? container.decode([AnyCodable].self) {
+            self.value = array
+        }
+        // Try primitive types
+        else if let string = try? container.decode(String.self) {
             self.value = string
         } else if let int = try? container.decode(Int.self) {
             self.value = int
@@ -141,5 +159,14 @@ public struct AnyCodable: Codable {
         } else if let bool = value as? Bool {
             try container.encode(bool)
         }
+    }
+    
+    // Helper methods to get typed values
+    public var asDynamicComponent: DynamicComponent? {
+        return value as? DynamicComponent
+    }
+    
+    public var asDynamicComponentArray: [DynamicComponent]? {
+        return value as? [DynamicComponent]
     }
 }
