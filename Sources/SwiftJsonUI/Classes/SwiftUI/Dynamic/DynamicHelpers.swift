@@ -202,22 +202,10 @@ extension View {
     @ViewBuilder
     func applyShadow(_ component: DynamicComponent) -> some View {
         if let shadow = component.shadow {
-            if shadow.contains("|") {
-                // "color|offsetX|offsetY|opacity|radius" 形式
-                let parts = shadow.split(separator: "|").map(String.init)
-                if parts.count >= 5 {
-                    let color = DynamicHelpers.colorFromHex(parts[0]) ?? .black
-                    let opacity = Double(parts[3]) ?? 0.3
-                    let radius = CGFloat(Double(parts[4]) ?? 10)
-                    let x = CGFloat(Double(parts[1]) ?? 0)
-                    let y = CGFloat(Double(parts[2]) ?? 0)
-                    self.shadow(color: color.opacity(opacity), radius: radius, x: x, y: y)
-                } else {
-                    self
-                }
-            } else {
-                self
-            }
+            self.shadow(color: shadow.shadowColor,
+                       radius: shadow.shadowRadius,
+                       x: shadow.shadowOffset.width,
+                       y: shadow.shadowOffset.height)
         } else {
             self
         }

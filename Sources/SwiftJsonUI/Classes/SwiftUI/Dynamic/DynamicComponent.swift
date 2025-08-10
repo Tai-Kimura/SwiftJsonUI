@@ -26,7 +26,7 @@ public struct DynamicComponent: Decodable {
     let alpha: CGFloat?
     let hidden: Bool?
     let visibility: String?
-    let shadow: String?
+    let shadow: DynamicShadow?
     let clipToBounds: Bool?
     let minWidth: CGFloat?
     let maxWidth: CGFloat?
