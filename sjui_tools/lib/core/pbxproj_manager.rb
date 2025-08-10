@@ -487,6 +487,8 @@ module SjuiTools
           
           if update_count == 0
             puts "Warning: No membershipExceptions sections found to update"
+            puts "  Creating new exception set section for synchronized project..."
+            create_exception_set_section(excluded_files)
             return
           end
           
@@ -494,6 +496,119 @@ module SjuiTools
           File.write(pbxproj_path, updated_content)
           
           puts "✅ Directly updated #{update_count} membershipExceptions section(s) with #{excluded_files.size} exclusions"
+        end
+        
+        def create_exception_set_section(excluded_files)
+          # Get pbxproj path
+          pbxproj_path = if @project_file_path.end_with?('.pbxproj')
+                          @project_file_path
+                        elsif @project_file_path.end_with?('.xcodeproj')
+                          File.join(@project_file_path, 'project.pbxproj')
+                        else
+                          Dir.glob(File.join(@project_file_path, '*.xcodeproj', 'project.pbxproj')).first
+                        end
+          
+          unless File.exist?(pbxproj_path)
+            puts "Error: Could not find project.pbxproj at #{pbxproj_path}"
+            return
+          end
+          
+          puts "Creating exception set section in: #{pbxproj_path}"
+          
+          # Read the file
+          content = File.read(pbxproj_path)
+          
+          # Get project name from xcodeproj path or config
+          xcodeproj_path = pbxproj_path.sub('/project.pbxproj', '')
+          project_name = File.basename(xcodeproj_path, '.xcodeproj')
+          
+          # Try to get project name from config if available
+          begin
+            config = Core::ConfigManager.load_config
+            project_name = config['project_name'] if config['project_name']
+          rescue
+            # Use the xcodeproj filename if config fails
+          end
+          
+          puts "  Project name: #{project_name}"
+          
+          # Find the main app target UUID
+          target_uuid = nil
+          if content =~ /([A-F0-9]{24})\s*\/\*\s*#{Regexp.escape(project_name)}\s*\*\/\s*=\s*\{[^}]*isa\s*=\s*PBXNativeTarget/
+            target_uuid = $1
+            puts "  Found target UUID: #{target_uuid}"
+          else
+            # Try alternate patterns
+            content.scan(/([A-F0-9]{24})\s*\/\*\s*([^*]+)\s*\*\/\s*=\s*\{[^}]*isa\s*=\s*PBXNativeTarget[^}]*productType\s*=\s*"com\.apple\.product-type\.application"/) do |uuid, name|
+              if name.include?(project_name)
+                target_uuid = uuid
+                puts "  Found target UUID (alt): #{target_uuid} for target: #{name}"
+                break
+              end
+            end
+          end
+          
+          unless target_uuid
+            puts "Error: Could not find app target UUID for #{project_name}"
+            return
+          end
+          
+          # Find the synchronized root group UUID for the main app folder
+          sync_group_uuid = nil
+          if content =~ /([A-F0-9]{24})\s*\/\*\s*#{Regexp.escape(project_name)}\s*\*\/\s*=\s*\{[^}]*isa\s*=\s*PBXFileSystemSynchronizedRootGroup/
+            sync_group_uuid = $1
+            puts "  Found synchronized root group UUID: #{sync_group_uuid}"
+          end
+          
+          unless sync_group_uuid
+            puts "Error: Could not find synchronized root group UUID"
+            return
+          end
+          
+          # Generate a new UUID for the exception set
+          require 'securerandom'
+          exception_set_uuid = SecureRandom.hex(12).upcase
+          puts "  Generated exception set UUID: #{exception_set_uuid}"
+          
+          # Format the excluded files
+          formatted_exceptions = excluded_files.map do |f|
+            "\t\t\t\t\"#{f}\""
+          end.join(",\n")
+          
+          # Create the exception set section
+          exception_set_section = <<-SECTION
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		#{exception_set_uuid} /* Exceptions for "#{project_name}" folder in "#{project_name}" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+#{formatted_exceptions},
+			);
+			target = #{target_uuid} /* #{project_name} */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+SECTION
+          
+          # Find where to insert - between PBXFileReference and PBXFileSystemSynchronizedRootGroup
+          if content =~ /(\/\*\s*End\s+PBXFileReference\s+section\s*\*\/\s*\n)/
+            insertion_point = $1
+            # Insert the new section after PBXFileReference section
+            content = content.sub(insertion_point, "#{insertion_point}\n#{exception_set_section}\n")
+            
+            # Now update the synchronized root group to reference the exception set
+            content = content.sub(
+              /(#{Regexp.escape(sync_group_uuid)}\s*\/\*[^*]*\*\/\s*=\s*\{[^}]*isa\s*=\s*PBXFileSystemSynchronizedRootGroup;)/,
+              "\\1\n\t\t\texceptions = (\n\t\t\t\t#{exception_set_uuid} /* Exceptions for \"#{project_name}\" folder in \"#{project_name}\" target */,\n\t\t\t);"
+            )
+            
+            # Write the updated content
+            File.write(pbxproj_path, content)
+            
+            puts "✅ Successfully created exception set section with #{excluded_files.size} exclusions"
+            puts "  Exception set UUID: #{exception_set_uuid}"
+            puts "  Added to synchronized root group: #{sync_group_uuid}"
+          else
+            puts "Error: Could not find insertion point for exception set section"
+          end
         end
         
         def exclude_group_from_target(group, target)
