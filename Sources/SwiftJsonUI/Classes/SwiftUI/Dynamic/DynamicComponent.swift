@@ -18,8 +18,8 @@ public struct DynamicComponent: Decodable {
     let width: Dynamic<String>?
     let height: Dynamic<String>?
     let background: String?
-    let padding: Dynamic<[CGFloat]>?
-    let margin: Dynamic<[CGFloat]>?
+    let padding: DynamicPadding?
+    let margin: DynamicPadding?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
