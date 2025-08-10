@@ -9,11 +9,25 @@ module SjuiTools
         def convert
           text = @component['text'] || ""
           
-          # テンプレート変数の処理
-          processed_text = process_template_value(text)
-          if processed_text.is_a?(Hash) && processed_text[:template_var]
-            add_line "Text(viewModel.#{to_camel_case(processed_text[:template_var])})"
+          # @{...}形式のテンプレート処理
+          if text.start_with?('@{') && text.end_with?('}')
+            # @{...}の中身を取り出す
+            template_content = text[2...-1]
+            
+            # 文字列補間形式を含む場合
+            if template_content.include?('\\(')
+              # SwiftUIの文字列補間形式として処理
+              # viewModel.プレフィックスを追加して変数を置換
+              interpolated = template_content.gsub(/\\?\((\w+)\)/) do |match|
+                "\\(viewModel.#{$1})"
+              end
+              add_line "Text(\"#{interpolated}\")"
+            else
+              # 単純な変数参照
+              add_line "Text(viewModel.#{to_camel_case(template_content)})"
+            end
           else
+            # 通常のテキスト
             add_line "Text(\"#{text}\")"
           end
           
