@@ -46,11 +46,8 @@ module SjuiTools
       private
       
       def sanitize_action_name(action_name)
-        # Remove trailing ':' if present (it's used for parameter detection)
-        cleaned_name = action_name.chomp(':')
-        
         # Remove special characters and convert to camelCase
-        sanitized = cleaned_name.gsub(/[^a-zA-Z0-9_]/, '')
+        sanitized = action_name.gsub(/[^a-zA-Z0-9_]/, '')
         
         # Ensure it starts with a letter
         unless sanitized.match?(/^[a-zA-Z]/)
@@ -71,23 +68,10 @@ module SjuiTools
       def generate_handler(info)
         handler_lines = []
         
-        # Check if action name ends with ':' to determine if it needs a parameter
-        has_parameter = info[:original_name].end_with?(':')
-        
-        if has_parameter
-          # Generate function with parameter
-          handler_lines << "func #{info[:handler_name]}(_ sender: Any) {"
-          handler_lines << "    // Action: #{info[:original_name]}"
-          handler_lines << "    // Component type: #{info[:component_type]}" if info[:component_type]
-          handler_lines << "    print(\"Action triggered: #{info[:original_name]} with sender: \\(sender)\")"
-        else
-          # Generate function without parameter
-          handler_lines << "func #{info[:handler_name]}() {"
-          handler_lines << "    // Action: #{info[:original_name]}"
-          handler_lines << "    // Component type: #{info[:component_type]}" if info[:component_type]
-          handler_lines << "    print(\"Action triggered: #{info[:original_name]}\")"
-        end
-        
+        handler_lines << "func #{info[:handler_name]}() {"
+        handler_lines << "    // Action: #{info[:original_name]}"
+        handler_lines << "    // Component type: #{info[:component_type]}" if info[:component_type]
+        handler_lines << "    print(\"Action triggered: #{info[:original_name]}\")"
         handler_lines << "    "
         handler_lines << "    // TODO: Implement your action logic here"
         handler_lines << "    // Example implementations:"

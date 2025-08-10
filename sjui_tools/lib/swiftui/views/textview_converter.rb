@@ -18,7 +18,7 @@ module SjuiTools
           # TextViewWithPlaceholderを使用
           add_line "TextViewWithPlaceholder("
           indent do
-            add_line "text: $#{state_var},"
+            add_line "text: $viewModel.#{state_var},"
             
             # hint (placeholder)
             if @component['hint']

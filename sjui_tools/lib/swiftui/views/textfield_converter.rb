@@ -17,8 +17,15 @@ module SjuiTools
           # Add state variable to requirements
           add_state_variable(state_var, "String", '""')
           
-          # TextField
-          add_line "TextField(\"#{hint}\", text: $#{state_var})"
+          # secureプロパティのチェック（パスワードフィールド）
+          is_secure = @component['secure'] == true
+          
+          # TextField or SecureField
+          if is_secure
+            add_line "SecureField(\"#{hint}\", text: $viewModel.#{state_var})"
+          else
+            add_line "TextField(\"#{hint}\", text: $viewModel.#{state_var})"
+          end
           
           # fontSize
           if @component['fontSize']

@@ -21,20 +21,23 @@ module SjuiTools
               interpolated = template_content.gsub(/\\?\((\w+)\)/) do |match|
                 "\\(viewModel.#{$1})"
               end
-              add_line "Text(\"#{interpolated}\")"
+              # 改行文字をエスケープ
+              escaped_interpolated = interpolated.gsub("\n", "\\n")
+              add_line "Text(\"#{escaped_interpolated}\")"
             else
               # 単純な変数参照
               add_line "Text(viewModel.#{to_camel_case(template_content)})"
             end
           else
-            # 通常のテキスト
-            add_line "Text(\"#{text}\")"
+            # 通常のテキスト - 改行文字をエスケープ
+            escaped_text = text.gsub("\n", "\\n")
+            add_line "Text(\"#{escaped_text}\")"
           end
           
           # SwiftJsonUIの属性に基づいたモディファイア
           # fontSize
           if @component['fontSize']
-            add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
+            add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
           end
           
           # fontColor
@@ -47,7 +50,7 @@ module SjuiTools
           if @component['font'] == 'bold'
             add_modifier_line ".fontWeight(.bold)"
           elsif @component['font']
-            add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{@component['fontSize'] || 17}))"
+            add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{(@component['fontSize'] || 17).to_i}))"
           end
           
           # textAlign
@@ -58,12 +61,46 @@ module SjuiTools
           
           # lines
           if @component['lines']
-            add_modifier_line ".lineLimit(#{@component['lines']})"
+            add_modifier_line ".lineLimit(#{@component['lines'].to_i})"
           end
           
           # lineHeightMultiple
           if @component['lineHeightMultiple']
-            add_modifier_line ".lineSpacing(#{(@component['lineHeightMultiple'].to_f - 1) * (@component['fontSize'] || 17)})"
+            add_modifier_line ".lineSpacing(#{(@component['lineHeightMultiple'].to_f - 1) * (@component['fontSize'] || 17).to_i}))"
+          end
+          
+          # lineSpacing (直接指定)
+          if @component['lineSpacing']
+            add_modifier_line ".lineSpacing(#{@component['lineSpacing'].to_f})"
+          end
+          
+          # underline（下線）
+          if @component['underline']
+            add_modifier_line ".underline()"
+          end
+          
+          # lineBreakMode (SwiftJsonUI uses short forms: Char, Clip, Word, Head, Middle, Tail)
+          if @component['lineBreakMode']
+            # In SwiftUI, only truncation modes are available as modifiers
+            # Word wrapping and char wrapping are default behaviors
+            mode = case @component['lineBreakMode']
+                   when 'Head'
+                     '.head'
+                   when 'Middle'
+                     '.middle'
+                   when 'Tail'
+                     '.tail'
+                   when 'Clip'
+                     # SwiftUI doesn't have direct clip mode, use tail truncation
+                     '.tail'
+                   when 'Word', 'Char'
+                     # These are wrapping modes, not truncation modes
+                     # SwiftUI handles wrapping automatically
+                     nil
+                   else
+                     nil
+                   end
+            add_modifier_line ".truncationMode(#{mode})" if mode
           end
           
           # autoShrink & minimumScaleFactor
@@ -73,7 +110,7 @@ module SjuiTools
           
           # edgeInset (パディングとして適用)
           if @component['edgeInset']
-            add_modifier_line ".padding(#{@component['edgeInset']})"
+            add_modifier_line ".padding(#{@component['edgeInset'].to_i})"
           end
           
           # 共通のモディファイアを適用

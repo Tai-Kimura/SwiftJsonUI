@@ -40,14 +40,14 @@ module SjuiTools
             
             # fontSize
             if @component['fontSize']
-              add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
+              add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
             end
             
             # font
             if @component['font'] == 'bold'
               add_modifier_line ".fontWeight(.bold)"
             elsif @component['font']
-              add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{@component['fontSize'] || 17}))"
+              add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{(@component['fontSize'] || 17).to_i}))"
             end
           end
           add_line "}"

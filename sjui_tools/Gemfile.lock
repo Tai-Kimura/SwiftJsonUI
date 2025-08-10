@@ -100,6 +100,7 @@ GEM
 
 PLATFORMS
   x86_64-darwin-21
+  x86_64-darwin-24
 
 DEPENDENCIES
   bundler (>= 2.0)

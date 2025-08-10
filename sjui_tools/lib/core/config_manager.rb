@@ -76,12 +76,14 @@ module SjuiTools
       def self.find_config_file
         # First check current directory
         local_config = File.join(Dir.pwd, 'sjui.config.json')
+        puts "Debug: Checking #{local_config}" if ENV['DEBUG']
         return local_config if File.exist?(local_config)
         
         # Check subdirectories for sjui.config.json (for workspace structure)
         Dir.glob(File.join(Dir.pwd, '**/sjui.config.json')).each do |config_path|
           # Skip hidden directories and node_modules
           next if config_path.include?('/.') || config_path.include?('/node_modules/')
+          puts "Debug: Found config at #{config_path}" if ENV['DEBUG']
           return config_path
         end
         
@@ -90,6 +92,7 @@ module SjuiTools
         3.times do
           current = File.dirname(current)
           config_path = File.join(current, 'sjui.config.json')
+          puts "Debug: Checking parent #{config_path}" if ENV['DEBUG']
           return config_path if File.exist?(config_path)
         end
         

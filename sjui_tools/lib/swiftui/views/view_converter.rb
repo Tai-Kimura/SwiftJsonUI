@@ -15,8 +15,8 @@ module SjuiTools
           child_data = @component['child'] || []
           # childが単一要素の場合は配列に変換
           children = child_data.is_a?(Array) ? child_data : [child_data]
-          # Filter out data declarations
-          children = children.reject { |child| child['data'] }
+          # Filter out data declarations - only if child is a Hash
+          children = children.reject { |child| child.is_a?(Hash) && child['data'] }
           
           if children.empty?
             # 子要素がない場合
@@ -41,6 +41,10 @@ module SjuiTools
                 @state_variables.concat(child_converter.state_variables)
               end
             end
+            
+            # 単一の子要素でもモディファイアを適用する必要がある
+            apply_modifiers
+            return generated_code
           else
             # 複数の子要素がある場合
             # orientationが指定されていない場合はZStackを使用

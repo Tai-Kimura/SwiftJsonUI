@@ -12,7 +12,9 @@ module SjuiTools
         end
 
         def convert
-          children = @component['child'] || []
+          child_data = @component['child'] || []
+          # childが単一要素の場合は配列に変換
+          children = child_data.is_a?(Array) ? child_data : [child_data]
           
           # スクロール方向の判定
           # orientation属性またはchild要素の配置から判定

@@ -72,8 +72,21 @@ module SjuiTools
               
               # dateStringFormat
               if @component['dateStringFormat']
-                add_line "dateStringFormat: \"#{@component['dateStringFormat']}\""
+                add_line "dateStringFormat: \"#{@component['dateStringFormat']}\","
               end
+              
+              # minimumDate
+              if @component['minimumDate']
+                add_line "minimumDate: ISO8601DateFormatter().date(from: \"#{@component['minimumDate']}\") ?? Date(),"
+              end
+              
+              # maximumDate  
+              if @component['maximumDate']
+                add_line "maximumDate: ISO8601DateFormatter().date(from: \"#{@component['maximumDate']}\") ?? Date(),"
+              end
+              
+              # Remove trailing comma from last parameter
+              @generated_code[-1] = @generated_code[-1].chomp(',')
             else
               add_line "selectItemType: .normal,"
               

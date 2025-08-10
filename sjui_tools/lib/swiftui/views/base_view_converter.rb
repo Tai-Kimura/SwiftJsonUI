@@ -1,12 +1,14 @@
 # frozen_string_literal: true
 
 require_relative 'template_helper'
+require_relative 'alignment_helper'
 
 module SjuiTools
   module SwiftUI
     module Views
       class BaseViewConverter
         include TemplateHelper
+        include AlignmentHelper
         
         attr_reader :state_variables
         
@@ -44,6 +46,10 @@ module SjuiTools
 
         # 共通のモディファイア適用メソッド
         def apply_modifiers
+          # アライメント処理を先に適用
+          apply_center_alignment
+          apply_edge_alignment
+          
           # サイズ
           if @component['width'] || @component['height']
             # widthの処理
@@ -114,37 +120,55 @@ module SjuiTools
             end
           end
           
+          # マージン（外側のスペース - SwiftUIではpaddingで実装）
+          # 注: SwiftUIにはマージンの概念がないため、親ビューでpaddingとして扱う必要がある
+          apply_margins
+          
           # パディング（SwiftJsonUIの属性に対応）
           if @component['padding'] || @component['paddings']
             padding = @component['padding'] || @component['paddings']
+            # Ensure padding is converted to proper format
             if padding.is_a?(Array)
               case padding.length
               when 1
-                add_modifier_line ".padding(#{padding[0]})"
+                add_modifier_line ".padding(#{padding[0].to_i})"
               when 2
                 # 縦横のパディング
-                add_modifier_line ".padding(.horizontal, #{padding[1]})"
-                add_modifier_line ".padding(.vertical, #{padding[0]})"
+                add_modifier_line ".padding(.horizontal, #{padding[1].to_i})"
+                add_modifier_line ".padding(.vertical, #{padding[0].to_i})"
               when 4
                 # 上、右、下、左の順
-                add_modifier_line ".padding(.top, #{padding[0]})"
-                add_modifier_line ".padding(.trailing, #{padding[1]})"
-                add_modifier_line ".padding(.bottom, #{padding[2]})"
-                add_modifier_line ".padding(.leading, #{padding[3]})"
+                add_modifier_line ".padding(.top, #{padding[0].to_i})"
+                add_modifier_line ".padding(.trailing, #{padding[1].to_i})"
+                add_modifier_line ".padding(.bottom, #{padding[2].to_i})"
+                add_modifier_line ".padding(.leading, #{padding[3].to_i})"
               end
             else
-              add_modifier_line ".padding(#{padding})"
+              add_modifier_line ".padding(#{padding.to_i})"
             end
           end
           
           # コーナー半径
           if @component['cornerRadius']
-            add_modifier_line ".cornerRadius(#{@component['cornerRadius']})"
+            add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
           end
           
-          # 透明度
+          # 透明度 (alphaとopacityの両方をサポート)
           if @component['alpha']
             add_modifier_line ".opacity(#{@component['alpha']})"
+          elsif @component['opacity']
+            add_modifier_line ".opacity(#{@component['opacity']})"
+          end
+          
+          # visibility属性
+          if @component['visibility']
+            case @component['visibility']
+            when 'invisible'
+              add_modifier_line ".opacity(0)"
+            when 'gone'
+              add_modifier_line ".hidden()"
+            # 'visible'の場合は何もしない（デフォルト）
+            end
           end
           
           # 影
@@ -162,8 +186,8 @@ module SjuiTools
             color = hex_to_swiftui_color(@component['borderColor'])
             add_modifier_line ".overlay("
             indent do
-              add_line "RoundedRectangle(cornerRadius: #{@component['cornerRadius'] || 0})"
-              add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth']})"
+              add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
+              add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth'].to_i})"
             end
             add_line ")"
           end
@@ -190,6 +214,52 @@ module SjuiTools
                 end
               end
               add_line "}"
+            end
+          end
+        end
+        
+        # マージンを適用（SwiftUIではGroup内でpaddingとして実装）
+        def apply_margins
+          left_margin = @component['leftMargin']
+          right_margin = @component['rightMargin']
+          top_margin = @component['topMargin']
+          bottom_margin = @component['bottomMargin']
+          margins = @component['margins']
+          
+          # marginsが配列で指定されている場合
+          if margins
+            if margins.is_a?(Array)
+              case margins.length
+              when 1
+                # 全方向同じマージン
+                add_modifier_line ".padding(.all, #{margins[0].to_i})"
+              when 2
+                # 縦横のマージン
+                add_modifier_line ".padding(.vertical, #{margins[0].to_i})"
+                add_modifier_line ".padding(.horizontal, #{margins[1].to_i})"
+              when 4
+                # 上、右、下、左の順
+                add_modifier_line ".padding(.top, #{margins[0].to_i})"
+                add_modifier_line ".padding(.trailing, #{margins[1].to_i})"
+                add_modifier_line ".padding(.bottom, #{margins[2].to_i})"
+                add_modifier_line ".padding(.leading, #{margins[3].to_i})"
+              end
+            else
+              add_modifier_line ".padding(.all, #{margins.to_i})"
+            end
+          else
+            # 個別のマージン設定
+            if top_margin
+              add_modifier_line ".padding(.top, #{top_margin.to_i})"
+            end
+            if bottom_margin
+              add_modifier_line ".padding(.bottom, #{bottom_margin.to_i})"
+            end
+            if left_margin
+              add_modifier_line ".padding(.leading, #{left_margin.to_i})"
+            end
+            if right_margin
+              add_modifier_line ".padding(.trailing, #{right_margin.to_i})"
             end
           end
         end

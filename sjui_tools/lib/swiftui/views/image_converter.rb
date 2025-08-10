@@ -16,6 +16,9 @@ module SjuiTools
               # 通常の画像名
               add_line "Image(\"#{@component['src']}\")"
             end
+          elsif @component['defaultImage']
+            # defaultImageが指定されている場合はそれを使用
+            add_line "Image(\"#{@component['defaultImage']}\")"
           else
             # デフォルトのシステムイメージ
             add_line "Image(systemName: \"photo\")"
