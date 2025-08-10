@@ -129,7 +129,11 @@ module SjuiTools
           add_line "#{state_var}.toggle()"
           if @component['onclick'] && @action_manager
             handler_name = @action_manager.register_action(@component['onclick'], 'checkbox')
-            add_line "#{handler_name}()"
+            if @component['onclick'].end_with?(':')
+              add_line "viewModel.#{handler_name}(#{state_var})"
+            else
+              add_line "viewModel.#{handler_name}()"
+            end
           end
         end
         add_line "}"

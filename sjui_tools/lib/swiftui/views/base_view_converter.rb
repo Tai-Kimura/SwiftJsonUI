@@ -178,7 +178,12 @@ module SjuiTools
             indent do
               if @action_manager
                 handler_name = @action_manager.register_action(click_action, 'view')
-                add_line "#{handler_name}()"
+                # Check if it's a parameterized action (ends with ':')
+                if click_action.end_with?(':')
+                  add_line "viewModel.#{handler_name}(self)"
+                else
+                  add_line "viewModel.#{handler_name}()"
+                end
               else
                 add_line "// TODO: Handle #{click_action} action"
               end

@@ -41,7 +41,11 @@ module SjuiTools
             handler_name = @action_manager.register_action(@component['onclick'], 'image')
             add_modifier_line ".onTapGesture {"
             indent do
-              add_line "#{handler_name}()"
+              if @component['onclick'].end_with?(':')
+                add_line "viewModel.#{handler_name}(self)"
+              else
+                add_line "viewModel.#{handler_name}()"
+              end
             end
             add_line "}"
           elsif @component['canTap'] && @component['onclick']
