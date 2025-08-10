@@ -22,6 +22,13 @@ public class JSONLayoutLoader {
                 Logger.debug("[JSONLayoutLoader] Found in HotLoader cache")
                 return data
             }
+            
+            // HotLoaderキャッシュにない場合、バンドルから読み込んでキャッシュに追加
+            if let bundleData = loadFromBundle(named: name) {
+                Logger.debug("[JSONLayoutLoader] Loading from bundle and caching for HotLoader")
+                HotLoader.instance.jsonData[name] = bundleData
+                return bundleData
+            }
         }
         // フォールバック: ローカルファイルから読み込み
         Logger.debug("[JSONLayoutLoader] Falling back to bundle")

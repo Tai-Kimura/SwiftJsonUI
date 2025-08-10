@@ -125,7 +125,8 @@ public struct DynamicHelpers {
     public static func frameValue(_ value: String?) -> CGFloat? {
         switch value {
         case "matchParent":
-            return .infinity
+            // SwiftUIでは.infinityを直接使わず、nilを返してmaxWidthで処理
+            return nil
         case "wrapContent", nil:
             return nil
         default:
@@ -135,22 +136,49 @@ public struct DynamicHelpers {
             return nil
         }
     }
+    
+    public static func isMatchParent(_ value: String?) -> Bool {
+        return value == "matchParent"
+    }
 }
 
 // MARK: - View Modifier Extension
 extension View {
     @ViewBuilder
     public func applyDynamicModifiers(_ component: DynamicComponent) -> some View {
+        let widthValue: String? = {
+            switch component.width {
+            case .single(let value):
+                return value
+            case .array(let values):
+                return values.first
+            case nil:
+                return nil
+            }
+        }()
+        let heightValue: String? = {
+            switch component.height {
+            case .single(let value):
+                return value
+            case .array(let values):
+                return values.first
+            case nil:
+                return nil
+            }
+        }()
+        
         self
             .frame(
-                width: DynamicHelpers.frameValue(component.width?.asArray.first),
-                height: DynamicHelpers.frameValue(component.height?.asArray.first)
+                width: DynamicHelpers.frameValue(widthValue),
+                height: DynamicHelpers.frameValue(heightValue)
             )
             .frame(
                 minWidth: component.minWidth,
-                maxWidth: component.maxWidth == nil ? nil : DynamicHelpers.frameValue(component.maxWidth.map { "\($0)" }),
+                maxWidth: DynamicHelpers.isMatchParent(widthValue) ? .infinity : 
+                         (component.maxWidth == nil ? nil : DynamicHelpers.frameValue(component.maxWidth.map { "\($0)" })),
                 minHeight: component.minHeight,
-                maxHeight: component.maxHeight == nil ? nil : DynamicHelpers.frameValue(component.maxHeight.map { "\($0)" })
+                maxHeight: DynamicHelpers.isMatchParent(heightValue) ? .infinity :
+                         (component.maxHeight == nil ? nil : DynamicHelpers.frameValue(component.maxHeight.map { "\($0)" }))
             )
             .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
