@@ -141,11 +141,15 @@ module SjuiTools
           # Match patterns like: WindowGroup { SomeView() }
           updated = false
           
-          # Pattern 1: Direct view in WindowGroup
-          if content =~ /WindowGroup\s*\{[^}]*\w+View\(\)[^}]*\}/m
+          # Pattern 1: Empty WindowGroup
+          if content =~ /WindowGroup\s*\{\s*\}/m
+            content.gsub!(/WindowGroup\s*\{\s*\}/m, "WindowGroup {\n            #{view_name}View()\n        }")
+            updated = true
+          # Pattern 2: Direct view in WindowGroup
+          elsif content =~ /WindowGroup\s*\{[^}]*\w+View\(\)[^}]*\}/m
             content.gsub!(/WindowGroup\s*\{[^}]*\}/m, "WindowGroup {\n            #{view_name}View()\n        }")
             updated = true
-          # Pattern 2: View with modifiers
+          # Pattern 3: View with modifiers
           elsif content =~ /WindowGroup\s*\{[^}]*\w+View\(\)[\s\S]*?\n\s*\}/m
             content.gsub!(/(WindowGroup\s*\{)[^}]*(\})/m, "\\1\n            #{view_name}View()\n        \\2")
             updated = true
