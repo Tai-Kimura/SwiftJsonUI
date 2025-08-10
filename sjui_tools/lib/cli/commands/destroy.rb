@@ -2,6 +2,7 @@
 
 require_relative '../command_base'
 require_relative '../../core/config_manager'
+require_relative '../../core/logger'
 require 'fileutils'
 require 'pathname'
 
@@ -15,6 +16,14 @@ module SjuiTools
             return
           end
           
+          # Check for --force option
+          force = false
+          if args.include?('--force') || args.include?('-f')
+            force = true
+            args.delete('--force')
+            args.delete('-f')
+          end
+          
           type = args.shift
           name = args.shift
           
@@ -24,13 +33,20 @@ module SjuiTools
             exit 1
           end
           
+          # Detect mode
+          mode = Core::ConfigManager.detect_mode
+          
           case type
           when 'view', 'partial', 'collection'
-            destroy_view(type, name)
+            if mode == 'swiftui'
+              destroy_swiftui_view(type, name, force)
+            else
+              destroy_view(type, name, force)
+            end
           when 'binding'
-            destroy_binding(name)
+            destroy_binding(name, force)
           else
-            puts "Error: Unknown type '#{type}'"
+            Core::Logger.error "Unknown type '#{type}'"
             show_help
             exit 1
           end
@@ -38,7 +54,93 @@ module SjuiTools
         
         private
         
-        def destroy_view(type, name)
+        def destroy_swiftui_view(type, name, force = false)
+          config = Core::ConfigManager.load_config
+          
+          # Get paths from config
+          layouts_dir = config['layouts_directory'] || 'Layouts'
+          view_dir = config['view_directory'] || 'View'
+          source_directory = config['source_directory'] || ''
+          
+          # Setup paths
+          project_root = find_project_root
+          
+          if source_directory.empty?
+            base_path = project_root
+          else
+            base_path = File.join(project_root, source_directory)
+          end
+          
+          # Parse name (could be nested like "home/dashboard")
+          name_parts = name.split('/')
+          file_name = name_parts.last
+          
+          # Convert names
+          view_class_name = file_name.split(/[_\-]/).map(&:capitalize).join
+          json_file_name = file_name.gsub(/([A-Z])/, '_\1').downcase.gsub(/^_/, '').gsub(/-/, '_')
+          
+          # Paths to delete
+          files_to_delete = []
+          
+          # JSON file path
+          json_path = if name_parts.length > 1
+            File.join(base_path, layouts_dir, *name_parts[0..-2], "#{json_file_name}.json")
+          else
+            File.join(base_path, layouts_dir, "#{json_file_name}.json")
+          end
+          files_to_delete << json_path if File.exist?(json_path)
+          
+          # Swift View file path
+          swift_file_name = "#{view_class_name}View.swift"
+          swift_path = if name_parts.length > 1
+            File.join(base_path, view_dir, *name_parts[0..-2], swift_file_name)
+          else
+            File.join(base_path, view_dir, swift_file_name)
+          end
+          files_to_delete << swift_path if File.exist?(swift_path)
+          
+          # Check if we found any files
+          if files_to_delete.empty?
+            Core::Logger.warn "No files found to delete for #{type} '#{name}'"
+            return
+          end
+          
+          # Confirm deletion
+          Core::Logger.info "The following files will be deleted:"
+          puts
+          
+          files_to_delete.each do |file|
+            puts "  📄 #{file}"
+          end
+          
+          unless force
+            puts
+            print "Are you sure you want to delete these files? (y/N): "
+            
+            begin
+              confirmation = STDIN.gets.chomp.downcase
+            rescue
+              Core::Logger.error "Cannot read input. Use --force flag to skip confirmation."
+              return
+            end
+            
+            unless confirmation == 'y' || confirmation == 'yes'
+              Core::Logger.info "Cancelled"
+              return
+            end
+          end
+          
+          # Delete files
+          files_to_delete.each do |file|
+            FileUtils.rm_f(file)
+            Core::Logger.info "Deleted: #{file}"
+          end
+          
+          Core::Logger.info ""
+          Core::Logger.info "✅ Successfully destroyed #{type} '#{name}'"
+        end
+        
+        def destroy_view(type, name, force = false)
           config = Core::ConfigManager.load_config
           
           # Get paths from config
