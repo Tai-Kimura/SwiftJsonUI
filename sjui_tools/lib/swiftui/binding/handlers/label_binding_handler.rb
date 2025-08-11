@@ -38,15 +38,26 @@ module SjuiTools
           text_value = component['text']
           if is_binding?(text_value)
             # Full binding: @{propertyName}
-            parse_binding(text_value)
+            # For Text views, we need the actual value, not a binding
+            # So we remove the $ prefix that parse_binding adds
+            binding = parse_binding(text_value)
+            if binding
+              # Remove the $ prefix for Text views
+              property_path = binding.sub(/^\$/, '')
+              
+              # Check if we need string interpolation for non-String types
+              # We'll wrap it in string interpolation to handle all types
+              "\"\\(#{property_path})\""
+            else
+              "\"\""
+            end
           elsif text_value && text_value.include?('@{')
             # Text with interpolation: "Some text @{property} more text"
             # Extract all binding expressions
             interpolated = text_value.gsub(/@\{([^}]+)\}/) do |match|
               property_name = $1
-              # Check if property contains Date, Bool, or other non-string types
-              # For now, wrap all bindings with String(describing:) to avoid warnings
-              "\\(String(describing: $viewModel.data.#{property_name}))"
+              # For interpolated text, use viewModel.data directly without the $ prefix
+              "\\(viewModel.data.#{property_name})"
             end
             "\"#{interpolated.gsub("\n", "\\n")}\""
           else

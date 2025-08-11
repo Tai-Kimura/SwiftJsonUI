@@ -15,14 +15,9 @@ module SjuiTools
           # Get text content with binding support
           text_content = label_handler.get_text_content(@component)
           
-          # Handle string interpolation if text content is a binding
-          if text_content.start_with?('$viewModel')
-            # Direct binding - need to convert to String
-            add_line "Text(String(describing: #{text_content}))"
-          else
-            # Regular text or quoted binding result
-            add_line "Text(#{text_content})"
-          end
+          # Simply use the text content as-is
+          # The binding handler already handles the correct format
+          add_line "Text(#{text_content})"
           
           # SwiftJsonUIの属性に基づいたモディファイア
           # fontSize
