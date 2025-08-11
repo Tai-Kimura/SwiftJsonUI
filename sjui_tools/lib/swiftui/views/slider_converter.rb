@@ -12,6 +12,12 @@ module SjuiTools
           max_value = @component['maximumValue'] || 1
           value = @component['value'] || min_value
           
+          # range プロパティの処理（配列形式: [min, max]）
+          if @component['range'].is_a?(Array) && @component['range'].length == 2
+            min_value = @component['range'][0]
+            max_value = @component['range'][1]
+          end
+          
           # Create @State variable name
           state_var = "sliderValue#{@component['id'] || ''}"
           state_var = state_var.gsub(/[^a-zA-Z0-9]/, '')

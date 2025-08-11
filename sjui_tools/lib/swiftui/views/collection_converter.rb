@@ -11,6 +11,22 @@ module SjuiTools
           columns = @component['columns'] || 2
           cell_layout = @component['cell_layout']
           
+          # cellClasses, headerClasses, footerClasses の処理
+          cell_classes = @component['cellClasses']
+          header_classes = @component['headerClasses']
+          footer_classes = @component['footerClasses']
+          
+          # クラス情報をコメントとして記録
+          if cell_classes
+            add_line "// cellClasses: #{cell_classes}"
+          end
+          if header_classes
+            add_line "// headerClasses: #{header_classes}"
+          end
+          if footer_classes
+            add_line "// footerClasses: #{footer_classes}"
+          end
+          
           # データ設定の確認（itemsキーを使用）
           items_data = @component['items']
           has_items = !items_data.nil?

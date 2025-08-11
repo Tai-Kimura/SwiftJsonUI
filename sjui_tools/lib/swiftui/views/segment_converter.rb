@@ -13,8 +13,11 @@ module SjuiTools
           # Create @State variable name
           state_var = "selected#{id.split('_').map(&:capitalize).join}"
           
+          # selectedTabIndex プロパティの処理
+          initial_selection = @component['selectedTabIndex'] || @component['selectedIndex'] || 0
+          
           # Add state variable to requirements
-          add_state_variable(state_var, "Int", "0")
+          add_state_variable(state_var, "Int", initial_selection.to_s)
           
           # Picker（SwiftUIのSegmented Control）
           add_line "Picker(\"\", selection: $#{state_var}) {"

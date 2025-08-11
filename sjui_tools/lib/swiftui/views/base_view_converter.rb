@@ -280,6 +280,22 @@ module SjuiTools
             add_modifier_line ".disabled(true)"
           end
           
+          # tagプロパティの適用（TabViewなどで使用）
+          if @component['tag']
+            add_modifier_line ".tag(#{@component['tag']})"
+          end
+          
+          # classNameプロパティ（SwiftUIではスタイル識別子として記録）
+          if @component['className']
+            add_line "// className: #{@component['className']}"
+          end
+          
+          # touchDisabledState（タッチ無効化状態）
+          if @component['touchDisabledState']
+            add_modifier_line ".allowsHitTesting(false)"
+            add_line "// touchDisabledState applied"
+          end
+          
           # クリックイベント (onclickとonClick両方をサポート)
           # ただし、Buttonの場合は既にactionで処理しているのでスキップ
           unless @component['type'] == 'Button'

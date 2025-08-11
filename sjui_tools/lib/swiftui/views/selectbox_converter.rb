@@ -100,6 +100,11 @@ module SjuiTools
             else
               add_line "selectItemType: .normal,"
               
+              # selectedItem の処理
+              if @component['selectedItem']
+                add_line "selectedItem: \"#{@component['selectedItem']}\","
+              end
+              
               # items配列の処理
               if items.is_a?(String) && items.start_with?('@{') && items.end_with?('}')
                 # テンプレート変数の場合

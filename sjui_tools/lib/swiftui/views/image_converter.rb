@@ -7,7 +7,10 @@ module SjuiTools
     module Views
       class ImageConverter < BaseViewConverter
         def convert
-          if @component['src']
+          # srcName優先（srcNameはアセット名を直接指定）
+          if @component['srcName']
+            add_line "Image(\"#{@component['srcName']}\")"
+          elsif @component['src']
             processed_src = process_template_value(@component['src'])
             if processed_src.is_a?(Hash) && processed_src[:template_var]
               # テンプレート変数の場合

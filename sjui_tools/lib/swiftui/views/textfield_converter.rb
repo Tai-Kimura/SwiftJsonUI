@@ -96,6 +96,11 @@ module SjuiTools
             add_line "// caretAttributes applied as accentColor"
           end
           
+          # textPaddingLeft（テキストの左パディング）
+          if @component['textPaddingLeft']
+            add_modifier_line ".padding(.leading, #{@component['textPaddingLeft']})"
+          end
+          
           # Text change handler
           if @component['onTextChange'] && @action_manager
             handler_name = @action_manager.register_action(@component['onTextChange'], 'textfield')
