@@ -39,8 +39,10 @@ public struct RelativePositionContainer: View {
                                     Color.clear
                                         .onAppear {
                                             viewSizes[child.id] = geometry.size
+                                            Logger.debug("📏 Measured \(child.id): \(geometry.size)")
                                             // After measuring all views, move to second pass
                                             if viewSizes.count == children.count {
+                                                Logger.debug("📊 All views measured, calculating positions...")
                                                 calculatePositions()
                                                 isFirstPass = false
                                             }
@@ -58,6 +60,8 @@ public struct RelativePositionContainer: View {
                         let absoluteX = geometry.size.width/2 + relativePos.x
                         let absoluteY = geometry.size.height/2 + relativePos.y
                         
+                        let _ = Logger.debug("🎯 Positioning \(child.id): relative(\(relativePos.x), \(relativePos.y)) -> absolute(\(absoluteX), \(absoluteY)) in container(\(geometry.size.width), \(geometry.size.height))")
+                        
                         child.view
                             .padding(child.margins)
                             .fixedSize()
@@ -69,12 +73,16 @@ public struct RelativePositionContainer: View {
     }
     
     private func calculatePositions() {
+        Logger.debug("🔧 calculatePositions() called")
+        
         // Find anchor view (no constraints or has centerInParent)
         guard let anchorChild = children.first(where: { $0.constraints.isEmpty }) else {
+            Logger.debug("⚠️ No anchor view found")
             return
         }
         
         let anchorSize = viewSizes[anchorChild.id] ?? CGSize(width: 100, height: 50)
+        Logger.debug("⚓ Anchor: \(anchorChild.id), size: \(anchorSize)")
         
         // Place anchor at center (will be adjusted by GeometryReader)
         viewPositions[anchorChild.id] = CGPoint(x: 0, y: 0) // Center placeholder
@@ -85,42 +93,68 @@ public struct RelativePositionContainer: View {
             var x: CGFloat = 0
             var y: CGFloat = 0
             
+            Logger.debug("📐 Calculating position for \(child.id), size: \(childSize)")
+            Logger.debug("   Margins: \(child.margins)")
+            
             for constraint in child.constraints {
-                guard constraint.targetId == anchorChild.id else { continue }
+                guard constraint.targetId == anchorChild.id else { 
+                    Logger.debug("   ⚠️ Constraint target \(constraint.targetId) is not anchor")
+                    continue 
+                }
+                
+                Logger.debug("   Constraint: \(constraint.type) -> \(constraint.targetId)")
                 
                 switch constraint.type {
                 case .alignTop:
-                    // Top edges aligned
+                    // Align top edges - child's top aligns with anchor's top
                     y = -anchorSize.height/2 + childSize.height/2
+                    Logger.debug("   alignTop: y = \(y) = -\(anchorSize.height/2) + \(childSize.height/2)")
                 case .alignBottom:
-                    // Bottom edges aligned
+                    // Align bottom edges - child's bottom aligns with anchor's bottom
                     y = anchorSize.height/2 - childSize.height/2
+                    Logger.debug("   alignBottom: y = \(y) = \(anchorSize.height/2) - \(childSize.height/2)")
                 case .alignLeft:
-                    // Left edges aligned
+                    // Align left edges - child's left aligns with anchor's left
                     x = -anchorSize.width/2 + childSize.width/2
+                    Logger.debug("   alignLeft: x = \(x) = -\(anchorSize.width/2) + \(childSize.width/2)")
                 case .alignRight:
-                    // Right edges aligned
+                    // Align right edges - child's right aligns with anchor's right
                     x = anchorSize.width/2 - childSize.width/2
+                    Logger.debug("   alignRight: x = \(x) = \(anchorSize.width/2) - \(childSize.width/2)")
                 case .above:
-                    // Position above anchor
+                    // Position above anchor - child's bottom touches anchor's top
                     y = -anchorSize.height/2 - childSize.height/2 - constraint.spacing
+                    Logger.debug("   above: y = \(y) = -\(anchorSize.height/2) - \(childSize.height/2) - \(constraint.spacing)")
                 case .below:
-                    // Position below anchor
+                    // Position below anchor - child's top touches anchor's bottom
                     y = anchorSize.height/2 + childSize.height/2 + constraint.spacing
+                    Logger.debug("   below: y = \(y) = \(anchorSize.height/2) + \(childSize.height/2) + \(constraint.spacing)")
                 case .leftOf:
-                    // Position to the left of anchor
+                    // Position to the left of anchor - child's right touches anchor's left
                     x = -anchorSize.width/2 - childSize.width/2 - constraint.spacing
+                    Logger.debug("   leftOf: x = \(x) = -\(anchorSize.width/2) - \(childSize.width/2) - \(constraint.spacing)")
                 case .rightOf:
-                    // Position to the right of anchor
+                    // Position to the right of anchor - child's left touches anchor's right
                     x = anchorSize.width/2 + childSize.width/2 + constraint.spacing
+                    Logger.debug("   rightOf: x = \(x) = \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing)")
                 }
             }
             
             // Apply margins as additional offset
-            x += child.margins.leading - child.margins.trailing
-            y += child.margins.top - child.margins.bottom
+            let marginOffsetX = child.margins.leading - child.margins.trailing
+            let marginOffsetY = child.margins.top - child.margins.bottom
+            x += marginOffsetX
+            y += marginOffsetY
+            
+            Logger.debug("   After margins: x += \(marginOffsetX), y += \(marginOffsetY)")
+            Logger.debug("   Final position: (\(x), \(y))")
             
             viewPositions[child.id] = CGPoint(x: x, y: y)
+        }
+        
+        Logger.debug("📍 All positions calculated:")
+        for (id, pos) in viewPositions {
+            Logger.debug("   \(id): (\(pos.x), \(pos.y))")
         }
     }
 }
