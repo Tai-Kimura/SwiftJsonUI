@@ -9,8 +9,24 @@ module SjuiTools
           return false
         end
         
-        # GeneratedViewファイルを完全に再生成する
-        view_name = File.basename(File.dirname(swift_file_path))
+        # Extract actual struct names from the existing file
+        existing_content = File.read(swift_file_path)
+        
+        # Extract the actual struct name
+        struct_match = existing_content.match(/struct\s+(\w+GeneratedView)\s*:\s*View/)
+        unless struct_match
+          puts "Error: Could not find struct definition in #{swift_file_path}"
+          return false
+        end
+        
+        generated_view_name = struct_match[1]
+        view_name = generated_view_name.sub(/GeneratedView$/, '')
+        
+        # Extract the actual ViewModel type from @EnvironmentObject declaration
+        viewmodel_match = existing_content.match(/@EnvironmentObject\s+var\s+viewModel:\s+(\w+ViewModel)/)
+        viewmodel_name = viewmodel_match ? viewmodel_match[1] : "#{view_name}ViewModel"
+        
+        # Convert view name to snake_case for JSON file name
         json_name = view_name.gsub(/([A-Z])/, '_\1').downcase.gsub(/^_/, '')
         
         # GeneratedViewファイルの内容を完全に作り直す
@@ -19,8 +35,8 @@ module SjuiTools
         import SwiftJsonUI
         import Combine
 
-        struct #{view_name}GeneratedView: View {
-            @EnvironmentObject var viewModel: #{view_name}ViewModel
+        struct #{generated_view_name}: View {
+            @EnvironmentObject var viewModel: #{viewmodel_name}
             @StateObject private var dynamicViewModel = DynamicViewModel(jsonName: "#{json_name}")
             
             var body: some View {

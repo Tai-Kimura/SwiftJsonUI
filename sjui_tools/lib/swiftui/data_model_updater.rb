@@ -37,10 +37,9 @@ module SjuiTools
         
         # Get the view name from file path
         base_name = File.basename(json_file, '.json')
-        view_name = to_pascal_case(base_name)
         
         # Update the Data model file
-        update_data_file(view_name, data_properties)
+        update_data_file(base_name, data_properties)
       end
 
       def extract_data_properties(json_data, properties = [])
@@ -73,11 +72,31 @@ module SjuiTools
         properties
       end
 
-      def update_data_file(view_name, data_properties)
-        data_file_path = File.join(@data_dir, "#{view_name}Data.swift")
+      def update_data_file(base_name, data_properties)
+        # Convert base_name to PascalCase for searching
+        pascal_view_name = to_pascal_case(base_name)
         
-        # If file doesn't exist, skip (it should be created by generator)
-        return unless File.exist?(data_file_path)
+        # Check for existing file with different casing
+        existing_file = find_existing_data_file(pascal_view_name)
+        
+        if existing_file
+          # Extract the actual struct name from the existing file
+          existing_struct_name = extract_struct_name(existing_file)
+          if existing_struct_name
+            # Use the exact struct name from the existing file
+            view_name = existing_struct_name.sub(/Data$/, '')
+          else
+            # Fallback to pascal case if we can't extract the name
+            view_name = pascal_view_name
+          end
+          data_file_path = existing_file
+        else
+          # For new files, use pascal case
+          view_name = pascal_view_name
+          data_file_path = File.join(@data_dir, "#{view_name}Data.swift")
+          # If file doesn't exist, skip (it should be created by generator)
+          return unless File.exist?(data_file_path)
+        end
         
         # Generate new content
         content = generate_data_content(view_name, data_properties)
@@ -85,6 +104,26 @@ module SjuiTools
         # Write the updated content
         File.write(data_file_path, content)
         puts "  Updated Data model: #{data_file_path}"
+      end
+      
+      def find_existing_data_file(view_name)
+        # Try exact match first
+        exact_path = File.join(@data_dir, "#{view_name}Data.swift")
+        return exact_path if File.exist?(exact_path)
+        
+        # Try case-insensitive search
+        Dir.glob(File.join(@data_dir, '*Data.swift')).find do |file|
+          File.basename(file, '.swift').downcase == "#{view_name}Data".downcase
+        end
+      end
+      
+      def extract_struct_name(file_path)
+        content = File.read(file_path)
+        if match = content.match(/struct\s+(\w+Data)\s*{/)
+          match[1]
+        else
+          nil
+        end
       end
 
       def generate_data_content(view_name, data_properties)
