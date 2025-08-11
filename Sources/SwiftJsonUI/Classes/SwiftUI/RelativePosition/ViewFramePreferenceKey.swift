@@ -15,7 +15,7 @@ public extension View {
         self.background(
             GeometryReader { geometry in
                 let frame = geometry.frame(in: coordinateSpace)
-                let _ = print("📐 Saving frame for \(id): origin=(\(frame.origin.x), \(frame.origin.y)), size=(\(frame.size.width), \(frame.size.height))")
+                SwiftJsonUI.Logger.debug("📐 Saving frame for \(id): origin=(\(frame.origin.x), \(frame.origin.y)), size=(\(frame.size.width), \(frame.size.height))")
                 return Color.clear.preference(
                     key: ViewFramePreferenceKey.self,
                     value: [id: frame]
