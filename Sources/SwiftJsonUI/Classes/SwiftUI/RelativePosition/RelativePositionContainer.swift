@@ -16,6 +16,18 @@ public struct RelativePositionContainer: View {
         self.children = children
         self.alignment = alignment
         self.backgroundColor = backgroundColor
+        
+        print("🚀 RelativePositionContainer initialized:")
+        print("  - Children count: \(children.count)")
+        print("  - Alignment: \(String(describing: alignment))")
+        for child in children {
+            print("  - Child \(child.id):")
+            print("    - Constraints: \(child.constraints.count)")
+            for constraint in child.constraints {
+                print("      - \(constraint.type) -> \(constraint.targetId)")
+            }
+            print("    - Margins: \(child.margins)")
+        }
     }
     
     public var body: some View {
@@ -35,6 +47,10 @@ public struct RelativePositionContainer: View {
         }
         .coordinateSpace(name: "container")
         .onPreferenceChange(ViewFramePreferenceKey.self) { frames in
+            print("📍 RelativePositionContainer - Frames updated:")
+            for (id, frame) in frames {
+                print("  - \(id): origin=(\(frame.origin.x), \(frame.origin.y)), size=(\(frame.size.width), \(frame.size.height))")
+            }
             viewFrames = frames
         }
     }
@@ -43,29 +59,62 @@ public struct RelativePositionContainer: View {
         var offsetX: CGFloat = 0
         var offsetY: CGFloat = 0
         
+        print("🎯 Calculating offset for child: \(child.id)")
+        print("  - Constraints count: \(child.constraints.count)")
+        
         for constraint in child.constraints {
-            guard let targetFrame = viewFrames[constraint.targetId] else { continue }
+            print("  - Processing constraint: \(constraint.type) -> \(constraint.targetId)")
+            
+            guard let targetFrame = viewFrames[constraint.targetId] else {
+                print("    ⚠️ Target frame not found for: \(constraint.targetId)")
+                continue
+            }
+            
+            let childFrame = viewFrames[child.id]
+            print("    - Target frame: origin=(\(targetFrame.origin.x), \(targetFrame.origin.y)), size=(\(targetFrame.size.width), \(targetFrame.size.height))")
+            if let cf = childFrame {
+                print("    - Child frame: origin=(\(cf.origin.x), \(cf.origin.y)), size=(\(cf.size.width), \(cf.size.height))")
+            } else {
+                print("    - Child frame: NOT FOUND")
+            }
             
             switch constraint.type {
             case .alignTop:
-                offsetY = targetFrame.minY - (viewFrames[child.id]?.minY ?? 0)
+                let offset = targetFrame.minY - (childFrame?.minY ?? 0)
+                offsetY = offset
+                print("    - alignTop: offsetY = \(offset)")
             case .alignBottom:
-                offsetY = targetFrame.maxY - (viewFrames[child.id]?.maxY ?? 0)
+                let offset = targetFrame.maxY - (childFrame?.maxY ?? 0)
+                offsetY = offset
+                print("    - alignBottom: offsetY = \(offset)")
             case .alignLeft:
-                offsetX = targetFrame.minX - (viewFrames[child.id]?.minX ?? 0)
+                let offset = targetFrame.minX - (childFrame?.minX ?? 0)
+                offsetX = offset
+                print("    - alignLeft: offsetX = \(offset)")
             case .alignRight:
-                offsetX = targetFrame.maxX - (viewFrames[child.id]?.maxX ?? 0)
+                let offset = targetFrame.maxX - (childFrame?.maxX ?? 0)
+                offsetX = offset
+                print("    - alignRight: offsetX = \(offset)")
             case .above:
-                offsetY = targetFrame.minY - (viewFrames[child.id]?.maxY ?? 0) - constraint.spacing
+                let offset = targetFrame.minY - (childFrame?.maxY ?? 0) - constraint.spacing
+                offsetY = offset
+                print("    - above: offsetY = \(offset)")
             case .below:
-                offsetY = targetFrame.maxY - (viewFrames[child.id]?.minY ?? 0) + constraint.spacing
+                let offset = targetFrame.maxY - (childFrame?.minY ?? 0) + constraint.spacing
+                offsetY = offset
+                print("    - below: offsetY = \(offset)")
             case .leftOf:
-                offsetX = targetFrame.minX - (viewFrames[child.id]?.maxX ?? 0) - constraint.spacing
+                let offset = targetFrame.minX - (childFrame?.maxX ?? 0) - constraint.spacing
+                offsetX = offset
+                print("    - leftOf: offsetX = \(offset)")
             case .rightOf:
-                offsetX = targetFrame.maxX - (viewFrames[child.id]?.minX ?? 0) + constraint.spacing
+                let offset = targetFrame.maxX - (childFrame?.minX ?? 0) + constraint.spacing
+                offsetX = offset
+                print("    - rightOf: offsetX = \(offset)")
             }
         }
         
+        print("  ✅ Final offset: (\(offsetX), \(offsetY))")
         return CGSize(width: offsetX, height: offsetY)
     }
 }

@@ -14,9 +14,11 @@ public extension View {
     func saveFrame(id: String, in coordinateSpace: CoordinateSpace) -> some View {
         self.background(
             GeometryReader { geometry in
-                Color.clear.preference(
+                let frame = geometry.frame(in: coordinateSpace)
+                let _ = print("📐 Saving frame for \(id): origin=(\(frame.origin.x), \(frame.origin.y)), size=(\(frame.size.width), \(frame.size.height))")
+                return Color.clear.preference(
                     key: ViewFramePreferenceKey.self,
-                    value: [id: geometry.frame(in: coordinateSpace)]
+                    value: [id: frame]
                 )
             }
         )
