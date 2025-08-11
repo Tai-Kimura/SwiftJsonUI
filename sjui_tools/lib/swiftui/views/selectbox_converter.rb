@@ -100,17 +100,8 @@ module SjuiTools
             else
               add_line "selectItemType: .normal,"
               
-              # selectedItem の処理
-              if @component['selectedItem']
-                selected_item = @component['selectedItem']
-                if selected_item.start_with?('@{') && selected_item.end_with?('}')
-                  # バインディングの場合
-                  property_name = selected_item[2..-2]
-                  add_line "selectedItem: $viewModel.data.#{property_name},"
-                else
-                  add_line "selectedItem: \"#{selected_item}\","
-                end
-              end
+              # Note: SelectBoxView manages its own state internally
+              # selectedItem binding is not supported in the current implementation
               
               # items配列の処理
               if items.is_a?(String) && items.start_with?('@{') && items.end_with?('}')
