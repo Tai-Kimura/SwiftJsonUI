@@ -47,15 +47,45 @@ module SjuiTools
               add_line "EmptyView()"
             end
           elsif children.length == 1
-            # 子要素が1つの場合は直接生成
-            if @converter_factory
-              child_converter = @converter_factory.create_converter(children.first, @indent_level, @action_manager)
-              child_code = child_converter.convert
-              @generated_code = child_code.split("\n")
+            # 子要素が1つの場合でも、alignmentが必要な場合はZStackを使用
+            child = children.first
+            needs_alignment = child['centerInParent'] || child['centerVertical'] || child['centerHorizontal'] ||
+                            child['alignTop'] || child['alignBottom'] || child['alignLeft'] || child['alignRight']
+            
+            if needs_alignment && !@component['orientation']
+              # orientationがなく、alignmentが必要な場合はZStack
+              alignment = get_zstack_alignment_for_child(child)
+              add_line "ZStack(alignment: #{alignment}) {"
               
-              # Propagate state variables
-              if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                @state_variables.concat(child_converter.state_variables)
+              indent do
+                # ZStackのサイズを確保するために透明なColorを追加
+                add_line "Color.clear"
+                
+                if @converter_factory
+                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager)
+                  child_code = child_converter.convert
+                  child_lines = child_code.split("\n")
+                  child_lines.each { |line| @generated_code << line }
+                  
+                  # Propagate state variables
+                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                    @state_variables.concat(child_converter.state_variables)
+                  end
+                end
+              end
+              
+              add_line "}"
+            else
+              # alignmentが不要またはorientationがある場合は直接生成
+              if @converter_factory
+                child_converter = @converter_factory.create_converter(children.first, @indent_level, @action_manager)
+                child_code = child_converter.convert
+                @generated_code = child_code.split("\n")
+                
+                # Propagate state variables
+                if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                  @state_variables.concat(child_converter.state_variables)
+                end
               end
             end
             
@@ -452,6 +482,64 @@ module SjuiTools
             '.trailing'
           else
             '.leading'  # デフォルトは左揃え
+          end
+        end
+        
+        def get_zstack_alignment_for_child(child)
+          # 子要素のalignmentプロパティからZStackのalignmentを決定
+          if child['centerInParent']
+            return '.center'
+          end
+          
+          h_align = nil
+          v_align = nil
+          
+          # 水平方向のalignment
+          if child['centerHorizontal']
+            h_align = 'center'
+          elsif child['alignRight']
+            h_align = 'trailing'
+          elsif child['alignLeft']
+            h_align = 'leading'
+          else
+            # デフォルトは左
+            h_align = 'leading'
+          end
+          
+          # 垂直方向のalignment
+          if child['centerVertical']
+            v_align = 'center'
+          elsif child['alignBottom']
+            v_align = 'bottom'
+          elsif child['alignTop']
+            v_align = 'top'
+          else
+            # デフォルトは上
+            v_align = 'top'
+          end
+          
+          # 組み合わせてSwiftUIのAlignmentを返す
+          case "#{v_align}|#{h_align}"
+          when 'top|leading'
+            '.topLeading'
+          when 'top|center'
+            '.top'
+          when 'top|trailing'
+            '.topTrailing'
+          when 'center|leading'
+            '.leading'
+          when 'center|center'
+            '.center'
+          when 'center|trailing'
+            '.trailing'
+          when 'bottom|leading'
+            '.bottomLeading'
+          when 'bottom|center'
+            '.bottom'
+          when 'bottom|trailing'
+            '.bottomTrailing'
+          else
+            '.topLeading'
           end
         end
         
