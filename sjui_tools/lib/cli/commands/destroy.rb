@@ -61,6 +61,7 @@ module SjuiTools
           layouts_dir = config['layouts_directory'] || 'Layouts'
           view_dir = config['view_directory'] || 'View'
           viewmodel_dir = config['viewmodel_directory'] || 'ViewModel'
+          data_dir = config['data_directory'] || 'Data'
           source_directory = config['source_directory'] || ''
           
           # Setup paths
@@ -125,6 +126,15 @@ module SjuiTools
             File.join(base_path, viewmodel_dir, viewmodel_file_name)
           end
           files_to_delete << viewmodel_path if File.exist?(viewmodel_path)
+          
+          # Data file path
+          data_file_name = "#{view_class_name}Data.swift"
+          data_path = if name_parts.length > 1
+            File.join(base_path, data_dir, *name_parts[0..-2], data_file_name)
+          else
+            File.join(base_path, data_dir, data_file_name)
+          end
+          files_to_delete << data_path if File.exist?(data_path)
           
           # Check if we found any files
           if files_to_delete.empty?
