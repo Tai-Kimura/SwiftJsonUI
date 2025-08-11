@@ -166,6 +166,20 @@ module SjuiTools
             end
           end
           
+          # partialAttributes（部分的なテキストスタイリング）
+          if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array)
+            add_line "// partialAttributes detected - Consider using AttributedString"
+            add_line "// Note: SwiftUI requires AttributedString for partial text styling"
+            @component['partialAttributes'].each do |partial|
+              if partial['range'] && partial['range'].is_a?(Array)
+                add_line "// Range: [#{partial['range'][0]}, #{partial['range'][1]}]"
+                add_line "//   fontColor: #{partial['fontColor']}" if partial['fontColor']
+                add_line "//   underline: #{partial['underline']}" if partial['underline']
+                add_line "//   onclick: #{partial['onclick']}" if partial['onclick']
+              end
+            end
+          end
+          
           # 共通のモディファイアを適用
           apply_modifiers
           

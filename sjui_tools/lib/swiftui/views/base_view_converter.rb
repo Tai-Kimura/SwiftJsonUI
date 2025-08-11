@@ -296,6 +296,12 @@ module SjuiTools
             add_line "// touchDisabledState applied"
           end
           
+          # indexBelow（Z軸順序の指定）
+          if @component['indexBelow']
+            add_modifier_line ".zIndex(-#{@component['indexBelow'].to_i})"
+            add_line "// indexBelow: #{@component['indexBelow']}"
+          end
+          
           # クリックイベント (onclickとonClick両方をサポート)
           # ただし、Buttonの場合は既にactionで処理しているのでスキップ
           unless @component['type'] == 'Button'

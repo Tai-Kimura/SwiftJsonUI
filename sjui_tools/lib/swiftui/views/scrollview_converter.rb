@@ -110,6 +110,23 @@ module SjuiTools
             add_line "// Note: Paging requires iOS 17+"
           end
           
+          # maxZoom プロパティの処理（ズーム可能なScrollView）
+          if @component['maxZoom']
+            add_modifier_line ".scaleEffect(1.0)"  # デフォルトスケール
+            add_line "// maxZoom: #{@component['maxZoom']} - Consider using MagnificationGesture"
+            add_modifier_line ".gesture("
+            indent do
+              add_line "MagnificationGesture()"
+              add_modifier_line ".onChanged { value in"
+              indent do
+                add_line "// Scale content based on gesture"
+                add_line "// Maximum zoom: #{@component['maxZoom']}"
+              end
+              add_line "}"
+            end
+            add_line ")"
+          end
+          
           # 共通のモディファイアを適用
           apply_modifiers
           

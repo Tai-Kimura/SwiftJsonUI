@@ -42,6 +42,22 @@ module SjuiTools
             add_modifier_line ".clipShape(Circle())"
           end
           
+          # onSrcプロパティ（画像読み込み完了時のコールバック）
+          if @component['onSrc']
+            add_line "// onSrc: #{@component['onSrc']} - Image loaded callback"
+            add_modifier_line ".onAppear {"
+            indent do
+              add_line "// Call #{@component['onSrc']} when image appears"
+              if @component['onSrc'].include?(':')
+                method_name = @component['onSrc'].gsub(':', '')
+                add_line "viewModel.#{method_name}(self)"
+              else
+                add_line "viewModel.#{@component['onSrc']}()"
+              end
+            end
+            add_line "}"
+          end
+          
           # canTap & onclick
           if @component['canTap'] && @component['onclick'] && @action_manager
             handler_name = @action_manager.register_action(@component['onclick'], 'image')

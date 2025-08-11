@@ -27,6 +27,14 @@ module SjuiTools
             add_line "// footerClasses: #{footer_classes}"
           end
           
+          # setTargetAsDataSource と setTargetAsDelegate
+          if @component['setTargetAsDataSource']
+            add_line "// setTargetAsDataSource: true - Collection data source set to view model"
+          end
+          if @component['setTargetAsDelegate']
+            add_line "// setTargetAsDelegate: true - Collection delegate set to view model"
+          end
+          
           # データ設定の確認（itemsキーを使用）
           items_data = @component['items']
           has_items = !items_data.nil?
