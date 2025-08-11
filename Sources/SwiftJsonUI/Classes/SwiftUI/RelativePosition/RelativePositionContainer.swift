@@ -82,24 +82,71 @@ public struct RelativePositionContainer: View {
         Logger.debug("🔧 calculatePositions() called")
         
         // Find anchor view (no constraints or has centerInParent)
-        guard let anchorChild = children.first(where: { $0.constraints.isEmpty }) else {
-            Logger.debug("⚠️ No anchor view found")
-            return
+        let anchorChild = children.first(where: { $0.constraints.isEmpty })
+        
+        if let anchorChild = anchorChild {
+            let anchorSize = viewSizes[anchorChild.id] ?? CGSize(width: 100, height: 50)
+            Logger.debug("⚓ Anchor: \(anchorChild.id), size: \(anchorSize)")
+            
+            // Place anchor at center (will be adjusted by GeometryReader)
+            viewPositions[anchorChild.id] = CGPoint(x: 0, y: 0) // Center placeholder
+            
+            // Calculate positions for other views relative to anchor
+            for child in children where child.id != anchorChild.id {
+                calculateChildPosition(child: child, anchorChild: anchorChild, anchorSize: anchorSize)
+            }
+        } else {
+            // No anchor view - all views have parent alignment constraints
+            Logger.debug("📍 No anchor view - processing parent alignment constraints only")
+            for child in children {
+                calculateChildPosition(child: child, anchorChild: nil, anchorSize: .zero)
+            }
         }
-        
-        let anchorSize = viewSizes[anchorChild.id] ?? CGSize(width: 100, height: 50)
-        Logger.debug("⚓ Anchor: \(anchorChild.id), size: \(anchorSize)")
-        
-        // Place anchor at center (will be adjusted by GeometryReader)
-        viewPositions[anchorChild.id] = CGPoint(x: 0, y: 0) // Center placeholder
-        
-        // Calculate positions for other views
-        for child in children where child.id != anchorChild.id {
+    }
+    
+    private func calculateChildPosition(child: RelativeChildConfig, anchorChild: RelativeChildConfig?, anchorSize: CGSize) {
             let childSize = viewSizes[child.id] ?? CGSize(width: 100, height: 30)
+            
+            // Default position based on container alignment
             var x: CGFloat = 0
             var y: CGFloat = 0
             
+            // Set default positions based on alignment
+            switch alignment {
+            case .topLeading:
+                x = -containerSize.width/2 + childSize.width/2
+                y = -containerSize.height/2 + childSize.height/2
+            case .top:
+                x = 0
+                y = -containerSize.height/2 + childSize.height/2
+            case .topTrailing:
+                x = containerSize.width/2 - childSize.width/2
+                y = -containerSize.height/2 + childSize.height/2
+            case .leading:
+                x = -containerSize.width/2 + childSize.width/2
+                y = 0
+            case .center:
+                x = 0
+                y = 0
+            case .trailing:
+                x = containerSize.width/2 - childSize.width/2
+                y = 0
+            case .bottomLeading:
+                x = -containerSize.width/2 + childSize.width/2
+                y = containerSize.height/2 - childSize.height/2
+            case .bottom:
+                x = 0
+                y = containerSize.height/2 - childSize.height/2
+            case .bottomTrailing:
+                x = containerSize.width/2 - childSize.width/2
+                y = containerSize.height/2 - childSize.height/2
+            default:
+                x = 0
+                y = 0
+            }
+            
             Logger.debug("📐 Calculating position for \(child.id), size: \(childSize)")
+            Logger.debug("   Default position from alignment (\(alignment)): x=\(x), y=\(y)")
             Logger.debug("   Margins: \(child.margins)")
             
             // Check for centering properties in the original child data
@@ -113,8 +160,9 @@ public struct RelativePositionContainer: View {
                                          .contains(constraint.type)
                 
                 if !isParentConstraint {
-                    guard constraint.targetId == anchorChild.id else { 
-                        Logger.debug("   ⚠️ Constraint target \(constraint.targetId) is not anchor")
+                    guard let anchorChild = anchorChild,
+                          constraint.targetId == anchorChild.id else { 
+                        Logger.debug("   ⚠️ Constraint target \(constraint.targetId) is not anchor or no anchor exists")
                         continue 
                     }
                 }
@@ -208,7 +256,7 @@ public struct RelativePositionContainer: View {
             Logger.debug("   Final position: (\(x), \(y))")
             
             viewPositions[child.id] = CGPoint(x: x, y: y)
-        }
+    }
         
         Logger.debug("📍 All positions calculated:")
         for (id, pos) in viewPositions {
