@@ -93,7 +93,12 @@ public struct TextViewWithPlaceholder: View {
                 Text(hint)
                     .font(hintFont)
                     .foregroundColor(hintColor)
-                    .padding(containerInset)
+                    .padding(EdgeInsets(
+                        top: containerInset.top + 2,
+                        leading: containerInset.leading + 4,
+                        bottom: containerInset.bottom,
+                        trailing: containerInset.trailing
+                    ))
                     .allowsHitTesting(false) // タップイベントを通過させる
             }
             
@@ -116,7 +121,7 @@ public struct TextViewWithPlaceholder: View {
                     .font(font)
                     .foregroundColor(fontColor)
                     .scrollContentBackground(.hidden)
-                    .background(backgroundColor)
+                    .background(Color.clear)
                     .focused($isFocused)
                     .padding(EdgeInsets(top: containerInset.top - 8, 
                                       leading: containerInset.leading - 5, 
@@ -129,7 +134,7 @@ public struct TextViewWithPlaceholder: View {
                     .font(font)
                     .foregroundColor(fontColor)
                     .scrollContentBackground(.hidden)
-                    .background(backgroundColor)
+                    .background(Color.clear)
                     .focused($isFocused)
                     .padding(EdgeInsets(top: containerInset.top - 8, 
                                       leading: containerInset.leading - 5, 
