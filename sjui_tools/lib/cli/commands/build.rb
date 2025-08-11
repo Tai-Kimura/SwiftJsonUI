@@ -102,6 +102,7 @@ module SjuiTools
           
           require_relative '../../swiftui/json_to_swiftui_converter'
           require_relative '../../swiftui/view_updater'
+          require_relative '../../swiftui/data_model_updater'
           
           config = Core::ConfigManager.load_config
           source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
@@ -115,6 +116,10 @@ module SjuiTools
             puts "No JSON files found in #{layouts_dir}"
             return
           end
+          
+          # First update Data models based on JSON
+          data_updater = SjuiTools::SwiftUI::DataModelUpdater.new
+          data_updater.update_data_models
           
           converter = SjuiTools::SwiftUI::JsonToSwiftUIConverter.new
           updater = SjuiTools::SwiftUI::ViewUpdater.new
