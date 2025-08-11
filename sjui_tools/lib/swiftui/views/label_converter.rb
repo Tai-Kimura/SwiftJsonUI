@@ -50,7 +50,13 @@ module SjuiTools
           
           # lines
           if @component['lines']
-            add_modifier_line ".lineLimit(#{@component['lines'].to_i})"
+            lines_value = @component['lines'].to_i
+            if lines_value == 0
+              # 0 means unlimited in UIKit, nil means unlimited in SwiftUI
+              add_modifier_line ".lineLimit(nil)"
+            else
+              add_modifier_line ".lineLimit(#{lines_value})"
+            end
           end
           
           # lineHeightMultiple
