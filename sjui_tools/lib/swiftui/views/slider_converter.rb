@@ -10,7 +10,7 @@ module SjuiTools
           # Slider properties
           min_value = @component['minimumValue'] || 0
           max_value = @component['maximumValue'] || 1
-          value = @component['value'] || min_value
+          value_prop = @component['value'] || min_value
           
           # range プロパティの処理（配列形式: [min, max]）
           if @component['range'].is_a?(Array) && @component['range'].length == 2
@@ -18,15 +18,23 @@ module SjuiTools
             max_value = @component['range'][1]
           end
           
-          # Create @State variable name
-          state_var = "sliderValue#{@component['id'] || ''}"
-          state_var = state_var.gsub(/[^a-zA-Z0-9]/, '')
-          
-          # Add state variable to requirements
-          add_state_variable(state_var, "Double", value.to_s)
-          
-          # Slider
-          add_line "Slider(value: $#{state_var}, in: #{min_value}...#{max_value})"
+          # Check if value is a binding
+          if @component['value'] && @component['value'].to_s.start_with?('@{') && @component['value'].to_s.end_with?('}')
+            # Use binding from data model
+            property_name = @component['value'][2..-2]
+            binding_var = "$viewModel.data.#{property_name}"
+            add_line "Slider(value: #{binding_var}, in: #{min_value}...#{max_value})"
+          else
+            # Create @State variable name
+            state_var = "sliderValue#{@component['id'] || ''}"
+            state_var = state_var.gsub(/[^a-zA-Z0-9]/, '')
+            
+            # Add state variable to requirements
+            add_state_variable(state_var, "Double", value_prop.to_s)
+            
+            # Slider
+            add_line "Slider(value: $#{state_var}, in: #{min_value}...#{max_value})"
+          end
           
           # Tint color
           if @component['tintColor']

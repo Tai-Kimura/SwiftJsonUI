@@ -37,9 +37,18 @@ module SjuiTools
         def get_text_content(component)
           text_value = component['text']
           if is_binding?(text_value)
+            # Full binding: @{propertyName}
             parse_binding(text_value)
+          elsif text_value && text_value.include?('@{')
+            # Text with interpolation: "Some text @{property} more text"
+            # Extract all binding expressions
+            interpolated = text_value.gsub(/@\{([^}]+)\}/) do |match|
+              property_name = $1
+              "\\($viewModel.data.#{property_name})"
+            end
+            "\"#{interpolated.gsub('\\n', '\\\\n')}\""
           else
-            "\"#{text_value || ''}\""
+            "\"#{(text_value || '').gsub('\\n', '\\\\n')}\""
           end
         end
       end

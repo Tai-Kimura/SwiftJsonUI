@@ -17,7 +17,8 @@ module SjuiTools
           
           # Handle string interpolation if text content is a binding
           if text_content.start_with?('$viewModel')
-            add_line "Text(#{text_content})"
+            # Direct binding - need to convert to String
+            add_line "Text(String(describing: #{text_content}))"
           else
             # Regular text or quoted binding result
             add_line "Text(#{text_content})"

@@ -102,7 +102,14 @@ module SjuiTools
               
               # selectedItem の処理
               if @component['selectedItem']
-                add_line "selectedItem: \"#{@component['selectedItem']}\","
+                selected_item = @component['selectedItem']
+                if selected_item.start_with?('@{') && selected_item.end_with?('}')
+                  # バインディングの場合
+                  property_name = selected_item[2..-2]
+                  add_line "selectedItem: $viewModel.data.#{property_name},"
+                else
+                  add_line "selectedItem: \"#{selected_item}\","
+                end
               end
               
               # items配列の処理
