@@ -89,36 +89,101 @@ public struct RelativePositionContainer: View {
     private func calculatePositions() {
         Logger.debug("🔧 calculatePositions() called")
 
-        // Find anchor view (no constraints or has centerInParent)
-        let anchorChild = children.first(where: { $0.constraints.isEmpty })
-
-        if let anchorChild = anchorChild {
-            let anchorSize =
-                viewSizes[anchorChild.id] ?? CGSize(width: 100, height: 50)
-            Logger.debug("⚓ Anchor: \(anchorChild.id), size: \(anchorSize)")
-
-            // Place anchor at center (will be adjusted by GeometryReader)
-            viewPositions[anchorChild.id] = CGPoint(x: 0, y: 0)  // Center placeholder
-
-            // Calculate positions for other views relative to anchor
-            for child in children where child.id != anchorChild.id {
-                calculateChildPosition(
-                    child: child,
-                    anchorChild: anchorChild,
-                    anchorSize: anchorSize
-                )
+        // Process views in dependency order
+        var processedViews = Set<String>()
+        var remainingChildren = children
+        
+        // First, process views with only parent constraints
+        let parentOnlyViews = children.filter { child in
+            child.constraints.allSatisfy { constraint in
+                [.parentTop, .parentBottom, .parentLeft, .parentRight,
+                 .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
+                    .contains(constraint.type)
             }
-        } else {
-            // No anchor view - all views have parent alignment constraints
-            Logger.debug(
-                "📍 No anchor view - processing parent alignment constraints only"
+        }
+        
+        // Process parent-only constrained views first
+        for child in parentOnlyViews {
+            let childSize = viewSizes[child.id] ?? CGSize(width: 100, height: 50)
+            calculateChildPosition(
+                child: child,
+                anchorChild: nil,
+                anchorSize: .zero
             )
-            for child in children {
-                calculateChildPosition(
-                    child: child,
-                    anchorChild: nil,
-                    anchorSize: .zero
-                )
+            processedViews.insert(child.id)
+            Logger.debug("✅ Processed parent-constrained view: \(child.id)")
+        }
+        
+        // Remove processed views from remaining
+        remainingChildren.removeAll { processedViews.contains($0.id) }
+        
+        // Process remaining views that depend on other views
+        var iterationCount = 0
+        let maxIterations = remainingChildren.count + 1
+        
+        while !remainingChildren.isEmpty && iterationCount < maxIterations {
+            iterationCount += 1
+            var processedInThisIteration = [RelativeChildConfig]()
+            
+            for child in remainingChildren {
+                // Check if all dependencies are already processed
+                let canProcess = child.constraints.allSatisfy { constraint in
+                    // Parent constraints are always ready
+                    if [.parentTop, .parentBottom, .parentLeft, .parentRight,
+                        .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
+                        .contains(constraint.type) {
+                        return true
+                    }
+                    // For other constraints, check if target is processed
+                    return constraint.targetId.isEmpty || processedViews.contains(constraint.targetId)
+                }
+                
+                if canProcess {
+                    // Find the target view if there is one
+                    var targetChild: RelativeChildConfig? = nil
+                    var targetSize = CGSize.zero
+                    
+                    // Find the first non-parent constraint to get the target
+                    for constraint in child.constraints {
+                        if ![.parentTop, .parentBottom, .parentLeft, .parentRight,
+                             .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
+                            .contains(constraint.type) && !constraint.targetId.isEmpty {
+                            targetChild = children.first { $0.id == constraint.targetId }
+                            if let target = targetChild {
+                                targetSize = viewSizes[target.id] ?? CGSize(width: 100, height: 50)
+                            }
+                            break
+                        }
+                    }
+                    
+                    calculateChildPosition(
+                        child: child,
+                        anchorChild: targetChild,
+                        anchorSize: targetSize
+                    )
+                    processedViews.insert(child.id)
+                    processedInThisIteration.append(child)
+                    Logger.debug("✅ Processed view with dependencies: \(child.id)")
+                }
+            }
+            
+            // Remove processed views from remaining
+            remainingChildren.removeAll { view in
+                processedInThisIteration.contains { $0.id == view.id }
+            }
+            
+            // If no views were processed in this iteration, we have a circular dependency
+            if processedInThisIteration.isEmpty && !remainingChildren.isEmpty {
+                Logger.debug("⚠️ Circular dependency detected or unresolvable constraints")
+                // Process remaining views anyway
+                for child in remainingChildren {
+                    calculateChildPosition(
+                        child: child,
+                        anchorChild: nil,
+                        anchorSize: .zero
+                    )
+                }
+                break
             }
         }
 
@@ -334,7 +399,75 @@ extension RelativeChildConfig {
 
         var constraints: [RelativePositionConstraint] = []
 
-        // Check for alignment constraints
+        // Check for parent alignment constraints first
+        if dict["centerInParent"] as? Bool == true {
+            constraints.append(
+                RelativePositionConstraint(
+                    type: .parentCenter,
+                    targetId: "",
+                    spacing: 0
+                )
+            )
+        } else {
+            // Check individual parent alignment properties
+            if dict["alignTop"] as? Bool == true {
+                constraints.append(
+                    RelativePositionConstraint(
+                        type: .parentTop,
+                        targetId: "",
+                        spacing: 0
+                    )
+                )
+            } else if dict["alignBottom"] as? Bool == true {
+                constraints.append(
+                    RelativePositionConstraint(
+                        type: .parentBottom,
+                        targetId: "",
+                        spacing: 0
+                    )
+                )
+            }
+            
+            if dict["alignLeft"] as? Bool == true {
+                constraints.append(
+                    RelativePositionConstraint(
+                        type: .parentLeft,
+                        targetId: "",
+                        spacing: 0
+                    )
+                )
+            } else if dict["alignRight"] as? Bool == true {
+                constraints.append(
+                    RelativePositionConstraint(
+                        type: .parentRight,
+                        targetId: "",
+                        spacing: 0
+                    )
+                )
+            }
+            
+            if dict["centerHorizontal"] as? Bool == true {
+                constraints.append(
+                    RelativePositionConstraint(
+                        type: .parentCenterHorizontal,
+                        targetId: "",
+                        spacing: 0
+                    )
+                )
+            }
+            
+            if dict["centerVertical"] as? Bool == true {
+                constraints.append(
+                    RelativePositionConstraint(
+                        type: .parentCenterVertical,
+                        targetId: "",
+                        spacing: 0
+                    )
+                )
+            }
+        }
+
+        // Check for alignment constraints to other views
         let constraintMappings:
             [(String, RelativePositionConstraint.ConstraintType)] = [
                 ("alignTopOfView", .above),  // Position above the view
