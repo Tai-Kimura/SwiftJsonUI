@@ -9,6 +9,7 @@ public struct RelativePositionContainer: View {
     @State private var viewSizes: [String: CGSize] = [:]
     @State private var viewPositions: [String: CGPoint] = [:]
     @State private var isFirstPass = true
+    @State private var containerSize: CGSize = .zero
     
     public init(
         children: [RelativeChildConfig],
@@ -41,8 +42,7 @@ public struct RelativePositionContainer: View {
                                             Logger.debug("📏 Measured \(child.id): \(geometry.size)")
                                             // After measuring all views, move to second pass
                                             if viewSizes.count == children.count {
-                                                Logger.debug("📊 All views measured, calculating positions...")
-                                                calculatePositions()
+                                                Logger.debug("📊 All views measured, moving to positioning phase...")
                                                 isFirstPass = false
                                             }
                                         }
@@ -55,6 +55,13 @@ public struct RelativePositionContainer: View {
             } else {
                 // Second pass: Position views based on calculated positions
                 GeometryReader { geometry in
+                    Color.clear
+                        .onAppear {
+                            if containerSize == .zero {
+                                containerSize = geometry.size
+                                calculatePositions()
+                            }
+                        }
                     ForEach(children) { child in
                         let relativePos = viewPositions[child.id] ?? CGPoint.zero
                         let absoluteX = geometry.size.width/2 + relativePos.x
@@ -161,19 +168,19 @@ public struct RelativePositionContainer: View {
                     Logger.debug("   rightOf: x = \(x) = \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing)")
                 case .parentTop:
                     // Align to parent top
-                    y = -geometry.size.height/2 + childSize.height/2 + constraint.spacing
+                    y = -containerSize.height/2 + childSize.height/2 + constraint.spacing
                     Logger.debug("   parentTop: y = \(y)")
                 case .parentBottom:
                     // Align to parent bottom
-                    y = geometry.size.height/2 - childSize.height/2 - constraint.spacing
+                    y = containerSize.height/2 - childSize.height/2 - constraint.spacing
                     Logger.debug("   parentBottom: y = \(y)")
                 case .parentLeft:
                     // Align to parent left
-                    x = -geometry.size.width/2 + childSize.width/2 + constraint.spacing
+                    x = -containerSize.width/2 + childSize.width/2 + constraint.spacing
                     Logger.debug("   parentLeft: x = \(x)")
                 case .parentRight:
                     // Align to parent right
-                    x = geometry.size.width/2 - childSize.width/2 - constraint.spacing
+                    x = containerSize.width/2 - childSize.width/2 - constraint.spacing
                     Logger.debug("   parentRight: x = \(x)")
                 case .parentCenterHorizontal:
                     // Center horizontally in parent
