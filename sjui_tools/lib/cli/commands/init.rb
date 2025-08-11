@@ -128,6 +128,8 @@ module SjuiTools
               'layouts_directory' => 'Layouts',
               'styles_directory' => 'Styles',
               'view_directory' => 'View',
+              'data_directory' => 'Data',  # Directory for data binding structs
+              'viewmodel_directory' => 'ViewModel',  # Directory for ViewModels
               'swiftui' => {
                 'output_directory' => 'Generated'
               },
@@ -148,6 +150,8 @@ module SjuiTools
               'layouts_directory' => 'Layouts',
               'styles_directory' => 'Styles',
               'view_directory' => 'View',
+              'data_directory' => 'Data',  # Directory for data binding structs
+              'viewmodel_directory' => 'ViewModel',  # Directory for ViewModels
               'bindings_directory' => 'Bindings',
               'hot_loader_directory' => project_name,
               'use_network' => true,
@@ -175,6 +179,8 @@ module SjuiTools
             Layouts
             Bindings
             View
+            Data
+            ViewModel
             Styles
             Core
             Core/Base
@@ -191,6 +197,8 @@ module SjuiTools
           directories = [
             config['layouts_directory'] || 'Layouts',
             config['view_directory'] || 'View',
+            config['data_directory'] || 'Data',
+            config['viewmodel_directory'] || 'ViewModel',
             config['styles_directory'] || 'Styles'
           ]
           
