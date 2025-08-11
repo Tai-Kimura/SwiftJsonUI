@@ -131,8 +131,7 @@ module SjuiTools
         def generate_collection_content(cell_class_name, id)
           if cell_class_name
             # Generate ForEach with the cell view
-            # The data comes from viewModel.data.collectionConfig.cellClasses["ClassName"]
-            # Each item in that array is passed to the cell view's viewModel.data
+            # The data comes from viewModel.data.collectionDataSource
             
             # Extract the original class name from the cell classes
             cell_class_info = @component['cellClasses']&.first
@@ -144,19 +143,12 @@ module SjuiTools
                                     cell_class_name.sub('View', '')
                                   end
             
-            add_line "ForEach(Array((viewModel.data.collectionDataSource.cellClasses[\"#{original_class_name}\"] ?? []).enumerated()), id: \\.offset) { index, item in"
+            # Generate ForEach that iterates through the data
+            # Using enumerated to get both index and item
+            add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
             indent do
-              # Create the cell view and pass the data
-              add_line "#{cell_class_name}()"
-              indent do
-                add_modifier_line ".environmentObject({"
-                indent do
-                  add_line "let vm = #{cell_class_name.sub('View', 'ViewModel')}()"
-                  add_line "vm.data = item"
-                  add_line "return vm"
-                end
-                add_modifier_line "}())"
-              end
+              # Pass the data directly to the cell view
+              add_line "#{cell_class_name}(data: item)"
               
               # Cell-specific modifiers
               if @component['cellHeight']
