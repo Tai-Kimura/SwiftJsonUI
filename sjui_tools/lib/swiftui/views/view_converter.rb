@@ -192,6 +192,25 @@ module SjuiTools
                     child_code = child_converter.convert
                     child_lines = child_code.split("\n")
                     
+                    # Wrap with VisibilityWrapper if visibility is set
+                    if child['visibility']
+                      visibility_value = child['visibility']
+                      # Check if it's a binding
+                      if visibility_value.is_a?(String) && visibility_value.start_with?('@{') && visibility_value.end_with?('}')
+                        var_name = to_camel_case(visibility_value[2..-2])
+                        visibility_param = var_name
+                      else
+                        visibility_param = "\"#{visibility_value}\""
+                      end
+                      
+                      # Wrap the view with VisibilityWrapper
+                      wrapped_lines = []
+                      wrapped_lines << "VisibilityWrapper(#{visibility_param}) {"
+                      child_lines.each { |line| wrapped_lines << "    #{line}" }
+                      wrapped_lines << "}"
+                      child_lines = wrapped_lines
+                    end
+                    
                     # Indent child code if inside Group (ZStack)
                     if !orientation
                       indent do

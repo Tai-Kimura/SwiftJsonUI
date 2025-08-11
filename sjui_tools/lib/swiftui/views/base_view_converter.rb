@@ -287,16 +287,8 @@ module SjuiTools
             add_modifier_line ".opacity(#{@component['opacity']})"
           end
           
-          # visibility属性
-          if @component['visibility']
-            case @component['visibility']
-            when 'invisible'
-              add_modifier_line ".opacity(0)"
-            when 'gone'
-              add_modifier_line ".hidden()"
-            # 'visible'の場合は何もしない（デフォルト）
-            end
-          end
+          # visibility属性はVisibilityWrapperで処理するので、ここでは何もしない
+          # The actual wrapping happens in the parent view converter
           
           # 影
           if @component['shadow']

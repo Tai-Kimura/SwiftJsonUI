@@ -49,7 +49,7 @@ module SjuiTools
                 case @component['datePickerMode']
                 when 'time'
                   add_line "datePickerMode: .time,"
-                when 'datetime'
+                when 'datetime', 'dateAndTime'
                   add_line "datePickerMode: .dateTime,"
                 else
                   add_line "datePickerMode: .date,"
@@ -77,23 +77,16 @@ module SjuiTools
               
               # minimumDate
               if @component['minimumDate']
-                add_line "minimumDate: ISO8601DateFormatter().date(from: \"#{@component['minimumDate']}\") ?? Date(),"
+                add_line "minimumDate: \"#{@component['minimumDate']}\".toDate(format: \"yyyy-MM-dd\") ?? Date(),"
               end
               
               # maximumDate  
               if @component['maximumDate']
-                add_line "maximumDate: ISO8601DateFormatter().date(from: \"#{@component['maximumDate']}\") ?? Date(),"
+                add_line "maximumDate: \"#{@component['maximumDate']}\".toDate(format: \"yyyy-MM-dd\") ?? Date(),"
               end
               
-              # minuteInterval
-              if @component['minuteInterval']
-                add_line "minuteInterval: #{@component['minuteInterval']},"
-              end
-              
-              # selectedDate
-              if @component['selectedDate']
-                add_line "selectedDate: ISO8601DateFormatter().date(from: \"#{@component['selectedDate']}\") ?? Date(),"
-              end
+              # Note: minuteInterval and selectedDate are not supported by SelectBoxView
+              # These are managed internally or not applicable
               
               # Remove trailing comma from last parameter
               @generated_code[-1] = @generated_code[-1].chomp(',')
