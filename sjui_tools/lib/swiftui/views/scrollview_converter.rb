@@ -17,8 +17,9 @@ module SjuiTools
           children = child_data.is_a?(Array) ? child_data : [child_data]
           
           # スクロール方向の判定
-          # orientation属性またはchild要素の配置から判定
+          # horizontalScroll属性、orientation属性、またはchild要素の配置から判定
           orientation = @component['orientation']
+          horizontal_scroll = @component['horizontalScroll']
           
           # 子要素が1つでView/SafeAreaViewの場合、その orientation を確認
           if children.length == 1 && ['View', 'SafeAreaView'].include?(children.first['type'])
@@ -27,7 +28,7 @@ module SjuiTools
           end
           
           # スクロール軸の設定
-          if orientation == 'horizontal'
+          if horizontal_scroll || orientation == 'horizontal'
             axes = '.horizontal'
             stack_type = 'HStack'
           else
@@ -86,6 +87,20 @@ module SjuiTools
           # bounces
           if @component['bounces'] == false
             add_modifier_line "// Note: bounce behavior cannot be disabled in SwiftUI"
+          end
+          
+          # contentInsetAdjustmentBehavior
+          if @component['contentInsetAdjustmentBehavior']
+            case @component['contentInsetAdjustmentBehavior']
+            when 'never'
+              add_modifier_line ".ignoresSafeArea()"
+            when 'scrollableAxes'
+              add_modifier_line ".ignoresSafeArea(edges: .horizontal)"
+            when 'always', 'automatic'
+              # デフォルトの動作
+            else
+              add_line "// contentInsetAdjustmentBehavior: #{@component['contentInsetAdjustmentBehavior']}"
+            end
           end
           
           # 共通のモディファイアを適用

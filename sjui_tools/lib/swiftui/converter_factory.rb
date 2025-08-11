@@ -21,6 +21,7 @@ require_relative 'views/blur_converter'
 require_relative 'views/gradient_view_converter'
 require_relative 'views/icon_label_converter'
 require_relative 'views/dynamic_component_converter'
+require_relative 'views/toggle_converter'
 
 module SjuiTools
   module SwiftUI
@@ -51,10 +52,10 @@ module SjuiTools
           Views::ScrollViewConverter.new(component, indent_level, action_manager, self)
         when 'TextView'
           Views::TextViewConverter.new(component, indent_level, action_manager)
-        when 'Switch'
-          SwitchConverter.new(component, indent_level, action_manager)
-        when 'Check'
-          CheckboxConverter.new(component, indent_level, action_manager)
+        when 'Switch', 'Toggle'
+          Views::ToggleConverter.new(component, indent_level, action_manager)
+        when 'Check', 'Checkbox'
+          Views::ToggleConverter.new(component, indent_level, action_manager)
         when 'Radio'
           Views::RadioConverter.new(component, indent_level, action_manager)
         when 'Segment'

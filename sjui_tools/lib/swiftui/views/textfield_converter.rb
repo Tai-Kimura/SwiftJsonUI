@@ -11,6 +11,12 @@ module SjuiTools
           hint = @component['hint'] || ""
           id = @component['id'] || "textField"
           
+          # hintAttributes の処理
+          if @component['hintAttributes']
+            # SwiftUIではplaceholderのスタイルをカスタマイズすることが難しいため、コメントとして記録
+            add_line "// hintAttributes: #{@component['hintAttributes'].to_json}"
+          end
+          
           # Create @State variable name
           state_var = "#{id}Text"
           

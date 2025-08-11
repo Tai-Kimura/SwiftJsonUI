@@ -128,7 +128,12 @@ module SjuiTools
           end
           
           # 背景色（Rectangleの場合はfillで設定済みなのでスキップ）
-          if @component['background'] && !@skip_background
+          # enabled状態に応じて背景色を変更
+          if @component['enabled'] == false && @component['disabledBackground']
+            # 無効状態の背景色
+            color = hex_to_swiftui_color(@component['disabledBackground'])
+            add_modifier_line ".background(#{color})"
+          elsif @component['background'] && !@skip_background
             processed_bg = process_template_value(@component['background'])
             if processed_bg.is_a?(Hash) && processed_bg[:template_var]
               add_modifier_line ".background(#{to_camel_case(processed_bg[:template_var])})"
@@ -184,6 +189,34 @@ module SjuiTools
           end
           if bottom_pad
             add_modifier_line ".padding(.bottom, #{bottom_pad.to_i})"
+          end
+          
+          # insets プロパティ（パディングの別形式）
+          if @component['insets']
+            insets = @component['insets']
+            if insets.is_a?(Array)
+              case insets.length
+              when 1
+                add_modifier_line ".padding(#{insets[0].to_i})"
+              when 2
+                # 縦横のinsets
+                add_modifier_line ".padding(.vertical, #{insets[0].to_i})"
+                add_modifier_line ".padding(.horizontal, #{insets[1].to_i})"
+              when 4
+                # 上、右、下、左の順
+                add_modifier_line ".padding(.top, #{insets[0].to_i})"
+                add_modifier_line ".padding(.trailing, #{insets[1].to_i})"
+                add_modifier_line ".padding(.bottom, #{insets[2].to_i})"
+                add_modifier_line ".padding(.leading, #{insets[3].to_i})"
+              end
+            else
+              add_modifier_line ".padding(#{insets.to_i})"
+            end
+          end
+          
+          # insetHorizontal プロパティ
+          if @component['insetHorizontal']
+            add_modifier_line ".padding(.horizontal, #{@component['insetHorizontal'].to_i})"
           end
           
           # コーナー半径
@@ -242,23 +275,31 @@ module SjuiTools
             add_modifier_line ".hidden()"
           end
           
+          # disabled状態の処理
+          if @component['enabled'] == false
+            add_modifier_line ".disabled(true)"
+          end
+          
           # クリックイベント (onclickとonClick両方をサポート)
           # ただし、Buttonの場合は既にactionで処理しているのでスキップ
           unless @component['type'] == 'Button'
             click_action = @component['onclick'] || @component['onClick']
             if click_action
-              add_modifier_line ".onTapGesture {"
-              indent do
-                # パラメータ付きメソッドの場合（例: "toggleMode:"）
-                if click_action.include?(':')
-                  method_name = click_action.gsub(':', '')
-                  add_line "viewModel.#{method_name}(self)"
-                else
-                  # パラメータなしメソッドの場合
-                  add_line "viewModel.#{click_action}()"
+              # enabled=falseの場合はクリックイベントを追加しない
+              unless @component['enabled'] == false
+                add_modifier_line ".onTapGesture {"
+                indent do
+                  # パラメータ付きメソッドの場合（例: "toggleMode:"）
+                  if click_action.include?(':')
+                    method_name = click_action.gsub(':', '')
+                    add_line "viewModel.#{method_name}(self)"
+                  else
+                    # パラメータなしメソッドの場合
+                    add_line "viewModel.#{click_action}()"
+                  end
                 end
+                add_line "}"
               end
-              add_line "}"
             end
           end
         end
@@ -340,14 +381,22 @@ module SjuiTools
             hex = hex[1..-1]
           end
           
-          # 6桁の16進数に変換
           hex = hex.upcase
           
           if hex.length == 6
+            # 6桁の16進数（RGB）
             r = hex[0..1].to_i(16) / 255.0
             g = hex[2..3].to_i(16) / 255.0
             b = hex[4..5].to_i(16) / 255.0
             "Color(red: #{r}, green: #{g}, blue: #{b})"
+          elsif hex.length == 8
+            # 8桁の16進数（ARGB または RGBA）
+            # SwiftJsonUIは通常ARGBフォーマットを使用
+            a = hex[0..1].to_i(16) / 255.0
+            r = hex[2..3].to_i(16) / 255.0
+            g = hex[4..5].to_i(16) / 255.0
+            b = hex[6..7].to_i(16) / 255.0
+            "Color(red: #{r}, green: #{g}, blue: #{b}, opacity: #{a})"
           else
             "Color.black"  # デフォルト
           end

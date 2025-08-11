@@ -74,8 +74,9 @@ module SjuiTools
                     add_line "Group {"
                   end
                   
-                  # weightプロパティの処理
-                  has_weight = child['weight'] && child['weight'].to_f > 0
+                  # weightプロパティの処理（weightまたはwidthWeightをサポート）
+                  weight_value = child['weight'] || child['widthWeight']
+                  has_weight = weight_value && weight_value.to_f > 0
                   
                   child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager)
                   child_code = child_converter.convert

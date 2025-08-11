@@ -25,15 +25,40 @@ module SjuiTools
               add_line "hint: \"#{@component['hint']}\","
             end
             
-            # hintColor
-            if @component['hintColor']
-              color = hex_to_swiftui_color(@component['hintColor'])
-              add_line "hintColor: #{color},"
-            end
-            
-            # hintFont
-            if @component['hintFont']
-              add_line "hintFont: \"#{@component['hintFont']}\","
+            # hintAttributes の処理
+            if @component['hintAttributes']
+              # hintAttributesからhintColorとhintFontを取得
+              hint_attrs = @component['hintAttributes']
+              
+              if hint_attrs['fontColor'] || hint_attrs['color']
+                color = hex_to_swiftui_color(hint_attrs['fontColor'] || hint_attrs['color'])
+                add_line "hintColor: #{color},"
+              elsif @component['hintColor']
+                # 個別のhintColor属性も引き続きサポート
+                color = hex_to_swiftui_color(@component['hintColor'])
+                add_line "hintColor: #{color},"
+              end
+              
+              if hint_attrs['font']
+                add_line "hintFont: \"#{hint_attrs['font']}\","
+              elsif @component['hintFont']
+                # 個別のhintFont属性も引き続きサポート
+                add_line "hintFont: \"#{@component['hintFont']}\","
+              end
+              
+              # その他のhintAttributesはコメントとして記録
+              add_line "// hintAttributes: #{hint_attrs.to_json}"
+            else
+              # hintColor (個別属性)
+              if @component['hintColor']
+                color = hex_to_swiftui_color(@component['hintColor'])
+                add_line "hintColor: #{color},"
+              end
+              
+              # hintFont (個別属性)
+              if @component['hintFont']
+                add_line "hintFont: \"#{@component['hintFont']}\","
+              end
             end
             
             # hideOnFocused

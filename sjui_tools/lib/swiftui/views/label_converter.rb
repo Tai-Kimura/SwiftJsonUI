@@ -40,8 +40,12 @@ module SjuiTools
             add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
           end
           
-          # fontColor
-          if @component['fontColor']
+          # fontColor (enabled状態に応じて色を変更)
+          if @component['enabled'] == false && @component['disabledFontColor']
+            # 無効状態のフォント色
+            color = hex_to_swiftui_color(@component['disabledFontColor'])
+            add_modifier_line ".foregroundColor(#{color})"
+          elsif @component['fontColor']
             color = hex_to_swiftui_color(@component['fontColor'])
             add_modifier_line ".foregroundColor(#{color})"
           end
