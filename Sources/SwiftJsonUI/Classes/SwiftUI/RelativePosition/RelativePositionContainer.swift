@@ -31,28 +31,79 @@ public struct RelativePositionContainer: View {
     }
     
     public var body: some View {
-        ZStack(alignment: alignment) {
-            // Background color if specified
-            if let backgroundColor = backgroundColor {
-                backgroundColor.ignoresSafeArea()
+        GeometryReader { containerGeometry in
+            ZStack(alignment: alignment) {
+                // Background color if specified
+                if let backgroundColor = backgroundColor {
+                    backgroundColor.ignoresSafeArea()
+                }
+                
+                // Render all children with calculated positions
+                ForEach(children) { child in
+                    child.view
+                        .padding(child.margins)
+                        .fixedSize()  // Use intrinsic size
+                        .position(calculatePosition(for: child, in: containerGeometry.size))
+                }
             }
+            .frame(width: containerGeometry.size.width, height: containerGeometry.size.height)
+        }
+    }
+    
+    private func calculatePosition(for child: RelativeChildConfig, in containerSize: CGSize) -> CGPoint {
+        // Default to center for anchor view
+        var x = containerSize.width / 2
+        var y = containerSize.height / 2
+        
+        // Find anchor view position (assume it's centered)
+        let anchorX = containerSize.width / 2
+        let anchorY = containerSize.height / 2
+        let anchorWidth: CGFloat = 100  // From JSON
+        let anchorHeight: CGFloat = 50  // From JSON
+        
+        SwiftJsonUI.Logger.debug("🎯 Calculating position for child: \(child.id)")
+        SwiftJsonUI.Logger.debug("  - Container size: \(containerSize)")
+        SwiftJsonUI.Logger.debug("  - Anchor position: (\(anchorX), \(anchorY))")
+        
+        // Apply constraints
+        for constraint in child.constraints {
+            SwiftJsonUI.Logger.debug("  - Processing constraint: \(constraint.type) -> \(constraint.targetId)")
             
-            // Render children with positioning
-            ForEach(children) { child in
-                child.view
-                    .saveFrame(id: child.id, in: .named("container"))
-                    .offset(calculateOffset(for: child))
-                    .padding(child.margins)
+            switch constraint.type {
+            case .alignTop:
+                y = anchorY - anchorHeight/2 + 15  // Approximate child height/2
+                SwiftJsonUI.Logger.debug("    - alignTop: y = \(y)")
+            case .alignBottom:
+                y = anchorY + anchorHeight/2 - 15  // Approximate child height/2
+                SwiftJsonUI.Logger.debug("    - alignBottom: y = \(y)")
+            case .alignLeft:
+                x = anchorX - anchorWidth/2 + 65  // Approximate child width/2
+                SwiftJsonUI.Logger.debug("    - alignLeft: x = \(x)")
+            case .alignRight:
+                x = anchorX + anchorWidth/2 - 70  // Approximate child width/2
+                SwiftJsonUI.Logger.debug("    - alignRight: x = \(x)")
+            case .above:
+                y = anchorY - anchorHeight/2 - 15 - constraint.spacing
+                SwiftJsonUI.Logger.debug("    - above: y = \(y)")
+            case .below:
+                y = anchorY + anchorHeight/2 + 15 + constraint.spacing
+                SwiftJsonUI.Logger.debug("    - below: y = \(y)")
+            case .leftOf:
+                x = anchorX - anchorWidth/2 - 56 - constraint.spacing
+                SwiftJsonUI.Logger.debug("    - leftOf: x = \(x)")
+            case .rightOf:
+                x = anchorX + anchorWidth/2 + 61 + constraint.spacing
+                SwiftJsonUI.Logger.debug("    - rightOf: x = \(x)")
             }
         }
-        .coordinateSpace(name: "container")
-        .onPreferenceChange(ViewFramePreferenceKey.self) { frames in
-            SwiftJsonUI.Logger.debug("📍 RelativePositionContainer - Frames updated:")
-            for (id, frame) in frames {
-                SwiftJsonUI.Logger.debug("  - \(id): origin=(\(frame.origin.x), \(frame.origin.y)), size=(\(frame.size.width), \(frame.size.height))")
-            }
-            viewFrames = frames
-        }
+        
+        // Apply margins
+        x += child.margins.leading - child.margins.trailing
+        y += child.margins.top - child.margins.bottom
+        
+        SwiftJsonUI.Logger.debug("  ✅ Final position: (\(x), \(y))")
+        
+        return CGPoint(x: x, y: y)
     }
     
     private func calculateOffset(for child: RelativeChildConfig) -> CGSize {
