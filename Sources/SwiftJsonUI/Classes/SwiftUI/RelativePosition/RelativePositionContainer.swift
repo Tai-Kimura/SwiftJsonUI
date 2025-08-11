@@ -17,16 +17,16 @@ public struct RelativePositionContainer: View {
         self.alignment = alignment
         self.backgroundColor = backgroundColor
         
-        SwiftJsonUI.Logger.debug("🚀 RelativePositionContainer initialized:")
-        SwiftJsonUI.Logger.debug("  - Children count: \(children.count)")
-        SwiftJsonUI.Logger.debug("  - Alignment: \(String(describing: alignment))")
+        Logger.debug("🚀 RelativePositionContainer initialized:")
+        Logger.debug("  - Children count: \(children.count)")
+        Logger.debug("  - Alignment: \(String(describing: alignment))")
         for child in children {
-            SwiftJsonUI.Logger.debug("  - Child \(child.id):")
-            SwiftJsonUI.Logger.debug("    - Constraints: \(child.constraints.count)")
+            Logger.debug("  - Child \(child.id):")
+            Logger.debug("    - Constraints: \(child.constraints.count)")
             for constraint in child.constraints {
-                SwiftJsonUI.Logger.debug("      - \(constraint.type) -> \(constraint.targetId)")
+                Logger.debug("      - \(constraint.type) -> \(constraint.targetId)")
             }
-            SwiftJsonUI.Logger.debug("    - Margins: \(child.margins)")
+            Logger.debug("    - Margins: \(child.margins)")
         }
     }
     
@@ -61,39 +61,39 @@ public struct RelativePositionContainer: View {
         let anchorWidth: CGFloat = 100  // From JSON
         let anchorHeight: CGFloat = 50  // From JSON
         
-        SwiftJsonUI.Logger.debug("🎯 Calculating position for child: \(child.id)")
-        SwiftJsonUI.Logger.debug("  - Container size: \(containerSize)")
-        SwiftJsonUI.Logger.debug("  - Anchor position: (\(anchorX), \(anchorY))")
+        Logger.debug("🎯 Calculating position for child: \(child.id)")
+        Logger.debug("  - Container size: \(containerSize)")
+        Logger.debug("  - Anchor position: (\(anchorX), \(anchorY))")
         
         // Apply constraints
         for constraint in child.constraints {
-            SwiftJsonUI.Logger.debug("  - Processing constraint: \(constraint.type) -> \(constraint.targetId)")
+            Logger.debug("  - Processing constraint: \(constraint.type) -> \(constraint.targetId)")
             
             switch constraint.type {
             case .alignTop:
                 y = anchorY - anchorHeight/2 + 15  // Approximate child height/2
-                SwiftJsonUI.Logger.debug("    - alignTop: y = \(y)")
+                Logger.debug("    - alignTop: y = \(y)")
             case .alignBottom:
                 y = anchorY + anchorHeight/2 - 15  // Approximate child height/2
-                SwiftJsonUI.Logger.debug("    - alignBottom: y = \(y)")
+                Logger.debug("    - alignBottom: y = \(y)")
             case .alignLeft:
                 x = anchorX - anchorWidth/2 + 65  // Approximate child width/2
-                SwiftJsonUI.Logger.debug("    - alignLeft: x = \(x)")
+                Logger.debug("    - alignLeft: x = \(x)")
             case .alignRight:
                 x = anchorX + anchorWidth/2 - 70  // Approximate child width/2
-                SwiftJsonUI.Logger.debug("    - alignRight: x = \(x)")
+                Logger.debug("    - alignRight: x = \(x)")
             case .above:
                 y = anchorY - anchorHeight/2 - 15 - constraint.spacing
-                SwiftJsonUI.Logger.debug("    - above: y = \(y)")
+                Logger.debug("    - above: y = \(y)")
             case .below:
                 y = anchorY + anchorHeight/2 + 15 + constraint.spacing
-                SwiftJsonUI.Logger.debug("    - below: y = \(y)")
+                Logger.debug("    - below: y = \(y)")
             case .leftOf:
                 x = anchorX - anchorWidth/2 - 56 - constraint.spacing
-                SwiftJsonUI.Logger.debug("    - leftOf: x = \(x)")
+                Logger.debug("    - leftOf: x = \(x)")
             case .rightOf:
                 x = anchorX + anchorWidth/2 + 61 + constraint.spacing
-                SwiftJsonUI.Logger.debug("    - rightOf: x = \(x)")
+                Logger.debug("    - rightOf: x = \(x)")
             }
         }
         
@@ -101,7 +101,7 @@ public struct RelativePositionContainer: View {
         x += child.margins.leading - child.margins.trailing
         y += child.margins.top - child.margins.bottom
         
-        SwiftJsonUI.Logger.debug("  ✅ Final position: (\(x), \(y))")
+        Logger.debug("  ✅ Final position: (\(x), \(y))")
         
         return CGPoint(x: x, y: y)
     }
@@ -110,62 +110,62 @@ public struct RelativePositionContainer: View {
         var offsetX: CGFloat = 0
         var offsetY: CGFloat = 0
         
-        SwiftJsonUI.Logger.debug("🎯 Calculating offset for child: \(child.id)")
-        SwiftJsonUI.Logger.debug("  - Constraints count: \(child.constraints.count)")
+        Logger.debug("🎯 Calculating offset for child: \(child.id)")
+        Logger.debug("  - Constraints count: \(child.constraints.count)")
         
         for constraint in child.constraints {
-            SwiftJsonUI.Logger.debug("  - Processing constraint: \(constraint.type) -> \(constraint.targetId)")
+            Logger.debug("  - Processing constraint: \(constraint.type) -> \(constraint.targetId)")
             
             guard let targetFrame = viewFrames[constraint.targetId] else {
-                SwiftJsonUI.Logger.debug("    ⚠️ Target frame not found for: \(constraint.targetId)")
+                Logger.debug("    ⚠️ Target frame not found for: \(constraint.targetId)")
                 continue
             }
             
             let childFrame = viewFrames[child.id]
-            SwiftJsonUI.Logger.debug("    - Target frame: origin=(\(targetFrame.origin.x), \(targetFrame.origin.y)), size=(\(targetFrame.size.width), \(targetFrame.size.height))")
+            Logger.debug("    - Target frame: origin=(\(targetFrame.origin.x), \(targetFrame.origin.y)), size=(\(targetFrame.size.width), \(targetFrame.size.height))")
             if let cf = childFrame {
-                SwiftJsonUI.Logger.debug("    - Child frame: origin=(\(cf.origin.x), \(cf.origin.y)), size=(\(cf.size.width), \(cf.size.height))")
+                Logger.debug("    - Child frame: origin=(\(cf.origin.x), \(cf.origin.y)), size=(\(cf.size.width), \(cf.size.height))")
             } else {
-                SwiftJsonUI.Logger.debug("    - Child frame: NOT FOUND")
+                Logger.debug("    - Child frame: NOT FOUND")
             }
             
             switch constraint.type {
             case .alignTop:
                 let offset = targetFrame.minY - (childFrame?.minY ?? 0)
                 offsetY = offset
-                SwiftJsonUI.Logger.debug("    - alignTop: offsetY = \(offset)")
+                Logger.debug("    - alignTop: offsetY = \(offset)")
             case .alignBottom:
                 let offset = targetFrame.maxY - (childFrame?.maxY ?? 0)
                 offsetY = offset
-                SwiftJsonUI.Logger.debug("    - alignBottom: offsetY = \(offset)")
+                Logger.debug("    - alignBottom: offsetY = \(offset)")
             case .alignLeft:
                 let offset = targetFrame.minX - (childFrame?.minX ?? 0)
                 offsetX = offset
-                SwiftJsonUI.Logger.debug("    - alignLeft: offsetX = \(offset)")
+                Logger.debug("    - alignLeft: offsetX = \(offset)")
             case .alignRight:
                 let offset = targetFrame.maxX - (childFrame?.maxX ?? 0)
                 offsetX = offset
-                SwiftJsonUI.Logger.debug("    - alignRight: offsetX = \(offset)")
+                Logger.debug("    - alignRight: offsetX = \(offset)")
             case .above:
                 let offset = targetFrame.minY - (childFrame?.maxY ?? 0) - constraint.spacing
                 offsetY = offset
-                SwiftJsonUI.Logger.debug("    - above: offsetY = \(offset)")
+                Logger.debug("    - above: offsetY = \(offset)")
             case .below:
                 let offset = targetFrame.maxY - (childFrame?.minY ?? 0) + constraint.spacing
                 offsetY = offset
-                SwiftJsonUI.Logger.debug("    - below: offsetY = \(offset)")
+                Logger.debug("    - below: offsetY = \(offset)")
             case .leftOf:
                 let offset = targetFrame.minX - (childFrame?.maxX ?? 0) - constraint.spacing
                 offsetX = offset
-                SwiftJsonUI.Logger.debug("    - leftOf: offsetX = \(offset)")
+                Logger.debug("    - leftOf: offsetX = \(offset)")
             case .rightOf:
                 let offset = targetFrame.maxX - (childFrame?.minX ?? 0) + constraint.spacing
                 offsetX = offset
-                SwiftJsonUI.Logger.debug("    - rightOf: offsetX = \(offset)")
+                Logger.debug("    - rightOf: offsetX = \(offset)")
             }
         }
         
-        SwiftJsonUI.Logger.debug("  ✅ Final offset: (\(offsetX), \(offsetY))")
+        Logger.debug("  ✅ Final offset: (\(offsetX), \(offsetY))")
         return CGSize(width: offsetX, height: offsetY)
     }
 }
