@@ -401,6 +401,30 @@ module SjuiTools
             "Color.black"  # デフォルト
           end
         end
+        
+        def gradient_direction_to_swiftui(direction)
+          # directionプロパティをSwiftUIのグラデーション方向に変換
+          case direction
+          when 'vertical', 'top_bottom'
+            'startPoint: .top, endPoint: .bottom'
+          when 'horizontal', 'left_right'
+            'startPoint: .leading, endPoint: .trailing'
+          when 'bottom_top'
+            'startPoint: .bottom, endPoint: .top'
+          when 'right_left'
+            'startPoint: .trailing, endPoint: .leading'
+          when 'topLeft_bottomRight', 'diagonal'
+            'startPoint: .topLeading, endPoint: .bottomTrailing'
+          when 'topRight_bottomLeft'
+            'startPoint: .topTrailing, endPoint: .bottomLeading'
+          when 'bottomLeft_topRight'
+            'startPoint: .bottomLeading, endPoint: .topTrailing'
+          when 'bottomRight_topLeft'
+            'startPoint: .bottomTrailing, endPoint: .topLeading'
+          else
+            'startPoint: .top, endPoint: .bottom'  # デフォルト
+          end
+        end
       end
     end
   end

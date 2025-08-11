@@ -103,6 +103,13 @@ module SjuiTools
             end
           end
           
+          # paging プロパティの処理
+          if @component['paging'] == true || @component['paging'] == 'true'
+            # iOS 17+ では.scrollTargetBehavior(.paging)が使える
+            add_modifier_line ".scrollTargetBehavior(.paging)"
+            add_line "// Note: Paging requires iOS 17+"
+          end
+          
           # 共通のモディファイアを適用
           apply_modifiers
           

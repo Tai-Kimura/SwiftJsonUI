@@ -89,6 +89,13 @@ module SjuiTools
             add_modifier_line ".disabled(true)"
           end
           
+          # caretAttributes（カーソル色の設定）
+          if @component['caretAttributes'] && @component['caretAttributes']['fontColor']
+            caret_color = hex_to_swiftui_color(@component['caretAttributes']['fontColor'])
+            add_modifier_line ".accentColor(#{caret_color})"
+            add_line "// caretAttributes applied as accentColor"
+          end
+          
           # Text change handler
           if @component['onTextChange'] && @action_manager
             handler_name = @action_manager.register_action(@component['onTextChange'], 'textfield')

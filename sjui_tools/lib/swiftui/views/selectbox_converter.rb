@@ -85,6 +85,16 @@ module SjuiTools
                 add_line "maximumDate: ISO8601DateFormatter().date(from: \"#{@component['maximumDate']}\") ?? Date(),"
               end
               
+              # minuteInterval
+              if @component['minuteInterval']
+                add_line "minuteInterval: #{@component['minuteInterval']},"
+              end
+              
+              # selectedDate
+              if @component['selectedDate']
+                add_line "selectedDate: ISO8601DateFormatter().date(from: \"#{@component['selectedDate']}\") ?? Date(),"
+              end
+              
               # Remove trailing comma from last parameter
               @generated_code[-1] = @generated_code[-1].chomp(',')
             else

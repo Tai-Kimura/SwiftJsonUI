@@ -78,9 +78,43 @@ module SjuiTools
             add_modifier_line ".lineSpacing(#{@component['lineSpacing'].to_f})"
           end
           
-          # underline（下線）
+          # underline（下線）とlineStyle
           if @component['underline']
-            add_modifier_line ".underline()"
+            # underlineがHashで詳細設定がある場合
+            if @component['underline'].is_a?(Hash) && @component['underline']['lineStyle']
+              line_style = @component['underline']['lineStyle']
+              case line_style
+              when 'Single', 'single'
+                add_modifier_line ".underline()"
+              when 'Double', 'double'
+                add_modifier_line ".underline()"
+                add_line "// Note: Double underline not directly supported, using single"
+              when 'Thick', 'thick'
+                add_modifier_line ".underline()"
+                add_line "// Note: Thick underline style applied as regular underline"
+              when 'Dashed', 'dashed'
+                add_modifier_line ".underline(pattern: .dash)"
+              when 'Dotted', 'dotted'
+                add_modifier_line ".underline(pattern: .dot)"
+              else
+                add_modifier_line ".underline()"
+              end
+            else
+              # booleanまたは通常の下線
+              add_modifier_line ".underline()"
+            end
+          elsif @component['lineStyle']
+            # 独立したlineStyleプロパティ
+            case @component['lineStyle']
+            when 'Single', 'single'
+              add_modifier_line ".underline()"
+            when 'Dashed', 'dashed'
+              add_modifier_line ".underline(pattern: .dash)"
+            when 'Dotted', 'dotted'
+              add_modifier_line ".underline(pattern: .dot)"
+            else
+              add_line "// lineStyle: #{@component['lineStyle']} - Not directly supported"
+            end
           end
           
           # lineBreakMode (SwiftJsonUI uses short forms: Char, Clip, Word, Head, Middle, Tail)
