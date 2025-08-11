@@ -22,12 +22,18 @@ require_relative 'views/gradient_view_converter'
 require_relative 'views/icon_label_converter'
 require_relative 'views/dynamic_component_converter'
 require_relative 'views/toggle_converter'
+require_relative 'view_registry'
 
 module SjuiTools
   module SwiftUI
     class ConverterFactory
-      def create_converter(component, indent_level = 0, action_manager = nil)
+      def initialize
+        @view_registry = ViewRegistry.new
+      end
+      
+      def create_converter(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
         component_type = component['type']
+        registry = view_registry || @view_registry
         
         case component_type
         when 'Label', 'Text'
@@ -37,11 +43,11 @@ module SjuiTools
         when 'Button'
           Views::ButtonConverter.new(component, indent_level, action_manager)
         when 'View', 'SafeAreaView'
-          Views::ViewConverter.new(component, indent_level, action_manager, self)
+          Views::ViewConverter.new(component, indent_level, action_manager, self, registry)
         when 'GradientView'
-          Views::GradientViewConverter.new(component, indent_level, action_manager, self)
+          Views::GradientViewConverter.new(component, indent_level, action_manager, self, registry)
         when 'Blur'
-          Views::BlurConverter.new(component, indent_level, action_manager, self)
+          Views::BlurConverter.new(component, indent_level, action_manager, self, registry)
         when 'TextField'
           Views::TextFieldConverter.new(component, indent_level, action_manager)
         when 'Image', 'CircleImage'
@@ -49,7 +55,7 @@ module SjuiTools
         when 'NetworkImage'
           Views::NetworkImageConverter.new(component, indent_level, action_manager)
         when 'Scroll', 'ScrollView'
-          Views::ScrollViewConverter.new(component, indent_level, action_manager, self)
+          Views::ScrollViewConverter.new(component, indent_level, action_manager, self, registry)
         when 'TextView'
           Views::TextViewConverter.new(component, indent_level, action_manager)
         when 'Switch', 'Toggle'

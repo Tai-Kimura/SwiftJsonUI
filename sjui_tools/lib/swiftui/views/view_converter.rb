@@ -6,17 +6,30 @@ module SjuiTools
   module SwiftUI
     module Views
       class ViewConverter < BaseViewConverter
-        def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil)
+        def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
           super(component, indent_level, action_manager)
           @converter_factory = converter_factory
+          @view_registry = view_registry || SjuiTools::SwiftUI::ViewRegistry.new
         end
         
         def convert
+          # ビューレジストリに自身を登録
+          if @component['id'] && @view_registry
+            @view_registry.register_view(@component['id'], @component)
+          end
+          
           child_data = @component['child'] || []
           # childが単一要素の場合は配列に変換
           children = child_data.is_a?(Array) ? child_data : [child_data]
           # Filter out data declarations - only if child is a Hash
           children = children.reject { |child| child.is_a?(Hash) && child['data'] }
+          
+          # 子ビューもレジストリに登録
+          children.each do |child|
+            if child.is_a?(Hash) && child['id'] && @view_registry
+              @view_registry.register_view(child['id'], child)
+            end
+          end
           
           if children.empty?
             # 子要素がない場合
@@ -78,7 +91,7 @@ module SjuiTools
                   weight_value = child['weight'] || child['widthWeight']
                   has_weight = weight_value && weight_value.to_f > 0
                   
-                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager)
+                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
                   child_code = child_converter.convert
                   child_lines = child_code.split("\n")
                   
@@ -269,36 +282,21 @@ module SjuiTools
           
           # 相対配置属性の処理（alignTopOfView, alignBottomOfView, alignLeftOfView, alignRightOfView）
           # または代替形式（alignTopView, alignBottomView, alignLeftView, alignRightView）
-          if child['alignTopOfView'] || child['alignBottomOfView'] || 
-             child['alignLeftOfView'] || child['alignRightOfView'] ||
-             child['alignTopView'] || child['alignBottomView'] ||
-             child['alignLeftView'] || child['alignRightView']
-            
-            # TODO: 相対配置の実装
-            # 現在はコメントとして出力
-            if child['alignTopOfView'] || child['alignTopView']
-              target_view = child['alignTopOfView'] || child['alignTopView']
-              add_line "// TODO: Align to top of view: #{target_view}"
+          has_relative_positioning = child['alignTopOfView'] || child['alignBottomOfView'] || 
+                                    child['alignLeftOfView'] || child['alignRightOfView'] ||
+                                    child['alignTopView'] || child['alignBottomView'] ||
+                                    child['alignLeftView'] || child['alignRightView']
+          
+          if has_relative_positioning && @view_registry && child['id']
+            # ViewRegistryから相対配置のモディファイアを取得
+            modifiers = @view_registry.generate_alignment_modifiers(child['id'])
+            modifiers.each do |modifier|
+              add_modifier_line modifier
             end
-            if child['alignBottomOfView'] || child['alignBottomView']
-              target_view = child['alignBottomOfView'] || child['alignBottomView']
-              add_line "// TODO: Align to bottom of view: #{target_view}"
-            end
-            if child['alignLeftOfView'] || child['alignLeftView']
-              target_view = child['alignLeftOfView'] || child['alignLeftView']
-              add_line "// TODO: Align to left of view: #{target_view}"
-            end
-            if child['alignRightOfView'] || child['alignRightView']
-              target_view = child['alignRightOfView'] || child['alignRightView']
-              add_line "// TODO: Align to right of view: #{target_view}"
-            end
-            
-            # 相対配置が指定されている場合も通常のoffset計算を行う
-            # （将来的に相対配置が実装されるまでの暫定処理）
           end
           
-          # 通常のoffset計算を常に実行
-          if true  # elseを削除して常に実行
+          # 通常のoffset計算（相対配置がない場合、または追加の調整として）
+          if !has_relative_positioning
             # 通常のoffset計算
             # ZStackでは左上を基準にoffsetを計算
             offset_x = left_margin - right_margin

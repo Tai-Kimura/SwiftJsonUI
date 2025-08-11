@@ -6,9 +6,10 @@ module SjuiTools
   module SwiftUI
     module Views
       class BlurConverter < BaseViewConverter
-        def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil)
+        def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
           super(component, indent_level, action_manager)
           @converter_factory = converter_factory
+          @view_registry = view_registry
         end
         
         def convert
@@ -21,7 +22,7 @@ module SjuiTools
           if children.any?
             children.each do |child|
               if @converter_factory
-                child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager)
+                child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
                 child_code = child_converter.convert
                 child_code.split("\n").each { |line| @generated_code << line }
                 
