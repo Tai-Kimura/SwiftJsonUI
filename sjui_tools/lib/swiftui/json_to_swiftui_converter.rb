@@ -90,49 +90,13 @@ module SjuiTools
       def process_includes(json_data, base_dir)
         return json_data unless json_data.is_a?(Hash)
         
-        # includeがある場合の処理
+        # includeがある場合、Includeタイプのコンポーネントとして扱う
         if json_data['include']
-          include_path = json_data['include']
-          variables = json_data['variables'] || {}
-          
-          # includeファイルのパスを構築
-          include_file_path = if include_path.include?('/')
-            # サブディレクトリがある場合: "common/header" → "common/_header.json"
-            components = include_path.split('/')
-            directory = components[0...-1].join('/')
-            filename = "_#{components.last}"
-            File.join(base_dir, directory, "#{filename}.json")
-          else
-            # サブディレクトリがない場合: "header" → "_header.json"
-            File.join(base_dir, "_#{include_path}.json")
-          end
-          
-          # ファイルが存在しない場合は、プレフィックスなしも試す
+          # includeをそのままIncludeコンポーネントとして扱う
+          json_data['type'] = 'Include'
+          # includeファイルの存在チェック（エラー早期発見のため）
+          include_file_path = File.join(base_dir, "#{json_data['include']}.json")
           unless File.exist?(include_file_path)
-            include_file_path = File.join(base_dir, "#{include_path}.json")
-          end
-          
-          if File.exist?(include_file_path)
-            # includeファイルを読み込み
-            include_content = File.read(include_file_path)
-            
-            # 変数を置換
-            variables.each do |key, value|
-              if key.start_with?('@@')
-                # @@から始まる変数はそのまま置換
-                include_content = include_content.gsub(key, value.to_s)
-              else
-                # それ以外は"key"形式で置換
-                include_content = include_content.gsub("\"#{key}\"", "\"#{value}\"")
-              end
-            end
-            
-            # パースして返す
-            included_data = JSON.parse(include_content)
-            
-            # includeしたデータを再帰的に処理
-            return process_includes(included_data, File.dirname(include_file_path))
-          else
             raise "Include file not found: #{include_file_path}"
           end
         end

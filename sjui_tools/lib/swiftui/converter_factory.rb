@@ -22,6 +22,7 @@ require_relative 'views/gradient_view_converter'
 require_relative 'views/icon_label_converter'
 require_relative 'views/dynamic_component_converter'
 require_relative 'views/toggle_converter'
+require_relative 'views/include_converter'
 require_relative 'view_registry'
 
 module SjuiTools
@@ -82,6 +83,8 @@ module SjuiTools
           Views::WebConverter.new(component, indent_level, action_manager)
         when 'DynamicComponent'
           Views::DynamicComponentConverter.new(component, indent_level, action_manager)
+        when 'Include'
+          Views::IncludeConverter.new(component, indent_level, action_manager)
         else
           # デフォルトコンバーター
           DefaultConverter.new(component, indent_level, action_manager)
