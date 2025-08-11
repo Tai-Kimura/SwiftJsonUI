@@ -104,7 +104,13 @@ module SjuiTools
           
           if name.nil? || name.empty?
             puts "Error: Collection name is required"
-            puts "Usage: sjui generate collection <folder/name>"
+            puts "Usage: sjui generate collection <name>"
+            exit 1
+          end
+          
+          # Setup project paths
+          unless Core::ProjectFinder.setup_paths
+            puts "Error: Could not find project file (.xcodeproj or Package.swift)"
             exit 1
           end
           
@@ -114,8 +120,12 @@ module SjuiTools
             project_file = Core::ProjectFinder.find_project_file
             generator = SjuiTools::Binding::XcodeProject::Generators::CollectionGenerator.new(project_file)
             generator.generate(name)
+          when 'swiftui'
+            require_relative '../../swiftui/generators/collection_generator'
+            generator = SjuiTools::SwiftUI::Generators::CollectionGenerator.new(name)
+            generator.generate
           else
-            puts "Collection generation is only available in binding mode"
+            puts "Error: Unknown mode: #{mode}"
             exit 1
           end
         end

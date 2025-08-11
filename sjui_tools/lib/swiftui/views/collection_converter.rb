@@ -117,13 +117,17 @@ module SjuiTools
           end
           
           # Convert UIKit cell class name to SwiftUI view name
-          # Remove "CollectionViewCell" or "Cell" suffix and add "View"
-          view_name = class_name
-            .sub(/CollectionViewCell$/, '')
-            .sub(/Cell$/, '')
-          
-          # If it doesn't end with View, add it
-          view_name += 'View' unless view_name.end_with?('View')
+          # If it ends with CollectionViewCell, replace with View
+          # Otherwise, if it ends with Cell but not ViewCell, add View
+          view_name = if class_name.end_with?('CollectionViewCell')
+                        class_name.sub(/CollectionViewCell$/, 'View')
+                      elsif class_name.end_with?('Cell') && !class_name.end_with?('ViewCell')
+                        class_name + 'View'
+                      elsif !class_name.end_with?('View')
+                        class_name + 'View'
+                      else
+                        class_name
+                      end
           
           view_name
         end
@@ -147,7 +151,7 @@ module SjuiTools
             # Using enumerated to get both index and item
             add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
             indent do
-              # Pass the data directly to the cell view
+              # Create cell view with data initializer
               add_line "#{cell_class_name}(data: item)"
               
               # Cell-specific modifiers

@@ -19,6 +19,8 @@ public struct SelectBoxView: View {
     let datePickerMode: DatePickerMode
     let datePickerStyle: DatePickerStyle
     let dateStringFormat: String
+    let minimumDate: Date?
+    let maximumDate: Date?
     
     @State private var isPresented = false
     @State private var selectedIndex: Int? = nil
@@ -55,7 +57,9 @@ public struct SelectBoxView: View {
         items: [String] = [],
         datePickerMode: DatePickerMode = .date,
         datePickerStyle: DatePickerStyle = .wheel,
-        dateStringFormat: String = "yyyy/MM/dd"
+        dateStringFormat: String = "yyyy/MM/dd",
+        minimumDate: Date? = nil,
+        maximumDate: Date? = nil
     ) {
         self.id = id
         self.prompt = prompt
@@ -68,6 +72,8 @@ public struct SelectBoxView: View {
         self.datePickerMode = datePickerMode
         self.datePickerStyle = datePickerStyle
         self.dateStringFormat = dateStringFormat
+        self.minimumDate = minimumDate
+        self.maximumDate = maximumDate
     }
     
     public var body: some View {
@@ -137,33 +143,73 @@ public struct SelectBoxView: View {
                         Group {
                             switch datePickerStyle {
                             case .automatic:
-                                DatePicker(
-                                    "Select Date",
-                                    selection: $selectedDate,
-                                    displayedComponents: datePickerComponents
-                                )
-                                .datePickerStyle(.automatic)
+                                if let min = minimumDate, let max = maximumDate {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        in: min...max,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.automatic)
+                                } else {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.automatic)
+                                }
                             case .wheel:
-                                DatePicker(
-                                    "Select Date",
-                                    selection: $selectedDate,
-                                    displayedComponents: datePickerComponents
-                                )
-                                .datePickerStyle(.wheel)
+                                if let min = minimumDate, let max = maximumDate {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        in: min...max,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.wheel)
+                                } else {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.wheel)
+                                }
                             case .compact:
-                                DatePicker(
-                                    "Select Date",
-                                    selection: $selectedDate,
-                                    displayedComponents: datePickerComponents
-                                )
-                                .datePickerStyle(.compact)
+                                if let min = minimumDate, let max = maximumDate {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        in: min...max,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.compact)
+                                } else {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.compact)
+                                }
                             case .graphical:
-                                DatePicker(
-                                    "Select Date",
-                                    selection: $selectedDate,
-                                    displayedComponents: datePickerComponents
-                                )
-                                .datePickerStyle(.graphical)
+                                if let min = minimumDate, let max = maximumDate {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        in: min...max,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.graphical)
+                                } else {
+                                    DatePicker(
+                                        "Select Date",
+                                        selection: $selectedDate,
+                                        displayedComponents: datePickerComponents
+                                    )
+                                    .datePickerStyle(.graphical)
+                                }
                             }
                         }
                         .labelsHidden()
