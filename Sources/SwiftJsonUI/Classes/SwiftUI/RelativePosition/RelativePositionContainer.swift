@@ -32,7 +32,6 @@ public struct RelativePositionContainer: View {
                 ZStack {
                     ForEach(children) { child in
                         child.view
-                            .padding(child.margins)
                             .fixedSize()
                             .background(
                                 GeometryReader { geometry in
@@ -49,6 +48,7 @@ public struct RelativePositionContainer: View {
                                         }
                                 }
                             )
+                            .padding(child.margins)
                             .hidden() // Hide during measurement
                     }
                 }
@@ -63,7 +63,6 @@ public struct RelativePositionContainer: View {
                         let _ = Logger.debug("🎯 Positioning \(child.id): relative(\(relativePos.x), \(relativePos.y)) -> absolute(\(absoluteX), \(absoluteY)) in container(\(geometry.size.width), \(geometry.size.height))")
                         
                         child.view
-                            .padding(child.margins)
                             .fixedSize()
                             .position(x: absoluteX, y: absoluteY)
                     }
