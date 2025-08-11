@@ -11,6 +11,14 @@ public struct RelativePositionConstraint: Codable {
         case below = "alignBottomOfView"
         case leftOf = "alignLeftOfView"
         case rightOf = "alignRightOfView"
+        // Parent alignment constraints
+        case parentTop = "alignTop"
+        case parentBottom = "alignBottom"
+        case parentLeft = "alignLeft"
+        case parentRight = "alignRight"
+        case parentCenterHorizontal = "centerHorizontal"
+        case parentCenterVertical = "centerVertical"
+        case parentCenter = "centerInParent"
     }
     
     public let type: ConstraintType

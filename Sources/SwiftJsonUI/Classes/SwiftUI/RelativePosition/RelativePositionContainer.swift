@@ -100,12 +100,19 @@ public struct RelativePositionContainer: View {
             // For now, we'll handle it based on constraint types
             
             for constraint in child.constraints {
-                guard constraint.targetId == anchorChild.id else { 
-                    Logger.debug("   ⚠️ Constraint target \(constraint.targetId) is not anchor")
-                    continue 
+                // Parent alignment constraints don't need targetId
+                let isParentConstraint = [.parentTop, .parentBottom, .parentLeft, .parentRight, 
+                                         .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
+                                         .contains(constraint.type)
+                
+                if !isParentConstraint {
+                    guard constraint.targetId == anchorChild.id else { 
+                        Logger.debug("   ⚠️ Constraint target \(constraint.targetId) is not anchor")
+                        continue 
+                    }
                 }
                 
-                Logger.debug("   Constraint: \(constraint.type) -> \(constraint.targetId)")
+                Logger.debug("   Constraint: \(constraint.type) -> \(isParentConstraint ? "parent" : constraint.targetId)")
                 
                 switch constraint.type {
                 case .alignTop:
@@ -152,6 +159,35 @@ public struct RelativePositionContainer: View {
                     // Position to the right of anchor - child's left touches anchor's right
                     x = anchorSize.width/2 + childSize.width/2 + constraint.spacing
                     Logger.debug("   rightOf: x = \(x) = \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing)")
+                case .parentTop:
+                    // Align to parent top
+                    y = -geometry.size.height/2 + childSize.height/2 + constraint.spacing
+                    Logger.debug("   parentTop: y = \(y)")
+                case .parentBottom:
+                    // Align to parent bottom
+                    y = geometry.size.height/2 - childSize.height/2 - constraint.spacing
+                    Logger.debug("   parentBottom: y = \(y)")
+                case .parentLeft:
+                    // Align to parent left
+                    x = -geometry.size.width/2 + childSize.width/2 + constraint.spacing
+                    Logger.debug("   parentLeft: x = \(x)")
+                case .parentRight:
+                    // Align to parent right
+                    x = geometry.size.width/2 - childSize.width/2 - constraint.spacing
+                    Logger.debug("   parentRight: x = \(x)")
+                case .parentCenterHorizontal:
+                    // Center horizontally in parent
+                    x = 0
+                    Logger.debug("   parentCenterHorizontal: x = 0")
+                case .parentCenterVertical:
+                    // Center vertically in parent
+                    y = 0
+                    Logger.debug("   parentCenterVertical: y = 0")
+                case .parentCenter:
+                    // Center in parent (both axes)
+                    x = 0
+                    y = 0
+                    Logger.debug("   parentCenter: x = 0, y = 0")
                 }
             }
             
