@@ -244,7 +244,23 @@ module SjuiTools
           
           # 影
           if @component['shadow']
-            add_modifier_line ".shadow(radius: 5)"
+            # shadowが詳細な設定を持つ場合
+            if @component['shadow'].is_a?(Hash)
+              radius = @component['shadow']['radius'] || 5
+              x = @component['shadow']['offsetX'] || 0
+              y = @component['shadow']['offsetY'] || 0
+              color_hex = @component['shadow']['color']
+              
+              if color_hex
+                color = hex_to_swiftui_color(color_hex)
+                add_modifier_line ".shadow(color: #{color}, radius: #{radius}, x: #{x}, y: #{y})"
+              else
+                add_modifier_line ".shadow(radius: #{radius}, x: #{x}, y: #{y})"
+              end
+            else
+              # shadowがbooleanまたはその他の場合
+              add_modifier_line ".shadow(radius: 5)"
+            end
           end
           
           # クリップ
@@ -294,6 +310,20 @@ module SjuiTools
           if @component['touchDisabledState']
             add_modifier_line ".allowsHitTesting(false)"
             add_line "// touchDisabledState applied"
+          end
+          
+          # バインディング関連プロパティ（コメントとして記録）
+          if @component['bindingScript']
+            add_line "// bindingScript: #{@component['bindingScript']}"
+          end
+          if @component['binding_group']
+            add_line "// binding_group: #{@component['binding_group']}"
+          end
+          if @component['binding_id']
+            add_line "// binding_id: #{@component['binding_id']}"
+          end
+          if @component['shared_data']
+            add_line "// shared_data: #{@component['shared_data']}"
           end
           
           # indexBelow（Z軸順序の指定）

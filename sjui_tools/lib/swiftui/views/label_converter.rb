@@ -142,7 +142,13 @@ module SjuiTools
           end
           
           # autoShrink & minimumScaleFactor
-          if @component['autoShrink'] && @component['minimumScaleFactor']
+          if @component['autoShrink']
+            # minimumScaleFactorが指定されていればその値を、なければデフォルト値を使用
+            scale_factor = @component['minimumScaleFactor'] || 0.5
+            add_modifier_line ".minimumScaleFactor(#{scale_factor})"
+            add_modifier_line ".lineLimit(1)"  # autoShrinkは通常1行での縮小を想定
+          elsif @component['minimumScaleFactor']
+            # minimumScaleFactorのみが指定されている場合
             add_modifier_line ".minimumScaleFactor(#{@component['minimumScaleFactor']})"
           end
           
