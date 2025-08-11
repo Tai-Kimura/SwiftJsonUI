@@ -7,17 +7,27 @@ module SjuiTools
     module Views
       class ToggleConverter < BaseViewConverter
         def convert
+          # Get toggle handler for this component
+          toggle_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::ToggleBindingHandler) ?
+                           @binding_handler :
+                           SjuiTools::SwiftUI::Binding::ToggleBindingHandler.new
+          
           id = @component['id'] || 'toggle'
           text = @component['text'] || @component['label'] || ""
           
-          # Create @State variable name
-          state_var = "#{id}IsOn"
-          
-          # Add state variable to requirements
-          add_state_variable(state_var, "Bool", @component['check'] ? 'true' : 'false')
+          # Get state binding from handler
+          state_binding = if @component['checked'] && is_binding?(@component['checked'])
+                           toggle_handler.get_state_binding(@component)
+                         else
+                           # Create @State variable name
+                           state_var = "#{id}IsOn"
+                           # Add state variable to requirements
+                           add_state_variable(state_var, "Bool", @component['checked'] ? 'true' : 'false')
+                           "$viewModel.#{state_var}"
+                         end
           
           # Toggle
-          add_line "Toggle(isOn: $viewModel.#{state_var}) {"
+          add_line "Toggle(isOn: #{state_binding}) {"
           indent do
             add_line "Text(\"#{text}\")"
             
