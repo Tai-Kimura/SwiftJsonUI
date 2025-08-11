@@ -26,11 +26,8 @@ module SjuiTools
           text_binding = if @component['text'] && is_binding?(@component['text'])
                           textfield_handler.get_text_binding(@component)
                         else
-                          # Create @State variable name
-                          state_var = "#{id}Text"
-                          # Add state variable to requirements
-                          add_state_variable(state_var, "String", '""')
-                          "$viewModel.#{state_var}"
+                          # If no binding, create a constant binding with empty string
+                          ".constant(\"\")"
                         end
           
           # Check if it should be a SecureField
