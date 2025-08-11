@@ -188,10 +188,6 @@ module SjuiTools
                         add_line "Group {"
                       end
                     
-                    child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
-                    child_code = child_converter.convert
-                    child_lines = child_code.split("\n")
-                    
                     # Wrap with VisibilityWrapper if visibility is set
                     if child['visibility']
                       visibility_value = child['visibility']
@@ -203,21 +199,30 @@ module SjuiTools
                         visibility_param = "\"#{visibility_value}\""
                       end
                       
-                      # Wrap the view with VisibilityWrapper
-                      wrapped_lines = []
-                      wrapped_lines << "VisibilityWrapper(#{visibility_param}) {"
-                      child_lines.each { |line| wrapped_lines << "    #{line}" }
-                      wrapped_lines << "}"
-                      child_lines = wrapped_lines
-                    end
-                    
-                    # Indent child code if inside Group (ZStack)
-                    if !orientation
+                      # Create child converter with extra indent level for content inside VisibilityWrapper
+                      child_converter = @converter_factory.create_converter(child, @indent_level + 1, @action_manager, @converter_factory, @view_registry)
+                      child_code = child_converter.convert
+                      
+                      # Add VisibilityWrapper wrapper
+                      add_line "VisibilityWrapper(#{visibility_param}) {"
                       indent do
+                        child_code.split("\n").each { |line| @generated_code << line }
+                      end
+                      add_line "}"
+                    else
+                      # Normal child without visibility wrapper
+                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                      child_code = child_converter.convert
+                      child_lines = child_code.split("\n")
+                      
+                      # Indent child code if inside Group (ZStack)
+                      if !orientation
+                        indent do
+                          child_lines.each { |line| @generated_code << line }
+                        end
+                      else
                         child_lines.each { |line| @generated_code << line }
                       end
-                    else
-                      child_lines.each { |line| @generated_code << line }
                     end
                     
                     # Propagate state variables

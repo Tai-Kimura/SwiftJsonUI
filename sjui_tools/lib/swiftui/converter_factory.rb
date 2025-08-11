@@ -23,6 +23,7 @@ require_relative 'views/icon_label_converter'
 require_relative 'views/dynamic_component_converter'
 require_relative 'views/toggle_converter'
 require_relative 'views/include_converter'
+require_relative 'views/tab_view_converter'
 require_relative 'view_registry'
 
 module SjuiTools
@@ -48,7 +49,7 @@ module SjuiTools
           Views::ViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'GradientView'
           Views::GradientViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
-        when 'Blur'
+        when 'Blur', 'BlurView'
           Views::BlurConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'TextField'
           Views::TextFieldConverter.new(component, indent_level, action_manager, @binding_registry)
@@ -80,12 +81,14 @@ module SjuiTools
           Views::CollectionConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'SelectBox'
           Views::SelectBoxConverter.new(component, indent_level, action_manager, @binding_registry)
-        when 'Web'
+        when 'Web', 'WebView'
           Views::WebConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'DynamicComponent'
           Views::DynamicComponentConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Include'
           Views::IncludeConverter.new(component, indent_level, action_manager, @binding_registry)
+        when 'TabView'
+          Views::TabViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         else
           # デフォルトコンバーター
           DefaultConverter.new(component, indent_level, action_manager, @binding_registry)

@@ -128,6 +128,23 @@ module SjuiTools
             add_line ")"
           end
           
+          # キーボード回避機能の追加
+          if @component['keyboardAvoidance'] == true
+            add_modifier_line ".keyboardAvoidance()"
+          elsif @component['keyboardAvoidance'].is_a?(Hash)
+            config = @component['keyboardAvoidance']
+            params = []
+            params << "isEnabled: #{config['isEnabled']}" if config['isEnabled'] != nil
+            params << "additionalPadding: #{config['additionalPadding']}" if config['additionalPadding']
+            params << "autoScrollToFocused: #{config['autoScrollToFocused']}" if config['autoScrollToFocused'] != nil
+            
+            if params.any?
+              add_modifier_line ".keyboardAvoidance(configuration: KeyboardAvoidanceConfiguration(#{params.join(', ')}))"
+            else
+              add_modifier_line ".keyboardAvoidance()"
+            end
+          end
+          
           # 共通のモディファイアを適用
           apply_modifiers
           

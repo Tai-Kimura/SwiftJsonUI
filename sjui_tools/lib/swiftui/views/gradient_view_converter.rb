@@ -49,7 +49,7 @@ module SjuiTools
           end
           
           # グラデーション背景を適用
-          if @component['gradient']
+          if @component['colors'] || @component['gradient']
             apply_gradient_background
           end
           
@@ -62,19 +62,56 @@ module SjuiTools
         private
         
         def apply_gradient_background
-          colors = @component['gradient'].map { |color| hex_to_swiftui_color(color) }
-          direction = @component['gradientDirection'] || 'Vertical'
+          # Handle colors property
+          color_array = @component['colors'] || @component['gradient'] || []
+          colors = color_array.map { |color| hex_to_swiftui_color(color) }
           
-          gradient_type = case direction
-          when 'Horizontal'
-            "startPoint: .leading, endPoint: .trailing"
-          when 'Oblique'
-            "startPoint: .topLeading, endPoint: .bottomTrailing"
+          # Handle start and end points
+          if @component['startPoint'] && @component['endPoint']
+            start_point = gradient_point(@component['startPoint'])
+            end_point = gradient_point(@component['endPoint'])
+            gradient_params = "startPoint: #{start_point}, endPoint: #{end_point}"
           else
-            "startPoint: .top, endPoint: .bottom"
+            direction = @component['gradientDirection'] || 'Vertical'
+            gradient_params = case direction
+            when 'Horizontal'
+              "startPoint: .leading, endPoint: .trailing"
+            when 'Oblique'
+              "startPoint: .topLeading, endPoint: .bottomTrailing"
+            else
+              "startPoint: .top, endPoint: .bottom"
+            end
           end
           
-          add_modifier_line ".background(LinearGradient(colors: [#{colors.join(', ')}], #{gradient_type}))"
+          add_modifier_line ".background(LinearGradient(colors: [#{colors.join(', ')}], #{gradient_params}))"
+        end
+        
+        def gradient_point(point)
+          x = point['x'] || 0
+          y = point['y'] || 0
+          
+          # Map common gradient points
+          if x == 0 && y == 0
+            ".topLeading"
+          elsif x == 0.5 && y == 0
+            ".top"
+          elsif x == 1 && y == 0
+            ".topTrailing"
+          elsif x == 0 && y == 0.5
+            ".leading"
+          elsif x == 0.5 && y == 0.5
+            ".center"
+          elsif x == 1 && y == 0.5
+            ".trailing"
+          elsif x == 0 && y == 1
+            ".bottomLeading"
+          elsif x == 0.5 && y == 1
+            ".bottom"
+          elsif x == 1 && y == 1
+            ".bottomTrailing"
+          else
+            "UnitPoint(x: #{x}, y: #{y})"
+          end
         end
       end
     end
