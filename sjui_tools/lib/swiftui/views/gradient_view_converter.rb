@@ -6,8 +6,8 @@ module SjuiTools
   module SwiftUI
     module Views
       class GradientViewConverter < BaseViewConverter
-        def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
-          super(component, indent_level, action_manager)
+        def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil, binding_registry = nil)
+          super(component, indent_level, action_manager, binding_registry)
           @converter_factory = converter_factory
           @view_registry = view_registry
         end
