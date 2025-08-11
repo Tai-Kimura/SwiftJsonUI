@@ -118,10 +118,15 @@ module SjuiTools
           
           # Convert UIKit cell class name to SwiftUI view name
           # If it ends with CollectionViewCell, replace with View
-          # Otherwise, if it ends with Cell but not ViewCell, add View
+          # If it ends with Cell, replace with CellView
+          # Otherwise add View
           view_name = if class_name.end_with?('CollectionViewCell')
                         class_name.sub(/CollectionViewCell$/, 'View')
-                      elsif class_name.end_with?('Cell') && !class_name.end_with?('ViewCell')
+                      elsif class_name.end_with?('cell')
+                        # Handle lowercase 'cell' - convert to CellView with proper casing
+                        class_name.sub(/cell$/, 'Cell') + 'View'
+                      elsif class_name.end_with?('Cell')
+                        # Handle uppercase 'Cell' - just add View
                         class_name + 'View'
                       elsif !class_name.end_with?('View')
                         class_name + 'View'
