@@ -11,9 +11,9 @@ import Combine
 
 public struct WebView: UIViewRepresentable {
     let url: URL?
-    @Binding var isLoading: Bool
-    @Binding var canGoBack: Bool
-    @Binding var canGoForward: Bool
+    @SwiftUI.Binding var isLoading: Bool
+    @SwiftUI.Binding var canGoBack: Bool
+    @SwiftUI.Binding var canGoForward: Bool
     var onNavigationCommit: ((URL?) -> Void)?
     
     // Simple initializer for basic usage
@@ -27,9 +27,9 @@ public struct WebView: UIViewRepresentable {
     
     // Full initializer with bindings
     public init(url: URL?, 
-                isLoading: Binding<Bool>,
-                canGoBack: Binding<Bool>,
-                canGoForward: Binding<Bool>,
+                isLoading: SwiftUI.Binding<Bool>,
+                canGoBack: SwiftUI.Binding<Bool>,
+                canGoForward: SwiftUI.Binding<Bool>,
                 onNavigationCommit: ((URL?) -> Void)? = nil) {
         self.url = url
         self._isLoading = isLoading
