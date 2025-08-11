@@ -53,28 +53,35 @@ module SjuiTools
                             child['alignTop'] || child['alignBottom'] || child['alignLeft'] || child['alignRight']
             
             if needs_alignment && !@component['orientation']
-              # orientationがなく、alignmentが必要な場合はZStack
-              alignment = get_zstack_alignment_for_child(child)
-              add_line "ZStack(alignment: #{alignment}) {"
-              
-              indent do
-                # ZStackのサイズを確保するために透明なColorを追加
-                add_line "Color.clear"
+              # orientationがなく、alignmentが必要な場合
+              # 相対配置が必要な場合はRelativePositionContainerを使用
+              if @needs_relative_positioning
+                generate_relative_positioning_zstack(children)
+                # 相対配置の場合はここで処理完了
+              else
+                # 通常のZStack with alignment
+                alignment = get_zstack_alignment_for_child(child)
+                add_line "ZStack(alignment: #{alignment}) {"
                 
-                if @converter_factory
-                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager)
-                  child_code = child_converter.convert
-                  child_lines = child_code.split("\n")
-                  child_lines.each { |line| @generated_code << line }
+                indent do
+                  # ZStackのサイズを確保するために透明なColorを追加
+                  add_line "Color.clear"
                   
-                  # Propagate state variables
-                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                    @state_variables.concat(child_converter.state_variables)
+                  if @converter_factory
+                    child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager)
+                    child_code = child_converter.convert
+                    child_lines = child_code.split("\n")
+                    child_lines.each { |line| @generated_code << line }
+                    
+                    # Propagate state variables
+                    if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                      @state_variables.concat(child_converter.state_variables)
+                    end
                   end
                 end
+                
+                add_line "}"
               end
-              
-              add_line "}"
             else
               # alignmentが不要またはorientationがある場合は直接生成
               if @converter_factory
@@ -382,8 +389,10 @@ module SjuiTools
                 end
               end
               
-              # 相対配置でない場合のみ閉じ括弧を追加
-              if !@needs_relative_positioning
+              # 閉じ括弧を追加
+              # orientationがある場合（HStack/VStack）は常に閉じ括弧が必要
+              # orientationがない場合（ZStack）は相対配置でない場合のみ
+              if orientation || !@needs_relative_positioning
                 if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
                   # GeometryReaderを使った場合は追加のインデントとブラケットが必要
                   indent do
@@ -678,7 +687,11 @@ module SjuiTools
             child['alignTopOfView'] || child['alignBottomOfView'] || 
             child['alignLeftOfView'] || child['alignRightOfView'] ||
             child['alignTopView'] || child['alignBottomView'] ||
-            child['alignLeftView'] || child['alignRightView']
+            child['alignLeftView'] || child['alignRightView'] ||
+            child['alignTop'] || child['alignBottom'] ||
+            child['alignLeft'] || child['alignRight'] ||
+            child['centerHorizontal'] || child['centerVertical'] ||
+            child['centerInParent']
           end
         end
         
