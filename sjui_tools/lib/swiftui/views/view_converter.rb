@@ -207,14 +207,28 @@ module SjuiTools
                     else
                       # Normal child without visibility wrapper
                       # Handle alignment properties for HStack and VStack
+                      needs_wrapper = false
+                      wrapper_alignment = nil
                       needs_spacer_before = false
                       needs_spacer_after = false
                       
+                      
                       if orientation == 'horizontal'
-                        # In HStack: alignTop/Bottom affect vertical alignment (handled by HStack alignment)
-                        # alignLeft/Right affect horizontal positioning (use Spacers)
-                        # centerHorizontal uses Spacers on both sides
-                        # centerInParent uses Spacers on both sides + vertical center (HStack alignment)
+                        # In HStack: 
+                        # - alignTop/Bottom/centerVertical need VStack wrapper for individual vertical alignment
+                        # - alignLeft/Right/centerHorizontal use Spacers for horizontal positioning
+                        if child['alignTop']
+                          needs_wrapper = true
+                          wrapper_alignment = '.top'
+                        elsif child['alignBottom']
+                          needs_wrapper = true
+                          wrapper_alignment = '.bottom'
+                        elsif child['centerVertical']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
+                        
+                        # Horizontal positioning with spacers
                         if child['alignRight']
                           needs_spacer_before = true
                         elsif child['alignLeft']
@@ -223,11 +237,28 @@ module SjuiTools
                           needs_spacer_before = true
                           needs_spacer_after = true
                         end
+                        
+                        # centerInParent also needs vertical centering
+                        if child['centerInParent']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
                       elsif orientation == 'vertical'
-                        # In VStack: alignLeft/Right affect horizontal alignment (handled by VStack alignment)
-                        # alignTop/Bottom affect vertical positioning (use Spacers)
-                        # centerVertical uses Spacers on both sides
-                        # centerInParent uses Spacers on both sides + horizontal center (VStack alignment)
+                        # In VStack:
+                        # - alignLeft/Right/centerHorizontal need HStack wrapper for individual horizontal alignment
+                        # - alignTop/Bottom/centerVertical use Spacers for vertical positioning
+                        if child['alignLeft']
+                          needs_wrapper = true
+                          wrapper_alignment = '.leading'
+                        elsif child['alignRight']
+                          needs_wrapper = true
+                          wrapper_alignment = '.trailing'
+                        elsif child['centerHorizontal']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
+                        
+                        # Vertical positioning with spacers
                         if child['alignBottom']
                           needs_spacer_before = true
                         elsif child['alignTop']
@@ -236,6 +267,12 @@ module SjuiTools
                           needs_spacer_before = true
                           needs_spacer_after = true
                         end
+                        
+                        # centerInParent also needs horizontal centering
+                        if child['centerInParent']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
                       end
                       
                       # Add spacer before if needed
@@ -243,17 +280,64 @@ module SjuiTools
                         add_line "Spacer()"
                       end
                       
-                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                      # Generate child code
+                      # Create a copy of child and remove alignment properties that we handle separately
+                      child_copy = child.dup
+                      if orientation == 'horizontal'
+                        # Remove vertical alignment properties that we handle with wrapper
+                        child_copy.delete('alignTop') if needs_wrapper
+                        child_copy.delete('alignBottom') if needs_wrapper
+                        child_copy.delete('centerVertical') if needs_wrapper
+                        # Remove horizontal alignment properties that we handle with spacers
+                        child_copy.delete('alignLeft')
+                        child_copy.delete('alignRight')
+                        child_copy.delete('centerHorizontal')
+                        child_copy.delete('centerInParent')
+                      elsif orientation == 'vertical'
+                        # Remove horizontal alignment properties that we handle with wrapper
+                        child_copy.delete('alignLeft') if needs_wrapper
+                        child_copy.delete('alignRight') if needs_wrapper  
+                        child_copy.delete('centerHorizontal') if needs_wrapper
+                        # Remove vertical alignment properties that we handle with spacers
+                        child_copy.delete('alignTop')
+                        child_copy.delete('alignBottom')
+                        child_copy.delete('centerVertical')
+                        child_copy.delete('centerInParent')
+                      end
+                      
+                      child_converter = @converter_factory.create_converter(child_copy, @indent_level, @action_manager, @converter_factory, @view_registry)
                       child_code = child_converter.convert
                       child_lines = child_code.split("\n")
                       
-                      # Indent child code if inside Group (ZStack)
-                      if !orientation
-                        indent do
-                          child_lines.each { |line| @generated_code << line }
+                      # Wrap child if needed for alignment
+                      if needs_wrapper && wrapper_alignment
+                        if orientation == 'horizontal'
+                          # Wrap in VStack for vertical alignment in HStack
+                          # Use frame alignment instead of Spacers
+                          add_line "VStack {"
+                          indent do
+                            child_lines.each { |line| add_line line.strip unless line.strip.empty? }
+                          end
+                          add_line "}.frame(maxHeight: .infinity, alignment: #{wrapper_alignment})"
+                        elsif orientation == 'vertical'
+                          # Wrap in HStack for horizontal alignment in VStack
+                          # Use frame alignment instead of Spacers
+                          add_line "HStack {"
+                          indent do
+                            child_lines.each { |line| add_line line.strip unless line.strip.empty? }
+                          end
+                          add_line "}.frame(maxWidth: .infinity, alignment: #{wrapper_alignment})"
                         end
                       else
-                        child_lines.each { |line| @generated_code << line }
+                        # No wrapper needed
+                        # Indent child code if inside Group (ZStack)
+                        if !orientation
+                          indent do
+                            child_lines.each { |line| @generated_code << "#{' ' * @indent_level * 4}#{line}" }
+                          end
+                        else
+                          child_lines.each { |line| @generated_code << line }
+                        end
                       end
                       
                       # Add spacer after if needed
@@ -317,14 +401,28 @@ module SjuiTools
                     else
                       # Normal child without visibility wrapper
                       # Handle alignment properties for HStack and VStack
+                      needs_wrapper = false
+                      wrapper_alignment = nil
                       needs_spacer_before = false
                       needs_spacer_after = false
                       
+                      
                       if orientation == 'horizontal'
-                        # In HStack: alignTop/Bottom affect vertical alignment (handled by HStack alignment)
-                        # alignLeft/Right affect horizontal positioning (use Spacers)
-                        # centerHorizontal uses Spacers on both sides
-                        # centerInParent uses Spacers on both sides + vertical center (HStack alignment)
+                        # In HStack: 
+                        # - alignTop/Bottom/centerVertical need VStack wrapper for individual vertical alignment
+                        # - alignLeft/Right/centerHorizontal use Spacers for horizontal positioning
+                        if child['alignTop']
+                          needs_wrapper = true
+                          wrapper_alignment = '.top'
+                        elsif child['alignBottom']
+                          needs_wrapper = true
+                          wrapper_alignment = '.bottom'
+                        elsif child['centerVertical']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
+                        
+                        # Horizontal positioning with spacers
                         if child['alignRight']
                           needs_spacer_before = true
                         elsif child['alignLeft']
@@ -333,11 +431,28 @@ module SjuiTools
                           needs_spacer_before = true
                           needs_spacer_after = true
                         end
+                        
+                        # centerInParent also needs vertical centering
+                        if child['centerInParent']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
                       elsif orientation == 'vertical'
-                        # In VStack: alignLeft/Right affect horizontal alignment (handled by VStack alignment)
-                        # alignTop/Bottom affect vertical positioning (use Spacers)
-                        # centerVertical uses Spacers on both sides
-                        # centerInParent uses Spacers on both sides + horizontal center (VStack alignment)
+                        # In VStack:
+                        # - alignLeft/Right/centerHorizontal need HStack wrapper for individual horizontal alignment
+                        # - alignTop/Bottom/centerVertical use Spacers for vertical positioning
+                        if child['alignLeft']
+                          needs_wrapper = true
+                          wrapper_alignment = '.leading'
+                        elsif child['alignRight']
+                          needs_wrapper = true
+                          wrapper_alignment = '.trailing'
+                        elsif child['centerHorizontal']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
+                        
+                        # Vertical positioning with spacers
                         if child['alignBottom']
                           needs_spacer_before = true
                         elsif child['alignTop']
@@ -346,6 +461,12 @@ module SjuiTools
                           needs_spacer_before = true
                           needs_spacer_after = true
                         end
+                        
+                        # centerInParent also needs horizontal centering
+                        if child['centerInParent']
+                          needs_wrapper = true
+                          wrapper_alignment = '.center'
+                        end
                       end
                       
                       # Add spacer before if needed
@@ -353,17 +474,64 @@ module SjuiTools
                         add_line "Spacer()"
                       end
                       
-                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                      # Generate child code
+                      # Create a copy of child and remove alignment properties that we handle separately
+                      child_copy = child.dup
+                      if orientation == 'horizontal'
+                        # Remove vertical alignment properties that we handle with wrapper
+                        child_copy.delete('alignTop') if needs_wrapper
+                        child_copy.delete('alignBottom') if needs_wrapper
+                        child_copy.delete('centerVertical') if needs_wrapper
+                        # Remove horizontal alignment properties that we handle with spacers
+                        child_copy.delete('alignLeft')
+                        child_copy.delete('alignRight')
+                        child_copy.delete('centerHorizontal')
+                        child_copy.delete('centerInParent')
+                      elsif orientation == 'vertical'
+                        # Remove horizontal alignment properties that we handle with wrapper
+                        child_copy.delete('alignLeft') if needs_wrapper
+                        child_copy.delete('alignRight') if needs_wrapper  
+                        child_copy.delete('centerHorizontal') if needs_wrapper
+                        # Remove vertical alignment properties that we handle with spacers
+                        child_copy.delete('alignTop')
+                        child_copy.delete('alignBottom')
+                        child_copy.delete('centerVertical')
+                        child_copy.delete('centerInParent')
+                      end
+                      
+                      child_converter = @converter_factory.create_converter(child_copy, @indent_level, @action_manager, @converter_factory, @view_registry)
                       child_code = child_converter.convert
                       child_lines = child_code.split("\n")
                       
-                      # Indent child code if inside Group (ZStack)
-                      if !orientation
-                        indent do
-                          child_lines.each { |line| @generated_code << line }
+                      # Wrap child if needed for alignment
+                      if needs_wrapper && wrapper_alignment
+                        if orientation == 'horizontal'
+                          # Wrap in VStack for vertical alignment in HStack
+                          # Use frame alignment instead of Spacers
+                          add_line "VStack {"
+                          indent do
+                            child_lines.each { |line| add_line line.strip unless line.strip.empty? }
+                          end
+                          add_line "}.frame(maxHeight: .infinity, alignment: #{wrapper_alignment})"
+                        elsif orientation == 'vertical'
+                          # Wrap in HStack for horizontal alignment in VStack
+                          # Use frame alignment instead of Spacers
+                          add_line "HStack {"
+                          indent do
+                            child_lines.each { |line| add_line line.strip unless line.strip.empty? }
+                          end
+                          add_line "}.frame(maxWidth: .infinity, alignment: #{wrapper_alignment})"
                         end
                       else
-                        child_lines.each { |line| @generated_code << line }
+                        # No wrapper needed
+                        # Indent child code if inside Group (ZStack)
+                        if !orientation
+                          indent do
+                            child_lines.each { |line| @generated_code << "#{' ' * @indent_level * 4}#{line}" }
+                          end
+                        else
+                          child_lines.each { |line| @generated_code << line }
+                        end
                       end
                       
                       # Add spacer after if needed
@@ -697,24 +865,9 @@ module SjuiTools
         
         def get_hstack_alignment
           # HStackの垂直方向のアライメント
-          # 子要素のalign属性も考慮する
-          children = @component['child'] || []
+          # 注: 子要素の個別のalign属性は考慮しない（それらは個別に処理される）
           
-          # 子要素にalignTop/Bottom/centerVertical/centerInParentがあるかチェック
-          has_align_top = children.any? { |c| c['alignTop'] }
-          has_align_bottom = children.any? { |c| c['alignBottom'] }
-          has_center_vertical = children.any? { |c| c['centerVertical'] || c['centerInParent'] }
-          
-          # 優先順位: 個別の子要素のalign > gravity
-          if has_center_vertical
-            return '.center'
-          elsif has_align_bottom
-            return '.bottom'
-          elsif has_align_top
-            return '.top'
-          end
-          
-          # gravityから垂直成分を取得（既存のロジック）
+          # gravityから垂直成分を取得
           gravity = @component['gravity'] || 'left|top'
           vertical = 'top'  # デフォルト
           
@@ -745,24 +898,9 @@ module SjuiTools
         
         def get_vstack_alignment
           # VStackの水平方向のアライメント
-          # 子要素のalign属性も考慮する
-          children = @component['child'] || []
+          # 注: 子要素の個別のalign属性は考慮しない（それらは個別に処理される）
           
-          # 子要素にalignLeft/Right/centerHorizontal/centerInParentがあるかチェック
-          has_align_left = children.any? { |c| c['alignLeft'] }
-          has_align_right = children.any? { |c| c['alignRight'] }
-          has_center_horizontal = children.any? { |c| c['centerHorizontal'] || c['centerInParent'] }
-          
-          # 優先順位: 個別の子要素のalign > gravity
-          if has_center_horizontal
-            return '.center'
-          elsif has_align_right
-            return '.trailing'
-          elsif has_align_left
-            return '.leading'
-          end
-          
-          # gravityから水平成分を取得（既存のロジック）
+          # gravityから水平成分を取得
           gravity = @component['gravity'] || 'left|top'
           horizontal = 'left'  # デフォルト
           

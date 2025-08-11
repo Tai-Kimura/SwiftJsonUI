@@ -22,7 +22,9 @@ module SjuiTools
             
             # hint (placeholder)
             if @component['hint']
-              add_line "hint: \"#{@component['hint']}\","
+              # Escape newlines in hint text
+              escaped_hint = @component['hint'].gsub("\n", "\\n")
+              add_line "hint: \"#{escaped_hint}\","
             end
             
             # hintAttributes の処理
@@ -133,15 +135,15 @@ module SjuiTools
           add_line ")"
           
           # 共通のモディファイア（frame, margin等）
-          # ただし、flexibleがtrueの場合はframeの高さ指定を無視
-          if @component['flexible'] != true
-            apply_modifiers
-          else
+          # flexibleがtrueの場合はframeの高さ指定を無視
+          if @component['flexible'] == true
             # flexible時はheightを除外してモディファイアを適用
             original_height = @component['height']
             @component.delete('height')
             apply_modifiers
             @component['height'] = original_height if original_height
+          else
+            apply_modifiers
           end
           
           generated_code
