@@ -298,8 +298,16 @@ module SjuiTools
           
           # indexBelow（Z軸順序の指定）
           if @component['indexBelow']
-            add_modifier_line ".zIndex(-#{@component['indexBelow'].to_i})"
-            add_line "// indexBelow: #{@component['indexBelow']}"
+            # indexBelowは指定した他のビューの下に配置することを意味する可能性
+            # SwiftUIではzIndexを使用して相対的な前後関係を制御
+            add_line "// indexBelow: #{@component['indexBelow']} - Place below specified view"
+            # 数値の場合はzIndexとして使用、文字列の場合は他のビューIDを参照
+            if @component['indexBelow'].to_s =~ /^\d+$/
+              add_modifier_line ".zIndex(-#{@component['indexBelow'].to_i})"
+            else
+              add_line "// Reference to view ID: #{@component['indexBelow']}"
+              add_modifier_line ".zIndex(-1)"  # デフォルトで背面に配置
+            end
           end
           
           # クリックイベント (onclickとonClick両方をサポート)

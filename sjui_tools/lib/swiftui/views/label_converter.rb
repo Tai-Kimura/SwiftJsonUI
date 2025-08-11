@@ -167,17 +167,57 @@ module SjuiTools
           end
           
           # partialAttributes（部分的なテキストスタイリング）
-          if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array)
-            add_line "// partialAttributes detected - Consider using AttributedString"
-            add_line "// Note: SwiftUI requires AttributedString for partial text styling"
-            @component['partialAttributes'].each do |partial|
-              if partial['range'] && partial['range'].is_a?(Array)
-                add_line "// Range: [#{partial['range'][0]}, #{partial['range'][1]}]"
-                add_line "//   fontColor: #{partial['fontColor']}" if partial['fontColor']
-                add_line "//   underline: #{partial['underline']}" if partial['underline']
-                add_line "//   onclick: #{partial['onclick']}" if partial['onclick']
+          if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array) && !@component['partialAttributes'].empty?
+            # AttributedStringを使用した実装
+            text = @component['text'] || ""
+            
+            # 最初のTextの行を削除（AttributedStringで置き換えるため）
+            @generated_code = []
+            
+            add_line "Text({"
+            indent do
+              add_line "var attributedString = AttributedString(\"#{text.gsub("\n", "\\n")}\")"
+              
+              @component['partialAttributes'].each_with_index do |partial, index|
+                if partial['range'] && partial['range'].is_a?(Array) && partial['range'].length == 2
+                  start_index = partial['range'][0]
+                  end_index = partial['range'][1]
+                  
+                  add_line ""
+                  add_line "// Apply partial attribute #{index + 1}"
+                  add_line "if let startIndex = attributedString.index(attributedString.startIndex, offsetByCharacters: #{start_index}),"
+                  add_line "   let endIndex = attributedString.index(attributedString.startIndex, offsetByCharacters: #{end_index}) {"
+                  indent do
+                    add_line "let range = startIndex..<endIndex"
+                    
+                    if partial['fontColor']
+                      color = hex_to_swiftui_color(partial['fontColor'])
+                      add_line "attributedString[range].foregroundColor = #{color}"
+                    end
+                    
+                    if partial['underline']
+                      add_line "attributedString[range].underlineStyle = .single"
+                      if partial['underline'].is_a?(Hash) && partial['underline']['lineStyle']
+                        add_line "// underline lineStyle: #{partial['underline']['lineStyle']}"
+                      end
+                    end
+                    
+                    if partial['onclick']
+                      add_line "// TODO: Add link for onclick: #{partial['onclick']}"
+                      add_line "// attributedString[range].link = URL(string: \"app://#{partial['onclick']}\")"
+                    end
+                  end
+                  add_line "}"
+                end
               end
+              
+              add_line ""
+              add_line "return attributedString"
             end
+            add_line "}())"
+            
+            # 既存のモディファイアは引き続き適用可能
+            return # 残りの処理をスキップして、通常のText処理を避ける
           end
           
           # 共通のモディファイアを適用
