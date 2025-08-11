@@ -110,20 +110,34 @@ module SjuiTools
           
           # サイズ
           if @component['width'] || @component['height']
+            # weightがある場合、width: 0 or height: 0は無視する
+            should_ignore_width = (@component['width'] == 0 || @component['width'] == '0') && 
+                                 (@component['weight'] || @component['widthWeight'])
+            should_ignore_height = (@component['height'] == 0 || @component['height'] == '0') && 
+                                  (@component['weight'] || @component['heightWeight'])
+            
             # widthの処理
-            processed_width = process_template_value(@component['width'])
-            if processed_width.is_a?(Hash) && processed_width[:template_var]
-              width_value = to_camel_case(processed_width[:template_var])
+            if !should_ignore_width
+              processed_width = process_template_value(@component['width'])
+              if processed_width.is_a?(Hash) && processed_width[:template_var]
+                width_value = to_camel_case(processed_width[:template_var])
+              else
+                width_value = size_to_swiftui(@component['width'])
+              end
             else
-              width_value = size_to_swiftui(@component['width'])
+              width_value = nil
             end
             
             # heightの処理
-            processed_height = process_template_value(@component['height'])
-            if processed_height.is_a?(Hash) && processed_height[:template_var]
-              height_value = to_camel_case(processed_height[:template_var])
+            if !should_ignore_height
+              processed_height = process_template_value(@component['height'])
+              if processed_height.is_a?(Hash) && processed_height[:template_var]
+                height_value = to_camel_case(processed_height[:template_var])
+              else
+                height_value = size_to_swiftui(@component['height'])
+              end
             else
-              height_value = size_to_swiftui(@component['height'])
+              height_value = nil
             end
             
             # テンプレート変数の場合は型変換が必要
