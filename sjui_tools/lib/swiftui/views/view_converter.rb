@@ -97,7 +97,24 @@ module SjuiTools
             # orientationが指定されていない場合はZStackを使用
             orientation = @component['orientation']
             
-            if orientation == 'horizontal'
+            # 子要素のweightをチェック
+            has_weights = children.any? { |child| 
+              (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f > 0 
+            }
+            
+            if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
+              # weightがある場合はGeometryReaderでラップ
+              add_line "GeometryReader { geometry in"
+              indent do
+                if orientation == 'horizontal'
+                  alignment = get_hstack_alignment
+                  add_line "HStack(alignment: #{alignment}, spacing: 0) {"
+                elsif orientation == 'vertical'
+                  alignment = get_vstack_alignment
+                  add_line "VStack(alignment: #{alignment}, spacing: 0) {"
+                end
+              end
+            elsif orientation == 'horizontal'
               # HStackでgravityを反映
               alignment = get_hstack_alignment
               add_line "HStack(alignment: #{alignment}, spacing: 0) {"
@@ -120,7 +137,7 @@ module SjuiTools
             
             # 相対配置の場合は子要素の処理をスキップ
             if !@needs_relative_positioning || orientation
-              # 重みの合計と各子要素の重みを計算
+              # weightの計算
               total_weight = 0.0
               weights = []
               children.each do |child|
@@ -129,56 +146,10 @@ module SjuiTools
                 total_weight += weight if weight > 0
               end
               
-              # 重みがある子要素の存在をチェック
-              has_weights = total_weight > 0
+              # インデントレベルを正しく管理
+              base_indent = has_weights && (orientation == 'horizontal' || orientation == 'vertical')
               
-              # GeometryReaderを使って重み配分を実装（必要な場合）
-              if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
-                add_line "GeometryReader { geometry in"
-                indent do
-                  # スタックを開始
-                  if orientation == 'horizontal'
-                    alignment = get_hstack_alignment
-                    add_line "HStack(alignment: #{alignment}, spacing: 0) {"
-                  elsif orientation == 'vertical'
-                    alignment = get_vstack_alignment
-                    add_line "VStack(alignment: #{alignment}, spacing: 0) {"
-                  end
-                  
-                  indent do
-                    children.each_with_index do |child, index|
-                      weight = weights[index]
-                      
-                      if @converter_factory
-                        child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
-                        child_code = child_converter.convert
-                        child_lines = child_code.split("\n")
-                        child_lines.each { |line| @generated_code << line }
-                        
-                        # Propagate state variables
-                        if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                          @state_variables.concat(child_converter.state_variables)
-                        end
-                        
-                        # 重みに基づいてframeを設定
-                        if weight > 0
-                          if orientation == 'horizontal'
-                            width_ratio = weight / total_weight
-                            add_modifier_line ".frame(width: geometry.size.width * #{width_ratio.round(4)})"
-                          elsif orientation == 'vertical'
-                            height_ratio = weight / total_weight
-                            add_modifier_line ".frame(height: geometry.size.height * #{height_ratio.round(4)})"
-                          end
-                        end
-                      end
-                    end
-                  end
-                  
-                  add_line "}"
-                end
-                add_line "}"
-              else
-                # 重みがない場合は通常の処理
+              if base_indent
                 indent do
                   children.each_with_index do |child, index|
                     if @converter_factory
@@ -187,6 +158,23 @@ module SjuiTools
                         # 通常のZStackでの子要素をグループ化
                         add_line "Group {"
                       end
+                    
+                    # weightプロパティの処理
+                    weight_value = weights[index]
+                    has_weight = weight_value > 0
+                    
+                    # 親のorientationを子に伝える
+                    if has_weight && orientation
+                      child['parent_orientation'] = orientation
+                      # weightベースのサイズを直接設定
+                      if orientation == 'horizontal'
+                        width_ratio = weight_value / total_weight
+                        child['_weight_frame'] = ".frame(width: geometry.size.width * #{width_ratio.round(4)})"
+                      elsif orientation == 'vertical'
+                        height_ratio = weight_value / total_weight
+                        child['_weight_frame'] = ".frame(height: geometry.size.height * #{height_ratio.round(4)})"
+                      end
+                    end
                     
                     # Wrap with VisibilityWrapper if visibility is set
                     if child['visibility']
@@ -211,6 +199,43 @@ module SjuiTools
                       add_line "}"
                     else
                       # Normal child without visibility wrapper
+                      # Handle alignment properties for HStack and VStack
+                      needs_spacer_before = false
+                      needs_spacer_after = false
+                      
+                      if orientation == 'horizontal'
+                        # In HStack: alignTop/Bottom affect vertical alignment (handled by HStack alignment)
+                        # alignLeft/Right affect horizontal positioning (use Spacers)
+                        # centerHorizontal uses Spacers on both sides
+                        # centerInParent uses Spacers on both sides + vertical center (HStack alignment)
+                        if child['alignRight']
+                          needs_spacer_before = true
+                        elsif child['alignLeft']
+                          needs_spacer_after = true
+                        elsif child['centerHorizontal'] || child['centerInParent']
+                          needs_spacer_before = true
+                          needs_spacer_after = true
+                        end
+                      elsif orientation == 'vertical'
+                        # In VStack: alignLeft/Right affect horizontal alignment (handled by VStack alignment)
+                        # alignTop/Bottom affect vertical positioning (use Spacers)
+                        # centerVertical uses Spacers on both sides
+                        # centerInParent uses Spacers on both sides + horizontal center (VStack alignment)
+                        if child['alignBottom']
+                          needs_spacer_before = true
+                        elsif child['alignTop']
+                          needs_spacer_after = true
+                        elsif child['centerVertical'] || child['centerInParent']
+                          needs_spacer_before = true
+                          needs_spacer_after = true
+                        end
+                      end
+                      
+                      # Add spacer before if needed
+                      if needs_spacer_before
+                        add_line "Spacer()"
+                      end
+                      
                       child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
                       child_code = child_converter.convert
                       child_lines = child_code.split("\n")
@@ -222,6 +247,121 @@ module SjuiTools
                         end
                       else
                         child_lines.each { |line| @generated_code << line }
+                      end
+                      
+                      # Add spacer after if needed
+                      if needs_spacer_after
+                        add_line "Spacer()"
+                      end
+                    end
+                    
+                    # Propagate state variables
+                    if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                      @state_variables.concat(child_converter.state_variables)
+                    end
+                    
+                    # ZStackの場合、位置調整を適用
+                    if !orientation
+                      indent do
+                        apply_zstack_positioning(child, index)
+                      end
+                      add_line "}"  # Group終了
+                    end
+                    end
+                  end
+                end
+              else
+                indent do
+                  children.each_with_index do |child, index|
+                    if @converter_factory
+                      # ZStackの場合、位置関係の処理
+                      if !orientation
+                        # 通常のZStackでの子要素をグループ化
+                        add_line "Group {"
+                      end
+                    
+                    # weightがある場合、親のorientationを子に伝える
+                    weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
+                    if weight > 0 && orientation
+                      child['parent_orientation'] = orientation
+                    end
+                    
+                    # Wrap with VisibilityWrapper if visibility is set
+                    if child['visibility']
+                      visibility_value = child['visibility']
+                      # Check if it's a binding
+                      if visibility_value.is_a?(String) && visibility_value.start_with?('@{') && visibility_value.end_with?('}')
+                        var_name = to_camel_case(visibility_value[2..-2])
+                        visibility_param = var_name
+                      else
+                        visibility_param = "\"#{visibility_value}\""
+                      end
+                      
+                      # Create child converter with extra indent level for content inside VisibilityWrapper
+                      child_converter = @converter_factory.create_converter(child, @indent_level + 1, @action_manager, @converter_factory, @view_registry)
+                      child_code = child_converter.convert
+                      
+                      # Add VisibilityWrapper wrapper
+                      add_line "VisibilityWrapper(#{visibility_param}) {"
+                      indent do
+                        child_code.split("\n").each { |line| @generated_code << line }
+                      end
+                      add_line "}"
+                    else
+                      # Normal child without visibility wrapper
+                      # Handle alignment properties for HStack and VStack
+                      needs_spacer_before = false
+                      needs_spacer_after = false
+                      
+                      if orientation == 'horizontal'
+                        # In HStack: alignTop/Bottom affect vertical alignment (handled by HStack alignment)
+                        # alignLeft/Right affect horizontal positioning (use Spacers)
+                        # centerHorizontal uses Spacers on both sides
+                        # centerInParent uses Spacers on both sides + vertical center (HStack alignment)
+                        if child['alignRight']
+                          needs_spacer_before = true
+                        elsif child['alignLeft']
+                          needs_spacer_after = true
+                        elsif child['centerHorizontal'] || child['centerInParent']
+                          needs_spacer_before = true
+                          needs_spacer_after = true
+                        end
+                      elsif orientation == 'vertical'
+                        # In VStack: alignLeft/Right affect horizontal alignment (handled by VStack alignment)
+                        # alignTop/Bottom affect vertical positioning (use Spacers)
+                        # centerVertical uses Spacers on both sides
+                        # centerInParent uses Spacers on both sides + horizontal center (VStack alignment)
+                        if child['alignBottom']
+                          needs_spacer_before = true
+                        elsif child['alignTop']
+                          needs_spacer_after = true
+                        elsif child['centerVertical'] || child['centerInParent']
+                          needs_spacer_before = true
+                          needs_spacer_after = true
+                        end
+                      end
+                      
+                      # Add spacer before if needed
+                      if needs_spacer_before
+                        add_line "Spacer()"
+                      end
+                      
+                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                      child_code = child_converter.convert
+                      child_lines = child_code.split("\n")
+                      
+                      # Indent child code if inside Group (ZStack)
+                      if !orientation
+                        indent do
+                          child_lines.each { |line| @generated_code << line }
+                        end
+                      else
+                        child_lines.each { |line| @generated_code << line }
+                      end
+                      
+                      # Add spacer after if needed
+                      if needs_spacer_after
+                        add_line "Spacer()"
                       end
                     end
                     
@@ -244,7 +384,15 @@ module SjuiTools
               
               # 相対配置でない場合のみ閉じ括弧を追加
               if !@needs_relative_positioning
-                add_line "}"
+                if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
+                  # GeometryReaderを使った場合は追加のインデントとブラケットが必要
+                  indent do
+                    add_line "}"  # HStack/VStackを閉じる
+                  end
+                  add_line "}"  # GeometryReaderを閉じる
+                else
+                  add_line "}"  # 通常のStack/ZStackを閉じる
+                end
               end
             end
             
@@ -324,10 +472,30 @@ module SjuiTools
                     # Constraints
                     constraints = []
                     
-                    # Check for centerInParent first - this should position the view in the center
+                    # Check for parent alignment constraints
                     if child['centerInParent']
-                      # For center positioning, we don't need constraints, just use the alignment
-                      # The container's alignment will handle this
+                      constraints << "RelativePositionConstraint(type: .parentCenter, targetId: \"\")"
+                    else
+                      # Check individual alignment properties
+                      if child['alignTop']
+                        constraints << "RelativePositionConstraint(type: .parentTop, targetId: \"\")"
+                      elsif child['alignBottom']
+                        constraints << "RelativePositionConstraint(type: .parentBottom, targetId: \"\")"
+                      end
+                      
+                      if child['alignLeft']
+                        constraints << "RelativePositionConstraint(type: .parentLeft, targetId: \"\")"
+                      elsif child['alignRight']
+                        constraints << "RelativePositionConstraint(type: .parentRight, targetId: \"\")"
+                      end
+                      
+                      if child['centerHorizontal']
+                        constraints << "RelativePositionConstraint(type: .parentCenterHorizontal, targetId: \"\")"
+                      end
+                      
+                      if child['centerVertical']
+                        constraints << "RelativePositionConstraint(type: .parentCenterVertical, targetId: \"\")"
+                      end
                     end
                     
                     # alignTopOfView, alignBottomOfView, etc. (position outside the view)
@@ -405,7 +573,11 @@ module SjuiTools
           child['alignTopOfView'] || child['alignBottomOfView'] || 
           child['alignLeftOfView'] || child['alignRightOfView'] ||
           child['alignTopView'] || child['alignBottomView'] ||
-          child['alignLeftView'] || child['alignRightView']
+          child['alignLeftView'] || child['alignRightView'] ||
+          child['alignTop'] || child['alignBottom'] ||
+          child['alignLeft'] || child['alignRight'] ||
+          child['centerHorizontal'] || child['centerVertical'] ||
+          child['centerInParent']
         end
         
         def calculate_relative_positions(children)
@@ -512,11 +684,25 @@ module SjuiTools
         
         def get_hstack_alignment
           # HStackの垂直方向のアライメント
-          # SwiftJsonUIのgravityから垂直成分を抽出
-          # 例: "center|bottom" → "bottom", "bottom" → "bottom", ["center", "bottom"] → "bottom"
-          gravity = @component['gravity'] || 'left|top'
+          # 子要素のalign属性も考慮する
+          children = @component['child'] || []
           
-          # gravityから垂直成分を取得
+          # 子要素にalignTop/Bottom/centerVertical/centerInParentがあるかチェック
+          has_align_top = children.any? { |c| c['alignTop'] }
+          has_align_bottom = children.any? { |c| c['alignBottom'] }
+          has_center_vertical = children.any? { |c| c['centerVertical'] || c['centerInParent'] }
+          
+          # 優先順位: 個別の子要素のalign > gravity
+          if has_center_vertical
+            return '.center'
+          elsif has_align_bottom
+            return '.bottom'
+          elsif has_align_top
+            return '.top'
+          end
+          
+          # gravityから垂直成分を取得（既存のロジック）
+          gravity = @component['gravity'] || 'left|top'
           vertical = 'top'  # デフォルト
           
           if gravity.is_a?(Array)
@@ -546,11 +732,25 @@ module SjuiTools
         
         def get_vstack_alignment
           # VStackの水平方向のアライメント
-          # SwiftJsonUIのgravityから水平成分を抽出
-          # 例: "right|center" → "right", "right" → "right", ["right", "center"] → "right"
-          gravity = @component['gravity'] || 'left|top'
+          # 子要素のalign属性も考慮する
+          children = @component['child'] || []
           
-          # gravityから水平成分を取得
+          # 子要素にalignLeft/Right/centerHorizontal/centerInParentがあるかチェック
+          has_align_left = children.any? { |c| c['alignLeft'] }
+          has_align_right = children.any? { |c| c['alignRight'] }
+          has_center_horizontal = children.any? { |c| c['centerHorizontal'] || c['centerInParent'] }
+          
+          # 優先順位: 個別の子要素のalign > gravity
+          if has_center_horizontal
+            return '.center'
+          elsif has_align_right
+            return '.trailing'
+          elsif has_align_left
+            return '.leading'
+          end
+          
+          # gravityから水平成分を取得（既存のロジック）
+          gravity = @component['gravity'] || 'left|top'
           horizontal = 'left'  # デフォルト
           
           if gravity.is_a?(Array)
