@@ -31,6 +31,7 @@ module SjuiTools
           layouts_dir = @config['layouts_directory'] || 'Layouts'
           view_dir = @config['view_directory'] || 'View'
           viewmodel_dir = @config['viewmodel_directory'] || 'ViewModel'
+          data_dir = @config['data_directory'] || 'Data'
           
           # Create full paths with subdirectory support
           if subdirectory
@@ -38,17 +39,20 @@ module SjuiTools
             # Create folder for the view in View directory
             swift_path = File.join(source_path, view_dir, subdirectory, view_class_name)
             viewmodel_path = File.join(source_path, viewmodel_dir, subdirectory)
+            data_path = File.join(source_path, data_dir, subdirectory)
           else
             json_path = File.join(source_path, layouts_dir)
             # Create folder for the view in View directory
             swift_path = File.join(source_path, view_dir, view_class_name)
             viewmodel_path = File.join(source_path, viewmodel_dir)
+            data_path = File.join(source_path, data_dir)
           end
           
           # Create directories if they don't exist
           FileUtils.mkdir_p(json_path)
           FileUtils.mkdir_p(swift_path)
           FileUtils.mkdir_p(viewmodel_path)
+          FileUtils.mkdir_p(data_path)
           
           # Create JSON file
           json_file = File.join(json_path, "#{json_file_name}.json")
@@ -61,6 +65,10 @@ module SjuiTools
           # Create Generated View file (for JSON generation)
           generated_swift_file = File.join(swift_path, "#{view_class_name}GeneratedView.swift")
           create_generated_view_template(generated_swift_file, view_class_name, json_file_name, subdirectory)
+          
+          # Create Data file
+          data_file = File.join(data_path, "#{view_class_name}Data.swift")
+          create_data_template(data_file, view_class_name)
           
           # Create ViewModel file
           viewmodel_file = File.join(viewmodel_path, "#{view_class_name}ViewModel.swift")
@@ -75,6 +83,7 @@ module SjuiTools
           Core::Logger.info "  JSON:          #{json_file}"
           Core::Logger.info "  Main View:     #{main_swift_file}"
           Core::Logger.info "  Generated View: #{generated_swift_file}"
+          Core::Logger.info "  Data:          #{data_file}"
           Core::Logger.info "  ViewModel:     #{viewmodel_file}"
           
           if @options[:root]
@@ -252,6 +261,24 @@ module SjuiTools
           Core::Logger.debug "Created Generated View template: #{file_path}"
         end
         
+        def create_data_template(file_path, view_name)
+          return if File.exist?(file_path)
+          
+          template = <<~SWIFT
+            import Foundation
+
+            struct #{view_name}Data {
+                // Data properties from JSON
+                var title: String = "#{view_name}"
+                
+                // Add more data properties as needed based on your JSON structure
+            }
+          SWIFT
+          
+          File.write(file_path, template)
+          Core::Logger.debug "Created Data template: #{file_path}"
+        end
+        
         def create_viewmodel_template(file_path, view_name, json_name, subdirectory)
           return if File.exist?(file_path)
           
@@ -267,8 +294,14 @@ module SjuiTools
                 // JSON file reference for hot reload
                 let jsonFileName = "#{json_reference}"
                 
-                // Data properties from JSON
-                @Published var title: String = "#{view_name}"
+                // Data model
+                @Published var data = #{view_name}Data()
+                
+                // Computed property for backward compatibility
+                var title: String {
+                    get { data.title }
+                    set { data.title = newValue }
+                }
                 
                 // Action handlers
                 func onAppear() {
