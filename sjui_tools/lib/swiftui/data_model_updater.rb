@@ -142,10 +142,16 @@ module SjuiTools
           # Add each property with correct type and default value
           data_properties.each do |prop|
             name = prop['name']
-            class_type = convert_to_swift_type(prop['class'])
-            default_value = format_default_value(prop['defaultValue'], prop['class'])
+            class_type = prop['class']  # Use class name directly
+            default_value = prop['defaultValue']
             
-            content += "    var #{name}: #{class_type} = #{default_value}\n"
+            # If no default value or nil, make it optional
+            if default_value.nil? || default_value == 'nil'
+              content += "    var #{name}: #{class_type}? = nil\n"
+            else
+              formatted_value = format_default_value(default_value, class_type)
+              content += "    var #{name}: #{class_type} = #{formatted_value}\n"
+            end
           end
         end
         
@@ -153,47 +159,13 @@ module SjuiTools
         content
       end
 
-      def convert_to_swift_type(json_class)
-        case json_class
-        when 'String'
-          'String'
-        when 'Int'
-          'Int'
-        when 'Double', 'Float'
-          'Double'
-        when 'Bool', 'Boolean'
-          'Bool'
-        when 'Array'
-          '[Any]'
-        when 'Dictionary'
-          '[String: Any]'
-        else
-          'Any'
-        end
-      end
-
       def format_default_value(value, json_class)
-        case json_class
-        when 'String'
-          if value.nil?
-            '""'
-          else
-            # Escape quotes and backslashes
-            escaped = value.to_s.gsub('\\', '\\\\').gsub('"', '\\"')
-            "\"#{escaped}\""
-          end
-        when 'Int'
-          value.nil? ? '0' : value.to_s
-        when 'Double', 'Float'
-          value.nil? ? '0.0' : value.to_s
-        when 'Bool', 'Boolean'
-          value.nil? ? 'false' : value.to_s.downcase
-        when 'Array'
-          '[]'
-        when 'Dictionary'
-          '[:]'
+        if json_class == 'String'
+          # For String class, add quotes
+          "\"#{value}\""
         else
-          'nil'
+          # For all other cases, use value as-is (it should be a Swift expression string)
+          value
         end
       end
 

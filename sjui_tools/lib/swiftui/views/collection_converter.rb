@@ -135,21 +135,40 @@ module SjuiTools
         def generate_collection_content(cell_class_name, id)
           if cell_class_name
             # Generate ForEach with the cell view
-            # The data comes from viewModel.data.collectionDataSource
             
-            # Extract the original class name from the cell classes
-            cell_class_info = @component['cellClasses']&.first
-            original_class_name = if cell_class_info.is_a?(Hash)
-                                    cell_class_info['className']
-                                  elsif cell_class_info.is_a?(String)
-                                    cell_class_info
-                                  else
-                                    cell_class_name.sub('View', '')
-                                  end
+            # Check if items property is specified (e.g., "@{items}")
+            items_property = @component['items']
             
-            # Generate ForEach that iterates through the data
-            # Using enumerated to get both index and item
-            add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
+            if items_property && items_property.start_with?('@{') && items_property.end_with?('}')
+              # Extract property name from @{propertyName}
+              property_name = items_property[2...-1]
+              
+              # Extract the original class name for CollectionDataSource
+              cell_class_info = @component['cellClasses']&.first
+              original_class_name = if cell_class_info.is_a?(Hash)
+                                      cell_class_info['className']
+                                    elsif cell_class_info.is_a?(String)
+                                      cell_class_info
+                                    else
+                                      cell_class_name.sub('View', '')
+                                    end
+              
+              # Use the specified property with getCellData if it's a CollectionDataSource
+              add_line "ForEach(Array(viewModel.data.#{property_name}.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
+            else
+              # Default to collectionDataSource
+              # Extract the original class name from the cell classes
+              cell_class_info = @component['cellClasses']&.first
+              original_class_name = if cell_class_info.is_a?(Hash)
+                                      cell_class_info['className']
+                                    elsif cell_class_info.is_a?(String)
+                                      cell_class_info
+                                    else
+                                      cell_class_name.sub('View', '')
+                                    end
+              
+              add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
+            end
             indent do
               # Create cell view with data initializer
               add_line "#{cell_class_name}(data: item)"

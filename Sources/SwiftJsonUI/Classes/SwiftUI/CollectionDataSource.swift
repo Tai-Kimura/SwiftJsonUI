@@ -1,18 +1,18 @@
 import SwiftUI
 
 /// Collection data source configuration for SwiftJsonUI
-public struct CollectionDataSource {
+public class CollectionDataSource {
     /// Header classes mapped to their data arrays
     /// Key: class name, Value: array of data (can be model classes, dictionaries, etc.)
-    public let headerClasses: [String: [Any]]
+    public var headerClasses: [String: [Any]]
     
     /// Footer classes mapped to their data arrays
     /// Key: class name, Value: array of data (can be model classes, dictionaries, etc.)
-    public let footerClasses: [String: [Any]]
+    public var footerClasses: [String: [Any]]
     
     /// Cell classes mapped to their data arrays
     /// Key: class name, Value: array of data (can be model classes, dictionaries, etc.)
-    public let cellClasses: [String: [Any]]
+    public var cellClasses: [String: [Any]]
     
     public init(
         headerClasses: [String: [Any]] = [:],
@@ -22,6 +22,21 @@ public struct CollectionDataSource {
         self.headerClasses = headerClasses
         self.footerClasses = footerClasses
         self.cellClasses = cellClasses
+    }
+    
+    /// Set cell data for a specific class name
+    public func setCellData(for className: String, data: [Any]) {
+        cellClasses[className] = data
+    }
+    
+    /// Set header data for a specific class name
+    public func setHeaderData(for className: String, data: [Any]) {
+        headerClasses[className] = data
+    }
+    
+    /// Set footer data for a specific class name
+    public func setFooterData(for className: String, data: [Any]) {
+        footerClasses[className] = data
     }
     
     /// Get cell data for a specific class name with type casting
