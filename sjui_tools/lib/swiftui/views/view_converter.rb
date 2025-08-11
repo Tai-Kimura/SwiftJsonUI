@@ -170,45 +170,112 @@ module SjuiTools
         private
         
         def generate_relative_positioning_zstack(children)
-          # 簡略化した相対配置の実装
-          # 各ビューの位置を事前に計算
-          positions = calculate_relative_positions(children)
-          
+          # RelativePositionContainerを使用した実装
           alignment = get_zstack_alignment
-          add_line "ZStack(alignment: #{alignment}) {"
           
+          add_line "RelativePositionContainer("
           indent do
-            children.each_with_index do |child, index|
-              if @converter_factory
-                add_line "Group {"
-                indent do
-                  # 各子ビューを生成
-                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
-                  child_code = child_converter.convert
-                  child_lines = child_code.split("\n")
-                  child_lines.each { |line| @generated_code << line }
-                  
-                  # Propagate state variables
-                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                    @state_variables.concat(child_converter.state_variables)
-                  end
-                  
-                  # 相対配置のoffsetを適用
-                  if positions[index]
-                    offset = positions[index]
-                    if offset[:x] != 0 || offset[:y] != 0
-                      add_modifier_line ".offset(x: #{offset[:x]}, y: #{offset[:y]})"
+            add_line "children: ["
+            indent do
+              children.each_with_index do |child, index|
+                if @converter_factory
+                  # 子ビューの設定を生成
+                  add_line "RelativeChildConfig("
+                  indent do
+                    # ID
+                    if child['id']
+                      add_line "id: \"#{child['id']}\","
+                    else
+                      add_line "id: \"view_#{index}\","
+                    end
+                    
+                    # View
+                    add_line "view: AnyView("
+                    indent do
+                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                      child_code = child_converter.convert
+                      child_lines = child_code.split("\n")
+                      child_lines.each { |line| @generated_code << line }
+                      
+                      # Propagate state variables
+                      if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                        @state_variables.concat(child_converter.state_variables)
+                      end
+                    end
+                    add_line "),"
+                    
+                    # Constraints
+                    constraints = []
+                    
+                    # alignTopOfView, alignBottomOfView, etc.
+                    if child['alignTopOfView']
+                      constraints << ".init(type: .alignTop, targetId: \"#{child['alignTopOfView']}\")"
+                    end
+                    if child['alignBottomOfView']
+                      constraints << ".init(type: .alignBottom, targetId: \"#{child['alignBottomOfView']}\")"
+                    end
+                    if child['alignLeftOfView']
+                      constraints << ".init(type: .alignLeft, targetId: \"#{child['alignLeftOfView']}\")"
+                    end
+                    if child['alignRightOfView']
+                      constraints << ".init(type: .alignRight, targetId: \"#{child['alignRightOfView']}\")"
+                    end
+                    
+                    # alignTopView, alignBottomView, etc.
+                    if child['alignTopView']
+                      spacing = child['topMargin'] || 0
+                      constraints << ".init(type: .above, targetId: \"#{child['alignTopView']}\", spacing: #{spacing})"
+                    end
+                    if child['alignBottomView']
+                      spacing = child['topMargin'] || 0
+                      constraints << ".init(type: .below, targetId: \"#{child['alignBottomView']}\", spacing: #{spacing})"
+                    end
+                    if child['alignLeftView']
+                      spacing = child['leftMargin'] || 0
+                      constraints << ".init(type: .leftOf, targetId: \"#{child['alignLeftView']}\", spacing: #{spacing})"
+                    end
+                    if child['alignRightView']
+                      spacing = child['leftMargin'] || 0
+                      constraints << ".init(type: .rightOf, targetId: \"#{child['alignRightView']}\", spacing: #{spacing})"
+                    end
+                    
+                    if constraints.any?
+                      add_line "constraints: ["
+                      indent do
+                        constraints.each do |constraint|
+                          add_line "#{constraint},"
+                        end
+                      end
+                      add_line "],"
+                    else
+                      add_line "constraints: [],"
+                    end
+                    
+                    # Margins
+                    top_margin = child['topMargin'] || 0
+                    bottom_margin = child['bottomMargin'] || 0
+                    left_margin = child['leftMargin'] || 0
+                    right_margin = child['rightMargin'] || 0
+                    
+                    if top_margin > 0 || bottom_margin > 0 || left_margin > 0 || right_margin > 0
+                      add_line "margins: EdgeInsets(top: #{top_margin}, leading: #{left_margin}, bottom: #{bottom_margin}, trailing: #{right_margin})"
+                    else
+                      add_line "margins: .init()"
                     end
                   end
-                  
-                  # z-indexを適用
-                  add_modifier_line ".zIndex(#{index})"
+                  add_line index < children.length - 1 ? ")," : ")"
                 end
-                add_line "}"
               end
             end
+            add_line "],"
+            add_line "alignment: #{alignment},"
+            if @component['background']
+              add_line "backgroundColor: #{hex_to_swiftui_color(@component['background'])}"
+            else
+              add_line "backgroundColor: nil"
+            end
           end
-          add_line "}"
+          add_line ")"
         end
         
         def has_relative_constraint?(child)
