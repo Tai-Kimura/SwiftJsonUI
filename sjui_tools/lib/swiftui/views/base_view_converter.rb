@@ -18,6 +18,9 @@ module SjuiTools
           @action_manager = action_manager
           @generated_code = []
           @state_variables = []
+          
+          # includeとvariables処理
+          handle_include_and_variables
         end
 
         def convert
@@ -25,6 +28,21 @@ module SjuiTools
         end
 
         protected
+        
+        def handle_include_and_variables
+          # include処理（JSONの読み込みと変数置換）
+          if @component['include']
+            add_line "// include: #{@component['include']}"
+            if @component['variables']
+              add_line "// variables: #{@component['variables'].to_json}"
+            end
+            # 実際のinclude処理はビルド時のプリプロセッサで行う必要がある
+            # ここではコメントとして記録
+          elsif @component['variables']
+            # variablesのみの場合もコメントとして記録
+            add_line "// variables: #{@component['variables'].to_json}"
+          end
+        end
 
         def add_line(line)
           @generated_code << ("    " * @indent_level + line)
@@ -289,6 +307,29 @@ module SjuiTools
           # 表示/非表示
           if @component['hidden'] == true
             add_modifier_line ".hidden()"
+          end
+          
+          # safeAreaInsetPositions
+          if @component['safeAreaInsetPositions']
+            positions = @component['safeAreaInsetPositions']
+            if positions.is_a?(Array)
+              # 配列の場合、各エッジを処理
+              edges = []
+              edges << '.top' if positions.include?('top')
+              edges << '.bottom' if positions.include?('bottom')
+              edges << '.leading' if positions.include?('leading') || positions.include?('left')
+              edges << '.trailing' if positions.include?('trailing') || positions.include?('right')
+              
+              if edges.any?
+                add_modifier_line ".ignoresSafeArea(.all, edges: [#{edges.join(', ')}])"
+              end
+            elsif positions == 'all'
+              add_modifier_line ".ignoresSafeArea()"
+            elsif positions == 'none'
+              # デフォルトでセーフエリアを尊重
+            else
+              add_line "// safeAreaInsetPositions: #{positions}"
+            end
           end
           
           # disabled状態の処理
