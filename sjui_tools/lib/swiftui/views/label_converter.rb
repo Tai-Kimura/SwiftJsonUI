@@ -7,31 +7,20 @@ module SjuiTools
     module Views
       class LabelConverter < BaseViewConverter
         def convert
-          text = @component['text'] || ""
+          # Get text handler for this component
+          label_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::LabelBindingHandler) ? 
+                          @binding_handler : 
+                          SjuiTools::SwiftUI::Binding::LabelBindingHandler.new
           
-          # @{...}形式のテンプレート処理
-          if text.start_with?('@{') && text.end_with?('}')
-            # @{...}の中身を取り出す
-            template_content = text[2...-1]
-            
-            # 文字列補間形式を含む場合
-            if template_content.include?('\\(')
-              # SwiftUIの文字列補間形式として処理
-              # viewModel.プレフィックスを追加して変数を置換
-              interpolated = template_content.gsub(/\\?\((\w+)\)/) do |match|
-                "\\(viewModel.#{$1})"
-              end
-              # 改行文字をエスケープ
-              escaped_interpolated = interpolated.gsub("\n", "\\n")
-              add_line "Text(\"#{escaped_interpolated}\")"
-            else
-              # 単純な変数参照
-              add_line "Text(viewModel.#{to_camel_case(template_content)})"
-            end
+          # Get text content with binding support
+          text_content = label_handler.get_text_content(@component)
+          
+          # Handle string interpolation if text content is a binding
+          if text_content.start_with?('$viewModel')
+            add_line "Text(#{text_content})"
           else
-            # 通常のテキスト - 改行文字をエスケープ
-            escaped_text = text.gsub("\n", "\\n")
-            add_line "Text(\"#{escaped_text}\")"
+            # Regular text or quoted binding result
+            add_line "Text(#{text_content})"
           end
           
           # SwiftJsonUIの属性に基づいたモディファイア
@@ -225,6 +214,9 @@ module SjuiTools
             # 既存のモディファイアは引き続き適用可能
             return # 残りの処理をスキップして、通常のText処理を避ける
           end
+          
+          # Apply binding-specific modifiers
+          apply_binding_modifiers
           
           # 共通のモディファイアを適用
           apply_modifiers

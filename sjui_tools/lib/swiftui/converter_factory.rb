@@ -28,8 +28,9 @@ require_relative 'view_registry'
 module SjuiTools
   module SwiftUI
     class ConverterFactory
-      def initialize
+      def initialize(binding_registry = nil)
         @view_registry = ViewRegistry.new
+        @binding_registry = binding_registry
       end
       
       def create_converter(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
@@ -38,56 +39,56 @@ module SjuiTools
         
         case component_type
         when 'Label', 'Text'
-          Views::LabelConverter.new(component, indent_level, action_manager)
+          Views::LabelConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'IconLabel'
-          Views::IconLabelConverter.new(component, indent_level, action_manager)
+          Views::IconLabelConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Button'
-          Views::ButtonConverter.new(component, indent_level, action_manager)
+          Views::ButtonConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'View', 'SafeAreaView'
-          Views::ViewConverter.new(component, indent_level, action_manager, self, registry)
+          Views::ViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'GradientView'
-          Views::GradientViewConverter.new(component, indent_level, action_manager, self, registry)
+          Views::GradientViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'Blur'
-          Views::BlurConverter.new(component, indent_level, action_manager, self, registry)
+          Views::BlurConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'TextField'
-          Views::TextFieldConverter.new(component, indent_level, action_manager)
+          Views::TextFieldConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Image', 'CircleImage'
-          Views::ImageConverter.new(component, indent_level, action_manager)
+          Views::ImageConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'NetworkImage'
-          Views::NetworkImageConverter.new(component, indent_level, action_manager)
+          Views::NetworkImageConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Scroll', 'ScrollView'
-          Views::ScrollViewConverter.new(component, indent_level, action_manager, self, registry)
+          Views::ScrollViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'TextView'
-          Views::TextViewConverter.new(component, indent_level, action_manager)
+          Views::TextViewConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Switch', 'Toggle'
-          Views::ToggleConverter.new(component, indent_level, action_manager)
+          Views::ToggleConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Check', 'Checkbox'
-          Views::ToggleConverter.new(component, indent_level, action_manager)
+          Views::ToggleConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Radio'
-          Views::RadioConverter.new(component, indent_level, action_manager)
+          Views::RadioConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Segment'
-          Views::SegmentConverter.new(component, indent_level, action_manager)
+          Views::SegmentConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Progress'
-          Views::ProgressConverter.new(component, indent_level, action_manager)
+          Views::ProgressConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Slider'
-          Views::SliderConverter.new(component, indent_level, action_manager)
+          Views::SliderConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Indicator'
-          Views::IndicatorConverter.new(component, indent_level, action_manager)
+          Views::IndicatorConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Table'
-          Views::TableConverter.new(component, indent_level, action_manager)
+          Views::TableConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Collection'
-          Views::CollectionConverter.new(component, indent_level, action_manager)
+          Views::CollectionConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'SelectBox'
-          Views::SelectBoxConverter.new(component, indent_level, action_manager)
+          Views::SelectBoxConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Web'
-          Views::WebConverter.new(component, indent_level, action_manager)
+          Views::WebConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'DynamicComponent'
-          Views::DynamicComponentConverter.new(component, indent_level, action_manager)
+          Views::DynamicComponentConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Include'
-          Views::IncludeConverter.new(component, indent_level, action_manager)
+          Views::IncludeConverter.new(component, indent_level, action_manager, @binding_registry)
         else
           # デフォルトコンバーター
-          DefaultConverter.new(component, indent_level, action_manager)
+          DefaultConverter.new(component, indent_level, action_manager, @binding_registry)
         end
       end
     end

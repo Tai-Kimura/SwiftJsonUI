@@ -2,6 +2,7 @@
 
 require_relative 'template_helper'
 require_relative 'alignment_helper'
+require_relative '../binding/binding_handler_registry'
 
 module SjuiTools
   module SwiftUI
@@ -12,12 +13,14 @@ module SjuiTools
         
         attr_reader :state_variables
         
-        def initialize(component, indent_level = 0, action_manager = nil)
+        def initialize(component, indent_level = 0, action_manager = nil, binding_registry = nil)
           @component = component
           @indent_level = indent_level
           @action_manager = action_manager
           @generated_code = []
           @state_variables = []
+          @binding_registry = binding_registry || SjuiTools::SwiftUI::Binding::BindingHandlerRegistry.new
+          @binding_handler = @binding_registry.get_handler(@component['type'] || 'View')
           
           # includeとvariables処理
           handle_include_and_variables
@@ -28,6 +31,25 @@ module SjuiTools
         end
 
         protected
+        
+        # Get value with binding support
+        def get_binding_value(key, default = nil)
+          value = @component[key]
+          @binding_handler.get_value(value, default)
+        end
+        
+        # Check if a value is a binding expression
+        def is_binding?(value)
+          @binding_handler.is_binding?(value)
+        end
+        
+        # Apply binding modifiers
+        def apply_binding_modifiers
+          modifiers = @binding_handler.process_bindings(@component)
+          modifiers.each do |modifier|
+            add_modifier_line modifier if modifier
+          end
+        end
         
         def handle_include_and_variables
           # include処理（JSONの読み込みと変数置換）

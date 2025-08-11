@@ -266,10 +266,12 @@ module SjuiTools
           
           template = <<~SWIFT
             import Foundation
+            import SwiftUI
+            import SwiftJsonUI
 
-            class #{view_name}Data: ObservableObject {
+            struct #{view_name}Data {
                 // Data properties from JSON
-                @Published var title: String = "#{view_name}"
+                var title: String = "#{view_name}"
                 
                 // Add more data properties as needed based on your JSON structure
             }
@@ -294,14 +296,8 @@ module SjuiTools
                 // JSON file reference for hot reload
                 let jsonFileName = "#{json_reference}"
                 
-                // Data model (using let since we don't reassign the instance)
-                let data = #{view_name}Data()
-                
-                // Computed property for backward compatibility
-                var title: String {
-                    get { data.title }
-                    set { data.title = newValue }
-                }
+                // Data model
+                @Published var data = #{view_name}Data()
                 
                 // Action handlers
                 func onAppear() {

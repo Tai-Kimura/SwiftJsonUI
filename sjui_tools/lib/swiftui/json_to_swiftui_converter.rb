@@ -5,6 +5,7 @@ require 'fileutils'
 require_relative 'converter_factory'
 require_relative 'views/base_view_converter'
 require_relative 'action_manager'
+require_relative 'binding/binding_handler_registry'
 
 module SjuiTools
   module SwiftUI
@@ -12,7 +13,8 @@ module SjuiTools
       def initialize
         @indent_level = 0
         @generated_code = []
-        @converter_factory = ConverterFactory.new
+        @binding_registry = SjuiTools::SwiftUI::Binding::BindingHandlerRegistry.new
+        @converter_factory = ConverterFactory.new(@binding_registry)
         @action_manager = ActionManager.new
         @state_variables = []
       end

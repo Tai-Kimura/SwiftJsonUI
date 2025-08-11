@@ -7,8 +7,13 @@ module SjuiTools
     module Views
       class TextFieldConverter < BaseViewConverter
         def convert
+          # Get text field handler for this component
+          textfield_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::TextFieldBindingHandler) ?
+                             @binding_handler :
+                             SjuiTools::SwiftUI::Binding::TextFieldBindingHandler.new
+          
           # hint (SwiftJsonUIではplaceholderではなくhint)
-          hint = @component['hint'] || ""
+          hint = @component['hint'] || @component['placeholder'] || ""
           id = @component['id'] || "textField"
           
           # hintAttributes の処理
@@ -17,20 +22,25 @@ module SjuiTools
             add_line "// hintAttributes: #{@component['hintAttributes'].to_json}"
           end
           
-          # Create @State variable name
-          state_var = "#{id}Text"
+          # Get text binding
+          text_binding = if @component['text'] && is_binding?(@component['text'])
+                          textfield_handler.get_text_binding(@component)
+                        else
+                          # Create @State variable name
+                          state_var = "#{id}Text"
+                          # Add state variable to requirements
+                          add_state_variable(state_var, "String", '""')
+                          "$viewModel.#{state_var}"
+                        end
           
-          # Add state variable to requirements
-          add_state_variable(state_var, "String", '""')
-          
-          # secureプロパティのチェック（パスワードフィールド）
-          is_secure = @component['secure'] == true
+          # Check if it should be a SecureField
+          is_secure = textfield_handler.is_secure_field?(@component)
           
           # TextField or SecureField
           if is_secure
-            add_line "SecureField(\"#{hint}\", text: $viewModel.#{state_var})"
+            add_line "SecureField(\"#{hint}\", text: #{text_binding})"
           else
-            add_line "TextField(\"#{hint}\", text: $viewModel.#{state_var})"
+            add_line "TextField(\"#{hint}\", text: #{text_binding})"
           end
           
           # fontSize
@@ -112,6 +122,9 @@ module SjuiTools
           end
           
           # 共通のモディファイアを適用
+          # Apply binding-specific modifiers
+          apply_binding_modifiers
+          
           apply_modifiers
           
           generated_code
