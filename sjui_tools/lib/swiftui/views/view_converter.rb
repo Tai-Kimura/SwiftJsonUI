@@ -306,36 +306,36 @@ module SjuiTools
                       # The container's alignment will handle this
                     end
                     
-                    # alignTopOfView, alignBottomOfView, etc.
+                    # alignTopOfView, alignBottomOfView, etc. (position outside the view)
                     if child['alignTopOfView']
-                      constraints << "RelativePositionConstraint(type: .alignTop, targetId: \"#{child['alignTopOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .above, targetId: \"#{child['alignTopOfView']}\")"
                     end
                     if child['alignBottomOfView']
-                      constraints << "RelativePositionConstraint(type: .alignBottom, targetId: \"#{child['alignBottomOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .below, targetId: \"#{child['alignBottomOfView']}\")"
                     end
                     if child['alignLeftOfView']
-                      constraints << "RelativePositionConstraint(type: .alignLeft, targetId: \"#{child['alignLeftOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .leftOf, targetId: \"#{child['alignLeftOfView']}\")"
                     end
                     if child['alignRightOfView']
-                      constraints << "RelativePositionConstraint(type: .alignRight, targetId: \"#{child['alignRightOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .rightOf, targetId: \"#{child['alignRightOfView']}\")"
                     end
                     
-                    # alignTopView, alignBottomView, etc.
+                    # alignTopView, alignBottomView, etc. (align edges)
                     if child['alignTopView']
                       spacing = child['topMargin'] || 0
-                      constraints << "RelativePositionConstraint(type: .above, targetId: \"#{child['alignTopView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .alignTop, targetId: \"#{child['alignTopView']}\", spacing: #{spacing})"
                     end
                     if child['alignBottomView']
                       spacing = child['topMargin'] || 0
-                      constraints << "RelativePositionConstraint(type: .below, targetId: \"#{child['alignBottomView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .alignBottom, targetId: \"#{child['alignBottomView']}\", spacing: #{spacing})"
                     end
                     if child['alignLeftView']
                       spacing = child['leftMargin'] || 0
-                      constraints << "RelativePositionConstraint(type: .leftOf, targetId: \"#{child['alignLeftView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .alignLeft, targetId: \"#{child['alignLeftView']}\", spacing: #{spacing})"
                     end
                     if child['alignRightView']
                       spacing = child['leftMargin'] || 0
-                      constraints << "RelativePositionConstraint(type: .rightOf, targetId: \"#{child['alignRightView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .alignRight, targetId: \"#{child['alignRightView']}\", spacing: #{spacing})"
                     end
                     
                     if constraints.any?

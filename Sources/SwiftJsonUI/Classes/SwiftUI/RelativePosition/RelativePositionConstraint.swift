@@ -3,14 +3,14 @@ import SwiftUI
 /// Represents a relative positioning constraint between views
 public struct RelativePositionConstraint: Codable {
     public enum ConstraintType: String, Codable {
-        case alignTop = "alignTopOfView"
-        case alignBottom = "alignBottomOfView"
-        case alignLeft = "alignLeftOfView"
-        case alignRight = "alignRightOfView"
-        case above = "alignTopView"
-        case below = "alignBottomView"
-        case leftOf = "alignLeftView"
-        case rightOf = "alignRightView"
+        case alignTop = "alignTopView"
+        case alignBottom = "alignBottomView"
+        case alignLeft = "alignLeftView"
+        case alignRight = "alignRightView"
+        case above = "alignTopOfView"
+        case below = "alignBottomOfView"
+        case leftOf = "alignLeftOfView"
+        case rightOf = "alignRightOfView"
     }
     
     public let type: ConstraintType
