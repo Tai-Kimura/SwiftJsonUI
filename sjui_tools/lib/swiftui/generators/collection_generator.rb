@@ -15,8 +15,8 @@ module SjuiTools
           @snake_name = to_snake_case(name)
           @pascal_name = to_pascal_case(name)
           @config = Core::ConfigManager.load_config
-          @project_root = Dir.pwd
-          @src_root = Dir.pwd
+          @project_root = Core::ProjectFinder.project_dir || Dir.pwd
+          @src_root = Core::ProjectFinder.get_full_source_path
         end
 
         def generate
