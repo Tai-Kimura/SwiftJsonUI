@@ -120,51 +120,100 @@ module SjuiTools
             
             # 相対配置の場合は子要素の処理をスキップ
             if !@needs_relative_positioning || orientation
-              indent do
-                children.each_with_index do |child, index|
-                  if @converter_factory
-                    # ZStackの場合、位置関係の処理
-                    if !orientation
-                      # 通常のZStackでの子要素をグループ化
-                      add_line "Group {"
+              # 重みの合計と各子要素の重みを計算
+              total_weight = 0.0
+              weights = []
+              children.each do |child|
+                weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
+                weights << weight
+                total_weight += weight if weight > 0
+              end
+              
+              # 重みがある子要素の存在をチェック
+              has_weights = total_weight > 0
+              
+              # GeometryReaderを使って重み配分を実装（必要な場合）
+              if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
+                add_line "GeometryReader { geometry in"
+                indent do
+                  # スタックを開始
+                  if orientation == 'horizontal'
+                    alignment = get_hstack_alignment
+                    add_line "HStack(alignment: #{alignment}, spacing: 0) {"
+                  elsif orientation == 'vertical'
+                    alignment = get_vstack_alignment
+                    add_line "VStack(alignment: #{alignment}, spacing: 0) {"
+                  end
+                  
+                  indent do
+                    children.each_with_index do |child, index|
+                      weight = weights[index]
+                      
+                      if @converter_factory
+                        child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                        child_code = child_converter.convert
+                        child_lines = child_code.split("\n")
+                        child_lines.each { |line| @generated_code << line }
+                        
+                        # Propagate state variables
+                        if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                          @state_variables.concat(child_converter.state_variables)
+                        end
+                        
+                        # 重みに基づいてframeを設定
+                        if weight > 0
+                          if orientation == 'horizontal'
+                            width_ratio = weight / total_weight
+                            add_modifier_line ".frame(width: geometry.size.width * #{width_ratio.round(4)})"
+                          elsif orientation == 'vertical'
+                            height_ratio = weight / total_weight
+                            add_modifier_line ".frame(height: geometry.size.height * #{height_ratio.round(4)})"
+                          end
+                        end
+                      end
                     end
+                  end
                   
-                  # weightプロパティの処理（weightまたはwidthWeightをサポート）
-                  weight_value = child['weight'] || child['widthWeight']
-                  has_weight = weight_value && weight_value.to_f > 0
-                  
-                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
-                  child_code = child_converter.convert
-                  child_lines = child_code.split("\n")
-                  
-                  # Indent child code if inside Group (ZStack)
-                  if !orientation
-                    indent do
+                  add_line "}"
+                end
+                add_line "}"
+              else
+                # 重みがない場合は通常の処理
+                indent do
+                  children.each_with_index do |child, index|
+                    if @converter_factory
+                      # ZStackの場合、位置関係の処理
+                      if !orientation
+                        # 通常のZStackでの子要素をグループ化
+                        add_line "Group {"
+                      end
+                    
+                    child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                    child_code = child_converter.convert
+                    child_lines = child_code.split("\n")
+                    
+                    # Indent child code if inside Group (ZStack)
+                    if !orientation
+                      indent do
+                        child_lines.each { |line| @generated_code << line }
+                      end
+                    else
                       child_lines.each { |line| @generated_code << line }
                     end
-                  else
-                    child_lines.each { |line| @generated_code << line }
-                  end
-                  
-                  # Propagate state variables
-                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                    @state_variables.concat(child_converter.state_variables)
-                  end
-                  
-                  # weightがある場合、frameを追加
-                  if has_weight && orientation == 'horizontal'
-                    add_modifier_line ".frame(maxWidth: .infinity)"
-                  elsif has_weight && orientation == 'vertical'
-                    add_modifier_line ".frame(maxHeight: .infinity)"
-                  end
-                  
-                  # ZStackの場合、位置調整を適用
-                  if !orientation
-                    indent do
-                      apply_zstack_positioning(child, index)
+                    
+                    # Propagate state variables
+                    if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                      @state_variables.concat(child_converter.state_variables)
                     end
-                    add_line "}"  # Group終了
-                  end
+                    
+                    # ZStackの場合、位置調整を適用
+                    if !orientation
+                      indent do
+                        apply_zstack_positioning(child, index)
+                      end
+                      add_line "}"  # Group終了
+                    end
+                    end
                   end
                 end
               end
@@ -222,7 +271,21 @@ module SjuiTools
                     # View
                     add_line "view: AnyView("
                     indent do
-                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                      # Create a copy to avoid modifying the original
+                      child_copy = child.dup
+                      # Remove properties that are handled by RelativePositionContainer
+                      child_copy.delete('alignTopOfView')
+                      child_copy.delete('alignBottomOfView')
+                      child_copy.delete('alignLeftOfView')
+                      child_copy.delete('alignRightOfView')
+                      child_copy.delete('alignTopView')
+                      child_copy.delete('alignBottomView')
+                      child_copy.delete('alignLeftView')
+                      child_copy.delete('alignRightView')
+                      # Keep margins since they may be used for additional offset
+                      # But don't delete centerInParent, centerHorizontal, centerVertical as they might affect internal layout
+                      
+                      child_converter = @converter_factory.create_converter(child_copy, @indent_level, @action_manager, @converter_factory, @view_registry)
                       child_code = child_converter.convert
                       child_lines = child_code.split("\n")
                       child_lines.each { |line| @generated_code << line }
@@ -237,36 +300,42 @@ module SjuiTools
                     # Constraints
                     constraints = []
                     
+                    # Check for centerInParent first - this should position the view in the center
+                    if child['centerInParent']
+                      # For center positioning, we don't need constraints, just use the alignment
+                      # The container's alignment will handle this
+                    end
+                    
                     # alignTopOfView, alignBottomOfView, etc.
                     if child['alignTopOfView']
-                      constraints << ".init(type: .alignTop, targetId: \"#{child['alignTopOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .alignTop, targetId: \"#{child['alignTopOfView']}\")"
                     end
                     if child['alignBottomOfView']
-                      constraints << ".init(type: .alignBottom, targetId: \"#{child['alignBottomOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .alignBottom, targetId: \"#{child['alignBottomOfView']}\")"
                     end
                     if child['alignLeftOfView']
-                      constraints << ".init(type: .alignLeft, targetId: \"#{child['alignLeftOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .alignLeft, targetId: \"#{child['alignLeftOfView']}\")"
                     end
                     if child['alignRightOfView']
-                      constraints << ".init(type: .alignRight, targetId: \"#{child['alignRightOfView']}\")"
+                      constraints << "RelativePositionConstraint(type: .alignRight, targetId: \"#{child['alignRightOfView']}\")"
                     end
                     
                     # alignTopView, alignBottomView, etc.
                     if child['alignTopView']
                       spacing = child['topMargin'] || 0
-                      constraints << ".init(type: .above, targetId: \"#{child['alignTopView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .above, targetId: \"#{child['alignTopView']}\", spacing: #{spacing})"
                     end
                     if child['alignBottomView']
                       spacing = child['topMargin'] || 0
-                      constraints << ".init(type: .below, targetId: \"#{child['alignBottomView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .below, targetId: \"#{child['alignBottomView']}\", spacing: #{spacing})"
                     end
                     if child['alignLeftView']
                       spacing = child['leftMargin'] || 0
-                      constraints << ".init(type: .leftOf, targetId: \"#{child['alignLeftView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .leftOf, targetId: \"#{child['alignLeftView']}\", spacing: #{spacing})"
                     end
                     if child['alignRightView']
                       spacing = child['leftMargin'] || 0
-                      constraints << ".init(type: .rightOf, targetId: \"#{child['alignRightView']}\", spacing: #{spacing})"
+                      constraints << "RelativePositionConstraint(type: .rightOf, targetId: \"#{child['alignRightView']}\", spacing: #{spacing})"
                     end
                     
                     if constraints.any?
