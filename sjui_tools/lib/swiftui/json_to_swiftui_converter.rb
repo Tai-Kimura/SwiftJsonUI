@@ -237,25 +237,11 @@ module SjuiTools
       
       def generate_preference_key_definition
         <<~SWIFT
-        // PreferenceKey for relative positioning
-        struct ViewOffsetKey: PreferenceKey {
-            static var defaultValue: CGPoint = .zero
-            static func reduce(value: inout CGPoint, nextValue: () -> CGPoint) {
-                value = nextValue()
-            }
-        }
-        
-        // Helper for relative positioning
-        extension View {
-            func savePosition(id: String) -> some View {
-                self.background(
-                    GeometryReader { geometry in
-                        Color.clear.preference(
-                            key: ViewOffsetKey.self,
-                            value: geometry.frame(in: .named("ZStackCoordinateSpace")).origin
-                        )
-                    }
-                )
+        // PreferenceKey for collecting view frames
+        struct ViewFramePreferenceKey: PreferenceKey {
+            static var defaultValue: [String: CGRect] = [:]
+            static func reduce(value: inout [String: CGRect], nextValue: () -> [String: CGRect]) {
+                value.merge(nextValue()) { _, new in new }
             }
         }
         

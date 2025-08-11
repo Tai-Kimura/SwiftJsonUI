@@ -31,6 +31,10 @@ module SjuiTools
             end
           end
           
+          # 相対配置が必要かチェック
+          @needs_relative_positioning = has_relative_positioning?(children)
+          @has_view_ids = children.any? { |child| child.is_a?(Hash) && child['id'] }
+          
           if children.empty?
             # 子要素がない場合
             # backgroundが設定されている場合はRectangleを使用（dividerなど）
@@ -73,19 +77,27 @@ module SjuiTools
               add_line "VStack(alignment: #{alignment}, spacing: 0) {"
             else
               # orientationがない場合はZStack（重ね合わせ）
-              # SwiftJsonUIのデフォルトは左上なので、.topLeadingを使用
-              alignment = get_zstack_alignment
-              add_line "ZStack(alignment: #{alignment}) {"
+              # 相対配置が必要な場合は特別な処理
+              if @needs_relative_positioning
+                generate_relative_positioning_zstack(children)
+                # 相対配置の場合はここで処理完了
+              else
+                # 通常のZStack
+                alignment = get_zstack_alignment
+                add_line "ZStack(alignment: #{alignment}) {"
+              end
             end
             
-            indent do
-              children.each_with_index do |child, index|
-                if @converter_factory
-                  # ZStackの場合、位置関係の処理
-                  if !orientation
-                    # ZStackでの子要素をグループ化
-                    add_line "Group {"
-                  end
+            # 相対配置の場合は子要素の処理をスキップ
+            if !@needs_relative_positioning || orientation
+              indent do
+                children.each_with_index do |child, index|
+                  if @converter_factory
+                    # ZStackの場合、位置関係の処理
+                    if !orientation
+                      # 通常のZStackでの子要素をグループ化
+                      add_line "Group {"
+                    end
                   
                   # weightプロパティの処理（weightまたはwidthWeightをサポート）
                   weight_value = child['weight'] || child['widthWeight']
@@ -123,13 +135,18 @@ module SjuiTools
                     end
                     add_line "}"  # Group終了
                   end
+                  end
                 end
               end
+              
+              # 相対配置でない場合のみ閉じ括弧を追加
+              if !@needs_relative_positioning
+                add_line "}"
+              end
             end
-            add_line "}"
             
             # ZStackで相対配置が必要な場合はcoordinateSpaceを設定
-            if !orientation && has_relative_positioning?(children)
+            if !orientation && has_relative_positioning?(children) && !@needs_relative_positioning
               add_modifier_line ".coordinateSpace(name: \"ZStackCoordinateSpace\")"
             end
           end
@@ -151,6 +168,148 @@ module SjuiTools
         end
         
         private
+        
+        def generate_relative_positioning_zstack(children)
+          # 簡略化した相対配置の実装
+          # 各ビューの位置を事前に計算
+          positions = calculate_relative_positions(children)
+          
+          alignment = get_zstack_alignment
+          add_line "ZStack(alignment: #{alignment}) {"
+          
+          indent do
+            children.each_with_index do |child, index|
+              if @converter_factory
+                add_line "Group {"
+                indent do
+                  # 各子ビューを生成
+                  child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                  child_code = child_converter.convert
+                  child_lines = child_code.split("\n")
+                  child_lines.each { |line| @generated_code << line }
+                  
+                  # Propagate state variables
+                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                    @state_variables.concat(child_converter.state_variables)
+                  end
+                  
+                  # 相対配置のoffsetを適用
+                  if positions[index]
+                    offset = positions[index]
+                    if offset[:x] != 0 || offset[:y] != 0
+                      add_modifier_line ".offset(x: #{offset[:x]}, y: #{offset[:y]})"
+                    end
+                  end
+                  
+                  # z-indexを適用
+                  add_modifier_line ".zIndex(#{index})"
+                end
+                add_line "}"
+              end
+            end
+          end
+          add_line "}"
+        end
+        
+        def has_relative_constraint?(child)
+          child['alignTopOfView'] || child['alignBottomOfView'] || 
+          child['alignLeftOfView'] || child['alignRightOfView'] ||
+          child['alignTopView'] || child['alignBottomView'] ||
+          child['alignLeftView'] || child['alignRightView']
+        end
+        
+        def calculate_relative_positions(children)
+          positions = {}
+          view_bounds = {}
+          
+          # まず、各ビューの仮想的な位置とサイズを計算
+          children.each_with_index do |child, index|
+            next unless child.is_a?(Hash)
+            
+            # デフォルトの位置とサイズ
+            x = child['leftMargin'] || 0
+            y = child['topMargin'] || 0
+            width = child['width'] || 100
+            height = child['height'] || 100
+            
+            if child['id']
+              view_bounds[child['id']] = {
+                x: x,
+                y: y,
+                width: width,
+                height: height
+              }
+            end
+            
+            positions[index] = { x: x, y: y }
+          end
+          
+          # 相対配置の計算
+          children.each_with_index do |child, index|
+            next unless child.is_a?(Hash)
+            
+            offset_x = positions[index][:x]
+            offset_y = positions[index][:y]
+            
+            # alignRightOfView: 指定ビューの右端に配置
+            if child['alignRightOfView'] && view_bounds[child['alignRightOfView']]
+              target = view_bounds[child['alignRightOfView']]
+              offset_x = target[:x] + target[:width] + (child['leftMargin'] || 0)
+            end
+            
+            # alignLeftOfView: 指定ビューの左端に配置
+            if child['alignLeftOfView'] && view_bounds[child['alignLeftOfView']]
+              target = view_bounds[child['alignLeftOfView']]
+              offset_x = target[:x] - (child['width'] || 100) - (child['rightMargin'] || 0)
+            end
+            
+            # alignTopOfView: 指定ビューの上端に揃える
+            if child['alignTopOfView'] && view_bounds[child['alignTopOfView']]
+              target = view_bounds[child['alignTopOfView']]
+              offset_y = target[:y]
+            end
+            
+            # alignBottomOfView: 指定ビューの下端に揃える
+            if child['alignBottomOfView'] && view_bounds[child['alignBottomOfView']]
+              target = view_bounds[child['alignBottomOfView']]
+              offset_y = target[:y] + target[:height] - (child['height'] || 100)
+            end
+            
+            # alignBottomView: 指定ビューの下に配置
+            if child['alignBottomView'] && view_bounds[child['alignBottomView']]
+              target = view_bounds[child['alignBottomView']]
+              offset_y = target[:y] + target[:height] + (child['topMargin'] || 0)
+            end
+            
+            # alignTopView: 指定ビューの上に配置
+            if child['alignTopView'] && view_bounds[child['alignTopView']]
+              target = view_bounds[child['alignTopView']]
+              offset_y = target[:y] - (child['height'] || 100) - (child['bottomMargin'] || 0)
+            end
+            
+            # alignRightView: 指定ビューの右に配置
+            if child['alignRightView'] && view_bounds[child['alignRightView']]
+              target = view_bounds[child['alignRightView']]
+              offset_x = target[:x] + target[:width] + (child['leftMargin'] || 0)
+            end
+            
+            # alignLeftView: 指定ビューの左に配置
+            if child['alignLeftView'] && view_bounds[child['alignLeftView']]
+              target = view_bounds[child['alignLeftView']]
+              offset_x = target[:x] - (child['width'] || 100) - (child['rightMargin'] || 0)
+            end
+            
+            positions[index] = { x: offset_x, y: offset_y }
+            
+            # 更新した位置をview_boundsにも反映
+            if child['id']
+              view_bounds[child['id']][:x] = offset_x
+              view_bounds[child['id']][:y] = offset_y
+            end
+          end
+          
+          positions
+        end
         
         def has_relative_positioning?(children)
           children.any? do |child|
