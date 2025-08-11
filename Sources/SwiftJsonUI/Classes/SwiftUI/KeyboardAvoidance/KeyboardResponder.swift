@@ -84,7 +84,20 @@ public class KeyboardResponder: ObservableObject {
             return nil
         }
         
-        let keyboardHeight = UIScreen.main.bounds.height - keyboardFrame.origin.y
+        // Get the actual keyboard height relative to screen bottom
+        let screenHeight = UIScreen.main.bounds.height
+        let keyboardTop = keyboardFrame.origin.y
+        
+        // Calculate keyboard height only if it's visible (not below screen)
+        let keyboardHeight: CGFloat
+        if keyboardTop < screenHeight {
+            // For iPhone with home indicator, the keyboard frame already includes the safe area
+            // We should NOT subtract it again
+            keyboardHeight = screenHeight - keyboardTop
+        } else {
+            keyboardHeight = 0
+        }
+        
         return (height: max(0, keyboardHeight), frame: keyboardFrame, duration: duration)
     }
 }

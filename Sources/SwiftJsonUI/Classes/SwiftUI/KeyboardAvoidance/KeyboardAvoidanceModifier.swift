@@ -29,6 +29,7 @@ public struct KeyboardAvoidanceConfiguration {
 /// ViewModifier that adds keyboard avoidance behavior to ScrollView
 public struct KeyboardAvoidanceModifier: ViewModifier {
     @StateObject private var keyboardResponder = KeyboardResponder.shared
+    @State private var additionalBottomPadding: CGFloat = 0
     private let configuration: KeyboardAvoidanceConfiguration
     
     public init(configuration: KeyboardAvoidanceConfiguration = .default) {
@@ -37,13 +38,30 @@ public struct KeyboardAvoidanceModifier: ViewModifier {
     
     public func body(content: Content) -> some View {
         content
-            .padding(.bottom, configuration.isEnabled ? calculateBottomPadding() : 0)
-            .animation(.easeOut(duration: keyboardResponder.animationDuration), value: keyboardResponder.currentHeight)
+            .onReceive(keyboardResponder.$currentHeight) { keyboardHeight in
+                withAnimation(.easeOut(duration: keyboardResponder.animationDuration)) {
+                    updatePadding(keyboardHeight: keyboardHeight)
+                }
+            }
+            .safeAreaInset(edge: .bottom) {
+                // Use a transparent spacer for the keyboard
+                Color.clear
+                    .frame(height: additionalBottomPadding)
+            }
     }
     
-    private func calculateBottomPadding() -> CGFloat {
-        guard keyboardResponder.isKeyboardVisible else { return 0 }
-        return keyboardResponder.currentHeight + configuration.additionalPadding
+    private func updatePadding(keyboardHeight: CGFloat) {
+        guard configuration.isEnabled else {
+            additionalBottomPadding = 0
+            return
+        }
+        
+        if keyboardHeight > 0 {
+            // Add padding for keyboard plus additional padding
+            additionalBottomPadding = keyboardHeight + configuration.additionalPadding
+        } else {
+            additionalBottomPadding = 0
+        }
     }
 }
 
