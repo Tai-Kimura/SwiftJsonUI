@@ -162,7 +162,9 @@ module SjuiTools
                 add_modifier_line ".frame(maxWidth: #{width_param})"
                 add_modifier_line ".frame(height: #{height_param})"
               elsif height_value == '.infinity'
-                add_modifier_line ".frame(width: #{width_param}, maxHeight: #{height_param})"
+                # Split into two frame calls for fixed width with maxHeight
+                add_modifier_line ".frame(width: #{width_param})"
+                add_modifier_line ".frame(maxHeight: #{height_param})"
               else
                 add_modifier_line ".frame(width: #{width_param}, height: #{height_param})"
               end

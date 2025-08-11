@@ -44,7 +44,9 @@ module SjuiTools
             # Extract all binding expressions
             interpolated = text_value.gsub(/@\{([^}]+)\}/) do |match|
               property_name = $1
-              "\\($viewModel.data.#{property_name})"
+              # Check if property contains Date, Bool, or other non-string types
+              # For now, wrap all bindings with String(describing:) to avoid warnings
+              "\\(String(describing: $viewModel.data.#{property_name}))"
             end
             "\"#{interpolated.gsub("\n", "\\n")}\""
           else
