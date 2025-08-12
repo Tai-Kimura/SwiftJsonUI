@@ -6,7 +6,7 @@ require_relative 'frame_helper'
 require_relative 'color_helper'
 require_relative 'spacing_helper'
 require_relative 'modifier_helper'
-require_relative '../uikit/binding_handler_registry'
+require_relative '../binding/binding_handler_registry'
 
 module SjuiTools
   module SwiftUI
@@ -27,7 +27,7 @@ module SjuiTools
           @action_manager = action_manager
           @generated_code = []
           @state_variables = []
-          @binding_registry = binding_registry || SjuiTools::SwiftUI::UIKit::BindingHandlerRegistry.new
+          @binding_registry = binding_registry || SjuiTools::SwiftUI::Binding::BindingHandlerRegistry.new
           @binding_handler = @binding_registry.get_handler(@component['type'] || 'View')
           
           # includeとvariables処理
