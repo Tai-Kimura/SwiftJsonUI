@@ -2,6 +2,8 @@
 
 require "json"
 require "time"
+require "fileutils"
+require_relative '../core/logger'
 
 module SjuiTools
   module UIKit
@@ -47,7 +49,7 @@ module SjuiTools
         file_name = File.basename(file_path, ".*")
         stat = File::Stat.new(file_path)
         
-        puts "file updated: #{stat.mtime}"
+        Core::Logger.debug "file updated: #{stat.mtime}"
         
         # ファイル自体の更新時刻をチェック
         return true if stat.mtime > last_updated

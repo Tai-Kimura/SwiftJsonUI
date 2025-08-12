@@ -24,7 +24,7 @@ module SjuiTools
           
           # Load config to determine mode
           config = Core::ConfigManager.load_config
-          mode = config['mode'] || 'binding'
+          mode = config['mode'] || 'uikit'
           
           puts "Setting up SwiftJsonUI project in #{mode} mode..."
           

@@ -14,6 +14,7 @@ require_relative "json_analyzer"
 require_relative "ui_control_event_manager"
 require_relative "../core/project_finder"
 require_relative "../core/config_manager"
+require_relative "../core/logger"
 
 module SjuiTools
   module UIKit
@@ -61,12 +62,12 @@ module SjuiTools
         # 全ファイルのincluding_filesを集約するためのハッシュ
         all_including_files = {}
         
-        puts @layout_path
+        Core::Logger.debug "Layout path: #{@layout_path}"
         
         # ディレクトリが存在しない場合は警告を表示して終了
         unless Dir.exist?(@layout_path)
-          puts "Warning: Layouts directory not found: #{@layout_path}"
-          puts "Please run 'sjui init' first to create the directory structure."
+          Core::Logger.error "Layouts directory not found: #{@layout_path}"
+          Core::Logger.error "Please run 'sjui init' first to create the directory structure."
           return
         end
         
@@ -76,11 +77,11 @@ module SjuiTools
           
           # キャッシュチェック
           unless @cache_manager.needs_update?(file, last_updated, @layout_path, last_including_files)
-            puts "Skip: #{file} (not updated)"
+            Core::Logger.debug "Skip: #{file} (not updated)"
             next
           end
           
-          puts "Processing: #{file}"
+          Core::Logger.info "Processing: #{file}"
           json_updated_flag = true
           
           # インポートマネージャーとUIコントロールイベントマネージャーをリセット
@@ -122,8 +123,8 @@ module SjuiTools
               all_including_files[key].uniq!
             end
           rescue => e
-            puts "Error generating binding file for #{file_name}: #{e.message}"
-            puts e.backtrace.first(5).join("\n")
+            Core::Logger.error "Error generating binding file for #{file_name}: #{e.message}"
+            Core::Logger.debug e.backtrace.first(5).join("\n")
             # Restore backup if generation failed
             @binding_file_manager.restore_backup(binding_info[:backup_file_path], binding_info[:binding_file_path])
             # Continue with next file instead of stopping completely
@@ -132,14 +133,14 @@ module SjuiTools
         
         # XcodeProjectManagerが存在する場合は、新しいバインディングファイルを追加
         if @xcode_project_manager && @new_binding_files.size > 0
-          puts "Adding binding files to Xcode project..."
+          Core::Logger.info "Adding binding files to Xcode project..."
           @xcode_project_manager.add_binding_files(@new_binding_files, @project_dir)
         end
         
         # キャッシュの保存（集約された全ファイルのincluding_filesを保存）
         @cache_manager.save_cache(all_including_files) if json_updated_flag
         
-        puts "Build completed successfully!"
+        Core::Logger.success "Build completed successfully!"
       end
 
       private
@@ -338,7 +339,7 @@ module SjuiTools
         
         # Debug: Check if the content already has an initializer
         if full_content.include?("override init(viewHolder: BaseViewController)")
-          puts "WARNING: Found override init in generated content!"
+          Core::Logger.warn "Found override init in generated content!"
         end
         
         # ファイルに書き込み
@@ -347,7 +348,7 @@ module SjuiTools
         end
         
         @new_binding_files << binding_info[:binding_file_path]
-        puts "Generated: #{binding_info[:binding_file_name]}"
+        Core::Logger.success "Generated: #{binding_info[:binding_file_name]}"
       end
 
       def generate_class_header(binding_info)

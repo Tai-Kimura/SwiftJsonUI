@@ -3,6 +3,7 @@
 require 'optparse'
 require_relative '../../core/config_manager'
 require_relative '../../core/project_finder'
+require_relative '../../core/logger'
 
 module SjuiTools
   module CLI
@@ -47,11 +48,11 @@ module SjuiTools
         end
 
         def build_uikit
-          puts "Building UIKit files..."
+          Core::Logger.info "Building UIKit files..."
           
           # Setup project paths
           unless Core::ProjectFinder.setup_paths
-            puts "Error: Could not find project file (.xcodeproj or Package.swift)"
+            Core::Logger.error "Could not find project file (.xcodeproj or Package.swift)"
             exit 1
           end
           
@@ -92,11 +93,11 @@ module SjuiTools
         end
 
         def build_swiftui
-          puts "Building SwiftUI files..."
+          Core::Logger.info "Building SwiftUI files..."
           
           # Setup project paths
           unless Core::ProjectFinder.setup_paths
-            puts "Error: Could not find project file (.xcodeproj or Package.swift)"
+            Core::Logger.error "Could not find project file (.xcodeproj or Package.swift)"
             exit 1
           end
           
@@ -113,7 +114,7 @@ module SjuiTools
           json_files = Dir.glob(File.join(layouts_dir, '**/*.json'))
           
           if json_files.empty?
-            puts "No JSON files found in #{layouts_dir}"
+            Core::Logger.warn "No JSON files found in #{layouts_dir}"
             return
           end
           
@@ -141,7 +142,7 @@ module SjuiTools
             end
             
             if File.exist?(swift_file)
-              puts "Processing: #{relative_path}"
+              Core::Logger.info "Processing: #{relative_path}"
               
               # Convert JSON to SwiftUI code
               swiftui_code = converter.convert_json_to_view(json_file)
@@ -149,13 +150,13 @@ module SjuiTools
               # Update the existing Swift file's generatedBody
               updater.update_generated_body(swift_file, swiftui_code)
               
-              puts "  Updated: #{swift_file}"
+              Core::Logger.info "  Updated: #{swift_file}"
             else
-              puts "  Skipping: #{relative_path} (no corresponding Swift file)"
+              Core::Logger.debug "  Skipping: #{relative_path} (no corresponding Swift file)"
             end
           end
           
-          puts "SwiftUI build completed!"
+          Core::Logger.success "SwiftUI build completed!"
         end
       end
     end

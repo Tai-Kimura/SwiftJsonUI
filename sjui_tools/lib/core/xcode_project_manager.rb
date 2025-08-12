@@ -4,6 +4,7 @@ require 'xcodeproj'
 require_relative 'pbxproj_manager'
 require_relative 'config_manager'
 require_relative 'xcode_target_helper'
+require_relative 'logger'
 
 module SjuiTools
   module Core
@@ -84,14 +85,14 @@ module SjuiTools
           end
           
           if is_sync
-            puts "Detected synchronized project (Xcode 15+ format) for main app"
+            Logger.info "Detected synchronized project (Xcode 15+ format) for main app"
           else
-            puts "Detected traditional project format for main app"
+            Logger.info "Detected traditional project format for main app"
           end
           
           return is_sync
         rescue => e
-          puts "Warning: Could not determine project type: #{e.message}"
+          Logger.warn "Could not determine project type: #{e.message}"
           return false
         end
       end
@@ -100,13 +101,13 @@ module SjuiTools
       def add_file(file_path, group_name)
         # Skip if synchronized project
         if @is_synchronized
-          puts "Skipping file addition for synchronized project: #{File.basename(file_path)}"
+          Logger.debug "Skipping file addition for synchronized project: #{File.basename(file_path)}"
           return
         end
         
         # Validate file path
         unless File.exist?(file_path)
-          puts "Warning: File does not exist: #{file_path}"
+          Logger.warn "File does not exist: #{file_path}"
           return
         end
         
@@ -118,11 +119,11 @@ module SjuiTools
           # Calculate relative path from source directory for proper Xcode references
           relative_path = Pathname.new(file_path).relative_path_from(Pathname.new(source_dir)).to_s
           
-          puts "Debug: Relative path: #{relative_path}"
+          Logger.debug "Relative path: #{relative_path}"
           
           # Validate that the file is within the project directory
           if relative_path.start_with?('..')
-            puts "Warning: File is outside project directory: #{file_path}"
+            Logger.warn "File is outside project directory: #{file_path}"
             return
           end
           
@@ -139,11 +140,11 @@ module SjuiTools
           end
           
           if excluded
-            puts "Excluding file from Xcode project: #{relative_path}"
+            Logger.debug "Excluding file from Xcode project: #{relative_path}"
             return
           end
         rescue ArgumentError => e
-          puts "Error calculating relative path: #{e.message}"
+          Logger.error "Error calculating relative path: #{e.message}"
           return
         end
         
@@ -152,19 +153,19 @@ module SjuiTools
         
         # Check if file already exists in project
         file_name = File.basename(file_path)
-        puts "Debug: Adding file - basename: #{file_name}, full path: #{file_path}"
+        Logger.debug "Adding file - basename: #{file_name}, full path: #{file_path}"
         
         existing = group.files.find { |f| f.path == file_name || f.path == relative_path }
         
         if existing
-          puts "File already in project: #{file_name}"
+          Logger.error "File already in project: #{file_name}"
           return
         end
         
         # Add file reference with proper relative path
         file_ref = group.new_file(relative_path)
         file_ref.name = file_name
-        puts "Debug: File reference name set to: #{file_ref.name}"
+        Logger.debug "File reference name set to: #{file_ref.name}"
         
         # Add to target if it's a source file
         if file_path.end_with?('.swift', '.m', '.mm')
@@ -177,22 +178,22 @@ module SjuiTools
         
         # Save project
         @project.save
-        puts "Added to Xcode project: #{file_name}"
+        Logger.info "Added to Xcode project: #{file_name}"
       rescue => e
-        puts "Error adding file to Xcode project: #{e.message}"
+        Logger.error "Error adding file to Xcode project: #{e.message}"
       end
 
       def find_or_create_group(group_name)
         # Skip if synchronized project
         if @is_synchronized
-          puts "Skipping group creation for synchronized project: #{group_name}"
+          Logger.error "Skipping group creation for synchronized project: #{group_name}"
           return nil
         end
         
-        puts "Debug: find_or_create_group called with: '#{group_name}'"
+        Logger.debug "find_or_create_group called with: '#{group_name}'"
         # Handle nested groups
         parts = group_name.split('/')
-        puts "Debug: Split into parts: #{parts.inspect}"
+        Logger.debug "Split into parts: #{parts.inspect}"
         
         # Find the proper base group (considering source_directory)
         config = Core::ConfigManager.load_config
@@ -207,9 +208,9 @@ module SjuiTools
           app_group = current_group.groups.find { |g| g.name == app_name || g.path == app_name }
           if app_group
             current_group = app_group
-            puts "Debug: Using app group '#{app_name}' as base"
+            Logger.error "Debug: Using app group '#{app_name}' as base"
           else
-            puts "Warning: Could not find app group '#{app_name}', using main group"
+            Logger.error "Warning: Could not find app group '#{app_name}', using main group"
           end
         else
           # Navigate to source directory group if specified
@@ -218,16 +219,16 @@ module SjuiTools
             existing = current_group.groups.find { |g| g.name == part || g.path == part }
             if existing
               current_group = existing
-              puts "Debug: Found existing group '#{part}'"
+              Logger.error "Debug: Found existing group '#{part}'"
             else
               # Check again with display_name
               existing = current_group.groups.find { |g| g.display_name == part }
               if existing
                 current_group = existing
-                puts "Debug: Found existing group by display_name '#{part}'"
+                Logger.error "Debug: Found existing group by display_name '#{part}'"
               else
                 # If source directory group doesn't exist, create it
-                puts "Warning: Creating new group '#{part}' - this might create duplicates!"
+                Logger.error "Warning: Creating new group '#{part}' - this might create duplicates!"
                 current_group = current_group.new_group(part)
               end
             end
@@ -264,7 +265,7 @@ module SjuiTools
       def add_directory(dir_path, group_name)
         # Skip if synchronized project
         if @is_synchronized
-          puts "Skipping directory addition for synchronized project: #{group_name}"
+          Logger.error "Skipping directory addition for synchronized project: #{group_name}"
           return
         end
         
@@ -275,7 +276,7 @@ module SjuiTools
         relative_dir_path = Pathname.new(dir_path).relative_path_from(Pathname.new(project_dir)).to_s
         
         if EXCLUDED_PATTERNS.any? { |pattern| pattern.end_with?('/') && relative_dir_path.start_with?(pattern.chomp('/')) }
-          puts "Excluding entire directory from Xcode project: #{relative_dir_path}"
+          Logger.error "Excluding entire directory from Xcode project: #{relative_dir_path}"
           return
         end
         
@@ -310,13 +311,6 @@ module SjuiTools
       private
 
       def cleanup_empty_groups
-        # Skip cleanup for synchronized projects
-        if @is_synchronized
-          puts "Detected synchronized project (Xcode 15+ format) for main app"
-          puts "Skipping empty group cleanup for synchronized projects"
-          return
-        end
-        
         # Remove empty groups from main group
         remove_empty_groups_recursive(@project.main_group)
         # Also remove any phantom references
@@ -338,7 +332,7 @@ module SjuiTools
             # Special handling for certain groups we want to keep
             unless ['Products', 'Frameworks'].include?(subgroup.name)
               groups_to_remove << subgroup
-              puts "Removing empty group: #{subgroup.name}"
+              Logger.error "Removing empty group: #{subgroup.name}"
             end
           end
         end
@@ -360,10 +354,10 @@ module SjuiTools
         
         # If there are multiple groups with the project name, keep the first one and remove others
         if project_groups.size > 1
-          puts "Found #{project_groups.size} groups named '#{project_name}'"
+          Logger.error "Found #{project_groups.size} groups named '#{project_name}'"
           # Remove all but the first one
           project_groups[1..-1].each do |group|
-            puts "Removing duplicate project reference: #{group.name}"
+            Logger.error "Removing duplicate project reference: #{group.name}"
             groups_to_remove << group
           end
         end
@@ -373,7 +367,7 @@ module SjuiTools
         
         @project.main_group.groups.each do |group|
           if phantom_patterns.include?(group.name) && group.files.empty? && group.groups.empty?
-            puts "Removing phantom reference: #{group.name}"
+            Logger.error "Removing phantom reference: #{group.name}"
             groups_to_remove << group
           end
         end
@@ -387,7 +381,7 @@ module SjuiTools
       def add_file_to_group(file_path, group)
         # Skip if synchronized project
         if @is_synchronized
-          puts "Skipping file-to-group addition for synchronized project: #{File.basename(file_path)}"
+          Logger.error "Skipping file-to-group addition for synchronized project: #{File.basename(file_path)}"
           return
         end
         
@@ -413,7 +407,7 @@ module SjuiTools
           end
           
           if excluded
-            puts "Excluding file from Xcode project: #{relative_path}"
+            Logger.debug "Excluding file from Xcode project: #{relative_path}"
             return
           end
           

@@ -4,6 +4,7 @@ require 'set'
 require_relative 'json_loader_config'
 require_relative 'view_binding_handler_factory'
 require_relative 'string_module'
+require_relative '../core/logger'
 
 module SjuiTools
   module UIKit
@@ -58,9 +59,9 @@ module SjuiTools
               json = style_json.merge(json)
             end
           elsif File.exist?(file_path)
-            puts "Warning: Style path is not a file: #{file_path}"
+            Core::Logger.warn "Style path is not a file: #{file_path}"
           else
-            puts "Warning: Style file not found: #{file_path}"
+            Core::Logger.warn "Style file not found: #{file_path}"
           end
         end
         json.each do |key,value|
@@ -178,38 +179,36 @@ module SjuiTools
           method_content << "        }\n"
           
           # Call invalidate on partial bindings FIRST (children before parent)
-          unless method_name.empty?
-            @partial_bindings.each do |partial|
-              # Skip partials that don't have any bindings
-              next unless partial[:has_bindings]
+          @partial_bindings.each do |partial|
+            # Skip partials that don't have any bindings
+            next unless partial[:has_bindings]
+            
+            # Check if partial has this binding group
+            partial_has_group = case group
+                              when "all"
+                                true  # All partials have invalidateAll
+                              when ""
+                                true  # All partials have invalidate (no suffix)
+                              else
+                                partial[:binding_groups].include?(group)
+                              end
+            
+            if partial_has_group
+              method_content << "        \n"
+              method_content << "        // Propagate invalidate to partial binding (child first)\n"
               
-              # Check if partial has this binding group
-              partial_has_group = case group
-                                when "all"
-                                  true  # All partials have invalidateAll
-                                when ""
-                                  true  # All partials have invalidate (no suffix)
-                                else
-                                  partial[:binding_groups].include?(group)
-                                end
-              
-              if partial_has_group
-                method_content << "        \n"
-                method_content << "        // Propagate invalidate to partial binding (child first)\n"
-                
-                # Add data assignments if data_bindings are present
-                if partial[:data_bindings] && !partial[:data_bindings].empty?
-                  partial[:data_bindings].each do |key, value|
-                    # Remove @{} if present
-                    clean_value = value.to_s.gsub(/^@\{/, '').gsub(/\}$/, '')
-                    # Replace single quotes with double quotes for string literals
-                    clean_value = clean_value.gsub("'", '"')
-                    method_content << "        #{partial[:property_name]}Binding.#{key} = #{clean_value}\n"
-                  end
+              # Add data assignments if data_bindings are present
+              if partial[:data_bindings] && !partial[:data_bindings].empty?
+                partial[:data_bindings].each do |key, value|
+                  # Remove @{} if present
+                  clean_value = value.to_s.gsub(/^@\{/, '').gsub(/\}$/, '')
+                  # Replace single quotes with double quotes for string literals
+                  clean_value = clean_value.gsub("'", '"')
+                  method_content << "        #{partial[:property_name]}Binding.#{key} = #{clean_value}\n"
                 end
-                
-                method_content << "        #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
               end
+              
+              method_content << "        #{partial[:property_name]}Binding.invalidate#{method_name}(resetForm: resetForm, formInitialized: formInitialized)\n"
             end
           end
           

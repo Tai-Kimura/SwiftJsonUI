@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require_relative '../core/logger'
+
 require 'fileutils'
 require_relative 'string_module'
 
@@ -17,7 +19,7 @@ module SjuiTools
         @base_name = "#{file_name.camelize}"
         @binding_class_name = "#{@base_name}Binding"
         @binding_file_name = "#{@binding_class_name}.swift"
-        puts @binding_file_name
+        Core::Logger.debug @binding_file_name
         @binding_file_path = "#{@binding_path}/#{@binding_file_name}"
         @backup_file_path = nil
         
@@ -51,7 +53,7 @@ module SjuiTools
       def restore_backup(backup_path, target_path)
         if backup_path && File.exist?(backup_path)
           FileUtils.mv(backup_path, target_path)
-          puts "Restored backup for #{File.basename(target_path)}"
+          Core::Logger.info "Restored backup for #{File.basename(target_path)}"
         end
       end
     end
