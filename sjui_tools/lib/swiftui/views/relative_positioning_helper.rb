@@ -11,6 +11,8 @@ module SjuiTools
           # 相対配置のプロパティをチェック
           child['toLeftOf'] || child['toRightOf'] || child['above'] || child['below'] ||
           child['alignTop'] || child['alignBottom'] || child['alignLeft'] || child['alignRight'] ||
+          child['alignTopView'] || child['alignBottomView'] || child['alignLeftView'] || child['alignRightView'] ||
+          child['alignTopOfView'] || child['alignBottomOfView'] || child['alignLeftOfView'] || child['alignRightOfView'] ||
           child['alignBaseline'] || child['centerHorizontal'] || child['centerVertical'] ||
           child['centerInParent'] || child['toStartOf'] || child['toEndOf']
         end
@@ -130,7 +132,9 @@ module SjuiTools
             has_parent = child['alignTop'] || child['alignBottom'] || child['alignLeft'] || child['alignRight'] ||
                         child['centerHorizontal'] || child['centerVertical'] || child['centerInParent']
             has_relative = child['toLeftOf'] || child['toRightOf'] || child['above'] || child['below'] ||
-                          child['toStartOf'] || child['toEndOf']
+                          child['toStartOf'] || child['toEndOf'] ||
+                          child['alignTopView'] || child['alignBottomView'] || child['alignLeftView'] || child['alignRightView'] ||
+                          child['alignTopOfView'] || child['alignBottomOfView'] || child['alignLeftOfView'] || child['alignRightOfView']
             has_parent && !has_relative
           end
           
@@ -193,6 +197,48 @@ module SjuiTools
                         constraint_added = true
                       elsif child['below']
                         add_line "RelativePositionConstraint(type: .below, targetId: \"#{child['below']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      # alignTopView, alignBottomView, alignLeftView, alignRightView (align edges to another view)
+                      if child['alignTopView']
+                        add_line "RelativePositionConstraint(type: .alignTop, targetId: \"#{child['alignTopView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignBottomView']
+                        add_line "RelativePositionConstraint(type: .alignBottom, targetId: \"#{child['alignBottomView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignLeftView']
+                        add_line "RelativePositionConstraint(type: .alignLeft, targetId: \"#{child['alignLeftView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignRightView']
+                        add_line "RelativePositionConstraint(type: .alignRight, targetId: \"#{child['alignRightView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      # alignTopOfView, alignBottomOfView, alignLeftOfView, alignRightOfView (position relative to edge)
+                      if child['alignTopOfView']
+                        add_line "RelativePositionConstraint(type: .topOf, targetId: \"#{child['alignTopOfView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignBottomOfView']
+                        add_line "RelativePositionConstraint(type: .bottomOf, targetId: \"#{child['alignBottomOfView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignLeftOfView']
+                        add_line "RelativePositionConstraint(type: .leftOf, targetId: \"#{child['alignLeftOfView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignRightOfView']
+                        add_line "RelativePositionConstraint(type: .rightOf, targetId: \"#{child['alignRightOfView']}\"),"
                         constraint_added = true
                       end
                       
