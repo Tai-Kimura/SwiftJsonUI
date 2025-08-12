@@ -80,8 +80,6 @@ public struct SelectBoxView: View {
     public var body: some View {
         Button(action: {
             isPresented = true
-            // Notify sheet responder when presenting
-            sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
         }) {
             HStack {
                 // Label text
@@ -232,8 +230,12 @@ public struct SelectBoxView: View {
                 )
             }
             .presentationDetents([.height(sheetHeight)])
+            .onAppear {
+                // Notify when sheet actually appears
+                sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
+            }
             .onDisappear {
-                // Also notify when sheet disappears (in case of swipe down)
+                // Notify when sheet disappears (in case of swipe down)
                 sheetResponder.sheetWillDismiss(id: id)
             }
         }
