@@ -223,12 +223,12 @@ module SjuiTools
                       
                       # alignTopOfView, alignBottomOfView, alignLeftOfView, alignRightOfView (position relative to edge)
                       if child['alignTopOfView']
-                        add_line "RelativePositionConstraint(type: .topOf, targetId: \"#{child['alignTopOfView']}\"),"
+                        add_line "RelativePositionConstraint(type: .above, targetId: \"#{child['alignTopOfView']}\"),"
                         constraint_added = true
                       end
                       
                       if child['alignBottomOfView']
-                        add_line "RelativePositionConstraint(type: .bottomOf, targetId: \"#{child['alignBottomOfView']}\"),"
+                        add_line "RelativePositionConstraint(type: .below, targetId: \"#{child['alignBottomOfView']}\"),"
                         constraint_added = true
                       end
                       
