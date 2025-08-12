@@ -27,6 +27,7 @@ public struct SelectBoxView: View {
     @State private var selectedText = ""
     @State private var selectedDate = Date()
     @State private var dateText = ""
+    @StateObject private var sheetResponder = SelectBoxSheetResponder.shared
     
     public enum SelectItemType {
         case normal
@@ -79,6 +80,8 @@ public struct SelectBoxView: View {
     public var body: some View {
         Button(action: {
             isPresented = true
+            // Notify sheet responder when presenting
+            sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
         }) {
             HStack {
                 // Label text
@@ -221,10 +224,18 @@ public struct SelectBoxView: View {
                     }
                 }
                 .navigationBarItems(
-                    trailing: Button("Done") { isPresented = false }
+                    trailing: Button("Done") { 
+                        isPresented = false
+                        // Notify sheet responder when dismissing
+                        sheetResponder.sheetWillDismiss(id: id)
+                    }
                 )
             }
             .presentationDetents([.height(sheetHeight)])
+            .onDisappear {
+                // Also notify when sheet disappears (in case of swipe down)
+                sheetResponder.sheetWillDismiss(id: id)
+            }
         }
     }
     
