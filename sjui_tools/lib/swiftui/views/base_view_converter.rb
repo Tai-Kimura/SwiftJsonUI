@@ -2,6 +2,10 @@
 
 require_relative 'template_helper'
 require_relative 'alignment_helper'
+require_relative 'frame_helper'
+require_relative 'color_helper'
+require_relative 'spacing_helper'
+require_relative 'modifier_helper'
 require_relative '../binding/binding_handler_registry'
 
 module SjuiTools
@@ -10,6 +14,10 @@ module SjuiTools
       class BaseViewConverter
         include TemplateHelper
         include AlignmentHelper
+        include FrameHelper
+        include ColorHelper
+        include SpacingHelper
+        include ModifierHelper
         
         attr_reader :state_variables
         
@@ -60,9 +68,6 @@ module SjuiTools
             end
             # 実際のinclude処理はビルド時のプリプロセッサで行う必要がある
             # ここではコメントとして記録
-          elsif @component['variables']
-            # variablesのみの場合もコメントとして記録
-            add_line "// variables: #{@component['variables'].to_json}"
           end
         end
 
@@ -90,98 +95,9 @@ module SjuiTools
           apply_center_alignment
           apply_edge_alignment
           
-          # サイズ制約（minWidth, maxWidth, minHeight, maxHeight）
-          if @component['minWidth'] || @component['maxWidth'] || @component['minHeight'] || @component['maxHeight']
-            min_width = @component['minWidth']
-            max_width = @component['maxWidth']
-            min_height = @component['minHeight'] 
-            max_height = @component['maxHeight']
-            
-            frame_params = []
-            frame_params << "minWidth: #{min_width}" if min_width
-            frame_params << "maxWidth: #{max_width == 'matchParent' ? '.infinity' : max_width}" if max_width
-            frame_params << "minHeight: #{min_height}" if min_height
-            frame_params << "maxHeight: #{max_height == 'matchParent' ? '.infinity' : max_height}" if max_height
-            
-            if frame_params.any?
-              add_modifier_line ".frame(#{frame_params.join(', ')})"
-            end
-          end
-          
-          # サイズ
-          if @component['width'] || @component['height']
-            # weightがある場合、width: 0 or height: 0は無視する
-            should_ignore_width = (@component['width'] == 0 || @component['width'] == '0') && 
-                                 (@component['weight'] || @component['widthWeight'])
-            should_ignore_height = (@component['height'] == 0 || @component['height'] == '0') && 
-                                  (@component['weight'] || @component['heightWeight'])
-            
-            # widthの処理
-            if !should_ignore_width
-              processed_width = process_template_value(@component['width'])
-              if processed_width.is_a?(Hash) && processed_width[:template_var]
-                width_value = to_camel_case(processed_width[:template_var])
-              else
-                width_value = size_to_swiftui(@component['width'])
-              end
-            else
-              width_value = nil
-            end
-            
-            # heightの処理
-            if !should_ignore_height
-              processed_height = process_template_value(@component['height'])
-              if processed_height.is_a?(Hash) && processed_height[:template_var]
-                height_value = to_camel_case(processed_height[:template_var])
-              else
-                height_value = size_to_swiftui(@component['height'])
-              end
-            else
-              height_value = nil
-            end
-            
-            # テンプレート変数の場合は型変換が必要
-            if processed_width.is_a?(Hash) && processed_width[:template_var]
-              width_param = "CGFloat(#{width_value})"
-            else
-              width_param = width_value
-            end
-            
-            if processed_height.is_a?(Hash) && processed_height[:template_var]
-              height_param = "CGFloat(#{height_value})"
-            else
-              height_param = height_value
-            end
-            
-            if width_value && height_value
-              # Check if either dimension is .infinity
-              if width_value == '.infinity' && height_value == '.infinity'
-                add_modifier_line ".frame(maxWidth: #{width_param}, maxHeight: #{height_param})"
-              elsif width_value == '.infinity'
-                # Split into two frame calls for maxWidth with fixed height
-                add_modifier_line ".frame(maxWidth: #{width_param})"
-                add_modifier_line ".frame(height: #{height_param})"
-              elsif height_value == '.infinity'
-                # Split into two frame calls for fixed width with maxHeight
-                add_modifier_line ".frame(width: #{width_param})"
-                add_modifier_line ".frame(maxHeight: #{height_param})"
-              else
-                add_modifier_line ".frame(width: #{width_param}, height: #{height_param})"
-              end
-            elsif width_value
-              if width_value == '.infinity'
-                add_modifier_line ".frame(maxWidth: #{width_param})"
-              else
-                add_modifier_line ".frame(width: #{width_param})"
-              end
-            elsif height_value
-              if height_value == '.infinity'
-                add_modifier_line ".frame(maxHeight: #{height_param})"
-              else
-                add_modifier_line ".frame(height: #{height_param})"
-              end
-            end
-          end
+          # サイズ制約とサイズの適用
+          apply_frame_constraints
+          apply_frame_size
           
           # 背景色（Rectangleの場合はfillで設定済みなのでスキップ）
           # enabled状態に応じて背景色を変更
@@ -204,76 +120,10 @@ module SjuiTools
           apply_margins
           
           # パディング（SwiftJsonUIの属性に対応）
-          if @component['padding'] || @component['paddings']
-            padding = @component['padding'] || @component['paddings']
-            # Ensure padding is converted to proper format
-            if padding.is_a?(Array)
-              case padding.length
-              when 1
-                add_modifier_line ".padding(#{padding[0].to_i})"
-              when 2
-                # 縦横のパディング
-                add_modifier_line ".padding(.horizontal, #{padding[1].to_i})"
-                add_modifier_line ".padding(.vertical, #{padding[0].to_i})"
-              when 4
-                # 上、右、下、左の順
-                add_modifier_line ".padding(.top, #{padding[0].to_i})"
-                add_modifier_line ".padding(.trailing, #{padding[1].to_i})"
-                add_modifier_line ".padding(.bottom, #{padding[2].to_i})"
-                add_modifier_line ".padding(.leading, #{padding[3].to_i})"
-              end
-            else
-              add_modifier_line ".padding(#{padding.to_i})"
-            end
-          end
+          apply_padding
           
-          # 個別のパディング設定（leftPadding, rightPadding, paddingLeft など）
-          # paddingLeft と leftPadding の両方をサポート
-          left_pad = @component['leftPadding'] || @component['paddingLeft']
-          right_pad = @component['rightPadding'] || @component['paddingRight']
-          top_pad = @component['topPadding'] || @component['paddingTop']
-          bottom_pad = @component['bottomPadding'] || @component['paddingBottom']
-          
-          if left_pad
-            add_modifier_line ".padding(.leading, #{left_pad.to_i})"
-          end
-          if right_pad
-            add_modifier_line ".padding(.trailing, #{right_pad.to_i})"
-          end
-          if top_pad
-            add_modifier_line ".padding(.top, #{top_pad.to_i})"
-          end
-          if bottom_pad
-            add_modifier_line ".padding(.bottom, #{bottom_pad.to_i})"
-          end
-          
-          # insets プロパティ（パディングの別形式）
-          if @component['insets']
-            insets = @component['insets']
-            if insets.is_a?(Array)
-              case insets.length
-              when 1
-                add_modifier_line ".padding(#{insets[0].to_i})"
-              when 2
-                # 縦横のinsets
-                add_modifier_line ".padding(.vertical, #{insets[0].to_i})"
-                add_modifier_line ".padding(.horizontal, #{insets[1].to_i})"
-              when 4
-                # 上、右、下、左の順
-                add_modifier_line ".padding(.top, #{insets[0].to_i})"
-                add_modifier_line ".padding(.trailing, #{insets[1].to_i})"
-                add_modifier_line ".padding(.bottom, #{insets[2].to_i})"
-                add_modifier_line ".padding(.leading, #{insets[3].to_i})"
-              end
-            else
-              add_modifier_line ".padding(#{insets.to_i})"
-            end
-          end
-          
-          # insetHorizontal プロパティ
-          if @component['insetHorizontal']
-            add_modifier_line ".padding(.horizontal, #{@component['insetHorizontal'].to_i})"
-          end
+          # insetsとinsetHorizontalの処理
+          apply_insets
           
           # コーナー半径
           if @component['cornerRadius']
@@ -340,27 +190,7 @@ module SjuiTools
           end
           
           # safeAreaInsetPositions
-          if @component['safeAreaInsetPositions']
-            positions = @component['safeAreaInsetPositions']
-            if positions.is_a?(Array)
-              # 配列の場合、各エッジを処理
-              edges = []
-              edges << '.top' if positions.include?('top')
-              edges << '.bottom' if positions.include?('bottom')
-              edges << '.leading' if positions.include?('leading') || positions.include?('left')
-              edges << '.trailing' if positions.include?('trailing') || positions.include?('right')
-              
-              if edges.any?
-                add_modifier_line ".ignoresSafeArea(.all, edges: [#{edges.join(', ')}])"
-              end
-            elsif positions == 'all'
-              add_modifier_line ".ignoresSafeArea()"
-            elsif positions == 'none'
-              # デフォルトでセーフエリアを尊重
-            else
-              add_line "// safeAreaInsetPositions: #{positions}"
-            end
-          end
+          apply_safe_area_insets
           
           # disabled状態の処理
           if @component['enabled'] == false
@@ -435,127 +265,8 @@ module SjuiTools
           end
         end
         
-        # マージンを適用（SwiftUIではGroup内でpaddingとして実装）
-        def apply_margins
-          left_margin = @component['leftMargin']
-          right_margin = @component['rightMargin']
-          top_margin = @component['topMargin']
-          bottom_margin = @component['bottomMargin']
-          margins = @component['margins']
-          
-          # marginsが配列で指定されている場合
-          if margins
-            if margins.is_a?(Array)
-              case margins.length
-              when 1
-                # 全方向同じマージン
-                add_modifier_line ".padding(.all, #{margins[0].to_i})"
-              when 2
-                # 縦横のマージン
-                add_modifier_line ".padding(.vertical, #{margins[0].to_i})"
-                add_modifier_line ".padding(.horizontal, #{margins[1].to_i})"
-              when 4
-                # 上、右、下、左の順
-                add_modifier_line ".padding(.top, #{margins[0].to_i})"
-                add_modifier_line ".padding(.trailing, #{margins[1].to_i})"
-                add_modifier_line ".padding(.bottom, #{margins[2].to_i})"
-                add_modifier_line ".padding(.leading, #{margins[3].to_i})"
-              end
-            else
-              add_modifier_line ".padding(.all, #{margins.to_i})"
-            end
-          else
-            # 個別のマージン設定
-            if top_margin
-              add_modifier_line ".padding(.top, #{top_margin.to_i})"
-            end
-            if bottom_margin
-              add_modifier_line ".padding(.bottom, #{bottom_margin.to_i})"
-            end
-            if left_margin
-              add_modifier_line ".padding(.leading, #{left_margin.to_i})"
-            end
-            if right_margin
-              add_modifier_line ".padding(.trailing, #{right_margin.to_i})"
-            end
-          end
-        end
 
         # ヘルパーメソッド
-        def size_to_swiftui(size)
-          return nil if size.nil?
-          
-          case size
-          when 'matchParent'
-            '.infinity'
-          when 'wrapContent'
-            nil  # SwiftUIのデフォルト動作
-          when Integer, Float
-            size.to_s
-          when String
-            if size.match?(/^\d+$/)
-              size
-            else
-              # その他の文字列はそのまま返す（変数名など）
-              size
-            end
-          else
-            size.to_s
-          end
-        end
-
-        def hex_to_swiftui_color(hex)
-          return "Color.clear" if hex.nil? || hex.empty?
-          
-          # 16進数カラーコードの処理
-          if hex.start_with?('#')
-            hex = hex[1..-1]
-          end
-          
-          hex = hex.upcase
-          
-          if hex.length == 6
-            # 6桁の16進数（RGB）
-            r = hex[0..1].to_i(16) / 255.0
-            g = hex[2..3].to_i(16) / 255.0
-            b = hex[4..5].to_i(16) / 255.0
-            "Color(red: #{r}, green: #{g}, blue: #{b})"
-          elsif hex.length == 8
-            # 8桁の16進数（ARGB または RGBA）
-            # SwiftJsonUIは通常ARGBフォーマットを使用
-            a = hex[0..1].to_i(16) / 255.0
-            r = hex[2..3].to_i(16) / 255.0
-            g = hex[4..5].to_i(16) / 255.0
-            b = hex[6..7].to_i(16) / 255.0
-            "Color(red: #{r}, green: #{g}, blue: #{b}, opacity: #{a})"
-          else
-            "Color.black"  # デフォルト
-          end
-        end
-        
-        def gradient_direction_to_swiftui(direction)
-          # directionプロパティをSwiftUIのグラデーション方向に変換
-          case direction
-          when 'vertical', 'top_bottom'
-            'startPoint: .top, endPoint: .bottom'
-          when 'horizontal', 'left_right'
-            'startPoint: .leading, endPoint: .trailing'
-          when 'bottom_top'
-            'startPoint: .bottom, endPoint: .top'
-          when 'right_left'
-            'startPoint: .trailing, endPoint: .leading'
-          when 'topLeft_bottomRight', 'diagonal'
-            'startPoint: .topLeading, endPoint: .bottomTrailing'
-          when 'topRight_bottomLeft'
-            'startPoint: .topTrailing, endPoint: .bottomLeading'
-          when 'bottomLeft_topRight'
-            'startPoint: .bottomLeading, endPoint: .topTrailing'
-          when 'bottomRight_topLeft'
-            'startPoint: .bottomTrailing, endPoint: .topLeading'
-          else
-            'startPoint: .top, endPoint: .bottom'  # デフォルト
-          end
-        end
       end
     end
   end
