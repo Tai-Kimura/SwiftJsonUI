@@ -8,9 +8,9 @@ module SjuiTools
       class TextFieldConverter < BaseViewConverter
         def convert
           # Get text field handler for this component
-          textfield_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::TextFieldBindingHandler) ?
+          textfield_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::UIKit::TextFieldBindingHandler) ?
                              @binding_handler :
-                             SjuiTools::SwiftUI::Binding::TextFieldBindingHandler.new
+                             SjuiTools::SwiftUI::UIKit::TextFieldBindingHandler.new
           
           # hint (SwiftJsonUIではplaceholderではなくhint)
           hint = @component['hint'] || @component['placeholder'] || ""

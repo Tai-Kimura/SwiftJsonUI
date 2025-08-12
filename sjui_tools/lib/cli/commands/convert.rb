@@ -70,7 +70,7 @@ module SjuiTools
         end
 
         def convert_to_group_reference(args)
-          require_relative '../../binding/tools/convert_to_group_reference'
+          require_relative '../../uikit/tools/convert_to_group_reference'
           
           options = {}
           OptionParser.new do |opts|
@@ -86,7 +86,7 @@ module SjuiTools
             end
           end.parse!(args)
           
-          converter = SjuiTools::Binding::Tools::ConvertToGroupReference.new
+          converter = SjuiTools::UIKit::Tools::ConvertToGroupReference.new
           converter.convert(options[:force])
         rescue => e
           puts "Error during conversion: #{e.message}"

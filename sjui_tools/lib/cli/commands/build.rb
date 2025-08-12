@@ -15,8 +15,8 @@ module SjuiTools
           mode = options[:mode] || Core::ConfigManager.detect_mode
           
           case mode
-          when 'binding', 'all'
-            build_binding
+          when 'uikit', 'all'
+            build_uikit
           end
           
           if mode == 'swiftui' || mode == 'all'
@@ -32,8 +32,8 @@ module SjuiTools
           OptionParser.new do |opts|
             opts.banner = "Usage: sjui build [options]"
             
-            opts.on('--mode MODE', ['all', 'binding', 'swiftui'], 
-                    'Build mode (all, binding, swiftui)') do |mode|
+            opts.on('--mode MODE', ['all', 'uikit', 'swiftui'], 
+                    'Build mode (all, uikit, swiftui)') do |mode|
               options[:mode] = mode
             end
             
@@ -46,8 +46,8 @@ module SjuiTools
           options
         end
 
-        def build_binding
-          puts "Building binding files..."
+        def build_uikit
+          puts "Building UIKit files..."
           
           # Setup project paths
           unless Core::ProjectFinder.setup_paths
@@ -61,8 +61,8 @@ module SjuiTools
           
           # Setup custom view types
           if custom_view_types.any?
-            require_relative '../../binding/json_loader'
-            require_relative '../../binding/import_module_manager'
+            require_relative '../../uikit/json_loader'
+            require_relative '../../uikit/import_module_manager'
             
             view_type_mappings = {}
             import_mappings = {}
@@ -77,17 +77,17 @@ module SjuiTools
             end
             
             # Extend view type set
-            Binding::JsonLoader.view_type_set.merge!(view_type_mappings) unless view_type_mappings.empty?
+            UIKit::JsonLoader.view_type_set.merge!(view_type_mappings) unless view_type_mappings.empty?
             
             # Add import mappings
             import_mappings.each do |type, module_name|
-              Binding::ImportModuleManager.add_type_import_mapping(type, module_name)
+              UIKit::ImportModuleManager.add_type_import_mapping(type, module_name)
             end
           end
           
           # Run JsonLoader
-          require_relative '../../binding/json_loader'
-          loader = Binding::JsonLoader.new
+          require_relative '../../uikit/json_loader'
+          loader = UIKit::JsonLoader.new
           loader.start_analyze
         end
 

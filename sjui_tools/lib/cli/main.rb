@@ -13,7 +13,7 @@ module SjuiTools
         'g' => 'Alias for generate',
         'destroy' => 'Destroy files (view, partial, collection, binding)',
         'd' => 'Alias for destroy',
-        'build' => 'Build binding files',
+        'build' => 'Build UIKit/SwiftUI files',
         'convert' => 'Convert JSON to SwiftUI code',
         'watch' => 'Watch for file changes',
         'hotload' => 'Start HotLoader server',
@@ -94,7 +94,7 @@ module SjuiTools
         puts "  sjui setup                   # Setup project structure"
         puts "  sjui g view HomeView         # Generate a new view"
         puts "  sjui d view splash           # Destroy a view and its files"
-        puts "  sjui build                   # Build binding files"
+        puts "  sjui build                   # Build UIKit/SwiftUI files"
         puts "  sjui watch                   # Watch for changes"
         puts "  sjui hotload                 # Start HotLoader server"
         puts

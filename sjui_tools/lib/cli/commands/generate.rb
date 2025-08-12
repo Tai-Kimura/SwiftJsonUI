@@ -39,7 +39,7 @@ module SjuiTools
             generate_partial(args, mode)
           when 'collection'
             generate_collection(args, mode)
-          when 'binding'
+          when 'uikit'
             generate_binding(args, mode)
           end
         end
@@ -63,9 +63,9 @@ module SjuiTools
           end
           
           case mode
-          when 'binding'
-            require_relative '../../binding/xcode_project/generators/view_generator'
-            generator = SjuiTools::Binding::XcodeProject::Generators::ViewGenerator.new(name, options)
+          when 'uikit'
+            require_relative '../../uikit/xcode_project/generators/view_generator'
+            generator = SjuiTools::UIKit::XcodeProject::Generators::ViewGenerator.new(name, options)
             generator.generate
           when 'swiftui'
             require_relative '../../swiftui/generators/view_generator'
@@ -88,10 +88,10 @@ module SjuiTools
           end
           
           case mode
-          when 'binding'
-            require_relative '../../binding/xcode_project/generators/partial_generator'
+          when 'uikit'
+            require_relative '../../uikit/xcode_project/generators/partial_generator'
             project_file = Core::ProjectFinder.find_project_file
-            generator = SjuiTools::Binding::XcodeProject::Generators::PartialGenerator.new(project_file)
+            generator = SjuiTools::UIKit::XcodeProject::Generators::PartialGenerator.new(project_file)
             generator.generate(name)
           when 'swiftui'
             puts "Generating SwiftUI partial: #{name}"
@@ -115,10 +115,10 @@ module SjuiTools
           end
           
           case mode
-          when 'binding'
-            require_relative '../../binding/xcode_project/generators/collection_generator'
+          when 'uikit'
+            require_relative '../../uikit/xcode_project/generators/collection_generator'
             project_file = Core::ProjectFinder.find_project_file
-            generator = SjuiTools::Binding::XcodeProject::Generators::CollectionGenerator.new(project_file)
+            generator = SjuiTools::UIKit::XcodeProject::Generators::CollectionGenerator.new(project_file)
             generator.generate(name)
           when 'swiftui'
             require_relative '../../swiftui/generators/collection_generator'
@@ -139,13 +139,13 @@ module SjuiTools
             exit 1
           end
           
-          if mode != 'binding'
-            puts "Binding generation is only available in binding mode"
+          if mode != 'uikit'
+            puts "Binding generation is only available in UIKit mode"
             exit 1
           end
           
-          require_relative '../../binding/xcode_project/generators/binding_generator'
-          generator = SjuiTools::Binding::XcodeProject::Generators::BindingGenerator.new(name)
+          require_relative '../../uikit/xcode_project/generators/binding_generator'
+          generator = SjuiTools::UIKit::XcodeProject::Generators::BindingGenerator.new(name)
           generator.generate
         end
 
@@ -160,7 +160,7 @@ module SjuiTools
               options[:root] = true
             end
             
-            opts.on('--mode MODE', 'Override mode (binding, swiftui, dynamic)') do |mode|
+            opts.on('--mode MODE', 'Override mode (uikit, swiftui, dynamic)') do |mode|
               options[:mode] = mode
             end
           end.parse!(args)

@@ -29,12 +29,12 @@ module SjuiTools
           
           # Create directory structure based on mode
           case mode
-          when 'binding'
-            create_binding_structure
+          when 'uikit'
+            create_uikit_structure
           when 'swiftui'
             create_swiftui_structure
           when 'all'
-            create_binding_structure
+            create_uikit_structure
             create_swiftui_structure
           end
           
@@ -57,8 +57,8 @@ module SjuiTools
           OptionParser.new do |opts|
             opts.banner = "Usage: sjui init [options]"
             
-            opts.on('--mode MODE', ['all', 'binding', 'swiftui'], 
-                    'Initialize mode (all, binding, swiftui)') do |mode|
+            opts.on('--mode MODE', ['all', 'uikit', 'swiftui'], 
+                    'Initialize mode (all, uikit, swiftui)') do |mode|
               options[:mode] = mode
             end
             
@@ -141,7 +141,7 @@ module SjuiTools
               }
             }
           else
-            # Binding mode or all mode config
+            # UIKit mode or all mode config
             config = {
               'mode' => mode,
               'project_name' => project_name,
@@ -174,7 +174,7 @@ module SjuiTools
           puts "Created config file: #{config_file}"
         end
 
-        def create_binding_structure
+        def create_uikit_structure
           directories = %w[
             Layouts
             Bindings

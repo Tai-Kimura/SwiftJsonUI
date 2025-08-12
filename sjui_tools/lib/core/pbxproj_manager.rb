@@ -86,7 +86,7 @@ module SjuiTools
             return if app_targets.empty?
             
             # 除外すべきディレクトリとファイル（XcodeProjectManagerから参照）
-            excluded_patterns = ::SjuiTools::Binding::XcodeProjectManager::EXCLUDED_PATTERNS
+            excluded_patterns = ::SjuiTools::UIKit::XcodeProjectManager::EXCLUDED_PATTERNS
             
             # パスからディレクトリとファイルを分離
             directories_to_exclude = excluded_patterns.select { |p| p.end_with?('/') }.map { |p| p.chomp('/') }

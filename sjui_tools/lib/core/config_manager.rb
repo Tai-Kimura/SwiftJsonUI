@@ -7,7 +7,7 @@ module SjuiTools
   module Core
     class ConfigManager
       DEFAULT_CONFIG = {
-        'mode' => 'binding',
+        'mode' => 'uikit',
         'project_name' => '',
         'project_file_name' => '',
         'source_directory' => '',
@@ -112,7 +112,7 @@ module SjuiTools
         if File.exist?(File.join(Dir.pwd, 'Package.swift'))
           'swiftui'
         else
-          'binding'
+          'uikit'
         end
       end
 

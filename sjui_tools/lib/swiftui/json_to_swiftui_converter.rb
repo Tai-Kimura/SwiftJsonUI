@@ -13,7 +13,7 @@ module SjuiTools
       def initialize
         @indent_level = 0
         @generated_code = []
-        @binding_registry = SjuiTools::SwiftUI::Binding::BindingHandlerRegistry.new
+        @binding_registry = SjuiTools::SwiftUI::UIKit::BindingHandlerRegistry.new
         @converter_factory = ConverterFactory.new(@binding_registry)
         @action_manager = ActionManager.new
         @state_variables = []

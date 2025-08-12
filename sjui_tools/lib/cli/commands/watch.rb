@@ -25,8 +25,8 @@ module SjuiTools
           puts "Press Ctrl+C to stop"
           
           case mode
-          when 'binding', 'all'
-            watch_binding
+          when 'uikit', 'all'
+            watch_uikit
           when 'swiftui'
             watch_swiftui
           else
@@ -43,8 +43,8 @@ module SjuiTools
           OptionParser.new do |opts|
             opts.banner = "Usage: sjui watch [options]"
             
-            opts.on('--mode MODE', ['all', 'binding', 'swiftui'], 
-                    'Watch mode (all, binding, swiftui)') do |mode|
+            opts.on('--mode MODE', ['all', 'uikit', 'swiftui'], 
+                    'Watch mode (all, uikit, swiftui)') do |mode|
               options[:mode] = mode
             end
             
@@ -57,18 +57,18 @@ module SjuiTools
           options
         end
 
-        def watch_binding
+        def watch_uikit
           config = Core::ConfigManager.load_config
           source_path = Core::ProjectFinder.get_full_source_path
           
           layouts_dir = File.join(source_path, config['layouts_directory'])
           styles_dir = File.join(source_path, config['styles_directory'])
           
-          require_relative '../../binding/json_loader'
+          require_relative '../../uikit/json_loader'
           
           # Initial build
           puts "Running initial build..."
-          loader = Binding::JsonLoader.new
+          loader = UIKit::JsonLoader.new
           loader.start_analyze
           
           # Setup file watcher
@@ -76,7 +76,7 @@ module SjuiTools
             puts "\nFile #{type}: #{file}"
             puts "Rebuilding binding files..."
             
-            loader = Binding::JsonLoader.new
+            loader = UIKit::JsonLoader.new
             loader.start_analyze
           end
           

@@ -43,7 +43,7 @@ module SjuiTools
             else
               destroy_view(type, name, force)
             end
-          when 'binding'
+          when 'uikit_binding'
             destroy_binding(name, force)
           else
             Core::Logger.error "Unknown type '#{type}'"
