@@ -8,9 +8,9 @@ module SjuiTools
       class ToggleConverter < BaseViewConverter
         def convert
           # Get toggle handler for this component
-          toggle_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::UIKit::ToggleBindingHandler) ?
+          toggle_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::ToggleBindingHandler) ?
                            @binding_handler :
-                           SjuiTools::SwiftUI::UIKit::ToggleBindingHandler.new
+                           SjuiTools::SwiftUI::Binding::ToggleBindingHandler.new
           
           id = @component['id'] || 'toggle'
           text = @component['text'] || @component['label'] || ""

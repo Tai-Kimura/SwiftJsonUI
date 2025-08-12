@@ -8,9 +8,9 @@ module SjuiTools
       class LabelConverter < BaseViewConverter
         def convert
           # Get text handler for this component
-          label_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::UIKit::LabelBindingHandler) ? 
+          label_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::LabelBindingHandler) ? 
                           @binding_handler : 
-                          SjuiTools::SwiftUI::UIKit::LabelBindingHandler.new
+                          SjuiTools::SwiftUI::Binding::LabelBindingHandler.new
           
           # Get text content with binding support
           text_content = label_handler.get_text_content(@component)
