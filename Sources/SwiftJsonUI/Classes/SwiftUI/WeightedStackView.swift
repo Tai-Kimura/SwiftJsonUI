@@ -65,11 +65,11 @@ public struct WeightedHStack: View {
                     
                     if child.isWeighted {
                         // Weighted view - calculate dynamic width
-                        ZStack {
-                            child.view
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
+                        Color.clear
+                            .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
+                            .overlay(
+                                child.view
+                            )
                         .background(
                             GeometryReader { geo in
                                 Color.clear
@@ -213,11 +213,11 @@ public struct WeightedVStack: View {
                     
                     if child.isWeighted {
                         // Weighted view - calculate dynamic height
-                        ZStack {
-                            child.view
-                                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        }
-                        .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
+                        Color.clear
+                            .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
+                            .overlay(
+                                child.view
+                            )
                         .background(
                                 GeometryReader { geo in
                                     Color.clear
