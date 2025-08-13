@@ -17,8 +17,8 @@ struct DynamicWebView: View {
            let url = URL(string: urlString) {
             WebViewWrapper(url: url)
                 .frame(
-                    width: component.width?.asArray.first.flatMap { DynamicHelpers.sizeValue($0) },
-                    height: component.height?.asArray.first.flatMap { DynamicHelpers.sizeValue($0) }
+                    width: component.width?.asArray.first.flatMap { DynamicHelpers.frameValue($0) },
+                    height: component.height?.asArray.first.flatMap { DynamicHelpers.frameValue($0) }
                 )
         } else {
             Text("Invalid URL")
@@ -46,31 +46,39 @@ struct DynamicCircleImageView: View {
     @ObservedObject var viewModel: DynamicViewModel
     
     var body: some View {
-        Group {
-            if let imageName = component.url {
-                if imageName.hasPrefix("http") {
-                    // Network image
-                    DynamicNetworkImageView(component: component, viewModel: viewModel)
-                        .clipShape(Circle())
-                } else {
-                    // Local image
-                    Image(imageName)
+        if let imageName = component.url {
+            if imageName.hasPrefix("http") {
+                // Network image
+                AsyncImage(url: URL(string: imageName)) { image in
+                    image
                         .resizable()
                         .aspectRatio(contentMode: contentModeFromString(component.contentMode))
-                        .clipShape(Circle())
-                        .frame(
-                            width: component.width?.asArray.first.flatMap { DynamicHelpers.sizeValue($0) },
-                            height: component.height?.asArray.first.flatMap { DynamicHelpers.sizeValue($0) }
-                        )
+                } placeholder: {
+                    ProgressView()
                 }
+                .clipShape(Circle())
+                .frame(
+                    width: component.width?.asArray.first.flatMap { DynamicHelpers.frameValue($0) },
+                    height: component.height?.asArray.first.flatMap { DynamicHelpers.frameValue($0) }
+                )
             } else {
-                Circle()
-                    .fill(Color.gray.opacity(0.3))
+                // Local image or SF Symbol
+                Image(systemName: imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: contentModeFromString(component.contentMode))
+                    .clipShape(Circle())
                     .frame(
-                        width: component.width?.asArray.first.flatMap { DynamicHelpers.sizeValue($0) } ?? 50,
-                        height: component.height?.asArray.first.flatMap { DynamicHelpers.sizeValue($0) } ?? 50
+                        width: component.width?.asArray.first.flatMap { DynamicHelpers.frameValue($0) },
+                        height: component.height?.asArray.first.flatMap { DynamicHelpers.frameValue($0) }
                     )
             }
+        } else {
+            Circle()
+                .fill(Color.gray.opacity(0.3))
+                .frame(
+                    width: component.width?.asArray.first.flatMap { DynamicHelpers.frameValue($0) } ?? 50,
+                    height: component.height?.asArray.first.flatMap { DynamicHelpers.frameValue($0) } ?? 50
+                )
         }
     }
     
@@ -116,7 +124,7 @@ struct DynamicGradientView: View {
     private func gradientColors() -> [Color] {
         // Parse gradient colors from items array or use defaults
         if let items = component.items {
-            return items.compactMap { DynamicHelpers.colorFromString($0) }
+            return items.compactMap { DynamicHelpers.colorFromHex($0) }
         }
         return [Color.blue, Color.purple]
     }
@@ -240,7 +248,7 @@ struct DynamicSafeAreaView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(
-            component.background.flatMap { DynamicHelpers.colorFromString($0) } ?? Color.clear
+            component.background.flatMap { DynamicHelpers.colorFromHex($0) } ?? Color.clear
         )
         .edgesIgnoringSafeArea(.all)
     }

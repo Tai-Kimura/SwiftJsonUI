@@ -15,20 +15,20 @@ DynamicViewにsjui_toolsのconverterで対応しているが未実装のコン�
 ## Implementation Checklist
 
 ### Basic UI Components
-- [ ] **Progress** - プログレスバー
-  - [ ] DynamicProgressView.swift を作成
-  - [ ] DynamicComponentBuilderに追加
-  - [ ] テスト用JSONを作成
+- [x] **Progress** - プログレスバー
+  - [x] DynamicProgressView.swift を作成
+  - [x] DynamicComponentBuilderに追加
+  - [x] テスト用JSONを作成
 
-- [ ] **Slider** - スライダー
-  - [ ] DynamicSliderView.swift を作成
-  - [ ] DynamicComponentBuilderに追加
-  - [ ] テスト用JSONを作成
+- [x] **Slider** - スライダー
+  - [x] DynamicSliderView.swift を作成
+  - [x] DynamicComponentBuilderに追加
+  - [x] テスト用JSONを作成
 
-- [ ] **Indicator** - インジケーター/ローディング
-  - [ ] DynamicIndicatorView.swift を作成
-  - [ ] DynamicComponentBuilderに追加
-  - [ ] テスト用JSONを作成
+- [x] **Indicator** - インジケーター/ローディング
+  - [x] DynamicIndicatorView.swift を作成
+  - [x] DynamicComponentBuilderに追加
+  - [x] テスト用JSONを作成
 
 ### Web & Media
 - [ ] **Web/WebView** - Webビュー
