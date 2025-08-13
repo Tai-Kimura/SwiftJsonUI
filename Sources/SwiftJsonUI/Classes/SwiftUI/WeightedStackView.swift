@@ -67,6 +67,25 @@ public struct WeightedHStack: View {
                         // Weighted view - calculate dynamic width
                         child.view
                             .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .onAppear {
+                                            if index < childVisibilities.count {
+                                                let isVisible = geo.size.width > 0 && geo.size.height > 0
+                                                childVisibilities[index] = isVisible
+                                                print("🔍 Weighted view \(index) visibility: \(isVisible), size: \(geo.size)")
+                                            }
+                                        }
+                                        .onChange(of: geo.size) { newSize in
+                                            if index < childVisibilities.count {
+                                                let isVisible = newSize.width > 0 && newSize.height > 0
+                                                childVisibilities[index] = isVisible
+                                                print("🔍 Weighted view \(index) visibility changed: \(isVisible), size: \(newSize)")
+                                            }
+                                        }
+                                }
+                            )
                     } else {
                         // Fixed size view - use intrinsic size
                         child.view
@@ -75,9 +94,19 @@ public struct WeightedHStack: View {
                                 GeometryReader { geo in
                                     Color.clear
                                         .onAppear {
-                                            if index < fixedSizes.count && fixedSizes[index] == .zero {
+                                            if index < fixedSizes.count {
                                                 fixedSizes[index] = geo.size
-                                                print("🔍 Fixed view \(index) size: \(geo.size)")
+                                                let isVisible = geo.size.width > 0 && geo.size.height > 0
+                                                childVisibilities[index] = isVisible
+                                                print("🔍 Fixed view \(index) size: \(geo.size), visibility: \(isVisible)")
+                                            }
+                                        }
+                                        .onChange(of: geo.size) { newSize in
+                                            if index < fixedSizes.count {
+                                                fixedSizes[index] = newSize
+                                                let isVisible = newSize.width > 0 && newSize.height > 0
+                                                childVisibilities[index] = isVisible
+                                                print("🔍 Fixed view \(index) size changed: \(newSize), visibility: \(isVisible)")
                                             }
                                         }
                                 }
@@ -184,6 +213,23 @@ public struct WeightedVStack: View {
                         // Weighted view - calculate dynamic height
                         child.view
                             .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .onAppear {
+                                            if index < childVisibilities.count {
+                                                let isVisible = geo.size.width > 0 && geo.size.height > 0
+                                                childVisibilities[index] = isVisible
+                                            }
+                                        }
+                                        .onChange(of: geo.size) { newSize in
+                                            if index < childVisibilities.count {
+                                                let isVisible = newSize.width > 0 && newSize.height > 0
+                                                childVisibilities[index] = isVisible
+                                            }
+                                        }
+                                }
+                            )
                     } else {
                         // Fixed size view - use intrinsic size
                         child.view
@@ -192,8 +238,17 @@ public struct WeightedVStack: View {
                                 GeometryReader { geo in
                                     Color.clear
                                         .onAppear {
-                                            if index < fixedSizes.count && fixedSizes[index] == .zero {
+                                            if index < fixedSizes.count {
                                                 fixedSizes[index] = geo.size
+                                                let isVisible = geo.size.width > 0 && geo.size.height > 0
+                                                childVisibilities[index] = isVisible
+                                            }
+                                        }
+                                        .onChange(of: geo.size) { newSize in
+                                            if index < fixedSizes.count {
+                                                fixedSizes[index] = newSize
+                                                let isVisible = newSize.width > 0 && newSize.height > 0
+                                                childVisibilities[index] = isVisible
                                             }
                                         }
                                 }
