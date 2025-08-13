@@ -10,14 +10,6 @@ module SjuiTools
             add_line "Group {"
           end
           
-          # weightプロパティの処理（weight値が渡された場合のみ）
-          if weight_value > 0 && total_weight > 0 && orientation
-            apply_weight_to_child(child, orientation, weight_value, total_weight)
-          elsif weight_value > 0 && orientation
-            # weightがあるが総重量がない場合（Block 2のケース）
-            child['parent_orientation'] = orientation
-          end
-          
           # Wrap with VisibilityWrapper if visibility is set
           child_converter = apply_visibility_wrapper(child)
           if !child_converter
@@ -40,19 +32,6 @@ module SjuiTools
         end
         
         private
-        
-        # weightベースのサイズを子要素に適用
-        def apply_weight_to_child(child, orientation, weight_value, total_weight)
-          child['parent_orientation'] = orientation
-          # weightベースのサイズを直接設定
-          if orientation == 'horizontal'
-            width_ratio = weight_value / total_weight
-            child['_weight_frame'] = ".frame(width: geometry.size.width * #{width_ratio.round(4)})"
-          elsif orientation == 'vertical'
-            height_ratio = weight_value / total_weight
-            child['_weight_frame'] = ".frame(height: geometry.size.height * #{height_ratio.round(4)})"
-          end
-        end
         
         # アライメント処理を含む子要素のレンダリング
         def render_child_with_alignment(child, orientation)

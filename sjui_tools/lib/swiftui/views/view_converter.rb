@@ -71,16 +71,19 @@ module SjuiTools
             }
             
             if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
-              # weightがある場合はGeometryReaderでラップ
-              add_line "GeometryReader { geometry in"
-              indent do
-                if orientation == 'horizontal'
-                  alignment = get_hstack_alignment
-                  add_line "HStack(alignment: #{alignment}, spacing: 0) {"
-                elsif orientation == 'vertical'
-                  alignment = get_vstack_alignment
-                  add_line "VStack(alignment: #{alignment}, spacing: 0) {"
-                end
+              # weightがある場合はWeightedStack用の子要素を構築
+              weighted_children = []
+              children.each do |child|
+                weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
+                weighted_children << { child: child, weight: weight }
+              end
+              
+              if orientation == 'horizontal'
+                alignment = get_hstack_alignment
+                add_line "WeightedHStack(alignment: #{alignment}, spacing: 0, children: ["
+              elsif orientation == 'vertical'
+                alignment = get_vstack_alignment
+                add_line "WeightedVStack(alignment: #{alignment}, spacing: 0, children: ["
               end
             elsif orientation == 'horizontal'
               # HStackでgravityを反映
@@ -105,34 +108,41 @@ module SjuiTools
             
             # 相対配置の場合は子要素の処理をスキップ
             if !@needs_relative_positioning || orientation
-              # weightの計算
-              total_weight = 0.0
-              weights = []
-              children.each do |child|
-                weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
-                weights << weight
-                total_weight += weight if weight > 0
-              end
-              
-              # インデントレベルを正しく管理
-              base_indent = has_weights && (orientation == 'horizontal' || orientation == 'vertical')
-              
-              if base_indent
+              if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
+                # WeightedStackの場合は特別な処理
                 indent do
                   children.each_with_index do |child, index|
-                    if @converter_factory
-                      weight_value = weights[index]
-                      render_child_element(child, orientation, index, weight_value, total_weight)
+                    weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
+                    
+                    # 各子要素を(view: AnyView, weight: CGFloat)のタプルとして追加
+                    add_line "(" if index == 0
+                    add_line "  view: AnyView("
+                    
+                    # 子要素を生成（visibilityは子要素で処理される）
+                    indent do
+                      child_converter = @converter_factory.create_converter(child, @indent_level + 1, @action_manager, @converter_factory, @view_registry)
+                      child_code = child_converter.convert
+                      child_lines = child_code.split("\n")
+                      child_lines.each { |line| add_line line.strip }
+                      
+                      # State変数を継承
+                      if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                        @state_variables.concat(child_converter.state_variables)
+                      end
                     end
+                    
+                    add_line "  ),"
+                    add_line "  weight: #{weight}"
+                    add_line ")#{index < children.size - 1 ? ',' : ''}"
                   end
                 end
+                add_line "])"  # WeightedStackの配列を閉じる
               else
+                # 通常のStack処理
                 indent do
                   children.each_with_index do |child, index|
                     if @converter_factory
-                      # weightがある場合でも、total_weightがないので個別に処理
-                      weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
-                      render_child_element(child, orientation, index, weight, 0)
+                      render_child_element(child, orientation, index, 0, 0)
                     end
                   end
                 end
@@ -142,13 +152,9 @@ module SjuiTools
               # orientationがある場合（HStack/VStack）は常に閉じ括弧が必要
               # orientationがない場合（ZStack）は相対配置でない場合のみ
               if orientation || !@needs_relative_positioning
-                if has_weights && (orientation == 'horizontal' || orientation == 'vertical')
-                  # GeometryReaderを使った場合は追加のインデントとブラケットが必要
-                  indent do
-                    add_line "}"  # HStack/VStackを閉じる
-                  end
-                  add_line "}"  # GeometryReaderを閉じる
-                else
+                if !has_weights || (orientation != 'horizontal' && orientation != 'vertical')
+                  # 通常のStackの場合のみ閉じ括弧が必要
+                  # WeightedStackは既に閉じている
                   add_line "}"  # 通常のStack/ZStackを閉じる
                 end
               end
