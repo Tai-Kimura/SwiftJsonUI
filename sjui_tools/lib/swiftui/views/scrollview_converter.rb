@@ -45,7 +45,8 @@ module SjuiTools
             @component['showsVerticalScrollIndicator'] != false
           end
           
-          add_line "ScrollView(#{axes}, showsIndicators: #{show_indicators}) {"
+          # AdvancedKeyboardAvoidingScrollViewを使用（キーボードとSelectBox対応）
+          add_line "AdvancedKeyboardAvoidingScrollView(#{axes}, showsIndicators: #{show_indicators}) {"
           
           indent do
             if children.length == 1
@@ -128,38 +129,8 @@ module SjuiTools
             add_line ")"
           end
           
-          # キーボード・SelectBox回避機能の追加
-          # デフォルトで両方の回避を有効化
-          keyboard_avoidance = @component['keyboardAvoidance'] != false
-          selectbox_avoidance = @component['selectBoxAvoidance'] != false
-          
-          # 両方明示的にfalseの場合のみ無効化
-          if @component['keyboardAvoidance'] == false && @component['selectBoxAvoidance'] == false
-            # 何も追加しない
-          elsif @component['keyboardAvoidance'] == false && selectbox_avoidance
-            # SelectBoxのみ
-            add_modifier_line ".selectBoxAvoidance()"
-          elsif keyboard_avoidance && @component['selectBoxAvoidance'] == false
-            # キーボードのみ
-            if @component['keyboardAvoidance'].is_a?(Hash)
-              config = @component['keyboardAvoidance']
-              params = []
-              params << "isEnabled: #{config['isEnabled']}" if config['isEnabled'] != nil
-              params << "additionalPadding: #{config['additionalPadding']}" if config['additionalPadding']
-              params << "autoScrollToFocused: #{config['autoScrollToFocused']}" if config['autoScrollToFocused'] != nil
-              
-              if params.any?
-                add_modifier_line ".keyboardAvoidance(configuration: KeyboardAvoidanceConfiguration(#{params.join(', ')}))"
-              else
-                add_modifier_line ".keyboardAvoidance()"
-              end
-            else
-              add_modifier_line ".keyboardAvoidance()"
-            end
-          else
-            # デフォルト: 両方有効（combinedAvoidance）
-            add_modifier_line ".combinedAvoidance()"
-          end
+          # AdvancedKeyboardAvoidingScrollViewは自動的に両方の回避機能を持つため、
+          # 追加のモディファイアは不要
           
           # 共通のモディファイアを適用
           apply_modifiers

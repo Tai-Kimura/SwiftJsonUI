@@ -8,6 +8,8 @@
 import SwiftUI
 
 public struct SelectBoxView: View {
+    @Environment(\.selectBoxScrollProxy) private var scrollProxy
+    
     let id: String
     let prompt: String?
     let fontSize: CGFloat
@@ -79,7 +81,18 @@ public struct SelectBoxView: View {
     
     public var body: some View {
         Button(action: {
-            isPresented = true
+            // If we have a scrollProxy, scroll to this SelectBox first
+            if let proxy = scrollProxy {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    proxy.scrollTo(id, anchor: .center)
+                }
+                // Delay sheet presentation to allow scroll animation
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    isPresented = true
+                }
+            } else {
+                isPresented = true
+            }
         }) {
             HStack {
                 // Label text
@@ -119,6 +132,7 @@ public struct SelectBoxView: View {
             .cornerRadius(cornerRadius)
         }
         .buttonStyle(.plain)
+        .id(id) // Important: Set ID for ScrollViewReader to find this view
         .sheet(isPresented: $isPresented) {
             NavigationView {
                 VStack {

@@ -7,11 +7,13 @@
 
 import SwiftUI
 
-/// Advanced ScrollView with automatic scrolling to focused fields
+/// Advanced ScrollView with automatic scrolling to focused fields and SelectBox support
 public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
     @StateObject private var keyboardResponder = KeyboardResponder.shared
+    @StateObject private var sheetResponder = SelectBoxSheetResponder.shared
     @StateObject private var focusTracker = FocusedFieldTracker.shared
     @State private var scrollOffset: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
     @Namespace private var scrollSpace
     
     private let axes: Axis.Set
@@ -37,6 +39,7 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                 ScrollView(axes, showsIndicators: showsIndicators) {
                     VStack(alignment: .leading, spacing: 0) {
                         content
+                            .environment(\.selectBoxScrollProxy, proxy)
                             .background(
                                 GeometryReader { contentGeometry in
                                     Color.clear
@@ -57,6 +60,9 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                     .frame(minHeight: geometry.size.height)
                 }
                 .coordinateSpace(name: scrollSpace)
+                .onAppear {
+                    self.scrollProxy = proxy
+                }
                 .onPreferenceChange(ContentFramePreferenceKey.self) { _ in
                     // Content frame changed
                 }
@@ -66,6 +72,12 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                 .onChange(of: focusTracker.focusedFieldId) { fieldId in
                     if fieldId != nil && keyboardResponder.isKeyboardVisible {
                         scrollToFocusedField(proxy: proxy, geometry: geometry)
+                    }
+                }
+                .onChange(of: sheetResponder.presentingSelectBoxId) { selectBoxId in
+                    if let id = selectBoxId {
+                        // Scroll to SelectBox when sheet is about to present
+                        scrollToSelectBox(id: id, proxy: proxy)
                     }
                 }
             }
@@ -111,6 +123,25 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                 proxy.scrollTo(focusedFieldId, anchor: .bottom)
             }
         }
+    }
+    
+    private func scrollToSelectBox(id: String, proxy: ScrollViewProxy) {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            // Scroll to center the SelectBox in view
+            proxy.scrollTo(id, anchor: .center)
+        }
+    }
+}
+
+/// Environment key for SelectBox scroll proxy
+private struct SelectBoxScrollProxyKey: EnvironmentKey {
+    static let defaultValue: ScrollViewProxy? = nil
+}
+
+public extension EnvironmentValues {
+    var selectBoxScrollProxy: ScrollViewProxy? {
+        get { self[SelectBoxScrollProxyKey.self] }
+        set { self[SelectBoxScrollProxyKey.self] = newValue }
     }
 }
 
