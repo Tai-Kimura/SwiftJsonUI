@@ -115,7 +115,7 @@ module SjuiTools
                     weight = (child['weight'] || child['widthWeight'] || child['heightWeight'] || 0).to_f
                     
                     # 各子要素を(view: AnyView, weight: CGFloat)のタプルとして追加
-                    add_line "(" if index == 0
+                    add_line "("
                     add_line "  view: AnyView("
                     
                     # 子要素を生成（visibilityは子要素で処理される）
