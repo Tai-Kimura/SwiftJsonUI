@@ -63,44 +63,36 @@ public struct WeightedHStack: View {
                 ForEach(0..<children.count, id: \.self) { index in
                     let child = children[index]
                     
-                    Group {
-                        if child.isWeighted {
-                            // Weighted view - calculate dynamic width
-                            child.view
-                                .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
-                        } else {
-                            // Fixed size view - measure and use natural size
-                            child.view
-                                .measureSize { size in
-                                    if index < fixedSizes.count {
-                                        fixedSizes[index] = size
-                                    }
+                    if child.isWeighted {
+                        // Weighted view - calculate dynamic width
+                        child.view
+                            .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
+                    } else {
+                        // Fixed size view - use intrinsic size
+                        child.view
+                            .fixedSize(horizontal: true, vertical: false)
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .preference(key: ViewSizeKey.self, value: geo.size)
+                                        .onPreferenceChange(ViewSizeKey.self) { size in
+                                            if index < fixedSizes.count {
+                                                fixedSizes[index] = size
+                                                print("🔍 Fixed view \(index) size: \(size)")
+                                            }
+                                        }
                                 }
-                        }
+                            )
                     }
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear
-                                .onAppear {
-                                    // Check if view is visible (size > 0)
-                                    if index < childVisibilities.count {
-                                        childVisibilities[index] = geo.size.width > 0 && geo.size.height > 0
-                                    }
-                                }
-                                .onChange(of: geo.size) { newSize in
-                                    if index < childVisibilities.count {
-                                        childVisibilities[index] = newSize.width > 0 && newSize.height > 0
-                                    }
-                                }
-                        }
-                    )
                 }
             }
             .onAppear {
                 availableWidth = geometry.size.width
+                print("🔍 WeightedHStack onAppear - availableWidth: \(availableWidth)")
             }
             .onChange(of: geometry.size.width) { newWidth in
                 availableWidth = newWidth
+                print("🔍 WeightedHStack onChange - availableWidth: \(availableWidth)")
             }
         }
     }
@@ -111,9 +103,14 @@ public struct WeightedHStack: View {
         var totalWeight: CGFloat = 0
         var visibleCount = 0
         
+        print("🔍 WeightedHStack calculateWeightedWidth - index: \(index), totalWidth: \(totalWidth)")
+        print("   fixedSizes: \(fixedSizes)")
+        print("   childVisibilities: \(childVisibilities)")
+        
         for (idx, child) in children.enumerated() {
             // Skip if not visible (determined by actual rendering)
             if idx < childVisibilities.count && !childVisibilities[idx] {
+                print("   Child \(idx): SKIPPED (not visible)")
                 continue
             }
             
@@ -121,8 +118,10 @@ public struct WeightedHStack: View {
             
             if child.isWeighted {
                 totalWeight += child.weight
+                print("   Child \(idx): weighted = \(child.weight)")
             } else if idx < fixedSizes.count {
                 totalFixedWidth += fixedSizes[idx].width
+                print("   Child \(idx): fixed width = \(fixedSizes[idx].width)")
             }
         }
         
@@ -135,6 +134,9 @@ public struct WeightedHStack: View {
         
         // Get this child's weight
         let childWeight = children[index].weight
+        
+        print("   Total: weight=\(totalWeight), fixed=\(totalFixedWidth), remaining=\(remainingSpace)")
+        print("   Child \(index) weight=\(childWeight), calculated width=\(totalWeight > 0 ? remainingSpace * (childWeight / totalWeight) : 0)")
         
         // Return proportional width
         if totalWeight > 0 {
