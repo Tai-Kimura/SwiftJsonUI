@@ -92,7 +92,9 @@ public struct SelectBoxView: View {
                 // Wait for sheet to be fully presented before scrolling
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation(.easeInOut(duration: 0.4)) {
-                        proxy.scrollTo(id, anchor: .center)
+                        // Use a position that shows the SelectBox above the sheet
+                        // UnitPoint(x: 0.5, y: 0.3) places it in upper portion of screen
+                        proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.3))
                     }
                 }
             }
@@ -253,7 +255,7 @@ public struct SelectBoxView: View {
                     // Small delay to ensure sheet is visible
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(id, anchor: .center)
+                            proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: 0.3))
                         }
                     }
                 }
