@@ -59,72 +59,62 @@ public struct WeightedHStack: View {
     
     public var body: some View {
         GeometryReader { geometry in
-            HStack(alignment: alignment, spacing: 0) {  // Set spacing to 0, we'll add it manually
+            HStack(alignment: alignment, spacing: spacing) {
                 ForEach(0..<children.count, id: \.self) { index in
                     let child = children[index]
                     
-                    HStack(spacing: 0) {
-                        if child.isWeighted {
-                            // Weighted view - calculate dynamic width
+                    if child.isWeighted {
+                        // Weighted view - calculate dynamic width
+                        ZStack {
                             child.view
-                                .frame(maxWidth: .infinity)
-                                .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
-                                .background(
-                                    GeometryReader { geo in
-                                        Color.clear
-                                            .onAppear {
-                                                if index < childVisibilities.count {
-                                                    let isVisible = geo.size.width > 0 && geo.size.height > 0
-                                                    childVisibilities[index] = isVisible
-                                                    print("🔍 Weighted view \(index) visibility: \(isVisible), size: \(geo.size)")
-                                                }
-                                            }
-                                            .onChange(of: geo.size) { newSize in
-                                                if index < childVisibilities.count {
-                                                    let isVisible = newSize.width > 0 && newSize.height > 0
-                                                    childVisibilities[index] = isVisible
-                                                    print("🔍 Weighted view \(index) visibility changed: \(isVisible), size: \(newSize)")
-                                                }
-                                            }
-                                    }
-                                )
-                        } else {
-                            // Fixed size view - use natural width
-                            child.view
-                                .background(
-                                    GeometryReader { geo in
-                                        Color.clear
-                                            .onAppear {
-                                                if index < fixedSizes.count {
-                                                    fixedSizes[index] = geo.size
-                                                    let isVisible = geo.size.width > 0 && geo.size.height > 0
-                                                    childVisibilities[index] = isVisible
-                                                    print("🔍 Fixed view \(index) size: \(geo.size), visibility: \(isVisible)")
-                                                }
-                                            }
-                                            .onChange(of: geo.size) { newSize in
-                                                if index < fixedSizes.count {
-                                                    fixedSizes[index] = newSize
-                                                    let isVisible = newSize.width > 0 && newSize.height > 0
-                                                    childVisibilities[index] = isVisible
-                                                    print("🔍 Fixed view \(index) size changed: \(newSize), visibility: \(isVisible)")
-                                                }
-                                            }
-                                    }
-                                )
                         }
-                        
-                        // Add spacing after each item except the last visible one
-                        if index < children.count - 1 && spacing > 0 {
-                            if shouldAddSpacing(after: index) {
+                        .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
+                        .background(
+                            GeometryReader { geo in
                                 Color.clear
-                                    .frame(width: spacing)
+                                    .onAppear {
+                                        if index < childVisibilities.count {
+                                            let isVisible = geo.size.width > 0 && geo.size.height > 0
+                                            childVisibilities[index] = isVisible
+                                            print("🔍 Weighted view \(index) visibility: \(isVisible), size: \(geo.size)")
+                                        }
+                                    }
+                                    .onChange(of: geo.size) { newSize in
+                                        if index < childVisibilities.count {
+                                            let isVisible = newSize.width > 0 && newSize.height > 0
+                                            childVisibilities[index] = isVisible
+                                            print("🔍 Weighted view \(index) visibility changed: \(isVisible), size: \(newSize)")
+                                        }
+                                    }
                             }
-                        }
+                        )
+                    } else {
+                        // Fixed size view - use natural width
+                        child.view
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .onAppear {
+                                            if index < fixedSizes.count {
+                                                fixedSizes[index] = geo.size
+                                                let isVisible = geo.size.width > 0 && geo.size.height > 0
+                                                childVisibilities[index] = isVisible
+                                                print("🔍 Fixed view \(index) size: \(geo.size), visibility: \(isVisible)")
+                                            }
+                                        }
+                                        .onChange(of: geo.size) { newSize in
+                                            if index < fixedSizes.count {
+                                                fixedSizes[index] = newSize
+                                                let isVisible = newSize.width > 0 && newSize.height > 0
+                                                childVisibilities[index] = isVisible
+                                                print("🔍 Fixed view \(index) size changed: \(newSize), visibility: \(isVisible)")
+                                            }
+                                        }
+                                }
+                            )
                     }
                 }
             }
-            .frame(width: geometry.size.width, alignment: .leading)
             .onAppear {
                 availableWidth = geometry.size.width
                 print("🔍 WeightedHStack onAppear - availableWidth: \(availableWidth)")
@@ -134,16 +124,6 @@ public struct WeightedHStack: View {
                 print("🔍 WeightedHStack onChange - availableWidth: \(availableWidth)")
             }
         }
-    }
-    
-    private func shouldAddSpacing(after index: Int) -> Bool {
-        // Check if there's any visible view after this index
-        for i in (index + 1)..<children.count {
-            if i >= childVisibilities.count || childVisibilities[i] {
-                return true
-            }
-        }
-        return false
     }
     
     private func calculateWeightedWidth(for index: Int, totalWidth: CGFloat) -> CGFloat {
@@ -232,10 +212,11 @@ public struct WeightedVStack: View {
                     
                     if child.isWeighted {
                         // Weighted view - calculate dynamic height
-                        child.view
-                            .frame(maxHeight: .infinity)
-                            .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
-                            .background(
+                        ZStack {
+                            child.view
+                        }
+                        .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
+                        .background(
                                 GeometryReader { geo in
                                     Color.clear
                                         .onAppear {
