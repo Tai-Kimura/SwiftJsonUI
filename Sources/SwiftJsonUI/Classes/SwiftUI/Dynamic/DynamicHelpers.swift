@@ -140,6 +140,32 @@ public struct DynamicHelpers {
     public static func isMatchParent(_ value: String?) -> Bool {
         return value == "matchParent"
     }
+    
+    // Helper to extract padding values from AnyCodable
+    public static func extractPaddingValues(_ padding: AnyCodable?) -> [CGFloat]? {
+        guard let padding = padding else { return nil }
+        
+        if let array = padding.value as? [Any] {
+            return array.compactMap { item in
+                if let value = item as? CGFloat {
+                    return value
+                } else if let value = item as? Double {
+                    return CGFloat(value)
+                } else if let value = item as? Int {
+                    return CGFloat(value)
+                }
+                return nil
+            }
+        } else if let value = padding.value as? CGFloat {
+            return [value]
+        } else if let value = padding.value as? Double {
+            return [CGFloat(value)]
+        } else if let value = padding.value as? Int {
+            return [CGFloat(value)]
+        }
+        
+        return nil
+    }
 }
 
 // MARK: - View Modifier Extension
@@ -271,120 +297,128 @@ extension View {
     
     @ViewBuilder
     func applyPadding(_ component: DynamicComponent) -> some View {
-        var view = self
+        self
+            .modifier(PaddingModifier(component: component))
+    }
+    
+    @ViewBuilder
+    func applyMargin(_ component: DynamicComponent) -> some View {
+        self
+            .modifier(MarginModifier(component: component))
+    }
+}
+
+// MARK: - Padding Modifier
+struct PaddingModifier: ViewModifier {
+    let component: DynamicComponent
+    
+    func body(content: Content) -> some View {
+        var modifiedContent = AnyView(content)
         
         // padding または paddings プロパティ
-        if let padding = component.padding ?? component.paddings {
-            if let array = padding.value as? [Any] {
-                let values = array.compactMap { $0 as? CGFloat ?? (($0 as? Double).map { CGFloat($0) }) ?? (($0 as? Int).map { CGFloat($0) }) }
-                switch values.count {
-                case 1:
-                    view = AnyView(view.padding(values[0]))
-                case 2:
-                    view = AnyView(view.padding(.horizontal, values[1]).padding(.vertical, values[0]))
-                case 4:
-                    view = AnyView(view.padding(.top, values[0])
+        if let values = DynamicHelpers.extractPaddingValues(component.padding ?? component.paddings) {
+            switch values.count {
+            case 1:
+                modifiedContent = AnyView(modifiedContent.padding(values[0]))
+            case 2:
+                modifiedContent = AnyView(modifiedContent.padding(.horizontal, values[1]).padding(.vertical, values[0]))
+            case 4:
+                modifiedContent = AnyView(
+                    modifiedContent
+                        .padding(.top, values[0])
                         .padding(.trailing, values[1])
                         .padding(.bottom, values[2])
-                        .padding(.leading, values[3]))
-                default:
-                    break
-                }
-            } else if let value = padding.value as? CGFloat {
-                view = AnyView(view.padding(value))
-            } else if let value = padding.value as? Double {
-                view = AnyView(view.padding(CGFloat(value)))
-            } else if let value = padding.value as? Int {
-                view = AnyView(view.padding(CGFloat(value)))
+                        .padding(.leading, values[3])
+                )
+            default:
+                break
             }
         }
         
         // 個別のpadding設定
         if let value = component.leftPadding ?? component.paddingLeft {
-            view = AnyView(view.padding(.leading, value))
+            modifiedContent = AnyView(modifiedContent.padding(.leading, value))
         }
         if let value = component.rightPadding ?? component.paddingRight {
-            view = AnyView(view.padding(.trailing, value))
+            modifiedContent = AnyView(modifiedContent.padding(.trailing, value))
         }
         if let value = component.topPadding ?? component.paddingTop {
-            view = AnyView(view.padding(.top, value))
+            modifiedContent = AnyView(modifiedContent.padding(.top, value))
         }
         if let value = component.bottomPadding ?? component.paddingBottom {
-            view = AnyView(view.padding(.bottom, value))
+            modifiedContent = AnyView(modifiedContent.padding(.bottom, value))
         }
         
         // insets プロパティ
-        if let insets = component.insets {
-            if let array = insets.value as? [Any] {
-                let values = array.compactMap { $0 as? CGFloat ?? (($0 as? Double).map { CGFloat($0) }) ?? (($0 as? Int).map { CGFloat($0) }) }
-                switch values.count {
-                case 1:
-                    view = AnyView(view.padding(values[0]))
-                case 2:
-                    view = AnyView(view.padding(.vertical, values[0]).padding(.horizontal, values[1]))
-                case 4:
-                    view = AnyView(view.padding(.top, values[0])
+        if let values = DynamicHelpers.extractPaddingValues(component.insets) {
+            switch values.count {
+            case 1:
+                modifiedContent = AnyView(modifiedContent.padding(values[0]))
+            case 2:
+                modifiedContent = AnyView(modifiedContent.padding(.vertical, values[0]).padding(.horizontal, values[1]))
+            case 4:
+                modifiedContent = AnyView(
+                    modifiedContent
+                        .padding(.top, values[0])
                         .padding(.trailing, values[1])
                         .padding(.bottom, values[2])
-                        .padding(.leading, values[3]))
-                default:
-                    break
-                }
+                        .padding(.leading, values[3])
+                )
+            default:
+                break
             }
         }
         
         // insetHorizontal
         if let value = component.insetHorizontal {
-            view = AnyView(view.padding(.horizontal, value))
+            modifiedContent = AnyView(modifiedContent.padding(.horizontal, value))
         }
         
-        return view
+        return modifiedContent
     }
+}
+
+// MARK: - Margin Modifier
+struct MarginModifier: ViewModifier {
+    let component: DynamicComponent
     
-    @ViewBuilder
-    func applyMargin(_ component: DynamicComponent) -> some View {
-        var view = self
+    func body(content: Content) -> some View {
+        var modifiedContent = AnyView(content)
         
         // margin または margins プロパティ
-        if let margin = component.margin ?? component.margins {
-            if let array = margin.value as? [Any] {
-                let values = array.compactMap { $0 as? CGFloat ?? (($0 as? Double).map { CGFloat($0) }) ?? (($0 as? Int).map { CGFloat($0) }) }
-                switch values.count {
-                case 1:
-                    view = AnyView(view.padding(values[0]))
-                case 2:
-                    view = AnyView(view.padding(.vertical, values[0]).padding(.horizontal, values[1]))
-                case 4:
-                    view = AnyView(view.padding(.top, values[0])
+        if let values = DynamicHelpers.extractPaddingValues(component.margin ?? component.margins) {
+            switch values.count {
+            case 1:
+                modifiedContent = AnyView(modifiedContent.padding(values[0]))
+            case 2:
+                modifiedContent = AnyView(modifiedContent.padding(.vertical, values[0]).padding(.horizontal, values[1]))
+            case 4:
+                modifiedContent = AnyView(
+                    modifiedContent
+                        .padding(.top, values[0])
                         .padding(.trailing, values[1])
                         .padding(.bottom, values[2])
-                        .padding(.leading, values[3]))
-                default:
-                    break
-                }
-            } else if let value = margin.value as? CGFloat {
-                view = AnyView(view.padding(value))
-            } else if let value = margin.value as? Double {
-                view = AnyView(view.padding(CGFloat(value)))
-            } else if let value = margin.value as? Int {
-                view = AnyView(view.padding(CGFloat(value)))
+                        .padding(.leading, values[3])
+                )
+            default:
+                break
             }
         }
         
         // 個別のmargin設定
         if let value = component.topMargin {
-            view = AnyView(view.padding(.top, value))
+            modifiedContent = AnyView(modifiedContent.padding(.top, value))
         }
         if let value = component.bottomMargin {
-            view = AnyView(view.padding(.bottom, value))
+            modifiedContent = AnyView(modifiedContent.padding(.bottom, value))
         }
         if let value = component.leftMargin {
-            view = AnyView(view.padding(.leading, value))
+            modifiedContent = AnyView(modifiedContent.padding(.leading, value))
         }
         if let value = component.rightMargin {
-            view = AnyView(view.padding(.trailing, value))
+            modifiedContent = AnyView(modifiedContent.padding(.trailing, value))
         }
         
-        return view
+        return modifiedContent
     }
 }
