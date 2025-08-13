@@ -136,8 +136,7 @@ public struct SelectBoxView: View {
                     .font(.system(size: 12))
             }
             .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity)
-            .frame(height: 50)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(backgroundColor)
             .cornerRadius(cornerRadius)
         }
