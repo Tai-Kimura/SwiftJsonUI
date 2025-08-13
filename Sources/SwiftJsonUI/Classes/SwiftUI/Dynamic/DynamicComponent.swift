@@ -63,6 +63,12 @@ public struct DynamicComponent: Decodable {
     let textAlign: String?
     let selectedItem: String?
     let isOn: Bool?
+    let progress: Double?
+    let value: Double?
+    let minValue: Double?
+    let maxValue: Double?
+    let indicatorStyle: String?
+    let selectedIndex: Int?
     
     // Event handlers
     let onClick: String?

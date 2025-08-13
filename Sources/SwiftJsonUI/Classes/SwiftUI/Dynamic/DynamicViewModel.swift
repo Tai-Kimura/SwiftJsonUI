@@ -14,6 +14,10 @@ public class DynamicViewModel: ObservableObject {
     @Published public var textFieldValues: [String: String] = [:]
     @Published public var toggleValues: [String: Bool] = [:]
     @Published public var variables: [String: Any] = [:]
+    @Published public var progressValues: [String: Double] = [:]
+    @Published public var sliderValues: [String: Double] = [:]
+    @Published public var selectedSegments: [String: Int] = [:]
+    @Published public var selectedRadios: [String: Int] = [:]
     
     private let jsonName: String?
     private var cancellables = Set<AnyCancellable>()

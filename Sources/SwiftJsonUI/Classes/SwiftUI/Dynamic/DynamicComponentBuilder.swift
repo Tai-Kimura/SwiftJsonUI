@@ -59,6 +59,32 @@ public struct DynamicComponentBuilder: View {
             DynamicScrollViewContainer(component: component, viewModel: viewModel, viewId: viewId)
         case "Switch":
             DynamicSwitchView(component: component, viewModel: viewModel)
+        case "Toggle", "Check":
+            DynamicToggleView(component: component, viewModel: viewModel)
+        case "Checkbox":
+            DynamicCheckboxView(component: component, viewModel: viewModel)
+        case "Progress":
+            DynamicProgressView(component: component, viewModel: viewModel)
+        case "Slider":
+            DynamicSliderView(component: component, viewModel: viewModel)
+        case "Indicator":
+            DynamicIndicatorView(component: component, viewModel: viewModel)
+        case "Segment":
+            DynamicSegmentView(component: component, viewModel: viewModel)
+        case "Radio":
+            DynamicRadioView(component: component, viewModel: viewModel)
+        case "Web", "WebView":
+            DynamicWebView(component: component, viewModel: viewModel)
+        case "CircleImage":
+            DynamicCircleImageView(component: component, viewModel: viewModel)
+        case "GradientView":
+            DynamicGradientView(component: component, viewModel: viewModel)
+        case "Blur", "BlurView":
+            DynamicBlurView(component: component, viewModel: viewModel)
+        case "TabView":
+            DynamicTabView(component: component, viewModel: viewModel)
+        case "SafeAreaView":
+            DynamicSafeAreaView(component: component, viewModel: viewModel)
         default:
             EmptyView()
         }

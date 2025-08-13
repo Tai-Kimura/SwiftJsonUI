@@ -6,12 +6,11 @@ DynamicViewにsjui_toolsのconverterで対応しているが未実装のコン�
 ## Priority Implementation
 
 ### 1. Include処理の実装（base_view_converter.rb:61-71の未実装部分）
-- [ ] **handle_include_and_variables メソッドの実装**
-  - [ ] includeファイルの読み込み処理
-  - [ ] variables による変数置換処理
-  - [ ] shared_data プロパティのサポート
-  - [ ] data キープロパティのサポート
-  - [ ] ビルド時のプリプロセッサ処理の実装
+- [x] **handle_include_and_variables メソッドの実装**
+  - [x] includeファイルの読み込み処理
+  - [x] shared_data プロパティのサポート
+  - [x] data キープロパティのサポート
+  - [x] ビルド時のプリプロセッサ処理の実装
 
 ## Implementation Checklist
 
@@ -80,13 +79,12 @@ DynamicViewにsjui_toolsのconverterで対応しているが未実装のコン�
   - [ ] テスト用JSONを作成
 
 ### Advanced Components
-- [ ] **Include** - 他のレイアウトファイルのインクルード
-  - [ ] DynamicIncludeView.swift を作成
-  - [ ] shared_data プロパティのサポート
-  - [ ] data キープロパティのサポート
-  - [ ] variables による変数置換処理
-  - [ ] DynamicComponentBuilderに追加
-  - [ ] テスト用JSONを作成
+- [x] **Include** - 他のレイアウトファイルのインクルード
+  - [x] IncludeConverterの実装（sjui_tools側で完了）
+  - [x] shared_data プロパティのサポート
+  - [x] data キープロパティのサポート
+  - [x] リアクティブデータ対応（.id()モディファイア）
+  - [x] テスト用JSONを作成
 
 - [ ] **DynamicComponent** - 動的コンポーネント（再帰的な動的ビュー）
   - [ ] DynamicComponentView.swift を作成
