@@ -81,17 +81,26 @@ public struct SelectBoxView: View {
     
     public var body: some View {
         Button(action: {
-            // If we have a scrollProxy, scroll to this SelectBox first
+            // Notify sheet responder first to trigger padding
+            sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
+            
+            // If we have a scrollProxy, scroll to this SelectBox
             if let proxy = scrollProxy {
-                withAnimation(.easeInOut(duration: 0.3)) {
-                    proxy.scrollTo(id, anchor: .center)
+                // Small delay to allow padding animation to start
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(.easeInOut(duration: 0.3)) {
+                        proxy.scrollTo(id, anchor: .center)
+                    }
                 }
                 // Delay sheet presentation to allow scroll animation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                     isPresented = true
                 }
             } else {
-                isPresented = true
+                // No scroll proxy, just show sheet after a small delay
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    isPresented = true
+                }
             }
         }) {
             HStack {
@@ -244,10 +253,6 @@ public struct SelectBoxView: View {
                 )
             }
             .presentationDetents([.height(sheetHeight)])
-            .onAppear {
-                // Notify when sheet actually appears
-                sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
-            }
             .onDisappear {
                 // Notify when sheet disappears (in case of swipe down)
                 sheetResponder.sheetWillDismiss(id: id)
