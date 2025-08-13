@@ -35,11 +35,14 @@ struct DynamicViewContainer: View {
             // orientation と weight をチェック
             let orientation = component.orientation
             let hasWeights = children.contains { child in
-                let weight = child.weight ?? child.widthWeight ?? child.heightWeight ?? 0
+                let weightValue = child.weight ?? 0
+                let widthWeightValue = child.widthWeight ?? 0
+                let heightWeightValue = child.heightWeight ?? 0
+                let totalWeight = CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                 // width:0 または height:0 の場合もweightありとして扱う
                 let hasZeroWidth = (child.width?.asArray.first == "0" || child.width?.asArray.first == "0.0")
                 let hasZeroHeight = (child.height?.asArray.first == "0" || child.height?.asArray.first == "0.0")
-                return weight > 0 || hasZeroWidth || hasZeroHeight
+                return totalWeight > 0 || hasZeroWidth || hasZeroHeight
             }
             
             // 相対配置が必要かチェック
@@ -233,9 +236,13 @@ struct WeightedStackContainer: View {
                 children: children.map { child in
                     // width:0の場合はweightを使用
                     let hasZeroWidth = (child.width?.asArray.first == "0" || child.width?.asArray.first == "0.0")
-                    let weight = hasZeroWidth ? 
-                        CGFloat(child.weight ?? child.widthWeight ?? 1) :
-                        CGFloat(child.weight ?? child.widthWeight ?? child.heightWeight ?? 0)
+                    let weightValue = child.weight ?? 0
+                    let widthWeightValue = child.widthWeight ?? 0
+                    let heightWeightValue = child.heightWeight ?? 0
+                    
+                    let weight: CGFloat = hasZeroWidth ? 
+                        CGFloat(max(weightValue, widthWeightValue, 1)) :
+                        CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                     
                     return (
                         view: AnyView(
@@ -252,9 +259,13 @@ struct WeightedStackContainer: View {
                 children: children.map { child in
                     // height:0の場合はweightを使用
                     let hasZeroHeight = (child.height?.asArray.first == "0" || child.height?.asArray.first == "0.0")
-                    let weight = hasZeroHeight ?
-                        CGFloat(child.weight ?? child.heightWeight ?? 1) :
-                        CGFloat(child.weight ?? child.widthWeight ?? child.heightWeight ?? 0)
+                    let weightValue = child.weight ?? 0
+                    let widthWeightValue = child.widthWeight ?? 0
+                    let heightWeightValue = child.heightWeight ?? 0
+                    
+                    let weight: CGFloat = hasZeroHeight ?
+                        CGFloat(max(weightValue, heightWeightValue, 1)) :
+                        CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                     
                     return (
                         view: AnyView(
