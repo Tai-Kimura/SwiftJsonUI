@@ -142,7 +142,7 @@ public struct SelectBoxView: View {
         }
         .buttonStyle(.plain)
         .id(id) // Important: Set ID for ScrollViewReader to find this view
-        .background(
+        .overlay(
             GeometryReader { geometry in
                 Color.clear
                     .onAppear {
