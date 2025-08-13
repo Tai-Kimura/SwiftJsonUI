@@ -67,6 +67,7 @@ public struct WeightedHStack: View {
                         if child.isWeighted {
                             // Weighted view - calculate dynamic width
                             child.view
+                                .frame(maxWidth: .infinity)
                                 .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
                                 .background(
                                     GeometryReader { geo in
@@ -232,6 +233,7 @@ public struct WeightedVStack: View {
                     if child.isWeighted {
                         // Weighted view - calculate dynamic height
                         child.view
+                            .frame(maxHeight: .infinity)
                             .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
                             .background(
                                 GeometryReader { geo in
