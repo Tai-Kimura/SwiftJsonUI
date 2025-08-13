@@ -33,8 +33,7 @@ module SjuiTools
         # Extract data properties from JSON
         data_properties = extract_data_properties(json_data)
         
-        return if data_properties.empty?
-        
+        # Always create/update data file, even if no properties
         # Get the view name from file path
         base_name = File.basename(json_file, '.json')
         
@@ -94,8 +93,11 @@ module SjuiTools
           # For new files, use pascal case
           view_name = pascal_view_name
           data_file_path = File.join(@data_dir, "#{view_name}Data.swift")
-          # If file doesn't exist, skip (it should be created by generator)
-          return unless File.exist?(data_file_path)
+          # If file doesn't exist, create it with empty data structure
+          unless File.exist?(data_file_path)
+            # Create directory if needed
+            FileUtils.mkdir_p(@data_dir)
+          end
         end
         
         # Generate new content
@@ -155,6 +157,57 @@ module SjuiTools
           end
         end
         
+        # Add update function to allow dynamic property updates
+        content += "\n"
+        content += "    // Update properties from dictionary\n"
+        content += "    mutating func update(dictionary: [String: Any]) {\n"
+        
+        if !data_properties.empty?
+          data_properties.each do |prop|
+            name = prop['name']
+            class_type = prop['class']
+            
+            # Generate update code based on type
+            content += "        if let value = dictionary[\"#{name}\"] {\n"
+            
+            case class_type
+            when 'String'
+              content += "            if let stringValue = value as? String {\n"
+              content += "                self.#{name} = stringValue\n"
+              content += "            }\n"
+            when 'Int'
+              content += "            if let intValue = value as? Int {\n"
+              content += "                self.#{name} = intValue\n"
+              content += "            }\n"
+            when 'Double'
+              content += "            if let doubleValue = value as? Double {\n"
+              content += "                self.#{name} = doubleValue\n"
+              content += "            }\n"
+            when 'Bool'
+              content += "            if let boolValue = value as? Bool {\n"
+              content += "                self.#{name} = boolValue\n"
+              content += "            }\n"
+            when 'CGFloat'
+              content += "            if let floatValue = value as? CGFloat {\n"
+              content += "                self.#{name} = floatValue\n"
+              content += "            } else if let doubleValue = value as? Double {\n"
+              content += "                self.#{name} = CGFloat(doubleValue)\n"
+              content += "            }\n"
+            else
+              # For custom types, try to cast directly
+              content += "            if let typedValue = value as? #{class_type} {\n"
+              content += "                self.#{name} = typedValue\n"
+              content += "            }\n"
+            end
+            
+            content += "        }\n"
+          end
+        else
+          # No properties, but still include empty function body
+          content += "        // No properties to update\n"
+        end
+        
+        content += "    }\n"
         content += "}\n"
         content
       end

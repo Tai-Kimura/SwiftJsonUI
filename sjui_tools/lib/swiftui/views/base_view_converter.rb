@@ -60,14 +60,24 @@ module SjuiTools
         end
         
         def handle_include_and_variables
-          # include処理（JSONの読み込みと変数置換）
+          # include処理は専用のIncludeConverterで処理するため、
+          # ここではメタデータのみを記録
           if @component['include']
+            # includeがある場合は、IncludeConverterが処理することを示すコメントを追加
+            add_line "// Component will be replaced by IncludeConverter"
             add_line "// include: #{@component['include']}"
+            
+            if @component['shared_data']
+              add_line "// shared_data: #{@component['shared_data'].to_json}"
+            end
+            
+            if @component['data']
+              add_line "// data: #{@component['data'].to_json}"
+            end
+            
             if @component['variables']
               add_line "// variables: #{@component['variables'].to_json}"
             end
-            # 実際のinclude処理はビルド時のプリプロセッサで行う必要がある
-            # ここではコメントとして記録
           end
         end
 

@@ -35,8 +35,10 @@ module SjuiTools
           child_data = @component['child'] || []
           # childが単一要素の場合は配列に変換
           children = child_data.is_a?(Array) ? child_data : [child_data]
-          # Filter out data declarations - only if child is a Hash
-          children = children.reject { |child| child.is_a?(Hash) && child['data'] }
+          # Filter out data declarations - only if it's a data declaration (has 'data' key and no other view properties)
+          children = children.reject { |child| 
+            child.is_a?(Hash) && child['data'] && !child['type'] && !child['include']
+          }
           
           # 子ビューもレジストリに登録
           children.each do |child|

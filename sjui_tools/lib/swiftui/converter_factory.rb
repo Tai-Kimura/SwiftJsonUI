@@ -35,6 +35,11 @@ module SjuiTools
       end
       
       def create_converter(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
+        # includeプロパティがある場合はIncludeConverterを使用
+        if component['include']
+          return Views::IncludeConverter.new(component, indent_level, action_manager, @binding_registry)
+        end
+        
         component_type = component['type']
         registry = view_registry || @view_registry
         
