@@ -14,6 +14,7 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
     @StateObject private var focusTracker = FocusedFieldTracker.shared
     @State private var scrollOffset: CGFloat = 0
     @State private var scrollProxy: ScrollViewProxy?
+    @State private var selectBoxPadding: CGFloat = 0
     @Namespace private var scrollSpace
     
     private let axes: Axis.Set
@@ -50,11 +51,18 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                                 }
                             )
                         
-                        // Dynamic spacer that adjusts to keyboard height
+                        // Dynamic spacer that adjusts to keyboard height or SelectBox sheet
                         if configuration.isEnabled {
                             Spacer()
                                 .frame(height: calculateSpacerHeight(in: geometry))
                                 .id("keyboard_spacer")
+                        }
+                        
+                        // Additional padding for SelectBox sheet
+                        if selectBoxPadding > 0 {
+                            Spacer()
+                                .frame(height: selectBoxPadding)
+                                .id("selectbox_spacer")
                         }
                     }
                     .frame(minHeight: geometry.size.height)
@@ -78,6 +86,11 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                     if let id = selectBoxId {
                         // Scroll to SelectBox when sheet is about to present
                         scrollToSelectBox(id: id, proxy: proxy)
+                    } else {
+                        // Sheet was dismissed, remove padding
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectBoxPadding = 0
+                        }
                     }
                 }
             }
@@ -126,9 +139,16 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
     }
     
     private func scrollToSelectBox(id: String, proxy: ScrollViewProxy) {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            // Scroll to center the SelectBox in view
-            proxy.scrollTo(id, anchor: .center)
+        // First, add padding to allow scrolling to bottom items
+        withAnimation(.easeInOut(duration: 0.2)) {
+            selectBoxPadding = 300 // Add padding for sheet height
+        }
+        
+        // Then scroll to the SelectBox after padding is applied
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            withAnimation(.easeInOut(duration: 0.3)) {
+                proxy.scrollTo(id, anchor: .center)
+            }
         }
     }
 }
