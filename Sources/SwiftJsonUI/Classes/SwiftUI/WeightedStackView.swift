@@ -74,11 +74,10 @@ public struct WeightedHStack: View {
                             .background(
                                 GeometryReader { geo in
                                     Color.clear
-                                        .preference(key: ViewSizeKey.self, value: geo.size)
-                                        .onPreferenceChange(ViewSizeKey.self) { size in
-                                            if index < fixedSizes.count {
-                                                fixedSizes[index] = size
-                                                print("🔍 Fixed view \(index) size: \(size)")
+                                        .onAppear {
+                                            if index < fixedSizes.count && fixedSizes[index] == .zero {
+                                                fixedSizes[index] = geo.size
+                                                print("🔍 Fixed view \(index) size: \(geo.size)")
                                             }
                                         }
                                 }
@@ -181,37 +180,25 @@ public struct WeightedVStack: View {
                 ForEach(0..<children.count, id: \.self) { index in
                     let child = children[index]
                     
-                    Group {
-                        if child.isWeighted {
-                            // Weighted view - calculate dynamic height
-                            child.view
-                                .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
-                        } else {
-                            // Fixed size view - measure and use natural size
-                            child.view
-                                .measureSize { size in
-                                    if index < fixedSizes.count {
-                                        fixedSizes[index] = size
-                                    }
+                    if child.isWeighted {
+                        // Weighted view - calculate dynamic height
+                        child.view
+                            .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
+                    } else {
+                        // Fixed size view - use intrinsic size
+                        child.view
+                            .fixedSize(horizontal: false, vertical: true)
+                            .background(
+                                GeometryReader { geo in
+                                    Color.clear
+                                        .onAppear {
+                                            if index < fixedSizes.count && fixedSizes[index] == .zero {
+                                                fixedSizes[index] = geo.size
+                                            }
+                                        }
                                 }
-                        }
+                            )
                     }
-                    .background(
-                        GeometryReader { geo in
-                            Color.clear
-                                .onAppear {
-                                    // Check if view is visible (size > 0)
-                                    if index < childVisibilities.count {
-                                        childVisibilities[index] = geo.size.width > 0 && geo.size.height > 0
-                                    }
-                                }
-                                .onChange(of: geo.size) { newSize in
-                                    if index < childVisibilities.count {
-                                        childVisibilities[index] = newSize.width > 0 && newSize.height > 0
-                                    }
-                                }
-                        }
-                    )
                 }
             }
             .onAppear {
