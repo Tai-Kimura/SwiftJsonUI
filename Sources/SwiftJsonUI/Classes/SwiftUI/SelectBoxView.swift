@@ -92,8 +92,11 @@ public struct SelectBoxView: View {
                 // Wait for sheet to be fully presented before scrolling
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation(.easeInOut(duration: 0.4)) {
-                        // Use .top to position SelectBox at the top of visible area
-                        proxy.scrollTo(id, anchor: .top)
+                        // Calculate anchor position based on sheet height
+                        // Position SelectBox just above the sheet
+                        let sheetRatio = sheetHeight / UIScreen.main.bounds.height
+                        let anchorY = 1.0 - sheetRatio - 0.1 // Subtract sheet ratio from bottom, with small margin
+                        proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                     }
                 }
             }
@@ -254,7 +257,10 @@ public struct SelectBoxView: View {
                     // Small delay to ensure sheet is visible
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(.easeInOut(duration: 0.3)) {
-                            proxy.scrollTo(id, anchor: .top)
+                            // Calculate anchor position based on sheet height
+                            let sheetRatio = sheetHeight / UIScreen.main.bounds.height
+                            let anchorY = 1.0 - sheetRatio - 0.1
+                            proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                         }
                     }
                 }
