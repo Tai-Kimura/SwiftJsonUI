@@ -69,6 +69,7 @@ public struct WeightedHStack: View {
                             child.view
                         }
                         .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
+                        .background(Color.red.opacity(0.3))  // Debug background
                         .background(
                             GeometryReader { geo in
                                 Color.clear
