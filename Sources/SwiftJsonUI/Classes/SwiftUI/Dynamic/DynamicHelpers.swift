@@ -13,13 +13,37 @@ public struct DynamicHelpers {
     public static func fontFromComponent(_ component: DynamicComponent) -> Font {
         let size = component.fontSize ?? 16
         let fontName = component.font
+        let weight = component.fontWeight
         
-        if fontName == "bold" {
-            return .system(size: size, weight: .bold)
-        } else if let fontName = fontName {
+        // Determine weight
+        let fontWeight: Font.Weight = {
+            switch weight?.lowercased() ?? fontName?.lowercased() {
+            case "bold":
+                return .bold
+            case "semibold":
+                return .semibold
+            case "medium":
+                return .medium
+            case "light":
+                return .light
+            case "thin":
+                return .thin
+            case "ultralight":
+                return .ultraLight
+            case "heavy":
+                return .heavy
+            case "black":
+                return .black
+            default:
+                return .regular
+            }
+        }()
+        
+        // Apply custom font or system font
+        if let fontName = fontName, fontName.lowercased() != "bold" {
             return .custom(fontName, size: size)
         } else {
-            return .system(size: size)
+            return .system(size: size, weight: fontWeight)
         }
     }
     
@@ -123,14 +147,19 @@ public struct DynamicHelpers {
     }
     
     public static func frameValue(_ value: String?) -> CGFloat? {
+        guard let value = value else { return nil }
+        
         switch value {
         case "matchParent":
             // SwiftUIでは.infinityを直接使わず、nilを返してmaxWidthで処理
             return nil
-        case "wrapContent", nil:
+        case "wrapContent":
             return nil
+        case "0", "0.0":
+            // width:0 or height:0 for weight system
+            return 0
         default:
-            if let doubleValue = Double(value ?? "") {
+            if let doubleValue = Double(value) {
                 return CGFloat(doubleValue)
             }
             return nil
@@ -208,7 +237,7 @@ extension View {
             )
             .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
-            .opacity(component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
+            .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
             .dynamicHidden(component.hidden == true || component.visibility == "gone")
             .disabled(component.userInteractionEnabled == false)
             .dynamicClipped(component.clipToBounds == true)

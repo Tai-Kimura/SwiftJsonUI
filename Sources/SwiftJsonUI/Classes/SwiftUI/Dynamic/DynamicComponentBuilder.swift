@@ -55,7 +55,7 @@ public struct DynamicComponentBuilder: View {
             DynamicCollectionView(component: component, viewModel: viewModel)
         case "Table":
             DynamicTableView(component: component, viewModel: viewModel)
-        case "ScrollView":
+        case "ScrollView", "Scroll":
             DynamicScrollViewContainer(component: component, viewModel: viewModel, viewId: viewId)
         case "Switch":
             DynamicSwitchView(component: component, viewModel: viewModel)

@@ -30,6 +30,7 @@ struct DynamicButtonView: View {
             Text(viewModel.processText(component.text))
                 .font(DynamicHelpers.fontFromComponent(component))
                 .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor))
+                .multilineTextAlignment(DynamicHelpers.textAlignmentFromString(component.textAlign))
         }
     }
 }

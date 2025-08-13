@@ -36,6 +36,7 @@ struct DynamicTextFieldView: View {
         )
         .font(DynamicHelpers.fontFromComponent(component))
         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor))
+        .multilineTextAlignment(DynamicHelpers.textAlignmentFromString(component.textAlign))
         .onSubmit {
             // onSubmit イベント
             if let onSubmit = component.onSubmit {

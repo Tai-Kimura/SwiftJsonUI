@@ -15,6 +15,7 @@ public struct DynamicComponent: Decodable {
     let fontSize: CGFloat?
     let fontColor: String?
     let font: String?
+    let fontWeight: String?
     let width: Dynamic<String>?
     let height: Dynamic<String>?
     let background: String?
@@ -40,6 +41,7 @@ public struct DynamicComponent: Decodable {
     let borderWidth: CGFloat?
     let borderColor: String?
     let alpha: CGFloat?
+    let opacity: CGFloat?
     let hidden: Bool?
     let visibility: String?
     let shadow: AnyCodable?
@@ -110,6 +112,10 @@ public struct DynamicComponent: Decodable {
     let alignParentBottom: Bool?
     let alignParentLeft: Bool?
     let alignParentRight: Bool?
+    let alignTop: Bool?  // Alias for alignParentTop
+    let alignBottom: Bool?  // Alias for alignParentBottom
+    let alignLeft: Bool?  // Alias for alignParentLeft
+    let alignRight: Bool?  // Alias for alignParentRight
     let centerHorizontal: Bool?
     let centerVertical: Bool?
     let alignLeftOf: String?
