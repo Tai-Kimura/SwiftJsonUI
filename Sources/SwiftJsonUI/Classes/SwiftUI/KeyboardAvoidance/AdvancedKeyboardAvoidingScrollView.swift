@@ -139,17 +139,12 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
     }
     
     private func scrollToSelectBox(id: String, proxy: ScrollViewProxy) {
-        // First, add padding to allow scrolling to bottom items
-        withAnimation(.easeInOut(duration: 0.2)) {
-            selectBoxPadding = 300 // Add padding for sheet height
-        }
+        // Add padding based on sheet height
+        // sheetResponder.currentHeight has the actual sheet height
+        let padding = sheetResponder.currentHeight > 0 ? sheetResponder.currentHeight : 300
+        selectBoxPadding = padding + 50 // Add extra padding for better centering
         
-        // Then scroll to the SelectBox after padding is applied
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-            withAnimation(.easeInOut(duration: 0.3)) {
-                proxy.scrollTo(id, anchor: .center)
-            }
-        }
+        // Scroll will be triggered by SelectBoxView after sheet is presented
     }
 }
 

@@ -81,25 +81,19 @@ public struct SelectBoxView: View {
     
     public var body: some View {
         Button(action: {
-            // Notify sheet responder first to trigger padding
-            sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
+            // Show sheet immediately
+            isPresented = true
             
-            // If we have a scrollProxy, scroll to this SelectBox
+            // If we have a scrollProxy, handle scrolling after sheet presentation
             if let proxy = scrollProxy {
-                // Small delay to allow padding animation to start
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                // Notify sheet responder to trigger padding
+                sheetResponder.sheetWillPresent(id: id, height: sheetHeight)
+                
+                // Wait for sheet to be fully presented before scrolling
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    withAnimation(.easeInOut(duration: 0.4)) {
                         proxy.scrollTo(id, anchor: .center)
                     }
-                }
-                // Delay sheet presentation to allow scroll animation
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
-                    isPresented = true
-                }
-            } else {
-                // No scroll proxy, just show sheet after a small delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    isPresented = true
                 }
             }
         }) {
@@ -253,6 +247,17 @@ public struct SelectBoxView: View {
                 )
             }
             .presentationDetents([.height(sheetHeight)])
+            .onAppear {
+                // Also try scrolling when sheet appears, for reliability
+                if let proxy = scrollProxy {
+                    // Small delay to ensure sheet is visible
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            proxy.scrollTo(id, anchor: .center)
+                        }
+                    }
+                }
+            }
             .onDisappear {
                 // Notify when sheet disappears (in case of swipe down)
                 sheetResponder.sheetWillDismiss(id: id)
