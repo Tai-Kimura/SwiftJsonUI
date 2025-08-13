@@ -60,8 +60,8 @@ struct DynamicViewContainer: View {
                 child.below != nil
             }
             
-            if needsRelativePositioning && orientation == nil {
-                // 相対配置用のZStack
+            if needsRelativePositioning {
+                // 相対配置用のZStack（orientationに関わらず相対配置が必要な場合）
                 RelativePositioningContainer(children: children, viewModel: viewModel, viewId: viewId)
             } else if hasWeights && (orientation == "horizontal" || orientation == "vertical") {
                 // Weight対応のStack
@@ -312,42 +312,59 @@ struct RelativePositioningContainer: View {
     let viewId: String?
     
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                ForEach(Array(children.enumerated()), id: \.offset) { index, child in
-                    ChildView(component: child, viewModel: viewModel, viewId: viewId)
-                        .anchorPreference(key: BoundsPreferenceKey.self, value: .bounds) { [$0] }
-                        .position(
-                            calculatePosition(for: child, at: index, in: geometry.size)
-                        )
-                }
+        ZStack(alignment: .topLeading) {
+            ForEach(Array(children.enumerated()), id: \.offset) { index, child in
+                ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: getAlignment(for: child))
             }
-            .frame(width: geometry.size.width, height: geometry.size.height)
         }
     }
     
-    private func calculatePosition(for component: DynamicComponent, at index: Int, in size: CGSize) -> CGPoint {
-        var x: CGFloat = size.width / 2
-        var y: CGFloat = size.height / 2
+    private func getAlignment(for component: DynamicComponent) -> Alignment {
+        var horizontal: HorizontalAlignment = .center
+        var vertical: VerticalAlignment = .center
         
-        // 親に対する配置
+        // Horizontal alignment
         if component.alignParentLeft == true || component.alignLeft == true {
-            x = 0
+            horizontal = .leading
         } else if component.alignParentRight == true || component.alignRight == true {
-            x = size.width
+            horizontal = .trailing
         } else if component.centerHorizontal == true || component.centerInParent == true {
-            x = size.width / 2
+            horizontal = .center
         }
         
+        // Vertical alignment
         if component.alignParentTop == true || component.alignTop == true {
-            y = 0
+            vertical = .top
         } else if component.alignParentBottom == true || component.alignBottom == true {
-            y = size.height
+            vertical = .bottom
         } else if component.centerVertical == true || component.centerInParent == true {
-            y = size.height / 2
+            vertical = .center
         }
         
-        return CGPoint(x: x, y: y)
+        // Combine alignments
+        switch (horizontal, vertical) {
+        case (.leading, .top):
+            return .topLeading
+        case (.center, .top):
+            return .top
+        case (.trailing, .top):
+            return .topTrailing
+        case (.leading, .center):
+            return .leading
+        case (.center, .center):
+            return .center
+        case (.trailing, .center):
+            return .trailing
+        case (.leading, .bottom):
+            return .bottomLeading
+        case (.center, .bottom):
+            return .bottom
+        case (.trailing, .bottom):
+            return .bottomTrailing
+        default:
+            return .center
+        }
     }
 }
 
