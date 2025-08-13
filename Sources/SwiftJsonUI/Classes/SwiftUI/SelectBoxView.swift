@@ -29,6 +29,7 @@ public struct SelectBoxView: View {
     @State private var selectedText = ""
     @State private var selectedDate = Date()
     @State private var dateText = ""
+    @State private var selectBoxFrame: CGRect = .zero
     @StateObject private var sheetResponder = SelectBoxSheetResponder.shared
     
     public enum SelectItemType {
@@ -92,11 +93,12 @@ public struct SelectBoxView: View {
                 // Wait for sheet to be fully presented before scrolling
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation(.easeInOut(duration: 0.4)) {
-                        // Calculate anchor position based on sheet height
+                        // Calculate anchor position based on sheet height and actual SelectBox height
                         // Position SelectBox just above the sheet with 20pt margin
-                        let marginRatio = 20.0 / UIScreen.main.bounds.height
-                        let sheetRatio = sheetHeight / UIScreen.main.bounds.height
-                        let anchorY = 1.0 - sheetRatio + marginRatio // Position with 20pt gap below SelectBox
+                        let selectBoxHeight = selectBoxFrame.height > 0 ? selectBoxFrame.height : 50.0
+                        let margin: CGFloat = 20.0
+                        let totalOffsetFromBottom = sheetHeight + selectBoxHeight + margin
+                        let anchorY = 1.0 - (totalOffsetFromBottom / UIScreen.main.bounds.height)
                         proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                     }
                 }
@@ -141,6 +143,17 @@ public struct SelectBoxView: View {
         }
         .buttonStyle(.plain)
         .id(id) // Important: Set ID for ScrollViewReader to find this view
+        .background(
+            GeometryReader { geometry in
+                Color.clear
+                    .onAppear {
+                        selectBoxFrame = geometry.frame(in: .global)
+                    }
+                    .onChange(of: geometry.frame(in: .global)) { newFrame in
+                        selectBoxFrame = newFrame
+                    }
+            }
+        )
         .sheet(isPresented: $isPresented) {
             NavigationView {
                 VStack {
@@ -258,10 +271,11 @@ public struct SelectBoxView: View {
                     // Small delay to ensure sheet is visible
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(.easeInOut(duration: 0.3)) {
-                            // Calculate anchor position based on sheet height
-                            let marginRatio = 20.0 / UIScreen.main.bounds.height
-                            let sheetRatio = sheetHeight / UIScreen.main.bounds.height
-                            let anchorY = 1.0 - sheetRatio + marginRatio
+                            // Calculate anchor position based on sheet height and actual SelectBox height
+                            let selectBoxHeight = selectBoxFrame.height > 0 ? selectBoxFrame.height : 50.0
+                            let margin: CGFloat = 20.0
+                            let totalOffsetFromBottom = sheetHeight + selectBoxHeight + margin
+                            let anchorY = 1.0 - (totalOffsetFromBottom / UIScreen.main.bounds.height)
                             proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                         }
                     }
