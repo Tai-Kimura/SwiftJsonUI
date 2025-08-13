@@ -93,9 +93,10 @@ public struct SelectBoxView: View {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     withAnimation(.easeInOut(duration: 0.4)) {
                         // Calculate anchor position based on sheet height
-                        // Position SelectBox just above the sheet
+                        // Position SelectBox just above the sheet with 20pt margin
+                        let marginRatio = 20.0 / UIScreen.main.bounds.height
                         let sheetRatio = sheetHeight / UIScreen.main.bounds.height
-                        let anchorY = 1.0 - sheetRatio - 0.1 // Subtract sheet ratio from bottom, with small margin
+                        let anchorY = 1.0 - sheetRatio - marginRatio - 0.05 // Position with margin above sheet
                         proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                     }
                 }
@@ -258,8 +259,9 @@ public struct SelectBoxView: View {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
                         withAnimation(.easeInOut(duration: 0.3)) {
                             // Calculate anchor position based on sheet height
+                            let marginRatio = 20.0 / UIScreen.main.bounds.height
                             let sheetRatio = sheetHeight / UIScreen.main.bounds.height
-                            let anchorY = 1.0 - sheetRatio - 0.1
+                            let anchorY = 1.0 - sheetRatio - marginRatio - 0.05
                             proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                         }
                     }
