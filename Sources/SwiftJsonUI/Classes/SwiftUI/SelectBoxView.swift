@@ -96,7 +96,7 @@ public struct SelectBoxView: View {
                         // Position SelectBox just above the sheet with 20pt margin
                         let marginRatio = 20.0 / UIScreen.main.bounds.height
                         let sheetRatio = sheetHeight / UIScreen.main.bounds.height
-                        let anchorY = 1.0 - sheetRatio - marginRatio - 0.05 // Position with margin above sheet
+                        let anchorY = 1.0 - sheetRatio + marginRatio // Position with 20pt gap below SelectBox
                         proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                     }
                 }
@@ -261,7 +261,7 @@ public struct SelectBoxView: View {
                             // Calculate anchor position based on sheet height
                             let marginRatio = 20.0 / UIScreen.main.bounds.height
                             let sheetRatio = sheetHeight / UIScreen.main.bounds.height
-                            let anchorY = 1.0 - sheetRatio - marginRatio - 0.05
+                            let anchorY = 1.0 - sheetRatio + marginRatio
                             proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                         }
                     }
