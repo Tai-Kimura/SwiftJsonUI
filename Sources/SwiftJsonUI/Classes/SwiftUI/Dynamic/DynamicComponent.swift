@@ -18,15 +18,31 @@ public struct DynamicComponent: Decodable {
     let width: Dynamic<String>?
     let height: Dynamic<String>?
     let background: String?
-    let padding: DynamicPadding?
-    let margin: DynamicPadding?
+    let padding: AnyCodable?
+    let margin: AnyCodable?
+    let margins: AnyCodable?
+    let paddings: AnyCodable?
+    let leftMargin: CGFloat?
+    let rightMargin: CGFloat?
+    let topMargin: CGFloat?
+    let bottomMargin: CGFloat?
+    let leftPadding: CGFloat?
+    let rightPadding: CGFloat?
+    let topPadding: CGFloat?
+    let bottomPadding: CGFloat?
+    let paddingLeft: CGFloat?
+    let paddingRight: CGFloat?
+    let paddingTop: CGFloat?
+    let paddingBottom: CGFloat?
+    let insets: AnyCodable?
+    let insetHorizontal: CGFloat?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
     let alpha: CGFloat?
     let hidden: Bool?
     let visibility: String?
-    let shadow: DynamicShadow?
+    let shadow: AnyCodable?
     let clipToBounds: Bool?
     let minWidth: CGFloat?
     let maxWidth: CGFloat?
@@ -83,6 +99,23 @@ public struct DynamicComponent: Decodable {
     // Include support
     let include: String?
     let variables: [String: AnyCodable]?
+    
+    // Layout properties
+    let gravity: String?
+    let widthWeight: Double?
+    let heightWeight: Double?
+    
+    // Relative positioning
+    let alignParentTop: Bool?
+    let alignParentBottom: Bool?
+    let alignParentLeft: Bool?
+    let alignParentRight: Bool?
+    let centerHorizontal: Bool?
+    let centerVertical: Bool?
+    let alignLeftOf: String?
+    let alignRightOf: String?
+    let above: String?
+    let below: String?
 }
 
 // MARK: - Dynamic Type (for single item or array)

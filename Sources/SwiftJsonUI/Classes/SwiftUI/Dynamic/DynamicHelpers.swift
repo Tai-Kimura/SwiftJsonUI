@@ -186,8 +186,8 @@ extension View {
             .dynamicHidden(component.hidden == true || component.visibility == "gone")
             .disabled(component.userInteractionEnabled == false)
             .dynamicClipped(component.clipToBounds == true)
-            .padding(component.padding?.edgeInsets ?? EdgeInsets())
-            .padding(component.margin?.edgeInsets ?? EdgeInsets())
+            .applyPadding(component)
+            .applyMargin(component)
             .applyBorder(component)
             .applyShadow(component)
             .applyAspectRatio(component)
@@ -229,11 +229,20 @@ extension View {
     
     @ViewBuilder
     func applyShadow(_ component: DynamicComponent) -> some View {
-        if let shadow = component.shadow {
-            self.shadow(color: shadow.shadowColor,
-                       radius: shadow.shadowRadius,
-                       x: shadow.shadowOffset.width,
-                       y: shadow.shadowOffset.height)
+        if let shadow = component.shadow,
+           let shadowDict = shadow.value as? [String: Any] {
+            let color = shadowDict["shadowColor"] as? String ?? "#000000"
+            let radius = CGFloat(shadowDict["shadowRadius"] as? Double ?? 5.0)
+            let offsetX = CGFloat(shadowDict["shadowOffsetX"] as? Double ?? 0.0)
+            let offsetY = CGFloat(shadowDict["shadowOffsetY"] as? Double ?? 0.0)
+            let opacity = shadowDict["shadowOpacity"] as? Double ?? 0.3
+            
+            self.shadow(
+                color: (DynamicHelpers.colorFromHex(color) ?? Color.black).opacity(opacity),
+                radius: radius,
+                x: offsetX,
+                y: offsetY
+            )
         } else {
             self
         }
@@ -258,5 +267,124 @@ extension View {
         } else {
             self
         }
+    }
+    
+    @ViewBuilder
+    func applyPadding(_ component: DynamicComponent) -> some View {
+        var view = self
+        
+        // padding または paddings プロパティ
+        if let padding = component.padding ?? component.paddings {
+            if let array = padding.value as? [Any] {
+                let values = array.compactMap { $0 as? CGFloat ?? (($0 as? Double).map { CGFloat($0) }) ?? (($0 as? Int).map { CGFloat($0) }) }
+                switch values.count {
+                case 1:
+                    view = AnyView(view.padding(values[0]))
+                case 2:
+                    view = AnyView(view.padding(.horizontal, values[1]).padding(.vertical, values[0]))
+                case 4:
+                    view = AnyView(view.padding(.top, values[0])
+                        .padding(.trailing, values[1])
+                        .padding(.bottom, values[2])
+                        .padding(.leading, values[3]))
+                default:
+                    break
+                }
+            } else if let value = padding.value as? CGFloat {
+                view = AnyView(view.padding(value))
+            } else if let value = padding.value as? Double {
+                view = AnyView(view.padding(CGFloat(value)))
+            } else if let value = padding.value as? Int {
+                view = AnyView(view.padding(CGFloat(value)))
+            }
+        }
+        
+        // 個別のpadding設定
+        if let value = component.leftPadding ?? component.paddingLeft {
+            view = AnyView(view.padding(.leading, value))
+        }
+        if let value = component.rightPadding ?? component.paddingRight {
+            view = AnyView(view.padding(.trailing, value))
+        }
+        if let value = component.topPadding ?? component.paddingTop {
+            view = AnyView(view.padding(.top, value))
+        }
+        if let value = component.bottomPadding ?? component.paddingBottom {
+            view = AnyView(view.padding(.bottom, value))
+        }
+        
+        // insets プロパティ
+        if let insets = component.insets {
+            if let array = insets.value as? [Any] {
+                let values = array.compactMap { $0 as? CGFloat ?? (($0 as? Double).map { CGFloat($0) }) ?? (($0 as? Int).map { CGFloat($0) }) }
+                switch values.count {
+                case 1:
+                    view = AnyView(view.padding(values[0]))
+                case 2:
+                    view = AnyView(view.padding(.vertical, values[0]).padding(.horizontal, values[1]))
+                case 4:
+                    view = AnyView(view.padding(.top, values[0])
+                        .padding(.trailing, values[1])
+                        .padding(.bottom, values[2])
+                        .padding(.leading, values[3]))
+                default:
+                    break
+                }
+            }
+        }
+        
+        // insetHorizontal
+        if let value = component.insetHorizontal {
+            view = AnyView(view.padding(.horizontal, value))
+        }
+        
+        return view
+    }
+    
+    @ViewBuilder
+    func applyMargin(_ component: DynamicComponent) -> some View {
+        var view = self
+        
+        // margin または margins プロパティ
+        if let margin = component.margin ?? component.margins {
+            if let array = margin.value as? [Any] {
+                let values = array.compactMap { $0 as? CGFloat ?? (($0 as? Double).map { CGFloat($0) }) ?? (($0 as? Int).map { CGFloat($0) }) }
+                switch values.count {
+                case 1:
+                    view = AnyView(view.padding(values[0]))
+                case 2:
+                    view = AnyView(view.padding(.vertical, values[0]).padding(.horizontal, values[1]))
+                case 4:
+                    view = AnyView(view.padding(.top, values[0])
+                        .padding(.trailing, values[1])
+                        .padding(.bottom, values[2])
+                        .padding(.leading, values[3]))
+                default:
+                    break
+                }
+            } else if let value = margin.value as? CGFloat {
+                view = AnyView(view.padding(value))
+            } else if let value = margin.value as? Double {
+                view = AnyView(view.padding(CGFloat(value)))
+            } else if let value = margin.value as? Int {
+                view = AnyView(view.padding(CGFloat(value)))
+            }
+        }
+        
+        // 個別のmargin設定
+        if let value = component.topMargin {
+            view = AnyView(view.padding(.top, value))
+        }
+        if let value = component.bottomMargin {
+            view = AnyView(view.padding(.bottom, value))
+        }
+        if let value = component.leftMargin {
+            view = AnyView(view.padding(.leading, value))
+        }
+        if let value = component.rightMargin {
+            view = AnyView(view.padding(.trailing, value))
+        }
+        
+        return view
     }
 }
