@@ -217,6 +217,20 @@ module SjuiTools
             return # 残りの処理をスキップして、通常のText処理を避ける
           end
           
+          # Apply frame modifiers for weighted views
+          # If this label has a weight in a horizontal/vertical container, make it fill the appropriate dimension
+          if @component['weight'] && @component['weight'].to_f > 0
+            parent_orientation = @component['parent_orientation']
+            
+            if parent_orientation == 'horizontal'
+              # In horizontal stack with weight - fill width
+              add_modifier_line ".frame(maxWidth: .infinity)"
+            elsif parent_orientation == 'vertical'
+              # In vertical stack with weight - fill height
+              add_modifier_line ".frame(maxHeight: .infinity)"
+            end
+          end
+          
           # Apply binding-specific modifiers
           apply_binding_modifiers
           

@@ -120,6 +120,8 @@ module SjuiTools
                     
                     # 子要素を生成（visibilityは子要素で処理される）
                     indent do
+                      # Pass parent orientation to child for proper frame handling
+                      child['parent_orientation'] = orientation
                       child_converter = @converter_factory.create_converter(child, @indent_level + 1, @action_manager, @converter_factory, @view_registry)
                       child_code = child_converter.convert
                       child_lines = child_code.split("\n")
