@@ -53,7 +53,7 @@ public struct DynamicComponentBuilder: View {
         // These components handle their own modifiers (padding/margins/background/cornerRadius)
         // Applying applyDynamicModifiers would cause double application
         let typeString = component.type?.lowercased() ?? ""
-        let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield"]
+        let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield", "textview"]
         
         if selfManagedTypes.contains(typeString) {
             view

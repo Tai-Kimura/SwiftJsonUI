@@ -142,16 +142,57 @@ module SjuiTools
           end
           add_line ")"
           
-          # 共通のモディファイア（frame, margin等）
-          # flexibleがtrueの場合はframeの高さ指定を無視
+          # TextViewWithPlaceholder handles background/cornerRadius internally
+          # Only apply frame, border, and margins here
+          # Corresponding to Dynamic mode: TextViewConverter.swift
+          
+          # Apply frame modifiers
           if @component['flexible'] == true
-            # flexible時はheightを除外してモディファイアを適用
-            original_height = @component['height']
-            @component.delete('height')
-            apply_modifiers
-            @component['height'] = original_height if original_height
+            # For flexible TextViews, apply minHeight/maxHeight as frame
+            if @component['minHeight'] && @component['maxHeight']
+              add_modifier_line ".frame(minHeight: #{@component['minHeight']}, maxHeight: #{@component['maxHeight']})"
+            elsif @component['minHeight']
+              add_modifier_line ".frame(minHeight: #{@component['minHeight']})"
+            elsif @component['maxHeight']
+              add_modifier_line ".frame(maxHeight: #{@component['maxHeight']})"
+            end
           else
-            apply_modifiers
+            # Normal frame application
+            apply_frame_constraints
+            apply_frame_size
+          end
+          
+          # Apply external padding if specified (not containerInset which is internal)
+          if @component['padding']
+            apply_padding
+          end
+          
+          # Note: background and cornerRadius are handled internally by TextViewWithPlaceholder
+          # so we skip them here
+          
+          # Apply border (after component's internal cornerRadius)
+          if @component['borderWidth'] && @component['borderColor']
+            color = hex_to_swiftui_color(@component['borderColor'])
+            add_modifier_line ".overlay("
+            indent do
+              add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
+              add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth'].to_i})"
+            end
+            add_line ")"
+          end
+          
+          # Apply margins (external spacing)
+          apply_margins
+          
+          # Apply other modifiers
+          if @component['alpha']
+            add_modifier_line ".opacity(#{@component['alpha']})"
+          elsif @component['opacity']
+            add_modifier_line ".opacity(#{@component['opacity']})"
+          end
+          
+          if @component['hidden'] == true
+            add_modifier_line ".hidden()"
           end
           
           generated_code

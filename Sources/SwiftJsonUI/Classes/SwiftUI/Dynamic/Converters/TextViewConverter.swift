@@ -7,6 +7,63 @@
 
 import SwiftUI
 
+// MARK: - TextView-specific modifiers
+// Corresponding to Generated code: text_view_converter.rb
+struct TextViewModifiers: ViewModifier {
+    let component: DynamicComponent
+    let viewModel: DynamicViewModel
+    
+    func body(content: Content) -> some View {
+        content
+            // TextViewWithPlaceholder handles padding internally via containerInset
+            // Only apply border and margins here
+            .overlay(getBorder())  // Border after component's internal cornerRadius
+            .padding(getMargins())  // Apply margins as outer padding
+            .opacity(getOpacity())
+            .opacity(isHidden() ? 0 : 1)
+    }
+    
+    /// Get border overlay
+    @ViewBuilder
+    private func getBorder() -> some View {
+        if let borderWidth = component.borderWidth,
+           borderWidth > 0 {
+            let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+            RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                .stroke(borderColor, lineWidth: borderWidth)
+        }
+    }
+    
+    private func getMargins() -> EdgeInsets {
+        // Use margin properties for outer spacing
+        let top = component.topMargin ?? 0
+        let leading = component.leftMargin ?? 0
+        let bottom = component.bottomMargin ?? 0
+        let trailing = component.rightMargin ?? 0
+        
+        return EdgeInsets(
+            top: top,
+            leading: leading,
+            bottom: bottom,
+            trailing: trailing
+        )
+    }
+    
+    private func getOpacity() -> Double {
+        if let opacity = component.opacity {
+            return Double(opacity)
+        }
+        if let alpha = component.alpha {
+            return Double(alpha)
+        }
+        return 1.0
+    }
+    
+    private func isHidden() -> Bool {
+        return component.hidden == true || component.visibility == "gone"
+    }
+}
+
 public struct TextViewConverter {
     
     /// Extract property name from @{propertyName} syntax
@@ -25,7 +82,15 @@ public struct TextViewConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let insetArray = component.containerInset ?? [8, 5, 8, 5]
+        // Handle containerInset as single value or array
+        let insetArray: [CGFloat]
+        if let singleInset = component.containerInset?.first, component.containerInset?.count == 1 {
+            // If single value, apply to all edges
+            insetArray = [singleInset, singleInset, singleInset, singleInset]
+        } else {
+            insetArray = component.containerInset ?? [8, 5, 8, 5]
+        }
+        
         let containerInset = EdgeInsets(
             top: insetArray.count > 0 ? insetArray[0] : 8,
             leading: insetArray.count > 1 ? insetArray[1] : 5,
@@ -69,7 +134,7 @@ public struct TextViewConverter {
                 minHeight: component.minHeight,
                 maxHeight: component.maxHeight
             )
-            .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            .modifier(TextViewModifiers(component: component, viewModel: viewModel))  // Border and margins only
         )
     }
 }

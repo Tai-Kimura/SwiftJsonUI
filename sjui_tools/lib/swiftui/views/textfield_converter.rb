@@ -118,11 +118,84 @@ module SjuiTools
             add_line "}"
           end
           
-          # 共通のモディファイアを適用
+          # TextField manages its own padding/background/cornerRadius/border
+          # Corresponding to Dynamic mode: TextFieldConverter.swift
+          
+          # Apply frame constraints and size first
+          apply_frame_constraints
+          apply_frame_size
+          
+          # Apply padding (internal spacing)
+          apply_padding
+          
+          # Apply background
+          if @component['background']
+            color = hex_to_swiftui_color(@component['background'])
+            add_modifier_line ".background(#{color})"
+          end
+          
+          # Apply cornerRadius
+          if @component['cornerRadius']
+            add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
+          end
+          
+          # Apply border (after cornerRadius, before margins)
+          if @component['borderWidth'] && @component['borderColor']
+            color = hex_to_swiftui_color(@component['borderColor'])
+            add_modifier_line ".overlay("
+            indent do
+              add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
+              add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth'].to_i})"
+            end
+            add_line ")"
+          end
+          
+          # Apply margins (external spacing)
+          apply_margins
+          
+          # Apply opacity
+          if @component['alpha']
+            add_modifier_line ".opacity(#{@component['alpha']})"
+          elsif @component['opacity']
+            add_modifier_line ".opacity(#{@component['opacity']})"
+          end
+          
+          # Apply shadow if needed
+          if @component['shadow']
+            if @component['shadow'].is_a?(Hash)
+              radius = @component['shadow']['radius'] || 5
+              x = @component['shadow']['offsetX'] || 0
+              y = @component['shadow']['offsetY'] || 0
+              if @component['shadow']['color']
+                color = hex_to_swiftui_color(@component['shadow']['color'])
+                add_modifier_line ".shadow(color: #{color}, radius: #{radius}, x: #{x}, y: #{y})"
+              else
+                add_modifier_line ".shadow(radius: #{radius}, x: #{x}, y: #{y})"
+              end
+            else
+              add_modifier_line ".shadow(radius: 5)"
+            end
+          end
+          
+          # Apply clipping
+          if @component['clipToBounds']
+            add_modifier_line ".clipped()"
+          end
+          
+          # Apply offset
+          if @component['offsetX'] || @component['offsetY']
+            offset_x = @component['offsetX'] || 0
+            offset_y = @component['offsetY'] || 0
+            add_modifier_line ".offset(x: #{offset_x}, y: #{offset_y})"
+          end
+          
+          # Apply hidden state
+          if @component['hidden'] == true
+            add_modifier_line ".hidden()"
+          end
+          
           # Apply binding-specific modifiers
           apply_binding_modifiers
-          
-          apply_modifiers
           
           generated_code
         end
