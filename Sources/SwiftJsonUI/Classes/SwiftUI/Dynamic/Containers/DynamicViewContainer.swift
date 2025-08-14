@@ -72,6 +72,7 @@ public struct DynamicViewContainer: View {
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if orientation == "vertical" {
                 // 通常のVStack
                 VStack(alignment: getHorizontalAlignmentFromAlignment(component.alignment), spacing: 0) {
@@ -79,6 +80,7 @@ public struct DynamicViewContainer: View {
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 // orientationなし = ZStack
                 ZStack(alignment: component.alignment ?? .topLeading) {
