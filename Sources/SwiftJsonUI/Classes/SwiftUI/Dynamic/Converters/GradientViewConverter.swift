@@ -49,8 +49,15 @@ public struct GradientViewConverter {
     
     private static func getGradient(_ component: DynamicComponent) -> LinearGradient {
         // Get colors from data array (expecting hex strings)
-        let colorHexes = component.data?.compactMap { dict in
-            dict["color"] ?? dict.values.first
+        let colorHexes = component.data?.compactMap { item in
+            if let dict = item.value as? [String: Any] {
+                if let color = dict["color"] as? String {
+                    return color
+                }
+                // Try to get first string value
+                return dict.values.first { $0 is String } as? String
+            }
+            return nil
         } ?? []
         
         // Convert hex strings to Colors
@@ -66,11 +73,16 @@ public struct GradientViewConverter {
         let endPoint: UnitPoint
         
         // Check for explicit start/end points in data
-        if let firstPoint = component.data?.first,
-           let startX = Double(firstPoint["startX"] ?? ""),
-           let startY = Double(firstPoint["startY"] ?? ""),
-           let endX = Double(firstPoint["endX"] ?? ""),
-           let endY = Double(firstPoint["endY"] ?? "") {
+        if let firstItem = component.data?.first,
+           let firstPoint = firstItem.value as? [String: Any],
+           let startXStr = firstPoint["startX"] as? String,
+           let startYStr = firstPoint["startY"] as? String,
+           let endXStr = firstPoint["endX"] as? String,
+           let endYStr = firstPoint["endY"] as? String,
+           let startX = Double(startXStr),
+           let startY = Double(startYStr),
+           let endX = Double(endXStr),
+           let endY = Double(endYStr) {
             startPoint = UnitPoint(x: startX, y: startY)
             endPoint = UnitPoint(x: endX, y: endY)
         } else {
