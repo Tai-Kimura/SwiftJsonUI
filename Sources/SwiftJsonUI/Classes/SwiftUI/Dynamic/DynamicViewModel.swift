@@ -134,4 +134,44 @@ public class DynamicViewModel: ObservableObject {
         
         return result
     }
+    
+    /// Process any value that might contain @{} reference
+    public func processValue<T>(_ value: Any?) -> T? {
+        guard let value = value else { return nil }
+        
+        // If it's a string, check for @{} pattern
+        if let stringValue = value as? String {
+            if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
+                let startIndex = stringValue.index(stringValue.startIndex, offsetBy: 2)
+                let endIndex = stringValue.index(stringValue.endIndex, offsetBy: -1)
+                let varName = String(stringValue[startIndex..<endIndex])
+                
+                // Return the value from data dictionary
+                return data[varName] as? T
+            }
+        }
+        
+        // Return the value as-is if it's not a @{} reference
+        return value as? T
+    }
+    
+    /// Process boolean value that might contain @{} reference
+    public func processBool(_ value: Any?) -> Bool {
+        return processValue(value) ?? false
+    }
+    
+    /// Process double value that might contain @{} reference
+    public func processDouble(_ value: Any?) -> Double {
+        return processValue(value) ?? 0.0
+    }
+    
+    /// Process int value that might contain @{} reference
+    public func processInt(_ value: Any?) -> Int {
+        return processValue(value) ?? 0
+    }
+    
+    /// Process string value that might contain @{} reference
+    public func processString(_ value: Any?) -> String? {
+        return processValue(value)
+    }
 }

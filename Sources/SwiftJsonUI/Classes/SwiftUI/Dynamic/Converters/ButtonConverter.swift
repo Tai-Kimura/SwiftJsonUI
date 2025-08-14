@@ -14,7 +14,7 @@ public struct ButtonConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = component.text ?? ""
+        let text = viewModel.processText(component.text) ?? ""
         
         return AnyView(
             Button(action: {
@@ -32,14 +32,26 @@ public struct ButtonConverter {
     }
     
     private static func handleButtonAction(component: DynamicComponent, viewModel: DynamicViewModel) {
-        // Handle onClick action
+        // First check if onClick action exists in data dictionary as a closure
         if let action = component.onClick {
-            viewModel.handleAction(action)
+            if let closure = viewModel.data[action] as? () -> Void {
+                // Execute the closure from data dictionary
+                closure()
+            } else {
+                // Fall back to handleAction for navigation
+                viewModel.handleAction(action)
+            }
         }
         
         // Handle action property
         if let action = component.action {
-            viewModel.handleAction(action)
+            if let closure = viewModel.data[action] as? () -> Void {
+                // Execute the closure from data dictionary
+                closure()
+            } else {
+                // Fall back to handleAction
+                viewModel.handleAction(action)
+            }
         }
     }
     

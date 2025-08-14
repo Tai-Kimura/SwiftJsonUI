@@ -69,7 +69,7 @@ public struct ProgressConverter {
                 return AnyView(
                     ProgressView {
                         if let text = component.text {
-                            Text(text)
+                            Text(viewModel.processText(text) ?? text)
                                 .font(getFont(component))
                                 .foregroundColor(getTextColor(component))
                         }
@@ -81,7 +81,7 @@ public struct ProgressConverter {
                 return AnyView(
                     ProgressView {
                         if let text = component.text {
-                            Text(text)
+                            Text(viewModel.processText(text) ?? text)
                                 .font(getFont(component))
                                 .foregroundColor(getTextColor(component))
                         }

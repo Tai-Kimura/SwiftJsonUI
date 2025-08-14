@@ -9,14 +9,23 @@ import SwiftUI
 
 public struct TextViewConverter {
     
+    /// Extract property name from @{propertyName} syntax
+    private static func extractPropertyName(from value: String?) -> String? {
+        guard let value = value,
+              value.hasPrefix("@{") && value.hasSuffix("}") else {
+            return nil
+        }
+        let startIndex = value.index(value.startIndex, offsetBy: 2)
+        let endIndex = value.index(value.endIndex, offsetBy: -1)
+        return String(value[startIndex..<endIndex])
+    }
+    
     /// Convert DynamicComponent to SwiftUI TextViewWithPlaceholder
     public static func convert(
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = component.text ?? ""
         let insetArray = component.containerInset ?? [8, 5, 8, 5]
-        let _ = print("📝 TextViewConverter: id=\(component.id ?? "no-id"), text=\(text), hint=\(component.hint ?? "no-hint"), width=\(component.width ?? -1), height=\(component.height ?? -1)")
         let containerInset = EdgeInsets(
             top: insetArray.count > 0 ? insetArray[0] : 8,
             leading: insetArray.count > 1 ? insetArray[1] : 5,
@@ -24,9 +33,28 @@ public struct TextViewConverter {
             trailing: insetArray.count > 3 ? insetArray[3] : 5
         )
         
+        // Check if text has @{} binding syntax
+        var textBinding: SwiftUI.Binding<String>
+        if let propertyName = extractPropertyName(from: component.text) {
+            // Create binding that updates the data dictionary
+            textBinding = SwiftUI.Binding<String>(
+                get: { 
+                    viewModel.data[propertyName] as? String ?? ""
+                },
+                set: { newValue in
+                    viewModel.data[propertyName] = newValue
+                    viewModel.objectWillChange.send()
+                }
+            )
+        } else {
+            // Use static text if no binding
+            let text = component.text ?? ""
+            textBinding = .constant(text)
+        }
+        
         return AnyView(
             TextViewWithPlaceholder(
-                text: .constant(text),
+                text: textBinding,
                 hint: component.hint ?? component.placeholder,
                 hintColor: DynamicHelpers.colorFromHex(component.hintColor) ?? .gray,
                 hintFont: component.hintFont,

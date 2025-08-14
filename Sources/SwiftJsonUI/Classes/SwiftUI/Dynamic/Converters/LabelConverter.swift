@@ -14,7 +14,7 @@ public struct LabelConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = component.text ?? ""
+        let text = viewModel.processText(component.text) ?? ""
         
         var textView = Text(text)
             .font(DynamicHelpers.fontFromComponent(component))

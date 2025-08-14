@@ -14,7 +14,7 @@ public struct TextConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = component.text ?? ""
+        let text = viewModel.processText(component.text) ?? ""
         
         return AnyView(
             Text(text)

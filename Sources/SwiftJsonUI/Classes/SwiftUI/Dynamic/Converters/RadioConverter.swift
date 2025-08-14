@@ -65,10 +65,18 @@ public struct RadioConverter {
                         
                         // Handle radio selection actions
                         if let onClick = component.onClick {
-                            viewModel.handleAction(onClick)
+                            if let closure = viewModel.data[onClick] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(onClick)
+                            }
                         }
                         if let action = component.action {
-                            viewModel.handleAction(action)
+                            if let closure = viewModel.data[action] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(action)
+                            }
                         }
                     }
                 

@@ -15,7 +15,7 @@ public struct IconLabelConverter {
         viewModel: DynamicViewModel,
         viewId: String? = nil
     ) -> AnyView {
-        let text = component.text ?? ""
+        let text = viewModel.processText(component.text) ?? ""
         let iconOn = component.iconOn
         let iconOff = component.iconOff
         let iconPosition = getIconPosition(component.iconPosition)
@@ -40,10 +40,18 @@ public struct IconLabelConverter {
                     fontName: component.font,
                     action: {
                         if let onClick = component.onClick {
-                            viewModel.handleAction(onClick)
+                            if let closure = viewModel.data[onClick] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(onClick)
+                            }
                         }
                         if let action = component.action {
-                            viewModel.handleAction(action)
+                            if let closure = viewModel.data[action] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(action)
+                            }
                         }
                     }
                 )
