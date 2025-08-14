@@ -10,17 +10,24 @@ module SjuiTools
           id = @component['id'] || 'segment'
           items = @component['items'] || []
           
-          # Create @State variable name
-          state_var = "selected#{id.split('_').map(&:capitalize).join}"
-          
           # selectedTabIndex プロパティの処理
           initial_selection = @component['selectedTabIndex'] || @component['selectedIndex'] || 0
           
-          # Add state variable to requirements
-          add_state_variable(state_var, "Int", initial_selection.to_s)
+          # Get selection binding
+          selection_binding = if (@component['selectedIndex'] && is_binding?(@component['selectedIndex']))
+                               "$viewModel.data.#{extract_binding_property(@component['selectedIndex'])}"
+                             elsif (@component['selectedTabIndex'] && is_binding?(@component['selectedTabIndex']))
+                               "$viewModel.data.#{extract_binding_property(@component['selectedTabIndex'])}"
+                             else
+                               # Create @State variable name
+                               state_var = "selected#{id.split('_').map(&:capitalize).join}"
+                               # Add state variable to requirements
+                               add_state_variable(state_var, "Int", initial_selection.to_s)
+                               "$#{state_var}"
+                             end
           
           # Picker（SwiftUIのSegmented Control）
-          add_line "Picker(\"\", selection: $#{state_var}) {"
+          add_line "Picker(\"\", selection: #{selection_binding}) {"
           indent do
             items.each_with_index do |item, index|
               add_line "Text(\"#{item}\").tag(#{index})"

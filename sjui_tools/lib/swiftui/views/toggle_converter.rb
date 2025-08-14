@@ -16,13 +16,15 @@ module SjuiTools
           text = @component['text'] || @component['label'] || ""
           
           # Get state binding from handler
-          state_binding = if @component['checked'] && is_binding?(@component['checked'])
+          state_binding = if @component['isOn'] && is_binding?(@component['isOn'])
+                           "$viewModel.data.#{extract_binding_property(@component['isOn'])}"
+                         elsif @component['checked'] && is_binding?(@component['checked'])
                            toggle_handler.get_state_binding(@component)
                          else
                            # Create @State variable name
                            state_var = "#{id}IsOn"
                            # Add state variable to requirements
-                           add_state_variable(state_var, "Bool", @component['checked'] ? 'true' : 'false')
+                           add_state_variable(state_var, "Bool", @component['isOn'] || @component['checked'] ? 'true' : 'false')
                            "$viewModel.#{state_var}"
                          end
           

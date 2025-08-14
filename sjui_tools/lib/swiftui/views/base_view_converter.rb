@@ -51,6 +51,17 @@ module SjuiTools
           @binding_handler.is_binding?(value)
         end
         
+        # Extract property name from binding expression
+        # "@{propertyName}" -> "propertyName"
+        def extract_binding_property(value)
+          return nil unless value.is_a?(String)
+          if value =~ /^@\{(.+)\}$/
+            $1
+          else
+            value
+          end
+        end
+        
         # Apply binding modifiers
         def apply_binding_modifiers
           modifiers = @binding_handler.process_bindings(@component)

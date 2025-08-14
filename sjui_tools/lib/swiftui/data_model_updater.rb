@@ -208,6 +208,34 @@ module SjuiTools
         end
         
         content += "    }\n"
+        
+        # Add toDictionary function
+        content += "\n"
+        content += "    // Convert properties to dictionary for Dynamic mode\n"
+        content += "    func toDictionary() -> [String: Any] {\n"
+        content += "        var dict: [String: Any] = [:]\n"
+        
+        if !data_properties.empty?
+          data_properties.each do |prop|
+            name = prop['name']
+            class_type = prop['class']
+            default_value = prop['defaultValue']
+            
+            # If it's optional, check for nil
+            if default_value.nil? || default_value == 'nil'
+              content += "        if let value = #{name} {\n"
+              content += "            dict[\"#{name}\"] = value\n"
+              content += "        }\n"
+            else
+              content += "        dict[\"#{name}\"] = #{name}\n"
+            end
+          end
+        else
+          content += "        // No properties to add\n"
+        end
+        
+        content += "        return dict\n"
+        content += "    }\n"
         content += "}\n"
         content
       end

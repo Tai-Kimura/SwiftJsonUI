@@ -10,14 +10,19 @@ module SjuiTools
           id = @component['id'] || 'progress'
           progress = @component['progress'] || 0.5
           
-          # Create @State variable name
-          state_var = "#{id}Value"
-          
-          # Add state variable to requirements
-          add_state_variable(state_var, "Double", progress.to_s)
+          # Get progress value (binding or static)
+          progress_value = if @component['progress'] && is_binding?(@component['progress'])
+                            "viewModel.data.#{extract_binding_property(@component['progress'])}"
+                          else
+                            # Create @State variable name
+                            state_var = "#{id}Value"
+                            # Add state variable to requirements
+                            add_state_variable(state_var, "Double", progress.to_s)
+                            state_var
+                          end
           
           # ProgressView
-          add_line "ProgressView(value: #{state_var})"
+          add_line "ProgressView(value: #{progress_value})"
           
           # progressTintColor
           if @component['progressTintColor']
