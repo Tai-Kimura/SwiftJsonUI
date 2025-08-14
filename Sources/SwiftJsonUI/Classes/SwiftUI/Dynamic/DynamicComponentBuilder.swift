@@ -20,9 +20,30 @@ public struct DynamicComponentBuilder: View {
     }
     
     public var body: some View {
-        buildView(from: component)
-            .applyDynamicModifiers(component)
-            .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+        // Check if component needs visibility wrapper
+        let needsVisibilityWrapper = component.visibility != nil || component.hidden == true
+        
+        if needsVisibilityWrapper {
+            // Handle both visibility and hidden properties
+            let visibility: String? = {
+                if component.hidden == true {
+                    return "gone"
+                }
+                return component.visibility
+            }()
+            
+            // Wrap with VisibilityWrapper
+            VisibilityWrapper(visibility) {
+                buildView(from: component)
+                    .applyDynamicModifiers(component)
+                    .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+            }
+        } else {
+            // No visibility wrapper needed
+            buildView(from: component)
+                .applyDynamicModifiers(component)
+                .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+        }
     }
     
     @ViewBuilder
