@@ -26,6 +26,63 @@ module SjuiTools
           @view_registry = view_registry || SjuiTools::SwiftUI::ViewRegistry.new
         end
         
+        def should_add_leading_spacer_for_hstack(gravity)
+          # HStack with right/trailing gravity needs leading spacer
+          # Extract horizontal component from gravity
+          horizontal = extract_horizontal_from_gravity(gravity)
+          horizontal == 'right'
+        end
+        
+        def should_add_trailing_spacer_for_hstack(gravity)
+          # HStack with left/leading gravity needs trailing spacer
+          horizontal = extract_horizontal_from_gravity(gravity)
+          horizontal == 'left'
+        end
+        
+        def should_add_leading_spacer_for_vstack(gravity)
+          # VStack with bottom gravity needs leading spacer
+          vertical = extract_vertical_from_gravity(gravity)
+          vertical == 'bottom'
+        end
+        
+        def should_add_trailing_spacer_for_vstack(gravity)
+          # VStack with top gravity needs trailing spacer
+          vertical = extract_vertical_from_gravity(gravity)
+          vertical == 'top'
+        end
+        
+        def extract_horizontal_from_gravity(gravity)
+          gravity = gravity || 'left|top'
+          if gravity.is_a?(Array)
+            gravity.find { |g| ['left', 'center', 'right'].include?(g) } || 'left'
+          elsif gravity.is_a?(String)
+            if gravity.include?('|')
+              parts = gravity.split('|')
+              parts.find { |p| ['left', 'center', 'right'].include?(p) } || 'left'
+            else
+              ['left', 'center', 'right'].include?(gravity) ? gravity : 'left'
+            end
+          else
+            'left'
+          end
+        end
+        
+        def extract_vertical_from_gravity(gravity)
+          gravity = gravity || 'left|top'
+          if gravity.is_a?(Array)
+            gravity.find { |g| ['top', 'center', 'bottom'].include?(g) } || 'top'
+          elsif gravity.is_a?(String)
+            if gravity.include?('|')
+              parts = gravity.split('|')
+              parts.find { |p| ['top', 'center', 'bottom'].include?(p) } || 'top'
+            else
+              ['top', 'center', 'bottom'].include?(gravity) ? gravity : 'top'
+            end
+          else
+            'top'
+          end
+        end
+        
         def convert
           # ビューレジストリに自身を登録
           if @component['id'] && @view_registry
@@ -91,10 +148,24 @@ module SjuiTools
               # HStackでgravityを反映
               alignment = get_hstack_alignment
               add_line "HStack(alignment: #{alignment}, spacing: 0) {"
+              
+              # Add Spacer at beginning for right gravity
+              if should_add_leading_spacer_for_hstack(@component['gravity'])
+                indent do
+                  add_line "Spacer(minLength: 0)"
+                end
+              end
             elsif orientation == 'vertical' 
               # VStackでgravityを反映
               alignment = get_vstack_alignment
               add_line "VStack(alignment: #{alignment}, spacing: 0) {"
+              
+              # Add Spacer at beginning for bottom gravity
+              if should_add_leading_spacer_for_vstack(@component['gravity'])
+                indent do
+                  add_line "Spacer(minLength: 0)"
+                end
+              end
             else
               # orientationがない場合はZStack（重ね合わせ）
               # 相対配置が必要な場合は特別な処理
@@ -148,6 +219,13 @@ module SjuiTools
                     if @converter_factory
                       render_child_element(child, orientation, index, 0, 0)
                     end
+                  end
+                  
+                  # Add trailing Spacer based on gravity
+                  if orientation == 'horizontal' && should_add_trailing_spacer_for_hstack(@component['gravity'])
+                    add_line "Spacer(minLength: 0)"
+                  elsif orientation == 'vertical' && should_add_trailing_spacer_for_vstack(@component['gravity'])
+                    add_line "Spacer(minLength: 0)"
                   end
                 end
               end

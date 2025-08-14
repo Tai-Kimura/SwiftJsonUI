@@ -67,20 +67,42 @@ public struct DynamicViewContainer: View {
                 )
             } else if orientation == "horizontal" {
                 // 通常のHStack
+                let hAlignment = getHorizontalAlignmentFromAlignment(component.alignment)
                 HStack(alignment: getVerticalAlignmentFromAlignment(component.alignment), spacing: 0) {
+                    // Add Spacer at beginning for trailing alignment
+                    if hAlignment == .trailing {
+                        Spacer(minLength: 0)
+                    }
+                    
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
-                    Spacer(minLength: 0)
+                    
+                    // Add Spacer at end for leading alignment
+                    if hAlignment == .leading {
+                        Spacer(minLength: 0)
+                    }
+                    // No Spacer for center alignment
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if orientation == "vertical" {
                 // 通常のVStack
+                let vAlignment = getVerticalAlignmentFromAlignment(component.alignment)
                 VStack(alignment: getHorizontalAlignmentFromAlignment(component.alignment), spacing: 0) {
+                    // Add Spacer at beginning for bottom alignment
+                    if vAlignment == .bottom {
+                        Spacer(minLength: 0)
+                    }
+                    
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
-                    Spacer(minLength: 0)
+                    
+                    // Add Spacer at end for top alignment
+                    if vAlignment == .top {
+                        Spacer(minLength: 0)
+                    }
+                    // No Spacer for center alignment
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
