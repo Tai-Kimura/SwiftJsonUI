@@ -39,11 +39,11 @@ module SjuiTools
             else
               add_modifier_line ".foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))"
             end
+            
+            # Apply padding to Text inside button (same as Dynamic mode)
+            apply_padding_to_text
           end
           add_line "}"
-          
-          # Button's internal padding (same as Dynamic mode)
-          apply_padding
           
           # Button's background and corner radius
           if @component['background']
@@ -79,6 +79,21 @@ module SjuiTools
         end
         
         private
+        
+        def apply_padding_to_text
+          # Apply padding to the Text inside the button (not to the button itself)
+          if @component['padding']
+            add_modifier_line ".padding(#{@component['padding'].to_i})"
+          elsif @component['paddingTop'] || @component['paddingBottom'] || 
+                @component['paddingLeft'] || @component['paddingRight']
+            top = @component['paddingTop'] || @component['topPadding'] || 0
+            bottom = @component['paddingBottom'] || @component['bottomPadding'] || 0
+            left = @component['paddingLeft'] || @component['leftPadding'] || 0
+            right = @component['paddingRight'] || @component['rightPadding'] || 0
+            
+            add_modifier_line ".padding(EdgeInsets(top: #{top}, leading: #{left}, bottom: #{bottom}, trailing: #{right}))"
+          end
+        end
         
         def button_style_to_swiftui(style)
           case style
