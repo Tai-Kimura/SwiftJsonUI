@@ -9,16 +9,24 @@ module SjuiTools
         def convert
           id = @component['id'] || 'textEditor'
           
-          # Create @State variable name
-          state_var = "#{id}Text"
+          # Get the binding property from text field
+          text_binding = @component['text']
           
-          # Add state variable to requirements
-          add_state_variable(state_var, "String", '""')
+          # Extract property name from binding (e.g., "@{simpleText}" -> "simpleText")
+          if text_binding && text_binding.start_with?('@{') && text_binding.end_with?('}')
+            property_name = text_binding[2..-2]  # Remove @{ and }
+            binding_path = "viewModel.data.#{property_name}"
+          else
+            # Fallback to ID-based naming if no binding
+            state_var = "#{id}Text"
+            add_state_variable(state_var, "String", '""')
+            binding_path = "viewModel.#{state_var}"
+          end
           
           # TextViewWithPlaceholderを使用
           add_line "TextViewWithPlaceholder("
           indent do
-            add_line "text: $viewModel.#{state_var},"
+            add_line "text: $#{binding_path},"
             
             # hint (placeholder)
             if @component['hint']

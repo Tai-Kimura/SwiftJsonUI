@@ -108,6 +108,7 @@ module SjuiTools
         end
 
         def to_snake_case(str)
+          # Standard snake_case conversion
           str.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
              .gsub(/([a-z\d])([A-Z])/, '\1_\2')
              .downcase

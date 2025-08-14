@@ -27,7 +27,10 @@ module SjuiTools
         viewmodel_name = viewmodel_match ? viewmodel_match[1] : "#{view_name}ViewModel"
         
         # Convert view name to snake_case for JSON file name
-        json_name = view_name.gsub(/([A-Z])/, '_\1').downcase.gsub(/^_/, '')
+        # Standard snake_case conversion
+        json_name = view_name.gsub(/([A-Z]+)([A-Z][a-z])/, '\1_\2')
+                             .gsub(/([a-z\d])([A-Z])/, '\1_\2')
+                             .downcase
         
         # GeneratedViewファイルの内容を完全に作り直す
         content = <<~SWIFT
