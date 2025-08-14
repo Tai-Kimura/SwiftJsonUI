@@ -53,6 +53,7 @@ public struct CommonModifiers: ViewModifier {
         }
         
         return finalContent
+            .padding(getPadding())  // Apply internal padding first
             .background(getBackground())
             .cornerRadius(component.cornerRadius ?? 0)
             .overlay(getBorder())
@@ -142,6 +143,33 @@ public struct CommonModifiers: ViewModifier {
             }
         }
         return component.alignment ?? .topLeading
+    }
+    
+    private func getPadding() -> EdgeInsets {
+        // Get padding value from AnyCodable
+        var paddingValue: CGFloat? = nil
+        if let padding = component.padding {
+            if let intValue = padding.value as? Int {
+                paddingValue = CGFloat(intValue)
+            } else if let doubleValue = padding.value as? Double {
+                paddingValue = CGFloat(doubleValue)
+            } else if let floatValue = padding.value as? CGFloat {
+                paddingValue = floatValue
+            }
+        }
+        
+        // Use individual padding properties or fallback to padding value
+        let top = component.paddingTop ?? component.topPadding ?? paddingValue ?? 0
+        let leading = component.paddingLeft ?? component.leftPadding ?? paddingValue ?? 0
+        let bottom = component.paddingBottom ?? component.bottomPadding ?? paddingValue ?? 0
+        let trailing = component.paddingRight ?? component.rightPadding ?? paddingValue ?? 0
+        
+        return EdgeInsets(
+            top: top,
+            leading: leading,
+            bottom: bottom,
+            trailing: trailing
+        )
     }
     
     private func getMargins() -> EdgeInsets {

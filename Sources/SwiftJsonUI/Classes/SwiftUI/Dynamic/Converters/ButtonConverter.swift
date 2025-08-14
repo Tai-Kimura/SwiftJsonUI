@@ -27,7 +27,7 @@ public struct ButtonConverter {
                     .padding(getButtonPadding(component))
             }
             .buttonStyle(getDynamicButtonStyle(component))
-            .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            .modifier(ButtonModifiers(component: component, viewModel: viewModel))
         )
     }
     
@@ -129,6 +129,49 @@ public struct ButtonConverter {
             backgroundColor: DynamicHelpers.colorFromHex(component.background) ?? .blue,
             cornerRadius: component.cornerRadius ?? 8
         )
+    }
+}
+
+// MARK: - Button Modifiers (without background/cornerRadius which are handled by ButtonStyle)
+struct ButtonModifiers: ViewModifier {
+    let component: DynamicComponent
+    let viewModel: DynamicViewModel
+    
+    func body(content: Content) -> some View {
+        content
+            // Apply margins only (background and cornerRadius are handled by DynamicButtonStyle)
+            .padding(getMargins())
+            .opacity(getOpacity())
+            .opacity(isHidden() ? 0 : 1)
+    }
+    
+    private func getMargins() -> EdgeInsets {
+        // Use margin properties for outer spacing
+        let top = component.topMargin ?? 0
+        let leading = component.leftMargin ?? 0
+        let bottom = component.bottomMargin ?? 0
+        let trailing = component.rightMargin ?? 0
+        
+        return EdgeInsets(
+            top: top,
+            leading: leading,
+            bottom: bottom,
+            trailing: trailing
+        )
+    }
+    
+    private func getOpacity() -> Double {
+        if let opacity = component.opacity {
+            return Double(opacity)
+        }
+        if let alpha = component.alpha {
+            return Double(alpha)
+        }
+        return 1.0
+    }
+    
+    private func isHidden() -> Bool {
+        return component.hidden == true || component.visibility == "gone"
     }
 }
 
