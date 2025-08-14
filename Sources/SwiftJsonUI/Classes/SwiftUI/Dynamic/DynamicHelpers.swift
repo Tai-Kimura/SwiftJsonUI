@@ -202,7 +202,7 @@ extension View {
     @ViewBuilder
     public func applyDynamicModifiers(_ component: DynamicComponent) -> some View {
         // width and height are already CGFloat? after JSON decoding
-        // .infinity means matchParent, nil means wrapContent
+        // .infinity means matchParent, nil means wrapContent or not specified
         let widthValue = component.width
         let heightValue = component.height
         
