@@ -236,7 +236,8 @@ module SjuiTools
           # Apply padding (internal spacing)
           apply_padding
           
-          # Apply background and corner radius
+          # Apply background and corner radius AFTER padding
+          # This ensures the background includes the padding area
           if @component['background']
             color = hex_to_swiftui_color(@component['background'])
             add_modifier_line ".background(#{color})"

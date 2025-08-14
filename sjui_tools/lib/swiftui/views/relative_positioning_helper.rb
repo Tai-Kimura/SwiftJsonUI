@@ -161,11 +161,36 @@ module SjuiTools
                     # View
                     add_line "view: AnyView("
                     indent do
-                      child_converter = @converter_factory.create_converter(child, @indent_level + 2, @action_manager, @converter_factory, @view_registry)
-                      child_code = child_converter.convert
-                      child_lines = child_code.split("\n")
-                      child_lines.each do |line|
-                        add_line line.strip unless line.strip.empty?
+                      # Special handling for views with padding in relative positioning
+                      # We need to ensure padding doesn't affect the view's alignment edges
+                      if child['padding'] && child['background']
+                        # Extract padding value and remove it from the child temporarily
+                        padding_value = child['padding']
+                        background_color = child['background']
+                        child_without_padding = child.dup
+                        child_without_padding.delete('padding')
+                        child_without_padding.delete('background')
+                        
+                        # Generate the view without padding and background
+                        child_converter = @converter_factory.create_converter(child_without_padding, @indent_level + 3, @action_manager, @converter_factory, @view_registry)
+                        child_code = child_converter.convert
+                        child_lines = child_code.split("\n")
+                        child_lines.each do |line|
+                          add_line line.strip unless line.strip.empty?
+                        end
+                        
+                        # Now apply padding and background together
+                        add_modifier_line ".padding(#{padding_value.to_i})"
+                        color = hex_to_swiftui_color(background_color)
+                        add_modifier_line ".background(#{color})"
+                      else
+                        # Normal conversion for views without padding or without background
+                        child_converter = @converter_factory.create_converter(child, @indent_level + 2, @action_manager, @converter_factory, @view_registry)
+                        child_code = child_converter.convert
+                        child_lines = child_code.split("\n")
+                        child_lines.each do |line|
+                          add_line line.strip unless line.strip.empty?
+                        end
                       end
                     end
                     add_line "),"
@@ -176,20 +201,6 @@ module SjuiTools
                       # 相対配置の制約を追加
                       constraint_added = false
                       
-                      # toLeftOf/toRightOf
-                      if child['toLeftOf']
-                        add_line "RelativePositionConstraint(type: .toLeftOf, targetId: \"#{child['toLeftOf']}\"),"
-                        constraint_added = true
-                      elsif child['toRightOf']
-                        add_line "RelativePositionConstraint(type: .toRightOf, targetId: \"#{child['toRightOf']}\"),"
-                        constraint_added = true
-                      elsif child['toStartOf']
-                        add_line "RelativePositionConstraint(type: .toStartOf, targetId: \"#{child['toStartOf']}\"),"
-                        constraint_added = true
-                      elsif child['toEndOf']
-                        add_line "RelativePositionConstraint(type: .toEndOf, targetId: \"#{child['toEndOf']}\"),"
-                        constraint_added = true
-                      end
                       
                       # above/below
                       if child['above']
