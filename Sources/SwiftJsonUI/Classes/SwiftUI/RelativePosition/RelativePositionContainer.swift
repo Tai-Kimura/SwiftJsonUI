@@ -278,30 +278,26 @@ public struct RelativePositionContainer: View {
                 // Align top edges - child's top aligns with anchor's top
                 // Child center should be at: anchor_top + child_height/2
                 y = -anchorSize.height / 2 + childSize.height / 2
-                // For alignTop/Bottom, typically centerHorizontal is used
-                x = 0  // Center horizontally
-                Logger.debug("   alignTop: y = \(y), x = 0 (centered)")
+                // Keep x unchanged (use default from alignment) - don't center horizontally
+                Logger.debug("   alignTop: y = \(y), x unchanged")
             case .alignBottom:
                 // Align bottom edges - child's bottom aligns with anchor's bottom
                 // Child center should be at: anchor_bottom - child_height/2
                 y = anchorSize.height / 2 - childSize.height / 2
-                // For alignTop/Bottom, typically centerHorizontal is used
-                x = 0  // Center horizontally
-                Logger.debug("   alignBottom: y = \(y), x = 0 (centered)")
+                // Keep x unchanged (use default from alignment) - don't center horizontally
+                Logger.debug("   alignBottom: y = \(y), x unchanged")
             case .alignLeft:
                 // Align left edges - child's left aligns with anchor's left
                 // Child center should be at: anchor_left + child_width/2
                 x = -anchorSize.width / 2 + childSize.width / 2
-                // For alignLeft/Right, typically centerVertical is used
-                y = 0  // Center vertically
-                Logger.debug("   alignLeft: x = \(x), y = 0 (centered)")
+                // Keep y unchanged (use default from alignment) - don't center vertically
+                Logger.debug("   alignLeft: x = \(x), y unchanged")
             case .alignRight:
                 // Align right edges - child's right aligns with anchor's right
                 // Child center should be at: anchor_right - child_width/2
                 x = anchorSize.width / 2 - childSize.width / 2
-                // For alignLeft/Right, typically centerVertical is used
-                y = 0  // Center vertically
-                Logger.debug("   alignRight: x = \(x), y = 0 (centered)")
+                // Keep y unchanged (use default from alignment) - don't center vertically
+                Logger.debug("   alignRight: x = \(x), y unchanged")
             case .above:
                 // Position above anchor - child's bottom touches anchor's top
                 y =
