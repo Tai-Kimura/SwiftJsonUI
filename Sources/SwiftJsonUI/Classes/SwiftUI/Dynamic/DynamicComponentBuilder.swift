@@ -50,10 +50,12 @@ public struct DynamicComponentBuilder: View {
     private func buildComponentWithModifiers() -> some View {
         let view = buildView(from: component)
         
-        // Button and Text/Label components handle their own modifiers
-        // Applying applyDynamicModifiers would cause double application of padding/margins
+        // These components handle their own modifiers (padding/margins/background/cornerRadius)
+        // Applying applyDynamicModifiers would cause double application
         let typeString = component.type?.lowercased() ?? ""
-        if typeString == "button" || typeString == "text" || typeString == "label" {
+        let selfManagedTypes = ["button", "text", "label", "image", "networkimage"]
+        
+        if selfManagedTypes.contains(typeString) {
             view
                 .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
         } else {
