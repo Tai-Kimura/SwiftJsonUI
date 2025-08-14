@@ -32,39 +32,48 @@ module SjuiTools
           indent do
             add_line "Text(\"#{text}\")"
             
-            # fontColor
+            # fontColor (デフォルトは白)
             if @component['fontColor']
               color = hex_to_swiftui_color(@component['fontColor'])
               add_modifier_line ".foregroundColor(#{color})"
-            end
-            
-            # fontSize
-            if @component['fontSize']
-              add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
-            end
-            
-            # font
-            if @component['font'] == 'bold'
-              add_modifier_line ".fontWeight(.bold)"
-            elsif @component['font']
-              add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{(@component['fontSize'] || 17).to_i}))"
+            else
+              add_modifier_line ".foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))"
             end
           end
           add_line "}"
+          
+          # Button's internal padding (same as Dynamic mode)
+          apply_padding
+          
+          # Button's background and corner radius
+          if @component['background']
+            color = hex_to_swiftui_color(@component['background'])
+            add_modifier_line ".background(#{color})"
+          end
+          
+          if @component['cornerRadius']
+            add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
+          end
+          
+          # Apply margins (outer spacing)
+          apply_margins
           
           # enabled属性
           if @component['enabled'] == false
             add_modifier_line ".disabled(true)"
           end
           
-          # iOS 15+ configuration
-          if @component['config'] && @component['config']['style']
-            style = button_style_to_swiftui(@component['config']['style'])
-            add_modifier_line ".buttonStyle(#{style})"
+          # opacity
+          if @component['alpha']
+            add_modifier_line ".opacity(#{@component['alpha']})"
+          elsif @component['opacity']
+            add_modifier_line ".opacity(#{@component['opacity']})"
           end
           
-          # 共通のモディファイアを適用（onTapGestureはここで追加される）
-          apply_modifiers
+          # hidden
+          if @component['hidden'] == true
+            add_modifier_line ".hidden()"
+          end
           
           generated_code
         end
