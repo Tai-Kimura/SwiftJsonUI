@@ -2,6 +2,7 @@
 
 require 'json'
 require 'fileutils'
+require 'set'
 require_relative 'converter_factory'
 require_relative 'views/base_view_converter'
 require_relative 'action_manager'
@@ -82,11 +83,39 @@ module SjuiTools
         # Convert to SwiftUI code
         @state_variables = []
         @action_manager = ActionManager.new
+        @onclick_actions = Set.new
+        
+        # Extract onclick actions from JSON
+        extract_onclick_actions(json_data)
         
         # Convert the main component
         view_code = convert_component(json_data, 0)  # Indent level 0, will be indented by view_updater
         
-        view_code
+        [view_code, @onclick_actions.to_a]
+      end
+      
+      def extract_onclick_actions(json_data)
+        if json_data.is_a?(Hash)
+          # Check for onclick attribute
+          if json_data['onclick'] && json_data['onclick'].is_a?(String)
+            @onclick_actions.add(json_data['onclick'])
+          end
+          
+          # Process children
+          if json_data['child']
+            if json_data['child'].is_a?(Array)
+              json_data['child'].each do |child|
+                extract_onclick_actions(child)
+              end
+            else
+              extract_onclick_actions(json_data['child'])
+            end
+          end
+        elsif json_data.is_a?(Array)
+          json_data.each do |item|
+            extract_onclick_actions(item)
+          end
+        end
       end
       
       def process_includes(json_data, base_dir)
