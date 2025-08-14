@@ -45,19 +45,9 @@ public struct WeightedStackContainer: View {
                         CGFloat(max(weightValue, widthWeightValue, 1)) :
                         CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                     
-                    // Handle visibility directly without ChildView wrapper
-                    let visibility: String? = {
-                        if child.hidden == true {
-                            return "gone"
-                        }
-                        return child.visibility
-                    }()
-                    
                     return (
                         view: AnyView(
-                            VisibilityWrapper(visibility) {
-                                DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                            }
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                         ),
                         weight: weight
                     )
@@ -78,19 +68,9 @@ public struct WeightedStackContainer: View {
                         CGFloat(max(weightValue, heightWeightValue, 1)) :
                         CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                     
-                    // Handle visibility directly without ChildView wrapper
-                    let visibility: String? = {
-                        if child.hidden == true {
-                            return "gone"
-                        }
-                        return child.visibility
-                    }()
-                    
                     return (
                         view: AnyView(
-                            VisibilityWrapper(visibility) {
-                                DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                            }
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                         ),
                         weight: weight
                     )
