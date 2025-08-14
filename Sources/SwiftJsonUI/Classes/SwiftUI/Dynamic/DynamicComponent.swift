@@ -260,7 +260,14 @@ public struct DynamicComponent: Decodable {
         hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)
         flexible = try container.decodeIfPresent(Bool.self, forKey: .flexible)
-        containerInset = try container.decodeIfPresent([CGFloat].self, forKey: .containerInset)
+        // Handle containerInset as either single value or array
+        if let singleValue = try? container.decode(CGFloat.self, forKey: .containerInset) {
+            containerInset = [singleValue, singleValue, singleValue, singleValue]
+        } else if let arrayValue = try? container.decode([CGFloat].self, forKey: .containerInset) {
+            containerInset = arrayValue
+        } else {
+            containerInset = nil
+        }
         hideOnFocused = try container.decodeIfPresent(Bool.self, forKey: .hideOnFocused)
         action = try container.decodeIfPresent(String.self, forKey: .action)
         iconOn = try container.decodeIfPresent(String.self, forKey: .iconOn)

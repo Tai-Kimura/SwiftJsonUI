@@ -119,10 +119,16 @@ public struct DynamicViewContainer: View {
     private func getChildren() -> [DynamicComponent] {
         // child is always an array
         if let child = component.child {
+            // Debug: Print all child types
+            for (index, comp) in child.enumerated() {
+                print("📝 Child[\(index)]: type=\(comp.type ?? "nil"), id=\(comp.id ?? "no-id"), data=\(comp.data != nil)")
+            }
             // Process data elements first
             processDataElements(child)
             // Then filter to get only valid components
-            return filterDataElements(child)
+            let filtered = filterDataElements(child)
+            print("📝 Filtered children count: \(filtered.count)")
+            return filtered
         }
         return []
     }
