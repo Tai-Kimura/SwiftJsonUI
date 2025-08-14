@@ -105,6 +105,7 @@ public struct DynamicComponent: Decodable {
     let maximumDate: String?
     
     // Event handlers
+    let onclick: String?  // lowercase version for JSON compatibility
     let onClick: String?
     let onLongPress: String?
     let onAppear: String?
@@ -164,7 +165,7 @@ public struct DynamicComponent: Decodable {
         case columns, spacing
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat, minimumDate, maximumDate
-        case onClick, onLongPress, onAppear, onDisappear
+        case onclick, onClick, onLongPress, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
         case gravity, alignment, widthWeight, heightWeight
@@ -287,6 +288,7 @@ public struct DynamicComponent: Decodable {
         maximumDate = try container.decodeIfPresent(String.self, forKey: .maximumDate)
         
         // Event handlers
+        onclick = try container.decodeIfPresent(String.self, forKey: .onclick)
         onClick = try container.decodeIfPresent(String.self, forKey: .onClick)
         onLongPress = try container.decodeIfPresent(String.self, forKey: .onLongPress)
         onAppear = try container.decodeIfPresent(String.self, forKey: .onAppear)
