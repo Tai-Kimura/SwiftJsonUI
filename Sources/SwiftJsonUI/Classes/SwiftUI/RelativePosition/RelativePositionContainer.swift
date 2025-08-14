@@ -278,26 +278,38 @@ public struct RelativePositionContainer: View {
                 // Align top edges - child's top aligns with anchor's top
                 // Child center should be at: anchor_top + child_height/2
                 y = -anchorSize.height / 2 + childSize.height / 2
-                // Keep x unchanged (use default from alignment) - don't center horizontally
-                Logger.debug("   alignTop: y = \(y), x unchanged")
+                // For vertical-only alignment, default to left edge
+                if x == 0 && alignment == .center {
+                    x = -containerSize.width / 2 + childSize.width / 2
+                }
+                Logger.debug("   alignTop: y = \(y), x = \(x)")
             case .alignBottom:
                 // Align bottom edges - child's bottom aligns with anchor's bottom
                 // Child center should be at: anchor_bottom - child_height/2
                 y = anchorSize.height / 2 - childSize.height / 2
-                // Keep x unchanged (use default from alignment) - don't center horizontally
-                Logger.debug("   alignBottom: y = \(y), x unchanged")
+                // For vertical-only alignment, default to left edge
+                if x == 0 && alignment == .center {
+                    x = -containerSize.width / 2 + childSize.width / 2
+                }
+                Logger.debug("   alignBottom: y = \(y), x = \(x)")
             case .alignLeft:
                 // Align left edges - child's left aligns with anchor's left
                 // Child center should be at: anchor_left + child_width/2
                 x = -anchorSize.width / 2 + childSize.width / 2
-                // Keep y unchanged (use default from alignment) - don't center vertically
-                Logger.debug("   alignLeft: x = \(x), y unchanged")
+                // For horizontal-only alignment, default to top edge
+                if y == 0 && alignment == .center {
+                    y = -containerSize.height / 2 + childSize.height / 2
+                }
+                Logger.debug("   alignLeft: x = \(x), y = \(y)")
             case .alignRight:
                 // Align right edges - child's right aligns with anchor's right
                 // Child center should be at: anchor_right - child_width/2
                 x = anchorSize.width / 2 - childSize.width / 2
-                // Keep y unchanged (use default from alignment) - don't center vertically
-                Logger.debug("   alignRight: x = \(x), y unchanged")
+                // For horizontal-only alignment, default to top edge
+                if y == 0 && alignment == .center {
+                    y = -containerSize.height / 2 + childSize.height / 2
+                }
+                Logger.debug("   alignRight: x = \(x), y = \(y)")
             case .above:
                 // Position above anchor - child's bottom touches anchor's top
                 y =
