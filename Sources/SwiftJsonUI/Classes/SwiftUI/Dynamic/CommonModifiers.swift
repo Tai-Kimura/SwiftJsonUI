@@ -62,6 +62,11 @@ public struct CommonModifiers: ViewModifier {
     }
     
     private func shouldApplyFrameModifier() -> Bool {
+        // ScrollView should not have frame modifier with infinity values
+        if component.type?.lowercased() == "scrollview" || component.type?.lowercased() == "scroll" {
+            return false
+        }
+        
         // Only apply frame if width or height is explicitly set (not nil/wrapContent)
         // or if weight is specified (which requires infinity)
         let hasExplicitWidth = component.width != nil || hasWeightForWidth()
