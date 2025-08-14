@@ -199,27 +199,32 @@ public struct DynamicHelpers {
 
 // MARK: - View Modifier Extension
 extension View {
-    @ViewBuilder
     public func applyDynamicModifiers(_ component: DynamicComponent, isWeightedChild: Bool = false) -> some View {
         // width and height are already CGFloat? after JSON decoding
         // .infinity means matchParent, nil means wrapContent or not specified
-        var widthValue = component.width
-        var heightValue = component.height
-        
-        // If this is a weighted child, WeightedStack handles the main axis sizing
-        // But we still need to set infinity for the content to fill the allocated space
-        if isWeightedChild {
-            // Check if weight affects width (horizontal stack with weight or widthWeight)
-            if component.width == 0 && ((component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0) {
-                widthValue = .infinity  // Fill the width allocated by WeightedHStack
+        let widthValue: CGFloat? = {
+            // If this is a weighted child, WeightedStack handles the main axis sizing
+            // But we still need to set infinity for the content to fill the allocated space
+            if isWeightedChild {
+                // Check if weight affects width (horizontal stack with weight or widthWeight)
+                if component.width == 0 && ((component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0) {
+                    return .infinity  // Fill the width allocated by WeightedHStack
+                }
             }
-            // Check if weight affects height (vertical stack with weight or heightWeight)
-            if component.height == 0 && ((component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0) {
-                heightValue = .infinity  // Fill the height allocated by WeightedVStack
-            }
-        }
+            return component.width
+        }()
         
-        self
+        let heightValue: CGFloat? = {
+            if isWeightedChild {
+                // Check if weight affects height (vertical stack with weight or heightWeight)
+                if component.height == 0 && ((component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0) {
+                    return .infinity  // Fill the height allocated by WeightedVStack
+                }
+            }
+            return component.height
+        }()
+        
+        return self
             .frame(
                 width: widthValue == .infinity ? nil : widthValue,
                 height: heightValue == .infinity ? nil : heightValue
