@@ -231,16 +231,51 @@ module SjuiTools
             end
           end
           
+          # Apply padding (internal spacing)
+          apply_padding
+          
+          # Apply background and corner radius
+          if @component['background']
+            color = hex_to_swiftui_color(@component['background'])
+            add_modifier_line ".background(#{color})"
+          end
+          
+          if @component['cornerRadius']
+            add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
+          end
+          
+          # Apply margins (external spacing)
+          apply_margins
+          
+          # Apply other modifiers (opacity, hidden, etc.)
+          apply_other_modifiers
+          
           # Apply binding-specific modifiers
           apply_binding_modifiers
-          
-          # 共通のモディファイアを適用
-          apply_modifiers
           
           generated_code
         end
 
         private
+        
+        def apply_other_modifiers
+          # Apply opacity
+          if @component['alpha']
+            add_modifier_line ".opacity(#{@component['alpha']})"
+          elsif @component['opacity']
+            add_modifier_line ".opacity(#{@component['opacity']})"
+          end
+          
+          # Apply hidden
+          if @component['hidden'] == true
+            add_modifier_line ".hidden()"
+          end
+          
+          # Apply disabled
+          if @component['enabled'] == false
+            add_modifier_line ".disabled(true)"
+          end
+        end
 
         def text_alignment_to_swiftui(alignment)
           case alignment.downcase

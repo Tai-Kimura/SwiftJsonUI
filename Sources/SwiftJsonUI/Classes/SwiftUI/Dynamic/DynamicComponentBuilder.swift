@@ -50,9 +50,10 @@ public struct DynamicComponentBuilder: View {
     private func buildComponentWithModifiers() -> some View {
         let view = buildView(from: component)
         
-        // Button components handle their own modifiers through ButtonConverter and ButtonModifiers
+        // Button and Text/Label components handle their own modifiers
         // Applying applyDynamicModifiers would cause double application of padding/margins
-        if component.type?.lowercased() == "button" {
+        let typeString = component.type?.lowercased() ?? ""
+        if typeString == "button" || typeString == "text" || typeString == "label" {
             view
                 .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
         } else {
