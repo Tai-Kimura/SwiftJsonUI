@@ -118,6 +118,8 @@ public struct DynamicComponent: Decodable {
     // Include support
     let include: String?
     let variables: [String: AnyCodable]?
+    let includeData: [String: AnyCodable]?  // For include component's data
+    let sharedData: [String: AnyCodable]?   // For include component's shared_data
     
     // Layout properties
     let gravity: [String]?  // Raw gravity values from JSON
@@ -168,6 +170,8 @@ public struct DynamicComponent: Decodable {
         case onclick, onClick, onLongPress, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
+        case includeData = "data"     // Map JSON "data" to includeData for include components
+        case sharedData = "shared_data"  // Map JSON "shared_data" to sharedData
         case gravity, alignment, widthWeight, heightWeight
         case alignTop, alignBottom, alignLeft, alignRight
         case centerHorizontal, centerVertical
@@ -308,6 +312,15 @@ public struct DynamicComponent: Decodable {
         // Include support
         include = try container.decodeIfPresent(String.self, forKey: .include)
         variables = try container.decodeIfPresent([String: AnyCodable].self, forKey: .variables)
+        
+        // For include components, decode data and shared_data as dictionaries
+        if include != nil {
+            includeData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .includeData)
+            sharedData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .sharedData)
+        } else {
+            includeData = nil
+            sharedData = nil
+        }
         
         // Layout properties
         gravity = DynamicDecodingHelper.decodeGravity(from: container)

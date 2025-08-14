@@ -67,7 +67,11 @@ public struct DynamicComponentBuilder: View {
     
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
-        if let type = component.type {
+        // Check for include first (has no type)
+        if component.include != nil {
+            let _ = print("🔨 Building include: path=\(component.include ?? "unknown"), id=\(component.id ?? "no-id")")
+            IncludeConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        } else if let type = component.type {
             let _ = print("🔨 Building component: type=\(type), id=\(component.id ?? "no-id"), visibility=\(component.visibility ?? "visible"), hidden=\(component.hidden ?? false)")
             switch type.lowercased() {
         // Text components
