@@ -32,8 +32,24 @@ public struct DynamicView: View {
                     viewId: viewId
                 )
                 .onAppear {
-                    Logger.debug("[DynamicView] Rendering component: \(component.type)")
+                    Logger.debug("[DynamicView] Rendering component: \(component.type ?? "unknown")")
                 }
+            } else if let error = viewModel.decodeError {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 10) {
+                        Text("JSON Decode Error")
+                            .font(.headline)
+                            .foregroundColor(.red)
+                            .padding(.bottom, 5)
+                        
+                        Text(error)
+                            .font(.system(.caption, design: .monospaced))
+                            .foregroundColor(.primary)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .background(Color(UIColor.systemBackground))
             } else {
                 ProgressView("Loading...")
                     .onAppear {

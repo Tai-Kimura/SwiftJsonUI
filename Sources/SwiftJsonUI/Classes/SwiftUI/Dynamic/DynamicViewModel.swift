@@ -18,6 +18,7 @@ public class DynamicViewModel: ObservableObject {
     @Published public var sliderValues: [String: Double] = [:]
     @Published public var selectedSegments: [String: Int] = [:]
     @Published public var selectedRadios: [String: Int] = [:]
+    @Published public var decodeError: String?
     
     private let jsonName: String?
     private var cancellables = Set<AnyCancellable>()
@@ -45,11 +46,14 @@ public class DynamicViewModel: ObservableObject {
             do {
                 let decoder = JSONDecoder()
                 rootComponent = try decoder.decode(DynamicComponent.self, from: data)
+                decodeError = nil
                 Logger.debug("[DynamicViewModel] Successfully decoded component: \(rootComponent?.type ?? "nil")")
             } catch {
                 Logger.debug("[DynamicViewModel] Decode error: \(error)")
+                decodeError = "JSON Decode Error:\n\(error)"
                 if let jsonString = String(data: data, encoding: .utf8) {
                     Logger.debug("[DynamicViewModel] JSON content: \(jsonString.prefix(200))...")
+                    decodeError! += "\n\nJSON Preview:\n\(jsonString.prefix(500))"
                 }
             }
         } else {

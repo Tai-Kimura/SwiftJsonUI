@@ -72,7 +72,7 @@ public struct DynamicComponent: Decodable {
     let renderingMode: String?
     let headers: [String: String]?
     let items: [String]?
-    let data: [[String: String]]?
+    let data: [AnyCodable]?  // For data elements with variable definitions
     let hint: String?
     let hintColor: String?
     let hintFont: String?
@@ -239,7 +239,7 @@ public struct DynamicComponent: Decodable {
         renderingMode = try container.decodeIfPresent(String.self, forKey: .renderingMode)
         headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
         items = try container.decodeIfPresent([String].self, forKey: .items)
-        data = try container.decodeIfPresent([[String: String]].self, forKey: .data)
+        data = try container.decodeIfPresent([AnyCodable].self, forKey: .data)
         hint = try container.decodeIfPresent(String.self, forKey: .hint)
         hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)

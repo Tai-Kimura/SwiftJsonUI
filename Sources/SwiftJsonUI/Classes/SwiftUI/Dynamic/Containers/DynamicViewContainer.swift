@@ -88,16 +88,36 @@ public struct DynamicViewContainer: View {
     private func getChildren() -> [DynamicComponent] {
         // child is always an array
         if let child = component.child {
+            // Process data elements first
+            processDataElements(child)
+            // Then filter to get only valid components
             return filterDataElements(child)
         }
         return []
     }
     
-    // data要素をフィルタリング（あとで実装）
+    // data要素を処理してからフィルタリング
     private func filterDataElements(_ components: [DynamicComponent]) -> [DynamicComponent] {
         return components.filter { comp in
             // typeがあるものだけを処理（isValidプロパティを使用）
             return comp.isValid
+        }
+    }
+    
+    // data要素から変数を抽出して設定
+    private func processDataElements(_ components: [DynamicComponent]) {
+        for component in components {
+            // data配列がある場合は変数として処理
+            if let dataArray = component.data {
+                for dataItem in dataArray {
+                    if let dict = dataItem.value as? [String: Any],
+                       let name = dict["name"] as? String,
+                       let defaultValue = dict["defaultValue"] {
+                        // ViewModelに変数を設定
+                        viewModel.variables[name] = String(describing: defaultValue)
+                    }
+                }
+            }
         }
     }
     
