@@ -19,18 +19,21 @@ public class DynamicViewModel: ObservableObject {
     @Published public var selectedSegments: [String: Int] = [:]
     @Published public var selectedRadios: [String: Int] = [:]
     @Published public var decodeError: String?
+    @Published public var data: [String: Any] = [:]
     
     private let jsonName: String?
     private var cancellables = Set<AnyCancellable>()
     
-    public init(jsonName: String) {
+    public init(jsonName: String, data: [String: Any] = [:]) {
         self.jsonName = jsonName
+        self.data = data
         loadJSON()
     }
     
-    public init(component: DynamicComponent) {
+    public init(component: DynamicComponent, data: [String: Any] = [:]) {
         self.jsonName = nil
         self.rootComponent = component
+        self.data = data
     }
     
     public func loadJSON() {
@@ -106,9 +109,11 @@ public class DynamicViewModel: ObservableObject {
                         .replacingOccurrences(of: "?", with: "")
                         .trimmingCharacters(in: .whitespaces)
                     
-                    // Get variable value
+                    // Get variable value - check data dictionary first, then variables
                     let value: String
-                    if let varValue = variables[cleanVarName] {
+                    if let dataValue = data[cleanVarName] {
+                        value = String(describing: dataValue)
+                    } else if let varValue = variables[cleanVarName] {
                         value = String(describing: varValue)
                     } else {
                         // Default values for common variables

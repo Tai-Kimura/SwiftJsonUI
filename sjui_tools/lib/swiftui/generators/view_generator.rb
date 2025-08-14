@@ -236,7 +236,7 @@ module SjuiTools
                 
                 var body: some View {
                     if ViewSwitcher.isDynamicMode {
-                        DynamicView(jsonName: "#{json_reference}", viewId: "#{json_name}_view")
+                        DynamicView(jsonName: "#{json_reference}", viewId: "#{json_name}_view", data: viewModel.data.toDictionary())
                             .environmentObject(dynamicViewModel)
                     } else {
                         // Generated SwiftUI code from #{json_reference}.json

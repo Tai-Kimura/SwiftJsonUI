@@ -13,13 +13,13 @@ public struct DynamicView: View {
     @StateObject private var viewModel: DynamicViewModel
     private let viewId: String
     
-    public init(jsonName: String, viewId: String? = nil) {
-        _viewModel = StateObject(wrappedValue: DynamicViewModel(jsonName: jsonName))
+    public init(jsonName: String, viewId: String? = nil, data: [String: Any] = [:]) {
+        _viewModel = StateObject(wrappedValue: DynamicViewModel(jsonName: jsonName, data: data))
         self.viewId = viewId ?? UUID().uuidString
     }
     
-    public init(component: DynamicComponent, viewId: String? = nil) {
-        _viewModel = StateObject(wrappedValue: DynamicViewModel(component: component))
+    public init(component: DynamicComponent, viewId: String? = nil, data: [String: Any] = [:]) {
+        _viewModel = StateObject(wrappedValue: DynamicViewModel(component: component, data: data))
         self.viewId = viewId ?? UUID().uuidString
     }
     
