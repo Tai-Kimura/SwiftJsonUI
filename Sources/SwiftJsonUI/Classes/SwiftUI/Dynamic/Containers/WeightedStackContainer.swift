@@ -81,6 +81,9 @@ public struct WeightedStackContainer: View {
     }
     
     private func getVerticalAlignmentFromAlignment(_ alignment: Alignment?) -> VerticalAlignment {
+        // Default to .top for HStack (from .topLeading default)
+        guard let alignment = alignment else { return .top }
+        
         switch alignment {
         case .top, .topLeading, .topTrailing:
             return .top
@@ -89,11 +92,14 @@ public struct WeightedStackContainer: View {
         case .center, .leading, .trailing:
             return .center
         default:
-            return .top  // デフォルトはtop (topLeadingから)
+            return .top
         }
     }
     
     private func getHorizontalAlignmentFromAlignment(_ alignment: Alignment?) -> HorizontalAlignment {
+        // Default to .leading for VStack (from .topLeading default)
+        guard let alignment = alignment else { return .leading }
+        
         switch alignment {
         case .leading, .topLeading, .bottomLeading:
             return .leading
@@ -102,7 +108,7 @@ public struct WeightedStackContainer: View {
         case .center, .top, .bottom:
             return .center
         default:
-            return .leading  // デフォルトはleading (topLeadingから)
+            return .leading
         }
     }
 }
