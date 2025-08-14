@@ -60,8 +60,18 @@ module SjuiTools
                   @state_variables.concat(child_converter.state_variables)
                 end
               end
+              
+              # Add frame modifier to fill available space in ScrollView
+              # VStack/HStack内のコンテンツが画面全体を使うように
+              if axes == '.vertical'
+                add_modifier_line ".frame(maxWidth: .infinity, alignment: .topLeading)"
+              else
+                add_modifier_line ".frame(maxHeight: .infinity, alignment: .topLeading)"
+              end
             else
-              add_line "#{stack_type}(spacing: 0) {"
+              # デフォルトのアライメントを左上にする
+              alignment = axes == '.vertical' ? 'alignment: .leading' : 'alignment: .top'
+              add_line "#{stack_type}(#{alignment}, spacing: 0) {"
               indent do
                 children.each do |child|
                   if @converter_factory
@@ -77,6 +87,13 @@ module SjuiTools
                 end
               end
               add_line "}"
+              
+              # Add frame modifier to fill available space in ScrollView
+              if axes == '.vertical'
+                add_modifier_line ".frame(maxWidth: .infinity, alignment: .topLeading)"
+              else
+                add_modifier_line ".frame(maxHeight: .infinity, alignment: .topLeading)"
+              end
             end
           end
           add_line "}"
