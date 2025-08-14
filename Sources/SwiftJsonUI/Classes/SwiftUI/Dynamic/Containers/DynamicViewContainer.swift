@@ -96,8 +96,8 @@ public struct DynamicViewContainer: View {
     // data要素をフィルタリング（あとで実装）
     private func filterDataElements(_ components: [DynamicComponent]) -> [DynamicComponent] {
         return components.filter { comp in
-            // typeがあるものだけを処理
-            return !comp.type.isEmpty
+            // typeがあるものだけを処理（isValidプロパティを使用）
+            return comp.isValid
         }
     }
     
