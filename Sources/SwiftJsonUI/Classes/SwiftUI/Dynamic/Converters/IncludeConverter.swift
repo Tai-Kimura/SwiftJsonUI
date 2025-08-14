@@ -13,22 +13,16 @@ struct IncludedContentView: View {
     let data: [String: Any]
     @ObservedObject var parentViewModel: DynamicViewModel
     
-    // Create a local ViewModel for the included view
-    @StateObject private var includedViewModel = DynamicViewModel(jsonName: "")
-    
     var body: some View {
+        // Create a new DynamicViewModel with the json name and data
+        let includedViewModel = DynamicViewModel(jsonName: jsonName, data: data)
+        
         DynamicView(
             jsonName: jsonName,
             viewId: "\(jsonName)_view",
             data: data
         )
         .environmentObject(includedViewModel)
-        .onAppear {
-            // Initialize the included view model with the json name
-            includedViewModel.loadJSON(named: jsonName)
-            // Set the initial data
-            includedViewModel.data = data
-        }
     }
 }
 
