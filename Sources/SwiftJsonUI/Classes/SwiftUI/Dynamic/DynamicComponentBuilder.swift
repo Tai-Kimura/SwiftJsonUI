@@ -38,13 +38,25 @@ public struct DynamicComponentBuilder: View {
             
             // Wrap with VisibilityWrapper
             VisibilityWrapper(visibility) {
-                buildView(from: component)
-                    .applyDynamicModifiers(component, isWeightedChild: isWeightedChild)
-                    .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+                buildComponentWithModifiers()
             }
         } else {
             // No visibility wrapper needed
-            buildView(from: component)
+            buildComponentWithModifiers()
+        }
+    }
+    
+    @ViewBuilder
+    private func buildComponentWithModifiers() -> some View {
+        let view = buildView(from: component)
+        
+        // Button components handle their own modifiers through ButtonConverter and ButtonModifiers
+        // Applying applyDynamicModifiers would cause double application of padding/margins
+        if component.type?.lowercased() == "button" {
+            view
+                .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+        } else {
+            view
                 .applyDynamicModifiers(component, isWeightedChild: isWeightedChild)
                 .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
         }
