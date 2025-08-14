@@ -120,6 +120,12 @@ module SjuiTools
           apply_frame_constraints
           apply_frame_size
           
+          # パディング（内側のスペース）を先に適用
+          apply_padding
+          
+          # insetsとinsetHorizontalの処理
+          apply_insets
+          
           # 背景色（Rectangleの場合はfillで設定済みなのでスキップ）
           # enabled状態に応じて背景色を変更
           if @component['enabled'] == false && @component['disabledBackground']
@@ -136,20 +142,14 @@ module SjuiTools
             end
           end
           
-          # マージン（外側のスペース - SwiftUIではpaddingで実装）
-          # 注: SwiftUIにはマージンの概念がないため、親ビューでpaddingとして扱う必要がある
-          apply_margins
-          
-          # パディング（SwiftJsonUIの属性に対応）
-          apply_padding
-          
-          # insetsとinsetHorizontalの処理
-          apply_insets
-          
-          # コーナー半径
+          # コーナー半径（背景の直後に適用）
           if @component['cornerRadius']
             add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
           end
+          
+          # マージン（外側のスペース - SwiftUIではpaddingで実装）
+          # 注: SwiftUIにはマージンの概念がないため、親ビューでpaddingとして扱う必要がある
+          apply_margins
           
           # 透明度 (alphaとopacityの両方をサポート)
           if @component['alpha']
