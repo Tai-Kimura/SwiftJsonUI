@@ -18,7 +18,7 @@ public struct CheckboxConverter {
         
         // Check if component id matches a data property
         var isChecked = component.isOn ?? false
-        var binding: Binding<Bool>?
+        var binding: SwiftUI.Binding<Bool>?
         
         if let componentId = component.id {
             // Try to find a matching checkbox property in data dictionary
@@ -34,7 +34,7 @@ public struct CheckboxConverter {
             for key in possibleKeys {
                 if viewModel.data[key] != nil {
                     // Create binding that updates the data dictionary
-                    binding = Binding<Bool>(
+                    binding = SwiftUI.Binding<Bool>(
                         get: { 
                             viewModel.data[key] as? Bool ?? false
                         },

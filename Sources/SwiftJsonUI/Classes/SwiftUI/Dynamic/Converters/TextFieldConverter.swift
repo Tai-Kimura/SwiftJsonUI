@@ -33,7 +33,7 @@ public struct TextFieldConverter {
             let value = viewModel.data[propertyName] as? String ?? ""
             
             // Create binding that updates the data dictionary
-            let binding = Binding<String>(
+            let binding = SwiftUI.Binding<String>(
                 get: { value },
                 set: { newValue in
                     viewModel.data[propertyName] = newValue

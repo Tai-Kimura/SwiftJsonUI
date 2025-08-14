@@ -18,7 +18,7 @@ public struct SliderConverter {
         let maxValue = component.maxValue ?? 1.0
         
         // Check if component id matches a data property
-        var binding: Binding<Double>?
+        var binding: SwiftUI.Binding<Double>?
         if let componentId = component.id {
             // Try to find a matching slider property in data dictionary
             // Common patterns: slider1Value, slider1_value, etc.
@@ -31,7 +31,7 @@ public struct SliderConverter {
             for key in possibleKeys {
                 if viewModel.data[key] != nil {
                     // Create binding that updates the data dictionary
-                    binding = Binding<Double>(
+                    binding = SwiftUI.Binding<Double>(
                         get: { 
                             viewModel.data[key] as? Double ?? 0.5
                         },

@@ -29,7 +29,7 @@ public struct ToggleConverter {
             for key in possibleKeys {
                 if viewModel.data[key] != nil {
                     // Create binding that updates the data dictionary
-                    let binding = Binding<Bool>(
+                    let binding = SwiftUI.Binding<Bool>(
                         get: { 
                             viewModel.data[key] as? Bool ?? false
                         },

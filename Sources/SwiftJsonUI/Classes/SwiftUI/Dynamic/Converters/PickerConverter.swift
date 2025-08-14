@@ -18,7 +18,7 @@ public struct PickerConverter {
         let label = viewModel.processText(component.text) ?? "Select"
         
         // Check if component id matches a data property
-        var binding: Binding<String>?
+        var binding: SwiftUI.Binding<String>?
         if let componentId = component.id {
             // Try to find a matching picker property in data dictionary
             // Common patterns: picker1SelectedItem, picker1_selectedItem, picker1Selected, etc.
@@ -35,7 +35,7 @@ public struct PickerConverter {
             for key in possibleKeys {
                 if viewModel.data[key] != nil {
                     // Create binding that updates the data dictionary
-                    binding = Binding<String>(
+                    binding = SwiftUI.Binding<String>(
                         get: { 
                             viewModel.data[key] as? String ?? items.first ?? ""
                         },
