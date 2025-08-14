@@ -27,13 +27,8 @@ public struct DynamicComponentBuilder: View {
     
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
-        guard let type = component.type else {
-            // Skip components without type (data, include, etc.)
-            EmptyView()
-            return
-        }
-        
-        switch type.lowercased() {
+        if let type = component.type {
+            switch type.lowercased() {
         // Text components
         case "text", "label":
             TextConverter.convert(component: component, viewModel: viewModel)
@@ -120,6 +115,10 @@ public struct DynamicComponentBuilder: View {
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(Color.red.opacity(0.8), lineWidth: 1)
                 )
+            }
+        } else {
+            // Skip components without type (data, include, etc.)
+            EmptyView()
         }
     }
 }
