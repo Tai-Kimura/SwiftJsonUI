@@ -9,7 +9,7 @@ module SjuiTools
       # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/NetworkImageConverter.swift
       class NetworkImageConverter < BaseViewConverter
         def convert
-          url = @component['url'] || ""
+          url = @component['src'] || ""
           
           # NetworkImageを使用
           add_line "NetworkImage("

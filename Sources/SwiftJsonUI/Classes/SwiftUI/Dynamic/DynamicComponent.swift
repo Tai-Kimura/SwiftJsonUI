@@ -170,7 +170,7 @@ public struct DynamicComponent: Decodable {
         case onclick, onClick, onLongPress, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
-        case includeData = "data"     // Map JSON "data" to includeData for include components
+        case includeData  // Will be handled specially in decoder
         case sharedData = "shared_data"  // Map JSON "shared_data" to sharedData
         case gravity, alignment, widthWeight, heightWeight
         case alignTop, alignBottom, alignLeft, alignRight
@@ -259,7 +259,6 @@ public struct DynamicComponent: Decodable {
         renderingMode = try container.decodeIfPresent(String.self, forKey: .renderingMode)
         headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
         items = try container.decodeIfPresent([String].self, forKey: .items)
-        data = try container.decodeIfPresent([AnyCodable].self, forKey: .data)
         hint = try container.decodeIfPresent(String.self, forKey: .hint)
         hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)
@@ -313,11 +312,15 @@ public struct DynamicComponent: Decodable {
         include = try container.decodeIfPresent(String.self, forKey: .include)
         variables = try container.decodeIfPresent([String: AnyCodable].self, forKey: .variables)
         
-        // For include components, decode data and shared_data as dictionaries
+        // Handle 'data' key conditionally based on whether it's an include component
         if include != nil {
-            includeData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .includeData)
+            // For include components, decode 'data' as a dictionary
+            includeData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .data)
             sharedData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .sharedData)
+            data = nil
         } else {
+            // For non-include components, decode 'data' as an array
+            data = try container.decodeIfPresent([AnyCodable].self, forKey: .data)
             includeData = nil
             sharedData = nil
         }
