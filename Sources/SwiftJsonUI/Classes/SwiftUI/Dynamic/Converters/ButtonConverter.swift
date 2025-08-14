@@ -32,13 +32,26 @@ public struct ButtonConverter {
     }
     
     private static func handleButtonAction(component: DynamicComponent, viewModel: DynamicViewModel) {
+        // Debug: Print all keys in data dictionary
+        print("📘 [ButtonConverter] Data dictionary keys: \(viewModel.data.keys.sorted())")
+        print("📘 [ButtonConverter] Data dictionary count: \(viewModel.data.count)")
+        
+        // Debug: Print values and types
+        for (key, value) in viewModel.data {
+            let valueType = String(describing: type(of: value))
+            print("📘 [ButtonConverter] data[\"\(key)\"] = \(valueType)")
+        }
+        
         // Check onclick (lowercase) - this is usually the action name from JSON
         if let action = component.onclick {
+            print("📘 [ButtonConverter] Looking for onclick action: \(action)")
             // First check if it exists as a closure in data dictionary
             if let closure = viewModel.data[action] as? () -> Void {
+                print("📘 [ButtonConverter] Found closure for action: \(action)")
                 // Execute the closure from data dictionary
                 closure()
             } else {
+                print("📘 [ButtonConverter] No closure found, calling handleAction: \(action)")
                 // Fall back to handleAction for navigation
                 viewModel.handleAction(action)
             }
