@@ -208,7 +208,7 @@ module SjuiTools
             when 'bottomTrailing'
               '.bottomTrailing'
             else
-              '.center'
+              '.topLeading'
             end
           elsif @component['child'] && @component['child'].is_a?(Array)
             # 子要素のアライメント属性から判断（最初に見つかったもの）
@@ -220,12 +220,12 @@ module SjuiTools
             
             if children_with_align.any?
               alignment = get_zstack_alignment_for_child(children_with_align.first)
-              alignment || '.center'
+              alignment || '.topLeading'
             else
-              '.center'
+              '.topLeading'
             end
           else
-            '.center'
+            '.topLeading'
           end
         end
       end

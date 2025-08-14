@@ -140,7 +140,7 @@ module SjuiTools
           
           if parent_only_children.any?
             # 親のみの制約を持つ最初の要素のアライメントを使用
-            alignment = get_zstack_alignment_for_child(parent_only_children.first) || '.center'
+            alignment = get_zstack_alignment_for_child(parent_only_children.first) || '.topLeading'
           else
             alignment = get_zstack_alignment
           end
