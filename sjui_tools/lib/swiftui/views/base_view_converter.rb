@@ -147,6 +147,18 @@ module SjuiTools
             add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
           end
           
+          # ボーダー（cornerRadiusの直後、marginsの前に適用）
+          # Dynamic mode: CommonModifiers.swift line 59
+          if @component['borderWidth'] && @component['borderColor']
+            color = hex_to_swiftui_color(@component['borderColor'])
+            add_modifier_line ".overlay("
+            indent do
+              add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
+              add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth'].to_i})"
+            end
+            add_line ")"
+          end
+          
           # マージン（外側のスペース - SwiftUIではpaddingで実装）
           # 注: SwiftUIにはマージンの概念がないため、親ビューでpaddingとして扱う必要がある
           apply_margins
@@ -185,17 +197,6 @@ module SjuiTools
           # クリップ
           if @component['clipToBounds']
             add_modifier_line ".clipped()"
-          end
-          
-          # ボーダー
-          if @component['borderWidth'] && @component['borderColor']
-            color = hex_to_swiftui_color(@component['borderColor'])
-            add_modifier_line ".overlay("
-            indent do
-              add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
-              add_modifier_line ".stroke(#{color}, lineWidth: #{@component['borderWidth'].to_i})"
-            end
-            add_line ")"
           end
           
           # オフセット（offsetX, offsetY）
