@@ -21,16 +21,31 @@ public struct DynamicScrollViewContainer: View {
     
     @ViewBuilder
     public var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // child is always an array
-                if let children = component.child {
-                    ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        ChildView(component: child, viewModel: viewModel, viewId: viewId)
+        AdvancedKeyboardAvoidingScrollView {
+            if let children = component.child {
+                // Check if children need relative positioning
+                let needsRelativePositioning = RelativePositionConverter.childrenNeedRelativePositioning(children)
+                
+                if needsRelativePositioning {
+                    // Use RelativePositioningContainer for relative positioning
+                    RelativePositioningContainer(children: children, viewModel: viewModel, viewId: viewId)
+                } else if component.orientation == "horizontal" {
+                    HStack(alignment: .top, spacing: 0) {
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                            ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                        }
                     }
+                    .frame(maxWidth: .infinity)
+                } else {
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                            ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
             }
-            .frame(maxWidth: .infinity)
         }
+        .modifier(CommonModifiers(component: component, viewModel: viewModel))
     }
 }
