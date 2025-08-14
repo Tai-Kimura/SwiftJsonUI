@@ -219,10 +219,7 @@ module SjuiTools
             return # 残りの処理をスキップして、通常のText処理を避ける
           end
           
-          # Apply frame size (width/height)
-          apply_frame_size
-          
-          # Apply frame modifiers for weighted views
+          # Apply frame modifiers for weighted views FIRST
           # If this label has a weight in a horizontal/vertical container, make it fill the appropriate dimension
           if @component['weight'] && @component['weight'].to_f > 0
             parent_orientation = @component['parent_orientation']
@@ -235,6 +232,9 @@ module SjuiTools
               add_modifier_line ".frame(maxHeight: .infinity)"
             end
           end
+          
+          # Apply frame size (width/height) - this should come AFTER weight handling
+          apply_frame_size
           
           # Apply padding (internal spacing)
           apply_padding
