@@ -46,8 +46,13 @@ public struct ButtonConverter {
         if let action = component.onclick {
             print("📘 [ButtonConverter] Looking for onclick action: \(action)")
             // First check if it exists as a closure in data dictionary
+            // Note: Closures might return Optional<()> due to weak references
             if let closure = viewModel.data[action] as? () -> Void {
-                print("📘 [ButtonConverter] Found closure for action: \(action)")
+                print("📘 [ButtonConverter] Found closure (Void) for action: \(action)")
+                // Execute the closure from data dictionary
+                closure()
+            } else if let closure = viewModel.data[action] as? () -> Void? {
+                print("📘 [ButtonConverter] Found closure (Optional) for action: \(action)")
                 // Execute the closure from data dictionary
                 closure()
             } else {
@@ -61,6 +66,9 @@ public struct ButtonConverter {
             if let closure = viewModel.data[action] as? () -> Void {
                 // Execute the closure from data dictionary
                 closure()
+            } else if let closure = viewModel.data[action] as? () -> Void? {
+                // Execute the closure from data dictionary
+                closure()
             } else {
                 // Fall back to handleAction for navigation
                 viewModel.handleAction(action)
@@ -70,6 +78,9 @@ public struct ButtonConverter {
         // Handle action property
         if let action = component.action {
             if let closure = viewModel.data[action] as? () -> Void {
+                // Execute the closure from data dictionary
+                closure()
+            } else if let closure = viewModel.data[action] as? () -> Void? {
                 // Execute the closure from data dictionary
                 closure()
             } else {
