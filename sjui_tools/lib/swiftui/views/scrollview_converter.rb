@@ -46,60 +46,55 @@ module SjuiTools
           end
           
           # AdvancedKeyboardAvoidingScrollViewを使用（キーボードとSelectBox対応）
-          # GeometryReaderを使用して、ScrollViewの高さを取得し、コンテンツが最低でもその高さを満たすようにする
-          add_line "GeometryReader { geometry in"
+          add_line "AdvancedKeyboardAvoidingScrollView(#{axes}, showsIndicators: #{show_indicators}) {"
+          
           indent do
-            add_line "AdvancedKeyboardAvoidingScrollView(#{axes}, showsIndicators: #{show_indicators}) {"
-            
-            indent do
-              if children.length == 1
-                if @converter_factory
-                  child_converter = @converter_factory.create_converter(children.first, @indent_level, @action_manager, @converter_factory, @view_registry)
-                  child_code = child_converter.convert
-                  child_code.split("\n").each { |line| @generated_code << line }
-                  
-                  # Propagate state variables
-                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                    @state_variables.concat(child_converter.state_variables)
-                  end
-                end
+            if children.length == 1
+              if @converter_factory
+                child_converter = @converter_factory.create_converter(children.first, @indent_level, @action_manager, @converter_factory, @view_registry)
+                child_code = child_converter.convert
+                child_code.split("\n").each { |line| @generated_code << line }
                 
-                # Add frame modifier to fill available space in ScrollView
-                # minHeightで最低でもScrollViewの高さを満たすようにする（Dynamic modeと同じ）
-                if axes == '.vertical'
-                  add_modifier_line ".frame(maxWidth: .infinity, minHeight: geometry.size.height, alignment: .topLeading)"
-                else
-                  add_modifier_line ".frame(maxHeight: .infinity, minWidth: geometry.size.width, alignment: .topLeading)"
+                # Propagate state variables
+                if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                  @state_variables.concat(child_converter.state_variables)
                 end
+              end
+              
+              # Add frame modifier to fill available space in ScrollView
+              # VStack/HStack内のコンテンツが画面全体を使うように
+              if axes == '.vertical'
+                add_modifier_line ".frame(maxWidth: .infinity, alignment: .topLeading)"
               else
-                # デフォルトのアライメントを左上にする
-                alignment = axes == '.vertical' ? 'alignment: .leading' : 'alignment: .top'
-                add_line "#{stack_type}(#{alignment}, spacing: 0) {"
-                indent do
-                  children.each do |child|
-                    if @converter_factory
-                      child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
-                      child_code = child_converter.convert
-                      child_code.split("\n").each { |line| @generated_code << line }
-                      
-                      # Propagate state variables
-                      if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                        @state_variables.concat(child_converter.state_variables)
-                      end
+                add_modifier_line ".frame(maxHeight: .infinity, alignment: .topLeading)"
+              end
+            else
+              # デフォルトのアライメントを左上にする
+              alignment = axes == '.vertical' ? 'alignment: .leading' : 'alignment: .top'
+              add_line "#{stack_type}(#{alignment}, spacing: 0) {"
+              indent do
+                children.each do |child|
+                  if @converter_factory
+                    child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
+                    child_code = child_converter.convert
+                    child_code.split("\n").each { |line| @generated_code << line }
+                    
+                    # Propagate state variables
+                    if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                      @state_variables.concat(child_converter.state_variables)
                     end
                   end
                 end
-                add_line "}"
-                
-                # Add frame modifier to fill available space in ScrollView
-                if axes == '.vertical'
-                  add_modifier_line ".frame(maxWidth: .infinity, minHeight: geometry.size.height, alignment: .topLeading)"
-                else
-                  add_modifier_line ".frame(maxHeight: .infinity, minWidth: geometry.size.width, alignment: .topLeading)"
-                end
+              end
+              add_line "}"
+              
+              # Add frame modifier to fill available space in ScrollView
+              if axes == '.vertical'
+                add_modifier_line ".frame(maxWidth: .infinity, alignment: .topLeading)"
+              else
+                add_modifier_line ".frame(maxHeight: .infinity, alignment: .topLeading)"
               end
             end
-            add_line "}"
           end
           add_line "}"
           
