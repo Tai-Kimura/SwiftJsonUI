@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// Dynamic mode network image converter
+// Generated code equivalent: sjui_tools/lib/swiftui/views/network_image_converter.rb
 public struct NetworkImageConverter {
     
     /// Convert DynamicComponent to SwiftJsonUI NetworkImage (for type: "NetworkImage")
@@ -96,6 +98,7 @@ public struct NetworkImageConverter {
 }
 
 // MARK: - NetworkImage Modifiers (margins only, no padding/background/cornerRadius)
+// Generated code equivalent: sjui_tools/lib/swiftui/views/network_image_converter.rb:72-73 (apply_margins)
 struct NetworkImageModifiers: ViewModifier {
     let component: DynamicComponent
     let viewModel: DynamicViewModel

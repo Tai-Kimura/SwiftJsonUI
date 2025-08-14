@@ -5,6 +5,8 @@ require_relative 'base_view_converter'
 module SjuiTools
   module SwiftUI
     module Views
+      # Generated code button converter
+      # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/ButtonConverter.swift
       class ButtonConverter < BaseViewConverter
         def convert
           text = @component['text'] || "Button"
@@ -45,7 +47,7 @@ module SjuiTools
           end
           add_line "}"
           
-          # Button's background and corner radius
+          # Button's background and corner radius (using buttonStyle)
           if @component['background']
             color = hex_to_swiftui_color(@component['background'])
             add_modifier_line ".background(#{color})"

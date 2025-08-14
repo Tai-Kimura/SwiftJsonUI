@@ -5,6 +5,8 @@ require_relative 'base_view_converter'
 module SjuiTools
   module SwiftUI
     module Views
+      # Generated code image converter
+      # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/ImageViewConverter.swift
       class ImageConverter < BaseViewConverter
         def convert
           # srcName優先（srcNameはアセット名を直接指定）
@@ -78,13 +80,43 @@ module SjuiTools
             add_line "}"
           end
           
-          # 共通のモディファイアを適用
-          apply_modifiers
+          # Apply padding (internal spacing)
+          apply_padding
+          
+          # Apply background and corner radius
+          if @component['background']
+            color = hex_to_swiftui_color(@component['background'])
+            add_modifier_line ".background(#{color})"
+          end
+          
+          if @component['cornerRadius']
+            add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
+          end
+          
+          # Apply margins (external spacing)
+          apply_margins
+          
+          # Apply other modifiers (opacity, hidden, etc.)
+          apply_other_modifiers
           
           generated_code
         end
         
         private
+        
+        def apply_other_modifiers
+          # Apply opacity
+          if @component['alpha']
+            add_modifier_line ".opacity(#{@component['alpha']})"
+          elsif @component['opacity']
+            add_modifier_line ".opacity(#{@component['opacity']})"
+          end
+          
+          # Apply hidden
+          if @component['hidden'] == true
+            add_modifier_line ".hidden()"
+          end
+        end
         
         def map_content_mode(mode)
           case mode

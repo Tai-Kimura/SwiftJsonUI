@@ -5,6 +5,8 @@ require_relative 'base_view_converter'
 module SjuiTools
   module SwiftUI
     module Views
+      # Generated code label/text converter
+      # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/TextConverter.swift
       class LabelConverter < BaseViewConverter
         def convert
           # Get text handler for this component

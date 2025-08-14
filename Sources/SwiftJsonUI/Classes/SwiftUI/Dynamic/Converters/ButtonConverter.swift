@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// Dynamic mode button converter
+// Generated code equivalent: sjui_tools/lib/swiftui/views/button_converter.rb
 public struct ButtonConverter {
     
     /// Convert DynamicComponent to SwiftUI Button view
@@ -133,6 +135,7 @@ public struct ButtonConverter {
 }
 
 // MARK: - Button Modifiers (without background/cornerRadius which are handled by ButtonStyle)
+// Generated code equivalent: sjui_tools/lib/swiftui/views/button_converter.rb:58-59 (apply_margins)
 struct ButtonModifiers: ViewModifier {
     let component: DynamicComponent
     let viewModel: DynamicViewModel

@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// Dynamic mode image converter
+// Generated code equivalent: sjui_tools/lib/swiftui/views/image_converter.rb
 public struct ImageViewConverter {
     
     /// Convert DynamicComponent to SwiftUI Image view (for type: "Image")
@@ -130,7 +132,8 @@ public struct ImageViewConverter {
     }
 }
 
-// MARK: - Image Modifiers (margins only, no padding/background/cornerRadius)
+// MARK: - Image Modifiers (margins only, no padding/background/cornerRadius)  
+// Generated code equivalent: sjui_tools/lib/swiftui/views/image_converter.rb:94-95 (apply_margins)
 struct ImageModifiers: ViewModifier {
     let component: DynamicComponent
     let viewModel: DynamicViewModel

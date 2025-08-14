@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+// Dynamic mode text/label converter
+// Generated code equivalent: sjui_tools/lib/swiftui/views/label_converter.rb
 public struct TextConverter {
     
     /// Convert DynamicComponent to SwiftUI Text view
@@ -62,6 +64,7 @@ public struct TextConverter {
 }
 
 // MARK: - Text Modifiers (margins only, no padding/background/cornerRadius)
+// Generated code equivalent: sjui_tools/lib/swiftui/views/label_converter.rb:247-248 (apply_margins)
 struct TextModifiers: ViewModifier {
     let component: DynamicComponent
     let viewModel: DynamicViewModel
