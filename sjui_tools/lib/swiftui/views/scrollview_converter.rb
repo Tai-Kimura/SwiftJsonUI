@@ -50,24 +50,27 @@ module SjuiTools
           
           indent do
             if children.length == 1
-              if @converter_factory
-                child_converter = @converter_factory.create_converter(children.first, @indent_level, @action_manager, @converter_factory, @view_registry)
-                child_code = child_converter.convert
-                child_code.split("\n").each { |line| @generated_code << line }
-                
-                # Propagate state variables
-                if child_converter.respond_to?(:state_variables) && child_converter.state_variables
-                  @state_variables.concat(child_converter.state_variables)
+              # Single child - wrap in VStack/HStack with Spacer (same as Dynamic mode)
+              alignment = axes == '.vertical' ? 'alignment: .leading' : 'alignment: .top'
+              add_line "#{stack_type}(#{alignment}, spacing: 0) {"
+              indent do
+                if @converter_factory
+                  child_converter = @converter_factory.create_converter(children.first, @indent_level, @action_manager, @converter_factory, @view_registry)
+                  child_code = child_converter.convert
+                  child_code.split("\n").each { |line| @generated_code << line }
+                  
+                  # Propagate state variables
+                  if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                    @state_variables.concat(child_converter.state_variables)
+                  end
                 end
+                # Add Spacer to fill remaining space (same as Dynamic mode)
+                add_line "Spacer(minLength: 0)"
               end
+              add_line "}"
               
               # Add frame modifier to fill available space in ScrollView
-              # VStack/HStack内のコンテンツが画面全体を使うように
-              if axes == '.vertical'
-                add_modifier_line ".frame(maxWidth: .infinity, alignment: .topLeading)"
-              else
-                add_modifier_line ".frame(maxHeight: .infinity, alignment: .topLeading)"
-              end
+              add_modifier_line ".frame(maxWidth: .infinity, maxHeight: .infinity)"
             else
               # デフォルトのアライメントを左上にする
               alignment = axes == '.vertical' ? 'alignment: .leading' : 'alignment: .top'
@@ -85,15 +88,13 @@ module SjuiTools
                     end
                   end
                 end
+                # Add Spacer to fill remaining space (same as Dynamic mode)
+                add_line "Spacer(minLength: 0)"
               end
               add_line "}"
               
               # Add frame modifier to fill available space in ScrollView
-              if axes == '.vertical'
-                add_modifier_line ".frame(maxWidth: .infinity, alignment: .topLeading)"
-              else
-                add_modifier_line ".frame(maxHeight: .infinity, alignment: .topLeading)"
-              end
+              add_modifier_line ".frame(maxWidth: .infinity, maxHeight: .infinity)"
             end
           end
           add_line "}"
