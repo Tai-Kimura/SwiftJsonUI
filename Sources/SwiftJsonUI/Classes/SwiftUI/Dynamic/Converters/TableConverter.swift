@@ -23,7 +23,7 @@ public struct TableConverter {
                 // Data-driven content
                 if !data.isEmpty {
                     ForEach(0..<data.count, id: \.self) { index in
-                        TableRow(data: data[index], component: component, viewModel: viewModel)
+                        TableRow(dataItem: data[index], component: component, viewModel: viewModel)
                     }
                 }
                 // Items-driven content
@@ -64,7 +64,7 @@ public struct TableConverter {
 
 // MARK: - Table Row
 struct TableRow: View {
-    let data: [String: String]
+    let dataItem: AnyCodable
     let component: DynamicComponent
     @ObservedObject var viewModel: DynamicViewModel
     
@@ -72,17 +72,23 @@ struct TableRow: View {
         HStack {
             // Display key-value pairs from data
             VStack(alignment: .leading, spacing: 4) {
-                ForEach(Array(data.keys.sorted()), id: \.self) { key in
-                    if let value = data[key] {
-                        HStack {
-                            Text(key)
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                            Spacer()
-                            Text(value)
-                                .font(.body)
+                if let data = dataItem.value as? [String: Any] {
+                    ForEach(Array(data.keys.sorted()), id: \.self) { key in
+                        if let value = data[key] {
+                            HStack {
+                                Text(key)
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                                Spacer()
+                                Text(String(describing: value))
+                                    .font(.body)
+                            }
                         }
                     }
+                } else {
+                    // If not a dictionary, just show the value
+                    Text(String(describing: dataItem.value))
+                        .font(.body)
                 }
             }
         }
