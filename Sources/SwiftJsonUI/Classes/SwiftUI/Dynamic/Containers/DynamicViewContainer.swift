@@ -71,6 +71,7 @@ public struct DynamicViewContainer: View {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
+                    Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if orientation == "vertical" {
@@ -79,6 +80,7 @@ public struct DynamicViewContainer: View {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
+                    Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
