@@ -135,6 +135,10 @@ public struct DynamicComponent: Decodable {
     let alignRightOfView: String?  // JSON: alignRightOfView -> constraint: rightOf
     let alignTopOfView: String?  // JSON: alignTopOfView -> constraint: above
     let alignBottomOfView: String?  // JSON: alignBottomOfView -> constraint: below
+    let alignTopView: String?  // Align top edge with target's top edge
+    let alignBottomView: String?  // Align bottom edge with target's bottom edge
+    let alignLeftView: String?  // Align left edge with target's left edge
+    let alignRightView: String?  // Align right edge with target's right edge
     
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
@@ -167,6 +171,7 @@ public struct DynamicComponent: Decodable {
         case alignTop, alignBottom, alignLeft, alignRight
         case centerHorizontal, centerVertical
         case alignLeftOfView, alignRightOfView, alignTopOfView, alignBottomOfView
+        case alignTopView, alignBottomView, alignLeftView, alignRightView
     }
     
     public init(from decoder: Decoder) throws {
@@ -312,6 +317,10 @@ public struct DynamicComponent: Decodable {
         alignRightOfView = try container.decodeIfPresent(String.self, forKey: .alignRightOfView)
         alignTopOfView = try container.decodeIfPresent(String.self, forKey: .alignTopOfView)
         alignBottomOfView = try container.decodeIfPresent(String.self, forKey: .alignBottomOfView)
+        alignTopView = try container.decodeIfPresent(String.self, forKey: .alignTopView)
+        alignBottomView = try container.decodeIfPresent(String.self, forKey: .alignBottomView)
+        alignLeftView = try container.decodeIfPresent(String.self, forKey: .alignLeftView)
+        alignRightView = try container.decodeIfPresent(String.self, forKey: .alignRightView)
     }
 }
 

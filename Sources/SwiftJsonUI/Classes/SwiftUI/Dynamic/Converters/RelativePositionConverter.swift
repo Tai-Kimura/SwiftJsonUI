@@ -81,6 +81,23 @@ public struct RelativePositionConverter {
             constraints.append(RelativePositionConstraint(type: .below, targetId: target))
         }
         
+        // Edge alignment with other views
+        if let target = component.alignTopView {
+            constraints.append(RelativePositionConstraint(type: .alignTop, targetId: target))
+        }
+        
+        if let target = component.alignBottomView {
+            constraints.append(RelativePositionConstraint(type: .alignBottom, targetId: target))
+        }
+        
+        if let target = component.alignLeftView {
+            constraints.append(RelativePositionConstraint(type: .alignLeft, targetId: target))
+        }
+        
+        if let target = component.alignRightView {
+            constraints.append(RelativePositionConstraint(type: .alignRight, targetId: target))
+        }
+        
         return constraints
     }
     
