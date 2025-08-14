@@ -7,6 +7,63 @@
 
 import SwiftUI
 
+// MARK: - SelectBox-specific modifiers (margins and border only)
+// Corresponding to Generated code: selectbox_converter.rb
+struct SelectBoxModifiers: ViewModifier {
+    let component: DynamicComponent
+    let viewModel: DynamicViewModel
+    
+    func body(content: Content) -> some View {
+        content
+            // SelectBoxView handles padding/background/cornerRadius internally
+            // Only apply border and margins here
+            .overlay(getBorder())  // Border after component's internal cornerRadius
+            .padding(getMargins())  // Apply margins as outer padding
+            .opacity(getOpacity())
+            .opacity(isHidden() ? 0 : 1)
+    }
+    
+    /// Get border overlay
+    @ViewBuilder
+    private func getBorder() -> some View {
+        if let borderWidth = component.borderWidth,
+           borderWidth > 0 {
+            let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+            RoundedRectangle(cornerRadius: component.cornerRadius ?? 8)
+                .stroke(borderColor, lineWidth: borderWidth)
+        }
+    }
+    
+    private func getMargins() -> EdgeInsets {
+        // Use margin properties for outer spacing
+        let top = component.topMargin ?? 0
+        let leading = component.leftMargin ?? 0
+        let bottom = component.bottomMargin ?? 0
+        let trailing = component.rightMargin ?? 0
+        
+        return EdgeInsets(
+            top: top,
+            leading: leading,
+            bottom: bottom,
+            trailing: trailing
+        )
+    }
+    
+    private func getOpacity() -> Double {
+        if let opacity = component.opacity {
+            return Double(opacity)
+        }
+        if let alpha = component.alpha {
+            return Double(alpha)
+        }
+        return 1.0
+    }
+    
+    private func isHidden() -> Bool {
+        return component.hidden == true || component.visibility == "gone"
+    }
+}
+
 public struct SelectBoxConverter {
     
     /// Convert DynamicComponent to SwiftUI SelectBoxView
@@ -81,7 +138,7 @@ public struct SelectBoxConverter {
                 minimumDate: minimumDate,
                 maximumDate: maximumDate
             )
-            .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            .modifier(SelectBoxModifiers(component: component, viewModel: viewModel))  // Margins and border only
         )
     }
 }
