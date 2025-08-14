@@ -53,10 +53,10 @@ public struct CommonModifiers: ViewModifier {
         }
         
         return finalContent
-            .padding(getPadding())
             .background(getBackground())
             .cornerRadius(component.cornerRadius ?? 0)
             .overlay(getBorder())
+            .padding(getMargins())  // Apply margins as outer padding
             .opacity(getOpacity())
             .opacity(isHidden() ? 0 : 1)
     }
@@ -144,11 +144,12 @@ public struct CommonModifiers: ViewModifier {
         return component.alignment ?? .topLeading
     }
     
-    private func getPadding() -> EdgeInsets {
-        let top = component.paddingTop ?? component.topPadding ?? component.padding?.value as? CGFloat ?? 0
-        let leading = component.paddingLeft ?? component.leftPadding ?? component.padding?.value as? CGFloat ?? 0
-        let bottom = component.paddingBottom ?? component.bottomPadding ?? component.padding?.value as? CGFloat ?? 0
-        let trailing = component.paddingRight ?? component.rightPadding ?? component.padding?.value as? CGFloat ?? 0
+    private func getMargins() -> EdgeInsets {
+        // Use margin properties for outer spacing
+        let top = component.topMargin ?? 0
+        let leading = component.leftMargin ?? 0
+        let bottom = component.bottomMargin ?? 0
+        let trailing = component.rightMargin ?? 0
         
         return EdgeInsets(
             top: top,

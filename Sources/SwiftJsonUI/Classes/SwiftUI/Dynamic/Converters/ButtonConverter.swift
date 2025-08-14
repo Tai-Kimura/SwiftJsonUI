@@ -92,19 +92,35 @@ public struct ButtonConverter {
     
     
     private static func getButtonPadding(_ component: DynamicComponent) -> EdgeInsets {
-        // Default button padding if not specified
-        let defaultPadding: CGFloat = 12
+        // Get padding value from AnyCodable
+        var paddingValue: CGFloat? = nil
+        if let padding = component.padding {
+            if let intValue = padding.value as? Int {
+                paddingValue = CGFloat(intValue)
+            } else if let doubleValue = padding.value as? Double {
+                paddingValue = CGFloat(doubleValue)
+            } else if let floatValue = padding.value as? CGFloat {
+                paddingValue = floatValue
+            }
+        }
         
-        let top = component.paddingTop ?? component.topPadding ?? component.padding?.value as? CGFloat ?? defaultPadding
-        let leading = component.paddingLeft ?? component.leftPadding ?? component.padding?.value as? CGFloat ?? defaultPadding * 2
-        let bottom = component.paddingBottom ?? component.bottomPadding ?? component.padding?.value as? CGFloat ?? defaultPadding
-        let trailing = component.paddingRight ?? component.rightPadding ?? component.padding?.value as? CGFloat ?? defaultPadding * 2
+        // If padding is specified, use it for all sides
+        if let padding = paddingValue {
+            return EdgeInsets(
+                top: component.paddingTop ?? component.topPadding ?? padding,
+                leading: component.paddingLeft ?? component.leftPadding ?? padding,
+                bottom: component.paddingBottom ?? component.bottomPadding ?? padding,
+                trailing: component.paddingRight ?? component.rightPadding ?? padding
+            )
+        }
         
+        // No padding specified - button should have no internal padding
+        // (background and cornerRadius are applied by DynamicButtonStyle)
         return EdgeInsets(
-            top: top,
-            leading: leading,
-            bottom: bottom,
-            trailing: trailing
+            top: component.paddingTop ?? component.topPadding ?? 0,
+            leading: component.paddingLeft ?? component.leftPadding ?? 0,
+            bottom: component.paddingBottom ?? component.bottomPadding ?? 0,
+            trailing: component.paddingRight ?? component.rightPadding ?? 0
         )
     }
     
