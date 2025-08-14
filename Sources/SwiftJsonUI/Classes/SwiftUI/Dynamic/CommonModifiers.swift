@@ -77,6 +77,7 @@ public struct CommonModifiers: ViewModifier {
     private func getWidth() -> CGFloat? {
         // If weight is specified and affects width, use infinity
         if hasWeightForWidth() {
+            let _ = print("🏋️ Width with weight: component id=\(component.id ?? "no-id"), weight=\(component.weight ?? 0), width=\(component.width ?? -1)")
             return .infinity
         }
         // Return explicit width if set and valid, nil for wrapContent or invalid values
