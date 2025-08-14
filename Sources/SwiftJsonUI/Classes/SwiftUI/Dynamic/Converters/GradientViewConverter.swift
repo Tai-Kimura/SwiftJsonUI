@@ -22,14 +22,14 @@ public struct GradientViewConverter {
             if children.count == 1 {
                 // Single child
                 content = AnyView(
-                    ChildView(component: children[0], viewModel: viewModel, viewId: viewId)
+                    DynamicComponentBuilder(component: children[0], viewModel: viewModel, viewId: viewId)
                 )
             } else {
                 // Multiple children
                 content = AnyView(
                     VStack(spacing: 0) {
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                            ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                         }
                     }
                 )

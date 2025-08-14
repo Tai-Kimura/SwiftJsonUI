@@ -30,7 +30,7 @@ public struct RelativePositioningContainer: View {
                 component: child,
                 index: index,
                 viewBuilder: { component in
-                    AnyView(ChildView(component: component, viewModel: viewModel, viewId: viewId))
+                    AnyView(DynamicComponentBuilder(component: component, viewModel: viewModel, viewId: viewId))
                 }
             )
         }

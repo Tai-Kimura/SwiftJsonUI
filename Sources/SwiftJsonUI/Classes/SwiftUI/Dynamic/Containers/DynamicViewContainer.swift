@@ -68,21 +68,21 @@ public struct DynamicViewContainer: View {
                 // 通常のHStack
                 HStack(alignment: getVerticalAlignmentFromAlignment(component.alignment), spacing: 0) {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
             } else if orientation == "vertical" {
                 // 通常のVStack
                 VStack(alignment: getHorizontalAlignmentFromAlignment(component.alignment), spacing: 0) {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
             } else {
                 // orientationなし = ZStack
                 ZStack(alignment: component.alignment ?? .topLeading) {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
             }

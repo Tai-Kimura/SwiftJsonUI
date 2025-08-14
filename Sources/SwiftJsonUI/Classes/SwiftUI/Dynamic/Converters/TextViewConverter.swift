@@ -23,21 +23,9 @@ public struct TextViewConverter {
             trailing: insetArray.count > 3 ? insetArray[3] : 5
         )
         
-        // Create binding from @{property} expression
-        let binding: Binding<String>
-        if text.hasPrefix("@{") && text.hasSuffix("}") {
-            let propertyName = String(text.dropFirst(2).dropLast(1))
-            binding = Binding<String>(
-                get: { viewModel.getDataValue(for: propertyName) as? String ?? "" },
-                set: { viewModel.setDataValue(for: propertyName, value: $0) }
-            )
-        } else {
-            binding = .constant(text)
-        }
-        
         return AnyView(
             TextViewWithPlaceholder(
-                text: binding,
+                text: .constant(text),
                 hint: component.hint ?? component.placeholder,
                 hintColor: DynamicHelpers.colorFromHex(component.hintColor) ?? .gray,
                 hintFont: component.hintFont,

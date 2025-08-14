@@ -17,20 +17,8 @@ public struct TextFieldConverter {
         let placeholder = component.hint ?? component.placeholder ?? ""
         let text = component.text ?? ""
         
-        // Create binding from @{property} expression
-        let binding: Binding<String>
-        if text.hasPrefix("@{") && text.hasSuffix("}") {
-            let propertyName = String(text.dropFirst(2).dropLast(1))
-            binding = Binding<String>(
-                get: { viewModel.getDataValue(for: propertyName) as? String ?? "" },
-                set: { viewModel.setDataValue(for: propertyName, value: $0) }
-            )
-        } else {
-            binding = .constant(text)
-        }
-        
         return AnyView(
-            TextField(placeholder, text: binding)
+            TextField(placeholder, text: .constant(text))
                 .textFieldStyle(RoundedBorderTextFieldStyle())
                 .font(DynamicHelpers.fontFromComponent(component))
                 .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)

@@ -32,14 +32,14 @@ public struct DynamicScrollViewContainer: View {
                 } else if component.orientation == "horizontal" {
                     HStack(alignment: .top, spacing: 0) {
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                            ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                         }
                     }
                     .frame(maxWidth: .infinity)
                 } else {
                     VStack(alignment: .leading, spacing: 0) {
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                            ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                         }
                     }
                     .frame(maxWidth: .infinity)

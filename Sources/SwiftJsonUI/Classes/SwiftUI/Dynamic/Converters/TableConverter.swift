@@ -40,7 +40,7 @@ public struct TableConverter {
                 // Child components
                 else if let children = component.child {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        ChildView(component: child, viewModel: viewModel, viewId: viewId)
+                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
                 // Default demo content
