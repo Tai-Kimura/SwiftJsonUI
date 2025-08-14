@@ -38,7 +38,7 @@ public struct RelativePositioningContainer: View {
         // Use SwiftJsonUI's RelativePositionContainer
         RelativePositionContainer(
             children: childConfigs,
-            alignment: .center,
+            alignment: .topLeading,
             backgroundColor: nil
         )
     }

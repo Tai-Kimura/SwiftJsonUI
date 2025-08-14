@@ -120,7 +120,7 @@ public struct DynamicDecodingHelper {
         case (.trailing, .bottom):
             return .bottomTrailing
         default:
-            return .center
+            return .topLeading
         }
     }
     
