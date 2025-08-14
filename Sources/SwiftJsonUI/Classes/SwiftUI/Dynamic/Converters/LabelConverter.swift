@@ -65,12 +65,24 @@ struct CommonModifiers: ViewModifier {
             }
         }
         
-        let finalContent = shouldApplyFrame ? 
-            AnyView(modifiedContent.frame(
-                width: getWidth(),
-                height: getHeight(),
-                alignment: getFrameAlignment()
-            )) : AnyView(modifiedContent)
+        // Apply frame dimensions separately
+        var finalContent = AnyView(modifiedContent)
+        
+        if shouldApplyFrame {
+            let width = getWidth()
+            let height = getHeight()
+            let alignment = getFrameAlignment()
+            
+            // Apply width if it has a value
+            if let w = width {
+                finalContent = AnyView(finalContent.frame(width: w, alignment: alignment))
+            }
+            
+            // Apply height if it has a value
+            if let h = height {
+                finalContent = AnyView(finalContent.frame(height: h, alignment: alignment))
+            }
+        }
         
         return finalContent
             .padding(getPadding())
