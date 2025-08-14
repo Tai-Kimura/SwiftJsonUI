@@ -21,6 +21,7 @@ public struct DynamicScrollViewContainer: View {
     
     @ViewBuilder
     public var body: some View {
+        print("📜 DynamicScrollViewContainer: id=\(component.id ?? "no-id"), childCount=\(component.child?.count ?? 0)")
         AdvancedKeyboardAvoidingScrollView {
             // ScrollView should have exactly one child
             if let children = component.child, let firstChild = children.first {

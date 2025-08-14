@@ -22,6 +22,7 @@ public struct DynamicViewContainer: View {
     @ViewBuilder
     public var body: some View {
         let children = getChildren()
+        print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), orientation=\(component.orientation ?? "none"), childCount=\(children.count)")
         
         if children.isEmpty {
             // 子要素がない場合

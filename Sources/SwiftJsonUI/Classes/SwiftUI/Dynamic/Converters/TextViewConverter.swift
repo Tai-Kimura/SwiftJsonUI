@@ -16,6 +16,7 @@ public struct TextViewConverter {
     ) -> AnyView {
         let text = component.text ?? ""
         let insetArray = component.containerInset ?? [8, 5, 8, 5]
+        print("📝 TextViewConverter: id=\(component.id ?? "no-id"), text=\(text), hint=\(component.hint ?? "no-hint"), width=\(component.width ?? -1), height=\(component.height ?? -1)")
         let containerInset = EdgeInsets(
             top: insetArray.count > 0 ? insetArray[0] : 8,
             leading: insetArray.count > 1 ? insetArray[1] : 5,

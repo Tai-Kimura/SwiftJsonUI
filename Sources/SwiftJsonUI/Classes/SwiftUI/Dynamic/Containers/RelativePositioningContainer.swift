@@ -24,6 +24,7 @@ public struct RelativePositioningContainer: View {
     }
     
     public var body: some View {
+        print("🎯 RelativePositioningContainer: childCount=\(children.count)")
         // Convert DynamicComponents to RelativeChildConfigs
         let childConfigs = children.enumerated().map { index, child in
             RelativePositionConverter.convert(
