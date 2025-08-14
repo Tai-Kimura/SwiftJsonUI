@@ -120,29 +120,14 @@ public struct RelativePositionConverter {
     }
     
     /// Check if children have conflicting alignments that require relative positioning
-    /// Even if parent has orientation, conflicting alignments require relative positioning
-    public static func childrenHaveConflictingAlignments(_ children: [DynamicComponent]) -> Bool {
+    /// Takes into account parent orientation - alignments perpendicular to orientation are OK
+    public static func childrenHaveConflictingAlignments(_ children: [DynamicComponent], parentOrientation: String? = nil) -> Bool {
         let alignedChildren = children.filter { needsRelativePositioning($0) }
         
         // If no children need alignment, no conflict
         if alignedChildren.isEmpty {
             return false
         }
-        
-        // If only one child needs alignment, no conflict
-        if alignedChildren.count == 1 {
-            return false
-        }
-        
-        // Check for conflicting vertical alignments (top vs bottom vs center)
-        let hasTop = alignedChildren.contains { $0.alignTop == true }
-        let hasBottom = alignedChildren.contains { $0.alignBottom == true }
-        let hasCenterVertical = alignedChildren.contains { $0.centerVertical == true || $0.centerInParent == true }
-        
-        // Check for conflicting horizontal alignments (left vs right vs center)
-        let hasLeft = alignedChildren.contains { $0.alignLeft == true }
-        let hasRight = alignedChildren.contains { $0.alignRight == true }
-        let hasCenterHorizontal = alignedChildren.contains { $0.centerHorizontal == true || $0.centerInParent == true }
         
         // Check for relative-to-view alignments (these always require relative positioning)
         let hasRelativeToView = alignedChildren.contains { 
@@ -152,14 +137,54 @@ public struct RelativePositionConverter {
             $0.alignBottomOfView != nil 
         }
         
-        // Conflicts exist if:
-        // - Multiple different vertical alignments
-        // - Multiple different horizontal alignments  
-        // - Any relative-to-view alignments
-        let verticalConflicts = [hasTop, hasBottom, hasCenterVertical].filter { $0 }.count > 1
-        let horizontalConflicts = [hasLeft, hasRight, hasCenterHorizontal].filter { $0 }.count > 1
+        // If any relative-to-view alignments, need relative positioning
+        if hasRelativeToView {
+            return true
+        }
         
-        return verticalConflicts || horizontalConflicts || hasRelativeToView
+        // If only one child needs alignment, no conflict
+        if alignedChildren.count == 1 {
+            return false
+        }
+        
+        // Check for conflicting alignments based on parent orientation
+        if parentOrientation == "horizontal" {
+            // In HStack, vertical alignments (top/bottom/centerVertical) are OK - they align within the row
+            // But horizontal alignments (left/right/centerHorizontal) would conflict
+            let hasLeft = alignedChildren.contains { $0.alignLeft == true }
+            let hasRight = alignedChildren.contains { $0.alignRight == true }
+            let hasCenterHorizontal = alignedChildren.contains { $0.centerHorizontal == true || $0.centerInParent == true }
+            
+            // Conflict if multiple horizontal alignments in horizontal layout
+            let horizontalConflicts = [hasLeft, hasRight, hasCenterHorizontal].filter { $0 }.count > 1
+            return horizontalConflicts
+            
+        } else if parentOrientation == "vertical" {
+            // In VStack, horizontal alignments (left/right/centerHorizontal) are OK - they align within the column
+            // But vertical alignments (top/bottom/centerVertical) would conflict
+            let hasTop = alignedChildren.contains { $0.alignTop == true }
+            let hasBottom = alignedChildren.contains { $0.alignBottom == true }
+            let hasCenterVertical = alignedChildren.contains { $0.centerVertical == true || $0.centerInParent == true }
+            
+            // Conflict if multiple vertical alignments in vertical layout
+            let verticalConflicts = [hasTop, hasBottom, hasCenterVertical].filter { $0 }.count > 1
+            return verticalConflicts
+            
+        } else {
+            // No orientation specified - check for any conflicting alignments
+            let hasTop = alignedChildren.contains { $0.alignTop == true }
+            let hasBottom = alignedChildren.contains { $0.alignBottom == true }
+            let hasCenterVertical = alignedChildren.contains { $0.centerVertical == true || $0.centerInParent == true }
+            
+            let hasLeft = alignedChildren.contains { $0.alignLeft == true }
+            let hasRight = alignedChildren.contains { $0.alignRight == true }
+            let hasCenterHorizontal = alignedChildren.contains { $0.centerHorizontal == true || $0.centerInParent == true }
+            
+            let verticalConflicts = [hasTop, hasBottom, hasCenterVertical].filter { $0 }.count > 1
+            let horizontalConflicts = [hasLeft, hasRight, hasCenterHorizontal].filter { $0 }.count > 1
+            
+            return verticalConflicts || horizontalConflicts
+        }
     }
 }
 

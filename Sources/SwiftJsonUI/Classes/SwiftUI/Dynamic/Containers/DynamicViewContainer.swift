@@ -47,7 +47,7 @@ public struct DynamicViewContainer: View {
             
             // 相対配置が必要かチェック
             let needsRelativePositioning = RelativePositionConverter.childrenNeedRelativePositioning(children)
-            let hasConflictingAlignments = RelativePositionConverter.childrenHaveConflictingAlignments(children)
+            let hasConflictingAlignments = RelativePositionConverter.childrenHaveConflictingAlignments(children, parentOrientation: orientation)
             
             // 相対配置が必要な場合:
             // 1. orientationが指定されていない場合

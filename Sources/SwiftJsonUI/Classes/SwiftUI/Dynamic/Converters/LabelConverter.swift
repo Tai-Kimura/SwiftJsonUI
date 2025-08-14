@@ -79,8 +79,18 @@ struct CommonModifiers: ViewModifier {
         if hasWeightForWidth() {
             return .infinity
         }
-        // Return explicit width if set, nil for wrapContent
-        return component.width
+        // Return explicit width if set and valid, nil for wrapContent or invalid values
+        if let width = component.width {
+            // Ensure width is positive and finite
+            if width > 0 && width.isFinite {
+                return width
+            } else if width == .infinity {
+                return width
+            }
+            // Return nil for 0 or negative values to avoid invalid frame
+            return nil
+        }
+        return nil
     }
     
     private func getHeight() -> CGFloat? {
@@ -88,8 +98,18 @@ struct CommonModifiers: ViewModifier {
         if hasWeightForHeight() {
             return .infinity
         }
-        // Return explicit height if set, nil for wrapContent
-        return component.height
+        // Return explicit height if set and valid, nil for wrapContent or invalid values
+        if let height = component.height {
+            // Ensure height is positive and finite
+            if height > 0 && height.isFinite {
+                return height
+            } else if height == .infinity {
+                return height
+            }
+            // Return nil for 0 or negative values to avoid invalid frame
+            return nil
+        }
+        return nil
     }
     
     private func hasWeightForWidth() -> Bool {
