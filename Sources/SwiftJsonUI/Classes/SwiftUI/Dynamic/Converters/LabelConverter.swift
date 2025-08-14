@@ -50,6 +50,21 @@ struct CommonModifiers: ViewModifier {
         
         // Apply frame only if width or height are explicitly set (not nil and not wrapContent)
         let shouldApplyFrame = shouldApplyFrameModifier()
+        
+        if shouldApplyFrame {
+            let width = getWidth()
+            let height = getHeight()
+            let _ = print("🖼️ Frame: id=\(component.id ?? "no-id"), width=\(width?.description ?? "nil"), height=\(height?.description ?? "nil")")
+            
+            // Check for invalid dimensions
+            if let w = width, (w < 0 || !w.isFinite) && w != .infinity {
+                print("⚠️ Invalid width detected: \(w) for component id=\(component.id ?? "no-id")")
+            }
+            if let h = height, (h < 0 || !h.isFinite) && h != .infinity {
+                print("⚠️ Invalid height detected: \(h) for component id=\(component.id ?? "no-id")")
+            }
+        }
+        
         let finalContent = shouldApplyFrame ? 
             AnyView(modifiedContent.frame(
                 width: getWidth(),
