@@ -203,49 +203,45 @@ extension View {
     public func applyDynamicModifiers(_ component: DynamicComponent, isWeightedChild: Bool = false) -> some View {
         // width and height are already CGFloat? after JSON decoding
         // .infinity means matchParent, nil means wrapContent or not specified
-        let widthValue = component.width
-        let heightValue = component.height
+        var widthValue = component.width
+        var heightValue = component.height
         
-        // If this is a weighted child, skip frame modifiers as WeightedStack handles sizing
+        // If this is a weighted child, WeightedStack handles the main axis sizing
+        // But we still need to set infinity for the content to fill the allocated space
         if isWeightedChild {
-            self
-                .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
-                .cornerRadius(component.cornerRadius ?? 0)
-                .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
-                .dynamicHidden(component.hidden == true || component.visibility == "gone")
-                .disabled(component.userInteractionEnabled == false)
-                .dynamicClipped(component.clipToBounds == true)
-                .applyPadding(component)
-                .applyMargin(component)
-                .applyBorder(component)
-                .applyShadow(component)
-                .applyAspectRatio(component)
-                .applyCenterInParent(component)
-        } else {
-            self
-                .frame(
-                    width: widthValue == .infinity ? nil : widthValue,
-                    height: heightValue == .infinity ? nil : heightValue
-                )
-                .frame(
-                    minWidth: component.minWidth,
-                    maxWidth: widthValue == .infinity ? .infinity : component.maxWidth,
-                    minHeight: component.minHeight,
-                    maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
-                )
-                .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
-                .cornerRadius(component.cornerRadius ?? 0)
-                .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
-                .dynamicHidden(component.hidden == true || component.visibility == "gone")
-                .disabled(component.userInteractionEnabled == false)
-                .dynamicClipped(component.clipToBounds == true)
-                .applyPadding(component)
-                .applyMargin(component)
-                .applyBorder(component)
-                .applyShadow(component)
-                .applyAspectRatio(component)
-                .applyCenterInParent(component)
+            // Check if weight affects width (horizontal stack with weight or widthWeight)
+            if component.width == 0 && ((component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0) {
+                widthValue = .infinity  // Fill the width allocated by WeightedHStack
+            }
+            // Check if weight affects height (vertical stack with weight or heightWeight)
+            if component.height == 0 && ((component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0) {
+                heightValue = .infinity  // Fill the height allocated by WeightedVStack
+            }
         }
+        
+        self
+            .frame(
+                width: widthValue == .infinity ? nil : widthValue,
+                height: heightValue == .infinity ? nil : heightValue
+            )
+            .frame(
+                minWidth: component.minWidth,
+                maxWidth: widthValue == .infinity ? .infinity : component.maxWidth,
+                minHeight: component.minHeight,
+                maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
+            )
+            .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
+            .cornerRadius(component.cornerRadius ?? 0)
+            .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
+            .dynamicHidden(component.hidden == true || component.visibility == "gone")
+            .disabled(component.userInteractionEnabled == false)
+            .dynamicClipped(component.clipToBounds == true)
+            .applyPadding(component)
+            .applyMargin(component)
+            .applyBorder(component)
+            .applyShadow(component)
+            .applyAspectRatio(component)
+            .applyCenterInParent(component)
     }
     
     @ViewBuilder
