@@ -342,28 +342,28 @@ public struct RelativePositionContainer: View {
                     "   rightOf: x = \(x) = \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing)"
                 )
             case .parentTop:
-                // Align to parent top
+                // Align to parent top with margin
                 y =
                     -containerSize.height / 2 + childSize.height / 2
-                    + constraint.spacing
+                    + constraint.spacing + child.margins.top
                 Logger.debug("   parentTop: y = \(y)")
             case .parentBottom:
-                // Align to parent bottom
+                // Align to parent bottom with margin
                 y =
                     containerSize.height / 2 - childSize.height / 2
-                    - constraint.spacing
+                    - constraint.spacing - child.margins.bottom
                 Logger.debug("   parentBottom: y = \(y)")
             case .parentLeft:
-                // Align to parent left
+                // Align to parent left with margin
                 x =
                     -containerSize.width / 2 + childSize.width / 2
-                    + constraint.spacing
+                    + constraint.spacing + child.margins.leading
                 Logger.debug("   parentLeft: x = \(x)")
             case .parentRight:
-                // Align to parent right
+                // Align to parent right with margin
                 x =
                     containerSize.width / 2 - childSize.width / 2
-                    - constraint.spacing
+                    - constraint.spacing - child.margins.trailing
                 Logger.debug("   parentRight: x = \(x)")
             case .parentCenterHorizontal:
                 // Center horizontally in parent
@@ -381,15 +381,8 @@ public struct RelativePositionContainer: View {
             }
         }
 
-        // Apply margins as additional offset
-        let marginOffsetX = child.margins.leading - child.margins.trailing
-        let marginOffsetY = child.margins.top - child.margins.bottom
-        x += marginOffsetX
-        y += marginOffsetY
-
-        Logger.debug(
-            "   After margins: x += \(marginOffsetX), y += \(marginOffsetY)"
-        )
+        // Margins are already applied in parent constraint calculations above
+        // No additional margin offset needed here
         Logger.debug("   Final position: (\(x), \(y))")
 
         viewPositions[child.id] = CGPoint(x: x, y: y)
