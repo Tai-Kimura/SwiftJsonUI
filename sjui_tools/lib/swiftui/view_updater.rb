@@ -3,7 +3,7 @@
 module SjuiTools
   module SwiftUI
     class ViewUpdater
-      def update_generated_body(swift_file_path, new_body_code, onclick_actions = [])
+      def update_generated_body(swift_file_path, new_body_code)
         unless File.exist?(swift_file_path)
           puts "Error: Swift file not found: #{swift_file_path}"
           return false
@@ -44,9 +44,7 @@ module SjuiTools
             
             var body: some View {
                 if ViewSwitcher.isDynamicMode {
-                    var data = viewModel.data.toDictionary()
-#{generate_onclick_closures(onclick_actions, "                    ")}
-                    DynamicView(jsonName: "#{json_name}", viewId: "#{json_name}_view", data: data)
+                    DynamicView(jsonName: "#{json_name}", viewId: "#{json_name}_view", data: viewModel.data.toDictionary(viewModel: viewModel))
                         .environmentObject(dynamicViewModel)
                 } else {
                     // Generated SwiftUI code from #{json_name}.json
@@ -74,16 +72,6 @@ module SjuiTools
       end
       
       private
-      
-      def generate_onclick_closures(onclick_actions, indent)
-        return "" if onclick_actions.empty?
-        
-        closures = onclick_actions.map do |action|
-          "#{indent}data[\"#{action}\"] = { [weak viewModel] in viewModel?.#{action}() }"
-        end
-        
-        closures.join("\n") + "\n"
-      end
       
       def indent_body_code(code, indent)
         lines = code.split("\n")

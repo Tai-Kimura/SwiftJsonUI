@@ -2,6 +2,7 @@
 
 require 'json'
 require 'fileutils'
+require 'set'
 require_relative '../core/config_manager'
 require_relative '../core/project_finder'
 
@@ -33,12 +34,41 @@ module SjuiTools
         # Extract data properties from JSON
         data_properties = extract_data_properties(json_data)
         
+        # Extract onclick actions from JSON
+        onclick_actions = extract_onclick_actions(json_data)
+        
         # Always create/update data file, even if no properties
         # Get the view name from file path
         base_name = File.basename(json_file, '.json')
         
         # Update the Data model file
-        update_data_file(base_name, data_properties)
+        update_data_file(base_name, data_properties, onclick_actions)
+      end
+      
+      def extract_onclick_actions(json_data, actions = Set.new)
+        if json_data.is_a?(Hash)
+          # Check for onclick attribute
+          if json_data['onclick'] && json_data['onclick'].is_a?(String)
+            actions.add(json_data['onclick'])
+          end
+          
+          # Process children
+          if json_data['child']
+            if json_data['child'].is_a?(Array)
+              json_data['child'].each do |child|
+                extract_onclick_actions(child, actions)
+              end
+            else
+              extract_onclick_actions(json_data['child'], actions)
+            end
+          end
+        elsif json_data.is_a?(Array)
+          json_data.each do |item|
+            extract_onclick_actions(item, actions)
+          end
+        end
+        
+        actions.to_a
       end
 
       def extract_data_properties(json_data, properties = [])
@@ -71,7 +101,7 @@ module SjuiTools
         properties
       end
 
-      def update_data_file(base_name, data_properties)
+      def update_data_file(base_name, data_properties, onclick_actions = [])
         # Convert base_name to PascalCase for searching
         pascal_view_name = to_pascal_case(base_name)
         
@@ -101,7 +131,7 @@ module SjuiTools
         end
         
         # Generate new content
-        content = generate_data_content(view_name, data_properties)
+        content = generate_data_content(view_name, data_properties, onclick_actions)
         
         # Write the updated content
         File.write(data_file_path, content)
@@ -128,7 +158,7 @@ module SjuiTools
         end
       end
 
-      def generate_data_content(view_name, data_properties)
+      def generate_data_content(view_name, data_properties, onclick_actions = [])
         content = <<~SWIFT
         import Foundation
         import SwiftUI
@@ -209,13 +239,16 @@ module SjuiTools
         
         content += "    }\n"
         
-        # Add toDictionary function
+        # Add toDictionary function with viewModel parameter
         content += "\n"
         content += "    // Convert properties to dictionary for Dynamic mode\n"
-        content += "    func toDictionary() -> [String: Any] {\n"
+        content += "    func toDictionary(viewModel: #{view_name}ViewModel? = nil) -> [String: Any] {\n"
         content += "        var dict: [String: Any] = [:]\n"
         
+        # Add data properties
         if !data_properties.empty?
+          content += "        \n"
+          content += "        // Data properties\n"
           data_properties.each do |prop|
             name = prop['name']
             class_type = prop['class']
@@ -230,10 +263,24 @@ module SjuiTools
               content += "        dict[\"#{name}\"] = #{name}\n"
             end
           end
-        else
+        end
+        
+        # Add onclick closures if viewModel is provided
+        if !onclick_actions.empty?
+          content += "        \n"
+          content += "        // Add onclick action closures if viewModel is provided\n"
+          content += "        if let viewModel = viewModel {\n"
+          onclick_actions.each do |action|
+            content += "            dict[\"#{action}\"] = { [weak viewModel] in viewModel?.#{action}() }\n"
+          end
+          content += "        }\n"
+        end
+        
+        if data_properties.empty? && onclick_actions.empty?
           content += "        // No properties to add\n"
         end
         
+        content += "        \n"
         content += "        return dict\n"
         content += "    }\n"
         content += "}\n"
