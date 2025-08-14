@@ -14,7 +14,26 @@ public struct ProgressConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let progress = component.progress ?? component.value ?? 0.0
+        // Try to get progress value from data dictionary first
+        var progress = component.progress ?? component.value ?? 0.0
+        
+        if let componentId = component.id {
+            // Try to find a matching progress property in data dictionary
+            // Common patterns: progress1Value, progress1_value, etc.
+            let possibleKeys = [
+                "\(componentId)Value",
+                "\(componentId)_value",
+                componentId
+            ]
+            
+            for key in possibleKeys {
+                if let dataValue = viewModel.data[key] as? Double {
+                    progress = dataValue
+                    break
+                }
+            }
+        }
+        
         let isCircular = component.type?.lowercased().contains("circular") ?? false
         
         if progress > 0 {
@@ -23,7 +42,7 @@ public struct ProgressConverter {
                 return AnyView(
                     ProgressView(value: progress, total: 1.0) {
                         if let text = component.text {
-                            Text(text)
+                            Text(viewModel.processText(text))
                                 .font(getFont(component))
                                 .foregroundColor(getTextColor(component))
                         }
@@ -35,7 +54,7 @@ public struct ProgressConverter {
                 return AnyView(
                     ProgressView(value: progress, total: 1.0) {
                         if let text = component.text {
-                            Text(text)
+                            Text(viewModel.processText(text))
                                 .font(getFont(component))
                                 .foregroundColor(getTextColor(component))
                         }

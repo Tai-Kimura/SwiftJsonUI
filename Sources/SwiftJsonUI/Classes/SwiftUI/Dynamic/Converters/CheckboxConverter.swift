@@ -14,30 +14,90 @@ public struct CheckboxConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = component.text ?? ""
-        let isOn = component.isOn ?? false
+        let text = viewModel.processText(component.text) ?? ""
         
-        return AnyView(
-            HStack {
-                Image(systemName: isOn ? "checkmark.square.fill" : "square")
-                    .foregroundColor(.blue)
-                    .onTapGesture {
-                        // Handle checkbox tap
-                        if let onClick = component.onClick {
-                            viewModel.handleAction(onClick)
+        // Check if component id matches a data property
+        var isChecked = component.isOn ?? false
+        var binding: Binding<Bool>?
+        
+        if let componentId = component.id {
+            // Try to find a matching checkbox property in data dictionary
+            // Common patterns: checkbox1IsOn, checkbox1_isOn, checkbox1Checked, etc.
+            let possibleKeys = [
+                "\(componentId)IsOn",
+                "\(componentId)_isOn",
+                "\(componentId)Checked",
+                "\(componentId)_checked",
+                componentId
+            ]
+            
+            for key in possibleKeys {
+                if viewModel.data[key] != nil {
+                    // Create binding that updates the data dictionary
+                    binding = Binding<Bool>(
+                        get: { 
+                            viewModel.data[key] as? Bool ?? false
+                        },
+                        set: { newValue in
+                            viewModel.data[key] = newValue
+                            viewModel.objectWillChange.send()
                         }
-                        if let action = component.action {
-                            viewModel.handleAction(action)
-                        }
-                    }
-                
-                if !text.isEmpty {
-                    Text(text)
-                        .font(DynamicHelpers.fontFromComponent(component))
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    )
+                    isChecked = viewModel.data[key] as? Bool ?? false
+                    break
                 }
             }
-            .modifier(CommonModifiers(component: component, viewModel: viewModel))
-        )
+        }
+        
+        // Use binding if found for interactive checkbox
+        if let binding = binding {
+            return AnyView(
+                HStack {
+                    Image(systemName: binding.wrappedValue ? "checkmark.square.fill" : "square")
+                        .foregroundColor(.blue)
+                        .onTapGesture {
+                            binding.wrappedValue.toggle()
+                            // Handle checkbox tap actions
+                            if let onClick = component.onClick {
+                                viewModel.handleAction(onClick)
+                            }
+                            if let action = component.action {
+                                viewModel.handleAction(action)
+                            }
+                        }
+                    
+                    if !text.isEmpty {
+                        Text(text)
+                            .font(DynamicHelpers.fontFromComponent(component))
+                            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    }
+                }
+                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            )
+        } else {
+            // Use static value if no binding found
+            return AnyView(
+                HStack {
+                    Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                        .foregroundColor(.blue)
+                        .onTapGesture {
+                            // Handle checkbox tap
+                            if let onClick = component.onClick {
+                                viewModel.handleAction(onClick)
+                            }
+                            if let action = component.action {
+                                viewModel.handleAction(action)
+                            }
+                        }
+                    
+                    if !text.isEmpty {
+                        Text(text)
+                            .font(DynamicHelpers.fontFromComponent(component))
+                            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    }
+                }
+                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            )
+        }
     }
 }
