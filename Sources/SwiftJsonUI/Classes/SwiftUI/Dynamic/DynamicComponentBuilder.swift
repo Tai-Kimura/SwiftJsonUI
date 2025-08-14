@@ -12,11 +12,13 @@ public struct DynamicComponentBuilder: View {
     let component: DynamicComponent
     @ObservedObject var viewModel: DynamicViewModel
     let viewId: String?
+    let isWeightedChild: Bool
     
-    public init(component: DynamicComponent, viewModel: DynamicViewModel, viewId: String? = nil) {
+    public init(component: DynamicComponent, viewModel: DynamicViewModel, viewId: String? = nil, isWeightedChild: Bool = false) {
         self.component = component
         self.viewModel = viewModel
         self.viewId = viewId
+        self.isWeightedChild = isWeightedChild
     }
     
     public var body: some View {
@@ -37,13 +39,13 @@ public struct DynamicComponentBuilder: View {
             // Wrap with VisibilityWrapper
             VisibilityWrapper(visibility) {
                 buildView(from: component)
-                    .applyDynamicModifiers(component)
+                    .applyDynamicModifiers(component, isWeightedChild: isWeightedChild)
                     .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
             }
         } else {
             // No visibility wrapper needed
             buildView(from: component)
-                .applyDynamicModifiers(component)
+                .applyDynamicModifiers(component, isWeightedChild: isWeightedChild)
                 .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
         }
     }

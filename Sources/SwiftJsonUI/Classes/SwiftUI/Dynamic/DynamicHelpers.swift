@@ -200,35 +200,52 @@ public struct DynamicHelpers {
 // MARK: - View Modifier Extension
 extension View {
     @ViewBuilder
-    public func applyDynamicModifiers(_ component: DynamicComponent) -> some View {
+    public func applyDynamicModifiers(_ component: DynamicComponent, isWeightedChild: Bool = false) -> some View {
         // width and height are already CGFloat? after JSON decoding
         // .infinity means matchParent, nil means wrapContent or not specified
         let widthValue = component.width
         let heightValue = component.height
         
-        self
-            .frame(
-                width: widthValue == .infinity ? nil : widthValue,
-                height: heightValue == .infinity ? nil : heightValue
-            )
-            .frame(
-                minWidth: component.minWidth,
-                maxWidth: widthValue == .infinity ? .infinity : component.maxWidth,
-                minHeight: component.minHeight,
-                maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
-            )
-            .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
-            .cornerRadius(component.cornerRadius ?? 0)
-            .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
-            .dynamicHidden(component.hidden == true || component.visibility == "gone")
-            .disabled(component.userInteractionEnabled == false)
-            .dynamicClipped(component.clipToBounds == true)
-            .applyPadding(component)
-            .applyMargin(component)
-            .applyBorder(component)
-            .applyShadow(component)
-            .applyAspectRatio(component)
-            .applyCenterInParent(component)
+        // If this is a weighted child, skip frame modifiers as WeightedStack handles sizing
+        if isWeightedChild {
+            self
+                .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
+                .cornerRadius(component.cornerRadius ?? 0)
+                .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
+                .dynamicHidden(component.hidden == true || component.visibility == "gone")
+                .disabled(component.userInteractionEnabled == false)
+                .dynamicClipped(component.clipToBounds == true)
+                .applyPadding(component)
+                .applyMargin(component)
+                .applyBorder(component)
+                .applyShadow(component)
+                .applyAspectRatio(component)
+                .applyCenterInParent(component)
+        } else {
+            self
+                .frame(
+                    width: widthValue == .infinity ? nil : widthValue,
+                    height: heightValue == .infinity ? nil : heightValue
+                )
+                .frame(
+                    minWidth: component.minWidth,
+                    maxWidth: widthValue == .infinity ? .infinity : component.maxWidth,
+                    minHeight: component.minHeight,
+                    maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
+                )
+                .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
+                .cornerRadius(component.cornerRadius ?? 0)
+                .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
+                .dynamicHidden(component.hidden == true || component.visibility == "gone")
+                .disabled(component.userInteractionEnabled == false)
+                .dynamicClipped(component.clipToBounds == true)
+                .applyPadding(component)
+                .applyMargin(component)
+                .applyBorder(component)
+                .applyShadow(component)
+                .applyAspectRatio(component)
+                .applyCenterInParent(component)
+        }
     }
     
     @ViewBuilder
