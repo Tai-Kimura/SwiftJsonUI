@@ -49,7 +49,7 @@ public struct GradientViewConverter {
     
     private static func getGradient(_ component: DynamicComponent) -> LinearGradient {
         // Get colors from data array (expecting hex strings)
-        let colorHexes = component.data?.compactMap { item in
+        let colorHexes: [String] = component.data?.compactMap { item in
             if let dict = item.value as? [String: Any] {
                 if let color = dict["color"] as? String {
                     return color
