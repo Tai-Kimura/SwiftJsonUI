@@ -66,21 +66,19 @@ public struct DynamicViewContainer: View {
                     viewId: viewId
                 )
             } else if orientation == "horizontal" {
-                // 通常のHStack - use alignment directly for VStack/HStack positioning
-                HStack(alignment: .top, spacing: 0) {
+                // 通常のHStack
+                HStack(alignment: getVerticalAlignmentFromAlignment(component.alignment), spacing: 0) {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: component.alignment ?? .topLeading)
             } else if orientation == "vertical" {
-                // 通常のVStack - use alignment directly for VStack/HStack positioning
-                VStack(alignment: .leading, spacing: 0) {
+                // 通常のVStack
+                VStack(alignment: getHorizontalAlignmentFromAlignment(component.alignment), spacing: 0) {
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: component.alignment ?? .topLeading)
             } else {
                 // orientationなし = ZStack
                 ZStack(alignment: component.alignment ?? .topLeading) {
@@ -125,6 +123,32 @@ public struct DynamicViewContainer: View {
                     }
                 }
             }
+        }
+    }
+    
+    private func getVerticalAlignmentFromAlignment(_ alignment: Alignment?) -> VerticalAlignment {
+        switch alignment {
+        case .top, .topLeading, .topTrailing:
+            return .top
+        case .bottom, .bottomLeading, .bottomTrailing:
+            return .bottom
+        case .center, .leading, .trailing:
+            return .center
+        default:
+            return .top  // デフォルトはtop (topLeadingから)
+        }
+    }
+    
+    private func getHorizontalAlignmentFromAlignment(_ alignment: Alignment?) -> HorizontalAlignment {
+        switch alignment {
+        case .leading, .topLeading, .bottomLeading:
+            return .leading
+        case .trailing, .topTrailing, .bottomTrailing:
+            return .trailing
+        case .center, .top, .bottom:
+            return .center
+        default:
+            return .leading  // デフォルトはleading (topLeadingから)
         }
     }
 }
