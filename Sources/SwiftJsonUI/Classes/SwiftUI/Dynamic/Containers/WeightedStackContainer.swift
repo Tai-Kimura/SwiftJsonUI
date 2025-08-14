@@ -30,7 +30,7 @@ public struct WeightedStackContainer: View {
     }
     
     public var body: some View {
-        print("⚖️ WeightedStackContainer: orientation=\(orientation), childCount=\(children.count)")
+        let _ = print("⚖️ WeightedStackContainer: orientation=\(orientation), childCount=\(children.count)")
         if orientation == "horizontal" {
             WeightedHStack(
                 alignment: getVerticalAlignmentFromAlignment(alignment),

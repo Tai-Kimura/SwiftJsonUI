@@ -32,7 +32,7 @@ public struct DynamicComponentBuilder: View {
                 return component.visibility
             }()
             
-            print("👁️ Applying VisibilityWrapper: id=\(component.id ?? "no-id"), visibility=\(visibility ?? "none")")
+            let _ = print("👁️ Applying VisibilityWrapper: id=\(component.id ?? "no-id"), visibility=\(visibility ?? "none")")
             
             // Wrap with VisibilityWrapper
             VisibilityWrapper(visibility) {
@@ -51,7 +51,7 @@ public struct DynamicComponentBuilder: View {
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
         if let type = component.type {
-            print("🔨 Building component: type=\(type), id=\(component.id ?? "no-id"), visibility=\(component.visibility ?? "visible"), hidden=\(component.hidden ?? false)")
+            let _ = print("🔨 Building component: type=\(type), id=\(component.id ?? "no-id"), visibility=\(component.visibility ?? "visible"), hidden=\(component.hidden ?? false)")
             switch type.lowercased() {
         // Text components
         case "text", "label":
