@@ -27,66 +27,93 @@ public struct DynamicComponentBuilder: View {
     
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
-        let _ = Logger.debug("[DynamicComponentBuilder] Building view for type: \(component.type)")
+        switch component.type.lowercased() {
+        // Text components
+        case "text", "label":
+            TextConverter.convert(component: component, viewModel: viewModel)
         
-        switch component.type {
-        case "View":
-            let _ = Logger.debug("[DynamicComponentBuilder] Creating DynamicViewContainer")
+        case "button":
+            ButtonConverter.convert(component: component, viewModel: viewModel)
+        
+        case "textfield":
+            TextFieldConverter.convert(component: component, viewModel: viewModel)
+        
+        case "textview":
+            TextViewConverter.convert(component: component, viewModel: viewModel)
+        
+        // Image components
+        case "image":
+            ImageViewConverter.convert(component: component, viewModel: viewModel)
+        
+        case "networkimage":
+            NetworkImageConverter.convert(component: component, viewModel: viewModel)
+        
+        // Container components
+        case "view":
             DynamicViewContainer(component: component, viewModel: viewModel, viewId: viewId)
-        case "Text", "Label":
-            let _ = Logger.debug("[DynamicComponentBuilder] Creating DynamicTextView")
-            DynamicTextView(component: component, viewModel: viewModel)
-        case "Button":
-            let _ = Logger.debug("[DynamicComponentBuilder] Creating DynamicButtonView")
-            DynamicButtonView(component: component, viewModel: viewModel)
-        case "TextField":
-            DynamicTextFieldView(component: component, viewModel: viewModel)
-        case "TextView":
-            DynamicTextViewWrapper(component: component, viewModel: viewModel)
-        case "Image":
-            DynamicImageView(component: component, viewModel: viewModel)
-        case "NetworkImage":
-            DynamicNetworkImageView(component: component, viewModel: viewModel)
-        case "SelectBox":
-            DynamicSelectBoxView(component: component, viewModel: viewModel)
-        case "IconLabel":
-            DynamicIconLabelView(component: component, viewModel: viewModel)
-        case "Collection":
-            DynamicCollectionView(component: component, viewModel: viewModel)
-        case "Table":
-            DynamicTableView(component: component, viewModel: viewModel)
-        case "ScrollView", "Scroll":
+        
+        case "scrollview", "scroll":
             DynamicScrollViewContainer(component: component, viewModel: viewModel, viewId: viewId)
-        case "Switch":
-            DynamicSwitchView(component: component, viewModel: viewModel)
-        case "Toggle", "Check":
-            DynamicToggleView(component: component, viewModel: viewModel)
-        case "Checkbox":
-            DynamicCheckboxView(component: component, viewModel: viewModel)
-        case "Progress":
-            DynamicProgressView(component: component, viewModel: viewModel)
-        case "Slider":
-            DynamicSliderView(component: component, viewModel: viewModel)
-        case "Indicator":
-            DynamicIndicatorView(component: component, viewModel: viewModel)
-        case "Segment":
-            DynamicSegmentView(component: component, viewModel: viewModel)
-        case "Radio":
-            DynamicRadioView(component: component, viewModel: viewModel)
-        case "Web", "WebView":
-            DynamicWebView(component: component, viewModel: viewModel)
-        case "CircleImage":
-            DynamicCircleImageView(component: component, viewModel: viewModel)
-        case "GradientView":
-            DynamicGradientView(component: component, viewModel: viewModel)
-        case "Blur", "BlurView":
-            DynamicBlurView(component: component, viewModel: viewModel)
-        case "TabView":
-            DynamicTabView(component: component, viewModel: viewModel)
-        case "SafeAreaView":
-            DynamicSafeAreaView(component: component, viewModel: viewModel)
+        
+        // Selection components
+        case "toggle", "switch", "check":
+            ToggleConverter.convert(component: component, viewModel: viewModel)
+        
+        case "checkbox":
+            CheckboxConverter.convert(component: component, viewModel: viewModel)
+        
+        case "radio":
+            RadioConverter.convert(component: component, viewModel: viewModel)
+        
+        case "picker":
+            PickerConverter.convert(component: component, viewModel: viewModel)
+        
+        case "selectbox":
+            SelectBoxConverter.convert(component: component, viewModel: viewModel)
+        
+        case "slider":
+            SliderConverter.convert(component: component, viewModel: viewModel)
+        
+        case "progress", "progressbar":
+            ProgressConverter.convert(component: component, viewModel: viewModel)
+        
+        // Complex components
+        case "iconlabel":
+            IconLabelConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        
+        case "collection":
+            CollectionConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        
+        case "table", "list":
+            TableConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        
+        case "tabview":
+            TabViewConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        
+        case "web", "webview":
+            WebConverter.convert(component: component, viewModel: viewModel)
+        
+        // Special effects
+        case "gradientview", "gradient":
+            GradientViewConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        
+        case "blur", "blurview":
+            BlurConverter.convert(component: component, viewModel: viewModel, viewId: viewId)
+        
+        // Default/Unknown
         default:
-            EmptyView()
+            // Unknown component type - show error message
+            Text("Error: Unknown component type '\(component.type)'")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.red)
+                .cornerRadius(6)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.red.opacity(0.8), lineWidth: 1)
+                )
         }
     }
 }

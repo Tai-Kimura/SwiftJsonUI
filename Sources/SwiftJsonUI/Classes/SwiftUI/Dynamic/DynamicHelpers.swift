@@ -201,39 +201,21 @@ public struct DynamicHelpers {
 extension View {
     @ViewBuilder
     public func applyDynamicModifiers(_ component: DynamicComponent) -> some View {
-        let widthValue: String? = {
-            switch component.width {
-            case .single(let value):
-                return value
-            case .array(let values):
-                return values.first
-            case nil:
-                return nil
-            }
-        }()
-        let heightValue: String? = {
-            switch component.height {
-            case .single(let value):
-                return value
-            case .array(let values):
-                return values.first
-            case nil:
-                return nil
-            }
-        }()
+        // width and height are already CGFloat? after JSON decoding
+        // .infinity means matchParent, nil means wrapContent
+        let widthValue = component.width
+        let heightValue = component.height
         
         self
             .frame(
-                width: DynamicHelpers.frameValue(widthValue),
-                height: DynamicHelpers.frameValue(heightValue)
+                width: widthValue == .infinity ? nil : widthValue,
+                height: heightValue == .infinity ? nil : heightValue
             )
             .frame(
                 minWidth: component.minWidth,
-                maxWidth: DynamicHelpers.isMatchParent(widthValue) ? .infinity : 
-                         (component.maxWidth == nil ? nil : DynamicHelpers.frameValue(component.maxWidth.map { "\($0)" })),
+                maxWidth: widthValue == .infinity ? .infinity : component.maxWidth,
                 minHeight: component.minHeight,
-                maxHeight: DynamicHelpers.isMatchParent(heightValue) ? .infinity :
-                         (component.maxHeight == nil ? nil : DynamicHelpers.frameValue(component.maxHeight.map { "\($0)" }))
+                maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
             )
             .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
