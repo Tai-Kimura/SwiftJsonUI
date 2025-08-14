@@ -15,7 +15,7 @@ public struct ProgressConverter {
         viewModel: DynamicViewModel
     ) -> AnyView {
         let progress = component.progress ?? component.value ?? 0.0
-        let isCircular = component.type.lowercased().contains("circular")
+        let isCircular = component.type?.lowercased().contains("circular") ?? false
         
         if progress > 0 {
             // Determinate progress

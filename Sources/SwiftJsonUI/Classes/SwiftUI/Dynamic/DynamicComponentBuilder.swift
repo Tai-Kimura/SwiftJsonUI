@@ -27,7 +27,13 @@ public struct DynamicComponentBuilder: View {
     
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
-        switch component.type.lowercased() {
+        guard let type = component.type else {
+            // Skip components without type (data, include, etc.)
+            EmptyView()
+            return
+        }
+        
+        switch type.lowercased() {
         // Text components
         case "text", "label":
             TextConverter.convert(component: component, viewModel: viewModel)
@@ -103,7 +109,7 @@ public struct DynamicComponentBuilder: View {
         // Default/Unknown
         default:
             // Unknown component type - show error message
-            Text("Error: Unknown component type '\(component.type)'")
+            Text("Error: Unknown component type '\(type)'")
                 .font(.system(size: 14, weight: .medium))
                 .foregroundColor(.white)
                 .padding(.horizontal, 12)

@@ -9,11 +9,11 @@ import SwiftUI
 
 // MARK: - Component Model
 public struct DynamicComponent: Decodable {
-    let type: String
+    let type: String?
     
     /// Check if this is a valid component (has type)
     public var isValid: Bool {
-        return !type.isEmpty
+        return type != nil && !type!.isEmpty
     }
     let id: String?
     let text: String?
@@ -162,8 +162,8 @@ public struct DynamicComponent: Decodable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
-        // Type is required - if not present, skip this element (could be include, data, etc.)
-        type = try container.decode(String.self, forKey: .type)
+        // Type is optional - elements without type (include, data, etc.) will be skipped
+        type = try container.decodeIfPresent(String.self, forKey: .type)
         
         // Basic properties
         id = try container.decodeIfPresent(String.self, forKey: .id)

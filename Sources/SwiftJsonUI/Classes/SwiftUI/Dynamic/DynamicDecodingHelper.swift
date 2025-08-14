@@ -50,14 +50,14 @@ public struct DynamicDecodingHelper {
         // Try to decode as array first (using FailableDecodable to skip invalid elements)
         if let childArray = try? container.decode([FailableDecodable<DynamicComponent>].self, forKey: key) {
             // Filter out nil values and components without type
-            let validComponents = childArray.compactMap { $0.value }.filter { !$0.type.isEmpty }
+            let validComponents = childArray.compactMap { $0.value }.filter { $0.isValid }
             return validComponents.isEmpty ? nil : validComponents
         }
         
         // Try to decode as single component
         if let singleChild = try? container.decode(DynamicComponent.self, forKey: key) {
             // Filter out components without type
-            return singleChild.type.isEmpty ? nil : [singleChild]
+            return singleChild.isValid ? [singleChild] : nil
         }
         
         // No children found
