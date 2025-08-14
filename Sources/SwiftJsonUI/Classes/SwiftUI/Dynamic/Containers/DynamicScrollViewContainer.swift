@@ -22,28 +22,9 @@ public struct DynamicScrollViewContainer: View {
     @ViewBuilder
     public var body: some View {
         AdvancedKeyboardAvoidingScrollView {
-            if let children = component.child {
-                // Check if children need relative positioning
-                let needsRelativePositioning = RelativePositionConverter.childrenNeedRelativePositioning(children)
-                
-                if needsRelativePositioning {
-                    // Use RelativePositioningContainer for relative positioning
-                    RelativePositioningContainer(children: children, viewModel: viewModel, viewId: viewId)
-                } else if component.orientation == "horizontal" {
-                    HStack(alignment: .top, spacing: 0) {
-                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                } else {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                }
+            // ScrollView should have exactly one child
+            if let children = component.child, let firstChild = children.first {
+                DynamicComponentBuilder(component: firstChild, viewModel: viewModel, viewId: viewId)
             }
         }
         .modifier(CommonModifiers(component: component, viewModel: viewModel))
