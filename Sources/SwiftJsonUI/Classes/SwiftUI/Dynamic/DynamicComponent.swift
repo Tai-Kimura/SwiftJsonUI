@@ -96,6 +96,14 @@ public struct DynamicComponent: Decodable {
     let columns: Int?  // For collection/grid layouts
     let spacing: CGFloat?  // For stack/grid spacing
     
+    // SelectBox/DatePicker properties
+    let selectItemType: String?
+    let datePickerMode: String?
+    let datePickerStyle: String?
+    let dateStringFormat: String?
+    let minimumDate: String?
+    let maximumDate: String?
+    
     // Event handlers
     let onClick: String?
     let onLongPress: String?
@@ -150,6 +158,8 @@ public struct DynamicComponent: Decodable {
         case textAlign, selectedItem, isOn, progress, value
         case minValue, maxValue, indicatorStyle, selectedIndex
         case columns, spacing
+        case selectItemType, datePickerMode, datePickerStyle
+        case dateStringFormat, minimumDate, maximumDate
         case onClick, onLongPress, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
@@ -262,6 +272,14 @@ public struct DynamicComponent: Decodable {
         selectedIndex = try container.decodeIfPresent(Int.self, forKey: .selectedIndex)
         columns = try container.decodeIfPresent(Int.self, forKey: .columns)
         spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing)
+        
+        // SelectBox/DatePicker properties
+        selectItemType = try container.decodeIfPresent(String.self, forKey: .selectItemType)
+        datePickerMode = try container.decodeIfPresent(String.self, forKey: .datePickerMode)
+        datePickerStyle = try container.decodeIfPresent(String.self, forKey: .datePickerStyle)
+        dateStringFormat = try container.decodeIfPresent(String.self, forKey: .dateStringFormat)
+        minimumDate = try container.decodeIfPresent(String.self, forKey: .minimumDate)
+        maximumDate = try container.decodeIfPresent(String.self, forKey: .maximumDate)
         
         // Event handlers
         onClick = try container.decodeIfPresent(String.self, forKey: .onClick)
