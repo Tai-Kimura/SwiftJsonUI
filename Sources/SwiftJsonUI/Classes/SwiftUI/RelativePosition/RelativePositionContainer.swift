@@ -53,7 +53,6 @@ public struct RelativePositionContainer: View {
                                         }
                                 }
                             )
-                            .padding(child.margins)
                             .hidden()  // Hide during measurement
                     }
                 }

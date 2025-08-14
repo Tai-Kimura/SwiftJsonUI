@@ -219,6 +219,9 @@ module SjuiTools
             return # 残りの処理をスキップして、通常のText処理を避ける
           end
           
+          # Apply frame size (width/height)
+          apply_frame_size
+          
           # Apply frame modifiers for weighted views
           # If this label has a weight in a horizontal/vertical container, make it fill the appropriate dimension
           if @component['weight'] && @component['weight'].to_f > 0
