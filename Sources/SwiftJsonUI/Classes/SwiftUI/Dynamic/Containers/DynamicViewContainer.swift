@@ -47,10 +47,13 @@ public struct DynamicViewContainer: View {
             
             // 相対配置が必要かチェック
             let needsRelativePositioning = RelativePositionConverter.childrenNeedRelativePositioning(children)
+            let hasConflictingAlignments = RelativePositionConverter.childrenHaveConflictingAlignments(children)
             
-            // orientationが明示的に指定されている場合は、相対配置よりもorientationを優先
-            if needsRelativePositioning && orientation == nil {
-                // 相対配置用のZStack（orientationが指定されていない場合のみ）
+            // 相対配置が必要な場合:
+            // 1. orientationが指定されていない場合
+            // 2. 子要素に競合するalignmentがある場合（orientationに関わらず）
+            if needsRelativePositioning && (orientation == nil || hasConflictingAlignments) {
+                // 相対配置用のZStack
                 RelativePositioningContainer(children: children, viewModel: viewModel, viewId: viewId)
             } else if hasWeights && (orientation == "horizontal" || orientation == "vertical") {
                 // Weight対応のStack

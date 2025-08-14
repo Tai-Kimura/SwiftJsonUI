@@ -43,14 +43,21 @@ public struct LabelConverter {
 struct CommonModifiers: ViewModifier {
     let component: DynamicComponent
     let viewModel: DynamicViewModel
+    let parentOrientation: String? = nil  // To be passed when needed
     
     func body(content: Content) -> some View {
-        content
-            .frame(
+        let modifiedContent = content
+        
+        // Apply frame only if width or height are explicitly set (not nil and not wrapContent)
+        let shouldApplyFrame = shouldApplyFrameModifier()
+        let finalContent = shouldApplyFrame ? 
+            AnyView(modifiedContent.frame(
                 width: getWidth(),
                 height: getHeight(),
                 alignment: getFrameAlignment()
-            )
+            )) : AnyView(modifiedContent)
+        
+        return finalContent
             .padding(getPadding())
             .background(getBackground())
             .cornerRadius(component.cornerRadius ?? 0)
@@ -59,12 +66,44 @@ struct CommonModifiers: ViewModifier {
             .opacity(isHidden() ? 0 : 1)
     }
     
+    private func shouldApplyFrameModifier() -> Bool {
+        // Only apply frame if width or height is explicitly set (not nil/wrapContent)
+        // or if weight is specified (which requires infinity)
+        let hasExplicitWidth = component.width != nil || hasWeightForWidth()
+        let hasExplicitHeight = component.height != nil || hasWeightForHeight()
+        return hasExplicitWidth || hasExplicitHeight
+    }
+    
     private func getWidth() -> CGFloat? {
+        // If weight is specified and affects width, use infinity
+        if hasWeightForWidth() {
+            return .infinity
+        }
+        // Return explicit width if set, nil for wrapContent
         return component.width
     }
     
     private func getHeight() -> CGFloat? {
+        // If weight is specified and affects height, use infinity
+        if hasWeightForHeight() {
+            return .infinity
+        }
+        // Return explicit height if set, nil for wrapContent
         return component.height
+    }
+    
+    private func hasWeightForWidth() -> Bool {
+        // Weight affects width in horizontal layouts or when widthWeight is specified
+        let hasWeight = (component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0
+        // Note: We don't have parent orientation here, so we check if width is 0 which indicates weight usage
+        return hasWeight && component.width == 0
+    }
+    
+    private func hasWeightForHeight() -> Bool {
+        // Weight affects height in vertical layouts or when heightWeight is specified
+        let hasWeight = (component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0
+        // Note: We don't have parent orientation here, so we check if height is 0 which indicates weight usage
+        return hasWeight && component.height == 0
     }
     
     private func getFrameAlignment() -> Alignment {
