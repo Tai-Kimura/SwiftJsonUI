@@ -338,7 +338,7 @@ public struct RelativePositionContainer: View {
                 let anchorTopMargin = anchorChild?.margins.top ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y - anchorSize.height / 2 - childSize.height / 2
-                    - constraint.spacing - anchorTopMargin - child.margins.bottom
+                    - anchorTopMargin - child.margins.bottom
                 // x position only uses anchor x if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentLeft, .parentRight, .parentCenterHorizontal, .alignLeft, .alignRight, .leftOf, .rightOf].contains($0.type) 
@@ -346,7 +346,7 @@ public struct RelativePositionContainer: View {
                     x = anchorPos.x
                 }
                 Logger.debug(
-                    "   above: y = \(y) = \(anchorPos.y) - \(anchorSize.height/2) - \(childSize.height/2) - \(constraint.spacing) - \(anchorTopMargin)"
+                    "   above: y = \(y) = \(anchorPos.y) - \(anchorSize.height/2) - \(childSize.height/2) - \(anchorTopMargin)"
                 )
             case .below:
                 // Position below anchor - child's top touches anchor's bottom
@@ -354,7 +354,7 @@ public struct RelativePositionContainer: View {
                 let anchorBottomMargin = anchorChild?.margins.bottom ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y + anchorSize.height / 2 + childSize.height / 2
-                    + constraint.spacing + anchorBottomMargin + child.margins.top
+                    + anchorBottomMargin + child.margins.top
                 // x position only uses anchor x if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentLeft, .parentRight, .parentCenterHorizontal, .alignLeft, .alignRight, .leftOf, .rightOf].contains($0.type) 
@@ -362,7 +362,7 @@ public struct RelativePositionContainer: View {
                     x = anchorPos.x
                 }
                 Logger.debug(
-                    "   below: y = \(y) = \(anchorPos.y) + \(anchorSize.height/2) + \(childSize.height/2) + \(constraint.spacing) + \(anchorBottomMargin)"
+                    "   below: y = \(y) = \(anchorPos.y) + \(anchorSize.height/2) + \(childSize.height/2) + \(anchorBottomMargin)"
                 )
             case .leftOf:
                 // Position to the left of anchor - child's right touches anchor's left
@@ -370,7 +370,7 @@ public struct RelativePositionContainer: View {
                 let anchorLeftMargin = anchorChild?.margins.leading ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x - anchorSize.width / 2 - childSize.width / 2
-                    - constraint.spacing - anchorLeftMargin - child.margins.trailing
+                    - anchorLeftMargin - child.margins.trailing
                 // y position only uses anchor y if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentTop, .parentBottom, .parentCenterVertical, .alignTop, .alignBottom, .above, .below].contains($0.type) 
@@ -378,7 +378,7 @@ public struct RelativePositionContainer: View {
                     y = anchorPos.y
                 }
                 Logger.debug(
-                    "   leftOf: x = \(x) = \(anchorPos.x) - \(anchorSize.width/2) - \(childSize.width/2) - \(constraint.spacing) - \(anchorLeftMargin)"
+                    "   leftOf: x = \(x) = \(anchorPos.x) - \(anchorSize.width/2) - \(childSize.width/2) - \(anchorLeftMargin)"
                 )
             case .rightOf:
                 // Position to the right of anchor - child's left touches anchor's right
@@ -386,7 +386,7 @@ public struct RelativePositionContainer: View {
                 let anchorRightMargin = anchorChild?.margins.trailing ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x + anchorSize.width / 2 + childSize.width / 2
-                    + constraint.spacing + anchorRightMargin + child.margins.leading
+                    + anchorRightMargin + child.margins.leading
                 // y position only uses anchor y if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentTop, .parentBottom, .parentCenterVertical, .alignTop, .alignBottom, .above, .below].contains($0.type) 
@@ -394,31 +394,31 @@ public struct RelativePositionContainer: View {
                     y = anchorPos.y
                 }
                 Logger.debug(
-                    "   rightOf: x = \(x) = \(anchorPos.x) + \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing) + \(anchorRightMargin)"
+                    "   rightOf: x = \(x) = \(anchorPos.x) + \(anchorSize.width/2) + \(childSize.width/2) + \(anchorRightMargin)"
                 )
             case .parentTop:
                 // Align to parent top with margin and parent padding
                 y =
                     -containerSize.height / 2 + childSize.height / 2
-                    + constraint.spacing + child.margins.top + parentPadding.top
+                    + child.margins.top + parentPadding.top
                 Logger.debug("   parentTop: y = \(y)")
             case .parentBottom:
                 // Align to parent bottom with margin and parent padding
                 y =
                     containerSize.height / 2 - childSize.height / 2
-                    - constraint.spacing - child.margins.bottom - parentPadding.bottom
+                    - child.margins.bottom - parentPadding.bottom
                 Logger.debug("   parentBottom: y = \(y)")
             case .parentLeft:
                 // Align to parent left with margin and parent padding
                 x =
                     -containerSize.width / 2 + childSize.width / 2
-                    + constraint.spacing + child.margins.leading + parentPadding.leading
+                    + child.margins.leading + parentPadding.leading
                 Logger.debug("   parentLeft: x = \(x)")
             case .parentRight:
                 // Align to parent right with margin and parent padding
                 x =
                     containerSize.width / 2 - childSize.width / 2
-                    - constraint.spacing - child.margins.trailing - parentPadding.trailing
+                    - child.margins.trailing - parentPadding.trailing
                 Logger.debug("   parentRight: x = \(x)")
             case .parentCenterHorizontal:
                 // Center horizontally in parent
@@ -466,13 +466,13 @@ public struct RelativePositionContainer: View {
                     if let anchorChild = anchorChild {
                         let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        leftX = anchorPos.x + anchorSize.width / 2 + anchorChild.margins.trailing + child.margins.leading + constraint.spacing
+                        leftX = anchorPos.x + anchorSize.width / 2 + anchorChild.margins.trailing + child.margins.leading
                     }
                 case .leftOf:
                     if let anchorChild = anchorChild {
                         let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        rightX = anchorPos.x - anchorSize.width / 2 - anchorChild.margins.leading - child.margins.trailing - constraint.spacing
+                        rightX = anchorPos.x - anchorSize.width / 2 - anchorChild.margins.leading - child.margins.trailing
                     }
                 case .parentTop:
                     topY = -containerSize.height / 2 + child.margins.top + parentPadding.top
@@ -494,13 +494,13 @@ public struct RelativePositionContainer: View {
                     if let anchorChild = anchorChild {
                         let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        topY = anchorPos.y + anchorSize.height / 2 + anchorChild.margins.bottom + child.margins.top + constraint.spacing
+                        topY = anchorPos.y + anchorSize.height / 2 + anchorChild.margins.bottom + child.margins.top
                     }
                 case .above:
                     if let anchorChild = anchorChild {
                         let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        bottomY = anchorPos.y - anchorSize.height / 2 - anchorChild.margins.top - child.margins.bottom - constraint.spacing
+                        bottomY = anchorPos.y - anchorSize.height / 2 - anchorChild.margins.top - child.margins.bottom
                     }
                 default:
                     break
@@ -652,8 +652,7 @@ extension RelativeChildConfig {
             constraints.append(
                 RelativePositionConstraint(
                     type: .parentCenter,
-                    targetId: "",
-                    spacing: 0
+                    targetId: ""
                 )
             )
         } else {
@@ -662,16 +661,14 @@ extension RelativeChildConfig {
                 constraints.append(
                     RelativePositionConstraint(
                         type: .parentTop,
-                        targetId: "",
-                        spacing: 0
+                        targetId: ""
                     )
                 )
             } else if dict["alignBottom"] as? Bool == true {
                 constraints.append(
                     RelativePositionConstraint(
                         type: .parentBottom,
-                        targetId: "",
-                        spacing: 0
+                        targetId: ""
                     )
                 )
             }
@@ -680,16 +677,14 @@ extension RelativeChildConfig {
                 constraints.append(
                     RelativePositionConstraint(
                         type: .parentLeft,
-                        targetId: "",
-                        spacing: 0
+                        targetId: ""
                     )
                 )
             } else if dict["alignRight"] as? Bool == true {
                 constraints.append(
                     RelativePositionConstraint(
                         type: .parentRight,
-                        targetId: "",
-                        spacing: 0
+                        targetId: ""
                     )
                 )
             }
@@ -698,8 +693,7 @@ extension RelativeChildConfig {
                 constraints.append(
                     RelativePositionConstraint(
                         type: .parentCenterHorizontal,
-                        targetId: "",
-                        spacing: 0
+                        targetId: ""
                     )
                 )
             }
@@ -708,8 +702,7 @@ extension RelativeChildConfig {
                 constraints.append(
                     RelativePositionConstraint(
                         type: .parentCenterVertical,
-                        targetId: "",
-                        spacing: 0
+                        targetId: ""
                     )
                 )
             }
@@ -730,12 +723,10 @@ extension RelativeChildConfig {
 
         for (key, type) in constraintMappings {
             if let targetId = dict[key] as? String {
-                let spacing = CGFloat(dict["spacing"] as? Double ?? 0)
                 constraints.append(
                     RelativePositionConstraint(
                         type: type,
-                        targetId: targetId,
-                        spacing: spacing
+                        targetId: targetId
                     )
                 )
             }

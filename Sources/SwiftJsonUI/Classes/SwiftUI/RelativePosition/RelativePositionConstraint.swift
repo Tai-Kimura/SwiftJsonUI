@@ -23,12 +23,10 @@ public struct RelativePositionConstraint: Codable {
     
     public let type: ConstraintType
     public let targetId: String
-    public let spacing: CGFloat
     
-    public init(type: ConstraintType, targetId: String, spacing: CGFloat = 0) {
+    public init(type: ConstraintType, targetId: String) {
         self.type = type
         self.targetId = targetId
-        self.spacing = spacing
     }
 }
 
