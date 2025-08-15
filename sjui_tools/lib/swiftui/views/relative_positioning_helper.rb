@@ -145,6 +145,41 @@ module SjuiTools
             alignment = get_zstack_alignment
           end
           
+          # 親のpaddingを取得
+          parent_padding_top = 0
+          parent_padding_right = 0
+          parent_padding_bottom = 0
+          parent_padding_left = 0
+          
+          # paddingまたはpaddingsプロパティの処理
+          if @component['padding'] || @component['paddings']
+            padding = @component['padding'] || @component['paddings']
+            if padding.is_a?(Array)
+              case padding.length
+              when 1
+                parent_padding_top = parent_padding_right = parent_padding_bottom = parent_padding_left = padding[0].to_i
+              when 2
+                # 縦横のパディング
+                parent_padding_top = parent_padding_bottom = padding[0].to_i
+                parent_padding_left = parent_padding_right = padding[1].to_i
+              when 4
+                # 上、右、下、左の順
+                parent_padding_top = padding[0].to_i
+                parent_padding_right = padding[1].to_i
+                parent_padding_bottom = padding[2].to_i
+                parent_padding_left = padding[3].to_i
+              end
+            else
+              parent_padding_top = parent_padding_right = parent_padding_bottom = parent_padding_left = padding.to_i
+            end
+          else
+            # 個別のパディング設定
+            parent_padding_top = (@component['topPadding'] || @component['paddingTop'] || 0).to_i
+            parent_padding_right = (@component['rightPadding'] || @component['paddingRight'] || 0).to_i
+            parent_padding_bottom = (@component['bottomPadding'] || @component['paddingBottom'] || 0).to_i
+            parent_padding_left = (@component['leftPadding'] || @component['paddingLeft'] || 0).to_i
+          end
+          
           add_line "RelativePositionContainer("
           indent do
             add_line "children: ["
@@ -342,10 +377,13 @@ module SjuiTools
             # 背景色
             if @component['background']
               bg_color = hex_to_swiftui_color(@component['background'])
-              add_line "backgroundColor: #{bg_color}"
+              add_line "backgroundColor: #{bg_color},"
             else
-              add_line "backgroundColor: nil"
+              add_line "backgroundColor: nil,"
             end
+            
+            # 親のpadding
+            add_line "parentPadding: EdgeInsets(top: #{parent_padding_top}, leading: #{parent_padding_left}, bottom: #{parent_padding_bottom}, trailing: #{parent_padding_right})"
           end
           add_line ")"
         end
