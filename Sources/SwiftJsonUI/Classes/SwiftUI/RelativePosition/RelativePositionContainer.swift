@@ -106,12 +106,7 @@ public struct RelativePositionContainer: View {
         
         // Process parent-only constrained views first
         for child in parentOnlyViews {
-            let childSize = viewSizes[child.id] ?? .zero
-            calculateChildPosition(
-                child: child,
-                anchorChild: nil,
-                anchorSize: .zero
-            )
+            calculateChildPosition(child: child)
             processedViews.insert(child.id)
             Logger.debug("✅ Processed parent-constrained view: \(child.id)")
         }
@@ -141,28 +136,7 @@ public struct RelativePositionContainer: View {
                 }
                 
                 if canProcess {
-                    // Find the target view if there is one
-                    var targetChild: RelativeChildConfig? = nil
-                    var targetSize = CGSize.zero
-                    
-                    // Find the first non-parent constraint to get the target
-                    for constraint in child.constraints {
-                        if ![.parentTop, .parentBottom, .parentLeft, .parentRight,
-                             .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
-                            .contains(constraint.type) && !constraint.targetId.isEmpty {
-                            targetChild = children.first { $0.id == constraint.targetId }
-                            if let target = targetChild {
-                                targetSize = viewSizes[target.id] ?? CGSize(width: 100, height: 50)
-                            }
-                            break
-                        }
-                    }
-                    
-                    calculateChildPosition(
-                        child: child,
-                        anchorChild: targetChild,
-                        anchorSize: targetSize
-                    )
+                    calculateChildPosition(child: child)
                     processedViews.insert(child.id)
                     processedInThisIteration.append(child)
                     Logger.debug("✅ Processed view with dependencies: \(child.id)")
@@ -179,11 +153,7 @@ public struct RelativePositionContainer: View {
                 Logger.debug("⚠️ Circular dependency detected or unresolvable constraints")
                 // Process remaining views anyway
                 for child in remainingChildren {
-                    calculateChildPosition(
-                        child: child,
-                        anchorChild: nil,
-                        anchorSize: .zero
-                    )
+                    calculateChildPosition(child: child)
                 }
                 break
             }
@@ -196,9 +166,7 @@ public struct RelativePositionContainer: View {
     }
 
     private func calculateChildPosition(
-        child: RelativeChildConfig,
-        anchorChild: RelativeChildConfig?,
-        anchorSize: CGSize
+        child: RelativeChildConfig
     ) {
         var childSize = viewSizes[child.id] ?? .zero
         
@@ -288,12 +256,17 @@ public struct RelativePositionContainer: View {
             ]
             .contains(constraint.type)
 
-            if !isParentConstraint {
-                guard let anchorChild = anchorChild,
-                    constraint.targetId == anchorChild.id
-                else {
+            // Find the target view for this specific constraint
+            var anchorChild: RelativeChildConfig? = nil
+            var anchorSize = CGSize.zero
+            
+            if !isParentConstraint && !constraint.targetId.isEmpty {
+                anchorChild = children.first { $0.id == constraint.targetId }
+                if let anchor = anchorChild {
+                    anchorSize = viewSizes[anchor.id] ?? .zero
+                } else {
                     Logger.debug(
-                        "   ⚠️ Constraint target \(constraint.targetId) is not anchor or no anchor exists"
+                        "   ⚠️ Constraint target \(constraint.targetId) not found"
                     )
                     continue
                 }
@@ -431,56 +404,56 @@ public struct RelativePositionContainer: View {
                 case .parentRight:
                     rightX = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
                 case .alignLeft:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
                         leftX = anchorPos.x - anchorSize.width / 2 + child.margins.leading
                     }
                 case .alignRight:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
                         rightX = anchorPos.x + anchorSize.width / 2 - child.margins.trailing
                     }
                 case .rightOf:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        leftX = anchorPos.x + anchorSize.width / 2 + anchorChild.margins.trailing + child.margins.leading
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
+                        leftX = anchorPos.x + anchorSize.width / 2 + targetView.margins.trailing + child.margins.leading
                     }
                 case .leftOf:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        rightX = anchorPos.x - anchorSize.width / 2 - anchorChild.margins.leading - child.margins.trailing
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
+                        rightX = anchorPos.x - anchorSize.width / 2 - targetView.margins.leading - child.margins.trailing
                     }
                 case .parentTop:
                     topY = -containerSize.height / 2 + child.margins.top + parentPadding.top
                 case .parentBottom:
                     bottomY = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
                 case .alignTop:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
                         topY = anchorPos.y - anchorSize.height / 2 + child.margins.top
                     }
                 case .alignBottom:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
                         bottomY = anchorPos.y + anchorSize.height / 2 - child.margins.bottom
                     }
                 case .below:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        topY = anchorPos.y + anchorSize.height / 2 + anchorChild.margins.bottom + child.margins.top
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
+                        topY = anchorPos.y + anchorSize.height / 2 + targetView.margins.bottom + child.margins.top
                     }
                 case .above:
-                    if let anchorChild = anchorChild {
-                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                        bottomY = anchorPos.y - anchorSize.height / 2 - anchorChild.margins.top - child.margins.bottom
+                    if let targetView = children.first(where: { $0.id == constraint.targetId }) {
+                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[targetView.id] ?? .zero
+                        bottomY = anchorPos.y - anchorSize.height / 2 - targetView.margins.top - child.margins.bottom
                     }
                 default:
                     break
@@ -512,16 +485,16 @@ public struct RelativePositionContainer: View {
             case .parentLeft:
                 leftEdge = -containerSize.width / 2 + child.margins.leading + parentPadding.leading
             case .alignLeft:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                if let targetView = children.first(where: { $0.id == leftConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
                     leftEdge = anchorPos.x - anchorSize.width / 2 + child.margins.leading
                 }
             case .rightOf:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                    leftEdge = anchorPos.x + anchorSize.width / 2 + anchorChild.margins.trailing + child.margins.leading
+                if let targetView = children.first(where: { $0.id == leftConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
+                    leftEdge = anchorPos.x + anchorSize.width / 2 + targetView.margins.trailing + child.margins.leading
                 }
             default:
                 break
@@ -531,16 +504,16 @@ public struct RelativePositionContainer: View {
             case .parentRight:
                 rightEdge = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
             case .alignRight:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                if let targetView = children.first(where: { $0.id == rightConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
                     rightEdge = anchorPos.x + anchorSize.width / 2 - child.margins.trailing
                 }
             case .leftOf:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                    rightEdge = anchorPos.x - anchorSize.width / 2 - anchorChild.margins.leading - child.margins.trailing
+                if let targetView = children.first(where: { $0.id == rightConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
+                    rightEdge = anchorPos.x - anchorSize.width / 2 - targetView.margins.leading - child.margins.trailing
                 }
             default:
                 break
@@ -568,16 +541,16 @@ public struct RelativePositionContainer: View {
             case .parentTop:
                 topEdge = -containerSize.height / 2 + child.margins.top + parentPadding.top
             case .alignTop:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                if let targetView = children.first(where: { $0.id == topConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
                     topEdge = anchorPos.y - anchorSize.height / 2 + child.margins.top
                 }
             case .below:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                    topEdge = anchorPos.y + anchorSize.height / 2 + anchorChild.margins.bottom + child.margins.top
+                if let targetView = children.first(where: { $0.id == topConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
+                    topEdge = anchorPos.y + anchorSize.height / 2 + targetView.margins.bottom + child.margins.top
                 }
             default:
                 break
@@ -587,16 +560,16 @@ public struct RelativePositionContainer: View {
             case .parentBottom:
                 bottomEdge = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
             case .alignBottom:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                if let targetView = children.first(where: { $0.id == bottomConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
                     bottomEdge = anchorPos.y + anchorSize.height / 2 - child.margins.bottom
                 }
             case .above:
-                if let anchorChild = anchorChild {
-                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
-                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
-                    bottomEdge = anchorPos.y - anchorSize.height / 2 - anchorChild.margins.top - child.margins.bottom
+                if let targetView = children.first(where: { $0.id == bottomConstraint.targetId }) {
+                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[targetView.id] ?? .zero
+                    bottomEdge = anchorPos.y - anchorSize.height / 2 - targetView.margins.top - child.margins.bottom
                 }
             default:
                 break
