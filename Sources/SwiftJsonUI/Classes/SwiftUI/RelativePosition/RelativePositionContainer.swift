@@ -277,37 +277,25 @@ public struct RelativePositionContainer: View {
                 // Align top edges - child's top aligns with anchor's top
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y - anchorSize.height / 2 + childSize.height / 2
-                // For vertical-only alignment, preserve x from anchorPos if not already set
-                if x == 0 && alignment == .center {
-                    x = anchorPos.x
-                }
+                // x position remains from default alignment calculation, don't change it
                 Logger.debug("   alignTop: y = \(y), x = \(x)")
             case .alignBottom:
                 // Align bottom edges - child's bottom aligns with anchor's bottom
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y + anchorSize.height / 2 - childSize.height / 2
-                // For vertical-only alignment, preserve x from anchorPos if not already set
-                if x == 0 && alignment == .center {
-                    x = anchorPos.x
-                }
+                // x position remains from default alignment calculation, don't change it
                 Logger.debug("   alignBottom: y = \(y), x = \(x)")
             case .alignLeft:
                 // Align left edges - child's left aligns with anchor's left
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x - anchorSize.width / 2 + childSize.width / 2
-                // For horizontal-only alignment, preserve y from anchorPos if not already set
-                if y == 0 && alignment == .center {
-                    y = anchorPos.y
-                }
+                // y position remains from default alignment calculation, don't change it
                 Logger.debug("   alignLeft: x = \(x), y = \(y)")
             case .alignRight:
                 // Align right edges - child's right aligns with anchor's right
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x + anchorSize.width / 2 - childSize.width / 2
-                // For horizontal-only alignment, preserve y from anchorPos if not already set
-                if y == 0 && alignment == .center {
-                    y = anchorPos.y
-                }
+                // y position remains from default alignment calculation, don't change it
                 Logger.debug("   alignRight: x = \(x), y = \(y)")
             case .above:
                 // Position above anchor - child's bottom touches anchor's top (considering anchor's top margin)
@@ -315,6 +303,12 @@ public struct RelativePositionContainer: View {
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y - anchorSize.height / 2 - childSize.height / 2
                     - constraint.spacing - anchorTopMargin
+                // x position only uses anchor x if not already set by other constraints
+                if child.constraints.count == 1 || !child.constraints.contains(where: { 
+                    [.parentLeft, .parentRight, .parentCenterHorizontal, .alignLeft, .alignRight, .leftOf, .rightOf].contains($0.type) 
+                }) {
+                    x = anchorPos.x
+                }
                 Logger.debug(
                     "   above: y = \(y) = \(anchorPos.y) - \(anchorSize.height/2) - \(childSize.height/2) - \(constraint.spacing) - \(anchorTopMargin)"
                 )
@@ -324,6 +318,12 @@ public struct RelativePositionContainer: View {
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y + anchorSize.height / 2 + childSize.height / 2
                     + constraint.spacing + anchorBottomMargin
+                // x position only uses anchor x if not already set by other constraints
+                if child.constraints.count == 1 || !child.constraints.contains(where: { 
+                    [.parentLeft, .parentRight, .parentCenterHorizontal, .alignLeft, .alignRight, .leftOf, .rightOf].contains($0.type) 
+                }) {
+                    x = anchorPos.x
+                }
                 Logger.debug(
                     "   below: y = \(y) = \(anchorPos.y) + \(anchorSize.height/2) + \(childSize.height/2) + \(constraint.spacing) + \(anchorBottomMargin)"
                 )
@@ -333,6 +333,12 @@ public struct RelativePositionContainer: View {
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x - anchorSize.width / 2 - childSize.width / 2
                     - constraint.spacing - anchorLeftMargin
+                // y position only uses anchor y if not already set by other constraints
+                if child.constraints.count == 1 || !child.constraints.contains(where: { 
+                    [.parentTop, .parentBottom, .parentCenterVertical, .alignTop, .alignBottom, .above, .below].contains($0.type) 
+                }) {
+                    y = anchorPos.y
+                }
                 Logger.debug(
                     "   leftOf: x = \(x) = \(anchorPos.x) - \(anchorSize.width/2) - \(childSize.width/2) - \(constraint.spacing) - \(anchorLeftMargin)"
                 )
@@ -342,6 +348,12 @@ public struct RelativePositionContainer: View {
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x + anchorSize.width / 2 + childSize.width / 2
                     + constraint.spacing + anchorRightMargin
+                // y position only uses anchor y if not already set by other constraints
+                if child.constraints.count == 1 || !child.constraints.contains(where: { 
+                    [.parentTop, .parentBottom, .parentCenterVertical, .alignTop, .alignBottom, .above, .below].contains($0.type) 
+                }) {
+                    y = anchorPos.y
+                }
                 Logger.debug(
                     "   rightOf: x = \(x) = \(anchorPos.x) + \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing) + \(anchorRightMargin)"
                 )
