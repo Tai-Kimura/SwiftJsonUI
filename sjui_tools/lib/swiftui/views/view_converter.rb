@@ -249,7 +249,12 @@ module SjuiTools
           end
           
           # 共通のモディファイアを適用
-          apply_modifiers
+          # 相対配置の場合、paddingはRelativePositionContainer内部で処理されるのでスキップ
+          if @needs_relative_positioning
+            apply_modifiers_without_padding
+          else
+            apply_modifiers
+          end
           
           # グラデーション
           if @component['gradient']
