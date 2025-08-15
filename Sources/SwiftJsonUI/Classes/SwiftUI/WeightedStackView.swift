@@ -28,6 +28,37 @@ private extension View {
     }
 }
 
+// MARK: - Helper functions to convert alignment
+private func convertToAlignment(_ verticalAlignment: VerticalAlignment) -> Alignment {
+    switch verticalAlignment {
+    case .top:
+        return .top
+    case .center:
+        return .center
+    case .bottom:
+        return .bottom
+    case .firstTextBaseline:
+        return .top
+    case .lastTextBaseline:
+        return .bottom
+    default:
+        return .center
+    }
+}
+
+private func convertToAlignment(_ horizontalAlignment: HorizontalAlignment) -> Alignment {
+    switch horizontalAlignment {
+    case .leading:
+        return .leading
+    case .center:
+        return .center
+    case .trailing:
+        return .trailing
+    default:
+        return .center
+    }
+}
+
 // MARK: - Weighted Container for HStack
 public struct WeightedHStack: View {
     private struct ChildInfo {
@@ -68,7 +99,8 @@ public struct WeightedHStack: View {
                         Color.clear
                             .frame(width: calculateWeightedWidth(for: index, totalWidth: geometry.size.width))
                             .overlay(
-                                child.view
+                                child.view,
+                                alignment: convertToAlignment(alignment)
                             )
                         .background(
                             GeometryReader { geo in
@@ -216,7 +248,8 @@ public struct WeightedVStack: View {
                         Color.clear
                             .frame(height: calculateWeightedHeight(for: index, totalHeight: geometry.size.height))
                             .overlay(
-                                child.view
+                                child.view,
+                                alignment: convertToAlignment(alignment)
                             )
                         .background(
                                 GeometryReader { geo in
