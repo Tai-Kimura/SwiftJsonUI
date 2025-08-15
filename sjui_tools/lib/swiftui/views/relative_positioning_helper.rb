@@ -206,6 +206,21 @@ module SjuiTools
                         child_without_padding.delete('padding')
                         child_without_padding.delete('background')
                         
+                        # Remove margin properties (they're handled separately by RelativePositionContainer)
+                        child_without_padding.delete('leftMargin')
+                        child_without_padding.delete('rightMargin')
+                        child_without_padding.delete('topMargin')
+                        child_without_padding.delete('bottomMargin')
+                        child_without_padding.delete('marginLeft')
+                        child_without_padding.delete('marginRight')
+                        child_without_padding.delete('marginTop')
+                        child_without_padding.delete('marginBottom')
+                        child_without_padding.delete('margins')
+                        child_without_padding.delete('startMargin')
+                        child_without_padding.delete('endMargin')
+                        child_without_padding.delete('marginStart')
+                        child_without_padding.delete('marginEnd')
+                        
                         # Generate the view without padding and background
                         child_converter = @converter_factory.create_converter(child_without_padding, @indent_level + 3, @action_manager, @converter_factory, @view_registry)
                         child_code = child_converter.convert

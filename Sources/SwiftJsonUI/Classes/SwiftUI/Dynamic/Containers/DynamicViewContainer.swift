@@ -55,7 +55,7 @@ public struct DynamicViewContainer: View {
             // 2. 子要素に競合するalignmentがある場合（orientationに関わらず）
             if needsRelativePositioning && (orientation == nil || hasConflictingAlignments) {
                 // 相対配置用のZStack
-                RelativePositioningContainer(children: children, viewModel: viewModel, viewId: viewId)
+                RelativePositioningContainer(children: children, parentComponent: component, viewModel: viewModel, viewId: viewId)
             } else if hasWeights && (orientation == "horizontal" || orientation == "vertical") {
                 // Weight対応のStack
                 WeightedStackContainer(
