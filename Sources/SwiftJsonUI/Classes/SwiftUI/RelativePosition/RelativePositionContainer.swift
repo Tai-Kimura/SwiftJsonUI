@@ -275,71 +275,75 @@ public struct RelativePositionContainer: View {
             switch constraint.type {
             case .alignTop:
                 // Align top edges - child's top aligns with anchor's top
-                // Child center should be at: anchor_top + child_height/2
-                y = -anchorSize.height / 2 + childSize.height / 2
-                // For vertical-only alignment, default to left edge
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                y = anchorPos.y - anchorSize.height / 2 + childSize.height / 2
+                // For vertical-only alignment, preserve x from anchorPos if not already set
                 if x == 0 && alignment == .center {
-                    x = -containerSize.width / 2 + childSize.width / 2
+                    x = anchorPos.x
                 }
                 Logger.debug("   alignTop: y = \(y), x = \(x)")
             case .alignBottom:
                 // Align bottom edges - child's bottom aligns with anchor's bottom
-                // Child center should be at: anchor_bottom - child_height/2
-                y = anchorSize.height / 2 - childSize.height / 2
-                // For vertical-only alignment, default to left edge
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                y = anchorPos.y + anchorSize.height / 2 - childSize.height / 2
+                // For vertical-only alignment, preserve x from anchorPos if not already set
                 if x == 0 && alignment == .center {
-                    x = -containerSize.width / 2 + childSize.width / 2
+                    x = anchorPos.x
                 }
                 Logger.debug("   alignBottom: y = \(y), x = \(x)")
             case .alignLeft:
                 // Align left edges - child's left aligns with anchor's left
-                // Child center should be at: anchor_left + child_width/2
-                x = -anchorSize.width / 2 + childSize.width / 2
-                // For horizontal-only alignment, default to top edge
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                x = anchorPos.x - anchorSize.width / 2 + childSize.width / 2
+                // For horizontal-only alignment, preserve y from anchorPos if not already set
                 if y == 0 && alignment == .center {
-                    y = -containerSize.height / 2 + childSize.height / 2
+                    y = anchorPos.y
                 }
                 Logger.debug("   alignLeft: x = \(x), y = \(y)")
             case .alignRight:
                 // Align right edges - child's right aligns with anchor's right
-                // Child center should be at: anchor_right - child_width/2
-                x = anchorSize.width / 2 - childSize.width / 2
-                // For horizontal-only alignment, default to top edge
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                x = anchorPos.x + anchorSize.width / 2 - childSize.width / 2
+                // For horizontal-only alignment, preserve y from anchorPos if not already set
                 if y == 0 && alignment == .center {
-                    y = -containerSize.height / 2 + childSize.height / 2
+                    y = anchorPos.y
                 }
                 Logger.debug("   alignRight: x = \(x), y = \(y)")
             case .above:
-                // Position above anchor - child's bottom touches anchor's top
-                y =
-                    -anchorSize.height / 2 - childSize.height / 2
-                    - constraint.spacing
+                // Position above anchor - child's bottom touches anchor's top (considering anchor's top margin)
+                let anchorTopMargin = anchorChild?.margins.top ?? 0
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                y = anchorPos.y - anchorSize.height / 2 - childSize.height / 2
+                    - constraint.spacing - anchorTopMargin
                 Logger.debug(
-                    "   above: y = \(y) = -\(anchorSize.height/2) - \(childSize.height/2) - \(constraint.spacing)"
+                    "   above: y = \(y) = \(anchorPos.y) - \(anchorSize.height/2) - \(childSize.height/2) - \(constraint.spacing) - \(anchorTopMargin)"
                 )
             case .below:
-                // Position below anchor - child's top touches anchor's bottom
-                y =
-                    anchorSize.height / 2 + childSize.height / 2
-                    + constraint.spacing
+                // Position below anchor - child's top touches anchor's bottom (considering anchor's bottom margin)
+                let anchorBottomMargin = anchorChild?.margins.bottom ?? 0
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                y = anchorPos.y + anchorSize.height / 2 + childSize.height / 2
+                    + constraint.spacing + anchorBottomMargin
                 Logger.debug(
-                    "   below: y = \(y) = \(anchorSize.height/2) + \(childSize.height/2) + \(constraint.spacing)"
+                    "   below: y = \(y) = \(anchorPos.y) + \(anchorSize.height/2) + \(childSize.height/2) + \(constraint.spacing) + \(anchorBottomMargin)"
                 )
             case .leftOf:
-                // Position to the left of anchor - child's right touches anchor's left
-                x =
-                    -anchorSize.width / 2 - childSize.width / 2
-                    - constraint.spacing
+                // Position to the left of anchor - child's right touches anchor's left (considering anchor's left margin)
+                let anchorLeftMargin = anchorChild?.margins.leading ?? 0
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                x = anchorPos.x - anchorSize.width / 2 - childSize.width / 2
+                    - constraint.spacing - anchorLeftMargin
                 Logger.debug(
-                    "   leftOf: x = \(x) = -\(anchorSize.width/2) - \(childSize.width/2) - \(constraint.spacing)"
+                    "   leftOf: x = \(x) = \(anchorPos.x) - \(anchorSize.width/2) - \(childSize.width/2) - \(constraint.spacing) - \(anchorLeftMargin)"
                 )
             case .rightOf:
-                // Position to the right of anchor - child's left touches anchor's right
-                x =
-                    anchorSize.width / 2 + childSize.width / 2
-                    + constraint.spacing
+                // Position to the right of anchor - child's left touches anchor's right (considering anchor's right margin)
+                let anchorRightMargin = anchorChild?.margins.trailing ?? 0
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                x = anchorPos.x + anchorSize.width / 2 + childSize.width / 2
+                    + constraint.spacing + anchorRightMargin
                 Logger.debug(
-                    "   rightOf: x = \(x) = \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing)"
+                    "   rightOf: x = \(x) = \(anchorPos.x) + \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing) + \(anchorRightMargin)"
                 )
             case .parentTop:
                 // Align to parent top with margin
