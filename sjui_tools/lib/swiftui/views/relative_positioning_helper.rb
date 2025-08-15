@@ -145,33 +145,6 @@ module SjuiTools
             alignment = get_zstack_alignment
           end
           
-          # 親のpaddingを取得
-          parent_padding = []
-          if @component['padding'] || @component['paddings']
-            padding = @component['padding'] || @component['paddings']
-            if padding.is_a?(Array)
-              case padding.length
-              when 1
-                parent_padding = [padding[0], padding[0], padding[0], padding[0]]
-              when 2
-                # 縦横のパディング
-                parent_padding = [padding[0], padding[1], padding[0], padding[1]]
-              when 4
-                # 上、右、下、左の順
-                parent_padding = padding
-              end
-            else
-              parent_padding = [padding, padding, padding, padding]
-            end
-          else
-            # 個別のパディング設定
-            top_pad = @component['topPadding'] || @component['paddingTop'] || 0
-            right_pad = @component['rightPadding'] || @component['paddingRight'] || 0
-            bottom_pad = @component['bottomPadding'] || @component['paddingBottom'] || 0
-            left_pad = @component['leftPadding'] || @component['paddingLeft'] || 0
-            parent_padding = [top_pad, right_pad, bottom_pad, left_pad]
-          end
-          
           add_line "RelativePositionContainer("
           indent do
             add_line "children: ["
@@ -346,46 +319,11 @@ module SjuiTools
                     add_line "],"
                     
                     # Margins
-                    margin_top = 0
-                    margin_right = 0
-                    margin_bottom = 0
-                    margin_left = 0
-                    
-                    # marginsプロパティの処理
-                    if child['margins']
-                      margins_value = child['margins']
-                      if margins_value.is_a?(Array)
-                        case margins_value.length
-                        when 1
-                          margin_top = margin_right = margin_bottom = margin_left = margins_value[0].to_i
-                        when 2
-                          margin_top = margin_bottom = margins_value[0].to_i
-                          margin_left = margin_right = margins_value[1].to_i
-                        when 4
-                          margin_top = margins_value[0].to_i
-                          margin_right = margins_value[1].to_i
-                          margin_bottom = margins_value[2].to_i
-                          margin_left = margins_value[3].to_i
-                        end
-                      else
-                        margin_top = margin_right = margin_bottom = margin_left = margins_value.to_i
-                      end
-                    elsif child['margin']
-                      margin_value = child['margin'].to_i
-                      margin_top = margin_right = margin_bottom = margin_left = margin_value
-                    else
-                      # 個別のマージン設定
-                      margin_top = (child['topMargin'] || child['marginTop'] || 0).to_i
-                      margin_right = (child['rightMargin'] || child['marginRight'] || child['endMargin'] || child['marginEnd'] || 0).to_i
-                      margin_bottom = (child['bottomMargin'] || child['marginBottom'] || 0).to_i
-                      margin_left = (child['leftMargin'] || child['marginLeft'] || child['startMargin'] || child['marginStart'] || 0).to_i
-                    end
-                    
                     margins = []
-                    margins << "top: #{margin_top}"
-                    margins << "leading: #{margin_left}"
-                    margins << "bottom: #{margin_bottom}"
-                    margins << "trailing: #{margin_right}"
+                    margins << "top: #{child['topMargin'] || child['marginTop'] || 0}"
+                    margins << "leading: #{child['leftMargin'] || child['marginLeft'] || child['startMargin'] || child['marginStart'] || 0}"
+                    margins << "bottom: #{child['bottomMargin'] || child['marginBottom'] || 0}"
+                    margins << "trailing: #{child['rightMargin'] || child['marginRight'] || child['endMargin'] || child['marginEnd'] || 0}"
                     
                     # デフォルト値でない場合のみマージンを設定
                     if margins.any? { |m| !m.end_with?(' 0') }
@@ -404,13 +342,10 @@ module SjuiTools
             # 背景色
             if @component['background']
               bg_color = hex_to_swiftui_color(@component['background'])
-              add_line "backgroundColor: #{bg_color},"
+              add_line "backgroundColor: #{bg_color}"
             else
-              add_line "backgroundColor: nil,"
+              add_line "backgroundColor: nil"
             end
-            
-            # 親のpadding
-            add_line "parentPadding: EdgeInsets(top: #{parent_padding[0].to_i}, leading: #{parent_padding[3].to_i}, bottom: #{parent_padding[2].to_i}, trailing: #{parent_padding[1].to_i})"
           end
           add_line ")"
         end
