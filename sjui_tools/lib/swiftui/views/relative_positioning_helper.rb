@@ -185,7 +185,23 @@ module SjuiTools
                         add_modifier_line ".background(#{color})"
                       else
                         # Normal conversion for views without padding or without background
-                        child_converter = @converter_factory.create_converter(child, @indent_level + 2, @action_manager, @converter_factory, @view_registry)
+                        # Remove margin properties before conversion (they're handled separately by RelativePositionContainer)
+                        child_without_margins = child.dup
+                        child_without_margins.delete('leftMargin')
+                        child_without_margins.delete('rightMargin')
+                        child_without_margins.delete('topMargin')
+                        child_without_margins.delete('bottomMargin')
+                        child_without_margins.delete('marginLeft')
+                        child_without_margins.delete('marginRight')
+                        child_without_margins.delete('marginTop')
+                        child_without_margins.delete('marginBottom')
+                        child_without_margins.delete('margins')
+                        child_without_margins.delete('startMargin')
+                        child_without_margins.delete('endMargin')
+                        child_without_margins.delete('marginStart')
+                        child_without_margins.delete('marginEnd')
+                        
+                        child_converter = @converter_factory.create_converter(child_without_margins, @indent_level + 2, @action_manager, @converter_factory, @view_registry)
                         child_code = child_converter.convert
                         child_lines = child_code.split("\n")
                         child_lines.each do |line|
