@@ -106,7 +106,7 @@ public struct RelativePositionContainer: View {
         
         // Process parent-only constrained views first
         for child in parentOnlyViews {
-            let childSize = viewSizes[child.id] ?? CGSize(width: 100, height: 50)
+            let childSize = viewSizes[child.id] ?? .zero
             calculateChildPosition(
                 child: child,
                 anchorChild: nil,
@@ -200,7 +200,7 @@ public struct RelativePositionContainer: View {
         anchorChild: RelativeChildConfig?,
         anchorSize: CGSize
     ) {
-        var childSize = viewSizes[child.id] ?? CGSize(width: 100, height: 30)
+        var childSize = viewSizes[child.id] ?? .zero
         
         // Check if size should be dynamic based on constraints
         let hasLeftConstraint = child.constraints.contains { 
