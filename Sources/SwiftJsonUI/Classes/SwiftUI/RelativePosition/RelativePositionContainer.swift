@@ -5,6 +5,7 @@ public struct RelativePositionContainer: View {
     public let children: [RelativeChildConfig]
     public let alignment: Alignment
     public let backgroundColor: Color?
+    public let parentPadding: EdgeInsets
 
     @State private var viewSizes: [String: CGSize] = [:]
     @State private var viewPositions: [String: CGPoint] = [:]
@@ -14,11 +15,13 @@ public struct RelativePositionContainer: View {
     public init(
         children: [RelativeChildConfig],
         alignment: Alignment = .topLeading,
-        backgroundColor: Color? = nil
+        backgroundColor: Color? = nil,
+        parentPadding: EdgeInsets = .init()
     ) {
         self.children = children
         self.alignment = alignment
         self.backgroundColor = backgroundColor
+        self.parentPadding = parentPadding
     }
 
     public var body: some View {
@@ -197,7 +200,35 @@ public struct RelativePositionContainer: View {
         anchorChild: RelativeChildConfig?,
         anchorSize: CGSize
     ) {
-        let childSize = viewSizes[child.id] ?? CGSize(width: 100, height: 30)
+        var childSize = viewSizes[child.id] ?? CGSize(width: 100, height: 30)
+        
+        // Check if size should be dynamic based on constraints
+        let hasLeftConstraint = child.constraints.contains { 
+            [.parentLeft, .alignLeft, .rightOf].contains($0.type) 
+        }
+        let hasRightConstraint = child.constraints.contains { 
+            [.parentRight, .alignRight, .leftOf].contains($0.type) 
+        }
+        let hasTopConstraint = child.constraints.contains { 
+            [.parentTop, .alignTop, .below].contains($0.type) 
+        }
+        let hasBottomConstraint = child.constraints.contains { 
+            [.parentBottom, .alignBottom, .above].contains($0.type) 
+        }
+        
+        // If non-fixed size and both sides have constraints, calculate dynamic size
+        // This will be recalculated after initial position is determined
+        var dynamicWidth = false
+        var dynamicHeight = false
+        
+        if child.size == nil {
+            if hasLeftConstraint && hasRightConstraint {
+                dynamicWidth = true
+            }
+            if hasTopConstraint && hasBottomConstraint {
+                dynamicHeight = true
+            }
+        }
 
         // Default position based on container alignment
         var x: CGFloat = 0
@@ -275,34 +306,39 @@ public struct RelativePositionContainer: View {
             switch constraint.type {
             case .alignTop:
                 // Align top edges - child's top aligns with anchor's top
+                // Only apply self margin, not anchor's margin
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
-                y = anchorPos.y - anchorSize.height / 2 + childSize.height / 2
+                y = anchorPos.y - anchorSize.height / 2 + childSize.height / 2 + child.margins.top
                 // x position remains from default alignment calculation, don't change it
                 Logger.debug("   alignTop: y = \(y), x = \(x)")
             case .alignBottom:
                 // Align bottom edges - child's bottom aligns with anchor's bottom
+                // Only apply self margin, not anchor's margin
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
-                y = anchorPos.y + anchorSize.height / 2 - childSize.height / 2
+                y = anchorPos.y + anchorSize.height / 2 - childSize.height / 2 - child.margins.bottom
                 // x position remains from default alignment calculation, don't change it
                 Logger.debug("   alignBottom: y = \(y), x = \(x)")
             case .alignLeft:
                 // Align left edges - child's left aligns with anchor's left
+                // Only apply self margin, not anchor's margin
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
-                x = anchorPos.x - anchorSize.width / 2 + childSize.width / 2
+                x = anchorPos.x - anchorSize.width / 2 + childSize.width / 2 + child.margins.leading
                 // y position remains from default alignment calculation, don't change it
                 Logger.debug("   alignLeft: x = \(x), y = \(y)")
             case .alignRight:
                 // Align right edges - child's right aligns with anchor's right
+                // Only apply self margin, not anchor's margin
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
-                x = anchorPos.x + anchorSize.width / 2 - childSize.width / 2
+                x = anchorPos.x + anchorSize.width / 2 - childSize.width / 2 - child.margins.trailing
                 // y position remains from default alignment calculation, don't change it
                 Logger.debug("   alignRight: x = \(x), y = \(y)")
             case .above:
-                // Position above anchor - child's bottom touches anchor's top (considering anchor's top margin)
+                // Position above anchor - child's bottom touches anchor's top
+                // Apply both self and anchor margins
                 let anchorTopMargin = anchorChild?.margins.top ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y - anchorSize.height / 2 - childSize.height / 2
-                    - constraint.spacing - anchorTopMargin
+                    - constraint.spacing - anchorTopMargin - child.margins.bottom
                 // x position only uses anchor x if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentLeft, .parentRight, .parentCenterHorizontal, .alignLeft, .alignRight, .leftOf, .rightOf].contains($0.type) 
@@ -313,11 +349,12 @@ public struct RelativePositionContainer: View {
                     "   above: y = \(y) = \(anchorPos.y) - \(anchorSize.height/2) - \(childSize.height/2) - \(constraint.spacing) - \(anchorTopMargin)"
                 )
             case .below:
-                // Position below anchor - child's top touches anchor's bottom (considering anchor's bottom margin)
+                // Position below anchor - child's top touches anchor's bottom
+                // Apply both self and anchor margins
                 let anchorBottomMargin = anchorChild?.margins.bottom ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y + anchorSize.height / 2 + childSize.height / 2
-                    + constraint.spacing + anchorBottomMargin
+                    + constraint.spacing + anchorBottomMargin + child.margins.top
                 // x position only uses anchor x if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentLeft, .parentRight, .parentCenterHorizontal, .alignLeft, .alignRight, .leftOf, .rightOf].contains($0.type) 
@@ -328,11 +365,12 @@ public struct RelativePositionContainer: View {
                     "   below: y = \(y) = \(anchorPos.y) + \(anchorSize.height/2) + \(childSize.height/2) + \(constraint.spacing) + \(anchorBottomMargin)"
                 )
             case .leftOf:
-                // Position to the left of anchor - child's right touches anchor's left (considering anchor's left margin)
+                // Position to the left of anchor - child's right touches anchor's left
+                // Apply both self and anchor margins
                 let anchorLeftMargin = anchorChild?.margins.leading ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x - anchorSize.width / 2 - childSize.width / 2
-                    - constraint.spacing - anchorLeftMargin
+                    - constraint.spacing - anchorLeftMargin - child.margins.trailing
                 // y position only uses anchor y if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentTop, .parentBottom, .parentCenterVertical, .alignTop, .alignBottom, .above, .below].contains($0.type) 
@@ -343,11 +381,12 @@ public struct RelativePositionContainer: View {
                     "   leftOf: x = \(x) = \(anchorPos.x) - \(anchorSize.width/2) - \(childSize.width/2) - \(constraint.spacing) - \(anchorLeftMargin)"
                 )
             case .rightOf:
-                // Position to the right of anchor - child's left touches anchor's right (considering anchor's right margin)
+                // Position to the right of anchor - child's left touches anchor's right
+                // Apply both self and anchor margins
                 let anchorRightMargin = anchorChild?.margins.trailing ?? 0
                 let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x + anchorSize.width / 2 + childSize.width / 2
-                    + constraint.spacing + anchorRightMargin
+                    + constraint.spacing + anchorRightMargin + child.margins.leading
                 // y position only uses anchor y if not already set by other constraints
                 if child.constraints.count == 1 || !child.constraints.contains(where: { 
                     [.parentTop, .parentBottom, .parentCenterVertical, .alignTop, .alignBottom, .above, .below].contains($0.type) 
@@ -358,28 +397,28 @@ public struct RelativePositionContainer: View {
                     "   rightOf: x = \(x) = \(anchorPos.x) + \(anchorSize.width/2) + \(childSize.width/2) + \(constraint.spacing) + \(anchorRightMargin)"
                 )
             case .parentTop:
-                // Align to parent top with margin
+                // Align to parent top with margin and parent padding
                 y =
                     -containerSize.height / 2 + childSize.height / 2
-                    + constraint.spacing + child.margins.top
+                    + constraint.spacing + child.margins.top + parentPadding.top
                 Logger.debug("   parentTop: y = \(y)")
             case .parentBottom:
-                // Align to parent bottom with margin
+                // Align to parent bottom with margin and parent padding
                 y =
                     containerSize.height / 2 - childSize.height / 2
-                    - constraint.spacing - child.margins.bottom
+                    - constraint.spacing - child.margins.bottom - parentPadding.bottom
                 Logger.debug("   parentBottom: y = \(y)")
             case .parentLeft:
-                // Align to parent left with margin
+                // Align to parent left with margin and parent padding
                 x =
                     -containerSize.width / 2 + childSize.width / 2
-                    + constraint.spacing + child.margins.leading
+                    + constraint.spacing + child.margins.leading + parentPadding.leading
                 Logger.debug("   parentLeft: x = \(x)")
             case .parentRight:
-                // Align to parent right with margin
+                // Align to parent right with margin and parent padding
                 x =
                     containerSize.width / 2 - childSize.width / 2
-                    - constraint.spacing - child.margins.trailing
+                    - constraint.spacing - child.margins.trailing - parentPadding.trailing
                 Logger.debug("   parentRight: x = \(x)")
             case .parentCenterHorizontal:
                 // Center horizontally in parent
@@ -397,8 +436,201 @@ public struct RelativePositionContainer: View {
             }
         }
 
-        // Margins are already applied in parent constraint calculations above
-        // No additional margin offset needed here
+        // Handle centering for fixed size with constraints on both sides
+        if child.size != nil {
+            // Collect left/right constraint positions
+            var leftX: CGFloat? = nil
+            var rightX: CGFloat? = nil
+            var topY: CGFloat? = nil
+            var bottomY: CGFloat? = nil
+            
+            for constraint in child.constraints {
+                switch constraint.type {
+                case .parentLeft:
+                    leftX = -containerSize.width / 2 + child.margins.leading + parentPadding.leading
+                case .parentRight:
+                    rightX = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
+                case .alignLeft:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        leftX = anchorPos.x - anchorSize.width / 2 + child.margins.leading
+                    }
+                case .alignRight:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        rightX = anchorPos.x + anchorSize.width / 2 - child.margins.trailing
+                    }
+                case .rightOf:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        leftX = anchorPos.x + anchorSize.width / 2 + anchorChild.margins.trailing + child.margins.leading + constraint.spacing
+                    }
+                case .leftOf:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        rightX = anchorPos.x - anchorSize.width / 2 - anchorChild.margins.leading - child.margins.trailing - constraint.spacing
+                    }
+                case .parentTop:
+                    topY = -containerSize.height / 2 + child.margins.top + parentPadding.top
+                case .parentBottom:
+                    bottomY = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
+                case .alignTop:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        topY = anchorPos.y - anchorSize.height / 2 + child.margins.top
+                    }
+                case .alignBottom:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        bottomY = anchorPos.y + anchorSize.height / 2 - child.margins.bottom
+                    }
+                case .below:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        topY = anchorPos.y + anchorSize.height / 2 + anchorChild.margins.bottom + child.margins.top + constraint.spacing
+                    }
+                case .above:
+                    if let anchorChild = anchorChild {
+                        let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                        let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                        bottomY = anchorPos.y - anchorSize.height / 2 - anchorChild.margins.top - child.margins.bottom - constraint.spacing
+                    }
+                default:
+                    break
+                }
+            }
+            
+            // Center between constraints if both sides are specified
+            if let leftX = leftX, let rightX = rightX {
+                x = (leftX + rightX) / 2
+                Logger.debug("   Centered horizontally between \(leftX) and \(rightX): x = \(x)")
+            }
+            if let topY = topY, let bottomY = bottomY {
+                y = (topY + bottomY) / 2
+                Logger.debug("   Centered vertically between \(topY) and \(bottomY): y = \(y)")
+            }
+        }
+        
+        // For dynamic size, calculate the actual size based on constraints
+        if dynamicWidth, let leftConstraint = child.constraints.first(where: { 
+            [.parentLeft, .alignLeft, .rightOf].contains($0.type) 
+        }), let rightConstraint = child.constraints.first(where: { 
+            [.parentRight, .alignRight, .leftOf].contains($0.type) 
+        }) {
+            // Calculate available width between constraints
+            var leftEdge: CGFloat = 0
+            var rightEdge: CGFloat = 0
+            
+            switch leftConstraint.type {
+            case .parentLeft:
+                leftEdge = -containerSize.width / 2 + child.margins.leading + parentPadding.leading
+            case .alignLeft:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    leftEdge = anchorPos.x - anchorSize.width / 2 + child.margins.leading
+                }
+            case .rightOf:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    leftEdge = anchorPos.x + anchorSize.width / 2 + anchorChild.margins.trailing + child.margins.leading
+                }
+            default:
+                break
+            }
+            
+            switch rightConstraint.type {
+            case .parentRight:
+                rightEdge = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
+            case .alignRight:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    rightEdge = anchorPos.x + anchorSize.width / 2 - child.margins.trailing
+                }
+            case .leftOf:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    rightEdge = anchorPos.x - anchorSize.width / 2 - anchorChild.margins.leading - child.margins.trailing
+                }
+            default:
+                break
+            }
+            
+            let newWidth = abs(rightEdge - leftEdge)
+            if newWidth > 0 {
+                childSize.width = newWidth
+                viewSizes[child.id] = childSize
+                x = (leftEdge + rightEdge) / 2
+                Logger.debug("   Dynamic width calculated: \(newWidth), x = \(x)")
+            }
+        }
+        
+        if dynamicHeight, let topConstraint = child.constraints.first(where: { 
+            [.parentTop, .alignTop, .below].contains($0.type) 
+        }), let bottomConstraint = child.constraints.first(where: { 
+            [.parentBottom, .alignBottom, .above].contains($0.type) 
+        }) {
+            // Calculate available height between constraints
+            var topEdge: CGFloat = 0
+            var bottomEdge: CGFloat = 0
+            
+            switch topConstraint.type {
+            case .parentTop:
+                topEdge = -containerSize.height / 2 + child.margins.top + parentPadding.top
+            case .alignTop:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    topEdge = anchorPos.y - anchorSize.height / 2 + child.margins.top
+                }
+            case .below:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    topEdge = anchorPos.y + anchorSize.height / 2 + anchorChild.margins.bottom + child.margins.top
+                }
+            default:
+                break
+            }
+            
+            switch bottomConstraint.type {
+            case .parentBottom:
+                bottomEdge = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
+            case .alignBottom:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    bottomEdge = anchorPos.y + anchorSize.height / 2 - child.margins.bottom
+                }
+            case .above:
+                if let anchorChild = anchorChild {
+                    let anchorPos = viewPositions[anchorChild.id] ?? CGPoint.zero
+                    let anchorSize = viewSizes[anchorChild.id] ?? .zero
+                    bottomEdge = anchorPos.y - anchorSize.height / 2 - anchorChild.margins.top - child.margins.bottom
+                }
+            default:
+                break
+            }
+            
+            let newHeight = abs(bottomEdge - topEdge)
+            if newHeight > 0 {
+                childSize.height = newHeight
+                viewSizes[child.id] = childSize
+                y = (topEdge + bottomEdge) / 2
+                Logger.debug("   Dynamic height calculated: \(newHeight), y = \(y)")
+            }
+        }
+        
         Logger.debug("   Final position: (\(x), \(y))")
 
         viewPositions[child.id] = CGPoint(x: x, y: y)
