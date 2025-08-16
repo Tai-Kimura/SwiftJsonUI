@@ -146,23 +146,91 @@ public struct CommonModifiers: ViewModifier {
     }
     
     private func getPadding() -> EdgeInsets {
-        // Get padding value from AnyCodable
-        var paddingValue: CGFloat? = nil
-        if let padding = component.padding {
-            if let intValue = padding.value as? Int {
-                paddingValue = CGFloat(intValue)
-            } else if let doubleValue = padding.value as? Double {
-                paddingValue = CGFloat(doubleValue)
-            } else if let floatValue = padding.value as? CGFloat {
-                paddingValue = floatValue
+        // Check for paddings array first
+        if let paddingsValue = component.paddings ?? component.padding {
+            if let paddingArray = paddingsValue.value as? [Any] {
+                // Handle array format [top, right, bottom, left] or [vertical, horizontal] or [all]
+                switch paddingArray.count {
+                case 1:
+                    if let value = paddingArray[0] as? Int {
+                        let padding = CGFloat(value)
+                        return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
+                    } else if let value = paddingArray[0] as? Double {
+                        let padding = CGFloat(value)
+                        return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
+                    } else if let value = paddingArray[0] as? CGFloat {
+                        return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
+                    }
+                case 2:
+                    // Vertical, Horizontal
+                    var vPadding: CGFloat = 0
+                    var hPadding: CGFloat = 0
+                    
+                    if let vValue = paddingArray[0] as? Int, let hValue = paddingArray[1] as? Int {
+                        vPadding = CGFloat(vValue)
+                        hPadding = CGFloat(hValue)
+                    } else if let vValue = paddingArray[0] as? Double, let hValue = paddingArray[1] as? Double {
+                        vPadding = CGFloat(vValue)
+                        hPadding = CGFloat(hValue)
+                    } else if let vValue = paddingArray[0] as? CGFloat, let hValue = paddingArray[1] as? CGFloat {
+                        vPadding = vValue
+                        hPadding = hValue
+                    }
+                    
+                    return EdgeInsets(top: vPadding, leading: hPadding, bottom: vPadding, trailing: hPadding)
+                case 4:
+                    // Top, Right, Bottom, Left
+                    var top: CGFloat = 0
+                    var right: CGFloat = 0
+                    var bottom: CGFloat = 0
+                    var left: CGFloat = 0
+                    
+                    if let t = paddingArray[0] as? Int,
+                       let r = paddingArray[1] as? Int,
+                       let b = paddingArray[2] as? Int,
+                       let l = paddingArray[3] as? Int {
+                        top = CGFloat(t)
+                        right = CGFloat(r)
+                        bottom = CGFloat(b)
+                        left = CGFloat(l)
+                    } else if let t = paddingArray[0] as? Double,
+                              let r = paddingArray[1] as? Double,
+                              let b = paddingArray[2] as? Double,
+                              let l = paddingArray[3] as? Double {
+                        top = CGFloat(t)
+                        right = CGFloat(r)
+                        bottom = CGFloat(b)
+                        left = CGFloat(l)
+                    } else if let t = paddingArray[0] as? CGFloat,
+                              let r = paddingArray[1] as? CGFloat,
+                              let b = paddingArray[2] as? CGFloat,
+                              let l = paddingArray[3] as? CGFloat {
+                        top = t
+                        right = r
+                        bottom = b
+                        left = l
+                    }
+                    
+                    return EdgeInsets(top: top, leading: left, bottom: bottom, trailing: right)
+                default:
+                    break
+                }
+            } else if let intValue = paddingsValue.value as? Int {
+                let padding = CGFloat(intValue)
+                return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
+            } else if let doubleValue = paddingsValue.value as? Double {
+                let padding = CGFloat(doubleValue)
+                return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
+            } else if let floatValue = paddingsValue.value as? CGFloat {
+                return EdgeInsets(top: floatValue, leading: floatValue, bottom: floatValue, trailing: floatValue)
             }
         }
         
-        // Use individual padding properties or fallback to padding value
-        let top = component.paddingTop ?? component.topPadding ?? paddingValue ?? 0
-        let leading = component.paddingLeft ?? component.leftPadding ?? paddingValue ?? 0
-        let bottom = component.paddingBottom ?? component.bottomPadding ?? paddingValue ?? 0
-        let trailing = component.paddingRight ?? component.rightPadding ?? paddingValue ?? 0
+        // Fallback to individual padding properties
+        let top = component.paddingTop ?? component.topPadding ?? 0
+        let leading = component.paddingLeft ?? component.leftPadding ?? 0
+        let bottom = component.paddingBottom ?? component.bottomPadding ?? 0
+        let trailing = component.paddingRight ?? component.rightPadding ?? 0
         
         return EdgeInsets(
             top: top,
