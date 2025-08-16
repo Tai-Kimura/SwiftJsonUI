@@ -74,7 +74,9 @@ public struct CommonModifiers: ViewModifier {
         } else if let customPadding = customModifiers.customPadding {
             result = AnyView(result.padding(customPadding))
         } else {
-            result = AnyView(result.padding(DynamicHelpers.getPadding(from: component)))
+            let padding = DynamicHelpers.getPadding(from: component)
+            print("📐 CommonModifiers padding: id=\(component.id ?? "no-id"), type=\(component.type ?? "unknown"), padding=\(padding)")
+            result = AnyView(result.padding(padding))
         }
         
         // 2. Apply frame
