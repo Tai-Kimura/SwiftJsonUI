@@ -36,13 +36,13 @@ public struct WeightedStackContainer: View {
                 alignment: getVerticalAlignmentFromAlignment(alignment),
                 spacing: 0,
                 children: children.map { child in
-                    // width:0の場合はweightを使用
-                    let hasZeroWidth = child.width == 0
+                    // width:nilまたは0の場合はweightを使用
+                    let shouldUseWeight = child.width == nil || child.width == 0
                     let weightValue = child.weight ?? 0
                     let widthWeightValue = child.widthWeight ?? 0
                     let heightWeightValue = child.heightWeight ?? 0
                     
-                    let weight: CGFloat = hasZeroWidth ? 
+                    let weight: CGFloat = shouldUseWeight ? 
                         CGFloat(max(weightValue, widthWeightValue, 1)) :
                         CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                     
@@ -59,13 +59,13 @@ public struct WeightedStackContainer: View {
                 alignment: getHorizontalAlignmentFromAlignment(alignment),
                 spacing: 0,
                 children: children.map { child in
-                    // height:0の場合はweightを使用
-                    let hasZeroHeight = child.height == 0
+                    // height:nilまたは0の場合はweightを使用
+                    let shouldUseWeight = child.height == nil || child.height == 0
                     let weightValue = child.weight ?? 0
                     let widthWeightValue = child.widthWeight ?? 0
                     let heightWeightValue = child.heightWeight ?? 0
                     
-                    let weight: CGFloat = hasZeroHeight ?
+                    let weight: CGFloat = shouldUseWeight ?
                         CGFloat(max(weightValue, heightWeightValue, 1)) :
                         CGFloat(max(weightValue, widthWeightValue, heightWeightValue))
                     

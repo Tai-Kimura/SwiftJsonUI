@@ -117,15 +117,15 @@ public struct CommonModifiers: ViewModifier {
     private func hasWeightForWidth() -> Bool {
         // Weight affects width in horizontal layouts or when widthWeight is specified
         let hasWeight = (component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0
-        // Note: We don't have parent orientation here, so we check if width is 0 which indicates weight usage
-        return hasWeight && component.width == 0
+        // Note: We don't have parent orientation here, so we check if width is nil or 0 which indicates weight usage
+        return hasWeight && (component.width == nil || component.width == 0)
     }
     
     private func hasWeightForHeight() -> Bool {
         // Weight affects height in vertical layouts or when heightWeight is specified
         let hasWeight = (component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0
-        // Note: We don't have parent orientation here, so we check if height is 0 which indicates weight usage
-        return hasWeight && component.height == 0
+        // Note: We don't have parent orientation here, so we check if height is nil or 0 which indicates weight usage
+        return hasWeight && (component.height == nil || component.height == 0)
     }
     
     private func getFrameAlignment() -> Alignment {

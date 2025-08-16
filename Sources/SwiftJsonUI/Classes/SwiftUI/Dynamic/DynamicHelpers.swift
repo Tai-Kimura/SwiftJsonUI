@@ -10,201 +10,34 @@ import SwiftUI
 // MARK: - Helper Functions
 public struct DynamicHelpers {
     
+    // MARK: - Wrapper methods for JSON data transformations (delegate to DynamicDecodingHelper)
+    
     public static func fontFromComponent(_ component: DynamicComponent) -> Font {
-        let size = component.fontSize ?? 16
-        let fontName = component.font
-        let weight = component.fontWeight
-        
-        // Determine weight
-        let fontWeight: Font.Weight = {
-            switch weight?.lowercased() ?? fontName?.lowercased() {
-            case "bold":
-                return .bold
-            case "semibold":
-                return .semibold
-            case "medium":
-                return .medium
-            case "light":
-                return .light
-            case "thin":
-                return .thin
-            case "ultralight":
-                return .ultraLight
-            case "heavy":
-                return .heavy
-            case "black":
-                return .black
-            default:
-                return .regular
-            }
-        }()
-        
-        // Apply custom font or system font
-        if let fontName = fontName, fontName.lowercased() != "bold" {
-            return .custom(fontName, size: size)
-        } else {
-            return .system(size: size, weight: fontWeight)
-        }
+        return DynamicDecodingHelper.fontFromComponent(component)
     }
     
     public static func colorFromHex(_ hex: String?) -> Color? {
-        guard let hex = hex else { return nil }
-        let cleanHex = hex.replacingOccurrences(of: "#", with: "")
-        
-        guard cleanHex.count == 6,
-              let intValue = Int(cleanHex, radix: 16) else {
-            return nil
-        }
-        
-        let r = Double((intValue >> 16) & 0xFF) / 255.0
-        let g = Double((intValue >> 8) & 0xFF) / 255.0
-        let b = Double(intValue & 0xFF) / 255.0
-        
-        return Color(red: r, green: g, blue: b)
+        return DynamicDecodingHelper.colorFromHex(hex)
     }
     
     public static func contentModeFromString(_ mode: String?) -> ContentMode {
-        switch mode {
-        case "AspectFill", "aspectFill":
-            return .fill
-        case "AspectFit", "aspectFit":
-            return .fit
-        default:
-            return .fit
-        }
+        return DynamicDecodingHelper.contentModeFromString(mode)
     }
     
     public static func networkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
-        switch mode {
-        case "AspectFill", "aspectFill":
-            return .fill
-        case "AspectFit", "aspectFit":
-            return .fit
-        case "center", "Center":
-            return .center
-        default:
-            return .fit
-        }
+        return DynamicDecodingHelper.networkImageContentMode(mode)
     }
     
     public static func renderingModeFromString(_ mode: String?) -> Image.TemplateRenderingMode? {
-        switch mode {
-        case "template", "Template":
-            return .template
-        case "original", "Original":
-            return .original
-        default:
-            return nil
-        }
+        return DynamicDecodingHelper.renderingModeFromString(mode)
     }
     
     public static func iconPositionFromString(_ position: String?) -> IconLabelView.IconPosition {
-        switch position {
-        case "top", "Top":
-            return .top
-        case "left", "Left":
-            return .left
-        case "right", "Right":
-            return .right
-        case "bottom", "Bottom":
-            return .bottom
-        default:
-            return .left
-        }
+        return DynamicDecodingHelper.iconPositionFromString(position)
     }
     
     public static func textAlignmentFromString(_ alignment: String?) -> TextAlignment {
-        switch alignment {
-        case "Center", "center":
-            return .center
-        case "Left", "left":
-            return .leading
-        case "Right", "right":
-            return .trailing
-        default:
-            return .leading
-        }
-    }
-    
-    public static func frameValue(_ value: String?) -> CGFloat? {
-        guard let value = value else { return nil }
-        
-        switch value {
-        case "matchParent":
-            // SwiftUIでは.infinityを直接使わず、nilを返してmaxWidthで処理
-            return nil
-        case "wrapContent":
-            return nil
-        case "0", "0.0":
-            // width:0 or height:0 for weight system
-            return 0
-        default:
-            if let doubleValue = Double(value) {
-                return CGFloat(doubleValue)
-            }
-            return nil
-        }
-    }
-    
-    public static func isMatchParent(_ value: String?) -> Bool {
-        return value == "matchParent"
-    }
-    
-    // Helper to convert AnyCodable to array of CGFloat values
-    private static func anyCodableToFloatArray(_ value: AnyCodable?) -> [CGFloat]? {
-        guard let value = value else { return nil }
-        
-        if let array = value.value as? [Any] {
-            return array.compactMap { item in
-                if let value = item as? CGFloat {
-                    return value
-                } else if let value = item as? Double {
-                    return CGFloat(value)
-                } else if let value = item as? Int {
-                    return CGFloat(value)
-                }
-                return nil
-            }
-        } else if let value = value.value as? CGFloat {
-            return [value]
-        } else if let value = value.value as? Double {
-            return [CGFloat(value)]
-        } else if let value = value.value as? Int {
-            return [CGFloat(value)]
-        }
-        
-        return nil
-    }
-    
-    // Convert array of padding/margin values to EdgeInsets
-    public static func edgeInsetsFromArray(_ values: [CGFloat]) -> EdgeInsets {
-        switch values.count {
-        case 1:
-            // All edges same value
-            let value = values[0]
-            return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
-        case 2:
-            // [Vertical, Horizontal]
-            let vValue = values[0]
-            let hValue = values[1]
-            return EdgeInsets(top: vValue, leading: hValue, bottom: vValue, trailing: hValue)
-        case 4:
-            // [Top, Right, Bottom, Left]
-            return EdgeInsets(top: values[0], leading: values[3], bottom: values[2], trailing: values[1])
-        default:
-            return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
-        }
-    }
-    
-    // Convert AnyCodable to EdgeInsets (handles arrays and single values)
-    public static func edgeInsetsFromAnyCodable(_ value: AnyCodable?) -> EdgeInsets? {
-        guard let value = value else { return nil }
-        
-        if let array = anyCodableToFloatArray(value) {
-            return edgeInsetsFromArray(array)
-        }
-        
-        return nil
+        return DynamicDecodingHelper.textAlignmentFromString(alignment)
     }
     
     // Unified method to get padding EdgeInsets from component
@@ -212,7 +45,7 @@ public struct DynamicHelpers {
         var resultPadding = EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         
         // Check for paddings/padding array or value
-        if let paddingInsets = edgeInsetsFromAnyCodable(component.paddings ?? component.padding) {
+        if let paddingInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.paddings ?? component.padding) {
             resultPadding = paddingInsets
         } else {
             // Fallback to individual padding properties
@@ -230,7 +63,7 @@ public struct DynamicHelpers {
         }
         
         // Apply insets if present (additive)
-        if let insetInsets = edgeInsetsFromAnyCodable(component.insets) {
+        if let insetInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets) {
             resultPadding.top += insetInsets.top
             resultPadding.leading += insetInsets.leading
             resultPadding.bottom += insetInsets.bottom
@@ -249,7 +82,7 @@ public struct DynamicHelpers {
     // Unified method to get margins EdgeInsets from component
     public static func getMargins(from component: DynamicComponent) -> EdgeInsets {
         // Check for margins array or value
-        if let marginInsets = edgeInsetsFromAnyCodable(component.margins) {
+        if let marginInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.margins) {
             return marginInsets
         }
         
@@ -269,7 +102,7 @@ public struct DynamicHelpers {
     
     // Get background color from component
     public static func getBackground(from component: DynamicComponent) -> Color {
-        return colorFromHex(component.background) ?? .clear
+        return DynamicDecodingHelper.colorFromHex(component.background) ?? .clear
     }
     
     // Get opacity from component
@@ -299,7 +132,7 @@ extension View {
             // But we still need to set infinity for the content to fill the allocated space
             if isWeightedChild {
                 // Check if weight affects width (horizontal stack with weight or widthWeight)
-                if component.width == 0 && ((component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0) {
+                if (component.width == nil || component.width == 0) && ((component.weight ?? 0) > 0 || (component.widthWeight ?? 0) > 0) {
                     return .infinity  // Fill the width allocated by WeightedHStack
                 }
             }
@@ -309,7 +142,7 @@ extension View {
         let heightValue: CGFloat? = {
             if isWeightedChild {
                 // Check if weight affects height (vertical stack with weight or heightWeight)
-                if component.height == 0 && ((component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0) {
+                if (component.height == nil || component.height == 0) && ((component.weight ?? 0) > 0 || (component.heightWeight ?? 0) > 0) {
                     return .infinity  // Fill the height allocated by WeightedVStack
                 }
             }
@@ -318,8 +151,8 @@ extension View {
         
         return self
             .frame(
-                width: widthValue == .infinity ? nil : widthValue,
-                height: heightValue == .infinity ? nil : heightValue
+                width: widthValue,
+                height: heightValue
             )
             .frame(
                 minWidth: component.minWidth,
