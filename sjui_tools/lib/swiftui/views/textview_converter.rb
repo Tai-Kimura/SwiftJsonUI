@@ -157,14 +157,14 @@ module SjuiTools
               add_modifier_line ".frame(maxHeight: #{@component['maxHeight']})"
             end
           else
-            # Normal frame application
+            # Apply external padding if specified (not containerInset which is internal)
+            if @component['padding']
+              apply_padding
+            end
+            
+            # Normal frame application after padding
             apply_frame_constraints
             apply_frame_size
-          end
-          
-          # Apply external padding if specified (not containerInset which is internal)
-          if @component['padding']
-            apply_padding
           end
           
           # Note: background and cornerRadius are handled internally by TextViewWithPlaceholder

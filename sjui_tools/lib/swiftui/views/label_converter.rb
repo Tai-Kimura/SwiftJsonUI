@@ -233,11 +233,11 @@ module SjuiTools
             end
           end
           
-          # Apply frame size (width/height) - this should come AFTER weight handling
-          apply_frame_size
-          
-          # Apply padding (internal spacing)
+          # Apply padding (internal spacing) first
           apply_padding
+          
+          # Apply frame size (width/height) after padding
+          apply_frame_size
           
           # Apply background and corner radius AFTER padding
           # This ensures the background includes the padding area

@@ -121,12 +121,12 @@ module SjuiTools
           # TextField manages its own padding/background/cornerRadius/border
           # Corresponding to Dynamic mode: TextFieldConverter.swift
           
-          # Apply frame constraints and size first
+          # Apply padding (internal spacing) first
+          apply_padding
+          
+          # Apply frame constraints and size after padding
           apply_frame_constraints
           apply_frame_size
-          
-          # Apply padding (internal spacing)
-          apply_padding
           
           # Apply background
           if @component['background']
