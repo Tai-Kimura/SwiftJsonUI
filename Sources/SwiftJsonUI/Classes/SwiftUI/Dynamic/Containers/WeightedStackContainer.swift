@@ -48,7 +48,7 @@ public struct WeightedStackContainer: View {
                     
                     return (
                         view: AnyView(
-                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, isWeightedChild: true)
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, isWeightedChild: true, parentOrientation: "horizontal")
                         ),
                         weight: weight
                     )
@@ -71,7 +71,7 @@ public struct WeightedStackContainer: View {
                     
                     return (
                         view: AnyView(
-                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, isWeightedChild: true)
+                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, isWeightedChild: true, parentOrientation: "vertical")
                         ),
                         weight: weight
                     )

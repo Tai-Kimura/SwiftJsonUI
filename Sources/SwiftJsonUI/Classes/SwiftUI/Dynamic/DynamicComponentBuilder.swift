@@ -13,12 +13,14 @@ public struct DynamicComponentBuilder: View {
     @ObservedObject var viewModel: DynamicViewModel
     let viewId: String?
     let isWeightedChild: Bool
+    let parentOrientation: String?
     
-    public init(component: DynamicComponent, viewModel: DynamicViewModel, viewId: String? = nil, isWeightedChild: Bool = false) {
+    public init(component: DynamicComponent, viewModel: DynamicViewModel, viewId: String? = nil, isWeightedChild: Bool = false, parentOrientation: String? = nil) {
         self.component = component
         self.viewModel = viewModel
         self.viewId = viewId
         self.isWeightedChild = isWeightedChild
+        self.parentOrientation = parentOrientation
     }
     
     public var body: some View {
@@ -97,7 +99,7 @@ public struct DynamicComponentBuilder: View {
             switch type.lowercased() {
         // Text components
         case "text", "label":
-            TextConverter.convert(component: component, viewModel: viewModel)
+            TextConverter.convert(component: component, viewModel: viewModel, parentOrientation: parentOrientation)
         
         case "button":
             ButtonConverter.convert(component: component, viewModel: viewModel)

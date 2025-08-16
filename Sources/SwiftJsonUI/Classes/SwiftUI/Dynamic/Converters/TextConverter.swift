@@ -14,7 +14,8 @@ public struct TextConverter {
     /// Convert DynamicComponent to SwiftUI Text view
     public static func convert(
         component: DynamicComponent,
-        viewModel: DynamicViewModel
+        viewModel: DynamicViewModel,
+        parentOrientation: String? = nil
     ) -> AnyView {
         let text = viewModel.processText(component.text) ?? ""
         
@@ -29,13 +30,22 @@ public struct TextConverter {
         
         // If weight is specified, apply appropriate frame modifier
         if let weight = component.weight, weight > 0 {
-            // Check parent orientation to determine which dimension to fill
-            // For now, we'll check both width and height based on whether they're nil
-            if component.width == nil || component.width == 0 {
-                result = AnyView(result.frame(maxWidth: .infinity))
-            }
-            if component.height == nil || component.height == 0 {
-                result = AnyView(result.frame(maxHeight: .infinity))
+            // Weight only affects the main axis of the parent container
+            if parentOrientation == "horizontal" {
+                // In horizontal stack, weight affects width
+                if component.width == nil || component.width == 0 {
+                    result = AnyView(result.frame(maxWidth: .infinity))
+                }
+            } else if parentOrientation == "vertical" {
+                // In vertical stack, weight affects height
+                if component.height == nil || component.height == 0 {
+                    result = AnyView(result.frame(maxHeight: .infinity))
+                }
+            } else {
+                // Parent orientation unknown, use heuristic
+                if component.width == nil || component.width == 0 {
+                    result = AnyView(result.frame(maxWidth: .infinity))
+                }
             }
         }
         
