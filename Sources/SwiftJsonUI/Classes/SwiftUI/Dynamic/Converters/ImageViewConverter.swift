@@ -23,7 +23,7 @@ public struct ImageViewConverter {
                 return AnyView(
                     Image(placeholder)
                         .resizable()
-                        .aspectRatio(contentMode: DynamicHelpers.contentModeFromString(component.contentMode))
+                        .aspectRatio(contentMode: DynamicHelpers.getContentMode(from: component))
                         .frame(width: component.width, height: component.height)
                         .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
                         .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
@@ -55,7 +55,7 @@ public struct ImageViewConverter {
         
         return AnyView(
             image
-                .renderingMode(DynamicHelpers.renderingModeFromString(component.renderingMode))
+                .renderingMode(DynamicHelpers.getRenderingMode(from: component))
                 .resizable()
                 .aspectRatio(contentMode: DynamicHelpers.contentModeFromString(component.contentMode))
                 .frame(width: component.width, height: component.height)

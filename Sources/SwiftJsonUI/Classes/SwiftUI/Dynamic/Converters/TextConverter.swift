@@ -22,7 +22,7 @@ public struct TextConverter {
             Text(text)
                 .font(DynamicHelpers.fontFromComponent(component))
                 .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                .multilineTextAlignment(DynamicHelpers.textAlignmentFromString(component.textAlign))
+                .multilineTextAlignment(DynamicHelpers.getTextAlignment(from: component))
                 .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
                 .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
                 .cornerRadius(component.cornerRadius ?? 0)

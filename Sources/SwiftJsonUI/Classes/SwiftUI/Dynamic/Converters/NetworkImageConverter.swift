@@ -17,8 +17,8 @@ public struct NetworkImageConverter {
         viewModel: DynamicViewModel
     ) -> AnyView {
         
-        let contentMode = DynamicHelpers.networkImageContentMode(component.contentMode)
-        let renderingMode = DynamicHelpers.renderingModeFromString(component.renderingMode)
+        let contentMode = DynamicHelpers.getNetworkImageContentMode(from: component)
+        let renderingMode = DynamicHelpers.getRenderingMode(from: component)
         
         return AnyView(
             NetworkImage(
