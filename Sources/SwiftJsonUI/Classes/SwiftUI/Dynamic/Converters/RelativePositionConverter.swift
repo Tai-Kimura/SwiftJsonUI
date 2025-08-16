@@ -63,15 +63,6 @@ public struct RelativePositionConverter {
         }
         
         // Relative positioning to other views
-        // Direct above/below properties
-        if let target = component.above {
-            constraints.append(RelativePositionConstraint(type: .above, targetId: target))
-        }
-        
-        if let target = component.below {
-            constraints.append(RelativePositionConstraint(type: .below, targetId: target))
-        }
-        
         // alignLeftOfView/alignRightOfView from JSON map to leftOf/rightOf constraint types
         if let target = component.alignLeftOfView {
             constraints.append(RelativePositionConstraint(type: .leftOf, targetId: target))
@@ -134,16 +125,10 @@ public struct RelativePositionConverter {
                component.centerInParent == true ||
                component.centerHorizontal == true ||
                component.centerVertical == true ||
-               component.above != nil ||
-               component.below != nil ||
                component.alignLeftOfView != nil ||
                component.alignRightOfView != nil ||
                component.alignTopOfView != nil ||
-               component.alignBottomOfView != nil ||
-               component.alignTopView != nil ||
-               component.alignBottomView != nil ||
-               component.alignLeftView != nil ||
-               component.alignRightView != nil
+               component.alignBottomOfView != nil
     }
     
     /// Check if any children need relative positioning
@@ -163,16 +148,10 @@ public struct RelativePositionConverter {
         
         // Check for relative-to-view alignments (these always require relative positioning)
         let hasRelativeToView = alignedChildren.contains { 
-            $0.above != nil ||
-            $0.below != nil ||
             $0.alignLeftOfView != nil || 
             $0.alignRightOfView != nil || 
             $0.alignTopOfView != nil || 
-            $0.alignBottomOfView != nil ||
-            $0.alignTopView != nil ||
-            $0.alignBottomView != nil ||
-            $0.alignLeftView != nil ||
-            $0.alignRightView != nil
+            $0.alignBottomOfView != nil 
         }
         
         // If any relative-to-view alignments, need relative positioning
@@ -224,4 +203,12 @@ public struct RelativePositionConverter {
             return verticalConflicts || horizontalConflicts
         }
     }
+}
+
+// Extension to add marginTop, marginBottom, marginLeft, marginRight properties
+extension DynamicComponent {
+    var marginTop: CGFloat? { nil }  // These would need to be added to DynamicComponent if not present
+    var marginBottom: CGFloat? { nil }
+    var marginLeft: CGFloat? { nil }
+    var marginRight: CGFloat? { nil }
 }
