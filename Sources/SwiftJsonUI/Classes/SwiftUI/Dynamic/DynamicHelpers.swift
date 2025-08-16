@@ -70,9 +70,17 @@ public struct DynamicHelpers {
     public static func getPadding(from component: DynamicComponent) -> EdgeInsets {
         var resultPadding = EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
         
+        // Debug logging
+        if component.type?.lowercased() == "scrollview" {
+            print("🔍 ScrollView padding debug: paddings=\(String(describing: component.paddings)), padding=\(String(describing: component.padding))")
+        }
+        
         // Check for paddings/padding array or value
         if let paddingInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.paddings ?? component.padding) {
             resultPadding = paddingInsets
+            if component.type?.lowercased() == "scrollview" {
+                print("🔍 ScrollView padding from array: \(resultPadding)")
+            }
         } else {
             // Fallback to individual padding properties
             let top = component.paddingTop ?? component.topPadding ?? 0
