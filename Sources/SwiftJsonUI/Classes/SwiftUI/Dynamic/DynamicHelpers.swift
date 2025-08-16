@@ -21,23 +21,23 @@ public struct DynamicHelpers {
     }
     
     public static func contentModeFromString(_ mode: String?) -> ContentMode {
-        return DynamicDecodingHelper.contentModeFromString(mode)
+        return DynamicDecodingHelper.toContentMode(mode)
     }
     
     public static func networkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
-        return DynamicDecodingHelper.networkImageContentMode(mode)
+        return DynamicDecodingHelper.toNetworkImageContentMode(mode)
     }
     
     public static func renderingModeFromString(_ mode: String?) -> Image.TemplateRenderingMode? {
-        return DynamicDecodingHelper.renderingModeFromString(mode)
+        return DynamicDecodingHelper.toRenderingMode(mode)
     }
     
     public static func iconPositionFromString(_ position: String?) -> IconLabelView.IconPosition {
-        return DynamicDecodingHelper.iconPositionFromString(position)
+        return DynamicDecodingHelper.toIconPosition(position)
     }
     
     public static func textAlignmentFromString(_ alignment: String?) -> TextAlignment {
-        return DynamicDecodingHelper.textAlignmentFromString(alignment)
+        return DynamicDecodingHelper.toTextAlignment(alignment)
     }
     
     // Unified method to get padding EdgeInsets from component

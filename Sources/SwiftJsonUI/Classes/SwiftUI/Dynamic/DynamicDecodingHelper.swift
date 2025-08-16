@@ -260,7 +260,7 @@ public struct DynamicDecodingHelper {
     }
     
     /// Convert content mode string to ContentMode
-    public static func contentModeFromString(_ mode: String?) -> ContentMode {
+    public static func toContentMode(_ mode: String?) -> ContentMode {
         switch mode {
         case "AspectFill", "aspectFill":
             return .fill
@@ -272,7 +272,7 @@ public struct DynamicDecodingHelper {
     }
     
     /// Convert content mode string to NetworkImage.ContentMode
-    public static func networkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
+    public static func toNetworkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
         switch mode {
         case "AspectFill", "aspectFill":
             return .fill
@@ -286,7 +286,7 @@ public struct DynamicDecodingHelper {
     }
     
     /// Convert rendering mode string to Image.TemplateRenderingMode
-    public static func renderingModeFromString(_ mode: String?) -> Image.TemplateRenderingMode? {
+    public static func toRenderingMode(_ mode: String?) -> Image.TemplateRenderingMode? {
         switch mode {
         case "template", "Template":
             return .template
@@ -298,7 +298,7 @@ public struct DynamicDecodingHelper {
     }
     
     /// Convert icon position string to IconLabelView.IconPosition
-    public static func iconPositionFromString(_ position: String?) -> IconLabelView.IconPosition {
+    public static func toIconPosition(_ position: String?) -> IconLabelView.IconPosition {
         switch position {
         case "top", "Top":
             return .top
@@ -314,7 +314,7 @@ public struct DynamicDecodingHelper {
     }
     
     /// Convert text alignment string to TextAlignment
-    public static func textAlignmentFromString(_ alignment: String?) -> TextAlignment {
+    public static func toTextAlignment(_ alignment: String?) -> TextAlignment {
         switch alignment {
         case "Center", "center":
             return .center
