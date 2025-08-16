@@ -18,9 +18,9 @@ struct TextViewModifiers: ViewModifier {
             // TextViewWithPlaceholder handles padding internally via containerInset
             // Only apply border and margins here
             .overlay(getBorder())  // Border after component's internal cornerRadius
-            .padding(getMargins())  // Apply margins as outer padding
-            .opacity(getOpacity())
-            .opacity(isHidden() ? 0 : 1)
+            .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+            .opacity(DynamicHelpers.getOpacity(from: component))
+            .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
     
     /// Get border overlay
@@ -32,35 +32,6 @@ struct TextViewModifiers: ViewModifier {
             RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
                 .stroke(borderColor, lineWidth: borderWidth)
         }
-    }
-    
-    private func getMargins() -> EdgeInsets {
-        // Use margin properties for outer spacing
-        let top = component.topMargin ?? 0
-        let leading = component.leftMargin ?? 0
-        let bottom = component.bottomMargin ?? 0
-        let trailing = component.rightMargin ?? 0
-        
-        return EdgeInsets(
-            top: top,
-            leading: leading,
-            bottom: bottom,
-            trailing: trailing
-        )
-    }
-    
-    private func getOpacity() -> Double {
-        if let opacity = component.opacity {
-            return Double(opacity)
-        }
-        if let alpha = component.alpha {
-            return Double(alpha)
-        }
-        return 1.0
-    }
-    
-    private func isHidden() -> Bool {
-        return component.hidden == true || component.visibility == "gone"
     }
 }
 

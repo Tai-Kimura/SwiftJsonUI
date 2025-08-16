@@ -53,13 +53,13 @@ public struct CommonModifiers: ViewModifier {
         }
         
         return finalContent
-            .padding(getPadding())  // Apply internal padding first
-            .background(getBackground())
+            .padding(DynamicHelpers.getPadding(from: component))  // Apply internal padding first
+            .background(DynamicHelpers.getBackground(from: component))
             .cornerRadius(component.cornerRadius ?? 0)
             .overlay(getBorder())
-            .padding(getMargins())  // Apply margins as outer padding
-            .opacity(getOpacity())
-            .opacity(isHidden() ? 0 : 1)
+            .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+            .opacity(DynamicHelpers.getOpacity(from: component))
+            .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
     
     private func shouldApplyFrameModifier() -> Bool {
@@ -145,203 +145,6 @@ public struct CommonModifiers: ViewModifier {
         return component.alignment ?? .topLeading
     }
     
-    private func getPadding() -> EdgeInsets {
-        // Debug log
-        let _ = print("🔍 getPadding for \(component.type ?? "unknown"): paddings=\(component.paddings?.value ?? "nil"), padding=\(component.padding?.value ?? "nil")")
-        
-        // Check for paddings array first
-        if let paddingsValue = component.paddings ?? component.padding {
-            if let paddingArray = paddingsValue.value as? [Any] {
-                // Handle array format [top, right, bottom, left] or [vertical, horizontal] or [all]
-                switch paddingArray.count {
-                case 1:
-                    if let value = paddingArray[0] as? Int {
-                        let padding = CGFloat(value)
-                        return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
-                    } else if let value = paddingArray[0] as? Double {
-                        let padding = CGFloat(value)
-                        return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
-                    } else if let value = paddingArray[0] as? CGFloat {
-                        return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
-                    }
-                case 2:
-                    // Vertical, Horizontal
-                    var vPadding: CGFloat = 0
-                    var hPadding: CGFloat = 0
-                    
-                    if let vValue = paddingArray[0] as? Int, let hValue = paddingArray[1] as? Int {
-                        vPadding = CGFloat(vValue)
-                        hPadding = CGFloat(hValue)
-                    } else if let vValue = paddingArray[0] as? Double, let hValue = paddingArray[1] as? Double {
-                        vPadding = CGFloat(vValue)
-                        hPadding = CGFloat(hValue)
-                    } else if let vValue = paddingArray[0] as? CGFloat, let hValue = paddingArray[1] as? CGFloat {
-                        vPadding = vValue
-                        hPadding = hValue
-                    }
-                    
-                    return EdgeInsets(top: vPadding, leading: hPadding, bottom: vPadding, trailing: hPadding)
-                case 4:
-                    // Top, Right, Bottom, Left
-                    var top: CGFloat = 0
-                    var right: CGFloat = 0
-                    var bottom: CGFloat = 0
-                    var left: CGFloat = 0
-                    
-                    if let t = paddingArray[0] as? Int,
-                       let r = paddingArray[1] as? Int,
-                       let b = paddingArray[2] as? Int,
-                       let l = paddingArray[3] as? Int {
-                        top = CGFloat(t)
-                        right = CGFloat(r)
-                        bottom = CGFloat(b)
-                        left = CGFloat(l)
-                    } else if let t = paddingArray[0] as? Double,
-                              let r = paddingArray[1] as? Double,
-                              let b = paddingArray[2] as? Double,
-                              let l = paddingArray[3] as? Double {
-                        top = CGFloat(t)
-                        right = CGFloat(r)
-                        bottom = CGFloat(b)
-                        left = CGFloat(l)
-                    } else if let t = paddingArray[0] as? CGFloat,
-                              let r = paddingArray[1] as? CGFloat,
-                              let b = paddingArray[2] as? CGFloat,
-                              let l = paddingArray[3] as? CGFloat {
-                        top = t
-                        right = r
-                        bottom = b
-                        left = l
-                    }
-                    
-                    return EdgeInsets(top: top, leading: left, bottom: bottom, trailing: right)
-                default:
-                    break
-                }
-            } else if let intValue = paddingsValue.value as? Int {
-                let padding = CGFloat(intValue)
-                return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
-            } else if let doubleValue = paddingsValue.value as? Double {
-                let padding = CGFloat(doubleValue)
-                return EdgeInsets(top: padding, leading: padding, bottom: padding, trailing: padding)
-            } else if let floatValue = paddingsValue.value as? CGFloat {
-                return EdgeInsets(top: floatValue, leading: floatValue, bottom: floatValue, trailing: floatValue)
-            }
-        }
-        
-        // Fallback to individual padding properties
-        let top = component.paddingTop ?? component.topPadding ?? 0
-        let leading = component.paddingLeft ?? component.leftPadding ?? 0
-        let bottom = component.paddingBottom ?? component.bottomPadding ?? 0
-        let trailing = component.paddingRight ?? component.rightPadding ?? 0
-        
-        return EdgeInsets(
-            top: top,
-            leading: leading,
-            bottom: bottom,
-            trailing: trailing
-        )
-    }
-    
-    private func getMargins() -> EdgeInsets {
-        // Check for margins array first (similar to getPadding)
-        if let marginsValue = component.margins {
-            if let marginArray = marginsValue.value as? [Any] {
-                // Handle array format [top, right, bottom, left] or [vertical, horizontal] or [all]
-                switch marginArray.count {
-                case 1:
-                    if let value = marginArray[0] as? Int {
-                        let margin = CGFloat(value)
-                        return EdgeInsets(top: margin, leading: margin, bottom: margin, trailing: margin)
-                    } else if let value = marginArray[0] as? Double {
-                        let margin = CGFloat(value)
-                        return EdgeInsets(top: margin, leading: margin, bottom: margin, trailing: margin)
-                    } else if let value = marginArray[0] as? CGFloat {
-                        return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
-                    }
-                case 2:
-                    // Vertical, Horizontal
-                    var vMargin: CGFloat = 0
-                    var hMargin: CGFloat = 0
-                    
-                    if let vValue = marginArray[0] as? Int, let hValue = marginArray[1] as? Int {
-                        vMargin = CGFloat(vValue)
-                        hMargin = CGFloat(hValue)
-                    } else if let vValue = marginArray[0] as? Double, let hValue = marginArray[1] as? Double {
-                        vMargin = CGFloat(vValue)
-                        hMargin = CGFloat(hValue)
-                    } else if let vValue = marginArray[0] as? CGFloat, let hValue = marginArray[1] as? CGFloat {
-                        vMargin = vValue
-                        hMargin = hValue
-                    }
-                    
-                    return EdgeInsets(top: vMargin, leading: hMargin, bottom: vMargin, trailing: hMargin)
-                case 4:
-                    // Top, Right, Bottom, Left
-                    var top: CGFloat = 0
-                    var right: CGFloat = 0
-                    var bottom: CGFloat = 0
-                    var left: CGFloat = 0
-                    
-                    if let t = marginArray[0] as? Int,
-                       let r = marginArray[1] as? Int,
-                       let b = marginArray[2] as? Int,
-                       let l = marginArray[3] as? Int {
-                        top = CGFloat(t)
-                        right = CGFloat(r)
-                        bottom = CGFloat(b)
-                        left = CGFloat(l)
-                    } else if let t = marginArray[0] as? Double,
-                              let r = marginArray[1] as? Double,
-                              let b = marginArray[2] as? Double,
-                              let l = marginArray[3] as? Double {
-                        top = CGFloat(t)
-                        right = CGFloat(r)
-                        bottom = CGFloat(b)
-                        left = CGFloat(l)
-                    } else if let t = marginArray[0] as? CGFloat,
-                              let r = marginArray[1] as? CGFloat,
-                              let b = marginArray[2] as? CGFloat,
-                              let l = marginArray[3] as? CGFloat {
-                        top = t
-                        right = r
-                        bottom = b
-                        left = l
-                    }
-                    
-                    return EdgeInsets(top: top, leading: left, bottom: bottom, trailing: right)
-                default:
-                    break
-                }
-            } else if let intValue = marginsValue.value as? Int {
-                let margin = CGFloat(intValue)
-                return EdgeInsets(top: margin, leading: margin, bottom: margin, trailing: margin)
-            } else if let doubleValue = marginsValue.value as? Double {
-                let margin = CGFloat(doubleValue)
-                return EdgeInsets(top: margin, leading: margin, bottom: margin, trailing: margin)
-            } else if let floatValue = marginsValue.value as? CGFloat {
-                return EdgeInsets(top: floatValue, leading: floatValue, bottom: floatValue, trailing: floatValue)
-            }
-        }
-        
-        // Fallback to individual margin properties
-        let top = component.topMargin ?? 0
-        let leading = component.leftMargin ?? 0
-        let bottom = component.bottomMargin ?? 0
-        let trailing = component.rightMargin ?? 0
-        
-        return EdgeInsets(
-            top: top,
-            leading: leading,
-            bottom: bottom,
-            trailing: trailing
-        )
-    }
-    
-    private func getBackground() -> Color {
-        return DynamicHelpers.colorFromHex(component.background) ?? .clear
-    }
-    
     private func getBorder() -> some View {
         Group {
             if let borderWidth = component.borderWidth,
@@ -351,19 +154,5 @@ public struct CommonModifiers: ViewModifier {
                     .stroke(borderColor, lineWidth: borderWidth)
             }
         }
-    }
-    
-    private func getOpacity() -> Double {
-        if let opacity = component.opacity {
-            return Double(opacity)
-        }
-        if let alpha = component.alpha {
-            return Double(alpha)
-        }
-        return 1.0
-    }
-    
-    private func isHidden() -> Bool {
-        return component.hidden == true || component.visibility == "gone"
     }
 }

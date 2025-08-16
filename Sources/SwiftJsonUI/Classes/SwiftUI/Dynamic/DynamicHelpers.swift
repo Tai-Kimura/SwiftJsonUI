@@ -63,26 +63,6 @@ public struct DynamicHelpers {
         return Color(red: r, green: g, blue: b)
     }
     
-    public static func paddingFromArray(_ padding: [CGFloat]?) -> EdgeInsets {
-        guard let padding = padding else {
-            return EdgeInsets()
-        }
-        
-        switch padding.count {
-        case 1:
-            return EdgeInsets(top: padding[0], leading: padding[0], 
-                            bottom: padding[0], trailing: padding[0])
-        case 2:
-            return EdgeInsets(top: padding[0], leading: padding[1], 
-                            bottom: padding[0], trailing: padding[1])
-        case 4:
-            return EdgeInsets(top: padding[0], leading: padding[1], 
-                            bottom: padding[2], trailing: padding[3])
-        default:
-            return EdgeInsets()
-        }
-    }
-    
     public static func contentModeFromString(_ mode: String?) -> ContentMode {
         switch mode {
         case "AspectFill", "aspectFill":
@@ -170,11 +150,11 @@ public struct DynamicHelpers {
         return value == "matchParent"
     }
     
-    // Helper to extract padding values from AnyCodable
-    public static func extractPaddingValues(_ padding: AnyCodable?) -> [CGFloat]? {
-        guard let padding = padding else { return nil }
+    // Helper to convert AnyCodable to array of CGFloat values
+    private static func anyCodableToFloatArray(_ value: AnyCodable?) -> [CGFloat]? {
+        guard let value = value else { return nil }
         
-        if let array = padding.value as? [Any] {
+        if let array = value.value as? [Any] {
             return array.compactMap { item in
                 if let value = item as? CGFloat {
                     return value
@@ -185,15 +165,127 @@ public struct DynamicHelpers {
                 }
                 return nil
             }
-        } else if let value = padding.value as? CGFloat {
+        } else if let value = value.value as? CGFloat {
             return [value]
-        } else if let value = padding.value as? Double {
+        } else if let value = value.value as? Double {
             return [CGFloat(value)]
-        } else if let value = padding.value as? Int {
+        } else if let value = value.value as? Int {
             return [CGFloat(value)]
         }
         
         return nil
+    }
+    
+    // Convert array of padding/margin values to EdgeInsets
+    public static func edgeInsetsFromArray(_ values: [CGFloat]) -> EdgeInsets {
+        switch values.count {
+        case 1:
+            // All edges same value
+            let value = values[0]
+            return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
+        case 2:
+            // [Vertical, Horizontal]
+            let vValue = values[0]
+            let hValue = values[1]
+            return EdgeInsets(top: vValue, leading: hValue, bottom: vValue, trailing: hValue)
+        case 4:
+            // [Top, Right, Bottom, Left]
+            return EdgeInsets(top: values[0], leading: values[3], bottom: values[2], trailing: values[1])
+        default:
+            return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        }
+    }
+    
+    // Convert AnyCodable to EdgeInsets (handles arrays and single values)
+    public static func edgeInsetsFromAnyCodable(_ value: AnyCodable?) -> EdgeInsets? {
+        guard let value = value else { return nil }
+        
+        if let array = anyCodableToFloatArray(value) {
+            return edgeInsetsFromArray(array)
+        }
+        
+        return nil
+    }
+    
+    // Unified method to get padding EdgeInsets from component
+    public static func getPadding(from component: DynamicComponent) -> EdgeInsets {
+        var resultPadding = EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        
+        // Check for paddings/padding array or value
+        if let paddingInsets = edgeInsetsFromAnyCodable(component.paddings ?? component.padding) {
+            resultPadding = paddingInsets
+        } else {
+            // Fallback to individual padding properties
+            let top = component.paddingTop ?? component.topPadding ?? 0
+            let leading = component.paddingLeft ?? component.leftPadding ?? 0
+            let bottom = component.paddingBottom ?? component.bottomPadding ?? 0
+            let trailing = component.paddingRight ?? component.rightPadding ?? 0
+            
+            resultPadding = EdgeInsets(
+                top: top,
+                leading: leading,
+                bottom: bottom,
+                trailing: trailing
+            )
+        }
+        
+        // Apply insets if present (additive)
+        if let insetInsets = edgeInsetsFromAnyCodable(component.insets) {
+            resultPadding.top += insetInsets.top
+            resultPadding.leading += insetInsets.leading
+            resultPadding.bottom += insetInsets.bottom
+            resultPadding.trailing += insetInsets.trailing
+        }
+        
+        // Apply insetHorizontal if present (additive)
+        if let value = component.insetHorizontal {
+            resultPadding.leading += value
+            resultPadding.trailing += value
+        }
+        
+        return resultPadding
+    }
+    
+    // Unified method to get margins EdgeInsets from component
+    public static func getMargins(from component: DynamicComponent) -> EdgeInsets {
+        // Check for margins array or value
+        if let marginInsets = edgeInsetsFromAnyCodable(component.margins) {
+            return marginInsets
+        }
+        
+        // Fallback to individual margin properties
+        let top = component.topMargin ?? 0
+        let leading = component.leftMargin ?? 0
+        let bottom = component.bottomMargin ?? 0
+        let trailing = component.rightMargin ?? 0
+        
+        return EdgeInsets(
+            top: top,
+            leading: leading,
+            bottom: bottom,
+            trailing: trailing
+        )
+    }
+    
+    // Get background color from component
+    public static func getBackground(from component: DynamicComponent) -> Color {
+        return colorFromHex(component.background) ?? .clear
+    }
+    
+    // Get opacity from component
+    public static func getOpacity(from component: DynamicComponent) -> Double {
+        if let opacity = component.opacity {
+            return Double(opacity)
+        }
+        if let alpha = component.alpha {
+            return Double(alpha)
+        }
+        return 1.0
+    }
+    
+    // Check if component should be hidden
+    public static func isHidden(_ component: DynamicComponent) -> Bool {
+        return component.hidden == true || component.visibility == "gone"
     }
 }
 
@@ -225,6 +317,7 @@ extension View {
         }()
         
         return self
+            .applyPadding(component, skip: skipPadding)  // Apply padding first (inner spacing)
             .frame(
                 width: widthValue == .infinity ? nil : widthValue,
                 height: heightValue == .infinity ? nil : heightValue
@@ -237,13 +330,12 @@ extension View {
             )
             .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
+            .applyBorder(component)
+            .dynamicClipped(component.clipToBounds == true)
+            .applyMargin(component)  // Apply margin last (outer spacing)
             .opacity(component.opacity ?? component.alpha ?? (component.visibility == "invisible" ? 0 : 1))
             .dynamicHidden(component.hidden == true || component.visibility == "gone")
             .disabled(component.userInteractionEnabled == false)
-            .dynamicClipped(component.clipToBounds == true)
-            .applyPadding(component, skip: skipPadding)
-            .applyMargin(component)
-            .applyBorder(component)
             .applyShadow(component)
             .applyAspectRatio(component)
             .applyCenterInParent(component)
@@ -329,128 +421,12 @@ extension View {
         if skip {
             self
         } else {
-            self.modifier(PaddingModifier(component: component))
+            self.padding(DynamicHelpers.getPadding(from: component))
         }
     }
     
     @ViewBuilder
     func applyMargin(_ component: DynamicComponent) -> some View {
-        self
-            .modifier(MarginModifier(component: component))
-    }
-}
-
-// MARK: - Padding Modifier
-struct PaddingModifier: ViewModifier {
-    let component: DynamicComponent
-    
-    func body(content: Content) -> some View {
-        var modifiedContent = AnyView(content)
-        
-        // padding または paddings プロパティ
-        if let values = DynamicHelpers.extractPaddingValues(component.padding ?? component.paddings) {
-            switch values.count {
-            case 1:
-                modifiedContent = AnyView(modifiedContent.padding(values[0]))
-            case 2:
-                modifiedContent = AnyView(modifiedContent.padding(.horizontal, values[1]).padding(.vertical, values[0]))
-            case 4:
-                modifiedContent = AnyView(
-                    modifiedContent
-                        .padding(.top, values[0])
-                        .padding(.trailing, values[1])
-                        .padding(.bottom, values[2])
-                        .padding(.leading, values[3])
-                )
-            default:
-                break
-            }
-        }
-        
-        // 個別のpadding設定
-        if let value = component.leftPadding ?? component.paddingLeft {
-            modifiedContent = AnyView(modifiedContent.padding(.leading, value))
-        }
-        if let value = component.rightPadding ?? component.paddingRight {
-            modifiedContent = AnyView(modifiedContent.padding(.trailing, value))
-        }
-        if let value = component.topPadding ?? component.paddingTop {
-            modifiedContent = AnyView(modifiedContent.padding(.top, value))
-        }
-        if let value = component.bottomPadding ?? component.paddingBottom {
-            modifiedContent = AnyView(modifiedContent.padding(.bottom, value))
-        }
-        
-        // insets プロパティ
-        if let values = DynamicHelpers.extractPaddingValues(component.insets) {
-            switch values.count {
-            case 1:
-                modifiedContent = AnyView(modifiedContent.padding(values[0]))
-            case 2:
-                modifiedContent = AnyView(modifiedContent.padding(.vertical, values[0]).padding(.horizontal, values[1]))
-            case 4:
-                modifiedContent = AnyView(
-                    modifiedContent
-                        .padding(.top, values[0])
-                        .padding(.trailing, values[1])
-                        .padding(.bottom, values[2])
-                        .padding(.leading, values[3])
-                )
-            default:
-                break
-            }
-        }
-        
-        // insetHorizontal
-        if let value = component.insetHorizontal {
-            modifiedContent = AnyView(modifiedContent.padding(.horizontal, value))
-        }
-        
-        return modifiedContent
-    }
-}
-
-// MARK: - Margin Modifier
-struct MarginModifier: ViewModifier {
-    let component: DynamicComponent
-    
-    func body(content: Content) -> some View {
-        var modifiedContent = AnyView(content)
-        
-        // margin または margins プロパティ
-        if let values = DynamicHelpers.extractPaddingValues(component.margin ?? component.margins) {
-            switch values.count {
-            case 1:
-                modifiedContent = AnyView(modifiedContent.padding(values[0]))
-            case 2:
-                modifiedContent = AnyView(modifiedContent.padding(.vertical, values[0]).padding(.horizontal, values[1]))
-            case 4:
-                modifiedContent = AnyView(
-                    modifiedContent
-                        .padding(.top, values[0])
-                        .padding(.trailing, values[1])
-                        .padding(.bottom, values[2])
-                        .padding(.leading, values[3])
-                )
-            default:
-                break
-            }
-        }
-        
-        // 個別のmargin設定
-        if let value = component.topMargin {
-            modifiedContent = AnyView(modifiedContent.padding(.top, value))
-        }
-        if let value = component.bottomMargin {
-            modifiedContent = AnyView(modifiedContent.padding(.bottom, value))
-        }
-        if let value = component.leftMargin {
-            modifiedContent = AnyView(modifiedContent.padding(.leading, value))
-        }
-        if let value = component.rightMargin {
-            modifiedContent = AnyView(modifiedContent.padding(.trailing, value))
-        }
-        
-        return modifiedContent
+        self.padding(DynamicHelpers.getMargins(from: component))
     }
 }

@@ -26,7 +26,7 @@ public struct ButtonConverter {
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
                     .frame(maxWidth: component.width == .infinity ? .infinity : nil)
-                    .padding(getButtonPadding(component))
+                    .padding(DynamicHelpers.getPadding(from: component))
             }
             .buttonStyle(getDynamicButtonStyle(component))
             .modifier(ButtonModifiers(component: component, viewModel: viewModel))
@@ -93,38 +93,6 @@ public struct ButtonConverter {
     }
     
     
-    private static func getButtonPadding(_ component: DynamicComponent) -> EdgeInsets {
-        // Get padding value from AnyCodable
-        var paddingValue: CGFloat? = nil
-        if let padding = component.padding {
-            if let intValue = padding.value as? Int {
-                paddingValue = CGFloat(intValue)
-            } else if let doubleValue = padding.value as? Double {
-                paddingValue = CGFloat(doubleValue)
-            } else if let floatValue = padding.value as? CGFloat {
-                paddingValue = floatValue
-            }
-        }
-        
-        // If padding is specified, use it for all sides
-        if let padding = paddingValue {
-            return EdgeInsets(
-                top: component.paddingTop ?? component.topPadding ?? padding,
-                leading: component.paddingLeft ?? component.leftPadding ?? padding,
-                bottom: component.paddingBottom ?? component.bottomPadding ?? padding,
-                trailing: component.paddingRight ?? component.rightPadding ?? padding
-            )
-        }
-        
-        // No padding specified - button should have no internal padding
-        // (background and cornerRadius are applied by DynamicButtonStyle)
-        return EdgeInsets(
-            top: component.paddingTop ?? component.topPadding ?? 0,
-            leading: component.paddingLeft ?? component.leftPadding ?? 0,
-            bottom: component.paddingBottom ?? component.bottomPadding ?? 0,
-            trailing: component.paddingRight ?? component.rightPadding ?? 0
-        )
-    }
     
     private static func getDynamicButtonStyle(_ component: DynamicComponent) -> some ButtonStyle {
         DynamicButtonStyle(
@@ -143,38 +111,9 @@ struct ButtonModifiers: ViewModifier {
     func body(content: Content) -> some View {
         content
             // Apply margins only (background and cornerRadius are handled by DynamicButtonStyle)
-            .padding(getMargins())
-            .opacity(getOpacity())
-            .opacity(isHidden() ? 0 : 1)
-    }
-    
-    private func getMargins() -> EdgeInsets {
-        // Use margin properties for outer spacing
-        let top = component.topMargin ?? 0
-        let leading = component.leftMargin ?? 0
-        let bottom = component.bottomMargin ?? 0
-        let trailing = component.rightMargin ?? 0
-        
-        return EdgeInsets(
-            top: top,
-            leading: leading,
-            bottom: bottom,
-            trailing: trailing
-        )
-    }
-    
-    private func getOpacity() -> Double {
-        if let opacity = component.opacity {
-            return Double(opacity)
-        }
-        if let alpha = component.alpha {
-            return Double(alpha)
-        }
-        return 1.0
-    }
-    
-    private func isHidden() -> Bool {
-        return component.hidden == true || component.visibility == "gone"
+            .padding(DynamicHelpers.getMargins(from: component))
+            .opacity(DynamicHelpers.getOpacity(from: component))
+            .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
 }
 
