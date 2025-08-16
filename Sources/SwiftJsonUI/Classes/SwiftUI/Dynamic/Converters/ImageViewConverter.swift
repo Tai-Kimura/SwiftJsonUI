@@ -57,10 +57,10 @@ public struct ImageViewConverter {
             image
                 .renderingMode(DynamicHelpers.getRenderingMode(from: component))
                 .resizable()
-                .aspectRatio(contentMode: DynamicHelpers.contentModeFromString(component.contentMode))
-                .frame(width: component.width, height: component.height)
+                .aspectRatio(contentMode: DynamicHelpers.getContentMode(from: component))
                 .foregroundColor(getImageColor(component))
-                .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                .padding(DynamicHelpers.getPadding(from: component))  // Apply padding first
+                .frame(width: component.width, height: component.height)  // Then frame
                 .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
                 .cornerRadius(component.cornerRadius ?? 0)
                 .modifier(ImageModifiers(component: component, viewModel: viewModel))  // External margins only
