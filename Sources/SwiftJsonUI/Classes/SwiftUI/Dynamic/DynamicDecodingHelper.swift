@@ -48,7 +48,18 @@ public struct DynamicDecodingHelper {
         
         if let array = value.value as? [Any] {
             return array.compactMap { item in
-                if let value = item as? CGFloat {
+                // Handle nested AnyCodable
+                if let anyCodable = item as? AnyCodable {
+                    if let value = anyCodable.value as? CGFloat {
+                        return value
+                    } else if let value = anyCodable.value as? Double {
+                        return CGFloat(value)
+                    } else if let value = anyCodable.value as? Int {
+                        return CGFloat(value)
+                    }
+                }
+                // Handle direct values
+                else if let value = item as? CGFloat {
                     return value
                 } else if let value = item as? Double {
                     return CGFloat(value)
