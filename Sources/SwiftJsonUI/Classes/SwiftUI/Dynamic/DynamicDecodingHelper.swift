@@ -266,8 +266,6 @@ public struct DynamicDecodingHelper {
             return .fill
         case "AspectFit", "aspectFit":
             return .fit
-        case "center", "Center":
-            return .center
         default:
             return .fit
         }
