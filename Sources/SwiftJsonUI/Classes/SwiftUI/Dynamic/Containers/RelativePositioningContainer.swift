@@ -42,11 +42,15 @@ public struct RelativePositioningContainer: View {
         // Extract parent padding
         let parentPadding = extractParentPadding()
         
+        // Extract parent background color
+        let backgroundColor = parentComponent?.background != nil ? 
+            DynamicHelpers.colorFromHex(parentComponent!.background) : nil
+        
         // Use SwiftJsonUI's RelativePositionContainer
         RelativePositionContainer(
             children: childConfigs,
             alignment: .topLeading,
-            backgroundColor: nil,
+            backgroundColor: backgroundColor,
             parentPadding: parentPadding
         )
     }
