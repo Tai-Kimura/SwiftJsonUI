@@ -7,59 +7,141 @@
 
 import SwiftUI
 
+// MARK: - Modifier Overrides
+/// Structure to customize or override specific modifiers in CommonModifiers
+public struct ModifierOverrides {
+    // Skip flags
+    var skipPadding: Bool = false
+    var skipCornerRadius: Bool = false
+    var skipBorder: Bool = false
+    var skipMargins: Bool = false
+    
+    // Custom values
+    var customPadding: EdgeInsets? = nil
+    var customCornerRadius: CGFloat? = nil
+    
+    // Custom modifier closures
+    var customBackground: ((AnyView) -> AnyView)? = nil
+    var customOverlay: ((AnyView) -> AnyView)? = nil
+    var afterBackgroundModifier: ((AnyView) -> AnyView)? = nil
+    var finalModifier: ((AnyView) -> AnyView)? = nil
+    
+    public init(
+        skipPadding: Bool = false,
+        skipCornerRadius: Bool = false,
+        skipBorder: Bool = false,
+        skipMargins: Bool = false,
+        customPadding: EdgeInsets? = nil,
+        customCornerRadius: CGFloat? = nil,
+        customBackground: ((AnyView) -> AnyView)? = nil,
+        customOverlay: ((AnyView) -> AnyView)? = nil,
+        afterBackgroundModifier: ((AnyView) -> AnyView)? = nil,
+        finalModifier: ((AnyView) -> AnyView)? = nil
+    ) {
+        self.skipPadding = skipPadding
+        self.skipCornerRadius = skipCornerRadius
+        self.skipBorder = skipBorder
+        self.skipMargins = skipMargins
+        self.customPadding = customPadding
+        self.customCornerRadius = customCornerRadius
+        self.customBackground = customBackground
+        self.customOverlay = customOverlay
+        self.afterBackgroundModifier = afterBackgroundModifier
+        self.finalModifier = finalModifier
+    }
+}
+
 // MARK: - Common Modifiers
 public struct CommonModifiers: ViewModifier {
     let component: DynamicComponent
     let viewModel: DynamicViewModel
     let parentOrientation: String? = nil  // To be passed when needed
+    let customModifiers: ModifierOverrides
+    
+    public init(component: DynamicComponent, viewModel: DynamicViewModel, customModifiers: ModifierOverrides = ModifierOverrides()) {
+        self.component = component
+        self.viewModel = viewModel
+        self.customModifiers = customModifiers
+    }
     
     public func body(content: Content) -> some View {
-        let modifiedContent = content
-            .padding(DynamicHelpers.getPadding(from: component))  // Apply padding first
+        // Start with content and apply modifiers in order
+        var result = AnyView(content)
         
-        // Apply frame only if width or height are explicitly set (not nil and not wrapContent)
-        let shouldApplyFrame = shouldApplyFrameModifier()
-        
-        if shouldApplyFrame {
-            let width = getWidth()
-            let height = getHeight()
-            let _ = print("🖼️ Frame: id=\(component.id ?? "no-id"), width=\(width?.description ?? "nil"), height=\(height?.description ?? "nil")")
-            
-            // Check for invalid dimensions
-            if let w = width, (w < 0 || !w.isFinite) && w != .infinity {
-                print("⚠️ Invalid width detected: \(w) for component id=\(component.id ?? "no-id")")
-            }
-            if let h = height, (h < 0 || !h.isFinite) && h != .infinity {
-                print("⚠️ Invalid height detected: \(h) for component id=\(component.id ?? "no-id")")
-            }
+        // 1. Apply padding (internal spacing) - can be overridden
+        if customModifiers.skipPadding {
+            // Skip padding if requested
+        } else if let customPadding = customModifiers.customPadding {
+            result = AnyView(result.padding(customPadding))
+        } else {
+            result = AnyView(result.padding(DynamicHelpers.getPadding(from: component)))
         }
         
-        // Apply frame dimensions separately
-        var finalContent = AnyView(modifiedContent)
-        
+        // 2. Apply frame
+        let shouldApplyFrame = shouldApplyFrameModifier()
         if shouldApplyFrame {
             let width = getWidth()
             let height = getHeight()
             let alignment = getFrameAlignment()
             
-            // Apply width if it has a value
-            if let w = width {
-                finalContent = AnyView(finalContent.frame(width: w, alignment: alignment))
-            }
+            let _ = print("🖼️ Frame: id=\(component.id ?? "no-id"), width=\(width?.description ?? "nil"), height=\(height?.description ?? "nil")")
             
-            // Apply height if it has a value
+            if let w = width {
+                result = AnyView(result.frame(width: w, alignment: alignment))
+            }
             if let h = height {
-                finalContent = AnyView(finalContent.frame(height: h, alignment: alignment))
+                result = AnyView(result.frame(height: h, alignment: alignment))
             }
         }
         
-        return finalContent
-            .background(DynamicHelpers.getBackground(from: component))
-            .cornerRadius(component.cornerRadius ?? 0)
-            .overlay(getBorder())
-            .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+        // 3. Apply background - can be overridden
+        if let customBackground = customModifiers.customBackground {
+            result = AnyView(customBackground(result))
+        } else {
+            result = AnyView(result.background(DynamicHelpers.getBackground(from: component)))
+        }
+        
+        // 4. Apply corner radius - can be overridden
+        if customModifiers.skipCornerRadius {
+            // Skip corner radius if requested
+        } else if let customCornerRadius = customModifiers.customCornerRadius {
+            result = AnyView(result.cornerRadius(customCornerRadius))
+        } else {
+            result = AnyView(result.cornerRadius(component.cornerRadius ?? 0))
+        }
+        
+        // 5. Apply border overlay - can be overridden
+        if customModifiers.skipBorder {
+            // Skip border if requested
+        } else if let customOverlay = customModifiers.customOverlay {
+            result = AnyView(customOverlay(result))
+        } else {
+            result = AnyView(result.overlay(getBorder()))
+        }
+        
+        // 6. Apply custom modifiers that should come after background/border
+        if let afterBackground = customModifiers.afterBackgroundModifier {
+            result = AnyView(afterBackground(result))
+        }
+        
+        // 7. Apply margins (external spacing)
+        if customModifiers.skipMargins {
+            // Skip margins if requested
+        } else {
+            result = AnyView(result.padding(DynamicHelpers.getMargins(from: component)))
+        }
+        
+        // 8. Apply opacity and visibility
+        result = AnyView(result
             .opacity(DynamicHelpers.getOpacity(from: component))
-            .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            .opacity(DynamicHelpers.isHidden(component) ? 0 : 1))
+        
+        // 9. Apply final custom modifiers
+        if let finalModifier = customModifiers.finalModifier {
+            result = AnyView(finalModifier(result))
+        }
+        
+        return result
     }
     
     private func shouldApplyFrameModifier() -> Bool {

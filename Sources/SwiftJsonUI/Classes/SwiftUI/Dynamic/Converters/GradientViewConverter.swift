@@ -39,11 +39,17 @@ public struct GradientViewConverter {
             content = AnyView(Color.clear)
         }
         
-        // Apply gradient background
+        // Apply gradient background via custom modifier
+        let gradient = getGradient(component)
+        let customModifiers = ModifierOverrides(
+            customBackground: { view in
+                AnyView(view.background(gradient))
+            }
+        )
+        
         return AnyView(
             content
-                .background(getGradient(component))
-                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                .modifier(CommonModifiers(component: component, viewModel: viewModel, customModifiers: customModifiers))
         )
     }
     
