@@ -198,12 +198,13 @@ module SjuiTools
                     indent do
                       # Special handling for views with padding in relative positioning
                       # We need to ensure padding doesn't affect the view's alignment edges
-                      if child['padding'] && child['background']
+                      if (child['padding'] || child['paddings']) && child['background']
                         # Extract padding value and remove it from the child temporarily
-                        padding_value = child['padding']
+                        padding_value = child['padding'] || child['paddings']
                         background_color = child['background']
                         child_without_padding = child.dup
                         child_without_padding.delete('padding')
+                        child_without_padding.delete('paddings')
                         child_without_padding.delete('background')
                         
                         # Remove margin properties (they're handled separately by RelativePositionContainer)
@@ -230,7 +231,26 @@ module SjuiTools
                         end
                         
                         # Now apply padding and background together
-                        add_modifier_line ".padding(#{padding_value.to_i})"
+                        if padding_value.is_a?(Array)
+                          case padding_value.length
+                          when 1
+                            add_modifier_line ".padding(#{padding_value[0]})"
+                          when 2
+                            # [Vertical, Horizontal]
+                            add_modifier_line ".padding(.vertical, #{padding_value[0]})"
+                            add_modifier_line ".padding(.horizontal, #{padding_value[1]})"
+                          when 4
+                            # [Top, Right, Bottom, Left]
+                            add_modifier_line ".padding(.top, #{padding_value[0]})"
+                            add_modifier_line ".padding(.trailing, #{padding_value[1]})"
+                            add_modifier_line ".padding(.bottom, #{padding_value[2]})"
+                            add_modifier_line ".padding(.leading, #{padding_value[3]})"
+                          else
+                            add_modifier_line ".padding(0)"
+                          end
+                        else
+                          add_modifier_line ".padding(#{padding_value.to_i})"
+                        end
                         color = hex_to_swiftui_color(background_color)
                         add_modifier_line ".background(#{color})"
                       else
