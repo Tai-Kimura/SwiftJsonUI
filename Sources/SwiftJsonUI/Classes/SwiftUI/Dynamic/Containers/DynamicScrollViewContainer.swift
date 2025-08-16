@@ -22,12 +22,22 @@ public struct DynamicScrollViewContainer: View {
     @ViewBuilder
     public var body: some View {
         let _ = print("📜 DynamicScrollViewContainer: id=\(component.id ?? "no-id"), childCount=\(component.child?.count ?? 0), width=\(component.width ?? -999), height=\(component.height ?? -999)")
+        
+        // Get padding to apply to content
+        let contentPadding = DynamicHelpers.getPadding(from: component)
+        
+        // Create custom modifiers that skip padding (since we apply it to content)
+        let customModifiers = ModifierOverrides(
+            skipPadding: true  // Don't apply padding to ScrollView itself
+        )
+        
         AdvancedKeyboardAvoidingScrollView {
             // ScrollView should have exactly one child
             if let children = component.child, let firstChild = children.first {
                 DynamicComponentBuilder(component: firstChild, viewModel: viewModel, viewId: viewId)
+                    .padding(contentPadding)  // Apply padding to the content inside ScrollView
             }
         }
-        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+        .modifier(CommonModifiers(component: component, viewModel: viewModel, customModifiers: customModifiers))
     }
 }
