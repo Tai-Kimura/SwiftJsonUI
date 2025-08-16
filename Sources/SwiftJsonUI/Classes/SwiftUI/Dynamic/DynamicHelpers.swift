@@ -176,6 +176,7 @@ extension View {
         }()
         
         return self
+            .applyPadding(component, skip: skipPadding)  // Apply padding first
             .frame(
                 width: widthValue,
                 height: heightValue
@@ -186,7 +187,6 @@ extension View {
                 minHeight: component.minHeight,
                 maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
             )
-            .applyPadding(component, skip: skipPadding)  // Apply padding after frame
             .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
             .applyBorder(component)

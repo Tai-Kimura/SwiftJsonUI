@@ -15,6 +15,7 @@ public struct CommonModifiers: ViewModifier {
     
     public func body(content: Content) -> some View {
         let modifiedContent = content
+            .padding(DynamicHelpers.getPadding(from: component))  // Apply padding first
         
         // Apply frame only if width or height are explicitly set (not nil and not wrapContent)
         let shouldApplyFrame = shouldApplyFrameModifier()
@@ -53,7 +54,6 @@ public struct CommonModifiers: ViewModifier {
         }
         
         return finalContent
-            .padding(DynamicHelpers.getPadding(from: component))  // Apply internal padding first
             .background(DynamicHelpers.getBackground(from: component))
             .cornerRadius(component.cornerRadius ?? 0)
             .overlay(getBorder())

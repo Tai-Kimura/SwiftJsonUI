@@ -116,12 +116,12 @@ module SjuiTools
           apply_center_alignment
           apply_edge_alignment
           
-          # サイズ制約とサイズの適用
+          # パディング（内側のスペース）を先に適用
+          apply_padding unless skip_padding
+          
+          # サイズ制約とサイズをパディングの後に適用
           apply_frame_constraints
           apply_frame_size
-          
-          # パディング（内側のスペース）をフレームの後に適用
-          apply_padding unless skip_padding
           
           # insetsとinsetHorizontalの処理
           apply_insets
