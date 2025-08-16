@@ -55,7 +55,7 @@ public struct DynamicComponentBuilder: View {
         // These components handle their own modifiers (padding/margins/background/cornerRadius)
         // Applying applyDynamicModifiers would cause double application
         let typeString = component.type?.lowercased() ?? ""
-        let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield", "textview", "selectbox"]
+        let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield", "textview", "selectbox", "scrollview", "scroll"]
         
         // Check if this is a View container that uses relative positioning
         let skipPadding = shouldSkipPadding()
