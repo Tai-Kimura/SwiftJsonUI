@@ -369,17 +369,39 @@ module SjuiTools
                     add_line "],"
                     
                     # Margins
-                    margins = []
-                    margins << "top: #{child['topMargin'] || child['marginTop'] || 0}"
-                    margins << "leading: #{child['leftMargin'] || child['marginLeft'] || child['startMargin'] || child['marginStart'] || 0}"
-                    margins << "bottom: #{child['bottomMargin'] || child['marginBottom'] || 0}"
-                    margins << "trailing: #{child['rightMargin'] || child['marginRight'] || child['endMargin'] || child['marginEnd'] || 0}"
-                    
-                    # デフォルト値でない場合のみマージンを設定
-                    if margins.any? { |m| !m.end_with?(' 0') }
-                      add_line "margins: EdgeInsets(#{margins.join(', ')})"
+                    # Check for margins array first
+                    if child['margins']
+                      margin_values = Array(child['margins'])
+                      case margin_values.length
+                      when 1
+                        # All edges same value
+                        value = margin_values[0]
+                        add_line "margins: EdgeInsets(top: #{value}, leading: #{value}, bottom: #{value}, trailing: #{value})"
+                      when 2
+                        # [Vertical, Horizontal]
+                        v_value = margin_values[0]
+                        h_value = margin_values[1]
+                        add_line "margins: EdgeInsets(top: #{v_value}, leading: #{h_value}, bottom: #{v_value}, trailing: #{h_value})"
+                      when 4
+                        # [Top, Right, Bottom, Left]
+                        add_line "margins: EdgeInsets(top: #{margin_values[0]}, leading: #{margin_values[3]}, bottom: #{margin_values[2]}, trailing: #{margin_values[1]})"
+                      else
+                        add_line "margins: .init()"
+                      end
                     else
-                      add_line "margins: .init()"
+                      # Individual margin properties
+                      margins = []
+                      margins << "top: #{child['topMargin'] || child['marginTop'] || 0}"
+                      margins << "leading: #{child['leftMargin'] || child['marginLeft'] || child['startMargin'] || child['marginStart'] || 0}"
+                      margins << "bottom: #{child['bottomMargin'] || child['marginBottom'] || 0}"
+                      margins << "trailing: #{child['rightMargin'] || child['marginRight'] || child['endMargin'] || child['marginEnd'] || 0}"
+                      
+                      # デフォルト値でない場合のみマージンを設定
+                      if margins.any? { |m| !m.end_with?(' 0') }
+                        add_line "margins: EdgeInsets(#{margins.join(', ')})"
+                      else
+                        add_line "margins: .init()"
+                      end
                     end
                   end
                   add_line index < children.length - 1 ? ")," : ")"
