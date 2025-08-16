@@ -183,18 +183,34 @@ extension View {
             return component.height
         }()
         
-        return self
-            .applyPadding(component, skip: skipPadding)  // Apply padding first
-            .frame(
-                width: widthValue,
-                height: heightValue
-            )
-            .frame(
-                minWidth: component.minWidth,
-                maxWidth: widthValue == .infinity ? .infinity : component.maxWidth,
-                minHeight: component.minHeight,
-                maxHeight: heightValue == .infinity ? .infinity : component.maxHeight
-            )
+        // Apply padding first, then frame modifiers
+        var result = self.applyPadding(component, skip: skipPadding)
+        
+        // Apply width - use maxWidth for infinity, width for finite values
+        if let widthValue = widthValue {
+            if widthValue == .infinity {
+                result = result.frame(maxWidth: .infinity)
+            } else {
+                result = result.frame(width: widthValue)
+            }
+        }
+        
+        // Apply height - use maxHeight for infinity, height for finite values
+        if let heightValue = heightValue {
+            if heightValue == .infinity {
+                result = result.frame(maxHeight: .infinity)
+            } else {
+                result = result.frame(height: heightValue)
+            }
+        }
+        
+        // Apply min/max constraints if needed
+        return result.frame(
+            minWidth: component.minWidth,
+            maxWidth: (widthValue == .infinity || component.maxWidth == nil) ? nil : component.maxWidth,
+            minHeight: component.minHeight,
+            maxHeight: (heightValue == .infinity || component.maxHeight == nil) ? nil : component.maxHeight
+        )
             .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
             .applyBorder(component)

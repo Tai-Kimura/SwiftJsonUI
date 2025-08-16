@@ -88,11 +88,20 @@ public struct CommonModifiers: ViewModifier {
             
             let _ = print("🖼️ Frame: id=\(component.id ?? "no-id"), width=\(width?.description ?? "nil"), height=\(height?.description ?? "nil")")
             
+            // Use maxWidth/maxHeight for infinity, width/height for finite values
             if let w = width {
-                result = AnyView(result.frame(width: w, alignment: alignment))
+                if w == .infinity {
+                    result = AnyView(result.frame(maxWidth: .infinity, alignment: alignment))
+                } else {
+                    result = AnyView(result.frame(width: w, alignment: alignment))
+                }
             }
             if let h = height {
-                result = AnyView(result.frame(height: h, alignment: alignment))
+                if h == .infinity {
+                    result = AnyView(result.frame(maxHeight: .infinity, alignment: alignment))
+                } else {
+                    result = AnyView(result.frame(height: h, alignment: alignment))
+                }
             }
         }
         
