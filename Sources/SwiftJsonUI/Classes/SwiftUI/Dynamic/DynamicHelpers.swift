@@ -199,7 +199,7 @@ public struct DynamicHelpers {
 
 // MARK: - View Modifier Extension
 extension View {
-    public func applyDynamicModifiers(_ component: DynamicComponent, isWeightedChild: Bool = false) -> some View {
+    public func applyDynamicModifiers(_ component: DynamicComponent, isWeightedChild: Bool = false, skipPadding: Bool = false) -> some View {
         // width and height are already CGFloat? after JSON decoding
         // .infinity means matchParent, nil means wrapContent or not specified
         let widthValue: CGFloat? = {
@@ -241,7 +241,7 @@ extension View {
             .dynamicHidden(component.hidden == true || component.visibility == "gone")
             .disabled(component.userInteractionEnabled == false)
             .dynamicClipped(component.clipToBounds == true)
-            .applyPadding(component)
+            .applyPadding(component, skip: skipPadding)
             .applyMargin(component)
             .applyBorder(component)
             .applyShadow(component)
@@ -325,9 +325,12 @@ extension View {
     }
     
     @ViewBuilder
-    func applyPadding(_ component: DynamicComponent) -> some View {
-        self
-            .modifier(PaddingModifier(component: component))
+    func applyPadding(_ component: DynamicComponent, skip: Bool = false) -> some View {
+        if skip {
+            self
+        } else {
+            self.modifier(PaddingModifier(component: component))
+        }
     }
     
     @ViewBuilder

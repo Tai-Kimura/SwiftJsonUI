@@ -55,14 +55,35 @@ public struct DynamicComponentBuilder: View {
         let typeString = component.type?.lowercased() ?? ""
         let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield", "textview", "selectbox"]
         
+        // Check if this is a View container that uses relative positioning
+        let skipPadding = shouldSkipPadding()
+        
         if selfManagedTypes.contains(typeString) {
             view
                 .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
         } else {
             view
-                .applyDynamicModifiers(component, isWeightedChild: isWeightedChild)
+                .applyDynamicModifiers(component, isWeightedChild: isWeightedChild, skipPadding: skipPadding)
                 .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
         }
+    }
+    
+    private func shouldSkipPadding() -> Bool {
+        // Skip padding if this is a View container with relative positioning
+        if component.type?.lowercased() == "view" {
+            if let children = component.child {
+                let needsRelativePositioning = RelativePositionConverter.childrenNeedRelativePositioning(children)
+                let hasConflictingAlignments = RelativePositionConverter.childrenHaveConflictingAlignments(
+                    children, 
+                    parentOrientation: component.orientation
+                )
+                
+                // Skip padding if relative positioning will be used
+                return needsRelativePositioning && 
+                       (component.orientation == nil || hasConflictingAlignments)
+            }
+        }
+        return false
     }
     
     @ViewBuilder
