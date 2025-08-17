@@ -143,15 +143,17 @@ struct ButtonModifiers: ViewModifier {
         
         return content
             // Apply frame size and constraints
-            .frame(
-                width: width,
-                height: height
-            )
+            // First apply min/max constraints
             .frame(
                 minWidth: component.minWidth,
                 maxWidth: maxWidth,
                 minHeight: component.minHeight,
                 maxHeight: maxHeight
+            )
+            // Then apply exact size if specified
+            .frame(
+                width: width,
+                height: height
             )
             // Apply margins only (background and cornerRadius are handled by DynamicButtonStyle)
             .padding(DynamicHelpers.getMargins(from: component))

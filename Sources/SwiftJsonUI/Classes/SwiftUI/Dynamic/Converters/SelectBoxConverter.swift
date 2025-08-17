@@ -30,15 +30,17 @@ struct SelectBoxModifiers: ViewModifier {
             // Apply padding first (internal spacing)
             .padding(DynamicHelpers.getPadding(from: component))
             // Apply frame size and constraints
-            .frame(
-                width: width,
-                height: height
-            )
+            // First apply min/max constraints
             .frame(
                 minWidth: component.minWidth,
                 maxWidth: (component.width == .infinity) ? .infinity : component.maxWidth,
                 minHeight: component.minHeight,
                 maxHeight: (component.height == .infinity) ? .infinity : component.maxHeight
+            )
+            // Then apply exact size if specified
+            .frame(
+                width: width,
+                height: height
             )
             // Apply border after component's internal cornerRadius
             .overlay(getBorder())
