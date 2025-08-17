@@ -47,10 +47,22 @@ public class DynamicViewModel: ObservableObject {
         if let data = JSONLayoutLoader.loadJSON(named: jsonName) {
             Logger.debug("[DynamicViewModel] JSON data loaded, size: \(data.count) bytes")
             do {
-                let decoder = JSONDecoder()
-                rootComponent = try decoder.decode(DynamicComponent.self, from: data)
-                decodeError = nil
-                Logger.debug("[DynamicViewModel] Successfully decoded component: \(rootComponent?.type ?? "nil")")
+                // First parse JSON to dictionary for style processing
+                if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    // Apply styles
+                    let processedJSON = StyleProcessor.processStyles(jsonObject)
+                    
+                    // Convert back to Data for decoding
+                    let processedData = try JSONSerialization.data(withJSONObject: processedJSON, options: [])
+                    
+                    // Decode to DynamicComponent
+                    let decoder = JSONDecoder()
+                    rootComponent = try decoder.decode(DynamicComponent.self, from: processedData)
+                    decodeError = nil
+                    Logger.debug("[DynamicViewModel] Successfully decoded component with styles: \(rootComponent?.type ?? "nil")")
+                } else {
+                    throw NSError(domain: "DynamicViewModel", code: 1, userInfo: [NSLocalizedDescriptionKey: "Invalid JSON format"])
+                }
             } catch {
                 Logger.debug("[DynamicViewModel] Decode error: \(error)")
                 decodeError = "JSON Decode Error:\n\(error)"
