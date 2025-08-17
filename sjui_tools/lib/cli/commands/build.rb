@@ -17,11 +17,11 @@ module SjuiTools
           
           case mode
           when 'uikit', 'all'
-            build_uikit
+            build_uikit(options)
           end
           
           if mode == 'swiftui' || mode == 'all'
-            build_swiftui
+            build_swiftui(options)
           end
         end
 
@@ -38,6 +38,10 @@ module SjuiTools
               options[:mode] = mode
             end
             
+            opts.on('--clean', 'Clean cache before building') do
+              options[:clean] = true
+            end
+            
             opts.on('-h', '--help', 'Show this help message') do
               puts opts
               exit
@@ -47,7 +51,7 @@ module SjuiTools
           options
         end
 
-        def build_uikit
+        def build_uikit(options = {})
           Core::Logger.info "Building UIKit files..."
           
           # Setup project paths
@@ -92,7 +96,7 @@ module SjuiTools
           loader.start_analyze
         end
 
-        def build_swiftui
+        def build_swiftui(options = {})
           Core::Logger.info "Building SwiftUI files..."
           
           # Setup project paths
@@ -113,6 +117,12 @@ module SjuiTools
           
           # Initialize cache manager
           cache_manager = SjuiTools::SwiftUI::BuildCacheManager.new(source_path)
+          
+          # Clean cache if --clean option is specified
+          if options[:clean]
+            Core::Logger.info "Cleaning build cache..."
+            cache_manager.clean_cache
+          end
           last_updated = cache_manager.load_last_updated
           last_including_files = cache_manager.load_last_including_files
           style_dependencies = cache_manager.load_style_dependencies

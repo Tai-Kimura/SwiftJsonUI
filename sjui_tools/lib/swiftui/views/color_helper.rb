@@ -41,13 +41,13 @@ module SjuiTools
             b = hex[4..5].to_i(16) / 255.0
             "Color(red: #{r}, green: #{g}, blue: #{b})"
           elsif hex.length == 8
-            # 8桁の16進数（ARGB または RGBA）
-            # SwiftJsonUIは通常ARGBフォーマットを使用
-            a = hex[0..1].to_i(16) / 255.0
-            r = hex[2..3].to_i(16) / 255.0
-            g = hex[4..5].to_i(16) / 255.0
-            b = hex[6..7].to_i(16) / 255.0
-            "Color(red: #{r}, green: #{g}, blue: #{b}, opacity: #{a})"
+            # 8桁の16進数（RGBA）
+            # RGBAフォーマット: 最初の6桁がRGB、最後の2桁がアルファ
+            r = hex[0..1].to_i(16) / 255.0
+            g = hex[2..3].to_i(16) / 255.0
+            b = hex[4..5].to_i(16) / 255.0
+            a = hex[6..7].to_i(16) / 255.0
+            "Color(red: #{r}, green: #{g}, blue: #{b}).opacity(#{a})"
           else
             "Color.black"  # デフォルト
           end

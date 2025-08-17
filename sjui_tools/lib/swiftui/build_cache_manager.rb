@@ -21,6 +21,17 @@ module SjuiTools
         @style_dependencies_file = File.join(@cache_dir, "swiftui_style_deps.json")
       end
 
+      # Clean all cache files
+      def clean_cache
+        [@last_updated_file, @including_file, @style_dependencies_file].each do |file|
+          if File.exist?(file)
+            File.delete(file)
+            Core::Logger.debug "Deleted cache file: #{File.basename(file)}"
+          end
+        end
+        Core::Logger.success "Cache cleaned successfully"
+      end
+
       # Get last update timestamp
       def load_last_updated
         return nil unless File.exist?(@last_updated_file)

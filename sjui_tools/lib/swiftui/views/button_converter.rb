@@ -32,9 +32,21 @@ module SjuiTools
           add_line "}) {"
           
           indent do
-            # Escape double quotes in text for Swift string literal
-            escaped_text = text.gsub('"', '\\"')
-            add_line "Text(\"#{escaped_text}\")"
+            # Process text with binding support
+            if text.include?('@{')
+              # Text with interpolation: "Some text @{property} more text"
+              interpolated = text.gsub(/@\{([^}]+)\}/) do |match|
+                property_name = $1
+                # For interpolated text, use viewModel.data directly
+                "\\(viewModel.data.#{property_name})"
+              end
+              escaped_text = interpolated.gsub('"', '\\"').gsub("\n", "\\n")
+              add_line "Text(\"#{escaped_text}\")"
+            else
+              # Regular text - escape double quotes
+              escaped_text = text.gsub('"', '\\"')
+              add_line "Text(\"#{escaped_text}\")"
+            end
             
             # fontColor (デフォルトは白)
             if @component['fontColor']

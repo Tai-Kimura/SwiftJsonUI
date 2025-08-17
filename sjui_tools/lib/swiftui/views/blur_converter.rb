@@ -20,7 +20,27 @@ module SjuiTools
           
           # 子要素を生成
           if children.any?
-            children.each do |child|
+            # 複数の子要素がある場合はZStackでラップ
+            if children.length > 1
+              add_line "ZStack {"
+              indent do
+                children.each do |child|
+                  if @converter_factory
+                    child_converter = @converter_factory.create_converter(child, @indent_level + 1, @action_manager, @converter_factory, @view_registry)
+                    child_code = child_converter.convert
+                    child_code.split("\n").each { |line| @generated_code << line }
+                    
+                    # Propagate state variables
+                    if child_converter.respond_to?(:state_variables) && child_converter.state_variables
+                      @state_variables.concat(child_converter.state_variables)
+                    end
+                  end
+                end
+              end
+              add_line "}"
+            else
+              # 単一の子要素の場合はそのまま出力
+              child = children.first
               if @converter_factory
                 child_converter = @converter_factory.create_converter(child, @indent_level, @action_manager, @converter_factory, @view_registry)
                 child_code = child_converter.convert
