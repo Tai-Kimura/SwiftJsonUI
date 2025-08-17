@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// Modifier that applies ignoresSafeArea for View but not for SafeAreaView
+/// Modifier that applies ignoresSafeArea for View and ScrollView types only
 struct SafeAreaModifier: ViewModifier {
     let component: DynamicComponent
     
@@ -15,9 +15,12 @@ struct SafeAreaModifier: ViewModifier {
         if component.type == "SafeAreaView" {
             // SafeAreaView should respect safe area
             content
-        } else {
-            // Regular View should ignore safe area (full screen)
+        } else if component.type == "View" {
+            // View type should ignore safe area by default (full screen)
             content.ignoresSafeArea()
+        } else {
+            // Other types respect safe area by default
+            content
         }
     }
 }

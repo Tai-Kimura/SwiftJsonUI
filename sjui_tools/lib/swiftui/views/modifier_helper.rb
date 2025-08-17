@@ -40,7 +40,7 @@ module SjuiTools
             return
           end
           
-          return unless positions
+          # positionsが指定されている場合の処理
           
           if positions.is_a?(Array)
             # 配列の場合、各エッジを処理
