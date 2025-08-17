@@ -50,24 +50,119 @@ public struct DynamicComponentBuilder: View {
     
     @ViewBuilder
     private func buildComponentWithModifiers() -> some View {
+        // Check if component needs alignment wrapper based on parent orientation
+        let alignmentInfo = getComponentAlignmentInfo()
+        
+        if alignmentInfo.needsWrapper {
+            // Build component wrapped for alignment
+            buildAlignmentWrappedComponent(alignmentInfo: alignmentInfo)
+        } else {
+            // Build component without alignment wrapper
+            let view = buildView(from: component)
+            
+            // These components handle their own modifiers (padding/margins/background/cornerRadius)
+            // Applying applyDynamicModifiers would cause double application
+            let typeString = component.type?.lowercased() ?? ""
+            let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield", "textview", "selectbox", "scrollview", "scroll"]
+            
+            // Check if this is a View container that uses relative positioning
+            let skipPadding = shouldSkipPadding()
+            
+            if selfManagedTypes.contains(typeString) {
+                view
+                    .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+            } else {
+                view
+                    .applyDynamicModifiers(component, isWeightedChild: isWeightedChild, skipPadding: skipPadding)
+                    .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+            }
+        }
+    }
+    
+    @ViewBuilder
+    private func buildAlignmentWrappedComponent(alignmentInfo: (needsWrapper: Bool, wrapperAlignment: Alignment)) -> some View {
         let view = buildView(from: component)
         
-        // These components handle their own modifiers (padding/margins/background/cornerRadius)
-        // Applying applyDynamicModifiers would cause double application
+        // These components handle their own modifiers
         let typeString = component.type?.lowercased() ?? ""
         let selfManagedTypes = ["button", "text", "label", "image", "networkimage", "textfield", "textview", "selectbox", "scrollview", "scroll"]
         
         // Check if this is a View container that uses relative positioning
         let skipPadding = shouldSkipPadding()
         
-        if selfManagedTypes.contains(typeString) {
-            view
-                .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
-        } else {
-            view
-                .applyDynamicModifiers(component, isWeightedChild: isWeightedChild, skipPadding: skipPadding)
-                .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+        let modifiedView = Group {
+            if selfManagedTypes.contains(typeString) {
+                view
+                    .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+            } else {
+                view
+                    .applyDynamicModifiers(component, isWeightedChild: isWeightedChild, skipPadding: skipPadding)
+                    .dynamicEvents(component, viewModel: viewModel, viewId: viewId)
+            }
         }
+        
+        // Apply alignment wrapper based on parent orientation
+        if parentOrientation == "horizontal" {
+            // Wrap in VStack for vertical alignment in HStack
+            VStack {
+                modifiedView
+            }
+            .frame(maxHeight: .infinity, alignment: alignmentInfo.wrapperAlignment)
+        } else if parentOrientation == "vertical" {
+            // Wrap in HStack for horizontal alignment in VStack
+            HStack {
+                modifiedView
+            }
+            .frame(maxWidth: .infinity, alignment: alignmentInfo.wrapperAlignment)
+        } else {
+            // No parent orientation, just return the view
+            modifiedView
+        }
+    }
+    
+    private func getComponentAlignmentInfo() -> (needsWrapper: Bool, wrapperAlignment: Alignment) {
+        guard let parentOrientation = parentOrientation else {
+            return (false, .center)
+        }
+        
+        var needsWrapper = false
+        var wrapperAlignment: Alignment = .center
+        
+        if parentOrientation == "horizontal" {
+            // In HStack: alignTop/Bottom/centerVertical need VStack wrapper for individual vertical alignment
+            if component.alignTop == true {
+                needsWrapper = true
+                wrapperAlignment = .top
+            } else if component.alignBottom == true {
+                needsWrapper = true
+                wrapperAlignment = .bottom
+            } else if component.centerVertical == true {
+                needsWrapper = true
+                wrapperAlignment = .center
+            } else if component.centerInParent == true {
+                // centerInParent also needs vertical centering
+                needsWrapper = true
+                wrapperAlignment = .center
+            }
+        } else if parentOrientation == "vertical" {
+            // In VStack: alignLeft/Right/centerHorizontal need HStack wrapper for individual horizontal alignment
+            if component.alignLeft == true {
+                needsWrapper = true
+                wrapperAlignment = .leading
+            } else if component.alignRight == true {
+                needsWrapper = true
+                wrapperAlignment = .trailing
+            } else if component.centerHorizontal == true {
+                needsWrapper = true
+                wrapperAlignment = .center
+            } else if component.centerInParent == true {
+                // centerInParent also needs horizontal centering
+                needsWrapper = true
+                wrapperAlignment = .center
+            }
+        }
+        
+        return (needsWrapper, wrapperAlignment)
     }
     
     private func shouldSkipPadding() -> Bool {

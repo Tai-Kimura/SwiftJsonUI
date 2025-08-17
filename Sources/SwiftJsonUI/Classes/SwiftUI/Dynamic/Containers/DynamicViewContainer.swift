@@ -75,7 +75,7 @@ public struct DynamicViewContainer: View {
                     }
                     
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
+                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, parentOrientation: "horizontal")
                     }
                     
                     // Add Spacer at end for leading alignment
@@ -95,7 +95,7 @@ public struct DynamicViewContainer: View {
                     }
                     
                     ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
+                        DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, parentOrientation: "vertical")
                     }
                     
                     // Add Spacer at end for top alignment
