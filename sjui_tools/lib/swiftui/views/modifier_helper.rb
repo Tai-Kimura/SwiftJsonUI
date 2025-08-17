@@ -34,8 +34,9 @@ module SjuiTools
             return
           end
           
-          # ScrollViewとViewタイプのみ、デフォルトでSafeAreaを無視
-          if ['ScrollView', 'View'].include?(@component['type']) && !positions
+          # Viewタイプのみ、デフォルトでSafeAreaを無視
+          # ScrollViewはcontentInsetAdjustmentBehaviorで制御される
+          if @component['type'] == 'View' && !positions
             add_modifier_line ".ignoresSafeArea()"
             return
           end

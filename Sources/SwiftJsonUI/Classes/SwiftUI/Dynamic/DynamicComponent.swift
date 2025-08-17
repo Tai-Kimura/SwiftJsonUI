@@ -97,6 +97,9 @@ public struct DynamicComponent: Decodable {
     let columns: Int?  // For collection/grid layouts
     let spacing: CGFloat?  // For stack/grid spacing
     
+    // ScrollView properties
+    let contentInsetAdjustmentBehavior: String?  // never, always, automatic, scrollableAxes
+    
     // SelectBox/DatePicker properties
     let selectItemType: String?
     let datePickerMode: String?
@@ -166,6 +169,7 @@ public struct DynamicComponent: Decodable {
         case textAlign, selectedItem, isOn, progress, value
         case minValue, maxValue, indicatorStyle, selectedIndex
         case columns, spacing
+        case contentInsetAdjustmentBehavior
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat, minimumDate, maximumDate
         case onclick, onClick, onLongPress, onAppear, onDisappear
