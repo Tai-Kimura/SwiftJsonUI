@@ -34,12 +34,15 @@ public struct ButtonConverter {
             Button(action: {
                 handleButtonAction(component: component, viewModel: viewModel)
             }) {
-                // Check if width/height were actually specified
-                let hasWidthSpec = component.widthRaw != nil || component.width != nil
-                let hasHeightSpec = component.heightRaw != nil || component.height != nil
+                // Check if width/height were actually specified with specific numeric values
+                // wrapContent should not expand the button
+                let isWrapContentWidth = component.widthRaw == "wrapContent"
+                let isWrapContentHeight = component.heightRaw == "wrapContent"
+                let hasExplicitWidth = component.width != nil && !isWrapContentWidth
+                let hasExplicitHeight = component.height != nil && !isWrapContentHeight
                 
-                // Only expand to fill if button has explicit size
-                if hasWidthSpec || hasHeightSpec {
+                // Only expand to fill if button has explicit numeric size (not wrapContent)
+                if hasExplicitWidth || hasExplicitHeight {
                     Text(text)
                         .font(DynamicHelpers.fontFromComponent(component))
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
@@ -51,7 +54,7 @@ public struct ButtonConverter {
                         .font(DynamicHelpers.fontFromComponent(component))
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
                         .padding(DynamicHelpers.getPadding(from: component))
-                        // No frame expansion for buttons without explicit size (wrap content behavior)
+                        // No frame expansion for buttons without explicit size or with wrapContent
                 }
             }
             .buttonStyle(getDynamicButtonStyle(component))
@@ -137,17 +140,19 @@ struct ButtonModifiers: ViewModifier {
     func body(content: Content) -> some View {
         // Debug log the frame values being applied
         // Check if width/height were actually specified in JSON using raw values
-        let hasWidthSpec = component.widthRaw != nil || component.width != nil
-        let hasHeightSpec = component.heightRaw != nil || component.height != nil
+        let isWrapContentWidth = component.widthRaw == "wrapContent"
+        let isWrapContentHeight = component.heightRaw == "wrapContent"
+        let hasWidthSpec = component.widthRaw != nil && !isWrapContentWidth
+        let hasHeightSpec = component.heightRaw != nil && !isWrapContentHeight
         
-        // For width: nil if infinity or not specified, otherwise use the value
+        // For width: nil if infinity, wrapContent, or not specified, otherwise use the value
         let width = (hasWidthSpec && component.width != nil && component.width != .infinity) ? component.width : nil
-        // For height: use the value if it was specified and is not infinity
+        // For height: use the value if it was specified and is not infinity or wrapContent
         let height = (hasHeightSpec && component.height != nil && component.height != .infinity) ? component.height : nil
-        // For maxWidth: infinity if width is infinity, otherwise use maxWidth if specified
-        let maxWidth = (component.width == .infinity) ? CGFloat.infinity : component.maxWidth
-        // For maxHeight: infinity if height is infinity, otherwise use maxHeight if specified
-        let maxHeight = (component.height == .infinity) ? CGFloat.infinity : component.maxHeight
+        // For maxWidth: infinity if width is infinity, otherwise use maxWidth if specified (but not for wrapContent)
+        let maxWidth = (component.width == .infinity) ? CGFloat.infinity : (isWrapContentWidth ? nil : component.maxWidth)
+        // For maxHeight: infinity if height is infinity, otherwise use maxHeight if specified (but not for wrapContent)
+        let maxHeight = (component.height == .infinity) ? CGFloat.infinity : (isWrapContentHeight ? nil : component.maxHeight)
         
         print("🔘 [ButtonModifiers] Applying frame:")
         print("  - component.width raw: \(String(describing: component.width))")
