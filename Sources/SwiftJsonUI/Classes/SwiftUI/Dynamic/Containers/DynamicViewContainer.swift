@@ -128,6 +128,12 @@ public struct DynamicViewContainer: View {
             // Then filter to get only valid components
             let filtered = filterDataElements(child)
             print("📝 Filtered children count: \(filtered.count)")
+            
+            // Debug: Print filtered children
+            for (index, comp) in filtered.enumerated() {
+                print("📝 Filtered[\(index)]: type=\(comp.type ?? "nil"), include=\(comp.include ?? "nil")")
+            }
+            
             return filtered
         }
         return []
@@ -137,7 +143,11 @@ public struct DynamicViewContainer: View {
     private func filterDataElements(_ components: [DynamicComponent]) -> [DynamicComponent] {
         return components.filter { comp in
             // typeがあるもの、またはincludeがあるものを処理
-            return comp.isValid || comp.include != nil
+            let shouldInclude = comp.isValid || comp.include != nil
+            if comp.include != nil {
+                print("📍 Filtering: include=\(comp.include!), isValid=\(comp.isValid), shouldInclude=\(shouldInclude)")
+            }
+            return shouldInclude
         }
     }
     

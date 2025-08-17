@@ -112,20 +112,21 @@ public struct DynamicDecodingHelper {
     
     /// Decode child components from JSON
     /// Handles both single component and array of components
-    /// Automatically filters out elements without type (include, data, etc.)
+    /// Keeps all components including those without type (include, data, etc.) for later filtering
     public static func decodeChildren(from container: KeyedDecodingContainer<DynamicComponent.CodingKeys>, 
                                      forKey key: DynamicComponent.CodingKeys) -> [DynamicComponent]? {
         // Try to decode as array first (using FailableDecodable to skip invalid elements)
         if let childArray = try? container.decode([FailableDecodable<DynamicComponent>].self, forKey: key) {
-            // Filter out nil values and components without type
-            let validComponents = childArray.compactMap { $0.value }.filter { $0.isValid }
+            // Filter out nil values but keep all components (including those without type like include)
+            // The actual filtering will be done later by DynamicViewContainer
+            let validComponents = childArray.compactMap { $0.value }
             return validComponents.isEmpty ? nil : validComponents
         }
         
         // Try to decode as single component
         if let singleChild = try? container.decode(DynamicComponent.self, forKey: key) {
-            // Filter out components without type
-            return singleChild.isValid ? [singleChild] : nil
+            // Keep all components (including those without type like include)
+            return [singleChild]
         }
         
         // No children found
