@@ -40,8 +40,9 @@ struct SelectBoxModifiers: ViewModifier {
     @ViewBuilder
     private func getBorder() -> some View {
         if let borderWidth = component.borderWidth,
-           borderWidth > 0 {
-            let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+           borderWidth > 0,
+           let borderColorString = component.borderColor {
+            let borderColor = DynamicHelpers.colorFromHex(borderColorString) ?? .gray
             RoundedRectangle(cornerRadius: component.cornerRadius ?? 8)
                 .stroke(borderColor, lineWidth: borderWidth)
         }

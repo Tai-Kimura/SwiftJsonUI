@@ -25,7 +25,7 @@ public struct ButtonConverter {
                 Text(text)
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
-                    .frame(maxWidth: component.width == .infinity ? .infinity : nil)
+                    // Remove frame from Text - it will be applied to Button
                     .padding(DynamicHelpers.getPadding(from: component))
             }
             .buttonStyle(getDynamicButtonStyle(component))
