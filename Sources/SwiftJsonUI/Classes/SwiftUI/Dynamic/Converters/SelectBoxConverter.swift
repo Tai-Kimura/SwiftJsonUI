@@ -14,13 +14,25 @@ struct SelectBoxModifiers: ViewModifier {
     let viewModel: DynamicViewModel
     
     func body(content: Content) -> some View {
-        content
+        // Debug log
+        let width = (component.width != nil && component.width != .infinity) ? component.width : nil
+        let height = (component.height != nil && component.height != .infinity) ? component.height : nil
+        
+        print("📦 [SelectBoxModifiers] Applying:")
+        print("  - id: \(component.id ?? "no-id")")
+        print("  - width: \(String(describing: width)) (raw: \(component.widthRaw ?? "nil"))")
+        print("  - height: \(String(describing: height)) (raw: \(component.heightRaw ?? "nil"))")
+        print("  - borderWidth: \(String(describing: component.borderWidth))")
+        print("  - borderColor: \(String(describing: component.borderColor))")
+        print("  - cornerRadius: \(String(describing: component.cornerRadius))")
+        
+        return content
             // Apply padding first (internal spacing)
             .padding(DynamicHelpers.getPadding(from: component))
             // Apply frame size and constraints
             .frame(
-                width: (component.width != nil && component.width != .infinity) ? component.width : nil,
-                height: (component.height != nil && component.height != .infinity) ? component.height : nil
+                width: width,
+                height: height
             )
             .frame(
                 minWidth: component.minWidth,
@@ -42,9 +54,12 @@ struct SelectBoxModifiers: ViewModifier {
         if let borderWidth = component.borderWidth,
            borderWidth > 0,
            let borderColorString = component.borderColor {
+            print("📦 [SelectBoxModifiers] Creating border with width: \(borderWidth), color: \(borderColorString)")
             let borderColor = DynamicHelpers.colorFromHex(borderColorString) ?? .gray
             RoundedRectangle(cornerRadius: component.cornerRadius ?? 8)
                 .stroke(borderColor, lineWidth: borderWidth)
+        } else {
+            print("📦 [SelectBoxModifiers] No border: width=\(String(describing: component.borderWidth)), color=\(String(describing: component.borderColor))")
         }
     }
     

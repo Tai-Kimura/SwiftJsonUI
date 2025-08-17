@@ -18,6 +18,18 @@ public struct ButtonConverter {
     ) -> AnyView {
         let text = viewModel.processText(component.text) ?? ""
         
+        // Debug logging for Button properties
+        print("🔘 [ButtonConverter] Creating button with:")
+        print("  - id: \(component.id ?? "no-id")")
+        print("  - width: \(String(describing: component.width)) (raw: \(component.widthRaw ?? "nil"))")
+        print("  - height: \(String(describing: component.height)) (raw: \(component.heightRaw ?? "nil"))")
+        print("  - minWidth: \(String(describing: component.minWidth))")
+        print("  - maxWidth: \(String(describing: component.maxWidth))")
+        print("  - minHeight: \(String(describing: component.minHeight))")
+        print("  - maxHeight: \(String(describing: component.maxHeight))")
+        print("  - padding: \(String(describing: component.padding))")
+        print("  - margin: \(String(describing: component.margin))")
+        
         return AnyView(
             Button(action: {
                 handleButtonAction(component: component, viewModel: viewModel)
@@ -109,17 +121,31 @@ struct ButtonModifiers: ViewModifier {
     let viewModel: DynamicViewModel
     
     func body(content: Content) -> some View {
-        content
+        // Debug log the frame values being applied
+        let width = (component.width != nil && component.width != .infinity) ? component.width : nil
+        let height = (component.height != nil && component.height != .infinity) ? component.height : nil
+        let maxWidth = (component.width == .infinity) ? CGFloat.infinity : component.maxWidth
+        let maxHeight = (component.height == .infinity) ? CGFloat.infinity : component.maxHeight
+        
+        print("🔘 [ButtonModifiers] Applying frame:")
+        print("  - width: \(String(describing: width))")
+        print("  - height: \(String(describing: height))")
+        print("  - minWidth: \(String(describing: component.minWidth))")
+        print("  - maxWidth: \(String(describing: maxWidth))")
+        print("  - minHeight: \(String(describing: component.minHeight))")
+        print("  - maxHeight: \(String(describing: maxHeight))")
+        
+        return content
             // Apply frame size and constraints
             .frame(
-                width: (component.width != nil && component.width != .infinity) ? component.width : nil,
-                height: (component.height != nil && component.height != .infinity) ? component.height : nil
+                width: width,
+                height: height
             )
             .frame(
                 minWidth: component.minWidth,
-                maxWidth: (component.width == .infinity) ? .infinity : component.maxWidth,
+                maxWidth: maxWidth,
                 minHeight: component.minHeight,
-                maxHeight: (component.height == .infinity) ? .infinity : component.maxHeight
+                maxHeight: maxHeight
             )
             // Apply margins only (background and cornerRadius are handled by DynamicButtonStyle)
             .padding(DynamicHelpers.getMargins(from: component))
