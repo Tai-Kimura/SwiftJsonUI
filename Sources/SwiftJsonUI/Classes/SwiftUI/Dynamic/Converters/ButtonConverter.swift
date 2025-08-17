@@ -37,8 +37,9 @@ public struct ButtonConverter {
                 Text(text)
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
-                    // Remove frame from Text - it will be applied to Button
                     .padding(DynamicHelpers.getPadding(from: component))
+                    // Apply frame to Text to fill button area
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             .buttonStyle(getDynamicButtonStyle(component))
             .modifier(ButtonModifiers(component: component, viewModel: viewModel))
@@ -204,8 +205,10 @@ struct DynamicButtonStyle: ButtonStyle {
     
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(backgroundColor.opacity(configuration.isPressed ? 0.8 : 1.0))
-            .cornerRadius(cornerRadius)
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(backgroundColor.opacity(configuration.isPressed ? 0.8 : 1.0))
+            )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
     }
 }
