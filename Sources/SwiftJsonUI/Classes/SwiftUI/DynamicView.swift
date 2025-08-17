@@ -60,6 +60,7 @@ public struct DynamicView: View {
                     }
             }
         }
+        .ignoresSafeArea()  // DynamicView should ignore SafeArea by default
         #if DEBUG
         .onReceive(HotLoader.instance.$lastUpdate) { date in
             Logger.debug("[DynamicView] HotLoader update received: \(date)")
