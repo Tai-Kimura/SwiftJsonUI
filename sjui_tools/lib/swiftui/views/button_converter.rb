@@ -98,7 +98,26 @@ module SjuiTools
         def apply_padding_to_text
           # Apply padding to the Text inside the button (not to the button itself)
           if @component['padding']
-            add_modifier_line ".padding(#{@component['padding'].to_i})"
+            padding = @component['padding']
+            # Handle array padding values (from style files)
+            if padding.is_a?(Array)
+              case padding.length
+              when 1
+                add_modifier_line ".padding(#{padding[0].to_i})"
+              when 2
+                # Vertical, Horizontal padding
+                add_modifier_line ".padding(.horizontal, #{padding[1].to_i})"
+                add_modifier_line ".padding(.vertical, #{padding[0].to_i})"
+              when 4
+                # Top, Right, Bottom, Left
+                add_modifier_line ".padding(.top, #{padding[0].to_i})"
+                add_modifier_line ".padding(.trailing, #{padding[1].to_i})"
+                add_modifier_line ".padding(.bottom, #{padding[2].to_i})"
+                add_modifier_line ".padding(.leading, #{padding[3].to_i})"
+              end
+            else
+              add_modifier_line ".padding(#{padding.to_i})"
+            end
           elsif @component['paddingTop'] || @component['paddingBottom'] || 
                 @component['paddingLeft'] || @component['paddingRight']
             top = @component['paddingTop'] || @component['topPadding'] || 0
