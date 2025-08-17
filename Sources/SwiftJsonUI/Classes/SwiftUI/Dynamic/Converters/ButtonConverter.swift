@@ -34,12 +34,25 @@ public struct ButtonConverter {
             Button(action: {
                 handleButtonAction(component: component, viewModel: viewModel)
             }) {
-                Text(text)
-                    .font(DynamicHelpers.fontFromComponent(component))
-                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
-                    .padding(DynamicHelpers.getPadding(from: component))
-                    // Apply frame to Text to fill button area
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Check if width/height were actually specified
+                let hasWidthSpec = component.widthRaw != nil || component.width != nil
+                let hasHeightSpec = component.heightRaw != nil || component.height != nil
+                
+                // Only expand to fill if button has explicit size
+                if hasWidthSpec || hasHeightSpec {
+                    Text(text)
+                        .font(DynamicHelpers.fontFromComponent(component))
+                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
+                        .padding(DynamicHelpers.getPadding(from: component))
+                        // Apply frame to Text to fill button area when button has explicit size
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Text(text)
+                        .font(DynamicHelpers.fontFromComponent(component))
+                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
+                        .padding(DynamicHelpers.getPadding(from: component))
+                        // No frame expansion for buttons without explicit size (wrap content behavior)
+                }
             }
             .buttonStyle(getDynamicButtonStyle(component))
             .modifier(ButtonModifiers(component: component, viewModel: viewModel))
