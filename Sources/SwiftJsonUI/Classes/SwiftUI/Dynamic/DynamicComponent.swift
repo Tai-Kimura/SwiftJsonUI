@@ -62,6 +62,7 @@ public struct DynamicComponent: Decodable {
     let userInteractionEnabled: Bool?
     let centerInParent: Bool?
     let weight: CGFloat?
+    let enabled: AnyCodable?  // For button enabled state with data binding support
     
     // Component specific - child is always an array
     let child: [DynamicComponent]?

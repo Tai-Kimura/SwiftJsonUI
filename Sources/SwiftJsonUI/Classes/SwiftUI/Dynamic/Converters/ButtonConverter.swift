@@ -114,6 +114,41 @@ struct ButtonModifiers: ViewModifier {
             .padding(DynamicHelpers.getMargins(from: component))
             .opacity(DynamicHelpers.getOpacity(from: component))
             .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            .disabled(isDisabled())
+    }
+    
+    private func isDisabled() -> Bool {
+        // Check enabled property
+        if let enabled = component.enabled {
+            // Check if it's a string with data binding
+            if let enabledString = enabled.value as? String {
+                if enabledString.hasPrefix("@{") && enabledString.hasSuffix("}") {
+                    // Extract property name
+                    let startIndex = enabledString.index(enabledString.startIndex, offsetBy: 2)
+                    let endIndex = enabledString.index(enabledString.endIndex, offsetBy: -1)
+                    let propertyName = String(enabledString[startIndex..<endIndex])
+                    
+                    // Get value from viewModel
+                    if let value = viewModel.data[propertyName] as? Bool {
+                        return !value  // disabled is the opposite of enabled
+                    } else if let value = viewModel.variables[propertyName] as? Bool {
+                        return !value
+                    } else if let stringValue = viewModel.data[propertyName] as? String {
+                        return stringValue.lowercased() != "true"
+                    } else if let stringValue = viewModel.variables[propertyName] as? String {
+                        return stringValue.lowercased() != "true"
+                    }
+                    // Default to enabled if property not found
+                    return false
+                } else {
+                    // Static string value
+                    return enabledString.lowercased() != "true"
+                }
+            } else if let enabledBool = enabled.value as? Bool {
+                return !enabledBool
+            }
+        }
+        return false  // Default to enabled
     }
 }
 

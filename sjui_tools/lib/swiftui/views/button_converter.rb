@@ -61,8 +61,17 @@ module SjuiTools
           apply_margins
           
           # enabled属性
-          if @component['enabled'] == false
-            add_modifier_line ".disabled(true)"
+          if @component['enabled'] != nil
+            enabled_value = @component['enabled']
+            if enabled_value.is_a?(String) && enabled_value.start_with?('@{') && enabled_value.end_with?('}')
+              # Data binding
+              property_name = enabled_value[2...-1]
+              add_modifier_line ".disabled(!viewModel.data.#{property_name})"
+            elsif enabled_value == false
+              add_modifier_line ".disabled(true)"
+            elsif enabled_value == true
+              # Explicitly enabled, no need to add disabled modifier
+            end
           end
           
           # opacity
