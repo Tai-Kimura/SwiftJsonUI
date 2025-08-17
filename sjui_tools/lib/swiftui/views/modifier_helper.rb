@@ -27,6 +27,13 @@ module SjuiTools
         
         def apply_safe_area_insets
           positions = @component['safeAreaInsetPositions']
+          
+          # ScrollViewとViewタイプのみ、SafeAreaViewでない限りデフォルトでSafeAreaを無視
+          if ['ScrollView', 'View'].include?(@component['type']) && @component['type'] != 'SafeAreaView' && !positions
+            add_modifier_line ".ignoresSafeArea()"
+            return
+          end
+          
           return unless positions
           
           if positions.is_a?(Array)

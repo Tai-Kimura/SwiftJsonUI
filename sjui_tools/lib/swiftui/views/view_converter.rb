@@ -33,6 +33,63 @@ module SjuiTools
           horizontal == 'right'
         end
         
+        def get_alignment_for_single_child(child)
+          # 子要素のアライメントプロパティからSwiftUIのAlignmentを決定
+          return nil unless child.is_a?(Hash)
+          
+          horizontal = nil
+          vertical = nil
+          
+          # 水平方向のアライメント
+          if child['alignLeft']
+            horizontal = 'leading'
+          elsif child['alignRight']
+            horizontal = 'trailing'
+          elsif child['centerHorizontal'] || child['centerInParent']
+            horizontal = 'center'
+          end
+          
+          # 垂直方向のアライメント
+          if child['alignTop']
+            vertical = 'top'
+          elsif child['alignBottom']
+            vertical = 'bottom'
+          elsif child['centerVertical'] || child['centerInParent']
+            vertical = 'center'
+          end
+          
+          # アライメントが指定されていない場合はnilを返す
+          return nil unless horizontal || vertical
+          
+          # デフォルト値の設定（左上がデフォルト）
+          horizontal ||= 'leading'
+          vertical ||= 'top'
+          
+          # SwiftUIのAlignmentに変換
+          case "#{vertical}_#{horizontal}"
+          when 'top_leading'
+            '.topLeading'
+          when 'top_center'
+            '.top'
+          when 'top_trailing'
+            '.topTrailing'
+          when 'center_leading'
+            '.leading'
+          when 'center_center'
+            '.center'
+          when 'center_trailing'
+            '.trailing'
+          when 'bottom_leading'
+            '.bottomLeading'
+          when 'bottom_center'
+            '.bottom'
+          when 'bottom_trailing'
+            '.bottomTrailing'
+          else
+            '.center'
+          end
+        end
+        
         def should_add_trailing_spacer_for_hstack(gravity)
           # HStack with left/leading gravity needs trailing spacer
           horizontal = extract_horizontal_from_gravity(gravity)
@@ -119,9 +176,28 @@ module SjuiTools
             else
               add_line "EmptyView()"
             end
+          elsif children.length == 1 && !@component['orientation']
+            # 子要素が1つで、orientationが指定されていない場合
+            # 子要素のアライメントプロパティをチェック
+            child = children.first
+            alignment = get_alignment_for_single_child(child)
+            
+            if alignment
+              # アライメントが指定されている場合
+              # render_child_elementは既にGroupを作成するので、それを利用
+              if @converter_factory
+                render_child_element(child, nil, 0, 0, 0)
+              end
+              # frameとalignmentを適用
+              add_modifier_line ".frame(maxWidth: .infinity, maxHeight: .infinity, alignment: #{alignment})"
+            else
+              # アライメントがない場合は直接レンダリング
+              if @converter_factory
+                render_child_element(child, nil, 0, 0, 0)
+              end
+            end
           else
-            # 複数の子要素がある場合
-            # orientationが指定されていない場合はZStackを使用
+            # 複数の子要素がある場合、またはorientationが指定されている場合
             orientation = @component['orientation']
             
             # 子要素のweightをチェック
