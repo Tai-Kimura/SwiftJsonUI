@@ -122,14 +122,20 @@ struct ButtonModifiers: ViewModifier {
     
     func body(content: Content) -> some View {
         // Debug log the frame values being applied
+        // For width: nil if infinity (let SwiftUI handle it), otherwise use the value
         let width = (component.width != nil && component.width != .infinity) ? component.width : nil
+        // For height: use the value if it exists and is not infinity
         let height = (component.height != nil && component.height != .infinity) ? component.height : nil
+        // For maxWidth: infinity if width is infinity, otherwise use maxWidth
         let maxWidth = (component.width == .infinity) ? CGFloat.infinity : component.maxWidth
+        // For maxHeight: infinity if height is infinity, otherwise use maxHeight  
         let maxHeight = (component.height == .infinity) ? CGFloat.infinity : component.maxHeight
         
         print("🔘 [ButtonModifiers] Applying frame:")
-        print("  - width: \(String(describing: width))")
-        print("  - height: \(String(describing: height))")
+        print("  - component.width raw: \(String(describing: component.width))")
+        print("  - component.height raw: \(String(describing: component.height))")
+        print("  - width to apply: \(String(describing: width))")
+        print("  - height to apply: \(String(describing: height))")
         print("  - minWidth: \(String(describing: component.minWidth))")
         print("  - maxWidth: \(String(describing: maxWidth))")
         print("  - minHeight: \(String(describing: component.minHeight))")
