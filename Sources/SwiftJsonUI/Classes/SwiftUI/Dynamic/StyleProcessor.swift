@@ -6,6 +6,12 @@ public class StyleProcessor {
     // Cache for loaded style files
     private static var styleCache: [String: [String: Any]] = [:]
     
+    #if DEBUG
+    // Track file modification times for cache invalidation in DEBUG mode
+    private static var styleFileTimestamps: [String: Date] = [:]
+    private static let cacheDirPath = NSTemporaryDirectory().appending("Styles/")
+    #endif
+    
     /// Process a JSON dictionary and apply styles recursively
     public static func processStyles(_ json: [String: Any]) -> [String: Any] {
         var result = json
@@ -18,6 +24,7 @@ public class StyleProcessor {
                 result = deepMerge(base: styleData, override: json)
                 // Remove the style attribute after processing
                 result.removeValue(forKey: "style")
+                Logger.debug("[StyleProcessor] Applied style '\(styleName)' to component")
             }
         }
         
@@ -40,10 +47,43 @@ public class StyleProcessor {
     
     /// Load a style file from the Styles directory
     private static func loadStyle(named name: String) -> [String: Any]? {
-        // Check cache first
+        #if DEBUG
+        // In DEBUG mode, check if cached file needs to be reloaded
+        if let cached = styleCache[name] {
+            if !needsReload(styleName: name) {
+                return cached
+            } else {
+                Logger.debug("[StyleProcessor] Style file '\(name)' has been modified, reloading...")
+            }
+        }
+        #else
+        // In RELEASE mode, use cache without checking for modifications
         if let cached = styleCache[name] {
             return cached
         }
+        #endif
+        
+        // Try to load from cache directory first (for HotLoader support)
+        #if DEBUG
+        let cacheFilePath = cacheDirPath + "\(name).json"
+        if FileManager.default.fileExists(atPath: cacheFilePath) {
+            do {
+                let data = try Data(contentsOf: URL(fileURLWithPath: cacheFilePath))
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    // Update cache and timestamp
+                    styleCache[name] = json
+                    if let attributes = try? FileManager.default.attributesOfItem(atPath: cacheFilePath),
+                       let modificationDate = attributes[.modificationDate] as? Date {
+                        styleFileTimestamps[name] = modificationDate
+                    }
+                    Logger.debug("[StyleProcessor] Loaded style from cache: \(name)")
+                    return json
+                }
+            } catch {
+                Logger.debug("[StyleProcessor] Error loading cached style \(name): \(error)")
+            }
+        }
+        #endif
         
         // Try to load from bundle
         if let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "Styles") {
@@ -52,7 +92,14 @@ public class StyleProcessor {
                 if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                     // Cache the loaded style
                     styleCache[name] = json
-                    Logger.debug("[StyleProcessor] Loaded style: \(name)")
+                    #if DEBUG
+                    // Store the modification date
+                    if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+                       let modificationDate = attributes[.modificationDate] as? Date {
+                        styleFileTimestamps[name] = modificationDate
+                    }
+                    #endif
+                    Logger.debug("[StyleProcessor] Loaded style from bundle: \(name)")
                     return json
                 }
             } catch {
@@ -67,6 +114,13 @@ public class StyleProcessor {
                 if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
                     // Cache the loaded style
                     styleCache[name] = json
+                    #if DEBUG
+                    // Store the modification date
+                    if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+                       let modificationDate = attributes[.modificationDate] as? Date {
+                        styleFileTimestamps[name] = modificationDate
+                    }
+                    #endif
                     Logger.debug("[StyleProcessor] Loaded style from flat structure: \(name)")
                     return json
                 }
@@ -78,6 +132,71 @@ public class StyleProcessor {
         Logger.debug("[StyleProcessor] Style not found: \(name)")
         return nil
     }
+    
+    #if DEBUG
+    /// Check if a cached style file needs to be reloaded
+    private static func needsReload(styleName: String) -> Bool {
+        // Check cache directory first
+        let cacheFilePath = cacheDirPath + "\(styleName).json"
+        if FileManager.default.fileExists(atPath: cacheFilePath) {
+            if let attributes = try? FileManager.default.attributesOfItem(atPath: cacheFilePath),
+               let modificationDate = attributes[.modificationDate] as? Date,
+               let cachedDate = styleFileTimestamps[styleName] {
+                return modificationDate > cachedDate
+            }
+            return true // Reload if we can't determine the modification date
+        }
+        
+        // Check bundle
+        if let url = Bundle.main.url(forResource: styleName, withExtension: "json", subdirectory: "Styles") {
+            if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+               let modificationDate = attributes[.modificationDate] as? Date,
+               let cachedDate = styleFileTimestamps[styleName] {
+                return modificationDate > cachedDate
+            }
+        }
+        
+        return false
+    }
+    
+    /// Copy style files from bundle to cache directory (for HotLoader support)
+    public static func copyStylesToCache() {
+        let fm = FileManager.default
+        
+        // Create cache directory if needed
+        if !fm.fileExists(atPath: cacheDirPath) {
+            do {
+                try fm.createDirectory(atPath: cacheDirPath, withIntermediateDirectories: true, attributes: nil)
+                Logger.debug("[StyleProcessor] Created styles cache directory")
+            } catch {
+                Logger.debug("[StyleProcessor] Error creating cache directory: \(error)")
+                return
+            }
+        }
+        
+        // Copy style files from bundle to cache
+        if let stylesURL = Bundle.main.url(forResource: "Styles", withExtension: nil) {
+            do {
+                let styleFiles = try fm.contentsOfDirectory(at: stylesURL, includingPropertiesForKeys: nil)
+                for fileURL in styleFiles where fileURL.pathExtension == "json" {
+                    let filename = fileURL.lastPathComponent
+                    let toPath = cacheDirPath + filename
+                    
+                    // Remove existing file if present
+                    if fm.fileExists(atPath: toPath) {
+                        try fm.removeItem(atPath: toPath)
+                    }
+                    
+                    // Copy new file
+                    try fm.copyItem(at: fileURL, to: URL(fileURLWithPath: toPath))
+                    Logger.debug("[StyleProcessor] Copied style to cache: \(filename)")
+                }
+            } catch {
+                Logger.debug("[StyleProcessor] Error copying styles to cache: \(error)")
+            }
+        }
+    }
+    #endif
     
     /// Deep merge two dictionaries
     /// - Parameters:
@@ -104,6 +223,18 @@ public class StyleProcessor {
     /// Clear the style cache
     public static func clearCache() {
         styleCache.removeAll()
+        #if DEBUG
+        styleFileTimestamps.removeAll()
+        #endif
         Logger.debug("[StyleProcessor] Style cache cleared")
+    }
+    
+    /// Clear cache for a specific style
+    public static func clearCache(for styleName: String) {
+        styleCache.removeValue(forKey: styleName)
+        #if DEBUG
+        styleFileTimestamps.removeValue(forKey: styleName)
+        #endif
+        Logger.debug("[StyleProcessor] Cleared cache for style: \(styleName)")
     }
 }

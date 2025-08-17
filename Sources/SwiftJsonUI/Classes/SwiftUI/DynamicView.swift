@@ -63,6 +63,8 @@ public struct DynamicView: View {
         #if DEBUG
         .onReceive(HotLoader.instance.$lastUpdate) { date in
             Logger.debug("[DynamicView] HotLoader update received: \(date)")
+            // Clear style cache to reload updated styles
+            StyleProcessor.clearCache()
             viewModel.reload()
         }
         #endif

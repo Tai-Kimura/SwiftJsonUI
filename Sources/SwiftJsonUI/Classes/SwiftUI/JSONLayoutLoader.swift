@@ -82,6 +82,9 @@ public class JSONLayoutLoader {
         } catch {
             Logger.debug("[JSONLayoutLoader] Error copying files to cache: \(error)")
         }
+        
+        // Also copy style files to cache
+        StyleProcessor.copyStylesToCache()
     }
     #endif
     
