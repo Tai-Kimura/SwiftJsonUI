@@ -54,12 +54,13 @@ struct SelectBoxModifiers: ViewModifier {
         if let borderWidth = component.borderWidth,
            borderWidth > 0,
            let borderColorString = component.borderColor {
-            print("📦 [SelectBoxModifiers] Creating border with width: \(borderWidth), color: \(borderColorString)")
+            let _ = print("📦 [SelectBoxModifiers] Creating border with width: \(borderWidth), color: \(borderColorString)")
             let borderColor = DynamicHelpers.colorFromHex(borderColorString) ?? .gray
             RoundedRectangle(cornerRadius: component.cornerRadius ?? 8)
                 .stroke(borderColor, lineWidth: borderWidth)
         } else {
-            print("📦 [SelectBoxModifiers] No border: width=\(String(describing: component.borderWidth)), color=\(String(describing: component.borderColor))")
+            let _ = print("📦 [SelectBoxModifiers] No border: width=\(String(describing: component.borderWidth)), color=\(String(describing: component.borderColor))")
+            EmptyView()
         }
     }
     
