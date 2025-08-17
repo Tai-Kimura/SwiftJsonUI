@@ -35,7 +35,6 @@ public struct DynamicView: View {
             .onAppear {
                 Logger.debug("[DynamicView] Rendering component: \(component.type ?? "unknown")")
             }
-            .ignoresSafeArea()  // DynamicView should ignore SafeArea by default
             #if DEBUG
             .onReceive(HotLoader.instance.$lastUpdate) { date in
                 Logger.debug("[DynamicView] HotLoader update received: \(date)")
