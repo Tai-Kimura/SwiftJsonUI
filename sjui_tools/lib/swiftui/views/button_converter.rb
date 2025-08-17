@@ -47,6 +47,10 @@ module SjuiTools
           end
           add_line "}"
           
+          # Apply frame modifiers (size constraints)
+          apply_frame_constraints
+          apply_frame_size
+          
           # Button's background and corner radius (using buttonStyle)
           if @component['background']
             color = hex_to_swiftui_color(@component['background'])

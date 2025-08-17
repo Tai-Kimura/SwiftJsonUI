@@ -18,7 +18,16 @@ struct SelectBoxModifiers: ViewModifier {
             // Apply padding first (internal spacing)
             .padding(DynamicHelpers.getPadding(from: component))
             // Apply frame size and constraints
-            .modifier(DynamicFrameModifier(component: component, viewModel: viewModel))
+            .frame(
+                width: (component.width != nil && component.width != .infinity) ? component.width : nil,
+                height: (component.height != nil && component.height != .infinity) ? component.height : nil
+            )
+            .frame(
+                minWidth: component.minWidth,
+                maxWidth: (component.width == .infinity) ? .infinity : component.maxWidth,
+                minHeight: component.minHeight,
+                maxHeight: (component.height == .infinity) ? .infinity : component.maxHeight
+            )
             // Apply border after component's internal cornerRadius
             .overlay(getBorder())
             // Apply margins as outer padding
