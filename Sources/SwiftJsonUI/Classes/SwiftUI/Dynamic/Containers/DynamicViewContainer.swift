@@ -22,7 +22,7 @@ public struct DynamicViewContainer: View {
     @ViewBuilder
     public var body: some View {
         let children = getChildren()
-        let _ = print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), orientation=\(component.orientation ?? "none"), childCount=\(children.count)")
+        let _ = print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), type=\(component.type ?? "View"), orientation=\(component.orientation ?? "none"), childCount=\(children.count)")
         
         if children.isEmpty {
             // 子要素がない場合
@@ -85,6 +85,8 @@ public struct DynamicViewContainer: View {
                     // No Spacer for center alignment
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Apply ignoresSafeArea for regular View, but not for SafeAreaView
+                .modifier(SafeAreaModifier(component: component))
             } else if orientation == "vertical" {
                 // 通常のVStack
                 let vAlignment = getVerticalAlignmentFromAlignment(component.alignment)
@@ -105,6 +107,8 @@ public struct DynamicViewContainer: View {
                     // No Spacer for center alignment
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // Apply ignoresSafeArea for regular View, but not for SafeAreaView
+                .modifier(SafeAreaModifier(component: component))
             } else {
                 // orientationなし = ZStack
                 ZStack(alignment: component.alignment ?? .topLeading) {
@@ -112,6 +116,8 @@ public struct DynamicViewContainer: View {
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
                     }
                 }
+                // Apply ignoresSafeArea for regular View, but not for SafeAreaView
+                .modifier(SafeAreaModifier(component: component))
             }
         }
     }

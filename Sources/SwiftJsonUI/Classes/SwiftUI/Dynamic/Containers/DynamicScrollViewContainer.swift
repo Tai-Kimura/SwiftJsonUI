@@ -29,6 +29,7 @@ public struct DynamicScrollViewContainer: View {
                 DynamicComponentBuilder(component: firstChild, viewModel: viewModel, viewId: viewId)
             }
         }
+        .ignoresSafeArea()  // ScrollView should use full screen by default unless wrapped in SafeAreaView
         .modifier(CommonModifiers(component: component, viewModel: viewModel))
     }
 }
