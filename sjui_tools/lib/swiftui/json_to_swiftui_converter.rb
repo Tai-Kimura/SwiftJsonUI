@@ -7,7 +7,7 @@ require_relative 'converter_factory'
 require_relative 'views/base_view_converter'
 require_relative 'action_manager'
 require_relative 'binding/binding_handler_registry'
-require_relative '../style_loader'
+require_relative 'style_loader'
 
 module SjuiTools
   module SwiftUI
@@ -31,7 +31,7 @@ module SjuiTools
         json_data = JSON.parse(json_content)
         
         # Styleファイルを適用
-        json_data = SjuiTools::StyleLoader.load_and_merge(json_data)
+        json_data = StyleLoader.load_and_merge(json_data)
         
         # includeを処理
         json_data = process_includes(json_data, File.dirname(json_file_path))
@@ -82,7 +82,7 @@ module SjuiTools
         json_data = JSON.parse(json_content)
         
         # Apply styles
-        json_data = SjuiTools::StyleLoader.load_and_merge(json_data)
+        json_data = StyleLoader.load_and_merge(json_data)
         
         # Process includes
         json_data = process_includes(json_data, File.dirname(json_file_path))
