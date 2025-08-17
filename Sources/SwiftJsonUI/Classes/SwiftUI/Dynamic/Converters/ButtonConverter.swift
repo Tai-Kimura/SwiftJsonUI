@@ -123,13 +123,17 @@ struct ButtonModifiers: ViewModifier {
     
     func body(content: Content) -> some View {
         // Debug log the frame values being applied
-        // For width: nil if infinity (let SwiftUI handle it), otherwise use the value
-        let width = (component.width != nil && component.width != .infinity) ? component.width : nil
-        // For height: use the value if it exists and is not infinity
-        let height = (component.height != nil && component.height != .infinity) ? component.height : nil
-        // For maxWidth: infinity if width is infinity, otherwise use maxWidth
+        // Check if width/height were actually specified in JSON using raw values
+        let hasWidthSpec = component.widthRaw != nil || component.width != nil
+        let hasHeightSpec = component.heightRaw != nil || component.height != nil
+        
+        // For width: nil if infinity or not specified, otherwise use the value
+        let width = (hasWidthSpec && component.width != nil && component.width != .infinity) ? component.width : nil
+        // For height: use the value if it was specified and is not infinity
+        let height = (hasHeightSpec && component.height != nil && component.height != .infinity) ? component.height : nil
+        // For maxWidth: infinity if width is infinity, otherwise use maxWidth if specified
         let maxWidth = (component.width == .infinity) ? CGFloat.infinity : component.maxWidth
-        // For maxHeight: infinity if height is infinity, otherwise use maxHeight  
+        // For maxHeight: infinity if height is infinity, otherwise use maxHeight if specified
         let maxHeight = (component.height == .infinity) ? CGFloat.infinity : component.maxHeight
         
         print("🔘 [ButtonModifiers] Applying frame:")
@@ -142,20 +146,32 @@ struct ButtonModifiers: ViewModifier {
         print("  - minHeight: \(String(describing: component.minHeight))")
         print("  - maxHeight: \(String(describing: maxHeight))")
         
-        return content
-            // Apply frame size and constraints
-            // First apply min/max constraints
-            .frame(
-                minWidth: component.minWidth,
-                maxWidth: maxWidth,
-                minHeight: component.minHeight,
-                maxHeight: maxHeight
+        // Apply frame modifiers based on what was actually specified
+        var modifiedContent = AnyView(content)
+        
+        // Apply min/max constraints if any were specified
+        if component.minWidth != nil || maxWidth != nil || component.minHeight != nil || maxHeight != nil {
+            modifiedContent = AnyView(
+                modifiedContent.frame(
+                    minWidth: component.minWidth,
+                    maxWidth: maxWidth,
+                    minHeight: component.minHeight,
+                    maxHeight: maxHeight
+                )
             )
-            // Then apply exact size if specified
-            .frame(
-                width: width,
-                height: height
+        }
+        
+        // Apply exact size only if specified
+        if width != nil || height != nil {
+            modifiedContent = AnyView(
+                modifiedContent.frame(
+                    width: width,
+                    height: height
+                )
             )
+        }
+        
+        return modifiedContent
             // Apply margins only (background and cornerRadius are handled by DynamicButtonStyle)
             .padding(DynamicHelpers.getMargins(from: component))
             .opacity(DynamicHelpers.getOpacity(from: component))

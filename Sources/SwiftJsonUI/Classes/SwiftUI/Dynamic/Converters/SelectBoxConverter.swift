@@ -15,8 +15,12 @@ struct SelectBoxModifiers: ViewModifier {
     
     func body(content: Content) -> some View {
         // Debug log
-        let width = (component.width != nil && component.width != .infinity) ? component.width : nil
-        let height = (component.height != nil && component.height != .infinity) ? component.height : nil
+        // Check if width/height were actually specified in JSON
+        let hasWidthSpec = component.widthRaw != nil || component.width != nil
+        let hasHeightSpec = component.heightRaw != nil || component.height != nil
+        
+        let width = (hasWidthSpec && component.width != nil && component.width != .infinity) ? component.width : nil
+        let height = (hasHeightSpec && component.height != nil && component.height != .infinity) ? component.height : nil
         
         print("📦 [SelectBoxModifiers] Applying:")
         print("  - id: \(component.id ?? "no-id")")
@@ -26,22 +30,37 @@ struct SelectBoxModifiers: ViewModifier {
         print("  - borderColor: \(String(describing: component.borderColor))")
         print("  - cornerRadius: \(String(describing: component.cornerRadius))")
         
-        return content
-            // Apply padding first (internal spacing)
-            .padding(DynamicHelpers.getPadding(from: component))
-            // Apply frame size and constraints
-            // First apply min/max constraints
-            .frame(
-                minWidth: component.minWidth,
-                maxWidth: (component.width == .infinity) ? .infinity : component.maxWidth,
-                minHeight: component.minHeight,
-                maxHeight: (component.height == .infinity) ? .infinity : component.maxHeight
+        // Apply modifiers based on what was actually specified
+        var modifiedContent = AnyView(
+            content.padding(DynamicHelpers.getPadding(from: component))
+        )
+        
+        // Apply min/max constraints if any were specified
+        let maxWidth = (component.width == .infinity) ? CGFloat.infinity : component.maxWidth
+        let maxHeight = (component.height == .infinity) ? CGFloat.infinity : component.maxHeight
+        
+        if component.minWidth != nil || maxWidth != nil || component.minHeight != nil || maxHeight != nil {
+            modifiedContent = AnyView(
+                modifiedContent.frame(
+                    minWidth: component.minWidth,
+                    maxWidth: maxWidth,
+                    minHeight: component.minHeight,
+                    maxHeight: maxHeight
+                )
             )
-            // Then apply exact size if specified
-            .frame(
-                width: width,
-                height: height
+        }
+        
+        // Apply exact size only if specified
+        if width != nil || height != nil {
+            modifiedContent = AnyView(
+                modifiedContent.frame(
+                    width: width,
+                    height: height
+                )
             )
+        }
+        
+        return modifiedContent
             // Apply border after component's internal cornerRadius
             .overlay(getBorder())
             // Apply margins as outer padding
