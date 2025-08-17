@@ -150,8 +150,14 @@ public struct DynamicViewContainer: View {
                     if let dict = dataItem.value as? [String: Any],
                        let name = dict["name"] as? String,
                        let defaultValue = dict["defaultValue"] {
-                        // ViewModelに変数を設定
-                        viewModel.variables[name] = String(describing: defaultValue)
+                        // Check if value is provided in viewModel.data first
+                        if let providedValue = viewModel.data[name] {
+                            // Use the provided value from Include
+                            viewModel.variables[name] = String(describing: providedValue)
+                        } else {
+                            // Use default value
+                            viewModel.variables[name] = String(describing: defaultValue)
+                        }
                     }
                 }
             }
