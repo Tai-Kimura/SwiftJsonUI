@@ -7,7 +7,7 @@ module SjuiTools
         def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil, binding_registry = nil)
           super
           # SafeAreaView is essentially a View that respects safe area
-          # We'll treat it the same as View but without ignoresSafeArea
+          # Set flag to skip ignoresSafeArea modifier
           @skip_ignore_safe_area = true
         end
 
@@ -15,6 +15,11 @@ module SjuiTools
 
         def should_ignore_safe_area?
           # SafeAreaView should NOT ignore safe area
+          false
+        end
+
+        def apply_safe_area_modifier?
+          # SafeAreaView should NOT apply .ignoresSafeArea()
           false
         end
       end

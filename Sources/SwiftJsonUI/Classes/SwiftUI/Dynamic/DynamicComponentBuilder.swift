@@ -217,8 +217,8 @@ public struct DynamicComponentBuilder: View {
             DynamicViewContainer(component: component, viewModel: viewModel, viewId: viewId)
         
         case "safeareaview":
-            // SafeAreaView is treated as a regular View but respects safe area
-            DynamicViewContainer(component: component, viewModel: viewModel, viewId: viewId)
+            // SafeAreaView respects safe area bounds
+            DynamicSafeAreaViewContainer(component: component, viewModel: viewModel, viewId: viewId)
         
         case "scrollview", "scroll":
             DynamicScrollViewContainer(component: component, viewModel: viewModel, viewId: viewId)
