@@ -31,10 +31,13 @@ module SjuiTools
         json_content = File.read(json_file)
         json_data = JSON.parse(json_content)
         
+        # Load and merge styles into the JSON data
+        json_data = SjuiTools::SwiftUI::StyleLoader.load_and_merge(json_data)
+        
         # Extract data properties from JSON
         data_properties = extract_data_properties(json_data)
         
-        # Extract onclick actions from JSON
+        # Extract onclick actions from JSON (now includes actions from styles)
         onclick_actions = extract_onclick_actions(json_data)
         
         # Always create/update data file, even if no properties
