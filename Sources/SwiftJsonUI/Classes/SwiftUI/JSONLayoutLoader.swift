@@ -85,6 +85,47 @@ public class JSONLayoutLoader {
     }
     #endif
     
+    // Clear all cached JSON files
+    public static func clearCache() {
+        let fm = FileManager.default
+        let layoutFileDirPath = getLayoutFileDirPath()
+        
+        do {
+            if fm.fileExists(atPath: layoutFileDirPath) {
+                let contents = try fm.contentsOfDirectory(atPath: layoutFileDirPath)
+                for file in contents {
+                    if file.hasSuffix(".json") {
+                        let filePath = "\(layoutFileDirPath)/\(file)"
+                        try fm.removeItem(atPath: filePath)
+                        Logger.debug("[JSONLayoutLoader] Removed cached file: \(file)")
+                    }
+                }
+                Logger.debug("[JSONLayoutLoader] Cache cleared successfully")
+            } else {
+                Logger.debug("[JSONLayoutLoader] Cache directory does not exist")
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error clearing cache: \(error)")
+        }
+    }
+    
+    // Clear specific cached JSON file
+    public static func clearCache(for name: String) {
+        let fm = FileManager.default
+        let cacheFilePath = "\(getLayoutFileDirPath())/\(name).json"
+        
+        do {
+            if fm.fileExists(atPath: cacheFilePath) {
+                try fm.removeItem(atPath: cacheFilePath)
+                Logger.debug("[JSONLayoutLoader] Removed cached file: \(name).json")
+            } else {
+                Logger.debug("[JSONLayoutLoader] Cached file not found: \(name).json")
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error removing cached file: \(error)")
+        }
+    }
+    
     #if DEBUG
     // DEBUGビルドではキャッシュまたはHotLoaderから取得
     public static func loadJSON(named name: String) -> Data? {
