@@ -85,7 +85,9 @@ public class StyleProcessor {
         }
         #endif
         
-        // Try to load from bundle
+        // Try to load from bundle - multiple search strategies
+        
+        // Strategy 1: Look in Styles subdirectory
         if let url = Bundle.main.url(forResource: name, withExtension: "json", subdirectory: "Styles") {
             do {
                 let data = try Data(contentsOf: url)
@@ -99,15 +101,15 @@ public class StyleProcessor {
                         styleFileTimestamps[name] = modificationDate
                     }
                     #endif
-                    Logger.debug("[StyleProcessor] Loaded style from bundle: \(name)")
+                    Logger.debug("[StyleProcessor] Loaded style from bundle subdirectory: \(name)")
                     return json
                 }
             } catch {
-                Logger.debug("[StyleProcessor] Error loading style \(name): \(error)")
+                Logger.debug("[StyleProcessor] Error loading style from subdirectory \(name): \(error)")
             }
         }
         
-        // Try without subdirectory (for flat bundle structure)
+        // Strategy 2: Try with path prefix
         if let url = Bundle.main.url(forResource: "Styles/\(name)", withExtension: "json") {
             do {
                 let data = try Data(contentsOf: url)
@@ -121,15 +123,86 @@ public class StyleProcessor {
                         styleFileTimestamps[name] = modificationDate
                     }
                     #endif
-                    Logger.debug("[StyleProcessor] Loaded style from flat structure: \(name)")
+                    Logger.debug("[StyleProcessor] Loaded style with path prefix: \(name)")
                     return json
                 }
             } catch {
-                Logger.debug("[StyleProcessor] Error loading style \(name): \(error)")
+                Logger.debug("[StyleProcessor] Error loading style with path prefix \(name): \(error)")
             }
         }
         
-        Logger.debug("[StyleProcessor] Style not found: \(name)")
+        // Strategy 3: Look for style files that were copied as regular resources
+        if let url = Bundle.main.url(forResource: "\(name)_style", withExtension: "json") {
+            do {
+                let data = try Data(contentsOf: url)
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                    // Cache the loaded style
+                    styleCache[name] = json
+                    #if DEBUG
+                    // Store the modification date
+                    if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+                       let modificationDate = attributes[.modificationDate] as? Date {
+                        styleFileTimestamps[name] = modificationDate
+                    }
+                    #endif
+                    Logger.debug("[StyleProcessor] Loaded style with _style suffix: \(name)")
+                    return json
+                }
+            } catch {
+                Logger.debug("[StyleProcessor] Error loading style with suffix \(name): \(error)")
+            }
+        }
+        
+        // Strategy 4: Look directly in bundle root (for when Styles folder contents are copied flat)
+        if let url = Bundle.main.url(forResource: name, withExtension: "json") {
+            do {
+                let data = try Data(contentsOf: url)
+                // Check if this is actually a style file (has a "type" field typical of styles)
+                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any],
+                   json["type"] != nil {
+                    // Cache the loaded style
+                    styleCache[name] = json
+                    #if DEBUG
+                    // Store the modification date
+                    if let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+                       let modificationDate = attributes[.modificationDate] as? Date {
+                        styleFileTimestamps[name] = modificationDate
+                    }
+                    #endif
+                    Logger.debug("[StyleProcessor] Loaded style from bundle root: \(name)")
+                    return json
+                }
+            } catch {
+                Logger.debug("[StyleProcessor] Error loading style from root \(name): \(error)")
+            }
+        }
+        
+        // Log all available resources for debugging
+        #if DEBUG
+        Logger.debug("[StyleProcessor] Style not found: \(name). Searching for available style resources...")
+        if let resourcePath = Bundle.main.resourcePath {
+            do {
+                let resourceContents = try FileManager.default.contentsOfDirectory(atPath: resourcePath)
+                let jsonFiles = resourceContents.filter { $0.hasSuffix(".json") && $0.contains("style") }
+                if !jsonFiles.isEmpty {
+                    Logger.debug("[StyleProcessor] Found style-related JSON files: \(jsonFiles)")
+                }
+                
+                // Check if Styles directory exists
+                let stylesPath = (resourcePath as NSString).appendingPathComponent("Styles")
+                if FileManager.default.fileExists(atPath: stylesPath) {
+                    let stylesContents = try FileManager.default.contentsOfDirectory(atPath: stylesPath)
+                    Logger.debug("[StyleProcessor] Styles directory contents: \(stylesContents)")
+                } else {
+                    Logger.debug("[StyleProcessor] Styles directory not found in bundle")
+                }
+            } catch {
+                Logger.debug("[StyleProcessor] Error listing bundle resources: \(error)")
+            }
+        }
+        #endif
+        
+        Logger.debug("[StyleProcessor] Style not found after all strategies: \(name)")
         return nil
     }
     
