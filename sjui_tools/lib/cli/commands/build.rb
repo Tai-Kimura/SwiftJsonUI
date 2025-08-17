@@ -104,11 +104,18 @@ module SjuiTools
           require_relative '../../swiftui/json_to_swiftui_converter'
           require_relative '../../swiftui/view_updater'
           require_relative '../../swiftui/data_model_updater'
+          require_relative '../../swiftui/build_cache_manager'
           
           config = Core::ConfigManager.load_config
           source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
           layouts_dir = File.join(source_path, config['layouts_directory'] || 'Layouts')
           view_dir = File.join(source_path, config['view_directory'] || 'View')
+          
+          # Initialize cache manager
+          cache_manager = SjuiTools::SwiftUI::BuildCacheManager.new(source_path)
+          last_updated = cache_manager.load_last_updated
+          last_including_files = cache_manager.load_last_including_files
+          style_dependencies = cache_manager.load_style_dependencies
           
           # Process all JSON files in Layouts directory
           json_files = Dir.glob(File.join(layouts_dir, '**/*.json'))
@@ -118,18 +125,59 @@ module SjuiTools
             return
           end
           
-          # First update Data models based on JSON
-          data_updater = SjuiTools::SwiftUI::DataModelUpdater.new
-          data_updater.update_data_models
+          # Track new includes and style dependencies
+          new_including_files = {}
+          new_style_dependencies = {}
+          
+          # Filter files that need update
+          files_to_update = []
+          json_files.each do |json_file|
+            file_name = File.basename(json_file, '.json')
+            
+            # Check if file needs update
+            if cache_manager.needs_update?(json_file, last_updated, layouts_dir, last_including_files, style_dependencies)
+              files_to_update << json_file
+            else
+              # Keep existing includes and style dependencies for unchanged files
+              new_including_files[file_name] = last_including_files[file_name] if last_including_files[file_name]
+              new_style_dependencies[file_name] = style_dependencies[file_name] if style_dependencies[file_name]
+            end
+          end
+          
+          # Update Data models if any files need updating
+          if files_to_update.any?
+            Core::Logger.info "Updating #{files_to_update.length} of #{json_files.length} files..."
+            data_updater = SjuiTools::SwiftUI::DataModelUpdater.new
+            data_updater.update_data_models
+          else
+            Core::Logger.info "No files need updating (all cached)"
+            return
+          end
           
           converter = SjuiTools::SwiftUI::JsonToSwiftUIConverter.new
           updater = SjuiTools::SwiftUI::ViewUpdater.new
           
-          json_files.each do |json_file|
+          files_to_update.each do |json_file|
             # Get relative path from layouts directory
             relative_path = Pathname.new(json_file).relative_path_from(Pathname.new(layouts_dir)).to_s
             base_name = File.basename(relative_path, '.json')
+            file_name = File.basename(json_file, '.json')
             dir_path = File.dirname(relative_path)
+            
+            # Read and parse JSON to extract includes and styles
+            begin
+              json_content = File.read(json_file)
+              json_data = JSON.parse(json_content)
+              
+              # Extract includes and styles for cache tracking
+              includes = cache_manager.extract_includes(json_data)
+              styles = cache_manager.extract_styles(json_data)
+              
+              new_including_files[file_name] = includes if includes.any?
+              new_style_dependencies[file_name] = styles if styles.any?
+            rescue => ex
+              Core::Logger.warn "Failed to parse #{json_file}: #{ex.message}"
+            end
             
             # Convert to PascalCase for Swift file
             view_name = base_name.split(/[_\-]/).map(&:capitalize).join
@@ -155,6 +203,9 @@ module SjuiTools
               Core::Logger.debug "  Skipping: #{relative_path} (no corresponding Swift file)"
             end
           end
+          
+          # Save cache for next build
+          cache_manager.save_cache(new_including_files, new_style_dependencies)
           
           Core::Logger.success "SwiftUI build completed!"
         end

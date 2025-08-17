@@ -1,0 +1,11 @@
+{
+  "type": "Button",
+  "background": "#007AFF",
+  "fontColor": "#FFFFFF",
+  "fontSize": 16,
+  "fontWeight": "semibold",
+  "cornerRadius": 8,
+  "padding": [12, 20],
+  "height": 44,
+  "width": "wrapContent"
+}
