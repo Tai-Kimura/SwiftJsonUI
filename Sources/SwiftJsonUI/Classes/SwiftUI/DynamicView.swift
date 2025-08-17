@@ -23,52 +23,69 @@ public struct DynamicView: View {
         self.viewId = viewId ?? UUID().uuidString
     }
     
+    @ViewBuilder
     public var body: some View {
-        Group {
-            if let component = viewModel.rootComponent {
-                DynamicComponentBuilder(
-                    component: component,
-                    viewModel: viewModel,
-                    viewId: viewId
-                )
-                .id(createViewId())  // Add ID to force view recreation when data changes
-                .onAppear {
-                    Logger.debug("[DynamicView] Rendering component: \(component.type ?? "unknown")")
-                }
-            } else if let error = viewModel.decodeError {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 10) {
-                        Text("JSON Decode Error")
-                            .font(.headline)
-                            .foregroundColor(.red)
-                            .padding(.bottom, 5)
-                        
-                        Text(error)
-                            .font(.system(.caption, design: .monospaced))
-                            .foregroundColor(.primary)
-                    }
-                    .padding()
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .background(Color(UIColor.systemBackground))
-            } else {
-                ProgressView("Loading...")
-                    .onAppear {
-                        Logger.debug("[DynamicView] No rootComponent, showing loading...")
-                        Logger.debug("[DynamicView] ProgressView appeared, attempting to load...")
-                        viewModel.loadJSON()
-                    }
+        if let component = viewModel.rootComponent {
+            DynamicComponentBuilder(
+                component: component,
+                viewModel: viewModel,
+                viewId: viewId
+            )
+            .id(createViewId())  // Add ID to force view recreation when data changes
+            .onAppear {
+                Logger.debug("[DynamicView] Rendering component: \(component.type ?? "unknown")")
             }
+            .ignoresSafeArea()  // DynamicView should ignore SafeArea by default
+            #if DEBUG
+            .onReceive(HotLoader.instance.$lastUpdate) { date in
+                Logger.debug("[DynamicView] HotLoader update received: \(date)")
+                // Clear style cache to reload updated styles
+                StyleProcessor.clearCache()
+                viewModel.reload()
+            }
+            #endif
+        } else if let error = viewModel.decodeError {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("JSON Decode Error")
+                        .font(.headline)
+                        .foregroundColor(.red)
+                        .padding(.bottom, 5)
+                    
+                    Text(error)
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundColor(.primary)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .background(Color(UIColor.systemBackground))
+            .ignoresSafeArea()  // DynamicView should ignore SafeArea by default
+            #if DEBUG
+            .onReceive(HotLoader.instance.$lastUpdate) { date in
+                Logger.debug("[DynamicView] HotLoader update received: \(date)")
+                // Clear style cache to reload updated styles
+                StyleProcessor.clearCache()
+                viewModel.reload()
+            }
+            #endif
+        } else {
+            ProgressView("Loading...")
+                .onAppear {
+                    Logger.debug("[DynamicView] No rootComponent, showing loading...")
+                    Logger.debug("[DynamicView] ProgressView appeared, attempting to load...")
+                    viewModel.loadJSON()
+                }
+                .ignoresSafeArea()  // DynamicView should ignore SafeArea by default
+                #if DEBUG
+                .onReceive(HotLoader.instance.$lastUpdate) { date in
+                    Logger.debug("[DynamicView] HotLoader update received: \(date)")
+                    // Clear style cache to reload updated styles
+                    StyleProcessor.clearCache()
+                    viewModel.reload()
+                }
+                #endif
         }
-        .ignoresSafeArea()  // DynamicView should ignore SafeArea by default
-        #if DEBUG
-        .onReceive(HotLoader.instance.$lastUpdate) { date in
-            Logger.debug("[DynamicView] HotLoader update received: \(date)")
-            // Clear style cache to reload updated styles
-            StyleProcessor.clearCache()
-            viewModel.reload()
-        }
-        #endif
     }
     
     // Generate a unique ID based on viewModel data to force view recreation when data changes
