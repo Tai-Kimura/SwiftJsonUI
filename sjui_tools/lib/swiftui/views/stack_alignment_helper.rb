@@ -7,24 +7,7 @@ module SjuiTools
       module StackAlignmentHelper
         def get_hstack_alignment
           # HStackの垂直方向のアライメント
-          # 子要素のalign属性も考慮する
-          children = @component['child'] || []
-          
-          # 子要素にalignTop/Bottom/centerVertical/centerInParentがあるかチェック
-          has_align_top = children.any? { |c| c['alignTop'] }
-          has_align_bottom = children.any? { |c| c['alignBottom'] }
-          has_center_vertical = children.any? { |c| c['centerVertical'] || c['centerInParent'] }
-          
-          # 優先順位: 個別の子要素のalign > gravity
-          if has_center_vertical
-            return '.center'
-          elsif has_align_bottom
-            return '.bottom'
-          elsif has_align_top
-            return '.top'
-          end
-          
-          # gravityから垂直成分を取得（既存のロジック）
+          # gravityから垂直成分を取得
           gravity = @component['gravity'] || 'left|top'
           vertical = 'top'  # デフォルト
           
@@ -55,24 +38,7 @@ module SjuiTools
         
         def get_vstack_alignment
           # VStackの水平方向のアライメント
-          # 子要素のalign属性も考慮する
-          children = @component['child'] || []
-          
-          # 子要素にalignLeft/Right/centerHorizontal/centerInParentがあるかチェック
-          has_align_left = children.any? { |c| c['alignLeft'] }
-          has_align_right = children.any? { |c| c['alignRight'] }
-          has_center_horizontal = children.any? { |c| c['centerHorizontal'] || c['centerInParent'] }
-          
-          # 優先順位: 個別の子要素のalign > gravity
-          if has_center_horizontal
-            return '.center'
-          elsif has_align_right
-            return '.trailing'
-          elsif has_align_left
-            return '.leading'
-          end
-          
-          # gravityから水平成分を取得（既存のロジック）
+          # gravityから水平成分を取得
           gravity = @component['gravity'] || 'left|top'
           horizontal = 'left'  # デフォルト
           
