@@ -294,6 +294,7 @@ public struct DynamicComponent: Decodable {
         selectedIndex = try container.decodeIfPresent(Int.self, forKey: .selectedIndex)
         columns = try container.decodeIfPresent(Int.self, forKey: .columns)
         spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing)
+        contentInsetAdjustmentBehavior = try container.decodeIfPresent(String.self, forKey: .contentInsetAdjustmentBehavior)
         
         // SelectBox/DatePicker properties
         selectItemType = try container.decodeIfPresent(String.self, forKey: .selectItemType)
