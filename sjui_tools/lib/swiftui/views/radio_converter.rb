@@ -26,7 +26,9 @@ module SjuiTools
             add_line "VStack(alignment: .leading, spacing: 8) {"
             indent do
               if text && !text.empty?
-                add_line "Text(\"#{text}\")"
+                # Escape double quotes in text for Swift string literal
+                escaped_text = text.gsub('"', '\\"')
+                add_line "Text(\"#{escaped_text}\")"
                 if @component['fontSize']
                   add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
                 end
@@ -42,7 +44,9 @@ module SjuiTools
                     add_line "#{selection_binding} = \"#{item}\""
                   end
                   add_line "}"
-                  add_line "Text(\"#{item}\")"
+                  # Escape double quotes in item text for Swift string literal
+                  escaped_item = item.gsub('"', '\\"')
+                  add_line "Text(\"#{escaped_item}\")"
                 end
                 add_line "}"
               end
@@ -76,7 +80,9 @@ module SjuiTools
               add_line "}"
               
               if text && !text.empty?
-                add_line "Text(\"#{text}\")"
+                # Escape double quotes in text for Swift string literal
+                escaped_text = text.gsub('"', '\\"')
+                add_line "Text(\"#{escaped_text}\")"
                 
                 if @component['fontSize']
                   add_modifier_line ".font(.system(size: #{@component['fontSize']}))"

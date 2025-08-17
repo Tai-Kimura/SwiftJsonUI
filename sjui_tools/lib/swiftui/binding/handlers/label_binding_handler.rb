@@ -59,9 +59,9 @@ module SjuiTools
               # For interpolated text, use viewModel.data directly without the $ prefix
               "\\(viewModel.data.#{property_name})"
             end
-            "\"#{interpolated.gsub("\n", "\\n")}\""
+            "\"#{interpolated.gsub('"', '\\"').gsub("\n", "\\n")}\""
           else
-            "\"#{(text_value || '').gsub("\n", "\\n")}\""
+            "\"#{(text_value || '').gsub('"', '\\"').gsub("\n", "\\n")}\""
           end
         end
       end

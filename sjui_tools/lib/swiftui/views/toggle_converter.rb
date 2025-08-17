@@ -31,7 +31,9 @@ module SjuiTools
           # Toggle
           add_line "Toggle(isOn: #{state_binding}) {"
           indent do
-            add_line "Text(\"#{text}\")"
+            # Escape double quotes in text for Swift string literal
+            escaped_text = text.gsub('"', '\\"')
+            add_line "Text(\"#{escaped_text}\")"
             
             # labelAttributes の処理
             if @component['labelAttributes']

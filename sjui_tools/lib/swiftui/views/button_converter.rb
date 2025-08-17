@@ -32,7 +32,9 @@ module SjuiTools
           add_line "}) {"
           
           indent do
-            add_line "Text(\"#{text}\")"
+            # Escape double quotes in text for Swift string literal
+            escaped_text = text.gsub('"', '\\"')
+            add_line "Text(\"#{escaped_text}\")"
             
             # fontColor (デフォルトは白)
             if @component['fontColor']
