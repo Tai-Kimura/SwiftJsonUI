@@ -31,6 +31,7 @@ public struct DynamicView: View {
                     viewModel: viewModel,
                     viewId: viewId
                 )
+                .id(createViewId())  // Add ID to force view recreation when data changes
                 .onAppear {
                     Logger.debug("[DynamicView] Rendering component: \(component.type ?? "unknown")")
                 }
@@ -65,6 +66,27 @@ public struct DynamicView: View {
             viewModel.reload()
         }
         #endif
+    }
+    
+    // Generate a unique ID based on viewModel data to force view recreation when data changes
+    private func createViewId() -> String {
+        // Create ID from all data values in the viewModel
+        let dataValues = viewModel.data
+            .sorted { $0.key < $1.key }  // Sort for consistent ordering
+            .map { "\($0.key):\($0.value)" }
+            .joined(separator: "_")
+        
+        // Include variables as well since they can also affect view rendering
+        let variableValues = viewModel.variables
+            .sorted { $0.key < $1.key }
+            .map { "\($0.key):\($0.value)" }
+            .joined(separator: "_")
+        
+        // Combine both to create a unique ID
+        let combinedId = "\(dataValues)_\(variableValues)"
+        
+        // If empty, use viewId as fallback
+        return combinedId.isEmpty ? viewId : combinedId
     }
 }
 
