@@ -15,10 +15,14 @@ struct SelectBoxModifiers: ViewModifier {
     
     func body(content: Content) -> some View {
         content
-            // SelectBoxView handles padding/background/cornerRadius internally
-            // Only apply border and margins here
-            .overlay(getBorder())  // Border after component's internal cornerRadius
-            .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+            // Apply padding first (internal spacing)
+            .padding(DynamicHelpers.getPadding(from: component))
+            // Apply frame size and constraints
+            .modifier(DynamicFrameModifier(component: component, viewModel: viewModel))
+            // Apply border after component's internal cornerRadius
+            .overlay(getBorder())
+            // Apply margins as outer padding
+            .padding(DynamicHelpers.getMargins(from: component))
             .opacity(DynamicHelpers.getOpacity(from: component))
             .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
