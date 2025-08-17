@@ -157,7 +157,7 @@ public struct DynamicComponent: Decodable {
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
         case aspectWidth, aspectHeight
-        case userInteractionEnabled, centerInParent, weight
+        case userInteractionEnabled, centerInParent, weight, enabled
         case child
         case orientation, contentMode, src, placeholder, renderingMode
         case headers, items, data
@@ -248,6 +248,7 @@ public struct DynamicComponent: Decodable {
         userInteractionEnabled = try container.decodeIfPresent(Bool.self, forKey: .userInteractionEnabled)
         centerInParent = try container.decodeIfPresent(Bool.self, forKey: .centerInParent)
         weight = try container.decodeIfPresent(CGFloat.self, forKey: .weight)
+        enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
         
         // Child handling - use helper for decoding (child is always an array)
         child = DynamicDecodingHelper.decodeChildren(from: container, forKey: .child)
@@ -313,12 +314,18 @@ public struct DynamicComponent: Decodable {
         include = try container.decodeIfPresent(String.self, forKey: .include)
         variables = try container.decodeIfPresent([String: AnyCodable].self, forKey: .variables)
         
-        // Handle 'data' key conditionally based on whether it's an include component
+        // Debug: Log include value
+        if let includeValue = include {
+            print("🔍 DynamicComponent decoded include: \(includeValue)")
+        }
+        
+        // Handle 'data' key conditionally based on whether it's an include component  
         if include != nil {
             // For include components, decode 'data' as a dictionary
             includeData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .data)
             sharedData = try container.decodeIfPresent([String: AnyCodable].self, forKey: .sharedData)
             data = nil
+            print("🔍 DynamicComponent include data: \(includeData?.count ?? 0) keys")
         } else {
             // For non-include components, decode 'data' as an array
             data = try container.decodeIfPresent([AnyCodable].self, forKey: .data)

@@ -121,7 +121,7 @@ public struct DynamicViewContainer: View {
         if let child = component.child {
             // Debug: Print all child types
             for (index, comp) in child.enumerated() {
-                print("📝 Child[\(index)]: type=\(comp.type ?? "nil"), id=\(comp.id ?? "no-id"), data=\(comp.data != nil)")
+                print("📝 Child[\(index)]: type=\(comp.type ?? "nil"), id=\(comp.id ?? "no-id"), include=\(comp.include ?? "nil"), data=\(comp.data != nil)")
             }
             // Process data elements first
             processDataElements(child)
