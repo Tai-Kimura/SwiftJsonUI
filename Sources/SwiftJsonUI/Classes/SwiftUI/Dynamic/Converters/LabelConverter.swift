@@ -27,99 +27,88 @@ public struct LabelConverter {
             }
         }
         
-        var textView = Text(text)
-            .font(DynamicHelpers.fontFromComponent(component))
-            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-        
-        // Apply underline
-        if component.underline == true {
-            textView = textView.underline()
-        }
-        
-        // Apply strikethrough
-        if component.strikethrough == true {
-            textView = textView.strikethrough()
-        }
-        
-        // Apply line height multiple
-        if let lineHeightMultiple = component.lineHeightMultiple {
-            let fontSize = component.fontSize ?? 17
-            let lineSpacing = (lineHeightMultiple - 1) * fontSize
-            textView = textView.lineSpacing(lineSpacing)
-        }
-        
-        // Apply auto shrink and minimum scale factor
-        if component.autoShrink == true {
-            // Use minimumScaleFactor if provided, otherwise default to 0.5
-            let scaleFactor = component.minimumScaleFactor ?? 0.5
-            textView = textView
-                .minimumScaleFactor(scaleFactor)
-                .lineLimit(1)  // Auto shrink typically works with single line
-        } else if let minimumScaleFactor = component.minimumScaleFactor {
-            // If only minimumScaleFactor is specified without autoShrink
-            textView = textView.minimumScaleFactor(minimumScaleFactor)
-        }
-        
-        // Apply text shadow
-        if let textShadowValue = component.textShadow?.value {
-            if let shadowDict = textShadowValue as? [String: Any] {
-                let color = shadowDict["color"] as? String ?? "#000000"
-                let radius = CGFloat(shadowDict["radius"] as? Double ?? 2.0)
-                let x = CGFloat(shadowDict["x"] as? Double ?? 0.0)
-                let y = CGFloat(shadowDict["y"] as? Double ?? 0.0)
-                
-                textView = textView.shadow(
-                    color: DynamicHelpers.colorFromHex(color) ?? .black,
-                    radius: radius,
-                    x: x,
-                    y: y
-                )
-            } else if let shadowArray = textShadowValue as? [Any], shadowArray.count >= 3 {
-                // Support array format: [x, y, radius, color?]
-                let x = CGFloat((shadowArray[0] as? Double) ?? 0.0)
-                let y = CGFloat((shadowArray[1] as? Double) ?? 0.0)
-                let radius = CGFloat((shadowArray[2] as? Double) ?? 2.0)
-                let color = (shadowArray.count > 3 ? shadowArray[3] as? String : nil) ?? "#000000"
-                
-                textView = textView.shadow(
-                    color: DynamicHelpers.colorFromHex(color) ?? .black,
-                    radius: radius,
-                    x: x,
-                    y: y
-                )
-            }
-        }
-        
-        // Apply text alignment
-        if let textAlign = component.textAlign {
-            textView = applyTextAlignment(textView, alignment: textAlign)
-        }
-        
-        // Apply edgeInset (text padding)
-        if let edgeInset = component.edgeInset {
-            textView = textView.padding(edgeInset)
-        }
-        
-        // Apply common modifiers
+        // Build the text view with all modifiers applied at once
         return AnyView(
-            textView
+            Text(text)
+                .font(DynamicHelpers.fontFromComponent(component))
+                .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                .underline(component.underline == true)
+                .strikethrough(component.strikethrough == true)
+                .lineSpacing(
+                    component.lineHeightMultiple != nil
+                        ? (component.lineHeightMultiple! - 1) * (component.fontSize ?? 17)
+                        : 0
+                )
+                .minimumScaleFactor(
+                    component.autoShrink == true
+                        ? (component.minimumScaleFactor ?? 0.5)
+                        : (component.minimumScaleFactor ?? 1.0)
+                )
+                .lineLimit(component.autoShrink == true ? 1 : nil)
+                .shadow(
+                    color: getTextShadowColor(component),
+                    radius: getTextShadowRadius(component),
+                    x: getTextShadowX(component),
+                    y: getTextShadowY(component)
+                )
+                .padding(component.edgeInset ?? 0)
                 .modifier(CommonModifiers(component: component, viewModel: viewModel))
         )
     }
     
+    private static func getTextShadowColor(_ component: DynamicComponent) -> Color {
+        if let textShadowValue = component.textShadow?.value {
+            if let shadowDict = textShadowValue as? [String: Any] {
+                let color = shadowDict["color"] as? String ?? "#000000"
+                return DynamicHelpers.colorFromHex(color) ?? .clear
+            } else if let shadowArray = textShadowValue as? [Any], shadowArray.count >= 3 {
+                let color = (shadowArray.count > 3 ? shadowArray[3] as? String : nil) ?? "#000000"
+                return DynamicHelpers.colorFromHex(color) ?? .clear
+            }
+        }
+        return .clear
+    }
     
-    private static func applyTextAlignment(_ text: Text, alignment: String) -> Text {
-        // Text alignment is handled by the frame modifier in CommonModifiers
-        return text
+    private static func getTextShadowRadius(_ component: DynamicComponent) -> CGFloat {
+        if let textShadowValue = component.textShadow?.value {
+            if let shadowDict = textShadowValue as? [String: Any] {
+                return CGFloat(shadowDict["radius"] as? Double ?? 0.0)
+            } else if let shadowArray = textShadowValue as? [Any], shadowArray.count >= 3 {
+                return CGFloat((shadowArray[2] as? Double) ?? 0.0)
+            }
+        }
+        return 0
+    }
+    
+    private static func getTextShadowX(_ component: DynamicComponent) -> CGFloat {
+        if let textShadowValue = component.textShadow?.value {
+            if let shadowDict = textShadowValue as? [String: Any] {
+                return CGFloat(shadowDict["x"] as? Double ?? 0.0)
+            } else if let shadowArray = textShadowValue as? [Any], shadowArray.count >= 1 {
+                return CGFloat((shadowArray[0] as? Double) ?? 0.0)
+            }
+        }
+        return 0
+    }
+    
+    private static func getTextShadowY(_ component: DynamicComponent) -> CGFloat {
+        if let textShadowValue = component.textShadow?.value {
+            if let shadowDict = textShadowValue as? [String: Any] {
+                return CGFloat(shadowDict["y"] as? Double ?? 0.0)
+            } else if let shadowArray = textShadowValue as? [Any], shadowArray.count >= 2 {
+                return CGFloat((shadowArray[1] as? Double) ?? 0.0)
+            }
+        }
+        return 0
     }
     
     private static func createLinkableAttributedString(from text: String, component: DynamicComponent) -> AttributedString? {
         var attributedString = AttributedString(text)
         
         // Apply font and color to the entire string
-        if let font = DynamicHelpers.fontFromComponent(component) {
-            attributedString.font = font
-        }
+        let font = DynamicHelpers.fontFromComponent(component)
+        attributedString.font = font
+        
         if let color = DynamicHelpers.colorFromHex(component.fontColor) {
             attributedString.foregroundColor = color
         }
@@ -142,4 +131,3 @@ public struct LabelConverter {
         return attributedString
     }
 }
-
