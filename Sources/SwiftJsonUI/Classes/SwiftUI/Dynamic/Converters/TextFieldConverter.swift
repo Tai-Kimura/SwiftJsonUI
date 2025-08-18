@@ -118,89 +118,45 @@ public struct TextFieldConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let borderStyle = component.borderStyle?.lowercased()
+        var textField = AnyView(
+            TextField(placeholder, text: text)
+                .keyboardType(getKeyboardType(from: component.input))
+                .submitLabel(getSubmitLabel(from: component.returnKeyType))
+                .onChange(of: text.wrappedValue) { _ in
+                    // onTextChange is handled in binding setter
+                }
+        )
         
-        switch borderStyle {
-        case "roundedrect", "rounded":
-            var textField = AnyView(
-                TextField(placeholder, text: text)
-                    .keyboardType(getKeyboardType(from: component.input))
-                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
-                    .onChange(of: text.wrappedValue) { _ in
-                        // onTextChange is handled in binding setter
-                    }
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            )
-            
-            // Apply font if specified
-            if let font = DynamicHelpers.fontFromComponent(component) {
-                textField = AnyView(textField.font(font))
+        // Apply textFieldStyle only if borderStyle is specified
+        if let borderStyle = component.borderStyle?.lowercased() {
+            switch borderStyle {
+            case "roundedrect", "rounded":
+                textField = AnyView(textField.textFieldStyle(RoundedBorderTextFieldStyle()))
+            case "plain", "none":
+                textField = AnyView(textField.textFieldStyle(PlainTextFieldStyle()))
+            default:
+                // Use platform default style
+                #if os(iOS)
+                textField = AnyView(textField.textFieldStyle(RoundedBorderTextFieldStyle()))
+                #else
+                textField = AnyView(textField.textFieldStyle(PlainTextFieldStyle()))
+                #endif
             }
-            
-            // Apply foreground color
-            if let fontColor = component.fontColor {
-                textField = AnyView(textField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
-            }
-            
-            return AnyView(textField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
-        case "plain", "none":
-            var textField = AnyView(
-                TextField(placeholder, text: text)
-                    .keyboardType(getKeyboardType(from: component.input))
-                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
-                    .onChange(of: text.wrappedValue) { _ in
-                        // onTextChange is handled in binding setter
-                    }
-                    .textFieldStyle(PlainTextFieldStyle())
-            )
-            
-            // Apply font if specified
-            if let font = DynamicHelpers.fontFromComponent(component) {
-                textField = AnyView(textField.font(font))
-            }
-            
-            // Apply foreground color
-            if let fontColor = component.fontColor {
-                textField = AnyView(textField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
-            }
-            
-            return AnyView(textField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
-        default:
-            // Default style based on platform
-            #if os(iOS)
-            var textField = AnyView(
-                TextField(placeholder, text: text)
-                    .keyboardType(getKeyboardType(from: component.input))
-                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
-                    .onChange(of: text.wrappedValue) { _ in
-                        // onTextChange is handled in binding setter
-                    }
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            )
-            #else
-            var textField = AnyView(
-                TextField(placeholder, text: text)
-                    .keyboardType(getKeyboardType(from: component.input))
-                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
-                    .onChange(of: text.wrappedValue) { _ in
-                        // onTextChange is handled in binding setter
-                    }
-                    .textFieldStyle(PlainTextFieldStyle())
-            )
-            #endif
-            
-            // Apply font if specified
-            if let font = DynamicHelpers.fontFromComponent(component) {
-                textField = AnyView(textField.font(font))
-            }
-            
-            // Apply foreground color
-            if let fontColor = component.fontColor {
-                textField = AnyView(textField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
-            }
-            
-            return AnyView(textField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
         }
+        // If borderStyle is not specified, don't apply any textFieldStyle
+        
+        // Apply font if specified
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            textField = AnyView(textField.font(font))
+        }
+        
+        // Apply foreground color
+        if let fontColor = component.fontColor {
+            textField = AnyView(textField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
+        }
+        
+        return AnyView(textField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
+    }
     }
     
     // Helper function to create SecureField with proper style
@@ -210,68 +166,39 @@ public struct TextFieldConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let borderStyle = component.borderStyle?.lowercased()
+        var secureField = AnyView(
+            SecureField(placeholder, text: text)
+        )
         
-        switch borderStyle {
-        case "roundedrect", "rounded":
-            var secureField = AnyView(
-                SecureField(placeholder, text: text)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            )
-            
-            // Apply font if specified
-            if let font = DynamicHelpers.fontFromComponent(component) {
-                secureField = AnyView(secureField.font(font))
+        // Apply textFieldStyle only if borderStyle is specified
+        if let borderStyle = component.borderStyle?.lowercased() {
+            switch borderStyle {
+            case "roundedrect", "rounded":
+                secureField = AnyView(secureField.textFieldStyle(RoundedBorderTextFieldStyle()))
+            case "plain", "none":
+                secureField = AnyView(secureField.textFieldStyle(PlainTextFieldStyle()))
+            default:
+                // Use platform default style
+                #if os(iOS)
+                secureField = AnyView(secureField.textFieldStyle(RoundedBorderTextFieldStyle()))
+                #else
+                secureField = AnyView(secureField.textFieldStyle(PlainTextFieldStyle()))
+                #endif
             }
-            
-            // Apply foreground color
-            if let fontColor = component.fontColor {
-                secureField = AnyView(secureField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
-            }
-            
-            return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
-        case "plain", "none":
-            var secureField = AnyView(
-                SecureField(placeholder, text: text)
-                    .textFieldStyle(PlainTextFieldStyle())
-            )
-            
-            // Apply font if specified
-            if let font = DynamicHelpers.fontFromComponent(component) {
-                secureField = AnyView(secureField.font(font))
-            }
-            
-            // Apply foreground color
-            if let fontColor = component.fontColor {
-                secureField = AnyView(secureField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
-            }
-            
-            return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
-        default:
-            // Default style based on platform
-            #if os(iOS)
-            var secureField = AnyView(
-                SecureField(placeholder, text: text)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-            )
-            #else
-            var secureField = AnyView(
-                SecureField(placeholder, text: text)
-                    .textFieldStyle(PlainTextFieldStyle())
-            )
-            #endif
-            
-            // Apply font if specified
-            if let font = DynamicHelpers.fontFromComponent(component) {
-                secureField = AnyView(secureField.font(font))
-            }
-            
-            // Apply foreground color
-            if let fontColor = component.fontColor {
-                secureField = AnyView(secureField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
-            }
-            
-            return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
         }
+        // If borderStyle is not specified, don't apply any textFieldStyle
+        
+        // Apply font if specified
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            secureField = AnyView(secureField.font(font))
+        }
+        
+        // Apply foreground color
+        if let fontColor = component.fontColor {
+            secureField = AnyView(secureField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
+        }
+        
+        return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
+    }
     }
 }
