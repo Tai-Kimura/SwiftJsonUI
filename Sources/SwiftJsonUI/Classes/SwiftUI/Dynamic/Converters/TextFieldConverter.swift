@@ -71,6 +71,9 @@ public struct TextFieldConverter {
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
                         .keyboardType(getKeyboardType(from: component.input))
                         .submitLabel(getSubmitLabel(from: component.returnKeyType))
+                        .onChange(of: binding.wrappedValue) { _ in
+                            // onTextChange is handled in binding setter
+                        }
                 )
             }
             

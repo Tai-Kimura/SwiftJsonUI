@@ -104,11 +104,11 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `borderStyle` - Border style (RoundedRect, Line, Bezel)
 - ✅ `input` - Keyboard type configuration
 - ✅ `returnKeyType` - Return key type
-- [ ] `onTextChange` - Text change event
+- ✅ `onTextChange` - Text change event
 - ✅ `secure` - Secure text entry
-- [ ] `accessoryBackground` - Input accessory background
-- [ ] `accessoryTextColor` - Input accessory text color
-- [ ] `doneText` - Done button text
+- ✅ `accessoryBackground` - Input accessory background (Dynamic mode)
+- ✅ `accessoryTextColor` - Input accessory text color (Dynamic mode)
+- ✅ `doneText` - Done button text (Dynamic mode)
 
 ### TextView
 - ✅ `hintFont` - Placeholder font (Dynamic mode)
@@ -172,27 +172,27 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `checked` - Initial state
 
 ### Radio
-- [ ] `icon` - Normal state icon
-- [ ] `selected_icon` - Selected state icon
-- [ ] `group` - Radio group name
-- [ ] `checked` - Initial state
+- ✅ `icon` - Normal state icon
+- ✅ `selected_icon` - Selected state icon
+- ✅ `group` - Radio group name
+- ✅ `checked` - Initial state
 
 ### Segment
-- [ ] `items` - Segment items
-- [ ] `enabled` - Enabled state
-- [ ] `tintColor` - Tint color
-- [ ] `normalColor` - Normal text color
-- [ ] `selectedColor` - Selected text color
-- [ ] `valueChange` - Value change event
+- ✅ `items` - Segment items
+- ✅ `enabled` - Enabled state
+- ✅ `tintColor` - Tint color
+- ✅ `normalColor` - Normal text color
+- ✅ `selectedColor` - Selected text color
+- ✅ `valueChange` - Value change event (onChange)
 
 ### SelectBox
-- [ ] `caretAttributes` - Caret styling
-- [ ] `dividerAttributes` - Divider styling
-- [ ] `labelAttributes` - Label styling
-- [ ] `canBack` - Show back button
-- [ ] `prompt` - Picker prompt
-- [ ] `includePromptWhenDataBinding` - Include prompt in binding
-- [ ] `minuteInterval` - Minute intervals
+- ✅ `caretAttributes` - Caret styling (Dynamic mode)
+- ✅ `dividerAttributes` - Divider styling (Dynamic mode)
+- ✅ `labelAttributes` - Label styling (Dynamic mode)
+- ✅ `canBack` - Show back button (Dynamic mode)
+- ✅ `prompt` - Picker prompt (Dynamic mode)
+- ✅ `includePromptWhenDataBinding` - Include prompt in binding (Dynamic mode)
+- ✅ `minuteInterval` - Minute intervals (Dynamic mode)
 
 ### IconLabel
 - [ ] `textShadow` - Text shadow
@@ -203,9 +203,9 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - [ ] `locations` - Color stop locations
 
 ### Web
-- [ ] `html` - HTML content
-- [ ] `allowsBackForwardNavigationGestures` - Enable swipe navigation
-- [ ] `allowsLinkPreview` - Enable link preview
+- ✅ `html` - HTML content (Dynamic mode)
+- ✅ `allowsBackForwardNavigationGestures` - Enable swipe navigation (Dynamic mode)
+- ✅ `allowsLinkPreview` - Enable link preview (Dynamic mode)
 
 ## Implementation Notes
 

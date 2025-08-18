@@ -19,7 +19,8 @@ public struct RadioConverter {
         let text = viewModel.processText(component.text) ?? ""
         
         // Check if component id matches a data property
-        var isSelected = component.isOn ?? false
+        var isSelected = component.checked ?? component.isOn ?? false
+        let group = component.group ?? "defaultRadioGroup"
         
         if let componentId = component.id {
             // Try to find a matching radio property in data dictionary
@@ -44,22 +45,38 @@ public struct RadioConverter {
             }
             
             // Also check for radio group selection (where value is stored in a parent group id)
-            if let radioGroupKey = viewModel.data["selectedRadio"] as? String {
+            if let radioGroupKey = viewModel.data[group] as? String {
+                isSelected = (radioGroupKey == componentId || radioGroupKey == text)
+            } else if let radioGroupKey = viewModel.data["selectedRadio"] as? String {
                 isSelected = (radioGroupKey == componentId || radioGroupKey == text)
             }
         }
         
         return AnyView(
             HStack {
-                Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(.blue)
+                // Use custom icons if provided
+                if let selectedIcon = component.selectedIcon, isSelected {
+                    Image(selectedIcon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                } else if let icon = component.icon, !isSelected {
+                    Image(icon)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 20, height: 20)
+                } else {
+                    Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                        .foregroundColor(.blue)
+                }
                     .onTapGesture {
                         // Update data if component has an id
                         if let componentId = component.id {
                             // Update this radio's selection state
                             viewModel.data[componentId] = true
                             // Update radio group selection
-                            viewModel.data["selectedRadio"] = componentId
+                            viewModel.data[group] = componentId
+                            viewModel.data["selectedRadio"] = componentId  // Keep for backward compatibility
                             viewModel.objectWillChange.send()
                         }
                         

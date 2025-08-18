@@ -92,6 +92,24 @@ public struct DynamicComponent: Decodable {
     // Segment attributes
     let normalColor: String?
     let selectedColor: String?
+    // TextField events
+    let onTextChange: String?
+    // TextField accessory
+    let accessoryBackground: String?
+    let accessoryTextColor: String?
+    let doneText: String?
+    // SelectBox attributes
+    let caretAttributes: AnyCodable?
+    let dividerAttributes: AnyCodable?
+    let labelAttributes: AnyCodable?
+    let canBack: Bool?
+    let prompt: String?
+    let includePromptWhenDataBinding: Bool?
+    let minuteInterval: Int?
+    // Web attributes
+    let html: String?
+    let allowsBackForwardNavigationGestures: Bool?
+    let allowsLinkPreview: Bool?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
@@ -232,6 +250,9 @@ public struct DynamicComponent: Decodable {
         case partialAttributes, highlightAttributes, highlightColor, hintAttributes
         case label, onSrc, checked, icon, selectedIcon, group
         case normalColor, selectedColor
+        case onTextChange, accessoryBackground, accessoryTextColor, doneText
+        case caretAttributes, dividerAttributes, labelAttributes, canBack, prompt, includePromptWhenDataBinding, minuteInterval
+        case html, allowsBackForwardNavigationGestures, allowsLinkPreview
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
@@ -357,6 +378,24 @@ public struct DynamicComponent: Decodable {
         // Segment attributes
         normalColor = try container.decodeIfPresent(String.self, forKey: .normalColor)
         selectedColor = try container.decodeIfPresent(String.self, forKey: .selectedColor)
+        // TextField events
+        onTextChange = try container.decodeIfPresent(String.self, forKey: .onTextChange)
+        // TextField accessory
+        accessoryBackground = try container.decodeIfPresent(String.self, forKey: .accessoryBackground)
+        accessoryTextColor = try container.decodeIfPresent(String.self, forKey: .accessoryTextColor)
+        doneText = try container.decodeIfPresent(String.self, forKey: .doneText)
+        // SelectBox attributes
+        caretAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .caretAttributes)
+        dividerAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .dividerAttributes)
+        labelAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .labelAttributes)
+        canBack = try container.decodeIfPresent(Bool.self, forKey: .canBack)
+        prompt = try container.decodeIfPresent(String.self, forKey: .prompt)
+        includePromptWhenDataBinding = try container.decodeIfPresent(Bool.self, forKey: .includePromptWhenDataBinding)
+        minuteInterval = try container.decodeIfPresent(Int.self, forKey: .minuteInterval)
+        // Web attributes
+        html = try container.decodeIfPresent(String.self, forKey: .html)
+        allowsBackForwardNavigationGestures = try container.decodeIfPresent(Bool.self, forKey: .allowsBackForwardNavigationGestures)
+        allowsLinkPreview = try container.decodeIfPresent(Bool.self, forKey: .allowsLinkPreview)
         
         // Style properties
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)
