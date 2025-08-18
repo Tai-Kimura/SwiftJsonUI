@@ -24,9 +24,9 @@ module SjuiTools
           # ProgressView
           add_line "ProgressView(value: #{progress_value})"
           
-          # progressTintColor
-          if @component['progressTintColor']
-            color = hex_to_swiftui_color(@component['progressTintColor'])
+          # progressTintColor, tintColor, or tint
+          if @component['progressTintColor'] || @component['tintColor'] || @component['tint']
+            color = hex_to_swiftui_color(@component['progressTintColor'] || @component['tintColor'] || @component['tint'])
             add_modifier_line ".tint(#{color})"
           end
           

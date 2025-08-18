@@ -107,6 +107,12 @@ module SjuiTools
             end
           end
           
+          # tint color for toggle
+          if @component['tint'] || @component['tintColor']
+            tint_color = hex_to_swiftui_color(@component['tint'] || @component['tintColor'])
+            add_modifier_line ".tint(#{tint_color})"
+          end
+          
           # 共通のモディファイアを適用
           apply_modifiers
           

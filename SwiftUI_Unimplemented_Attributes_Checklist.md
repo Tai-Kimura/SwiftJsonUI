@@ -151,20 +151,20 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - [ ] `setTargetAsDataSource` - Set data source
 
 ### Switch
-- [ ] `tint` - On state color
+- ✅ `tint` - On state color
 - [ ] `onValueChange` - Value change event
 
 ### Slider
-- [ ] `tintColor` - Slider tint color
-- [ ] `minimum` - Minimum value
-- [ ] `maximum` - Maximum value
+- ✅ `tintColor` - Slider tint color
+- ✅ `minimum` - Minimum value
+- ✅ `maximum` - Maximum value
 
 ### Progress
-- [ ] `tintColor` - Progress tint color
+- ✅ `tintColor` - Progress tint color
 
 ### Indicator
-- [ ] `color` - Indicator color
-- [ ] `hidesWhenStopped` - Hide when stopped
+- ✅ `color` - Indicator color
+- ✅ `hidesWhenStopped` - Hide when stopped
 
 ### Check
 - [ ] `label` - Associated label ID

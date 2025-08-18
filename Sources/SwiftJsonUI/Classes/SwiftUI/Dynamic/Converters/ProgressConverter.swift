@@ -47,7 +47,7 @@ public struct ProgressConverter {
                                 .foregroundColor(getTextColor(component))
                         }
                     }
-                    .progressViewStyle(CircularProgressViewStyle())
+                    .progressViewStyle(CircularProgressViewStyle(tint: getTintColor(component)))
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
                 )
             } else {
@@ -59,7 +59,7 @@ public struct ProgressConverter {
                                 .foregroundColor(getTextColor(component))
                         }
                     }
-                    .progressViewStyle(LinearProgressViewStyle())
+                    .progressViewStyle(LinearProgressViewStyle(tint: getTintColor(component)))
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
                 )
             }
@@ -74,7 +74,7 @@ public struct ProgressConverter {
                                 .foregroundColor(getTextColor(component))
                         }
                     }
-                    .progressViewStyle(CircularProgressViewStyle())
+                    .progressViewStyle(CircularProgressViewStyle(tint: getTintColor(component)))
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
                 )
             } else {
@@ -86,7 +86,7 @@ public struct ProgressConverter {
                                 .foregroundColor(getTextColor(component))
                         }
                     }
-                    .progressViewStyle(LinearProgressViewStyle())
+                    .progressViewStyle(LinearProgressViewStyle(tint: getTintColor(component)))
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
                 )
             }
@@ -103,5 +103,12 @@ public struct ProgressConverter {
             return DynamicHelpers.colorFromHex(colorHex) ?? .primary
         }
         return .primary
+    }
+    
+    private static func getTintColor(_ component: DynamicComponent) -> Color? {
+        if let tintColor = component.tintColor ?? component.tint {
+            return DynamicHelpers.colorFromHex(tintColor)
+        }
+        return nil
     }
 }

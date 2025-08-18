@@ -61,6 +61,12 @@ public struct DynamicComponent: Decodable {
     let columnSpacing: CGFloat?
     let lineSpacing: CGFloat?
     let contentInsets: AnyCodable?
+    let tint: String?
+    let tintColor: String?
+    let minimum: CGFloat?
+    let maximum: CGFloat?
+    let color: String?
+    let hidesWhenStopped: Bool?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
@@ -194,6 +200,7 @@ public struct DynamicComponent: Decodable {
         case leftPadding, rightPadding, topPadding, bottomPadding
         case paddingLeft, paddingRight, paddingTop, paddingBottom
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, contentInsets
+        case tint, tintColor, minimum, maximum, color, hidesWhenStopped
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
@@ -288,6 +295,12 @@ public struct DynamicComponent: Decodable {
         columnSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .columnSpacing)
         lineSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .lineSpacing)
         contentInsets = try container.decodeIfPresent(AnyCodable.self, forKey: .contentInsets)
+        tint = try container.decodeIfPresent(String.self, forKey: .tint)
+        tintColor = try container.decodeIfPresent(String.self, forKey: .tintColor)
+        minimum = try container.decodeIfPresent(CGFloat.self, forKey: .minimum)
+        maximum = try container.decodeIfPresent(CGFloat.self, forKey: .maximum)
+        color = try container.decodeIfPresent(String.self, forKey: .color)
+        hidesWhenStopped = try container.decodeIfPresent(Bool.self, forKey: .hidesWhenStopped)
         
         // Style properties
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)

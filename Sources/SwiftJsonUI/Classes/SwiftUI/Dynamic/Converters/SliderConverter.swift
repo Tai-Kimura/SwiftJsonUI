@@ -14,8 +14,9 @@ public struct SliderConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let minValue = component.minValue ?? 0.0
-        let maxValue = component.maxValue ?? 1.0
+        // Use minimum/maximum if available, otherwise fall back to minValue/maxValue
+        let minValue = component.minimum ?? component.minValue ?? 0.0
+        let maxValue = component.maximum ?? component.maxValue ?? 1.0
         
         // Check if component id matches a data property
         var binding: SwiftUI.Binding<Double>?
@@ -57,7 +58,7 @@ public struct SliderConverter {
                 }
                 
                 Slider(value: sliderBinding, in: minValue...maxValue)
-                    .tint(DynamicHelpers.colorFromHex(component.iconColor ?? component.fontColor) ?? .accentColor)
+                    .tint(DynamicHelpers.colorFromHex(component.tintColor ?? component.tint ?? component.iconColor ?? component.fontColor) ?? .accentColor)
             }
             .modifier(CommonModifiers(component: component, viewModel: viewModel))
         )

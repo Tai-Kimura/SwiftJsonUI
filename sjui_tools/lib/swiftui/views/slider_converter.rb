@@ -7,9 +7,9 @@ module SjuiTools
     module Views
       class SliderConverter < BaseViewConverter
         def convert
-          # Slider properties
-          min_value = @component['minimumValue'] || 0
-          max_value = @component['maximumValue'] || 1
+          # Slider properties - support both minimum/maximum and minimumValue/maximumValue
+          min_value = @component['minimum'] || @component['minimumValue'] || 0
+          max_value = @component['maximum'] || @component['maximumValue'] || 1
           value_prop = @component['value'] || min_value
           
           # range プロパティの処理（配列形式: [min, max]）
@@ -36,10 +36,10 @@ module SjuiTools
             add_line "Slider(value: $#{state_var}, in: #{min_value}...#{max_value})"
           end
           
-          # Tint color
-          if @component['tintColor']
-            color = hex_to_swiftui_color(@component['tintColor'])
-            add_modifier_line ".accentColor(#{color})"
+          # Tint color - support both tint and tintColor
+          if @component['tintColor'] || @component['tint']
+            color = hex_to_swiftui_color(@component['tintColor'] || @component['tint'])
+            add_modifier_line ".tint(#{color})"
           end
           
           # Disabled state

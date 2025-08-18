@@ -15,6 +15,20 @@ public struct IndicatorConverter {
         viewModel: DynamicViewModel
     ) -> AnyView {
         
+        // Check if we should hide when stopped
+        let hidesWhenStopped = component.hidesWhenStopped ?? true
+        
+        // Check if the indicator is animating (default true unless explicitly stopped)
+        let isAnimating = component.isOn ?? true
+        
+        if !isAnimating && hidesWhenStopped {
+            // Hide the indicator when not animating
+            return AnyView(
+                EmptyView()
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            )
+        }
+        
         return AnyView(
             ProgressView()
                 .progressViewStyle(getIndicatorStyle(component))
@@ -44,7 +58,8 @@ public struct IndicatorConverter {
     }
     
     private static func getIndicatorColor(_ component: DynamicComponent) -> Color {
-        if let colorHex = component.fontColor ?? component.iconColor {
+        // Use color, tintColor, fontColor, or iconColor in that order
+        if let colorHex = component.color ?? component.tintColor ?? component.tint ?? component.fontColor ?? component.iconColor {
             return DynamicHelpers.colorFromHex(colorHex) ?? .primary
         }
         return .primary
