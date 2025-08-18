@@ -43,10 +43,12 @@ public struct ToggleConverter {
                         }
                     )
                     
-                    let toggle = Toggle(text, isOn: binding)
-                        .font(DynamicHelpers.fontFromComponent(component))
+                    var toggle = Toggle(text, isOn: binding)
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
                         .toggleStyle(SwitchToggleStyle())
+                    if let font = DynamicHelpers.fontFromComponent(component) {
+                        toggle = toggle.font(font)
+                    }
                     
                     // Apply tint color if specified
                     if let tintColor = component.tint ?? component.tintColor,
@@ -69,10 +71,12 @@ public struct ToggleConverter {
         // Use static value if no binding found
         let isOn = component.isOn ?? false
         
-        let toggle = Toggle(text, isOn: .constant(isOn))
-            .font(DynamicHelpers.fontFromComponent(component))
+        var toggle = Toggle(text, isOn: .constant(isOn))
             .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
             .toggleStyle(SwitchToggleStyle())
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            toggle = toggle.font(font)
+        }
         
         // Apply tint color if specified
         if let tintColor = component.tint ?? component.tintColor,

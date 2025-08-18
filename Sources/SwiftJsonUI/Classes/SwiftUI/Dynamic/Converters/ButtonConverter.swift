@@ -50,16 +50,22 @@ public struct ButtonConverter {
                 // Only expand to fill if button has explicit numeric width AND height (not wrapContent)
                 // Both must be explicit for frame expansion
                 if hasExplicitWidth && component.width == .infinity {
-                    Text(text)
-                        .font(DynamicHelpers.fontFromComponent(component))
+                    var text = Text(text)
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
+                    if let font = DynamicHelpers.fontFromComponent(component) {
+                        text = text.font(font)
+                    }
+                    text
                         .padding(DynamicHelpers.getPadding(from: component))
                         // Apply frame to Text to fill button area when button has explicit infinite width
                         .frame(maxWidth: .infinity, maxHeight: hasExplicitHeight ? .infinity : nil)
                 } else {
-                    Text(text)
-                        .font(DynamicHelpers.fontFromComponent(component))
+                    var text = Text(text)
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
+                    if let font = DynamicHelpers.fontFromComponent(component) {
+                        text = text.font(font)
+                    }
+                    text
                         .padding(DynamicHelpers.getPadding(from: component))
                         // No frame expansion for buttons without explicit size or with wrapContent
                 }

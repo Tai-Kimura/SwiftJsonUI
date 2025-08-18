@@ -20,9 +20,12 @@ public struct TextConverter {
         let text = viewModel.processText(component.text) ?? ""
         
         var textView = Text(text)
-            .font(DynamicHelpers.fontFromComponent(component))
             .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
             .multilineTextAlignment(DynamicHelpers.getTextAlignment(from: component))
+        
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            textView = textView.font(font)
+        }
         
         // Apply frame for weight FIRST (before padding and background)
         // This ensures the background fills the entire weighted area

@@ -28,10 +28,15 @@ public struct LabelConverter {
         }
         
         // Build the text view with all modifiers applied at once
+        var textView = Text(text)
+            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+        
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            textView = textView.font(font)
+        }
+        
         return AnyView(
-            Text(text)
-                .font(DynamicHelpers.fontFromComponent(component))
-                .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+            textView
                 .underline(component.underline == true)
                 .strikethrough(component.strikethrough == true)
                 .lineSpacing(
