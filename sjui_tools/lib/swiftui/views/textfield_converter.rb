@@ -108,7 +108,7 @@ module SjuiTools
             if text_binding.start_with?('$')
               add_modifier_line ".onChange(of: #{binding_var}) { newValue in"
               indent do
-                add_line "#{handler_name}()"
+                add_line "viewModel.#{handler_name}()"
               end
               add_line "}"
             else
