@@ -18,7 +18,7 @@ public struct SegmentConverter {
         let selectedIndex = component.selectedIndex ?? 0
         
         // Create binding for selected index
-        var binding: SwiftUI.Binding<Int>
+        let binding: SwiftUI.Binding<Int>
         if let componentId = component.id {
             // Try to find a matching property in data dictionary
             let possibleKeys = [
@@ -28,10 +28,10 @@ public struct SegmentConverter {
                 componentId
             ]
             
-            var foundBinding = false
+            var foundBinding: SwiftUI.Binding<Int>? = nil
             for key in possibleKeys {
                 if viewModel.data[key] != nil {
-                    binding = SwiftUI.Binding<Int>(
+                    foundBinding = SwiftUI.Binding<Int>(
                         get: { 
                             viewModel.data[key] as? Int ?? 0
                         },
@@ -44,14 +44,11 @@ public struct SegmentConverter {
                             }
                         }
                     )
-                    foundBinding = true
                     break
                 }
             }
             
-            if !foundBinding {
-                binding = .constant(selectedIndex)
-            }
+            binding = foundBinding ?? .constant(selectedIndex)
         } else {
             binding = .constant(selectedIndex)
         }
