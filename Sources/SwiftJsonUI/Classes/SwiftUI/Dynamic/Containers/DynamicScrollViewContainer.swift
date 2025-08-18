@@ -46,7 +46,8 @@ public struct DynamicScrollViewContainer: View {
                     .gesture(
                         MagnificationGesture()
                             .onChanged { value in
-                                zoomScale = min(max(value, minZoom), maxZoom)
+                                let newScale = min(max(value, minZoom), maxZoom)
+                                zoomScale = newScale
                             }
                     )
             )
