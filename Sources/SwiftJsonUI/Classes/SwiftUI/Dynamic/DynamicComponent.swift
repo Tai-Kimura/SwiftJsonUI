@@ -57,6 +57,8 @@ public struct DynamicComponent: Decodable {
     let maxWidth: CGFloat?
     let minHeight: CGFloat?
     let maxHeight: CGFloat?
+    let idealWidth: CGFloat?
+    let idealHeight: CGFloat?
     let aspectWidth: CGFloat?
     let aspectHeight: CGFloat?
     let userInteractionEnabled: Bool?
@@ -159,6 +161,7 @@ public struct DynamicComponent: Decodable {
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
+        case idealWidth, idealHeight
         case aspectWidth, aspectHeight
         case userInteractionEnabled, centerInParent, weight, enabled
         case child
@@ -245,6 +248,8 @@ public struct DynamicComponent: Decodable {
         maxWidth = try container.decodeIfPresent(CGFloat.self, forKey: .maxWidth)
         minHeight = try container.decodeIfPresent(CGFloat.self, forKey: .minHeight)
         maxHeight = try container.decodeIfPresent(CGFloat.self, forKey: .maxHeight)
+        idealWidth = try container.decodeIfPresent(CGFloat.self, forKey: .idealWidth)
+        idealHeight = try container.decodeIfPresent(CGFloat.self, forKey: .idealHeight)
         aspectWidth = try container.decodeIfPresent(CGFloat.self, forKey: .aspectWidth)
         aspectHeight = try container.decodeIfPresent(CGFloat.self, forKey: .aspectHeight)
         

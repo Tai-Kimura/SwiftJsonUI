@@ -88,19 +88,32 @@ public struct CommonModifiers: ViewModifier {
             
             let _ = print("🖼️ Frame: id=\(component.id ?? "no-id"), width=\(width?.description ?? "nil"), height=\(height?.description ?? "nil")")
             
-            // Use maxWidth/maxHeight for infinity, width/height for finite values
-            if let w = width {
-                if w == .infinity {
-                    result = AnyView(result.frame(maxWidth: .infinity, alignment: alignment))
-                } else {
-                    result = AnyView(result.frame(width: w, alignment: alignment))
+            // Apply min/ideal/max constraints if available
+            if component.minWidth != nil || component.maxWidth != nil || component.minHeight != nil || component.maxHeight != nil || component.idealWidth != nil || component.idealHeight != nil {
+                result = AnyView(result.frame(
+                    minWidth: component.minWidth,
+                    idealWidth: component.idealWidth,
+                    maxWidth: component.maxWidth == .infinity ? .infinity : component.maxWidth,
+                    minHeight: component.minHeight,
+                    idealHeight: component.idealHeight,
+                    maxHeight: component.maxHeight == .infinity ? .infinity : component.maxHeight,
+                    alignment: alignment
+                ))
+            } else {
+                // Use maxWidth/maxHeight for infinity, width/height for finite values
+                if let w = width {
+                    if w == .infinity {
+                        result = AnyView(result.frame(maxWidth: .infinity, alignment: alignment))
+                    } else {
+                        result = AnyView(result.frame(width: w, alignment: alignment))
+                    }
                 }
-            }
-            if let h = height {
-                if h == .infinity {
-                    result = AnyView(result.frame(maxHeight: .infinity, alignment: alignment))
-                } else {
-                    result = AnyView(result.frame(height: h, alignment: alignment))
+                if let h = height {
+                    if h == .infinity {
+                        result = AnyView(result.frame(maxHeight: .infinity, alignment: alignment))
+                    } else {
+                        result = AnyView(result.frame(height: h, alignment: alignment))
+                    }
                 }
             }
         }
@@ -161,11 +174,14 @@ public struct CommonModifiers: ViewModifier {
             return false
         }
         
-        // Only apply frame if width or height is explicitly set (not nil/wrapContent)
-        // or if weight is specified (which requires infinity)
+        // Apply frame if any sizing property is set
         let hasExplicitWidth = component.width != nil || hasWeightForWidth()
         let hasExplicitHeight = component.height != nil || hasWeightForHeight()
-        return hasExplicitWidth || hasExplicitHeight
+        let hasConstraints = component.minWidth != nil || component.maxWidth != nil || 
+                           component.minHeight != nil || component.maxHeight != nil ||
+                           component.idealWidth != nil || component.idealHeight != nil
+        
+        return hasExplicitWidth || hasExplicitHeight || hasConstraints
     }
     
     private func getWidth() -> CGFloat? {

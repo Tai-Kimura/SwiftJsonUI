@@ -239,6 +239,9 @@ module SjuiTools
           # Apply frame size (width/height) after padding
           apply_frame_size
           
+          # Apply frame constraints (min/max/ideal)
+          apply_frame_constraints
+          
           # Apply background and corner radius AFTER padding
           # This ensures the background includes the padding area
           if @component['background']
