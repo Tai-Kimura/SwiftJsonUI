@@ -85,10 +85,12 @@ public struct StateAwareButton: View {
                 .foregroundColor(textColor)
                 .padding(DynamicHelpers.getPadding(from: component))
                 .frame(
-                    width: component.width == .infinity ? nil : component.width,
                     maxWidth: component.width == .infinity ? .infinity : nil,
-                    height: component.height == .infinity ? nil : component.height,
                     maxHeight: component.height == .infinity ? .infinity : nil
+                )
+                .frame(
+                    width: component.width == .infinity || component.width == nil ? nil : component.width,
+                    height: component.height == .infinity || component.height == nil ? nil : component.height
                 )
                 .background(backgroundColor)
                 .cornerRadius(component.cornerRadius ?? 8)
