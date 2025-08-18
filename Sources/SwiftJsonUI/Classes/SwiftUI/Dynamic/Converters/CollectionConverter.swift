@@ -101,6 +101,8 @@ public struct CollectionConverter {
                     }
                     .padding(getContentInsets(from: component))
                 }
+                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                )
             }
         }
     }
