@@ -84,30 +84,32 @@ public struct DynamicScrollViewContainer: View {
             .disabled(component.scrollEnabled == false)
         
         // Apply ignoresSafeArea based on contentInsetAdjustmentBehavior
-        if let contentInsetAdjustmentBehavior = component.contentInsetAdjustmentBehavior {
-            switch contentInsetAdjustmentBehavior {
-            case "never":
-                modifiedScrollView
-                    .ignoresSafeArea()
-                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
-            case "scrollableAxes":
-                modifiedScrollView
-                    .ignoresSafeArea(edges: .horizontal)
-                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
-            case "always", "automatic":
-                // Default behavior - respect safe area
-                modifiedScrollView
-                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
-            default:
-                // Default behavior for unknown values
+        Group {
+            if let contentInsetAdjustmentBehavior = component.contentInsetAdjustmentBehavior {
+                switch contentInsetAdjustmentBehavior {
+                case "never":
+                    modifiedScrollView
+                        .ignoresSafeArea()
+                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                case "scrollableAxes":
+                    modifiedScrollView
+                        .ignoresSafeArea(edges: .horizontal)
+                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                case "always", "automatic":
+                    // Default behavior - respect safe area
+                    modifiedScrollView
+                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                default:
+                    // Default behavior for unknown values
+                    modifiedScrollView
+                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                }
+            } else {
+                // Default behavior when contentInsetAdjustmentBehavior is not specified
+                // Default to "always" - respect safe area
                 modifiedScrollView
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
             }
-        } else {
-            // Default behavior when contentInsetAdjustmentBehavior is not specified
-            // Default to "always" - respect safe area
-            modifiedScrollView
-                .modifier(CommonModifiers(component: component, viewModel: viewModel))
         }
     }
     

@@ -21,16 +21,19 @@ public struct DynamicViewContainer: View {
     
     @ViewBuilder
     public var body: some View {
-        var children = getChildren()
+        let initialChildren = getChildren()
         
         // Apply direction to reverse children if needed
+        let children: [DynamicComponent]
         if let direction = component.direction {
             switch direction.lowercased() {
             case "bottomtotop", "righttoleft":
-                children = children.reversed()
+                children = initialChildren.reversed()
             default:
-                break
+                children = initialChildren
             }
+        } else {
+            children = initialChildren
         }
         
         let _ = print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), type=\(component.type ?? "View"), orientation=\(component.orientation ?? "none"), direction=\(component.direction ?? "none"), childCount=\(children.count)")
