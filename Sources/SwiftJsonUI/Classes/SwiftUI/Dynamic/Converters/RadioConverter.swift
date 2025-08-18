@@ -55,21 +55,23 @@ public struct RadioConverter {
         return AnyView(
             HStack {
                 // Use custom icons if provided
-                if let selectedIcon = component.selectedIcon, isSelected {
-                    Image(selectedIcon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
-                } else if let icon = component.icon, !isSelected {
-                    Image(icon)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 20, height: 20)
-                } else {
-                    Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
-                        .foregroundColor(.blue)
+                Group {
+                    if let selectedIcon = component.selectedIcon, isSelected {
+                        Image(selectedIcon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                    } else if let icon = component.icon, !isSelected {
+                        Image(icon)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                    } else {
+                        Image(systemName: isSelected ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                    }
                 }
-                    .onTapGesture {
+                .onTapGesture {
                         // Update data if component has an id
                         if let componentId = component.id {
                             // Update this radio's selection state
