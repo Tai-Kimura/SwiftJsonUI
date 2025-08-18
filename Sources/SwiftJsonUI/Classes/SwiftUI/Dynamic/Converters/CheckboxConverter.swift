@@ -14,10 +14,10 @@ public struct CheckboxConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = viewModel.processText(component.text) ?? ""
+        let text = viewModel.processText(component.text ?? component.label) ?? ""
         
         // Check if component id matches a data property
-        var isChecked = component.isOn ?? false
+        var isChecked = component.checked ?? component.isOn ?? false
         var binding: SwiftUI.Binding<Bool>?
         
         if let componentId = component.id {
@@ -53,8 +53,16 @@ public struct CheckboxConverter {
         if let binding = binding {
             return AnyView(
                 HStack {
-                    Image(systemName: binding.wrappedValue ? "checkmark.square.fill" : "square")
-                        .foregroundColor(.blue)
+                    // Use custom onSrc image if provided, otherwise use system image
+                    if let onSrc = component.onSrc, binding.wrappedValue {
+                        Image(onSrc)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                    } else {
+                        Image(systemName: binding.wrappedValue ? "checkmark.square.fill" : "square")
+                            .foregroundColor(.blue)
+                    }
                         .onTapGesture {
                             binding.wrappedValue.toggle()
                             // Handle checkbox tap actions
@@ -86,8 +94,16 @@ public struct CheckboxConverter {
             // Use static value if no binding found
             return AnyView(
                 HStack {
-                    Image(systemName: isChecked ? "checkmark.square.fill" : "square")
-                        .foregroundColor(.blue)
+                    // Use custom onSrc image if provided, otherwise use system image
+                    if let onSrc = component.onSrc, isChecked {
+                        Image(onSrc)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 20, height: 20)
+                    } else {
+                        Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                            .foregroundColor(.blue)
+                    }
                         .onTapGesture {
                             // Handle checkbox tap
                             if let onClick = component.onClick {

@@ -73,10 +73,10 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 ## Component-Specific Attributes
 
 ### View / SafeAreaView
-- [ ] `highlightBackground` - Background when highlighted
-- [ ] `highlighted` - Highlighted state
-- [ ] `canTap` - Enable tap capability
-- [ ] `events` - Complex event handlers
+- ✅ `highlightBackground` - Background when highlighted (Dynamic mode)
+- ✅ `highlighted` - Highlighted state (Dynamic mode)
+- ✅ `canTap` - Enable tap capability
+- ✅ `events` - Complex event handlers (Dynamic mode)
 - [ ] `touchDisabledState` - Touch disable mode
 - [ ] `touchEnabledViewIds` - Array of enabled views
 
@@ -88,11 +88,11 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `strikethrough` - Strikethrough styling
 - ✅ `lineHeightMultiple` - Line height multiplier
 - ✅ `textShadow` - Text shadow
-- [ ] `partialAttributes` - Partial text styling
-- [ ] `highlightAttributes` - Highlight text attributes
-- [ ] `highlightColor` - Text color when selected
-- [ ] `hintAttributes` - Hint text attributes
-- [ ] `hintColor` - Hint text color
+- ✅ `partialAttributes` - Partial text styling (Dynamic mode)
+- ✅ `highlightAttributes` - Highlight text attributes (Dynamic mode)
+- ✅ `highlightColor` - Text color when selected (Dynamic mode)
+- ✅ `hintAttributes` - Hint text attributes (Dynamic mode)
+- ✅ `hintColor` - Hint text color (Dynamic mode)
 - ✅ `autoShrink` - Auto font size adjustment
 - ✅ `minimumScaleFactor` - Minimum scale for auto shrink
 - ✅ `linkable` - Make URLs clickable (Dynamic mode only)
@@ -167,9 +167,9 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `hidesWhenStopped` - Hide when stopped
 
 ### Check
-- [ ] `label` - Associated label ID
-- [ ] `onSrc` - Selected state image
-- [ ] `checked` - Initial state
+- ✅ `label` - Associated label ID
+- ✅ `onSrc` - Selected state image
+- ✅ `checked` - Initial state
 
 ### Radio
 - [ ] `icon` - Normal state icon

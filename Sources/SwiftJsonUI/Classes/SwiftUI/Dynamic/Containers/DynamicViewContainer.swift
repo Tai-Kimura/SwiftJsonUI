@@ -35,13 +35,30 @@ public struct DynamicViewContainer: View {
         
         let _ = print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), type=\(component.type ?? "View"), orientation=\(component.orientation ?? "none"), direction=\(component.direction ?? "none"), childCount=\(children.count)")
         
-        // Wrap in StateAwareContainer if tapBackground is set
-        if component.tapBackground != nil {
-            StateAwareContainer(component: component) {
+        // Create the main content
+        let mainContent = Group {
+            // Wrap in StateAwareContainer if tapBackground is set
+            if component.tapBackground != nil {
+                StateAwareContainer(component: component) {
+                    containerContent(children: children)
+                }
+            } else {
                 containerContent(children: children)
             }
+        }
+        
+        // Apply tap gesture if canTap is true
+        if component.canTap == true {
+            mainContent
+                .contentShape(Rectangle()) // Make entire area tappable
+                .onTapGesture {
+                    // Handle tap action if onclick is defined
+                    if let onclick = component.onclick ?? component.onClick {
+                        viewModel.handleAction(onclick)
+                    }
+                }
         } else {
-            containerContent(children: children)
+            mainContent
         }
     }
     

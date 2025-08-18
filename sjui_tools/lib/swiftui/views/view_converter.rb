@@ -338,6 +338,26 @@ module SjuiTools
             apply_safe_area_insets
           end
           
+          # canTapの処理
+          if @component['canTap'] == true || @component['canTap'] == 'true'
+            add_modifier_line ".contentShape(Rectangle())"
+            add_modifier_line ".onTapGesture {"
+            indent do
+              if @component['onclick'] || @component['onClick']
+                action_name = @component['onclick'] || @component['onClick']
+                if @action_manager
+                  handler_name = @action_manager.register_action(action_name, 'tap')
+                  add_line "#{handler_name}()"
+                else
+                  add_line "// Action: #{action_name}"
+                end
+              else
+                add_line "// No action defined"
+              end
+            end
+            add_line "}"
+          end
+          
           generated_code
         end
       end

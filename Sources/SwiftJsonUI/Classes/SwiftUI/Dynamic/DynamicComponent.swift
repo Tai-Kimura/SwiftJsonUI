@@ -73,6 +73,25 @@ public struct DynamicComponent: Decodable {
     let loadingImage: String?
     let maxZoom: CGFloat?
     let minZoom: CGFloat?
+    let highlightBackground: String?
+    let highlighted: Bool?
+    let canTap: Bool?
+    let events: AnyCodable?
+    let partialAttributes: AnyCodable?
+    let highlightAttributes: AnyCodable?
+    let highlightColor: String?
+    let hintAttributes: AnyCodable?
+    let hintColor: String?
+    // Check/Radio attributes
+    let label: String?
+    let onSrc: String?
+    let checked: Bool?
+    let icon: String?
+    let selectedIcon: String?
+    let group: String?
+    // Segment attributes
+    let normalColor: String?
+    let selectedColor: String?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
@@ -209,6 +228,10 @@ public struct DynamicComponent: Decodable {
         case tint, tintColor, minimum, maximum, color, hidesWhenStopped
         case highlightSrc, defaultImage, errorImage, loadingImage
         case maxZoom, minZoom
+        case highlightBackground, highlighted, canTap, events
+        case partialAttributes, highlightAttributes, highlightColor, hintAttributes
+        case label, onSrc, checked, icon, selectedIcon, group
+        case normalColor, selectedColor
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
@@ -315,6 +338,25 @@ public struct DynamicComponent: Decodable {
         loadingImage = try container.decodeIfPresent(String.self, forKey: .loadingImage)
         maxZoom = try container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
         minZoom = try container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
+        highlightBackground = try container.decodeIfPresent(String.self, forKey: .highlightBackground)
+        highlighted = try container.decodeIfPresent(Bool.self, forKey: .highlighted)
+        canTap = try container.decodeIfPresent(Bool.self, forKey: .canTap)
+        events = try container.decodeIfPresent(AnyCodable.self, forKey: .events)
+        partialAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .partialAttributes)
+        highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
+        highlightColor = try container.decodeIfPresent(String.self, forKey: .highlightColor)
+        hintAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .hintAttributes)
+        hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
+        // Check/Radio attributes
+        label = try container.decodeIfPresent(String.self, forKey: .label)
+        onSrc = try container.decodeIfPresent(String.self, forKey: .onSrc)
+        checked = try container.decodeIfPresent(Bool.self, forKey: .checked)
+        icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        selectedIcon = try container.decodeIfPresent(String.self, forKey: .selectedIcon)
+        group = try container.decodeIfPresent(String.self, forKey: .group)
+        // Segment attributes
+        normalColor = try container.decodeIfPresent(String.self, forKey: .normalColor)
+        selectedColor = try container.decodeIfPresent(String.self, forKey: .selectedColor)
         
         // Style properties
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)
