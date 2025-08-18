@@ -15,8 +15,8 @@ public struct SliderConverter {
         viewModel: DynamicViewModel
     ) -> AnyView {
         // Use minimum/maximum if available, otherwise fall back to minValue/maxValue
-        let minValue = component.minimum ?? component.minValue ?? 0.0
-        let maxValue = component.maximum ?? component.maxValue ?? 1.0
+        let minValue = Double(component.minimum ?? CGFloat(component.minValue ?? 0.0))
+        let maxValue = Double(component.maximum ?? CGFloat(component.maxValue ?? 1.0))
         
         // Check if component id matches a data property
         var binding: SwiftUI.Binding<Double>?

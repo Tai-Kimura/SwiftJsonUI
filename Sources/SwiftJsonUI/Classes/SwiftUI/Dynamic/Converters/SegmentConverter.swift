@@ -65,7 +65,7 @@ public struct SegmentConverter {
                 }
             }
             .pickerStyle(SegmentedPickerStyle())
-            .disabled(component.enabled == false)
+            .disabled(component.enabled != nil && component.enabled as? Bool == false)
             .accentColor(getTintColor(component))
             .modifier(CommonModifiers(component: component, viewModel: viewModel))
         )
