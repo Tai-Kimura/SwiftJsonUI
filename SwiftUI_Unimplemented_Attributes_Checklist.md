@@ -10,6 +10,16 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `style` - Style file name to apply
 - ✅ `lines` - Number of lines for Label (0 = unlimited)
 - ✅ `lineBreakMode` - Line break mode for Label
+- ✅ `alignTopOfView` - Align below specified view ID
+- ✅ `alignBottomOfView` - Align above specified view ID
+- ✅ `alignLeftOfView` - Align to right of specified view ID
+- ✅ `alignRightOfView` - Align to left of specified view ID
+- ✅ `alignTopView` - Align top edge with specified view
+- ✅ `alignBottomView` - Align bottom edge with specified view
+- ✅ `alignLeftView` - Align left edge with specified view
+- ✅ `alignRightView` - Align right edge with specified view
+- ✅ `alignCenterVerticalView` - Center vertically with specified view
+- ✅ `alignCenterHorizontalView` - Center horizontally with specified view
 
 ### Not Required (実装不要)
 - ~~`propertyName`~~ - Alternative to id for data binding
@@ -40,16 +50,6 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 ### Advanced Margins
 
 ### Relative Positioning
-- [ ] `alignTopOfView` - Align below specified view ID
-- [ ] `alignBottomOfView` - Align above specified view ID
-- [ ] `alignLeftOfView` - Align to right of specified view ID
-- [ ] `alignRightOfView` - Align to left of specified view ID
-- [ ] `alignTopView` - Align top edge with specified view
-- [ ] `alignBottomView` - Align bottom edge with specified view
-- [ ] `alignLeftView` - Align left edge with specified view
-- [ ] `alignRightView` - Align right edge with specified view
-- [ ] `alignCenterVerticalView` - Center vertically with specified view
-- [ ] `alignCenterHorizontalView` - Center horizontally with specified view
 
 ### Visual Appearance
 - [ ] `tapBackground` - Background color when tapped
