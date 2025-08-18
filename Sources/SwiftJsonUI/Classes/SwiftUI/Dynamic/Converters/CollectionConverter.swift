@@ -130,9 +130,6 @@ public struct CollectionConverter {
         
         // Default padding
         return EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
-                .modifier(CommonModifiers(component: component, viewModel: viewModel))
-            )
-        }
     }
 }
 
