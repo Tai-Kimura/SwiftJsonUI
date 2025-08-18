@@ -54,33 +54,35 @@ public struct CheckboxConverter {
             return AnyView(
                 HStack {
                     // Use custom onSrc image if provided, otherwise use system image
-                    if let onSrc = component.onSrc, binding.wrappedValue {
-                        Image(onSrc)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                    } else {
-                        Image(systemName: binding.wrappedValue ? "checkmark.square.fill" : "square")
-                            .foregroundColor(.blue)
+                    Group {
+                        if let onSrc = component.onSrc, binding.wrappedValue {
+                            Image(onSrc)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        } else {
+                            Image(systemName: binding.wrappedValue ? "checkmark.square.fill" : "square")
+                                .foregroundColor(.blue)
+                        }
                     }
-                        .onTapGesture {
-                            binding.wrappedValue.toggle()
-                            // Handle checkbox tap actions
-                            if let onClick = component.onClick {
-                                if let closure = viewModel.data[onClick] as? () -> Void {
-                                    closure()
-                                } else {
-                                    viewModel.handleAction(onClick)
-                                }
-                            }
-                            if let action = component.action {
-                                if let closure = viewModel.data[action] as? () -> Void {
-                                    closure()
-                                } else {
-                                    viewModel.handleAction(action)
-                                }
+                    .onTapGesture {
+                        binding.wrappedValue.toggle()
+                        // Handle checkbox tap actions
+                        if let onClick = component.onClick {
+                            if let closure = viewModel.data[onClick] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(onClick)
                             }
                         }
+                        if let action = component.action {
+                            if let closure = viewModel.data[action] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(action)
+                            }
+                        }
+                    }
                     
                     if !text.isEmpty {
                         Text(text)
@@ -95,32 +97,34 @@ public struct CheckboxConverter {
             return AnyView(
                 HStack {
                     // Use custom onSrc image if provided, otherwise use system image
-                    if let onSrc = component.onSrc, isChecked {
-                        Image(onSrc)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 20, height: 20)
-                    } else {
-                        Image(systemName: isChecked ? "checkmark.square.fill" : "square")
-                            .foregroundColor(.blue)
+                    Group {
+                        if let onSrc = component.onSrc, isChecked {
+                            Image(onSrc)
+                                .resizable()
+                                .aspectRatio(contentMode: .fit)
+                                .frame(width: 20, height: 20)
+                        } else {
+                            Image(systemName: isChecked ? "checkmark.square.fill" : "square")
+                                .foregroundColor(.blue)
+                        }
                     }
-                        .onTapGesture {
-                            // Handle checkbox tap
-                            if let onClick = component.onClick {
-                                if let closure = viewModel.data[onClick] as? () -> Void {
-                                    closure()
-                                } else {
-                                    viewModel.handleAction(onClick)
-                                }
-                            }
-                            if let action = component.action {
-                                if let closure = viewModel.data[action] as? () -> Void {
-                                    closure()
-                                } else {
-                                    viewModel.handleAction(action)
-                                }
+                    .onTapGesture {
+                        // Handle checkbox tap
+                        if let onClick = component.onClick {
+                            if let closure = viewModel.data[onClick] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(onClick)
                             }
                         }
+                        if let action = component.action {
+                            if let closure = viewModel.data[action] as? () -> Void {
+                                closure()
+                            } else {
+                                viewModel.handleAction(action)
+                            }
+                        }
+                    }
                     
                     if !text.isEmpty {
                         Text(text)
