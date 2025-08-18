@@ -100,12 +100,15 @@ public struct RadioConverter {
                     }
                 
                 if !text.isEmpty {
-                    var textView = Text(text)
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
                     if let font = DynamicHelpers.fontFromComponent(component) {
-                        textView = textView.font(font)
+                        Text(text)
+                            .font(font)
+                            .foregroundColor(textColor)
+                    } else {
+                        Text(text)
+                            .foregroundColor(textColor)
                     }
-                    textView
                 }
             }
             .disabled(component.userInteractionEnabled == false)

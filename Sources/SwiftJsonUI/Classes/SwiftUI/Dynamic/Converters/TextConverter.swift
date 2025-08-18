@@ -18,18 +18,29 @@ public struct TextConverter {
         parentOrientation: String? = nil
     ) -> AnyView {
         let text = viewModel.processText(component.text) ?? ""
+        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+        let alignment = DynamicHelpers.getTextAlignment(from: component)
         
-        var textView = Text(text)
-            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-            .multilineTextAlignment(DynamicHelpers.getTextAlignment(from: component))
-        
+        // Create text view with optional font
+        let textView: AnyView
         if let font = DynamicHelpers.fontFromComponent(component) {
-            textView = textView.font(font)
+            textView = AnyView(
+                Text(text)
+                    .font(font)
+                    .foregroundColor(textColor)
+                    .multilineTextAlignment(alignment)
+            )
+        } else {
+            textView = AnyView(
+                Text(text)
+                    .foregroundColor(textColor)
+                    .multilineTextAlignment(alignment)
+            )
         }
         
         // Apply frame for weight FIRST (before padding and background)
         // This ensures the background fills the entire weighted area
-        var result = AnyView(textView)
+        var result = textView
         
         // If weight is specified, apply appropriate frame modifier
         if let weight = component.weight, weight > 0 {

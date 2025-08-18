@@ -49,21 +49,26 @@ public struct SliderConverter {
         // Use binding if found, otherwise use static value
         let sliderBinding = binding ?? .constant(component.value ?? 0.5)
         
-        return AnyView(
-            VStack(alignment: .leading, spacing: 8) {
-                if let text = component.text {
-                    var textView = Text(viewModel.processText(text))
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                    if let font = DynamicHelpers.fontFromComponent(component) {
-                        textView = textView.font(font)
-                    }
-                    textView
-                }
+        let content = VStack(alignment: .leading, spacing: 8) {
+            if let text = component.text {
+                let processedText = viewModel.processText(text)
+                let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
                 
-                Slider(value: sliderBinding, in: minValue...maxValue)
-                    .tint(DynamicHelpers.colorFromHex(component.tintColor ?? component.tint ?? component.iconColor ?? component.fontColor) ?? .accentColor)
+                if let font = DynamicHelpers.fontFromComponent(component) {
+                    Text(processedText)
+                        .font(font)
+                        .foregroundColor(textColor)
+                } else {
+                    Text(processedText)
+                        .foregroundColor(textColor)
+                }
             }
-            .modifier(CommonModifiers(component: component, viewModel: viewModel))
-        )
+            
+            Slider(value: sliderBinding, in: minValue...maxValue)
+                .tint(DynamicHelpers.colorFromHex(component.tintColor ?? component.tint ?? component.iconColor ?? component.fontColor) ?? .accentColor)
+        }
+        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+        
+        return AnyView(content)
     }
 }
