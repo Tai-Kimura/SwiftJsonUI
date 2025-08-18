@@ -52,16 +52,22 @@ public struct PickerConverter {
         // Use binding if found, otherwise use static value
         let selectionBinding = binding ?? .constant(component.selectedItem ?? items.first ?? "")
         
-        return AnyView(
+        var picker = AnyView(
             Picker(label, selection: selectionBinding) {
                 ForEach(items, id: \.self) { item in
                     Text(item).tag(item)
                 }
             }
             .pickerStyle(MenuPickerStyle())
-            .font(DynamicHelpers.fontFromComponent(component))
             .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-            .modifier(CommonModifiers(component: component, viewModel: viewModel))
+        )
+        
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            picker = AnyView(picker.font(font))
+        }
+        
+        return AnyView(
+            picker.modifier(CommonModifiers(component: component, viewModel: viewModel))
         )
     }
 }

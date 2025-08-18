@@ -26,9 +26,14 @@ public struct CollectionConverter {
                     // Items-driven content
                     if !items.isEmpty {
                         ForEach(0..<items.count, id: \.self) { index in
-                            Text(items[index])
-                                .font(DynamicHelpers.fontFromComponent(component))
-                                .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                            {
+                                var text = Text(items[index])
+                                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                                if let font = DynamicHelpers.fontFromComponent(component) {
+                                    text = text.font(font)
+                                }
+                                return text
+                            }()
                         }
                     }
                     // Child components

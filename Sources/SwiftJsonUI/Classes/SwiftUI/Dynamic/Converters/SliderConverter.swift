@@ -52,9 +52,12 @@ public struct SliderConverter {
         return AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 if let text = component.text {
-                    Text(viewModel.processText(text))
-                        .font(DynamicHelpers.fontFromComponent(component))
+                    var textView = Text(viewModel.processText(text))
                         .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    if let font = DynamicHelpers.fontFromComponent(component) {
+                        textView = textView.font(font)
+                    }
+                    textView
                 }
                 
                 Slider(value: sliderBinding, in: minValue...maxValue)
