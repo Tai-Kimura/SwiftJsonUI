@@ -21,11 +21,23 @@ public struct DynamicComponent: Decodable {
     let fontColor: String?
     let font: String?
     let fontWeight: String?
+    let hilightColor: String?  // Text color when highlighted (for Button)
+    let disabledFontColor: String?  // Text color when disabled
+    let disabledBackground: String?  // Background when disabled
+    let edgeInset: CGFloat?  // Text padding for Label
+    let underline: Bool?  // Underline text for Label
+    let strikethrough: Bool?  // Strikethrough text for Label
+    let lineHeightMultiple: CGFloat?  // Line height multiplier for Label
+    let autoShrink: Bool?  // Auto shrink text to fit for Label
+    let minimumScaleFactor: CGFloat?  // Minimum scale factor for auto shrink
+    let textShadow: AnyCodable?  // Text shadow for Label
+    let linkable: Bool?  // Make URLs clickable for Label
     let width: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let height: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let widthRaw: String?  // Store original string value if needed
     let heightRaw: String?  // Store original string value if needed
     let background: String?
+    let tapBackground: String?  // Background color when tapped
     let padding: AnyCodable?
     let margin: AnyCodable?
     let margins: AnyCodable?
@@ -44,6 +56,11 @@ public struct DynamicComponent: Decodable {
     let paddingBottom: CGFloat?
     let insets: AnyCodable?
     let insetHorizontal: CGFloat?
+    let insetVertical: CGFloat?
+    let horizontalScroll: Bool?
+    let columnSpacing: CGFloat?
+    let lineSpacing: CGFloat?
+    let contentInsets: AnyCodable?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
@@ -66,9 +83,15 @@ public struct DynamicComponent: Decodable {
     let weight: CGFloat?
     let enabled: AnyCodable?  // For button enabled state with data binding support
     
+    // Z-order
+    let indexBelow: String?  // Place below specified view ID
+    let indexAbove: String?  // Place above specified view ID
+    
     // Component specific - child is always an array
     let child: [DynamicComponent]?
     let orientation: String?
+    let direction: String?  // Layout direction: topToBottom, bottomToTop, leftToRight, rightToLeft
+    let distribution: String?  // Child distribution: fill, fillEqually, fillProportionally, equalSpacing, equalCentering
     let contentMode: String?
     let src: String?  // Image source (local name or URL)
     let placeholder: String?
@@ -79,9 +102,15 @@ public struct DynamicComponent: Decodable {
     let hint: String?
     let hintColor: String?
     let hintFont: String?
+    let hintFontSize: CGFloat?
+    let fieldPadding: CGFloat?
     let flexible: Bool?
     let containerInset: [CGFloat]?
     let hideOnFocused: Bool?
+    let secure: Bool?  // Secure text entry for TextField
+    let returnKeyType: String?  // Return key type for TextField
+    let borderStyle: String?  // Border style for TextField
+    let input: String?  // Keyboard type for TextField
     let action: String?
     let iconOn: String?
     let iconOff: String?
@@ -101,6 +130,11 @@ public struct DynamicComponent: Decodable {
     
     // ScrollView properties
     let contentInsetAdjustmentBehavior: String?  // never, always, automatic, scrollableAxes
+    let showsHorizontalScrollIndicator: Bool?  // Show horizontal scroll indicator
+    let showsVerticalScrollIndicator: Bool?  // Show vertical scroll indicator
+    let paging: Bool?  // Enable paging
+    let bounces: Bool?  // Enable bounce effect
+    let scrollEnabled: Bool?  // Enable scrolling
     
     // SelectBox/DatePicker properties
     let selectItemType: String?
@@ -152,27 +186,33 @@ public struct DynamicComponent: Decodable {
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
         case type, id, text, fontSize, fontColor, font, fontWeight
-        case width, height, widthRaw, heightRaw, background
+        case hilightColor, disabledFontColor, disabledBackground, edgeInset
+        case underline, strikethrough, lineHeightMultiple, autoShrink, minimumScaleFactor, textShadow, linkable
+        case width, height, widthRaw, heightRaw, background, tapBackground
         case padding, margin, margins, paddings
         case leftMargin, rightMargin, topMargin, bottomMargin
         case leftPadding, rightPadding, topPadding, bottomPadding
         case paddingLeft, paddingRight, paddingTop, paddingBottom
-        case insets, insetHorizontal
+        case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, contentInsets
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
         case idealWidth, idealHeight
         case aspectWidth, aspectHeight
         case userInteractionEnabled, centerInParent, weight, enabled
+        case indexBelow, indexAbove
         case child
-        case orientation, contentMode, src, placeholder, renderingMode
+        case orientation, direction, distribution, contentMode, src, placeholder, renderingMode
         case headers, items, data
-        case hint, hintColor, hintFont, flexible, containerInset, hideOnFocused
+        case hint, hintColor, hintFont, hintFontSize, fieldPadding, flexible, containerInset, hideOnFocused
+        case secure, returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
         case textAlign, selectedItem, isOn, progress, value
         case minValue, maxValue, indicatorStyle, selectedIndex
         case columns, spacing
         case contentInsetAdjustmentBehavior
+        case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
+        case paging, bounces, scrollEnabled
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat, minimumDate, maximumDate
         case onclick, onClick, onLongPress, onAppear, onDisappear
@@ -200,6 +240,17 @@ public struct DynamicComponent: Decodable {
         fontColor = try container.decodeIfPresent(String.self, forKey: .fontColor)
         font = try container.decodeIfPresent(String.self, forKey: .font)
         fontWeight = try container.decodeIfPresent(String.self, forKey: .fontWeight)
+        hilightColor = try container.decodeIfPresent(String.self, forKey: .hilightColor)
+        disabledFontColor = try container.decodeIfPresent(String.self, forKey: .disabledFontColor)
+        disabledBackground = try container.decodeIfPresent(String.self, forKey: .disabledBackground)
+        edgeInset = try container.decodeIfPresent(CGFloat.self, forKey: .edgeInset)
+        underline = try container.decodeIfPresent(Bool.self, forKey: .underline)
+        strikethrough = try container.decodeIfPresent(Bool.self, forKey: .strikethrough)
+        lineHeightMultiple = try container.decodeIfPresent(CGFloat.self, forKey: .lineHeightMultiple)
+        autoShrink = try container.decodeIfPresent(Bool.self, forKey: .autoShrink)
+        minimumScaleFactor = try container.decodeIfPresent(CGFloat.self, forKey: .minimumScaleFactor)
+        textShadow = try container.decodeIfPresent(AnyCodable.self, forKey: .textShadow)
+        linkable = try container.decodeIfPresent(Bool.self, forKey: .linkable)
         
         // Size properties - use helper for decoding
         let widthResult = DynamicDecodingHelper.decodeSizeValue(from: container, forKey: .width)
@@ -211,6 +262,7 @@ public struct DynamicComponent: Decodable {
         heightRaw = heightResult.raw
         
         background = try container.decodeIfPresent(String.self, forKey: .background)
+        tapBackground = try container.decodeIfPresent(String.self, forKey: .tapBackground)
         
         // Padding/Margin
         padding = try container.decodeIfPresent(AnyCodable.self, forKey: .padding)
@@ -231,6 +283,11 @@ public struct DynamicComponent: Decodable {
         paddingBottom = try container.decodeIfPresent(CGFloat.self, forKey: .paddingBottom)
         insets = try container.decodeIfPresent(AnyCodable.self, forKey: .insets)
         insetHorizontal = try container.decodeIfPresent(CGFloat.self, forKey: .insetHorizontal)
+        insetVertical = try container.decodeIfPresent(CGFloat.self, forKey: .insetVertical)
+        horizontalScroll = try container.decodeIfPresent(Bool.self, forKey: .horizontalScroll)
+        columnSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .columnSpacing)
+        lineSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .lineSpacing)
+        contentInsets = try container.decodeIfPresent(AnyCodable.self, forKey: .contentInsets)
         
         // Style properties
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)
@@ -259,11 +316,17 @@ public struct DynamicComponent: Decodable {
         weight = try container.decodeIfPresent(CGFloat.self, forKey: .weight)
         enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
         
+        // Z-order
+        indexBelow = try container.decodeIfPresent(String.self, forKey: .indexBelow)
+        indexAbove = try container.decodeIfPresent(String.self, forKey: .indexAbove)
+        
         // Child handling - use helper for decoding (child is always an array)
         child = DynamicDecodingHelper.decodeChildren(from: container, forKey: .child)
         
         // Component specific
         orientation = try container.decodeIfPresent(String.self, forKey: .orientation)
+        direction = try container.decodeIfPresent(String.self, forKey: .direction)
+        distribution = try container.decodeIfPresent(String.self, forKey: .distribution)
         contentMode = try container.decodeIfPresent(String.self, forKey: .contentMode)
         src = try container.decodeIfPresent(String.self, forKey: .src)
         placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
@@ -273,6 +336,8 @@ public struct DynamicComponent: Decodable {
         hint = try container.decodeIfPresent(String.self, forKey: .hint)
         hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)
+        hintFontSize = try container.decodeIfPresent(CGFloat.self, forKey: .hintFontSize)
+        fieldPadding = try container.decodeIfPresent(CGFloat.self, forKey: .fieldPadding)
         flexible = try container.decodeIfPresent(Bool.self, forKey: .flexible)
         // Handle containerInset as either single value or array
         if let singleValue = try? container.decode(CGFloat.self, forKey: .containerInset) {
@@ -283,6 +348,10 @@ public struct DynamicComponent: Decodable {
             containerInset = nil
         }
         hideOnFocused = try container.decodeIfPresent(Bool.self, forKey: .hideOnFocused)
+        secure = try container.decodeIfPresent(Bool.self, forKey: .secure)
+        returnKeyType = try container.decodeIfPresent(String.self, forKey: .returnKeyType)
+        borderStyle = try container.decodeIfPresent(String.self, forKey: .borderStyle)
+        input = try container.decodeIfPresent(String.self, forKey: .input)
         action = try container.decodeIfPresent(String.self, forKey: .action)
         iconOn = try container.decodeIfPresent(String.self, forKey: .iconOn)
         iconOff = try container.decodeIfPresent(String.self, forKey: .iconOff)
@@ -300,6 +369,11 @@ public struct DynamicComponent: Decodable {
         columns = try container.decodeIfPresent(Int.self, forKey: .columns)
         spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing)
         contentInsetAdjustmentBehavior = try container.decodeIfPresent(String.self, forKey: .contentInsetAdjustmentBehavior)
+        showsHorizontalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsHorizontalScrollIndicator)
+        showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
+        paging = try container.decodeIfPresent(Bool.self, forKey: .paging)
+        bounces = try container.decodeIfPresent(Bool.self, forKey: .bounces)
+        scrollEnabled = try container.decodeIfPresent(Bool.self, forKey: .scrollEnabled)
         
         // SelectBox/DatePicker properties
         selectItemType = try container.decodeIfPresent(String.self, forKey: .selectItemType)

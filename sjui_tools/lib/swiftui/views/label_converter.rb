@@ -63,7 +63,7 @@ module SjuiTools
           
           # lineHeightMultiple
           if @component['lineHeightMultiple']
-            add_modifier_line ".lineSpacing(#{(@component['lineHeightMultiple'].to_f - 1) * (@component['fontSize'] || 17).to_i}))"
+            add_modifier_line ".lineSpacing(#{(@component['lineHeightMultiple'].to_f - 1) * (@component['fontSize'] || 17).to_i})"
           end
           
           # lineSpacing (直接指定)
@@ -71,42 +71,33 @@ module SjuiTools
             add_modifier_line ".lineSpacing(#{@component['lineSpacing'].to_f})"
           end
           
-          # underline（下線）とlineStyle
-          if @component['underline']
-            # underlineがHashで詳細設定がある場合
-            if @component['underline'].is_a?(Hash) && @component['underline']['lineStyle']
-              line_style = @component['underline']['lineStyle']
-              case line_style
-              when 'Single', 'single'
-                add_modifier_line ".underline()"
-              when 'Double', 'double'
-                add_modifier_line ".underline()"
-                add_line "// Note: Double underline not directly supported, using single"
-              when 'Thick', 'thick'
-                add_modifier_line ".underline()"
-                add_line "// Note: Thick underline style applied as regular underline"
-              when 'Dashed', 'dashed'
-                add_modifier_line ".underline(pattern: .dash)"
-              when 'Dotted', 'dotted'
-                add_modifier_line ".underline(pattern: .dot)"
-              else
-                add_modifier_line ".underline()"
-              end
-            else
-              # booleanまたは通常の下線
-              add_modifier_line ".underline()"
-            end
-          elsif @component['lineStyle']
-            # 独立したlineStyleプロパティ
-            case @component['lineStyle']
-            when 'Single', 'single'
-              add_modifier_line ".underline()"
-            when 'Dashed', 'dashed'
-              add_modifier_line ".underline(pattern: .dash)"
-            when 'Dotted', 'dotted'
-              add_modifier_line ".underline(pattern: .dot)"
-            else
-              add_line "// lineStyle: #{@component['lineStyle']} - Not directly supported"
+          # underline（下線）
+          if @component['underline'] == true
+            add_modifier_line ".underline()"
+          end
+          
+          # strikethrough（取り消し線）
+          if @component['strikethrough'] == true
+            add_modifier_line ".strikethrough()"
+          end
+          
+          # textShadow
+          if @component['textShadow']
+            shadow = @component['textShadow']
+            if shadow.is_a?(Hash)
+              # Object format: { color: "#000000", radius: 2, x: 0, y: 0 }
+              color = hex_to_swiftui_color(shadow['color'] || '#000000')
+              radius = shadow['radius'] || 2
+              x = shadow['x'] || 0
+              y = shadow['y'] || 0
+              add_modifier_line ".shadow(color: #{color}, radius: #{radius}, x: #{x}, y: #{y})"
+            elsif shadow.is_a?(Array) && shadow.length >= 3
+              # Array format: [x, y, radius, color?]
+              x = shadow[0] || 0
+              y = shadow[1] || 0
+              radius = shadow[2] || 2
+              color = shadow.length > 3 ? hex_to_swiftui_color(shadow[3]) : hex_to_swiftui_color('#000000')
+              add_modifier_line ".shadow(color: #{color}, radius: #{radius}, x: #{x}, y: #{y})"
             end
           end
           
@@ -152,17 +143,49 @@ module SjuiTools
           
           # linkable プロパティ（リンクとして動作）
           if @component['linkable'] == true || @component['linkable'] == 'true'
-            # Linkとしてラップするためのコメント
-            add_line "// linkable: true - Consider wrapping in Link or adding .onTapGesture"
-            if @component['url']
-              add_modifier_line ".onTapGesture {"
+            # For linkable text, we need to use AttributedString with link detection
+            text = @component['text'] || ""
+            
+            # Replace the Text creation with attributed string version
+            @generated_code = []
+            
+            add_line "Text({"
+            indent do
+              add_line "var attributedString = AttributedString(\"#{text.gsub('"', '\\"').gsub("\n", "\\n")}\")"
+              add_line ""
+              add_line "// Apply font and color"
+              if @component['fontSize']
+                add_line "attributedString.font = .system(size: #{@component['fontSize'].to_i})"
+              end
+              if @component['fontColor']
+                color = hex_to_swiftui_color(@component['fontColor'])
+                add_line "attributedString.foregroundColor = #{color}"
+              end
+              add_line ""
+              add_line "// Detect and style URLs"
+              add_line "let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)"
+              add_line "let nsRange = NSRange(location: 0, length: attributedString.characters.count)"
+              add_line "let matches = detector?.matches(in: String(attributedString.characters), options: [], range: nsRange) ?? []"
+              add_line ""
+              add_line "for match in matches {"
               indent do
-                add_line "if let url = URL(string: \"#{@component['url']}\") {"
-                add_line "    UIApplication.shared.open(url)"
+                add_line "if let range = Range(match.range, in: String(attributedString.characters)),"
+                add_line "   let url = match.url,"
+                add_line "   let attributedRange = Range(range, in: attributedString) {"
+                indent do
+                  add_line "attributedString[attributedRange].link = url"
+                  add_line "attributedString[attributedRange].underlineStyle = .single"
+                end
                 add_line "}"
               end
               add_line "}"
+              add_line ""
+              add_line "return attributedString"
             end
+            add_line "}())"
+            
+            # Continue with other modifiers
+            return
           end
           
           # partialAttributes（部分的なテキストスタイリング）

@@ -70,14 +70,20 @@ module SjuiTools
             add_modifier_line ".keyboardType(#{keyboard_type})"
           end
           
+          # returnKeyType
+          if @component['returnKeyType']
+            submit_label = return_key_to_submit_label(@component['returnKeyType'])
+            add_modifier_line ".submitLabel(#{submit_label})"
+          end
+          
           # contentType (for auto-fill)
           if @component['contentType']
             content_type = map_content_type(@component['contentType'])
             add_modifier_line ".textContentType(#{content_type})"
           end
           
-          # Secure text entry - input == 'password'
-          if @component['input'] == 'password'
+          # Secure text entry - secure property or input == 'password'
+          if @component['secure'] == true || @component['secure'] == 'true' || @component['input'] == 'password'
             # SecureFieldを使う必要があるため、最初から作り直す
             @generated_code = []
             add_line "SecureField(\"#{hint}\", text: $#{state_var})"
@@ -88,6 +94,11 @@ module SjuiTools
             if @component['fontColor']
               color = hex_to_swiftui_color(@component['fontColor'])
               add_modifier_line ".foregroundColor(#{color})"
+            end
+            # submitLabel for SecureField
+            if @component['returnKeyType']
+              submit_label = return_key_to_submit_label(@component['returnKeyType'])
+              add_modifier_line ".submitLabel(#{submit_label})"
             end
           end
           
@@ -204,10 +215,12 @@ module SjuiTools
         
         def text_field_style(style)
           case style
-          when 'RoundedRect', 'roundedRect'
+          when 'RoundedRect', 'roundedRect', 'roundedBorder'
             '.roundedBorder'
-          when 'none'
+          when 'none', 'plain'
             '.plain'
+          when 'automatic'
+            '.automatic'
           else
             '.automatic'
           end
@@ -215,15 +228,17 @@ module SjuiTools
         
         def input_to_keyboard_type(input)
           case input
-          when 'email'
+          when 'email', 'emailAddress'
             '.emailAddress'
           when 'password'
             '.default'  # SwiftUIではセキュア入力は別途設定
-          when 'number'
+          when 'number', 'numeric'
             '.numberPad'
-          when 'decimal'
+          when 'decimal', 'decimalPad'
             '.decimalPad'
-          when 'URL'
+          when 'phone', 'phoneNumber', 'phonePad'
+            '.phonePad'
+          when 'url', 'URL', 'webURL'
             '.URL'
           when 'twitter'
             '.twitter'
@@ -231,8 +246,37 @@ module SjuiTools
             '.webSearch'
           when 'namePhonePad'
             '.namePhonePad'
+          when 'numbersAndPunctuation'
+            '.numbersAndPunctuation'
+          when 'asciiCapable'
+            '.asciiCapable'
           else
             '.default'
+          end
+        end
+        
+        def return_key_to_submit_label(return_key_type)
+          case return_key_type
+          when 'done', 'Done'
+            '.done'
+          when 'go', 'Go'
+            '.go'
+          when 'next', 'Next'
+            '.next'
+          when 'return', 'Return'
+            '.return'
+          when 'search', 'Search'
+            '.search'
+          when 'send', 'Send'
+            '.send'
+          when 'continue', 'Continue'
+            '.continue'
+          when 'join', 'Join'
+            '.join'
+          when 'route', 'Route'
+            '.route'
+          else
+            '.done'
           end
         end
         

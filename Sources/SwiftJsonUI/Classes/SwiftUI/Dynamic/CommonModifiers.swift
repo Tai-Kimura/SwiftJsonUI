@@ -125,13 +125,20 @@ public struct CommonModifiers: ViewModifier {
             result = AnyView(result.background(DynamicHelpers.getBackground(from: component)))
         }
         
-        // 4. Apply corner radius - can be overridden
+        // 4. Apply corner radius and clipping - can be overridden
         if customModifiers.skipCornerRadius {
             // Skip corner radius if requested
         } else if let customCornerRadius = customModifiers.customCornerRadius {
             result = AnyView(result.cornerRadius(customCornerRadius))
+            if component.clipToBounds == true {
+                result = AnyView(result.clipped())
+            }
         } else {
-            result = AnyView(result.cornerRadius(component.cornerRadius ?? 0))
+            let cornerRadius = component.cornerRadius ?? 0
+            result = AnyView(result.cornerRadius(cornerRadius))
+            if component.clipToBounds == true || cornerRadius > 0 {
+                result = AnyView(result.clipped())
+            }
         }
         
         // 5. Apply border overlay - can be overridden
@@ -155,12 +162,17 @@ public struct CommonModifiers: ViewModifier {
             result = AnyView(result.padding(DynamicHelpers.getMargins(from: component)))
         }
         
-        // 8. Apply opacity and visibility
+        // 8. Apply z-order
+        if component.indexAbove != nil || component.indexBelow != nil {
+            result = AnyView(result.zOrder(component: component))
+        }
+        
+        // 9. Apply opacity and visibility
         result = AnyView(result
             .opacity(DynamicHelpers.getOpacity(from: component))
             .opacity(DynamicHelpers.isHidden(component) ? 0 : 1))
         
-        // 9. Apply final custom modifiers
+        // 10. Apply final custom modifiers
         if let finalModifier = customModifiers.finalModifier {
             result = AnyView(finalModifier(result))
         }

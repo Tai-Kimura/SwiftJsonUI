@@ -9,6 +9,9 @@ module SjuiTools
         def convert
           id = @component['id'] || 'collection'
           columns = @component['columns'] || 2
+          horizontal_scroll = @component['horizontalScroll'] || false
+          column_spacing = @component['columnSpacing'] || @component['itemSpacing'] || 10
+          line_spacing = @component['lineSpacing'] || @component['itemSpacing'] || 10
           
           # cellClasses, headerClasses, footerClasses の処理
           cell_classes = @component['cellClasses'] || []
@@ -29,8 +32,8 @@ module SjuiTools
           end
           
           # Create the main collection view structure
-          # Use List for single column, LazyVGrid for multiple columns
-          if columns == 1
+          # Use List for single column (unless horizontal), LazyVGrid/LazyHGrid for multiple columns
+          if columns == 1 && !horizontal_scroll
             # Single column - use List
             add_line "List {"
             indent do
@@ -67,6 +70,19 @@ module SjuiTools
             end
             add_line "}"
             add_modifier_line ".listStyle(PlainListStyle())"
+          elsif horizontal_scroll
+            # Horizontal scroll - use LazyHGrid
+            add_line "ScrollView(.horizontal) {"
+            indent do
+              # Grid content
+              add_line "LazyHGrid(rows: Array(repeating: GridItem(.flexible(), spacing: #{line_spacing}), count: #{columns}), spacing: #{column_spacing}) {"
+              indent do
+                generate_collection_content(cell_class_name, id)
+              end
+              add_line "}"
+              apply_content_insets
+            end
+            add_line "}"
           else
             # Multiple columns - use ScrollView with LazyVGrid
             add_line "ScrollView {"
@@ -78,12 +94,12 @@ module SjuiTools
               end
               
               # Grid content
-              add_line "LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: #{@component['itemSpacing'] || 10}), count: #{columns}), spacing: #{@component['itemSpacing'] || 10}) {"
+              add_line "LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: #{line_spacing}), count: #{columns}), spacing: #{column_spacing}) {"
               indent do
                 generate_collection_content(cell_class_name, id)
               end
               add_line "}"
-              add_modifier_line ".padding(.horizontal)"
+              apply_content_insets
               
               # Footer
               if footer_class_name
@@ -102,6 +118,23 @@ module SjuiTools
         end
         
         private
+        
+        def apply_content_insets
+          if @component['contentInsets']
+            if @component['contentInsets'].is_a?(Array)
+              insets = @component['contentInsets']
+              add_modifier_line ".padding(EdgeInsets(top: #{insets[0] || 0}, leading: #{insets[1] || 0}, bottom: #{insets[2] || 0}, trailing: #{insets[3] || 0}))"
+            elsif @component['contentInsets'].is_a?(Numeric)
+              add_modifier_line ".padding(#{@component['contentInsets']})"
+            end
+          elsif @component['insetHorizontal'] || @component['insetVertical']
+            h = @component['insetHorizontal'] || 0
+            v = @component['insetVertical'] || 0
+            add_modifier_line ".padding(EdgeInsets(top: #{v}, leading: #{h}, bottom: #{v}, trailing: #{h}))"
+          else
+            add_modifier_line ".padding(.horizontal)"
+          end
+        end
         
         def extract_view_name(class_info)
           return nil unless class_info

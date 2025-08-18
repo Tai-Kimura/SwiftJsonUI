@@ -21,8 +21,32 @@ public struct DynamicViewContainer: View {
     
     @ViewBuilder
     public var body: some View {
-        let children = getChildren()
-        let _ = print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), type=\(component.type ?? "View"), orientation=\(component.orientation ?? "none"), childCount=\(children.count)")
+        var children = getChildren()
+        
+        // Apply direction to reverse children if needed
+        if let direction = component.direction {
+            switch direction.lowercased() {
+            case "bottomtotop", "righttoleft":
+                children = children.reversed()
+            default:
+                break
+            }
+        }
+        
+        let _ = print("📦 DynamicViewContainer: id=\(component.id ?? "no-id"), type=\(component.type ?? "View"), orientation=\(component.orientation ?? "none"), direction=\(component.direction ?? "none"), childCount=\(children.count)")
+        
+        // Wrap in StateAwareContainer if tapBackground is set
+        if component.tapBackground != nil {
+            StateAwareContainer(component: component) {
+                containerContent(children: children)
+            }
+        } else {
+            containerContent(children: children)
+        }
+    }
+    
+    @ViewBuilder
+    private func containerContent(children: [DynamicComponent]) -> some View {
         
         if children.isEmpty {
             // 子要素がない場合
@@ -74,8 +98,22 @@ public struct DynamicViewContainer: View {
                         Spacer(minLength: 0)
                     }
                     
-                    ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                    ForEach(Array(children.enumerated()), id: \.offset) { index, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, parentOrientation: "horizontal")
+                        
+                        // Add spacers between children based on distribution
+                        if index < children.count - 1 {
+                            if let distribution = component.distribution {
+                                switch distribution.lowercased() {
+                                case "fillequally", "equalspacing":
+                                    Spacer(minLength: 0)
+                                case "equalcentering":
+                                    Spacer(minLength: 0)
+                                default:
+                                    EmptyView()
+                                }
+                            }
+                        }
                     }
                     
                     // Add Spacer at end for leading alignment
@@ -96,8 +134,22 @@ public struct DynamicViewContainer: View {
                         Spacer(minLength: 0)
                     }
                     
-                    ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                    ForEach(Array(children.enumerated()), id: \.offset) { index, child in
                         DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId, parentOrientation: "vertical")
+                        
+                        // Add spacers between children based on distribution
+                        if index < children.count - 1 {
+                            if let distribution = component.distribution {
+                                switch distribution.lowercased() {
+                                case "fillequally", "equalspacing":
+                                    Spacer(minLength: 0)
+                                case "equalcentering":
+                                    Spacer(minLength: 0)
+                                default:
+                                    EmptyView()
+                                }
+                            }
+                        }
                     }
                     
                     // Add Spacer at end for top alignment

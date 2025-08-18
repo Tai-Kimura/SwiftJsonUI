@@ -62,6 +62,11 @@ public struct TextConverter {
             result = AnyView(result.frame(maxHeight: .infinity))
         }
         
+        // Apply edgeInset as additional padding for text
+        if let edgeInset = component.edgeInset {
+            result = AnyView(result.padding(edgeInset))
+        }
+        
         return AnyView(
             result
                 .padding(DynamicHelpers.getPadding(from: component))  // Internal padding

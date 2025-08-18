@@ -16,19 +16,25 @@ public struct ButtonConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let text = viewModel.processText(component.text) ?? ""
+        // Use StateAwareButton if any state-dependent properties are set
+        if component.hilightColor != nil || 
+           component.disabledFontColor != nil || 
+           component.disabledBackground != nil ||
+           component.tapBackground != nil {
+            return AnyView(
+                StateAwareButton(
+                    component: component,
+                    viewModel: viewModel,
+                    action: {
+                        handleButtonAction(component: component, viewModel: viewModel)
+                    }
+                )
+                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            )
+        }
         
-        // Debug logging for Button properties
-        print("🔘 [ButtonConverter] Creating button with:")
-        print("  - id: \(component.id ?? "no-id")")
-        print("  - width: \(String(describing: component.width)) (raw: \(component.widthRaw ?? "nil"))")
-        print("  - height: \(String(describing: component.height)) (raw: \(component.heightRaw ?? "nil"))")
-        print("  - minWidth: \(String(describing: component.minWidth))")
-        print("  - maxWidth: \(String(describing: component.maxWidth))")
-        print("  - minHeight: \(String(describing: component.minHeight))")
-        print("  - maxHeight: \(String(describing: component.maxHeight))")
-        print("  - padding: \(String(describing: component.padding))")
-        print("  - margin: \(String(describing: component.margin))")
+        // Original implementation for buttons without state properties
+        let text = viewModel.processText(component.text) ?? ""
         
         return AnyView(
             Button(action: {
