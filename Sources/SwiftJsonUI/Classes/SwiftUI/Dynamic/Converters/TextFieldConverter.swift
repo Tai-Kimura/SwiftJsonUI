@@ -157,7 +157,6 @@ public struct TextFieldConverter {
         
         return AnyView(textField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
     }
-    }
     
     // Helper function to create SecureField with proper style
     private static func createSecureField(
@@ -199,6 +198,5 @@ public struct TextFieldConverter {
         }
         
         return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
-    }
     }
 }
