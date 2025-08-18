@@ -65,11 +65,11 @@ module SjuiTools
             # カスタムRadioButton実装
             add_line "HStack {"
             indent do
-              add_line "Image(systemName: #{state_var} == \"#{id}\" ? \"largecircle.fill.circle\" : \"circle\")"
+              add_line "Image(systemName: viewModel.data.#{state_var} as? String == \"#{id}\" ? \"largecircle.fill.circle\" : \"circle\")"
               add_modifier_line ".foregroundColor(.blue)"
               add_modifier_line ".onTapGesture {"
               indent do
-                add_line "#{state_var} = \"#{id}\""
+                add_line "viewModel.data.#{state_var} = \"#{id}\""
                 if @component['onclick'] && @action_manager
                   handler_name = @action_manager.register_action(@component['onclick'], 'radio')
                   add_line "#{handler_name}()"
