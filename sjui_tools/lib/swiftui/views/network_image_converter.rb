@@ -27,6 +27,21 @@ module SjuiTools
               add_line "placeholder: \"#{@component['placeholder']}\","
             end
             
+            # defaultImage
+            if @component['defaultImage']
+              add_line "defaultImage: \"#{@component['defaultImage']}\","
+            end
+            
+            # errorImage
+            if @component['errorImage']
+              add_line "errorImage: \"#{@component['errorImage']}\","
+            end
+            
+            # loadingImage
+            if @component['loadingImage']
+              add_line "loadingImage: \"#{@component['loadingImage']}\","
+            end
+            
             # contentMode
             if @component['contentMode']
               content_mode = map_content_mode_enum(@component['contentMode'])

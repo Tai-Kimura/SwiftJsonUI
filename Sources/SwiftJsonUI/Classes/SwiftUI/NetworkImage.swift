@@ -10,6 +10,9 @@ import SwiftUI
 public struct NetworkImage: View {
     let url: String?
     let placeholder: String?
+    let defaultImage: String?
+    let errorImage: String?
+    let loadingImage: String?
     let contentMode: ContentMode
     let renderingMode: Image.TemplateRenderingMode?
     let headers: [String: String]
@@ -23,12 +26,18 @@ public struct NetworkImage: View {
     public init(
         url: String? = nil,
         placeholder: String? = nil,
+        defaultImage: String? = nil,
+        errorImage: String? = nil,
+        loadingImage: String? = nil,
         contentMode: ContentMode = .fit,
         renderingMode: Image.TemplateRenderingMode? = nil,
         headers: [String: String] = [:]
     ) {
         self.url = url
-        self.placeholder = placeholder
+        self.placeholder = placeholder ?? defaultImage
+        self.defaultImage = defaultImage
+        self.errorImage = errorImage
+        self.loadingImage = loadingImage
         self.contentMode = contentMode
         self.renderingMode = renderingMode
         self.headers = headers
@@ -40,7 +49,12 @@ public struct NetworkImage: View {
                 switch phase {
                 case .empty:
                     // ローディング中
-                    if let placeholder = placeholder {
+                    if let loadingImage = loadingImage {
+                        Image(loadingImage)
+                            .resizable()
+                            .renderingMode(renderingMode)
+                            .aspectRatio(contentMode: contentModeToSwiftUI())
+                    } else if let placeholder = placeholder {
                         Image(placeholder)
                             .resizable()
                             .renderingMode(renderingMode)
@@ -57,7 +71,12 @@ public struct NetworkImage: View {
                         .aspectRatio(contentMode: contentModeToSwiftUI())
                 case .failure(_):
                     // エラー
-                    if let placeholder = placeholder {
+                    if let errorImage = errorImage {
+                        Image(errorImage)
+                            .resizable()
+                            .renderingMode(renderingMode)
+                            .aspectRatio(contentMode: contentModeToSwiftUI())
+                    } else if let placeholder = placeholder {
                         Image(placeholder)
                             .resizable()
                             .renderingMode(renderingMode)

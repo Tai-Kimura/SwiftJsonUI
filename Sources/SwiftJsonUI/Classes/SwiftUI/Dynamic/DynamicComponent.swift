@@ -67,6 +67,12 @@ public struct DynamicComponent: Decodable {
     let maximum: CGFloat?
     let color: String?
     let hidesWhenStopped: Bool?
+    let highlightSrc: String?
+    let defaultImage: String?
+    let errorImage: String?
+    let loadingImage: String?
+    let maxZoom: CGFloat?
+    let minZoom: CGFloat?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
@@ -201,6 +207,8 @@ public struct DynamicComponent: Decodable {
         case paddingLeft, paddingRight, paddingTop, paddingBottom
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, contentInsets
         case tint, tintColor, minimum, maximum, color, hidesWhenStopped
+        case highlightSrc, defaultImage, errorImage, loadingImage
+        case maxZoom, minZoom
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
@@ -301,6 +309,12 @@ public struct DynamicComponent: Decodable {
         maximum = try container.decodeIfPresent(CGFloat.self, forKey: .maximum)
         color = try container.decodeIfPresent(String.self, forKey: .color)
         hidesWhenStopped = try container.decodeIfPresent(Bool.self, forKey: .hidesWhenStopped)
+        highlightSrc = try container.decodeIfPresent(String.self, forKey: .highlightSrc)
+        defaultImage = try container.decodeIfPresent(String.self, forKey: .defaultImage)
+        errorImage = try container.decodeIfPresent(String.self, forKey: .errorImage)
+        loadingImage = try container.decodeIfPresent(String.self, forKey: .loadingImage)
+        maxZoom = try container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
+        minZoom = try container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
         
         // Style properties
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)

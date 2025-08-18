@@ -12,6 +12,7 @@ public struct DynamicScrollViewContainer: View {
     let component: DynamicComponent
     @ObservedObject var viewModel: DynamicViewModel
     let viewId: String?
+    @State private var zoomScale: CGFloat = 1.0
     
     public init(component: DynamicComponent, viewModel: DynamicViewModel, viewId: String? = nil) {
         self.component = component
@@ -27,11 +28,30 @@ public struct DynamicScrollViewContainer: View {
         let axes: Axis.Set = determineScrollAxes()
         let showsIndicators = determineShowsIndicators()
         
-        let scrollViewContent = Group {
+        let baseContent = Group {
             // ScrollView should have exactly one child
             if let children = component.child, let firstChild = children.first {
                 DynamicComponentBuilder(component: firstChild, viewModel: viewModel, viewId: viewId)
             }
+        }
+        
+        // Apply zoom if maxZoom or minZoom is specified
+        let scrollViewContent: AnyView
+        if component.maxZoom != nil || component.minZoom != nil {
+            let minZoom = component.minZoom ?? 1.0
+            let maxZoom = component.maxZoom ?? 1.0
+            scrollViewContent = AnyView(
+                baseContent
+                    .scaleEffect(zoomScale)
+                    .gesture(
+                        MagnificationGesture()
+                            .onChanged { value in
+                                zoomScale = min(max(value, minZoom), maxZoom)
+                            }
+                    )
+            )
+        } else {
+            scrollViewContent = AnyView(baseContent)
         }
         
         let scrollView: AnyView

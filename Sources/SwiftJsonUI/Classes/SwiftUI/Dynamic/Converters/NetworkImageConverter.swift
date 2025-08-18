@@ -24,6 +24,9 @@ public struct NetworkImageConverter {
             NetworkImage(
                 url: component.src,
                 placeholder: component.placeholder,
+                defaultImage: component.defaultImage,
+                errorImage: component.errorImage,
+                loadingImage: component.loadingImage,
                 contentMode: contentMode,
                 renderingMode: renderingMode,
                 headers: component.headers ?? [:]

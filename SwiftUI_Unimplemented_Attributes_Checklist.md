@@ -118,18 +118,18 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - [ ] `returnKeyType` - Return key type (not supported in SwiftUI TextEditor)
 
 ### Image
-- [ ] `highlightSrc` - Image when highlighted
+- ✅ `highlightSrc` - Image when highlighted (Dynamic mode)
 
 ### NetworkImage / CircleImage
-- [ ] `defaultImage` - Default image
-- [ ] `errorImage` - Error state image
-- [ ] `loadingImage` - Loading state image
+- ✅ `defaultImage` - Default image
+- ✅ `errorImage` - Error state image
+- ✅ `loadingImage` - Loading state image
 
 ### ScrollView
 - ✅ `showsHorizontalScrollIndicator` - Show horizontal indicator
 - ✅ `showsVerticalScrollIndicator` - Show vertical indicator
-- [ ] `maxZoom` - Maximum zoom scale
-- [ ] `minZoom` - Minimum zoom scale
+- ✅ `maxZoom` - Maximum zoom scale
+- ✅ `minZoom` - Minimum zoom scale
 - ✅ `paging` - Enable paging (iOS 17+ in static mode)
 - ✅ `bounces` - Enable bounce (comment only in static)
 - ✅ `scrollEnabled` - Enable scrolling
