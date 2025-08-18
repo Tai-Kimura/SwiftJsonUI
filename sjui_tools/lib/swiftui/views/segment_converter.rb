@@ -19,11 +19,10 @@ module SjuiTools
                              elsif (@component['selectedTabIndex'] && is_binding?(@component['selectedTabIndex']))
                                "$viewModel.data.#{extract_binding_property(@component['selectedTabIndex'])}"
                              else
-                               # Create @State variable name
+                               # Use viewModel.data with state variable name
                                state_var = "selected#{id.split('_').map(&:capitalize).join}"
-                               # Add state variable to requirements
-                               add_state_variable(state_var, "Int", initial_selection.to_s)
-                               "$#{state_var}"
+                               # Note: This needs to be defined in JSON data section
+                               "$viewModel.data.#{state_var}"
                              end
           
           # Picker（SwiftUIのSegmented Control）
@@ -42,13 +41,6 @@ module SjuiTools
           apply_modifiers
           
           generated_code
-        end
-        
-        private
-        
-        def add_state_variable(name, type, default_value)
-          @state_variables ||= []
-          @state_variables << "@State private var #{name}: #{type} = #{default_value}"
         end
       end
     end
