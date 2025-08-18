@@ -36,6 +36,10 @@ public struct ToggleConverter {
                         set: { newValue in
                             viewModel.data[key] = newValue
                             viewModel.objectWillChange.send()
+                            // Handle onValueChange event
+                            if let onValueChange = component.onValueChange {
+                                viewModel.handleAction(onValueChange)
+                            }
                         }
                     )
                     

@@ -110,6 +110,24 @@ public struct DynamicComponent: Decodable {
     let html: String?
     let allowsBackForwardNavigationGestures: Bool?
     let allowsLinkPreview: Bool?
+    // View touch disable attributes
+    let touchDisabledState: String?
+    let touchEnabledViewIds: [String]?
+    // IconLabel attributes
+    let selectedFontColor: String?
+    let iconMargin: CGFloat?
+    // GradientView attributes
+    let locations: [CGFloat]?
+    // Collection attributes
+    let itemWeight: CGFloat?
+    let layout: String?
+    let cellClasses: AnyCodable?
+    let headerClasses: AnyCodable?
+    let footerClasses: AnyCodable?
+    let setTargetAsDelegate: Bool?
+    let setTargetAsDataSource: Bool?
+    // Switch/Toggle event
+    let onValueChange: String?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
     let borderColor: String?
@@ -253,6 +271,12 @@ public struct DynamicComponent: Decodable {
         case onTextChange, accessoryBackground, accessoryTextColor, doneText
         case caretAttributes, dividerAttributes, labelAttributes, canBack, prompt, includePromptWhenDataBinding, minuteInterval
         case html, allowsBackForwardNavigationGestures, allowsLinkPreview
+        case touchDisabledState, touchEnabledViewIds
+        case selectedFontColor, iconMargin
+        case locations
+        case itemWeight, layout, cellClasses, headerClasses, footerClasses
+        case setTargetAsDelegate, setTargetAsDataSource
+        case onValueChange
         case cornerRadius, borderWidth, borderColor
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
@@ -396,6 +420,24 @@ public struct DynamicComponent: Decodable {
         html = try container.decodeIfPresent(String.self, forKey: .html)
         allowsBackForwardNavigationGestures = try container.decodeIfPresent(Bool.self, forKey: .allowsBackForwardNavigationGestures)
         allowsLinkPreview = try container.decodeIfPresent(Bool.self, forKey: .allowsLinkPreview)
+        // View touch disable attributes
+        touchDisabledState = try container.decodeIfPresent(String.self, forKey: .touchDisabledState)
+        touchEnabledViewIds = try container.decodeIfPresent([String].self, forKey: .touchEnabledViewIds)
+        // IconLabel attributes
+        selectedFontColor = try container.decodeIfPresent(String.self, forKey: .selectedFontColor)
+        iconMargin = try container.decodeIfPresent(CGFloat.self, forKey: .iconMargin)
+        // GradientView attributes
+        locations = try container.decodeIfPresent([CGFloat].self, forKey: .locations)
+        // Collection attributes
+        itemWeight = try container.decodeIfPresent(CGFloat.self, forKey: .itemWeight)
+        layout = try container.decodeIfPresent(String.self, forKey: .layout)
+        cellClasses = try container.decodeIfPresent(AnyCodable.self, forKey: .cellClasses)
+        headerClasses = try container.decodeIfPresent(AnyCodable.self, forKey: .headerClasses)
+        footerClasses = try container.decodeIfPresent(AnyCodable.self, forKey: .footerClasses)
+        setTargetAsDelegate = try container.decodeIfPresent(Bool.self, forKey: .setTargetAsDelegate)
+        setTargetAsDataSource = try container.decodeIfPresent(Bool.self, forKey: .setTargetAsDataSource)
+        // Switch/Toggle event
+        onValueChange = try container.decodeIfPresent(String.self, forKey: .onValueChange)
         
         // Style properties
         cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)

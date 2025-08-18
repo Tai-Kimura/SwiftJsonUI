@@ -77,8 +77,8 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `highlighted` - Highlighted state (Dynamic mode)
 - ✅ `canTap` - Enable tap capability
 - ✅ `events` - Complex event handlers (Dynamic mode)
-- [ ] `touchDisabledState` - Touch disable mode
-- [ ] `touchEnabledViewIds` - Array of enabled views
+- ✅ `touchDisabledState` - Touch disable mode (Dynamic mode)
+- ✅ `touchEnabledViewIds` - Array of enabled views (Dynamic mode)
 
 ### Button
 
@@ -142,17 +142,17 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `columnSpacing` - Inter-item spacing
 - ✅ `lineSpacing` - Line spacing
 - ✅ `contentInsets` - Content insets
-- [ ] `itemWeight` - Item sizing weight
-- [ ] `layout` - Layout type
-- [ ] `cellClasses` - Cell class definitions
-- [ ] `headerClasses` - Header class definitions
-- [ ] `footerClasses` - Footer class definitions
-- [ ] `setTargetAsDelegate` - Set delegate
-- [ ] `setTargetAsDataSource` - Set data source
+- ✅ `itemWeight` - Item sizing weight (Dynamic mode)
+- ✅ `layout` - Layout type (Dynamic mode)
+- ✅ `cellClasses` - Cell class definitions (Dynamic mode)
+- ✅ `headerClasses` - Header class definitions (Dynamic mode)
+- ✅ `footerClasses` - Footer class definitions (Dynamic mode)
+- ✅ `setTargetAsDelegate` - Set delegate (Dynamic mode)
+- ✅ `setTargetAsDataSource` - Set data source (Dynamic mode)
 
 ### Switch
 - ✅ `tint` - On state color
-- [ ] `onValueChange` - Value change event
+- ✅ `onValueChange` - Value change event
 
 ### Slider
 - ✅ `tintColor` - Slider tint color
@@ -195,12 +195,12 @@ This checklist tracks attributes documented in the SwiftJsonUI wiki that are not
 - ✅ `minuteInterval` - Minute intervals (Dynamic mode)
 
 ### IconLabel
-- [ ] `textShadow` - Text shadow
-- [ ] `selectedFontColor` - Selected text color
-- [ ] `iconMargin` - Icon-text spacing
+- ✅ `textShadow` - Text shadow (Dynamic mode - uses Label's textShadow)
+- ✅ `selectedFontColor` - Selected text color (Dynamic mode)
+- ✅ `iconMargin` - Icon-text spacing (Dynamic mode)
 
 ### GradientView
-- [ ] `locations` - Color stop locations
+- ✅ `locations` - Color stop locations (Dynamic mode)
 
 ### Web
 - ✅ `html` - HTML content (Dynamic mode)
