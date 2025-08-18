@@ -132,22 +132,7 @@ public struct TextFieldConverter {
                         // onTextChange is handled in binding setter
                     }
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         case "plain", "none":
             return AnyView(
@@ -160,22 +145,7 @@ public struct TextFieldConverter {
                         // onTextChange is handled in binding setter
                     }
                     .textFieldStyle(PlainTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         default:
             // Default style based on platform
@@ -190,22 +160,7 @@ public struct TextFieldConverter {
                         // onTextChange is handled in binding setter
                     }
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
             #else
             return AnyView(
@@ -218,22 +173,7 @@ public struct TextFieldConverter {
                         // onTextChange is handled in binding setter
                     }
                     .textFieldStyle(PlainTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
             #endif
         }
@@ -254,22 +194,7 @@ public struct TextFieldConverter {
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         case "plain", "none":
             return AnyView(
@@ -277,22 +202,7 @@ public struct TextFieldConverter {
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
                     .textFieldStyle(PlainTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         default:
             // Default style based on platform
@@ -302,22 +212,7 @@ public struct TextFieldConverter {
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
             #else
             return AnyView(
@@ -325,22 +220,7 @@ public struct TextFieldConverter {
                     .font(DynamicHelpers.fontFromComponent(component))
                     .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
                     .textFieldStyle(PlainTextFieldStyle())
-                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                    .background(DynamicHelpers.getBackground(from: component))
-                    .cornerRadius(component.cornerRadius ?? 0)
-                    .overlay(
-                        Group {
-                            if let borderWidth = component.borderWidth,
-                               borderWidth > 0 {
-                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                    .stroke(borderColor, lineWidth: borderWidth)
-                            }
-                        }
-                    )  // Border after cornerRadius, before margins
-                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                    .opacity(DynamicHelpers.getOpacity(from: component))
-                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
             #endif
         }
