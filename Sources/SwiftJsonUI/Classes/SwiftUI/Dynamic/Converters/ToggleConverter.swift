@@ -43,24 +43,35 @@ public struct ToggleConverter {
                         }
                     )
                     
-                    var toggle = Toggle(text, isOn: binding)
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                        .toggleStyle(SwitchToggleStyle())
+                    let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+                    let toggleView: AnyView
+                    
                     if let font = DynamicHelpers.fontFromComponent(component) {
-                        toggle = toggle.font(font)
+                        toggleView = AnyView(
+                            Toggle(text, isOn: binding)
+                                .font(font)
+                                .foregroundColor(textColor)
+                                .toggleStyle(SwitchToggleStyle())
+                        )
+                    } else {
+                        toggleView = AnyView(
+                            Toggle(text, isOn: binding)
+                                .foregroundColor(textColor)
+                                .toggleStyle(SwitchToggleStyle())
+                        )
                     }
                     
                     // Apply tint color if specified
                     if let tintColor = component.tint ?? component.tintColor,
                        let color = DynamicHelpers.colorFromHex(tintColor) {
                         return AnyView(
-                            toggle
+                            toggleView
                                 .tint(color)
                                 .modifier(CommonModifiers(component: component, viewModel: viewModel))
                         )
                     } else {
                         return AnyView(
-                            toggle
+                            toggleView
                                 .modifier(CommonModifiers(component: component, viewModel: viewModel))
                         )
                     }
@@ -70,25 +81,35 @@ public struct ToggleConverter {
         
         // Use static value if no binding found
         let isOn = component.isOn ?? false
+        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+        let toggleView: AnyView
         
-        var toggle = Toggle(text, isOn: .constant(isOn))
-            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-            .toggleStyle(SwitchToggleStyle())
         if let font = DynamicHelpers.fontFromComponent(component) {
-            toggle = toggle.font(font)
+            toggleView = AnyView(
+                Toggle(text, isOn: .constant(isOn))
+                    .font(font)
+                    .foregroundColor(textColor)
+                    .toggleStyle(SwitchToggleStyle())
+            )
+        } else {
+            toggleView = AnyView(
+                Toggle(text, isOn: .constant(isOn))
+                    .foregroundColor(textColor)
+                    .toggleStyle(SwitchToggleStyle())
+            )
         }
         
         // Apply tint color if specified
         if let tintColor = component.tint ?? component.tintColor,
            let color = DynamicHelpers.colorFromHex(tintColor) {
             return AnyView(
-                toggle
+                toggleView
                     .tint(color)
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         } else {
             return AnyView(
-                toggle
+                toggleView
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         }
