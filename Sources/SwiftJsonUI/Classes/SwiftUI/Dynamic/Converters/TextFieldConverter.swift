@@ -44,56 +44,9 @@ public struct TextFieldConverter {
             
             // Choose between TextField and SecureField based on secure property
             if component.secure == true {
-                return AnyView(
-                    SecureField(placeholder, text: binding)
-                        .font(DynamicHelpers.fontFromComponent(component))
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                        .textFieldStyle(getTextFieldStyle(from: component.borderStyle))
-                        .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                        .background(DynamicHelpers.getBackground(from: component))
-                        .cornerRadius(component.cornerRadius ?? 0)
-                        .overlay(
-                            Group {
-                                if let borderWidth = component.borderWidth,
-                                   borderWidth > 0 {
-                                    let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                    RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                        .stroke(borderColor, lineWidth: borderWidth)
-                                }
-                            }
-                        )  // Border after cornerRadius, before margins
-                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                        .opacity(DynamicHelpers.getOpacity(from: component))
-                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
-                )
+                return createSecureField(placeholder: placeholder, text: binding, component: component)
             } else {
-                return AnyView(
-                    TextField(placeholder, text: binding)
-                        .font(DynamicHelpers.fontFromComponent(component))
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                        .keyboardType(getKeyboardType(from: component.input))
-                        .submitLabel(getSubmitLabel(from: component.returnKeyType))
-                        .onChange(of: binding.wrappedValue) { _ in
-                            // onTextChange is handled in binding setter
-                        }
-                        .textFieldStyle(getTextFieldStyle(from: component.borderStyle))
-                        .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                        .background(DynamicHelpers.getBackground(from: component))
-                        .cornerRadius(component.cornerRadius ?? 0)
-                        .overlay(
-                            Group {
-                                if let borderWidth = component.borderWidth,
-                                   borderWidth > 0 {
-                                    let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                    RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                        .stroke(borderColor, lineWidth: borderWidth)
-                                }
-                            }
-                        )  // Border after cornerRadius, before margins
-                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                        .opacity(DynamicHelpers.getOpacity(from: component))
-                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
-                )
+                return createTextField(placeholder: placeholder, text: binding, component: component, viewModel: viewModel)
             }
         } else {
             // Use static text if no binding
@@ -101,53 +54,9 @@ public struct TextFieldConverter {
             
             // Choose between TextField and SecureField based on secure property
             if component.secure == true {
-                return AnyView(
-                    SecureField(placeholder, text: .constant(text))
-                        .font(DynamicHelpers.fontFromComponent(component))
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                        .textFieldStyle(getTextFieldStyle(from: component.borderStyle))
-                        .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                        .background(DynamicHelpers.getBackground(from: component))
-                        .cornerRadius(component.cornerRadius ?? 0)
-                        .overlay(
-                            Group {
-                                if let borderWidth = component.borderWidth,
-                                   borderWidth > 0 {
-                                    let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                    RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                        .stroke(borderColor, lineWidth: borderWidth)
-                                }
-                            }
-                        )  // Border after cornerRadius, before margins
-                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                        .opacity(DynamicHelpers.getOpacity(from: component))
-                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
-                )
+                return createSecureField(placeholder: placeholder, text: .constant(text), component: component)
             } else {
-                return AnyView(
-                    TextField(placeholder, text: .constant(text))
-                        .font(DynamicHelpers.fontFromComponent(component))
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                        .keyboardType(getKeyboardType(from: component.input))
-                        .submitLabel(getSubmitLabel(from: component.returnKeyType))
-                        .textFieldStyle(getTextFieldStyle(from: component.borderStyle))
-                        .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                        .background(DynamicHelpers.getBackground(from: component))
-                        .cornerRadius(component.cornerRadius ?? 0)
-                        .overlay(
-                            Group {
-                                if let borderWidth = component.borderWidth,
-                                   borderWidth > 0 {
-                                    let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
-                                    RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
-                                        .stroke(borderColor, lineWidth: borderWidth)
-                                }
-                            }
-                        )  // Border after cornerRadius, before margins
-                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-                        .opacity(DynamicHelpers.getOpacity(from: component))
-                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
-                )
+                return createTextField(placeholder: placeholder, text: .constant(text), component: component, viewModel: viewModel)
             }
         }
     }
@@ -202,19 +111,237 @@ public struct TextFieldConverter {
         }
     }
     
-    // Helper function to get text field style
-    private static func getTextFieldStyle(from borderStyle: String?) -> any TextFieldStyle {
-        switch borderStyle?.lowercased() {
+    // Helper function to create TextField with proper style
+    private static func createTextField(
+        placeholder: String,
+        text: SwiftUI.Binding<String>,
+        component: DynamicComponent,
+        viewModel: DynamicViewModel
+    ) -> AnyView {
+        let borderStyle = component.borderStyle?.lowercased()
+        
+        switch borderStyle {
         case "roundedrect", "rounded":
-            return RoundedBorderTextFieldStyle()
+            return AnyView(
+                TextField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .keyboardType(getKeyboardType(from: component.input))
+                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
+                    .onChange(of: text.wrappedValue) { _ in
+                        // onTextChange is handled in binding setter
+                    }
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
         case "plain", "none":
-            return PlainTextFieldStyle()
+            return AnyView(
+                TextField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .keyboardType(getKeyboardType(from: component.input))
+                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
+                    .onChange(of: text.wrappedValue) { _ in
+                        // onTextChange is handled in binding setter
+                    }
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
         default:
             // Default style based on platform
             #if os(iOS)
-            return RoundedBorderTextFieldStyle()
+            return AnyView(
+                TextField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .keyboardType(getKeyboardType(from: component.input))
+                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
+                    .onChange(of: text.wrappedValue) { _ in
+                        // onTextChange is handled in binding setter
+                    }
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
             #else
-            return PlainTextFieldStyle()
+            return AnyView(
+                TextField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .keyboardType(getKeyboardType(from: component.input))
+                    .submitLabel(getSubmitLabel(from: component.returnKeyType))
+                    .onChange(of: text.wrappedValue) { _ in
+                        // onTextChange is handled in binding setter
+                    }
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
+            #endif
+        }
+    }
+    
+    // Helper function to create SecureField with proper style
+    private static func createSecureField(
+        placeholder: String,
+        text: SwiftUI.Binding<String>,
+        component: DynamicComponent
+    ) -> AnyView {
+        let borderStyle = component.borderStyle?.lowercased()
+        
+        switch borderStyle {
+        case "roundedrect", "rounded":
+            return AnyView(
+                SecureField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
+        case "plain", "none":
+            return AnyView(
+                SecureField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
+        default:
+            // Default style based on platform
+            #if os(iOS)
+            return AnyView(
+                SecureField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .textFieldStyle(RoundedBorderTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
+            #else
+            return AnyView(
+                SecureField(placeholder, text: text)
+                    .font(DynamicHelpers.fontFromComponent(component))
+                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                    .textFieldStyle(PlainTextFieldStyle())
+                    .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
+                    .background(DynamicHelpers.getBackground(from: component))
+                    .cornerRadius(component.cornerRadius ?? 0)
+                    .overlay(
+                        Group {
+                            if let borderWidth = component.borderWidth,
+                               borderWidth > 0 {
+                                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                                RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
+                                    .stroke(borderColor, lineWidth: borderWidth)
+                            }
+                        }
+                    )  // Border after cornerRadius, before margins
+                    .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                    .opacity(DynamicHelpers.getOpacity(from: component))
+                    .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
+            )
             #endif
         }
     }
