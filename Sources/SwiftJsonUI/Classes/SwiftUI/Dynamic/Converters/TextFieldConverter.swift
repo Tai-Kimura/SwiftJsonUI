@@ -7,20 +7,6 @@
 
 import SwiftUI
 
-// MARK: - TextField-specific modifiers (margins only)
-// Corresponding to Generated code: textfield_converter.rb
-struct TextFieldModifiers: ViewModifier {
-    let component: DynamicComponent
-    let viewModel: DynamicViewModel
-    
-    func body(content: Content) -> some View {
-        content
-            .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
-            .opacity(DynamicHelpers.getOpacity(from: component))
-            .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
-    }
-}
-
 public struct TextFieldConverter {
     
     /// Extract property name from @{propertyName} syntax
@@ -76,7 +62,9 @@ public struct TextFieldConverter {
                                 }
                             }
                         )  // Border after cornerRadius, before margins
-                        .modifier(TextFieldModifiers(component: component, viewModel: viewModel))  // Margins only
+                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                        .opacity(DynamicHelpers.getOpacity(from: component))
+                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
                 )
             } else {
                 return AnyView(
@@ -102,7 +90,9 @@ public struct TextFieldConverter {
                                 }
                             }
                         )  // Border after cornerRadius, before margins
-                        .modifier(TextFieldModifiers(component: component, viewModel: viewModel))  // Margins only
+                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                        .opacity(DynamicHelpers.getOpacity(from: component))
+                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
                 )
             }
         } else {
@@ -129,7 +119,9 @@ public struct TextFieldConverter {
                                 }
                             }
                         )  // Border after cornerRadius, before margins
-                        .modifier(TextFieldModifiers(component: component, viewModel: viewModel))  // Margins only
+                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                        .opacity(DynamicHelpers.getOpacity(from: component))
+                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
                 )
             } else {
                 return AnyView(
@@ -152,7 +144,9 @@ public struct TextFieldConverter {
                                 }
                             }
                         )  // Border after cornerRadius, before margins
-                        .modifier(TextFieldModifiers(component: component, viewModel: viewModel))  // Margins only
+                        .padding(DynamicHelpers.getMargins(from: component))  // Apply margins as outer padding
+                        .opacity(DynamicHelpers.getOpacity(from: component))
+                        .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
                 )
             }
         }
