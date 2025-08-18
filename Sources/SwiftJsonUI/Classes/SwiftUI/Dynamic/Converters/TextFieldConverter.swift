@@ -44,7 +44,7 @@ public struct TextFieldConverter {
             
             // Choose between TextField and SecureField based on secure property
             if component.secure == true {
-                return createSecureField(placeholder: placeholder, text: binding, component: component)
+                return createSecureField(placeholder: placeholder, text: binding, component: component, viewModel: viewModel)
             } else {
                 return createTextField(placeholder: placeholder, text: binding, component: component, viewModel: viewModel)
             }
@@ -54,7 +54,7 @@ public struct TextFieldConverter {
             
             // Choose between TextField and SecureField based on secure property
             if component.secure == true {
-                return createSecureField(placeholder: placeholder, text: .constant(text), component: component)
+                return createSecureField(placeholder: placeholder, text: .constant(text), component: component, viewModel: viewModel)
             } else {
                 return createTextField(placeholder: placeholder, text: .constant(text), component: component, viewModel: viewModel)
             }
@@ -207,7 +207,8 @@ public struct TextFieldConverter {
     private static func createSecureField(
         placeholder: String,
         text: SwiftUI.Binding<String>,
-        component: DynamicComponent
+        component: DynamicComponent,
+        viewModel: DynamicViewModel
     ) -> AnyView {
         let borderStyle = component.borderStyle?.lowercased()
         
