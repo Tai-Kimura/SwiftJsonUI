@@ -20,27 +20,29 @@ public struct DynamicScrollViewContainer: View {
         self.viewId = viewId
     }
     
-    @ViewBuilder
-    public var body: some View {
-        let _ = print("📜 DynamicScrollViewContainer: id=\(component.id ?? "no-id"), childCount=\(component.child?.count ?? 0), width=\(component.width ?? -999), height=\(component.height ?? -999)")
-        
-        // Determine scroll axes and indicators
-        let axes: Axis.Set = determineScrollAxes()
-        let showsIndicators = determineShowsIndicators()
-        
-        let baseContent = Group {
+    private var scrollAxes: Axis.Set {
+        determineScrollAxes()
+    }
+    
+    private var showsIndicators: Bool {
+        determineShowsIndicators()
+    }
+    
+    private var baseContent: some View {
+        Group {
             // ScrollView should have exactly one child
             if let children = component.child, let firstChild = children.first {
                 DynamicComponentBuilder(component: firstChild, viewModel: viewModel, viewId: viewId)
             }
         }
-        
+    }
+    
+    private var scrollViewContent: AnyView {
         // Apply zoom if maxZoom or minZoom is specified
-        let scrollViewContent: AnyView
         if component.maxZoom != nil || component.minZoom != nil {
             let minZoom = component.minZoom ?? 1.0
             let maxZoom = component.maxZoom ?? 1.0
-            scrollViewContent = AnyView(
+            return AnyView(
                 baseContent
                     .scaleEffect(zoomScale)
                     .gesture(
@@ -52,16 +54,19 @@ public struct DynamicScrollViewContainer: View {
                     )
             )
         } else {
-            scrollViewContent = AnyView(baseContent)
+            return AnyView(baseContent)
         }
-        
-        let scrollView: AnyView
+    }
+    
+    private var scrollView: AnyView {
+        let axes = scrollAxes
+        let indicators = showsIndicators
         
         // Use different ScrollView implementations based on features needed
         if component.paging == true {
             // Paging requires a custom implementation
-            scrollView = AnyView(
-                ScrollView(axes, showsIndicators: showsIndicators) {
+            return AnyView(
+                ScrollView(axes, showsIndicators: indicators) {
                     scrollViewContent
                 }
                 .onAppear {
@@ -71,15 +76,20 @@ public struct DynamicScrollViewContainer: View {
             )
         } else {
             // Use AdvancedKeyboardAvoidingScrollView for keyboard avoidance
-            scrollView = AnyView(
+            return AnyView(
                 AdvancedKeyboardAvoidingScrollView(
                     axes,
-                    showsIndicators: showsIndicators
+                    showsIndicators: indicators
                 ) {
                     scrollViewContent
                 }
             )
         }
+    }
+    
+    @ViewBuilder
+    public var body: some View {
+        let _ = print("📜 DynamicScrollViewContainer: id=\(component.id ?? "no-id"), childCount=\(component.child?.count ?? 0), width=\(component.width ?? -999), height=\(component.height ?? -999)")
         
         let modifiedScrollView = scrollView
             .disabled(component.scrollEnabled == false)
