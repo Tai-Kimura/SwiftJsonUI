@@ -65,7 +65,7 @@ module SjuiTools
             # カスタムRadioButton実装
             add_line "HStack {"
             indent do
-              add_line "Image(systemName: viewModel.data.#{state_var} as? String == \"#{id}\" ? \"largecircle.fill.circle\" : \"circle\")"
+              add_line "Image(systemName: viewModel.data.#{state_var} == \"#{id}\" ? \"largecircle.fill.circle\" : \"circle\")"
               add_modifier_line ".foregroundColor(.blue)"
               add_modifier_line ".onTapGesture {"
               indent do
