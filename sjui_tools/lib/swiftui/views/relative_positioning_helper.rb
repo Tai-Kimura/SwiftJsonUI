@@ -9,13 +9,12 @@ module SjuiTools
           return false unless child.is_a?(Hash)
           
           # 相対配置のプロパティをチェック
-          # Note: alignTop, alignBottom, alignLeft, alignRight, centerHorizontal, centerVertical, centerInParent
-          # are NOT relative constraints when used alone - they are simple alignment properties
-          # Only check for actual relative positioning properties (positioning relative to other views)
           child['toLeftOf'] || child['toRightOf'] || child['above'] || child['below'] ||
+          child['alignTop'] || child['alignBottom'] || child['alignLeft'] || child['alignRight'] ||
           child['alignTopView'] || child['alignBottomView'] || child['alignLeftView'] || child['alignRightView'] ||
           child['alignTopOfView'] || child['alignBottomOfView'] || child['alignLeftOfView'] || child['alignRightOfView'] ||
-          child['alignBaseline'] || child['toStartOf'] || child['toEndOf']
+          child['alignBaseline'] || child['centerHorizontal'] || child['centerVertical'] ||
+          child['centerInParent'] || child['toStartOf'] || child['toEndOf']
         end
         
         def has_relative_positioning?(children)

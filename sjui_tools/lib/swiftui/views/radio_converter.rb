@@ -60,43 +60,13 @@ module SjuiTools
             state_var = "selected#{group.split('_').map(&:capitalize).join}"
             
             # Add state variable to requirements
-            initial_value = (@component['checked'] == true || @component['checked'] == 'true') ? "\"#{id}\"" : '""'
-            add_state_variable(state_var, "String", initial_value)
+            add_state_variable(state_var, "String", '""')
             
             # カスタムRadioButton実装
             add_line "HStack {"
             indent do
-              # Use custom icons if provided
-              if @component['selectedIcon'] || @component['icon']
-                add_line "if #{state_var} == \"#{id}\" {"
-                indent do
-                  if @component['selectedIcon']
-                    add_line "Image(\"#{@component['selectedIcon']}\")"
-                    add_modifier_line ".resizable()"
-                    add_modifier_line ".aspectRatio(contentMode: .fit)"
-                    add_modifier_line ".frame(width: 20, height: 20)"
-                  else
-                    add_line "Image(systemName: \"largecircle.fill.circle\")"
-                    add_modifier_line ".foregroundColor(.blue)"
-                  end
-                end
-                add_line "} else {"
-                indent do
-                  if @component['icon']
-                    add_line "Image(\"#{@component['icon']}\")"
-                    add_modifier_line ".resizable()"
-                    add_modifier_line ".aspectRatio(contentMode: .fit)"
-                    add_modifier_line ".frame(width: 20, height: 20)"
-                  else
-                    add_line "Image(systemName: \"circle\")"
-                    add_modifier_line ".foregroundColor(.blue)"
-                  end
-                end
-                add_line "}"
-              else
-                add_line "Image(systemName: #{state_var} == \"#{id}\" ? \"largecircle.fill.circle\" : \"circle\")"
-                add_modifier_line ".foregroundColor(.blue)"
-              end
+              add_line "Image(systemName: #{state_var} == \"#{id}\" ? \"largecircle.fill.circle\" : \"circle\")"
+              add_modifier_line ".foregroundColor(.blue)"
               add_modifier_line ".onTapGesture {"
               indent do
                 add_line "#{state_var} = \"#{id}\""

@@ -3,7 +3,6 @@
 require_relative 'views/label_converter'
 require_relative 'views/button_converter'
 require_relative 'views/view_converter'
-require_relative 'views/safeareaview_converter'
 require_relative 'views/textfield_converter'
 require_relative 'views/textview_converter'
 require_relative 'views/image_converter'
@@ -51,10 +50,8 @@ module SjuiTools
           Views::IconLabelConverter.new(component, indent_level, action_manager, @binding_registry)
         when 'Button'
           Views::ButtonConverter.new(component, indent_level, action_manager, @binding_registry)
-        when 'View'
+        when 'View', 'SafeAreaView'
           Views::ViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
-        when 'SafeAreaView'
-          Views::SafeAreaViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'GradientView'
           Views::GradientViewConverter.new(component, indent_level, action_manager, self, registry, @binding_registry)
         when 'Blur', 'BlurView'

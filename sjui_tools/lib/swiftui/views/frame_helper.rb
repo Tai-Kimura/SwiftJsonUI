@@ -3,21 +3,17 @@ module SjuiTools
     module Views
       module FrameHelper
         def apply_frame_constraints
-          # サイズ制約（minWidth, maxWidth, minHeight, maxHeight, idealWidth, idealHeight）
-          if @component['minWidth'] || @component['maxWidth'] || @component['minHeight'] || @component['maxHeight'] || @component['idealWidth'] || @component['idealHeight']
+          # サイズ制約（minWidth, maxWidth, minHeight, maxHeight）
+          if @component['minWidth'] || @component['maxWidth'] || @component['minHeight'] || @component['maxHeight']
             min_width = @component['minWidth']
             max_width = @component['maxWidth']
             min_height = @component['minHeight'] 
             max_height = @component['maxHeight']
-            ideal_width = @component['idealWidth']
-            ideal_height = @component['idealHeight']
             
             frame_params = []
             frame_params << "minWidth: #{min_width}" if min_width
-            frame_params << "idealWidth: #{ideal_width}" if ideal_width
             frame_params << "maxWidth: #{max_width == 'matchParent' ? '.infinity' : max_width}" if max_width
             frame_params << "minHeight: #{min_height}" if min_height
-            frame_params << "idealHeight: #{ideal_height}" if ideal_height
             frame_params << "maxHeight: #{max_height == 'matchParent' ? '.infinity' : max_height}" if max_height
             
             if frame_params.any?

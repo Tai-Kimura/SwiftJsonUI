@@ -70,36 +70,17 @@ module SjuiTools
             add_modifier_line ".keyboardType(#{keyboard_type})"
           end
           
-          # returnKeyType
-          if @component['returnKeyType']
-            submit_label = return_key_to_submit_label(@component['returnKeyType'])
-            add_modifier_line ".submitLabel(#{submit_label})"
-          end
-          
           # contentType (for auto-fill)
           if @component['contentType']
             content_type = map_content_type(@component['contentType'])
             add_modifier_line ".textContentType(#{content_type})"
           end
           
-          # Secure text entry - secure property or input == 'password'
-          if @component['secure'] == true || @component['secure'] == 'true' || @component['input'] == 'password'
-            # SecureFieldを使う必要があるため、最初から作り直す
-            @generated_code = []
-            add_line "SecureField(\"#{hint}\", text: $#{state_var})"
-            # 再度スタイルを適用
-            if @component['fontSize']
-              add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-            end
-            if @component['fontColor']
-              color = hex_to_swiftui_color(@component['fontColor'])
-              add_modifier_line ".foregroundColor(#{color})"
-            end
-            # submitLabel for SecureField
-            if @component['returnKeyType']
-              submit_label = return_key_to_submit_label(@component['returnKeyType'])
-              add_modifier_line ".submitLabel(#{submit_label})"
-            end
+          # Secure text entry - input == 'password'
+          if @component['input'] == 'password'
+            # SecureField should be handled above, not here
+            # This section is commented out as secure handling is now in the main logic
+            # add_line "// Note: SecureField is handled in the main field creation logic"
           end
           
           # Disabled state
@@ -122,11 +103,17 @@ module SjuiTools
           # Text change handler
           if @component['onTextChange'] && @action_manager
             handler_name = @action_manager.register_action(@component['onTextChange'], 'textfield')
-            add_modifier_line ".onChange(of: #{state_var}) { newValue in"
-            indent do
-              add_line "#{handler_name}()"
+            # Get the binding variable name from text_binding
+            binding_var = text_binding.gsub('$', '').gsub('.constant(', '').gsub(')', '')
+            if text_binding.start_with?('$')
+              add_modifier_line ".onChange(of: #{binding_var}) { newValue in"
+              indent do
+                add_line "#{handler_name}()"
+              end
+              add_line "}"
+            else
+              add_line "// onTextChange requires data binding"
             end
-            add_line "}"
           end
           
           # TextField manages its own padding/background/cornerRadius/border
@@ -215,12 +202,10 @@ module SjuiTools
         
         def text_field_style(style)
           case style
-          when 'RoundedRect', 'roundedRect', 'roundedBorder'
+          when 'RoundedRect', 'roundedRect'
             '.roundedBorder'
-          when 'none', 'plain'
+          when 'none'
             '.plain'
-          when 'automatic'
-            '.automatic'
           else
             '.automatic'
           end
@@ -228,17 +213,15 @@ module SjuiTools
         
         def input_to_keyboard_type(input)
           case input
-          when 'email', 'emailAddress'
+          when 'email'
             '.emailAddress'
           when 'password'
             '.default'  # SwiftUIではセキュア入力は別途設定
-          when 'number', 'numeric'
+          when 'number'
             '.numberPad'
-          when 'decimal', 'decimalPad'
+          when 'decimal'
             '.decimalPad'
-          when 'phone', 'phoneNumber', 'phonePad'
-            '.phonePad'
-          when 'url', 'URL', 'webURL'
+          when 'URL'
             '.URL'
           when 'twitter'
             '.twitter'
@@ -246,37 +229,8 @@ module SjuiTools
             '.webSearch'
           when 'namePhonePad'
             '.namePhonePad'
-          when 'numbersAndPunctuation'
-            '.numbersAndPunctuation'
-          when 'asciiCapable'
-            '.asciiCapable'
           else
             '.default'
-          end
-        end
-        
-        def return_key_to_submit_label(return_key_type)
-          case return_key_type
-          when 'done', 'Done'
-            '.done'
-          when 'go', 'Go'
-            '.go'
-          when 'next', 'Next'
-            '.next'
-          when 'return', 'Return'
-            '.return'
-          when 'search', 'Search'
-            '.search'
-          when 'send', 'Send'
-            '.send'
-          when 'continue', 'Continue'
-            '.continue'
-          when 'join', 'Join'
-            '.join'
-          when 'route', 'Route'
-            '.route'
-          else
-            '.done'
           end
         end
         
