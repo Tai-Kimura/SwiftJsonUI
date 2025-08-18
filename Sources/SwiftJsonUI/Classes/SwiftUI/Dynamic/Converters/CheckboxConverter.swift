@@ -85,12 +85,15 @@ public struct CheckboxConverter {
                     }
                     
                     if !text.isEmpty {
-                        var textView = Text(text)
-                            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
                         if let font = DynamicHelpers.fontFromComponent(component) {
-                            textView = textView.font(font)
+                            Text(text)
+                                .font(font)
+                                .foregroundColor(textColor)
+                        } else {
+                            Text(text)
+                                .foregroundColor(textColor)
                         }
-                        textView
                     }
                 }
                 .modifier(CommonModifiers(component: component, viewModel: viewModel))
@@ -130,12 +133,15 @@ public struct CheckboxConverter {
                     }
                     
                     if !text.isEmpty {
-                        var textView = Text(text)
-                            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
                         if let font = DynamicHelpers.fontFromComponent(component) {
-                            textView = textView.font(font)
+                            Text(text)
+                                .font(font)
+                                .foregroundColor(textColor)
+                        } else {
+                            Text(text)
+                                .foregroundColor(textColor)
                         }
-                        textView
                     }
                 }
                 .modifier(CommonModifiers(component: component, viewModel: viewModel))

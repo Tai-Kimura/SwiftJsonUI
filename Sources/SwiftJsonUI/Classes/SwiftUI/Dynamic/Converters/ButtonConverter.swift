@@ -49,25 +49,37 @@ public struct ButtonConverter {
                 
                 // Only expand to fill if button has explicit numeric width AND height (not wrapContent)
                 // Both must be explicit for frame expansion
+                let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .white
+                let padding = DynamicHelpers.getPadding(from: component)
+                
                 if hasExplicitWidth && component.width == .infinity {
-                    var text = Text(text)
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
                     if let font = DynamicHelpers.fontFromComponent(component) {
-                        text = text.font(font)
+                        Text(text)
+                            .font(font)
+                            .foregroundColor(textColor)
+                            .padding(padding)
+                            // Apply frame to Text to fill button area when button has explicit infinite width
+                            .frame(maxWidth: .infinity, maxHeight: hasExplicitHeight ? .infinity : nil)
+                    } else {
+                        Text(text)
+                            .foregroundColor(textColor)
+                            .padding(padding)
+                            // Apply frame to Text to fill button area when button has explicit infinite width
+                            .frame(maxWidth: .infinity, maxHeight: hasExplicitHeight ? .infinity : nil)
                     }
-                    text
-                        .padding(DynamicHelpers.getPadding(from: component))
-                        // Apply frame to Text to fill button area when button has explicit infinite width
-                        .frame(maxWidth: .infinity, maxHeight: hasExplicitHeight ? .infinity : nil)
                 } else {
-                    var text = Text(text)
-                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .white)
                     if let font = DynamicHelpers.fontFromComponent(component) {
-                        text = text.font(font)
+                        Text(text)
+                            .font(font)
+                            .foregroundColor(textColor)
+                            .padding(padding)
+                            // No frame expansion for buttons without explicit size or with wrapContent
+                    } else {
+                        Text(text)
+                            .foregroundColor(textColor)
+                            .padding(padding)
+                            // No frame expansion for buttons without explicit size or with wrapContent
                     }
-                    text
-                        .padding(DynamicHelpers.getPadding(from: component))
-                        // No frame expansion for buttons without explicit size or with wrapContent
                 }
             }
             .buttonStyle(getDynamicButtonStyle(component))
