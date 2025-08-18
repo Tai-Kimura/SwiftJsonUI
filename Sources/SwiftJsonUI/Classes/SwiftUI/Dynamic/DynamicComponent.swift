@@ -167,7 +167,7 @@ public struct DynamicComponent: Decodable {
     let items: [String]?
     let data: [AnyCodable]?  // For data elements with variable definitions
     let hint: String?
-    let hintColor: String?
+    // hintColor is already declared above with hintAttributes
     let hintFont: String?
     let hintFontSize: CGFloat?
     let fieldPadding: CGFloat?
@@ -484,7 +484,7 @@ public struct DynamicComponent: Decodable {
         headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
         items = try container.decodeIfPresent([String].self, forKey: .items)
         hint = try container.decodeIfPresent(String.self, forKey: .hint)
-        hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
+        // hintColor is already decoded above with hintAttributes
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)
         hintFontSize = try container.decodeIfPresent(CGFloat.self, forKey: .hintFontSize)
         fieldPadding = try container.decodeIfPresent(CGFloat.self, forKey: .fieldPadding)
