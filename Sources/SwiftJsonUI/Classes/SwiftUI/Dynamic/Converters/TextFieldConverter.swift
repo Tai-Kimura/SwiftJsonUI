@@ -132,9 +132,9 @@ public struct TextFieldConverter {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             )
             
-            // Apply font only if fontSize, fontWeight, or font is specified
-            if component.fontSize != nil || component.fontWeight != nil || component.font != nil {
-                textField = AnyView(textField.font(DynamicHelpers.fontFromComponent(component)))
+            // Apply font if specified
+            if let font = DynamicHelpers.fontFromComponent(component) {
+                textField = AnyView(textField.font(font))
             }
             
             // Apply foreground color
@@ -154,9 +154,9 @@ public struct TextFieldConverter {
                     .textFieldStyle(PlainTextFieldStyle())
             )
             
-            // Apply font only if fontSize, fontWeight, or font is specified
-            if component.fontSize != nil || component.fontWeight != nil || component.font != nil {
-                textField = AnyView(textField.font(DynamicHelpers.fontFromComponent(component)))
+            // Apply font if specified
+            if let font = DynamicHelpers.fontFromComponent(component) {
+                textField = AnyView(textField.font(font))
             }
             
             // Apply foreground color
@@ -189,9 +189,9 @@ public struct TextFieldConverter {
             )
             #endif
             
-            // Apply font only if fontSize, fontWeight, or font is specified
-            if component.fontSize != nil || component.fontWeight != nil || component.font != nil {
-                textField = AnyView(textField.font(DynamicHelpers.fontFromComponent(component)))
+            // Apply font if specified
+            if let font = DynamicHelpers.fontFromComponent(component) {
+                textField = AnyView(textField.font(font))
             }
             
             // Apply foreground color
@@ -219,9 +219,9 @@ public struct TextFieldConverter {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
             )
             
-            // Apply font only if fontSize, fontWeight, or font is specified
-            if component.fontSize != nil || component.fontWeight != nil || component.font != nil {
-                secureField = AnyView(secureField.font(DynamicHelpers.fontFromComponent(component)))
+            // Apply font if specified
+            if let font = DynamicHelpers.fontFromComponent(component) {
+                secureField = AnyView(secureField.font(font))
             }
             
             // Apply foreground color
@@ -236,9 +236,9 @@ public struct TextFieldConverter {
                     .textFieldStyle(PlainTextFieldStyle())
             )
             
-            // Apply font only if fontSize, fontWeight, or font is specified
-            if component.fontSize != nil || component.fontWeight != nil || component.font != nil {
-                secureField = AnyView(secureField.font(DynamicHelpers.fontFromComponent(component)))
+            // Apply font if specified
+            if let font = DynamicHelpers.fontFromComponent(component) {
+                secureField = AnyView(secureField.font(font))
             }
             
             // Apply foreground color
@@ -261,9 +261,9 @@ public struct TextFieldConverter {
             )
             #endif
             
-            // Apply font only if fontSize, fontWeight, or font is specified
-            if component.fontSize != nil || component.fontWeight != nil || component.font != nil {
-                secureField = AnyView(secureField.font(DynamicHelpers.fontFromComponent(component)))
+            // Apply font if specified
+            if let font = DynamicHelpers.fontFromComponent(component) {
+                secureField = AnyView(secureField.font(font))
             }
             
             // Apply foreground color

@@ -234,7 +234,12 @@ public struct DynamicDecodingHelper {
     }
     
     /// Convert component properties to Font
-    public static func fontFromComponent(_ component: DynamicComponent) -> Font {
+    public static func fontFromComponent(_ component: DynamicComponent) -> Font? {
+        // Return nil if no font attributes are specified
+        guard component.fontSize != nil || component.font != nil || component.fontWeight != nil else {
+            return nil
+        }
+        
         let size = component.fontSize ?? 16
         let fontName = component.font
         let weight = component.fontWeight

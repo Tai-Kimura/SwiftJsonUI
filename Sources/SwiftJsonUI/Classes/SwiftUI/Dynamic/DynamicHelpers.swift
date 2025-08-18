@@ -12,7 +12,7 @@ public struct DynamicHelpers {
     
     // MARK: - Wrapper methods for JSON data transformations (delegate to DynamicDecodingHelper)
     
-    public static func fontFromComponent(_ component: DynamicComponent) -> Font {
+    public static func fontFromComponent(_ component: DynamicComponent) -> Font? {
         return DynamicDecodingHelper.fontFromComponent(component)
     }
     
