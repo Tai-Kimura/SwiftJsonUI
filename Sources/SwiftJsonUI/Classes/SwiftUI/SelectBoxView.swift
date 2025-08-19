@@ -23,6 +23,7 @@ public struct SelectBoxView: View {
     let dateStringFormat: String
     let minimumDate: Date?
     let maximumDate: Date?
+    let padding: EdgeInsets?
     
     @State private var isPresented = false
     @State private var selectedIndex: Int? = nil
@@ -63,7 +64,8 @@ public struct SelectBoxView: View {
         datePickerStyle: DatePickerStyle = .wheel,
         dateStringFormat: String = "yyyy/MM/dd",
         minimumDate: Date? = nil,
-        maximumDate: Date? = nil
+        maximumDate: Date? = nil,
+        padding: EdgeInsets? = nil
     ) {
         self.id = id
         self.prompt = prompt
@@ -78,6 +80,7 @@ public struct SelectBoxView: View {
         self.dateStringFormat = dateStringFormat
         self.minimumDate = minimumDate
         self.maximumDate = maximumDate
+        self.padding = padding
     }
     
     public var body: some View {
@@ -135,7 +138,7 @@ public struct SelectBoxView: View {
                     .foregroundColor(.gray)
                     .font(.system(size: 12))
             }
-            .padding(.horizontal, 12)
+            .padding(padding ?? EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(backgroundColor)
             .cornerRadius(cornerRadius)

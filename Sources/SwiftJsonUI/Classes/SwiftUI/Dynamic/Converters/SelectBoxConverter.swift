@@ -159,7 +159,8 @@ public struct SelectBoxConverter {
                 datePickerStyle: datePickerStyle,
                 dateStringFormat: dateStringFormat,
                 minimumDate: minimumDate,
-                maximumDate: maximumDate
+                maximumDate: maximumDate,
+                padding: DynamicHelpers.getPadding(from: component)
             )
             .modifier(SelectBoxModifiers(component: component, viewModel: viewModel))  // Margins and border only
         )
