@@ -1,11 +1,13 @@
 #!/usr/bin/env ruby
 
 require_relative 'base_view_converter'
+require_relative '../helpers/font_helper'
 
 module SjuiTools
   module SwiftUI
     module Views
       class ToggleConverter < BaseViewConverter
+        include SjuiTools::SwiftUI::Helpers::FontHelper
         def convert
           # Get toggle handler for this component
           toggle_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::ToggleBindingHandler) ?
@@ -39,12 +41,9 @@ module SjuiTools
             if @component['labelAttributes']
               label_attrs = @component['labelAttributes']
               
-              # fontSize
-              if label_attrs['fontSize']
-                add_modifier_line ".font(.system(size: #{label_attrs['fontSize']}))"
-              elsif @component['fontSize']
-                add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-              end
+              # Apply font modifiers using helper - prioritize labelAttributes over component attributes
+              merged_attrs = @component.merge(label_attrs)
+              apply_font_modifiers(merged_attrs, self)
               
               # fontColor
               if label_attrs['fontColor'] || label_attrs['color']
@@ -54,40 +53,14 @@ module SjuiTools
                 color = hex_to_swiftui_color(@component['fontColor'])
                 add_modifier_line ".foregroundColor(#{color})"
               end
-              
-              # font
-              if label_attrs['font']
-                if label_attrs['font'] == 'bold'
-                  add_modifier_line ".fontWeight(.bold)"
-                else
-                  add_modifier_line ".font(.custom(\"#{label_attrs['font']}\", size: #{label_attrs['fontSize'] || 17}))"
-                end
-              elsif @component['font']
-                if @component['font'] == 'bold'
-                  add_modifier_line ".fontWeight(.bold)"
-                else
-                  add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{@component['fontSize'] || 17}))"
-                end
-              end
             else
-              # fontSize
-              if @component['fontSize']
-                add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-              end
+              # Apply font modifiers using helper
+              apply_font_modifiers(@component, self)
               
               # fontColor
               if @component['fontColor']
                 color = hex_to_swiftui_color(@component['fontColor'])
                 add_modifier_line ".foregroundColor(#{color})"
-              end
-              
-              # font
-              if @component['font']
-                if @component['font'] == 'bold'
-                  add_modifier_line ".fontWeight(.bold)"
-                else
-                  add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{@component['fontSize'] || 17}))"
-                end
               end
             end
           end

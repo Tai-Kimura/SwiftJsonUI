@@ -1,11 +1,13 @@
 #!/usr/bin/env ruby
 
 require_relative 'base_view_converter'
+require_relative '../helpers/font_helper'
 
 module SjuiTools
   module SwiftUI
     module Views
       class RadioConverter < BaseViewConverter
+        include SjuiTools::SwiftUI::Helpers::FontHelper
         def convert
           id = @component['id'] || 'radio'
           items = @component['items'] || []
@@ -29,9 +31,8 @@ module SjuiTools
                 # Escape double quotes in text for Swift string literal
                 escaped_text = text.gsub('"', '\\"')
                 add_line "Text(\"#{escaped_text}\")"
-                if @component['fontSize']
-                  add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-                end
+                # Apply font modifiers using helper
+                apply_font_modifiers(@component, self)
               end
               
               items.each do |item|
@@ -84,9 +85,8 @@ module SjuiTools
                 escaped_text = text.gsub('"', '\\"')
                 add_line "Text(\"#{escaped_text}\")"
                 
-                if @component['fontSize']
-                  add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-                end
+                # Apply font modifiers using helper
+                apply_font_modifiers(@component, self)
                 
                 if @component['fontColor']
                   color = hex_to_swiftui_color(@component['fontColor'])

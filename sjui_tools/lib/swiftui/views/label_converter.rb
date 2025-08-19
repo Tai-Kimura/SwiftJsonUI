@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'base_view_converter'
+require_relative '../helpers/font_helper'
 
 module SjuiTools
   module SwiftUI
@@ -8,6 +9,7 @@ module SjuiTools
       # Generated code label/text converter
       # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/TextConverter.swift
       class LabelConverter < BaseViewConverter
+        include SjuiTools::SwiftUI::Helpers::FontHelper
         def convert
           # Get text handler for this component
           label_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::LabelBindingHandler) ? 
@@ -22,10 +24,8 @@ module SjuiTools
           add_line "Text(#{text_content})"
           
           # SwiftJsonUIの属性に基づいたモディファイア
-          # fontSize
-          if @component['fontSize']
-            add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
-          end
+          # Apply font modifiers using helper
+          apply_font_modifiers(@component, self)
           
           # fontColor (enabled状態に応じて色を変更)
           if @component['enabled'] == false && @component['disabledFontColor']
@@ -35,13 +35,6 @@ module SjuiTools
           elsif @component['fontColor']
             color = hex_to_swiftui_color(@component['fontColor'])
             add_modifier_line ".foregroundColor(#{color})"
-          end
-          
-          # font (bold対応)
-          if @component['font'] == 'bold'
-            add_modifier_line ".fontWeight(.bold)"
-          elsif @component['font']
-            add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{(@component['fontSize'] || 17).to_i}))"
           end
           
           # textAlign

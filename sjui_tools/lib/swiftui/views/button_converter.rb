@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 
 require_relative 'base_view_converter'
+require_relative '../helpers/font_helper'
 
 module SjuiTools
   module SwiftUI
@@ -8,6 +9,7 @@ module SjuiTools
       # Generated code button converter
       # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/ButtonConverter.swift
       class ButtonConverter < BaseViewConverter
+        include SjuiTools::SwiftUI::Helpers::FontHelper
         def convert
           text = @component['text'] || "Button"
           # onclickを使用（SwiftJsonUIの属性）
@@ -48,17 +50,8 @@ module SjuiTools
               add_line "Text(\"#{escaped_text}\")"
             end
             
-            # fontSize
-            if @component['fontSize']
-              add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
-            end
-            
-            # font (bold対応)
-            if @component['font'] == 'bold'
-              add_modifier_line ".fontWeight(.bold)"
-            elsif @component['font']
-              add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{(@component['fontSize'] || 17).to_i}))"
-            end
+            # Apply font modifiers using helper
+            apply_font_modifiers(@component, self)
             
             # fontColor (デフォルトは白)
             if @component['fontColor']

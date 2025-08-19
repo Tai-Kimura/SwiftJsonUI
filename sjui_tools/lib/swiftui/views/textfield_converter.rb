@@ -1,11 +1,13 @@
 #!/usr/bin/env ruby
 
 require_relative 'base_view_converter'
+require_relative '../helpers/font_helper'
 
 module SjuiTools
   module SwiftUI
     module Views
       class TextFieldConverter < BaseViewConverter
+        include SjuiTools::SwiftUI::Helpers::FontHelper
         def convert
           # Get text field handler for this component
           textfield_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::TextFieldBindingHandler) ?
@@ -40,22 +42,13 @@ module SjuiTools
             add_line "TextField(\"#{hint}\", text: #{text_binding})"
           end
           
-          # fontSize
-          if @component['fontSize']
-            add_modifier_line ".font(.system(size: #{@component['fontSize']}))"
-          end
+          # Apply font modifiers using helper
+          apply_font_modifiers(@component, self)
           
           # fontColor
           if @component['fontColor']
             color = hex_to_swiftui_color(@component['fontColor'])
             add_modifier_line ".foregroundColor(#{color})"
-          end
-          
-          # font
-          if @component['font'] == 'bold'
-            add_modifier_line ".fontWeight(.bold)"
-          elsif @component['font']
-            add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{@component['fontSize'] || 17}))"
           end
           
           # textFieldStyle
