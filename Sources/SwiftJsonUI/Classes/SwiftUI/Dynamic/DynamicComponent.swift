@@ -249,6 +249,8 @@ public struct DynamicComponent: Decodable {
     let alignBottomView: String?  // Align bottom edge with target's bottom edge
     let alignLeftView: String?  // Align left edge with target's left edge
     let alignRightView: String?  // Align right edge with target's right edge
+    let alignCenterVerticalView: String?  // Center vertically with target view
+    let alignCenterHorizontalView: String?  // Center horizontally with target view
     
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
@@ -308,6 +310,7 @@ public struct DynamicComponent: Decodable {
         case centerHorizontal, centerVertical
         case alignLeftOfView, alignRightOfView, alignTopOfView, alignBottomOfView
         case alignTopView, alignBottomView, alignLeftView, alignRightView
+        case alignCenterVerticalView, alignCenterHorizontalView
     }
     
     public init(from decoder: Decoder) throws {
@@ -588,6 +591,8 @@ public struct DynamicComponent: Decodable {
         alignBottomView = try container.decodeIfPresent(String.self, forKey: .alignBottomView)
         alignLeftView = try container.decodeIfPresent(String.self, forKey: .alignLeftView)
         alignRightView = try container.decodeIfPresent(String.self, forKey: .alignRightView)
+        alignCenterVerticalView = try container.decodeIfPresent(String.self, forKey: .alignCenterVerticalView)
+        alignCenterHorizontalView = try container.decodeIfPresent(String.self, forKey: .alignCenterHorizontalView)
     }
 }
 

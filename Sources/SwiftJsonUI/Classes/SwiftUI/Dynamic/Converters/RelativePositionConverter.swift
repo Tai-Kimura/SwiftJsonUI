@@ -98,6 +98,15 @@ public struct RelativePositionConverter {
             constraints.append(RelativePositionConstraint(type: .alignRight, targetId: target))
         }
         
+        // Center alignment with other views
+        if let target = component.alignCenterVerticalView {
+            constraints.append(RelativePositionConstraint(type: .centerVertical, targetId: target))
+        }
+        
+        if let target = component.alignCenterHorizontalView {
+            constraints.append(RelativePositionConstraint(type: .centerHorizontal, targetId: target))
+        }
+        
         return constraints
     }
     
@@ -128,7 +137,13 @@ public struct RelativePositionConverter {
                component.alignLeftOfView != nil ||
                component.alignRightOfView != nil ||
                component.alignTopOfView != nil ||
-               component.alignBottomOfView != nil
+               component.alignBottomOfView != nil ||
+               component.alignTopView != nil ||
+               component.alignBottomView != nil ||
+               component.alignLeftView != nil ||
+               component.alignRightView != nil ||
+               component.alignCenterVerticalView != nil ||
+               component.alignCenterHorizontalView != nil
     }
     
     /// Check if any children need relative positioning
@@ -151,7 +166,13 @@ public struct RelativePositionConverter {
             $0.alignLeftOfView != nil || 
             $0.alignRightOfView != nil || 
             $0.alignTopOfView != nil || 
-            $0.alignBottomOfView != nil 
+            $0.alignBottomOfView != nil ||
+            $0.alignTopView != nil ||
+            $0.alignBottomView != nil ||
+            $0.alignLeftView != nil ||
+            $0.alignRightView != nil ||
+            $0.alignCenterVerticalView != nil ||
+            $0.alignCenterHorizontalView != nil
         }
         
         // If any relative-to-view alignments, need relative positioning

@@ -13,6 +13,7 @@ module SjuiTools
           child['alignTop'] || child['alignBottom'] || child['alignLeft'] || child['alignRight'] ||
           child['alignTopView'] || child['alignBottomView'] || child['alignLeftView'] || child['alignRightView'] ||
           child['alignTopOfView'] || child['alignBottomOfView'] || child['alignLeftOfView'] || child['alignRightOfView'] ||
+          child['alignCenterVerticalView'] || child['alignCenterHorizontalView'] ||
           child['alignBaseline'] || child['centerHorizontal'] || child['centerVertical'] ||
           child['centerInParent'] || child['toStartOf'] || child['toEndOf']
         end
@@ -134,7 +135,8 @@ module SjuiTools
             has_relative = child['toLeftOf'] || child['toRightOf'] || child['above'] || child['below'] ||
                           child['toStartOf'] || child['toEndOf'] ||
                           child['alignTopView'] || child['alignBottomView'] || child['alignLeftView'] || child['alignRightView'] ||
-                          child['alignTopOfView'] || child['alignBottomOfView'] || child['alignLeftOfView'] || child['alignRightOfView']
+                          child['alignTopOfView'] || child['alignBottomOfView'] || child['alignLeftOfView'] || child['alignRightOfView'] ||
+                          child['alignCenterVerticalView'] || child['alignCenterHorizontalView']
             has_parent && !has_relative
           end
           
@@ -373,6 +375,17 @@ module SjuiTools
                       if child['centerVertical']
                         target = child['centerVertical'].is_a?(String) ? "\"#{child['centerVertical']}\"" : "\"\""
                         add_line "RelativePositionConstraint(type: .#{child['centerVertical'].is_a?(String) ? 'centerVertical' : 'parentCenterVertical'}, targetId: #{target}),"
+                        constraint_added = true
+                      end
+                      
+                      # alignCenterVerticalView and alignCenterHorizontalView
+                      if child['alignCenterVerticalView']
+                        add_line "RelativePositionConstraint(type: .centerVertical, targetId: \"#{child['alignCenterVerticalView']}\"),"
+                        constraint_added = true
+                      end
+                      
+                      if child['alignCenterHorizontalView']
+                        add_line "RelativePositionConstraint(type: .centerHorizontal, targetId: \"#{child['alignCenterHorizontalView']}\"),"
                         constraint_added = true
                       end
                       
