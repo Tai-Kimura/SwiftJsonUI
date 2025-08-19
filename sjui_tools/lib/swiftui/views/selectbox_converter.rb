@@ -39,6 +39,30 @@ module SjuiTools
               add_line "cornerRadius: #{@component['cornerRadius']},"
             end
             
+            # padding
+            if @component['padding']
+              padding = @component['padding']
+              if padding.is_a?(Array)
+                case padding.length
+                when 1
+                  add_line "padding: EdgeInsets(top: #{padding[0]}, leading: #{padding[0]}, bottom: #{padding[0]}, trailing: #{padding[0]}),"
+                when 2
+                  add_line "padding: EdgeInsets(top: #{padding[0]}, leading: #{padding[1]}, bottom: #{padding[0]}, trailing: #{padding[1]}),"
+                when 4
+                  add_line "padding: EdgeInsets(top: #{padding[0]}, leading: #{padding[3]}, bottom: #{padding[2]}, trailing: #{padding[1]}),"
+                end
+              else
+                add_line "padding: EdgeInsets(top: #{padding}, leading: #{padding}, bottom: #{padding}, trailing: #{padding}),"
+              end
+            elsif @component['paddingTop'] || @component['paddingBottom'] || 
+                  @component['paddingLeft'] || @component['paddingRight']
+              top = @component['paddingTop'] || @component['topPadding'] || 0
+              bottom = @component['paddingBottom'] || @component['bottomPadding'] || 0
+              left = @component['paddingLeft'] || @component['leftPadding'] || 0
+              right = @component['paddingRight'] || @component['rightPadding'] || 0
+              add_line "padding: EdgeInsets(top: #{top}, leading: #{left}, bottom: #{bottom}, trailing: #{right}),"
+            end
+            
             # selectItemType
             case selectItemType
             when 'Date'
