@@ -349,6 +349,16 @@ public struct RelativePositionContainer: View {
                 Logger.debug(
                     "   rightOf: x = \(x) = \(anchorPos.x) + \(anchorSize.width/2) + \(childSize.width/2) + \(anchorRightMargin)"
                 )
+            case .centerVertical:
+                // Center vertically with another view
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                y = anchorPos.y
+                Logger.debug("   centerVertical: y = \(y) (aligned with \(constraint.targetId))")
+            case .centerHorizontal:
+                // Center horizontally with another view
+                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                x = anchorPos.x
+                Logger.debug("   centerHorizontal: x = \(x) (aligned with \(constraint.targetId))")
             case .parentTop:
                 // Align to parent top with margin and parent padding
                 y =
