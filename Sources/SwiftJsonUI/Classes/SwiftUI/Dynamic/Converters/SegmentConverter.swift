@@ -15,42 +15,61 @@ public struct SegmentConverter {
         viewModel: DynamicViewModel
     ) -> AnyView {
         let items = component.items ?? []
-        let selectedIndex = component.selectedIndex ?? 0
         
         // Create binding for selected index
         let binding: SwiftUI.Binding<Int>
+        
+        // First check if component has an id and look for selectedSegment in data
         if let componentId = component.id {
-            // Try to find a matching property in data dictionary
-            let possibleKeys = [
-                "\(componentId)SelectedIndex",
-                "\(componentId)_selectedIndex",
-                "\(componentId)Index",
-                componentId
-            ]
-            
-            var foundBinding: SwiftUI.Binding<Int>? = nil
-            for key in possibleKeys {
-                if viewModel.data[key] != nil {
-                    foundBinding = SwiftUI.Binding<Int>(
-                        get: { 
-                            viewModel.data[key] as? Int ?? 0
-                        },
-                        set: { newValue in
-                            viewModel.data[key] = newValue
-                            viewModel.objectWillChange.send()
-                            // Handle valueChange event
-                            if let valueChange = component.onChange {
-                                viewModel.handleAction(valueChange)
-                            }
+            // For Segment, try "selectedSegment" first
+            let segmentKey = "selectedSegment"
+            if viewModel.data[segmentKey] != nil {
+                binding = SwiftUI.Binding<Int>(
+                    get: {
+                        viewModel.data[segmentKey] as? Int ?? 0
+                    },
+                    set: { newValue in
+                        viewModel.data[segmentKey] = newValue
+                        viewModel.objectWillChange.send()
+                        // Handle valueChange event
+                        if let valueChange = component.onChange {
+                            viewModel.handleAction(valueChange)
                         }
-                    )
-                    break
+                    }
+                )
+            } else {
+                // Try to find a matching property in data dictionary
+                let possibleKeys = [
+                    "\(componentId)SelectedIndex",
+                    "\(componentId)_selectedIndex",
+                    "\(componentId)Index",
+                    componentId
+                ]
+                
+                var foundBinding: SwiftUI.Binding<Int>? = nil
+                for key in possibleKeys {
+                    if viewModel.data[key] != nil {
+                        foundBinding = SwiftUI.Binding<Int>(
+                            get: { 
+                                viewModel.data[key] as? Int ?? 0
+                            },
+                            set: { newValue in
+                                viewModel.data[key] = newValue
+                                viewModel.objectWillChange.send()
+                                // Handle valueChange event
+                                if let valueChange = component.onChange {
+                                    viewModel.handleAction(valueChange)
+                                }
+                            }
+                        )
+                        break
+                    }
                 }
+                
+                binding = foundBinding ?? .constant(component.selectedIndex ?? 0)
             }
-            
-            binding = foundBinding ?? .constant(selectedIndex)
         } else {
-            binding = .constant(selectedIndex)
+            binding = .constant(component.selectedIndex ?? 0)
         }
         
         return AnyView(
