@@ -48,6 +48,18 @@ module SjuiTools
               add_line "Text(\"#{escaped_text}\")"
             end
             
+            # fontSize
+            if @component['fontSize']
+              add_modifier_line ".font(.system(size: #{@component['fontSize'].to_i}))"
+            end
+            
+            # font (bold対応)
+            if @component['font'] == 'bold'
+              add_modifier_line ".fontWeight(.bold)"
+            elsif @component['font']
+              add_modifier_line ".font(.custom(\"#{@component['font']}\", size: #{(@component['fontSize'] || 17).to_i}))"
+            end
+            
             # fontColor (デフォルトは白)
             if @component['fontColor']
               color = hex_to_swiftui_color(@component['fontColor'])
