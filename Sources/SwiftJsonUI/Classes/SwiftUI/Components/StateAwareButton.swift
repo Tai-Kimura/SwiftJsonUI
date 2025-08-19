@@ -88,13 +88,13 @@ public struct StateAwareButton: View {
                     maxWidth: component.width == .infinity ? .infinity : nil,
                     maxHeight: component.height == .infinity ? .infinity : nil
                 )
-                .frame(
-                    width: component.width == .infinity || component.width == nil ? nil : component.width,
-                    height: component.height == .infinity || component.height == nil ? nil : component.height
-                )
-                .background(backgroundColor)
-                .cornerRadius(component.cornerRadius ?? 8)
         }
+        .frame(
+            width: component.width == .infinity || component.width == nil ? nil : component.width,
+            height: component.height == .infinity || component.height == nil ? nil : component.height
+        )
+        .background(backgroundColor)
+        .cornerRadius(component.cornerRadius ?? 8)
         .disabled(isDisabled)
         .scaleEffect(isPressed ? 0.95 : 1.0)
         .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity,
