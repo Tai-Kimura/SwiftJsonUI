@@ -18,7 +18,7 @@ public struct BlurConverter {
         // Create content
         let content: AnyView
         
-        if let children = component.child, !children.isEmpty {
+        if let children = component.childComponents, !children.isEmpty {
             if children.count == 1 {
                 // Single child
                 content = AnyView(

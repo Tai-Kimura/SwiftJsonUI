@@ -492,7 +492,9 @@ open class SJUIViewCreator:NSObject {
                 }
             }
         }
-        if let children = attr["child"].array {
+        // Support both 'child' and 'children' keys
+        let children = attr["child"].array ?? attr["children"].array
+        if let children = children {
             
             for child in children {
                 createView(child, parentView: view, target: target, views: &views, isRootView: false, bindingId: bindingId)
@@ -1030,7 +1032,9 @@ open class SJUIViewCreator:NSObject {
                 return json
             }
         }
-        if let children = json["child"].array {
+        // Support both 'child' and 'children' keys
+        let children = json["child"].array ?? json["children"].array
+        if let children = children {
             for child in children {
                 if let json = findViewJSON(byId: viewId, inJSON: child) {
                     return json

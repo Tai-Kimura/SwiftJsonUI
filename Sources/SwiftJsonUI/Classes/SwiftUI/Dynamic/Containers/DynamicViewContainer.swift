@@ -197,8 +197,8 @@ public struct DynamicViewContainer: View {
     }
     
     private func getChildren() -> [DynamicComponent] {
-        // child is always an array
-        if let child = component.child {
+        // Use childComponents property which supports both 'child' and 'children'
+        if let child = component.childComponents {
             // Debug: Print all child types
             for (index, comp) in child.enumerated() {
                 print("📝 Child[\(index)]: type=\(comp.type ?? "nil"), id=\(comp.id ?? "no-id"), include=\(comp.include ?? "nil"), data=\(comp.data != nil)")

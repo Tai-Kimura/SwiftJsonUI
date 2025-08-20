@@ -31,7 +31,7 @@ public struct DynamicScrollViewContainer: View {
     private var baseContent: some View {
         Group {
             // ScrollView should have exactly one child
-            if let children = component.child, let firstChild = children.first {
+            if let children = component.childComponents, let firstChild = children.first {
                 DynamicComponentBuilder(component: firstChild, viewModel: viewModel, viewId: viewId)
             }
         }
@@ -89,7 +89,7 @@ public struct DynamicScrollViewContainer: View {
     
     @ViewBuilder
     public var body: some View {
-        let _ = print("📜 DynamicScrollViewContainer: id=\(component.id ?? "no-id"), childCount=\(component.child?.count ?? 0), width=\(component.width ?? -999), height=\(component.height ?? -999)")
+        let _ = print("📜 DynamicScrollViewContainer: id=\(component.id ?? "no-id"), childCount=\(component.childComponents?.count ?? 0), width=\(component.width ?? -999), height=\(component.height ?? -999)")
         
         let modifiedScrollView = scrollView
             .disabled(component.scrollEnabled == false)
@@ -126,7 +126,7 @@ public struct DynamicScrollViewContainer: View {
     
     private func determineScrollAxes() -> Axis.Set {
         // Check for explicit horizontal scroll
-        if let firstChild = component.child?.first,
+        if let firstChild = component.childComponents?.first,
            firstChild.orientation == "horizontal" {
             return .horizontal
         }

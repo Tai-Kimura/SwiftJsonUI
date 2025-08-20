@@ -15,6 +15,13 @@ public struct DynamicComponent: Decodable {
     public var isValid: Bool {
         return type != nil && !type!.isEmpty
     }
+    
+    /// Get child components - supports both 'child' and 'children' keys
+    public var childComponents: [DynamicComponent]? {
+        // Prefer 'child' over 'children' for consistency
+        return child ?? children
+    }
+    
     let id: String?
     let text: String?
     let fontSize: CGFloat?
@@ -156,6 +163,7 @@ public struct DynamicComponent: Decodable {
     
     // Component specific - child is always an array
     let child: [DynamicComponent]?
+    let children: [DynamicComponent]?  // Alias for child (backward compatibility)
     let orientation: String?
     let direction: String?  // Layout direction: topToBottom, bottomToTop, leftToRight, rightToLeft
     let distribution: String?  // Child distribution: fill, fillEqually, fillProportionally, equalSpacing, equalCentering
@@ -287,6 +295,7 @@ public struct DynamicComponent: Decodable {
         case userInteractionEnabled, centerInParent, weight, enabled
         case indexBelow, indexAbove
         case child
+        case children  // Alias for child (backward compatibility)
         case orientation, direction, distribution, contentMode, src, placeholder, renderingMode
         case headers, items, data
         case hint, hintColor, hintFont, hintFontSize, fieldPadding, flexible, containerInset, hideOnFocused
@@ -473,8 +482,9 @@ public struct DynamicComponent: Decodable {
         indexBelow = try container.decodeIfPresent(String.self, forKey: .indexBelow)
         indexAbove = try container.decodeIfPresent(String.self, forKey: .indexAbove)
         
-        // Child handling - use helper for decoding (child is always an array)
+        // Child handling - decode both 'child' and 'children' keys
         child = DynamicDecodingHelper.decodeChildren(from: container, forKey: .child)
+        children = DynamicDecodingHelper.decodeChildren(from: container, forKey: .children)
         
         // Component specific
         orientation = try container.decodeIfPresent(String.self, forKey: .orientation)

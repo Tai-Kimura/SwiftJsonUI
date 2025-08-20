@@ -168,7 +168,7 @@ public struct DynamicComponentBuilder: View {
     private func shouldSkipPadding() -> Bool {
         // Skip padding if this is a View container with relative positioning
         if component.type?.lowercased() == "view" {
-            if let children = component.child {
+            if let children = component.childComponents {
                 let needsRelativePositioning = RelativePositionConverter.childrenNeedRelativePositioning(children)
                 let hasConflictingAlignments = RelativePositionConverter.childrenHaveConflictingAlignments(
                     children, 
