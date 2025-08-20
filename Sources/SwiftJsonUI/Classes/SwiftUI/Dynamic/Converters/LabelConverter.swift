@@ -12,7 +12,8 @@ public struct LabelConverter {
     /// Convert DynamicComponent to SwiftUI Text view
     public static func convert(
         component: DynamicComponent,
-        viewModel: DynamicViewModel
+        viewModel: DynamicViewModel,
+        parentOrientation: String? = nil
     ) -> AnyView {
         let text = viewModel.processText(component.text) ?? ""
         

@@ -193,11 +193,8 @@ public struct DynamicComponentBuilder: View {
             let _ = print("🔨 Building component: type=\(type), id=\(component.id ?? "no-id"), include=\(component.include ?? "nil"), visibility=\(component.visibility ?? "visible"), hidden=\(component.hidden ?? false)")
             switch type.lowercased() {
         // Text components
-        case "text":
-            TextConverter.convert(component: component, viewModel: viewModel, parentOrientation: parentOrientation)
-            
-        case "label":
-            LabelConverter.convert(component: component, viewModel: viewModel)
+        case "text", "label":
+            LabelConverter.convert(component: component, viewModel: viewModel, parentOrientation: parentOrientation)
         
         case "button":
             ButtonConverter.convert(component: component, viewModel: viewModel)
