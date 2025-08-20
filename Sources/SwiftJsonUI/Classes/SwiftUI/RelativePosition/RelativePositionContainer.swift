@@ -39,6 +39,8 @@ public struct RelativePositionContainer: View {
     }
 
     public var body: some View {
+        let _ = print("🔄 RelativePositionContainer.body called - phase: \(layoutPhase), viewSizes: \(viewSizes.count), viewPositions: \(viewPositions.count)")
+        
         ZStack {
             // Background
             if let backgroundColor = backgroundColor {
@@ -47,6 +49,7 @@ public struct RelativePositionContainer: View {
 
             switch layoutPhase {
             case .measuring:
+                let _ = print("📏 MEASURING PHASE - children: \(children.count)")
                 // First pass: Measure all views
                 ZStack {
                     ForEach(children) { child in
@@ -65,24 +68,29 @@ public struct RelativePositionContainer: View {
                     }
                 }
                 .onPreferenceChange(SizePreferenceKey.self) { sizes in
+                    print("📐 onPreferenceChange called with \(sizes.count) sizes")
                     for (id, size) in sizes {
                         if viewSizes[id] == nil {
+                            print("   📏 Measuring \(id): \(size)")
                             viewSizes[id] = size
-                            Logger.debug("📏 Measured \(id): \(size)")
+                        } else {
+                            print("   ⚠️ Already measured \(id), skipping")
                         }
                     }
                     // After measuring all views, move to positioning phase
                     if viewSizes.count == children.count && layoutPhase == .measuring {
-                        Logger.debug(
-                            "📊 All views measured, moving to positioning phase..."
-                        )
+                        print("📊 All \(children.count) views measured, transitioning to positioning phase")
                         layoutPhase = .positioning
+                    } else {
+                        print("   📊 Progress: \(viewSizes.count)/\(children.count) measured")
                     }
                 }
                 
             case .positioning, .completed:
+                let _ = print("📍 POSITIONING PHASE - phase: \(layoutPhase)")
                 // Second pass: Position views based on calculated positions
                 GeometryReader { geometry in
+                    let _ = print("   📐 GeometryReader size: \(geometry.size)")
                     ZStack {
                         Color.clear
                         ForEach(children) { child in
@@ -97,10 +105,15 @@ public struct RelativePositionContainer: View {
                         }
                     }
                     .task(id: geometry.size) {
+                        print("   🔄 task(id: \(geometry.size)) called - phase: \(layoutPhase)")
                         if layoutPhase == .positioning {
+                            print("   📊 Calculating positions...")
                             let positions = calculatePositions(containerSize: geometry.size)
+                            print("   ✅ Setting \(positions.count) positions and transitioning to completed")
                             viewPositions = positions
                             layoutPhase = .completed
+                        } else {
+                            print("   ⏭️ Already completed, skipping")
                         }
                     }
                 }

@@ -24,6 +24,7 @@ public struct DynamicComponentBuilder: View {
     }
     
     public var body: some View {
+        let _ = print("🏗️ DynamicComponentBuilder.body: type=\(component.type ?? "nil"), id=\(component.id ?? "nil")")
         // Check if component needs visibility wrapper
         let needsVisibilityWrapper = component.visibility != nil || component.hidden == true
         

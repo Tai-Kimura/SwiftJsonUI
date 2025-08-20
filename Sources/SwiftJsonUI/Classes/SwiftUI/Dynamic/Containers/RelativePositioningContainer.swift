@@ -27,7 +27,7 @@ public struct RelativePositioningContainer: View {
     }
     
     public var body: some View {
-        let _ = print("🎯 RelativePositioningContainer: childCount=\(children.count)")
+        let _ = print("🎯 RelativePositioningContainer.body called: childCount=\(children.count), viewModel=\(ObjectIdentifier(viewModel))")
         // Convert DynamicComponents to RelativeChildConfigs
         // ビルダーを遅延評価にして、測定フェーズでのviewModel参照を避ける
         let childConfigs = children.enumerated().map { index, child in
