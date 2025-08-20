@@ -10,7 +10,7 @@ import SwiftUI
 // MARK: - Component Builder
 public struct DynamicComponentBuilder: View {
     let component: DynamicComponent
-    @ObservedObject var viewModel: DynamicViewModel
+    let viewModel: DynamicViewModel  // @ObservedObjectを削除してビュー更新を防ぐ
     let viewId: String?
     let isWeightedChild: Bool
     let parentOrientation: String?

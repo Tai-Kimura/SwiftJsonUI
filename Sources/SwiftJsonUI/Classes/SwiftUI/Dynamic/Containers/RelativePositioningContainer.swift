@@ -29,12 +29,21 @@ public struct RelativePositioningContainer: View {
     public var body: some View {
         let _ = print("🎯 RelativePositioningContainer: childCount=\(children.count)")
         // Convert DynamicComponents to RelativeChildConfigs
+        // ビルダーを遅延評価にして、測定フェーズでのviewModel参照を避ける
         let childConfigs = children.enumerated().map { index, child in
             RelativePositionConverter.convert(
                 component: child,
                 index: index,
                 viewBuilder: { component in
-                    AnyView(DynamicComponentBuilder(component: component, viewModel: viewModel, viewId: viewId))
+                    // ViewBuilderをAnyViewでラップ、viewModelの直接参照を避ける
+                    AnyView(
+                        DynamicComponentBuilder(
+                            component: component, 
+                            viewModel: viewModel, 
+                            viewId: viewId
+                        )
+                        .id("\(component.id ?? "view")_\(index)")  // 安定したIDを付与
+                    )
                 }
             )
         }
