@@ -635,16 +635,8 @@ public struct AnyCodable: Codable {
     public init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         
-        // Try to decode as array of DynamicComponents (for child arrays)
-        if let componentArray = try? container.decode([DynamicComponent].self) {
-            self.value = componentArray
-        }
-        // Try to decode as single DynamicComponent
-        else if let component = try? container.decode(DynamicComponent.self) {
-            self.value = component
-        }
-        // Try primitive types
-        else if let string = try? container.decode(String.self) {
+        // Try primitive types first
+        if let string = try? container.decode(String.self) {
             self.value = string
         } else if let int = try? container.decode(Int.self) {
             self.value = int
@@ -653,13 +645,29 @@ public struct AnyCodable: Codable {
         } else if let bool = try? container.decode(Bool.self) {
             self.value = bool
         }
-        // Try to decode as array (general case, might contain mixed types)
-        else if let array = try? container.decode([AnyCodable].self) {
-            self.value = array
+        // Try to decode as array of dictionaries (for partialAttributes)
+        else if let dictArray = try? container.decode([[String: AnyCodable]].self) {
+            // Convert AnyCodable dictionary to Any dictionary
+            self.value = dictArray.map { dict in
+                dict.mapValues { $0.value }
+            }
         }
         // Try to decode as dictionary (for objects with unknown structure)
         else if let dict = try? container.decode([String: AnyCodable].self) {
-            self.value = dict
+            // Convert AnyCodable dictionary to Any dictionary
+            self.value = dict.mapValues { $0.value }
+        }
+        // Try to decode as array of DynamicComponents (for child arrays)
+        else if let componentArray = try? container.decode([DynamicComponent].self) {
+            self.value = componentArray
+        }
+        // Try to decode as single DynamicComponent
+        else if let component = try? container.decode(DynamicComponent.self) {
+            self.value = component
+        }
+        // Try to decode as array (general case, might contain mixed types)
+        else if let array = try? container.decode([AnyCodable].self) {
+            self.value = array.map { $0.value }
         } else {
             self.value = ""
         }
