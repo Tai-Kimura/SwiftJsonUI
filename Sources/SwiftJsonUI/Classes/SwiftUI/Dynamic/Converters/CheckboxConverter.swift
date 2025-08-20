@@ -40,7 +40,7 @@ public struct CheckboxConverter {
                         },
                         set: { newValue in
                             viewModel.data[key] = newValue
-                            viewModel.objectWillChange.send()
+                            // Removed objectWillChange.send() - @Published will handle notification
                         }
                     )
                     isChecked = viewModel.data[key] as? Bool ?? false

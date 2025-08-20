@@ -79,7 +79,7 @@ public struct RadioConverter {
                             // Update radio group selection
                             viewModel.data[group] = componentId
                             viewModel.data["selectedRadio"] = componentId  // Keep for backward compatibility
-                            viewModel.objectWillChange.send()
+                            // Removed objectWillChange.send() - @Published will handle notification
                         }
                         
                         // Handle radio selection actions

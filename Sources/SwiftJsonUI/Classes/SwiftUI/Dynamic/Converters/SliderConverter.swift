@@ -38,7 +38,7 @@ public struct SliderConverter {
                         },
                         set: { newValue in
                             viewModel.data[key] = newValue
-                            viewModel.objectWillChange.send()
+                            // Removed objectWillChange.send() - @Published will handle notification
                         }
                     )
                     break

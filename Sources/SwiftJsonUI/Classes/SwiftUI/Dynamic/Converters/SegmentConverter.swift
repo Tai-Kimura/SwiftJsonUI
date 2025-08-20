@@ -30,7 +30,7 @@ public struct SegmentConverter {
                     },
                     set: { newValue in
                         viewModel.data[segmentKey] = newValue
-                        viewModel.objectWillChange.send()
+                        // Removed objectWillChange.send() - @Published will handle notification
                         // Handle valueChange event
                         if let valueChange = component.onChange {
                             viewModel.handleAction(valueChange)
@@ -55,7 +55,7 @@ public struct SegmentConverter {
                             },
                             set: { newValue in
                                 viewModel.data[key] = newValue
-                                viewModel.objectWillChange.send()
+                                // Removed objectWillChange.send() - @Published will handle notification
                                 // Handle valueChange event
                                 if let valueChange = component.onChange {
                                     viewModel.handleAction(valueChange)

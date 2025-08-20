@@ -79,7 +79,7 @@ public struct TextViewConverter {
                 },
                 set: { newValue in
                     viewModel.data[propertyName] = newValue
-                    viewModel.objectWillChange.send()
+                    // Removed objectWillChange.send() - @Published will handle notification
                 }
             )
         } else {

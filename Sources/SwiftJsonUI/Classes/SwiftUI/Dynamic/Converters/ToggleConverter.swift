@@ -35,7 +35,7 @@ public struct ToggleConverter {
                         },
                         set: { newValue in
                             viewModel.data[key] = newValue
-                            viewModel.objectWillChange.send()
+                            // Removed objectWillChange.send() - @Published will handle notification
                             // Handle onValueChange event
                             if let onValueChange = component.onValueChange {
                                 viewModel.handleAction(onValueChange)
