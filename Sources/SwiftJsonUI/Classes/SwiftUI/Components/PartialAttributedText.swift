@@ -1,12 +1,12 @@
 import SwiftUI
 
 /// A text component that supports partial text attributes
-/// Used for all text rendering in Static mode
+/// Used for all text rendering with support for partial styling
 public struct PartialAttributedText: View {
     let text: String
-    let partialAttributes: [[String: Any]]?
+    let partialAttributes: [PartialAttribute]
     let fontSize: CGFloat?
-    let fontWeight: String?
+    let fontWeight: Font.Weight?
     let fontColor: Color?
     let underline: Bool
     let strikethrough: Bool
@@ -17,9 +17,9 @@ public struct PartialAttributedText: View {
     
     public init(
         _ text: String,
-        partialAttributes: [[String: Any]]? = nil,
+        partialAttributes: [PartialAttribute] = [],
         fontSize: CGFloat? = nil,
-        fontWeight: String? = nil,
+        fontWeight: Font.Weight? = nil,
         fontColor: Color? = nil,
         underline: Bool = false,
         strikethrough: Bool = false,
@@ -41,8 +41,35 @@ public struct PartialAttributedText: View {
         self.onClickHandler = onClickHandler
     }
     
+    /// Convenience initializer for backward compatibility with dictionary format
+    public init(
+        _ text: String,
+        partialAttributesDict: [[String: Any]]? = nil,
+        fontSize: CGFloat? = nil,
+        fontWeight: String? = nil,
+        fontColor: Color? = nil,
+        underline: Bool = false,
+        strikethrough: Bool = false,
+        lineSpacing: CGFloat? = nil,
+        lineLimit: Int? = nil,
+        textAlignment: TextAlignment = .leading,
+        onClickHandler: ((String) -> Void)? = nil
+    ) {
+        self.text = text
+        self.partialAttributes = partialAttributesDict?.compactMap { PartialAttribute(from: $0) } ?? []
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight != nil ? Font.Weight.from(string: fontWeight!) : nil
+        self.fontColor = fontColor
+        self.underline = underline
+        self.strikethrough = strikethrough
+        self.lineSpacing = lineSpacing
+        self.lineLimit = lineLimit
+        self.textAlignment = textAlignment
+        self.onClickHandler = onClickHandler
+    }
+    
     public var body: some View {
-        if let partialAttributes = partialAttributes, !partialAttributes.isEmpty {
+        if !partialAttributes.isEmpty {
             Text(createAttributedString())
                 .applyTextModifiers(
                     underline: underline,
@@ -78,74 +105,59 @@ public struct PartialAttributedText: View {
         
         // Apply base styles to entire string
         if let fontSize = fontSize {
-            attributedString.font = .system(size: fontSize, weight: fontWeightToSwiftUI(fontWeight))
+            attributedString.font = .system(size: fontSize, weight: fontWeight ?? .regular)
         }
         if let fontColor = fontColor {
             attributedString.foregroundColor = fontColor
         }
         
         // Apply partial attributes
-        for partial in partialAttributes ?? [] {
-            guard let rangeArray = partial["range"] as? [Int],
-                  rangeArray.count == 2 else {
-                continue
-            }
-            
-            let startOffset = rangeArray[0]
-            let endOffset = rangeArray[1]
-            
+        for partial in partialAttributes {
             // Convert character offsets to AttributedString indices
-            let stringStartIndex = text.index(text.startIndex, offsetBy: startOffset, limitedBy: text.endIndex) ?? text.startIndex
-            let stringEndIndex = text.index(text.startIndex, offsetBy: endOffset, limitedBy: text.endIndex) ?? text.endIndex
+            let stringStartIndex = text.index(text.startIndex, offsetBy: partial.range.lowerBound, limitedBy: text.endIndex) ?? text.startIndex
+            let stringEndIndex = text.index(text.startIndex, offsetBy: partial.range.upperBound, limitedBy: text.endIndex) ?? text.endIndex
             
             // Find corresponding indices in AttributedString
             guard let attrStartIndex = AttributedString.Index(stringStartIndex, within: attributedString),
-                  let attrEndIndex = AttributedString.Index(stringEndIndex, within: attributedString) else {
+                  let attrEndIndex = AttributedString.Index(stringEndIndex, within: attributedString),
+                  attrStartIndex < attrEndIndex else {
                 continue
             }
             
-            let startIndex = attrStartIndex
-            let endIndex = attrEndIndex
-            
-            guard startIndex < endIndex else {
-                continue
-            }
-            
-            let range = startIndex..<endIndex
+            let range = attrStartIndex..<attrEndIndex
             
             // Apply fontColor
-            if let fontColorHex = partial["fontColor"] as? String {
-                attributedString[range].foregroundColor = Color(hex: fontColorHex)
+            if let color = partial.fontColor {
+                attributedString[range].foregroundColor = color
             }
             
-            // Apply fontSize
-            if let partialFontSize = partial["fontSize"] as? CGFloat {
-                let weight = fontWeightToSwiftUI(partial["fontWeight"] as? String)
-                attributedString[range].font = .system(size: partialFontSize, weight: weight)
-            } else if let fontWeightStr = partial["fontWeight"] as? String {
+            // Apply fontSize and fontWeight
+            if let size = partial.fontSize {
+                attributedString[range].font = .system(size: size, weight: partial.fontWeight ?? .regular)
+            } else if let weight = partial.fontWeight {
                 // Apply only weight if fontSize not specified
                 let size = fontSize ?? 17
-                attributedString[range].font = .system(size: size, weight: fontWeightToSwiftUI(fontWeightStr))
+                attributedString[range].font = .system(size: size, weight: weight)
             }
             
             // Apply underline
-            if partial["underline"] as? Bool == true {
+            if partial.underline {
                 attributedString[range].underlineStyle = .single
             }
             
             // Apply strikethrough
-            if partial["strikethrough"] as? Bool == true {
+            if partial.strikethrough {
                 attributedString[range].strikethroughStyle = .single
             }
             
             // Apply background color
-            if let backgroundHex = partial["background"] as? String {
-                attributedString[range].backgroundColor = Color(hex: backgroundHex)
+            if let bgColor = partial.backgroundColor {
+                attributedString[range].backgroundColor = bgColor
             }
             
             // Handle onclick as link
-            if let onclick = partial["onclick"] as? String {
-                if let url = URL(string: "app://\(onclick)") {
+            if let onClick = partial.onClick {
+                if let url = URL(string: "app://\(onClick)") {
                     attributedString[range].link = url
                 }
             }
@@ -153,34 +165,11 @@ public struct PartialAttributedText: View {
         
         return attributedString
     }
-    
-    private func fontWeightToSwiftUI(_ weight: String?) -> Font.Weight {
-        switch weight?.lowercased() {
-        case "bold":
-            return .bold
-        case "semibold":
-            return .semibold
-        case "medium":
-            return .medium
-        case "light":
-            return .light
-        case "thin":
-            return .thin
-        case "ultralight":
-            return .ultraLight
-        case "heavy":
-            return .heavy
-        case "black":
-            return .black
-        default:
-            return .regular
-        }
-    }
 }
 
 // MARK: - View Extensions for Text modifiers
 extension View {
-    func applyBaseFont(fontSize: CGFloat?, fontWeight: String?) -> some View {
+    func applyBaseFont(fontSize: CGFloat?, fontWeight: Font.Weight?) -> some View {
         self.modifier(BaseFontModifier(fontSize: fontSize, fontWeight: fontWeight))
     }
     
@@ -206,37 +195,13 @@ extension View {
 
 struct BaseFontModifier: ViewModifier {
     let fontSize: CGFloat?
-    let fontWeight: String?
+    let fontWeight: Font.Weight?
     
     func body(content: Content) -> some View {
         if let fontSize = fontSize {
-            let weight = fontWeightToSwiftUI(fontWeight)
-            content.font(.system(size: fontSize, weight: weight))
+            content.font(.system(size: fontSize, weight: fontWeight ?? .regular))
         } else {
             content
-        }
-    }
-    
-    private func fontWeightToSwiftUI(_ weight: String?) -> Font.Weight {
-        switch weight?.lowercased() {
-        case "bold":
-            return .bold
-        case "semibold":
-            return .semibold
-        case "medium":
-            return .medium
-        case "light":
-            return .light
-        case "thin":
-            return .thin
-        case "ultralight":
-            return .ultraLight
-        case "heavy":
-            return .heavy
-        case "black":
-            return .black
-        default:
-            return .regular
         }
     }
 }
@@ -250,33 +215,5 @@ struct TextColorModifier: ViewModifier {
         } else {
             content
         }
-    }
-}
-
-// MARK: - Color Extension for hex conversion
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (255, 0, 0, 0)
-        }
-        
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
     }
 }

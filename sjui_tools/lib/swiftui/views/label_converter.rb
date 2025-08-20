@@ -26,7 +26,7 @@ module SjuiTools
             
             # Add partialAttributes if present
             if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array) && !@component['partialAttributes'].empty?
-              add_line "partialAttributes: ["
+              add_line "partialAttributesDict: ["
               indent do
                 @component['partialAttributes'].each_with_index do |partial, index|
                   add_line "["
