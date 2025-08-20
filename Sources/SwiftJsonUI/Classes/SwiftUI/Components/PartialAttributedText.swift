@@ -239,8 +239,15 @@ struct BaseFontModifier: ViewModifier {
     let fontWeight: Font.Weight?
     
     func body(content: Content) -> some View {
-        if let fontSize = fontSize {
-            content.font(.system(size: fontSize, weight: fontWeight ?? .regular))
+        if let fontSize = fontSize, let fontWeight = fontWeight {
+            // Both fontSize and fontWeight specified
+            content.font(.system(size: fontSize, weight: fontWeight))
+        } else if let fontSize = fontSize {
+            // Only fontSize specified
+            content.font(.system(size: fontSize))
+        } else if let fontWeight = fontWeight {
+            // Only fontWeight specified - use default size
+            content.font(.system(size: 17, weight: fontWeight))
         } else {
             content
         }
