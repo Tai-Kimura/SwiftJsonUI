@@ -56,7 +56,9 @@ public struct PartialAttributedText: View {
         onClickHandler: ((String) -> Void)? = nil
     ) {
         self.text = text
-        self.partialAttributes = partialAttributesDict?.compactMap { PartialAttribute(from: $0) } ?? []
+        self.partialAttributes = partialAttributesDict?.compactMap { 
+            PartialAttribute(from: $0, onClickHandler: onClickHandler) 
+        } ?? []
         self.fontSize = fontSize
         self.fontWeight = fontWeight != nil ? Font.Weight.from(string: fontWeight!) : nil
         self.fontColor = fontColor
@@ -81,6 +83,14 @@ public struct PartialAttributedText: View {
                 .environment(\.openURL, OpenURLAction { url in
                     // Handle app:// URLs for onclick actions
                     if url.scheme == "app", let host = url.host {
+                        // Find the partial attribute with matching action name or ID
+                        for partial in partialAttributes {
+                            if let actionName = partial.onClickActionName, actionName == host {
+                                partial.onClick?()
+                                return .handled
+                            }
+                        }
+                        // Fallback to the old string-based handler if needed
                         onClickHandler?(host)
                         return .handled
                     }
@@ -113,9 +123,14 @@ public struct PartialAttributedText: View {
         
         // Apply partial attributes
         for partial in partialAttributes {
+            // Calculate the actual range (handles both numeric and text pattern)
+            guard let calculatedRange = partial.calculateRange(in: text) else {
+                continue
+            }
+            
             // Convert character offsets to AttributedString indices
-            let stringStartIndex = text.index(text.startIndex, offsetBy: partial.range.lowerBound, limitedBy: text.endIndex) ?? text.startIndex
-            let stringEndIndex = text.index(text.startIndex, offsetBy: partial.range.upperBound, limitedBy: text.endIndex) ?? text.endIndex
+            let stringStartIndex = text.index(text.startIndex, offsetBy: calculatedRange.lowerBound, limitedBy: text.endIndex) ?? text.startIndex
+            let stringEndIndex = text.index(text.startIndex, offsetBy: calculatedRange.upperBound, limitedBy: text.endIndex) ?? text.endIndex
             
             // Find corresponding indices in AttributedString
             guard let attrStartIndex = AttributedString.Index(stringStartIndex, within: attributedString),
@@ -156,8 +171,10 @@ public struct PartialAttributedText: View {
             }
             
             // Handle onclick as link
-            if let onClick = partial.onClick {
-                if let url = URL(string: "app://\(onClick)") {
+            // Use action name if available (for URL-based handling), otherwise generate unique ID
+            if partial.onClick != nil {
+                let actionId = partial.onClickActionName ?? UUID().uuidString
+                if let url = URL(string: "app://\(actionId)") {
                     attributedString[range].link = url
                 }
             }

@@ -31,8 +31,12 @@ module SjuiTools
                 @component['partialAttributes'].each_with_index do |partial, index|
                   add_line "["
                   indent do
-                    if partial['range'] && partial['range'].is_a?(Array) && partial['range'].length == 2
-                      add_line "\"range\": [#{partial['range'][0]}, #{partial['range'][1]}],"
+                    if partial['range']
+                      if partial['range'].is_a?(Array) && partial['range'].length == 2
+                        add_line "\"range\": [#{partial['range'][0]}, #{partial['range'][1]}],"
+                      elsif partial['range'].is_a?(String)
+                        add_line "\"range\": \"#{partial['range']}\","
+                      end
                     end
                     if partial['fontColor']
                       add_line "\"fontColor\": \"#{partial['fontColor']}\","

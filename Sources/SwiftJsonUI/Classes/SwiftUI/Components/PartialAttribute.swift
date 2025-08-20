@@ -5,6 +5,9 @@ public struct PartialAttribute {
     /// The range of characters to apply the attributes to (start, end)
     public let range: Range<Int>
     
+    /// Optional text pattern to search for (alternative to numeric range)
+    public let textPattern: String?
+    
     /// Optional font color for this range
     public let fontColor: Color?
     
@@ -23,8 +26,28 @@ public struct PartialAttribute {
     /// Optional background color for this range
     public let backgroundColor: Color?
     
-    /// Optional onclick action name for this range
-    public let onClick: String?
+    /// Optional onclick action closure for this range
+    public let onClick: (() -> Void)?
+    
+    /// Store the action name when initialized from dictionary (for code generation)
+    public let onClickActionName: String?
+    
+    /// Calculate the actual range in the given text
+    /// Returns nil if textPattern is not found in the text
+    public func calculateRange(in text: String) -> Range<Int>? {
+        if let pattern = textPattern {
+            // Find the pattern in the text
+            if let range = text.range(of: pattern) {
+                let startOffset = text.distance(from: text.startIndex, to: range.lowerBound)
+                let endOffset = text.distance(from: text.startIndex, to: range.upperBound)
+                return startOffset..<endOffset
+            }
+            return nil
+        } else {
+            // Use the numeric range directly
+            return range
+        }
+    }
     
     public init(
         range: Range<Int>,
@@ -34,9 +57,11 @@ public struct PartialAttribute {
         underline: Bool = false,
         strikethrough: Bool = false,
         backgroundColor: Color? = nil,
-        onClick: String? = nil
+        onClick: (() -> Void)? = nil,
+        onClickActionName: String? = nil
     ) {
         self.range = range
+        self.textPattern = nil
         self.fontColor = fontColor
         self.fontSize = fontSize
         self.fontWeight = fontWeight
@@ -44,17 +69,49 @@ public struct PartialAttribute {
         self.strikethrough = strikethrough
         self.backgroundColor = backgroundColor
         self.onClick = onClick
+        self.onClickActionName = onClickActionName
+    }
+    
+    /// Initialize with text pattern instead of numeric range
+    public init(
+        textPattern: String,
+        fontColor: Color? = nil,
+        fontSize: CGFloat? = nil,
+        fontWeight: Font.Weight? = nil,
+        underline: Bool = false,
+        strikethrough: Bool = false,
+        backgroundColor: Color? = nil,
+        onClick: (() -> Void)? = nil,
+        onClickActionName: String? = nil
+    ) {
+        self.range = 0..<0  // Placeholder, will be calculated from text
+        self.textPattern = textPattern
+        self.fontColor = fontColor
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.underline = underline
+        self.strikethrough = strikethrough
+        self.backgroundColor = backgroundColor
+        self.onClick = onClick
+        self.onClickActionName = onClickActionName
     }
     
     /// Initialize from dictionary (for backward compatibility)
-    public init?(from dictionary: [String: Any]) {
-        // Parse range
-        guard let rangeArray = dictionary["range"] as? [Int],
-              rangeArray.count == 2,
-              rangeArray[0] < rangeArray[1] else {
+    /// Note: onClick will be nil when initialized from dictionary. 
+    /// The actual closure must be set via withOnClick method
+    public init?(from dictionary: [String: Any], onClickHandler: ((String) -> Void)? = nil) {
+        // Parse range - can be either [Int, Int] array or String pattern
+        if let rangeArray = dictionary["range"] as? [Int],
+           rangeArray.count == 2,
+           rangeArray[0] < rangeArray[1] {
+            self.range = rangeArray[0]..<rangeArray[1]
+            self.textPattern = nil
+        } else if let pattern = dictionary["range"] as? String {
+            self.range = 0..<0  // Placeholder, will be calculated from text
+            self.textPattern = pattern
+        } else {
             return nil
         }
-        self.range = rangeArray[0]..<rangeArray[1]
         
         // Parse fontColor
         if let colorHex = dictionary["fontColor"] as? String {
@@ -86,8 +143,13 @@ public struct PartialAttribute {
             self.backgroundColor = nil
         }
         
-        // Parse onClick
-        self.onClick = dictionary["onclick"] as? String
+        // Store action name and create closure if handler provided
+        self.onClickActionName = dictionary["onclick"] as? String
+        if let actionName = self.onClickActionName, let handler = onClickHandler {
+            self.onClick = { handler(actionName) }
+        } else {
+            self.onClick = nil
+        }
     }
 }
 
