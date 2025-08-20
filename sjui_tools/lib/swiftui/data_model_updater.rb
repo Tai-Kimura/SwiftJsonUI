@@ -5,6 +5,7 @@ require 'fileutils'
 require 'set'
 require_relative '../core/config_manager'
 require_relative '../core/project_finder'
+require_relative 'style_loader'
 
 module SjuiTools
   module SwiftUI
@@ -14,6 +15,7 @@ module SjuiTools
         @source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
         @layouts_dir = File.join(@source_path, @config['layouts_directory'] || 'Layouts')
         @data_dir = File.join(@source_path, @config['data_directory'] || 'Data')
+        @styles_dir = File.join(@source_path, @config['styles_directory'] || 'Styles')
       end
 
       def update_data_models
@@ -31,11 +33,14 @@ module SjuiTools
         json_content = File.read(json_file)
         json_data = JSON.parse(json_content)
         
-        # Extract data properties from JSON
-        data_properties = extract_data_properties(json_data)
+        # Expand styles before extracting data and actions
+        expanded_data = StyleLoader.load_and_merge(json_data, @styles_dir)
         
-        # Extract onclick actions from JSON
-        onclick_actions = extract_onclick_actions(json_data)
+        # Extract data properties from expanded JSON
+        data_properties = extract_data_properties(expanded_data)
+        
+        # Extract onclick actions from expanded JSON
+        onclick_actions = extract_onclick_actions(expanded_data)
         
         # Always create/update data file, even if no properties
         # Get the view name from file path
