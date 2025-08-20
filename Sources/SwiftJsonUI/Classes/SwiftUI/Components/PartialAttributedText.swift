@@ -91,7 +91,8 @@ public struct PartialAttributedText: View {
     
     public var body: some View {
         if !partialAttributes.isEmpty {
-            Text(createAttributedString())
+            let result = createAttributedStringWithMapping()
+            Text(result.attributedString)
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
@@ -102,12 +103,10 @@ public struct PartialAttributedText: View {
                 .environment(\.openURL, OpenURLAction { url in
                     // Handle app:// URLs for onclick actions
                     if url.scheme == "app", let host = url.host {
-                        // Find the partial attribute with matching action name
-                        for partial in partialAttributes {
-                            if let actionName = partial.onClickActionName, actionName == host {
-                                partial.onClick?()
-                                return .handled
-                            }
+                        // Find the partial attribute with matching onClick
+                        if let partial = result.urlMapping[host] {
+                            partial.onClick?()
+                            return .handled
                         }
                         return .handled
                     }
@@ -127,8 +126,9 @@ public struct PartialAttributedText: View {
         }
     }
     
-    private func createAttributedString() -> AttributedString {
+    private func createAttributedStringWithMapping() -> (attributedString: AttributedString, urlMapping: [String: PartialAttribute]) {
         var attributedString = AttributedString(text)
+        var urlMapping: [String: PartialAttribute] = [:]
         
         // Apply base styles to entire string
         if let fontSize = fontSize {
@@ -188,16 +188,18 @@ public struct PartialAttributedText: View {
             }
             
             // Handle onclick as link
-            // Use action name if available (for URL-based handling), otherwise generate unique ID
             if partial.onClick != nil {
-                let actionId = partial.onClickActionName ?? UUID().uuidString
+                // Generate a unique ID for this onClick action
+                let actionId = UUID().uuidString
+                // Store the mapping for this onClick
+                urlMapping[actionId] = partial
                 if let url = URL(string: "app://\(actionId)") {
                     attributedString[range].link = url
                 }
             }
         }
         
-        return attributedString
+        return (attributedString, urlMapping)
     }
 }
 
