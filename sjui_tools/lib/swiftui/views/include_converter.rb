@@ -37,14 +37,24 @@ module SjuiTools
           
           if has_reactive_data
             # リアクティブなデータ用 - SwiftUIのビューを再作成させる
-            # IDを使って親データが変わったときに再レンダリング
+            # Dynamic mode support: merge with parent's toDictionary to include handlers
             reactive_keys = extract_reactive_keys(merged_data)
             # Create a combined string for the ID
             id_parts = reactive_keys.map { |key| "\\(viewModel.data.#{key})" }
             id_expression = id_parts.join("_")
             
-            dict_content = process_data_hash(merged_data)
-            add_line "#{view_name}(data: [#{dict_content}])"
+            # For Dynamic mode compatibility, merge parent's toDictionary with the specific data overrides
+            add_line "#{view_name}(data: {"
+            indent do
+              add_line "var mergedData = viewModel.data.toDictionary(viewModel: viewModel)"
+              # Add/override specific data values
+              merged_data.each do |key, value|
+                formatted_value = format_value(value)
+                add_line "mergedData[\"#{key}\"] = #{formatted_value}"
+              end
+              add_line "return mergedData"
+            end
+            add_line "}())"
             indent do
               add_line ".id(\"#{id_expression}\")"
             end
