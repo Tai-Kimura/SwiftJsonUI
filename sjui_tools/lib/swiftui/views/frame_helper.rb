@@ -16,7 +16,11 @@ module SjuiTools
             frame_params << "minHeight: #{min_height}" if min_height
             frame_params << "maxHeight: #{max_height == 'matchParent' ? '.infinity' : max_height}" if max_height
             
+            # For labels and text components, add alignment to prevent centering
             if frame_params.any?
+              if @component['type'] == 'Label' || @component['type'] == 'Text'
+                frame_params << "alignment: .topLeading"
+              end
               add_modifier_line ".frame(#{frame_params.join(', ')})"
             end
           end
