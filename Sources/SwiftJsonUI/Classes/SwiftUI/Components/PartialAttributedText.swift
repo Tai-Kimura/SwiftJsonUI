@@ -38,10 +38,9 @@ public struct PartialAttributedText: View {
         self.textAlignment = textAlignment
     }
     
-    /// Convenience initializer for backward compatibility with dictionary format
+    /// Convenience initializer for generated code with string fontWeight
     public init(
         _ text: String,
-        partialAttributesDict: [[String: Any]]? = nil,
         fontSize: CGFloat? = nil,
         fontWeight: String? = nil,
         fontColor: Color? = nil,
@@ -52,9 +51,34 @@ public struct PartialAttributedText: View {
         textAlignment: TextAlignment = .leading
     ) {
         self.text = text
-        self.partialAttributes = partialAttributesDict?.compactMap { 
+        self.partialAttributes = []
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight != nil ? Font.Weight.from(string: fontWeight!) : nil
+        self.fontColor = fontColor
+        self.underline = underline
+        self.strikethrough = strikethrough
+        self.lineSpacing = lineSpacing
+        self.lineLimit = lineLimit
+        self.textAlignment = textAlignment
+    }
+    
+    /// Convenience initializer for backward compatibility with dictionary format
+    public init(
+        _ text: String,
+        partialAttributesDict: [[String: Any]],
+        fontSize: CGFloat? = nil,
+        fontWeight: String? = nil,
+        fontColor: Color? = nil,
+        underline: Bool = false,
+        strikethrough: Bool = false,
+        lineSpacing: CGFloat? = nil,
+        lineLimit: Int? = nil,
+        textAlignment: TextAlignment = .leading
+    ) {
+        self.text = text
+        self.partialAttributes = partialAttributesDict.compactMap { 
             PartialAttribute(from: $0) 
-        } ?? []
+        }
         self.fontSize = fontSize
         self.fontWeight = fontWeight != nil ? Font.Weight.from(string: fontWeight!) : nil
         self.fontColor = fontColor
