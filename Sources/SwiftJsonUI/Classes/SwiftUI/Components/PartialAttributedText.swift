@@ -131,9 +131,14 @@ public struct PartialAttributedText: View {
         var urlMapping: [String: PartialAttribute] = [:]
         
         // Apply base styles to entire string
-        if let fontSize = fontSize {
-            attributedString.font = .system(size: fontSize, weight: fontWeight ?? .regular)
+        // Only apply base font if both fontSize and fontWeight are provided
+        // Otherwise, let partial attributes handle font settings
+        if let fontSize = fontSize, let fontWeight = fontWeight {
+            attributedString.font = .system(size: fontSize, weight: fontWeight)
+        } else if let fontSize = fontSize {
+            attributedString.font = .system(size: fontSize)
         }
+        
         if let fontColor = fontColor {
             attributedString.foregroundColor = fontColor
         }
