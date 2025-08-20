@@ -21,36 +21,49 @@ public struct LabelConverter {
            let partialAttributes = partialAttributesValue as? [[String: Any]],
            !partialAttributes.isEmpty {
             // Create attributed string with partial attributes
-            if let attributedString = createAttributedStringWithPartialAttributes(
+            let result = createAttributedStringWithPartialAttributes(
                 from: text,
                 partialAttributes: partialAttributes,
-                component: component
-            ) {
-                return AnyView(
-                    Text(attributedString)
-                        .underline(component.underline == true)
-                        .strikethrough(component.strikethrough == true)
-                        .lineSpacing(
-                            component.lineHeightMultiple != nil
-                                ? (component.lineHeightMultiple! - 1) * (component.fontSize ?? 17)
-                                : 0
-                        )
-                        .minimumScaleFactor(
-                            component.autoShrink == true
-                                ? (component.minimumScaleFactor ?? 0.5)
-                                : (component.minimumScaleFactor ?? 1.0)
-                        )
-                        .lineLimit(component.autoShrink == true ? 1 : nil)
-                        .shadow(
-                            color: getTextShadowColor(component),
-                            radius: getTextShadowRadius(component),
-                            x: getTextShadowX(component),
-                            y: getTextShadowY(component)
-                        )
-                        .padding(component.edgeInset ?? 0)
-                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
-                )
-            }
+                component: component,
+                viewModel: viewModel
+            )
+            
+            return AnyView(
+                Text(result.attributedString)
+                    .underline(component.underline == true)
+                    .strikethrough(component.strikethrough == true)
+                    .lineSpacing(
+                        component.lineHeightMultiple != nil
+                            ? (component.lineHeightMultiple! - 1) * (component.fontSize ?? 17)
+                            : 0
+                    )
+                    .minimumScaleFactor(
+                        component.autoShrink == true
+                            ? (component.minimumScaleFactor ?? 0.5)
+                            : (component.minimumScaleFactor ?? 1.0)
+                    )
+                    .lineLimit(component.autoShrink == true ? 1 : nil)
+                    .shadow(
+                        color: getTextShadowColor(component),
+                        radius: getTextShadowRadius(component),
+                        x: getTextShadowX(component),
+                        y: getTextShadowY(component)
+                    )
+                    .padding(component.edgeInset ?? 0)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                    .environment(\.openURL, OpenURLAction { url in
+                        // Handle app:// URLs for onclick actions
+                        if url.scheme == "app", let host = url.host {
+                            // Check if this is an onClick action
+                            if let action = result.urlMapping[host] {
+                                action()
+                                return .handled
+                            }
+                            return .handled
+                        }
+                        return .systemAction
+                    })
+            )
         }
         
         // If linkable is true, detect URLs and make them clickable
@@ -147,9 +160,11 @@ public struct LabelConverter {
     private static func createAttributedStringWithPartialAttributes(
         from text: String,
         partialAttributes: [[String: Any]],
-        component: DynamicComponent
-    ) -> AttributedString? {
+        component: DynamicComponent,
+        viewModel: DynamicViewModel
+    ) -> (attributedString: AttributedString, urlMapping: [String: () -> Void]) {
         var attributedString = AttributedString(text)
+        var urlMapping: [String: () -> Void] = [:]
         
         // Apply base font and color to the entire string
         if let font = DynamicHelpers.fontFromComponent(component) {
@@ -162,14 +177,23 @@ public struct LabelConverter {
         
         // Apply partial attributes
         for partial in partialAttributes {
-            // Get the range
-            guard let rangeArray = partial["range"] as? [Int],
-                  rangeArray.count == 2 else {
+            // Get the range - can be either [Int, Int] array or String pattern
+            var startOffset: Int
+            var endOffset: Int
+            
+            if let rangeArray = partial["range"] as? [Int], rangeArray.count == 2 {
+                startOffset = rangeArray[0]
+                endOffset = rangeArray[1]
+            } else if let pattern = partial["range"] as? String {
+                // Find the pattern in the text
+                guard let range = text.range(of: pattern) else {
+                    continue
+                }
+                startOffset = text.distance(from: text.startIndex, to: range.lowerBound)
+                endOffset = text.distance(from: text.startIndex, to: range.upperBound)
+            } else {
                 continue
             }
-            
-            let startOffset = rangeArray[0]
-            let endOffset = rangeArray[1]
             
             // Convert character offsets to String.Index
             guard let startIndex = text.index(text.startIndex, offsetBy: startOffset, limitedBy: text.endIndex),
@@ -229,14 +253,20 @@ public struct LabelConverter {
             
             // Handle onclick (as link)
             if let onclick = partial["onclick"] as? String {
+                // Generate a unique ID for this onClick action
+                let actionId = UUID().uuidString
+                // Store the mapping for this onClick
+                urlMapping[actionId] = {
+                    viewModel.handleEvent(onclick, data: [:])
+                }
                 // Create a custom URL scheme for internal actions
-                if let url = URL(string: "app://\(onclick)") {
+                if let url = URL(string: "app://\(actionId)") {
                     attributedString[attributedRange].link = url
                 }
             }
         }
         
-        return attributedString
+        return (attributedString, urlMapping)
     }
     
     private static func createLinkableAttributedString(from text: String, component: DynamicComponent) -> AttributedString? {
