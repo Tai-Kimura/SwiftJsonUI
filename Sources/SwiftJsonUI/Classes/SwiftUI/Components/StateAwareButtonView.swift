@@ -17,10 +17,10 @@ struct StateAwareButtonStyle: ButtonStyle {
 // Tracks pressed and disabled states for visual feedback
 public struct StateAwareButtonView: View {
     let text: String
-    let partialAttributes: [[String: Any]]?
+    let partialAttributes: [PartialAttribute]?
     let action: () -> Void
     let fontSize: CGFloat?
-    let fontWeight: String?
+    let fontWeight: Font.Weight?
     let fontColor: Color?
     let backgroundColor: Color?
     let tapBackground: Color?
@@ -37,10 +37,10 @@ public struct StateAwareButtonView: View {
     
     public init(
         text: String,
-        partialAttributes: [[String: Any]]? = nil,
+        partialAttributes: [PartialAttribute]? = nil,
         action: @escaping () -> Void,
         fontSize: CGFloat? = nil,
-        fontWeight: String? = nil,
+        fontWeight: Font.Weight? = nil,
         fontColor: Color? = nil,
         backgroundColor: Color? = nil,
         tapBackground: Color? = nil,
@@ -69,6 +69,45 @@ public struct StateAwareButtonView: View {
         self.isEnabled = isEnabled
         self.width = width
         self.height = height
+    }
+    
+    /// Convenience initializer for backward compatibility with string fontWeight
+    public init(
+        text: String,
+        partialAttributes: [PartialAttribute]? = nil,
+        action: @escaping () -> Void,
+        fontSize: CGFloat? = nil,
+        fontWeight: String? = nil,
+        fontColor: Color? = nil,
+        backgroundColor: Color? = nil,
+        tapBackground: Color? = nil,
+        hilightColor: Color? = nil,
+        disabledFontColor: Color? = nil,
+        disabledBackground: Color? = nil,
+        cornerRadius: CGFloat? = nil,
+        padding: EdgeInsets? = nil,
+        isEnabled: Bool = true,
+        width: CGFloat? = nil,
+        height: CGFloat? = nil
+    ) {
+        self.init(
+            text: text,
+            partialAttributes: partialAttributes,
+            action: action,
+            fontSize: fontSize,
+            fontWeight: fontWeight != nil ? Font.Weight.from(string: fontWeight!) : nil,
+            fontColor: fontColor,
+            backgroundColor: backgroundColor,
+            tapBackground: tapBackground,
+            hilightColor: hilightColor,
+            disabledFontColor: disabledFontColor,
+            disabledBackground: disabledBackground,
+            cornerRadius: cornerRadius,
+            padding: padding,
+            isEnabled: isEnabled,
+            width: width,
+            height: height
+        )
     }
     
     // Get text color based on state
@@ -107,7 +146,7 @@ public struct StateAwareButtonView: View {
         let button = Button(action: action) {
             PartialAttributedText(
                 text,
-                partialAttributes: partialAttributes,
+                partialAttributes: partialAttributes ?? [],
                 fontSize: fontSize,
                 fontWeight: fontWeight,
                 fontColor: textColor
