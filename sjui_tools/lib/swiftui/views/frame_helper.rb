@@ -75,10 +75,38 @@ module SjuiTools
             if width_value && height_value
               # Check if either dimension is .infinity
               if width_value == '.infinity' && height_value == '.infinity'
-                add_modifier_line ".frame(maxWidth: #{width_param}, maxHeight: #{height_param})"
+                # For labels and text components, add alignment to honor textAlign
+                if @component['type'] == 'Label' || @component['type'] == 'Text'
+                  # Map textAlign to frame alignment
+                  frame_alignment = case @component['textAlign']
+                  when 'center'
+                    '.center'
+                  when 'right'
+                    '.topTrailing'
+                  else
+                    '.topLeading'
+                  end
+                  add_modifier_line ".frame(maxWidth: #{width_param}, maxHeight: #{height_param}, alignment: #{frame_alignment})"
+                else
+                  add_modifier_line ".frame(maxWidth: #{width_param}, maxHeight: #{height_param})"
+                end
               elsif width_value == '.infinity'
                 # Split into two frame calls for maxWidth with fixed height
-                add_modifier_line ".frame(maxWidth: #{width_param})"
+                # For labels and text components, add alignment to honor textAlign
+                if @component['type'] == 'Label' || @component['type'] == 'Text'
+                  # Map textAlign to frame alignment
+                  frame_alignment = case @component['textAlign']
+                  when 'center'
+                    '.center'
+                  when 'right'
+                    '.trailing'
+                  else
+                    '.leading'
+                  end
+                  add_modifier_line ".frame(maxWidth: #{width_param}, alignment: #{frame_alignment})"
+                else
+                  add_modifier_line ".frame(maxWidth: #{width_param})"
+                end
                 add_modifier_line ".frame(height: #{height_param})"
               elsif height_value == '.infinity'
                 # Split into two frame calls for fixed width with maxHeight
@@ -89,7 +117,21 @@ module SjuiTools
               end
             elsif width_value
               if width_value == '.infinity'
-                add_modifier_line ".frame(maxWidth: #{width_param})"
+                # For labels and text components, add alignment to honor textAlign
+                if @component['type'] == 'Label' || @component['type'] == 'Text'
+                  # Map textAlign to frame alignment
+                  frame_alignment = case @component['textAlign']
+                  when 'center'
+                    '.center'
+                  when 'right'
+                    '.trailing'
+                  else
+                    '.leading'
+                  end
+                  add_modifier_line ".frame(maxWidth: #{width_param}, alignment: #{frame_alignment})"
+                else
+                  add_modifier_line ".frame(maxWidth: #{width_param})"
+                end
               else
                 add_modifier_line ".frame(width: #{width_param})"
               end
