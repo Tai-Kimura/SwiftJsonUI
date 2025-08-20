@@ -23,14 +23,8 @@ module SjuiTools
             end
           else
             # No wrapper needed
-            # Indent child code if inside Group (ZStack)
-            if !orientation
-              indent do
-                child_lines.each { |line| @generated_code << "#{' ' * @indent_level * 4}#{line}" }
-              end
-            else
-              child_lines.each { |line| @generated_code << line }
-            end
+            # Add child code directly (already has proper indentation)
+            child_lines.each { |line| @generated_code << line }
           end
         end
         

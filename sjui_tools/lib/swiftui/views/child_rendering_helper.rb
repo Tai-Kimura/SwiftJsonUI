@@ -24,9 +24,7 @@ module SjuiTools
           
           # ZStackの場合、位置調整を適用
           if !orientation
-            indent do
-              apply_zstack_positioning(child, index)
-            end
+            apply_zstack_positioning(child, index)
             add_line "}"  # Group終了
           end
         end
