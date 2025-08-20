@@ -173,7 +173,7 @@ public struct PartialAttributedText: View {
                 attributedString[range].font = .system(size: size, weight: partial.fontWeight ?? .regular)
             } else if let weight = partial.fontWeight {
                 // Apply only weight if fontSize not specified
-                let size = fontSize ?? 17
+                let size = fontSize ?? SwiftJsonUIConfiguration.shared.defaultFontSize
                 attributedString[range].font = .system(size: size, weight: weight)
             }
             
@@ -246,8 +246,8 @@ struct BaseFontModifier: ViewModifier {
             // Only fontSize specified
             content.font(.system(size: fontSize))
         } else if let fontWeight = fontWeight {
-            // Only fontWeight specified - use default size
-            content.font(.system(size: 17, weight: fontWeight))
+            // Only fontWeight specified - use default size from configuration
+            content.font(.system(size: SwiftJsonUIConfiguration.shared.defaultFontSize, weight: fontWeight))
         } else {
             content
         }

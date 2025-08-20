@@ -240,8 +240,9 @@ public struct DynamicDecodingHelper {
             return nil
         }
         
-        let size = component.fontSize ?? 16
-        let fontName = component.font
+        let config = SwiftJsonUIConfiguration.shared
+        let size = component.fontSize ?? config.defaultFontSize
+        let fontName = component.font ?? config.defaultFontName
         let weight = component.fontWeight
         
         // Determine weight
@@ -264,7 +265,7 @@ public struct DynamicDecodingHelper {
             case "black":
                 return .black
             default:
-                return .regular
+                return config.defaultFontWeight
             }
         }()
         

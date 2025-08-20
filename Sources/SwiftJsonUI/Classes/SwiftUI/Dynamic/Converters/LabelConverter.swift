@@ -34,7 +34,7 @@ public struct LabelConverter {
                     
                     // Parse font properties
                     let fontSize = dict["fontSize"] as? CGFloat
-                    let fontWeight = (dict["fontWeight"] as? String).flatMap { Font.Weight.from(string: $0) }
+                    let fontWeight = (dict["fontWeight"] as? String).flatMap { Font.Weight.from(string: $0) } ?? SwiftJsonUIConfiguration.shared.defaultFontWeight
                     
                     // Parse decorations
                     let underline = dict["underline"] as? Bool ?? false
