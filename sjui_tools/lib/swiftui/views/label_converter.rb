@@ -140,11 +140,11 @@ module SjuiTools
               add_line "lineLimit: 1,"
             end
             
-            # Add textAlignment
-            if @component['textAlign']
-              alignment = text_alignment_to_swiftui(@component['textAlign'])
-              add_line "textAlignment: #{alignment},"
-            end
+            # Add textAlignment (default to .leading)
+            alignment = @component['textAlign'] ? 
+                       text_alignment_to_swiftui(@component['textAlign']) : 
+                       '.leading'
+            add_line "textAlignment: #{alignment},"
             
             # Remove trailing comma from last parameter
             @generated_code[-1] = @generated_code[-1].chomp(',')
