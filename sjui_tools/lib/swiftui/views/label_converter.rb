@@ -92,9 +92,11 @@ module SjuiTools
               add_line "fontSize: #{@component['fontSize']},"
             end
             
-            # Add fontWeight
+            # Add fontWeight (handle both fontWeight and font:"bold")
             if @component['fontWeight']
               add_line "fontWeight: \"#{@component['fontWeight']}\","
+            elsif @component['font'] == 'bold'
+              add_line "fontWeight: \"bold\","
             end
             
             # Add fontColor

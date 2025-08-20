@@ -109,12 +109,22 @@ public struct LabelConverter {
             }
             
             // Use PartialAttributedText component
+            // Handle font: "bold" as fontWeight
+            let fontWeight: Font.Weight? = {
+                if let weight = component.fontWeight {
+                    return Font.Weight.from(string: weight)
+                } else if component.font == "bold" {
+                    return .bold
+                }
+                return nil
+            }()
+            
             return AnyView(
                 PartialAttributedText(
                     text,
                     partialAttributes: partialAttributes,
                     fontSize: component.fontSize,
-                    fontWeight: component.fontWeight.flatMap { Font.Weight.from(string: $0) },
+                    fontWeight: fontWeight,
                     fontColor: DynamicHelpers.colorFromHex(component.fontColor),
                     underline: component.underline == true,
                     strikethrough: component.strikethrough == true,
