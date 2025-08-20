@@ -2,6 +2,7 @@
 
 require_relative 'base_view_converter'
 require_relative '../helpers/font_helper'
+require_relative 'frame_helper'
 
 module SjuiTools
   module SwiftUI
@@ -10,6 +11,7 @@ module SjuiTools
       # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/TextConverter.swift
       class LabelConverter < BaseViewConverter
         include SjuiTools::SwiftUI::Helpers::FontHelper
+        include SjuiTools::SwiftUI::Views::FrameHelper
         def convert
           # Get text handler for this component
           label_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::LabelBindingHandler) ? 
@@ -211,6 +213,9 @@ module SjuiTools
           
           # Apply frame size (width/height) after padding
           apply_frame_size
+          
+          # Apply frame constraints (minWidth, maxWidth, minHeight, maxHeight)
+          apply_frame_constraints
           
           # Apply background and corner radius AFTER padding
           # This ensures the background includes the padding area
