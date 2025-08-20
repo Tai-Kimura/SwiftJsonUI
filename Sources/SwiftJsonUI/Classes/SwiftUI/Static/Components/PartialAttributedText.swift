@@ -13,6 +13,7 @@ public struct PartialAttributedText: View {
     let lineSpacing: CGFloat?
     let lineLimit: Int?
     let textAlignment: TextAlignment
+    let onClickHandler: ((String) -> Void)?
     
     public init(
         _ text: String,
@@ -24,7 +25,8 @@ public struct PartialAttributedText: View {
         strikethrough: Bool = false,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
-        textAlignment: TextAlignment = .leading
+        textAlignment: TextAlignment = .leading,
+        onClickHandler: ((String) -> Void)? = nil
     ) {
         self.text = text
         self.partialAttributes = partialAttributes
@@ -36,6 +38,7 @@ public struct PartialAttributedText: View {
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
+        self.onClickHandler = onClickHandler
     }
     
     public var body: some View {
@@ -48,6 +51,14 @@ public struct PartialAttributedText: View {
                     lineLimit: lineLimit,
                     textAlignment: textAlignment
                 )
+                .environment(\.openURL, OpenURLAction { url in
+                    // Handle app:// URLs for onclick actions
+                    if url.scheme == "app", let host = url.host {
+                        onClickHandler?(host)
+                        return .handled
+                    }
+                    return .systemAction
+                })
         } else {
             Text(text)
                 .applyBaseFont(fontSize: fontSize, fontWeight: fontWeight)

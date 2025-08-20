@@ -119,6 +119,32 @@ module SjuiTools
               add_line "textAlignment: #{alignment},"
             end
             
+            # Add onClickHandler if there are onclick actions in partialAttributes
+            if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array)
+              has_onclick = @component['partialAttributes'].any? { |attr| attr['onclick'] }
+              if has_onclick
+                add_line "onClickHandler: { action in"
+                indent do
+                  # Generate switch statement for all onclick actions
+                  add_line "switch action {"
+                  @component['partialAttributes'].each do |attr|
+                    if attr['onclick']
+                      add_line "case \"#{attr['onclick']}\":"
+                      indent do
+                        add_line "viewModel.#{attr['onclick']}()"
+                      end
+                    end
+                  end
+                  add_line "default:"
+                  indent do
+                    add_line "break"
+                  end
+                  add_line "}"
+                end
+                add_line "},"
+              end
+            end
+            
             # Remove trailing comma from last parameter
             @generated_code[-1] = @generated_code[-1].chomp(',')
           end
