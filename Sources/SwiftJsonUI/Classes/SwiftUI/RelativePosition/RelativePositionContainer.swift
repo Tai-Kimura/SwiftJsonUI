@@ -1,5 +1,14 @@
 import SwiftUI
 
+// PreferenceKey for collecting view sizes
+struct SizePreferenceKey: PreferenceKey {
+    static var defaultValue: [String: CGSize] = [:]
+    
+    static func reduce(value: inout [String: CGSize], nextValue: () -> [String: CGSize]) {
+        value.merge(nextValue()) { _, new in new }
+    }
+}
+
 /// Container that manages relative positioning of child views
 public struct RelativePositionContainer: View {
     public let children: [RelativeChildConfig]
@@ -9,9 +18,14 @@ public struct RelativePositionContainer: View {
 
     @State private var viewSizes: [String: CGSize] = [:]
     @State private var viewPositions: [String: CGPoint] = [:]
-    @State private var isFirstPass = true
+    @State private var layoutPhase: LayoutPhase = .measuring
     @State private var containerSize: CGSize = .zero
-    @State private var isCalculating = false
+    
+    private enum LayoutPhase {
+        case measuring
+        case positioning
+        case completed
+    }
 
     public init(
         children: [RelativeChildConfig],
@@ -32,7 +46,8 @@ public struct RelativePositionContainer: View {
                 backgroundColor
             }
 
-            if isFirstPass {
+            switch layoutPhase {
+            case .measuring:
                 // First pass: Measure all views
                 ZStack {
                     ForEach(children) { child in
@@ -41,57 +56,53 @@ public struct RelativePositionContainer: View {
                             .background(
                                 GeometryReader { geometry in
                                     Color.clear
-                                        .onAppear {
-                                            if !isCalculating {
-                                                viewSizes[child.id] = geometry.size
-                                                Logger.debug(
-                                                    "📏 Measured \(child.id): \(geometry.size)"
-                                                )
-                                                // After measuring all views, move to second pass
-                                                if viewSizes.count == children.count {
-                                                    Logger.debug(
-                                                        "📊 All views measured, moving to positioning phase..."
-                                                    )
-                                                    // Defer state change to avoid "Publishing changes from within view updates"
-                                                    DispatchQueue.main.async {
-                                                        isFirstPass = false
-                                                    }
-                                                }
-                                            }
-                                        }
+                                        .preference(
+                                            key: SizePreferenceKey.self,
+                                            value: [child.id: geometry.size]
+                                        )
                                 }
                             )
                             .hidden()  // Hide during measurement
                     }
                 }
-            } else {
+                .onPreferenceChange(SizePreferenceKey.self) { sizes in
+                    for (id, size) in sizes {
+                        if viewSizes[id] == nil {
+                            viewSizes[id] = size
+                            Logger.debug("📏 Measured \(id): \(size)")
+                        }
+                    }
+                    // After measuring all views, move to positioning phase
+                    if viewSizes.count == children.count && layoutPhase == .measuring {
+                        Logger.debug(
+                            "📊 All views measured, moving to positioning phase..."
+                        )
+                        layoutPhase = .positioning
+                    }
+                }
+                
+            case .positioning, .completed:
                 // Second pass: Position views based on calculated positions
                 GeometryReader { geometry in
-                    Color.clear
-                        .onAppear {
-                            if containerSize == .zero && !isCalculating {
-                                containerSize = geometry.size
-                                // Defer position calculation to avoid state changes during view updates
-                                DispatchQueue.main.async {
-                                    isCalculating = true
-                                    calculatePositions()
-                                    isCalculating = false
-                                }
-                            }
+                    ZStack {
+                        Color.clear
+                        ForEach(children) { child in
+                            let relativePos =
+                                viewPositions[child.id] ?? CGPoint.zero
+                            let absoluteX = geometry.size.width / 2 + relativePos.x
+                            let absoluteY = geometry.size.height / 2 + relativePos.y
+
+                            child.view
+                                .fixedSize()
+                                .position(x: absoluteX, y: absoluteY)
                         }
-                    ForEach(children) { child in
-                        let relativePos =
-                            viewPositions[child.id] ?? CGPoint.zero
-                        let absoluteX = geometry.size.width / 2 + relativePos.x
-                        let absoluteY = geometry.size.height / 2 + relativePos.y
-
-                        let _ = Logger.debug(
-                            "🎯 Positioning \(child.id): relative(\(relativePos.x), \(relativePos.y)) -> absolute(\(absoluteX), \(absoluteY)) in container(\(geometry.size.width), \(geometry.size.height))"
-                        )
-
-                        child.view
-                            .fixedSize()
-                            .position(x: absoluteX, y: absoluteY)
+                    }
+                    .task(id: geometry.size) {
+                        if layoutPhase == .positioning && containerSize != geometry.size {
+                            containerSize = geometry.size
+                            calculatePositions()
+                            layoutPhase = .completed
+                        }
                     }
                 }
             }

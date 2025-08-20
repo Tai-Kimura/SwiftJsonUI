@@ -11,7 +11,7 @@ import SwiftUI
 public struct RelativePositioningContainer: View {
     let children: [DynamicComponent]
     let parentComponent: DynamicComponent?
-    @ObservedObject var viewModel: DynamicViewModel
+    let viewModel: DynamicViewModel  // Remove @ObservedObject to prevent rerendering
     let viewId: String?
     
     public init(
