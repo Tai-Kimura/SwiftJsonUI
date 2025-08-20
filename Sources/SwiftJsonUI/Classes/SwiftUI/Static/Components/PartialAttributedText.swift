@@ -83,18 +83,18 @@ public struct PartialAttributedText: View {
             let startOffset = rangeArray[0]
             let endOffset = rangeArray[1]
             
-            // Get the string index safely
-            let startIndex = attributedString.characters.index(
-                attributedString.startIndex,
-                offsetBy: startOffset,
-                limitedBy: attributedString.endIndex
-            ) ?? attributedString.startIndex
+            // Convert character offsets to AttributedString indices
+            let stringStartIndex = text.index(text.startIndex, offsetBy: startOffset, limitedBy: text.endIndex) ?? text.startIndex
+            let stringEndIndex = text.index(text.startIndex, offsetBy: endOffset, limitedBy: text.endIndex) ?? text.endIndex
             
-            let endIndex = attributedString.characters.index(
-                attributedString.startIndex,
-                offsetBy: endOffset,
-                limitedBy: attributedString.endIndex
-            ) ?? attributedString.endIndex
+            // Find corresponding indices in AttributedString
+            guard let attrStartIndex = AttributedString.Index(stringStartIndex, within: attributedString),
+                  let attrEndIndex = AttributedString.Index(stringEndIndex, within: attributedString) else {
+                continue
+            }
+            
+            let startIndex = attrStartIndex
+            let endIndex = attrEndIndex
             
             guard startIndex < endIndex else {
                 continue
