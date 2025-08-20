@@ -20,6 +20,11 @@ public struct LabelConverter {
         print("[LabelConverter] Converting label with text: \(text)")
         print("[LabelConverter] Component has partialAttributes: \(component.partialAttributes != nil)")
         
+        if let partialAttributesValue = component.partialAttributes?.value {
+            print("[LabelConverter] PartialAttributes value type: \(type(of: partialAttributesValue))")
+            print("[LabelConverter] PartialAttributes value: \(partialAttributesValue)")
+        }
+        
         // Check for partialAttributes first
         if let partialAttributesValue = component.partialAttributes?.value,
            let partialAttributesDict = partialAttributesValue as? [[String: Any]],
@@ -146,6 +151,8 @@ public struct LabelConverter {
                 .padding(component.edgeInset ?? 0)
                 .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
+        } else {
+            print("[LabelConverter] PartialAttributes not found or empty")
         }
         
         // If linkable is true, detect URLs and make them clickable
