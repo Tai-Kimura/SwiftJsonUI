@@ -208,8 +208,24 @@ module SjuiTools
             end
             add_line "}())"
             
-            # 既存のモディファイアは引き続き適用可能
-            return # 残りの処理をスキップして、通常のText処理を避ける
+            # Apply modifiers after partialAttributes
+            apply_padding
+            apply_frame_size
+            
+            if @component['background']
+              color = hex_to_swiftui_color(@component['background'])
+              add_modifier_line ".background(#{color})"
+            end
+            
+            if @component['cornerRadius']
+              add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
+            end
+            
+            apply_margins
+            apply_other_modifiers
+            apply_binding_modifiers
+            
+            return generated_code # Return the generated code
           end
           
           # Apply frame modifiers for weighted views FIRST
