@@ -38,6 +38,12 @@ public struct ButtonConverter {
         // Original implementation for buttons without state properties
         let text = viewModel.processText(component.text) ?? ""
         
+        // Debug: Log button properties
+        print("🔘 [ButtonConverter] Button properties:")
+        print("  - text: \(text)")
+        print("  - fontColor: \(component.fontColor ?? "nil")")
+        print("  - background: \(component.background ?? "nil")")
+        
         return AnyView(
             Button(action: {
                 handleButtonAction(component: component, viewModel: viewModel)
@@ -51,7 +57,8 @@ public struct ButtonConverter {
                 
                 // Only expand to fill if button has explicit numeric width AND height (not wrapContent)
                 // Both must be explicit for frame expansion
-                let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .white
+                // Use blue as default text color if fontColor is not specified (matches system button default)
+                let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? Color(UIColor.systemBlue)
                 let padding = DynamicHelpers.getPadding(from: component)
                 
                 if hasExplicitWidth && component.width == .infinity {
