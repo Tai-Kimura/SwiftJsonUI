@@ -166,10 +166,14 @@ module SjuiTools
             when 'scrollableAxes'
               add_modifier_line ".ignoresSafeArea(edges: .horizontal)"
             when 'always', 'automatic'
-              # デフォルトの動作
+              # Explicitly respect safe area
+              # SwiftUI's default is to respect safe area, so no modifier needed
             else
               add_line "// contentInsetAdjustmentBehavior: #{@component['contentInsetAdjustmentBehavior']}"
             end
+          else
+            # Default behavior: ignore safe area (matches Dynamic mode)
+            add_modifier_line ".ignoresSafeArea()"
           end
           
           # paging プロパティの処理
