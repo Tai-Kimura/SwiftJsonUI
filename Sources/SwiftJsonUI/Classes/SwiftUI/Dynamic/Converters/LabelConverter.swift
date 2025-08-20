@@ -16,20 +16,29 @@ public struct LabelConverter {
     ) -> AnyView {
         let text = viewModel.processText(component.text) ?? ""
         
+        print("[LabelConverter] Converting label with text: \(text)")
+        print("[LabelConverter] Component has partialAttributes: \(component.partialAttributes != nil)")
+        
         // Check for partialAttributes first
         if let partialAttributesValue = component.partialAttributes?.value,
            let partialAttributesDict = partialAttributesValue as? [[String: Any]],
            !partialAttributesDict.isEmpty {
+            print("[LabelConverter] Found partialAttributes: \(partialAttributesDict.count) items")
+            print("[LabelConverter] PartialAttributes raw value: \(partialAttributesDict)")
+            
             // Convert dictionary to PartialAttribute structs
             let partialAttributes = partialAttributesDict.compactMap { dict -> PartialAttribute? in
+                print("[LabelConverter] Processing dict: \(dict)")
                 // Get range
                 if let rangeArray = dict["range"] as? [Int], rangeArray.count == 2 {
                     // Numeric range
                     let range = rangeArray[0]..<rangeArray[1]
+                    print("[LabelConverter] Creating PartialAttribute with numeric range: \(range)")
                     
                     // Parse colors
                     let fontColor = (dict["fontColor"] as? String).flatMap { DynamicHelpers.colorFromHex($0) }
                     let backgroundColor = (dict["background"] as? String).flatMap { DynamicHelpers.colorFromHex($0) }
+                    print("[LabelConverter] Colors - font: \(String(describing: fontColor)), bg: \(String(describing: backgroundColor))")
                     
                     // Parse font properties
                     let fontSize = dict["fontSize"] as? CGFloat
@@ -105,6 +114,11 @@ public struct LabelConverter {
                     )
                 }
                 return nil
+            }
+            
+            print("[LabelConverter] Created \(partialAttributes.count) PartialAttribute objects")
+            for (index, attr) in partialAttributes.enumerated() {
+                print("[LabelConverter] PartialAttribute \(index): range=\(attr.range), textPattern=\(String(describing: attr.textPattern)), fontColor=\(String(describing: attr.fontColor))")
             }
             
             // Use PartialAttributedText component
