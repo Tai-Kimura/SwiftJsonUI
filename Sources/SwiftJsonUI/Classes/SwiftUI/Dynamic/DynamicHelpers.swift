@@ -154,6 +154,30 @@ public struct DynamicHelpers {
     public static func isHidden(_ component: DynamicComponent) -> Bool {
         return component.hidden == true || component.visibility == "gone"
     }
+    
+    // Convert font weight string to Font.Weight
+    public static func fontWeightFromString(_ weight: String?) -> Font.Weight {
+        switch weight?.lowercased() {
+        case "bold":
+            return .bold
+        case "semibold":
+            return .semibold
+        case "medium":
+            return .medium
+        case "light":
+            return .light
+        case "thin":
+            return .thin
+        case "ultralight":
+            return .ultraLight
+        case "heavy":
+            return .heavy
+        case "black":
+            return .black
+        default:
+            return .regular
+        }
+    }
 }
 
 // MARK: - View Modifier Extension

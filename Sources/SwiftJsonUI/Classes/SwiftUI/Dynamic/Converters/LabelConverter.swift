@@ -16,6 +16,43 @@ public struct LabelConverter {
     ) -> AnyView {
         let text = viewModel.processText(component.text) ?? ""
         
+        // Check for partialAttributes first
+        if let partialAttributesValue = component.partialAttributes?.value,
+           let partialAttributes = partialAttributesValue as? [[String: Any]],
+           !partialAttributes.isEmpty {
+            // Create attributed string with partial attributes
+            if let attributedString = createAttributedStringWithPartialAttributes(
+                from: text,
+                partialAttributes: partialAttributes,
+                component: component
+            ) {
+                return AnyView(
+                    Text(attributedString)
+                        .underline(component.underline == true)
+                        .strikethrough(component.strikethrough == true)
+                        .lineSpacing(
+                            component.lineHeightMultiple != nil
+                                ? (component.lineHeightMultiple! - 1) * (component.fontSize ?? 17)
+                                : 0
+                        )
+                        .minimumScaleFactor(
+                            component.autoShrink == true
+                                ? (component.minimumScaleFactor ?? 0.5)
+                                : (component.minimumScaleFactor ?? 1.0)
+                        )
+                        .lineLimit(component.autoShrink == true ? 1 : nil)
+                        .shadow(
+                            color: getTextShadowColor(component),
+                            radius: getTextShadowRadius(component),
+                            x: getTextShadowX(component),
+                            y: getTextShadowY(component)
+                        )
+                        .padding(component.edgeInset ?? 0)
+                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                )
+            }
+        }
+        
         // If linkable is true, detect URLs and make them clickable
         if component.linkable == true {
             // Use attributed string with link detection
@@ -105,6 +142,101 @@ public struct LabelConverter {
             }
         }
         return 0
+    }
+    
+    private static func createAttributedStringWithPartialAttributes(
+        from text: String,
+        partialAttributes: [[String: Any]],
+        component: DynamicComponent
+    ) -> AttributedString? {
+        var attributedString = AttributedString(text)
+        
+        // Apply base font and color to the entire string
+        if let font = DynamicHelpers.fontFromComponent(component) {
+            attributedString.font = font
+        }
+        
+        if let color = DynamicHelpers.colorFromHex(component.fontColor) {
+            attributedString.foregroundColor = color
+        }
+        
+        // Apply partial attributes
+        for partial in partialAttributes {
+            // Get the range
+            guard let rangeArray = partial["range"] as? [Int],
+                  rangeArray.count == 2 else {
+                continue
+            }
+            
+            let startOffset = rangeArray[0]
+            let endOffset = rangeArray[1]
+            
+            // Convert character offsets to String.Index
+            guard let startIndex = text.index(text.startIndex, offsetBy: startOffset, limitedBy: text.endIndex),
+                  let endIndex = text.index(text.startIndex, offsetBy: endOffset, limitedBy: text.endIndex),
+                  startIndex < endIndex else {
+                continue
+            }
+            
+            let range = startIndex..<endIndex
+            
+            // Convert to AttributedString range
+            guard let attributedRange = Range(range, in: attributedString) else {
+                continue
+            }
+            
+            // Apply fontColor
+            if let fontColorHex = partial["fontColor"] as? String,
+               let color = DynamicHelpers.colorFromHex(fontColorHex) {
+                attributedString[attributedRange].foregroundColor = color
+            }
+            
+            // Apply fontSize
+            if let fontSize = partial["fontSize"] as? CGFloat {
+                attributedString[attributedRange].font = .system(size: fontSize)
+            }
+            
+            // Apply fontWeight
+            if let fontWeight = partial["fontWeight"] as? String {
+                let weight = DynamicHelpers.fontWeightFromString(fontWeight)
+                if let currentFont = attributedString[attributedRange].font {
+                    attributedString[attributedRange].font = currentFont.weight(weight)
+                } else {
+                    attributedString[attributedRange].font = .system(size: 17, weight: weight)
+                }
+            }
+            
+            // Apply underline
+            if let underline = partial["underline"] {
+                if underline as? Bool == true {
+                    attributedString[attributedRange].underlineStyle = .single
+                } else if let underlineDict = underline as? [String: Any] {
+                    // Could handle lineStyle here if needed
+                    attributedString[attributedRange].underlineStyle = .single
+                }
+            }
+            
+            // Apply strikethrough
+            if partial["strikethrough"] as? Bool == true {
+                attributedString[attributedRange].strikethroughStyle = .single
+            }
+            
+            // Apply background color
+            if let backgroundHex = partial["background"] as? String,
+               let backgroundColor = DynamicHelpers.colorFromHex(backgroundHex) {
+                attributedString[attributedRange].backgroundColor = backgroundColor
+            }
+            
+            // Handle onclick (as link)
+            if let onclick = partial["onclick"] as? String {
+                // Create a custom URL scheme for internal actions
+                if let url = URL(string: "app://\(onclick)") {
+                    attributedString[attributedRange].link = url
+                }
+            }
+        }
+        
+        return attributedString
     }
     
     private static func createLinkableAttributedString(from text: String, component: DynamicComponent) -> AttributedString? {
