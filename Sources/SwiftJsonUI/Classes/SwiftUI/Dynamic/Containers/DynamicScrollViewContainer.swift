@@ -117,9 +117,8 @@ public struct DynamicScrollViewContainer: View {
                 }
             } else {
                 // Default behavior when contentInsetAdjustmentBehavior is not specified
-                // Default to "never" - ignore safe area (matches Static mode behavior)
+                // Default to "always" - respect safe area
                 modifiedScrollView
-                    .ignoresSafeArea()
                     .modifier(CommonModifiers(component: component, viewModel: viewModel))
             }
         }
