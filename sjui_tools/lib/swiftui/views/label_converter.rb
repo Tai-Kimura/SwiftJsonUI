@@ -26,43 +26,62 @@ module SjuiTools
             
             # Add partialAttributes if present
             if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array) && !@component['partialAttributes'].empty?
-              add_line "partialAttributesDict: ["
+              add_line "partialAttributes: ["
               indent do
                 @component['partialAttributes'].each_with_index do |partial, index|
-                  add_line "["
+                  add_line "PartialAttribute("
                   indent do
+                    # Handle range - either array or string
                     if partial['range']
                       if partial['range'].is_a?(Array) && partial['range'].length == 2
-                        add_line "\"range\": [#{partial['range'][0]}, #{partial['range'][1]}],"
+                        add_line "range: #{partial['range'][0]}..<#{partial['range'][1]},"
                       elsif partial['range'].is_a?(String)
-                        add_line "\"range\": \"#{partial['range']}\","
+                        add_line "textPattern: \"#{partial['range']}\","
                       end
                     end
+                    
+                    # Add fontColor
                     if partial['fontColor']
-                      add_line "\"fontColor\": \"#{partial['fontColor']}\","
+                      color = hex_to_swiftui_color(partial['fontColor'])
+                      add_line "fontColor: #{color},"
                     end
+                    
+                    # Add fontSize
                     if partial['fontSize']
-                      add_line "\"fontSize\": #{partial['fontSize']},"
+                      add_line "fontSize: #{partial['fontSize']},"
                     end
+                    
+                    # Add fontWeight
                     if partial['fontWeight']
-                      add_line "\"fontWeight\": \"#{partial['fontWeight']}\","
+                      weight = font_weight_to_swiftui(partial['fontWeight'])
+                      add_line "fontWeight: #{weight},"
                     end
+                    
+                    # Add underline
                     if partial['underline']
-                      add_line "\"underline\": true,"
+                      add_line "underline: true,"
                     end
+                    
+                    # Add strikethrough
                     if partial['strikethrough']
-                      add_line "\"strikethrough\": true,"
+                      add_line "strikethrough: true,"
                     end
+                    
+                    # Add backgroundColor
                     if partial['background']
-                      add_line "\"background\": \"#{partial['background']}\","
+                      bg_color = hex_to_swiftui_color(partial['background'])
+                      add_line "backgroundColor: #{bg_color},"
                     end
+                    
+                    # Add onClick as closure
                     if partial['onclick']
-                      add_line "\"onclick\": \"#{partial['onclick']}\","
+                      add_line "onClick: { viewModel.#{partial['onclick']}() },"
                     end
+                    
                     # Remove trailing comma from last item
                     @generated_code[-1] = @generated_code[-1].chomp(',')
                   end
-                  add_line "]#{ index < @component['partialAttributes'].length - 1 ? ',' : '' }"
+                  add_line ")#{ index < @component['partialAttributes'].length - 1 ? ',' : '' }"
                 end
               end
               add_line "],"
@@ -121,32 +140,6 @@ module SjuiTools
             if @component['textAlign']
               alignment = text_alignment_to_swiftui(@component['textAlign'])
               add_line "textAlignment: #{alignment},"
-            end
-            
-            # Add onClickHandler if there are onclick actions in partialAttributes
-            if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array)
-              has_onclick = @component['partialAttributes'].any? { |attr| attr['onclick'] }
-              if has_onclick
-                add_line "onClickHandler: { action in"
-                indent do
-                  # Generate switch statement for all onclick actions
-                  add_line "switch action {"
-                  @component['partialAttributes'].each do |attr|
-                    if attr['onclick']
-                      add_line "case \"#{attr['onclick']}\":"
-                      indent do
-                        add_line "viewModel.#{attr['onclick']}()"
-                      end
-                    end
-                  end
-                  add_line "default:"
-                  indent do
-                    add_line "break"
-                  end
-                  add_line "}"
-                end
-                add_line "},"
-              end
             end
             
             # Remove trailing comma from last parameter
@@ -271,6 +264,32 @@ module SjuiTools
             '.center'
           else
             '.leading'
+          end
+        end
+        
+        def font_weight_to_swiftui(weight)
+          return '.regular' unless weight
+          case weight.downcase
+          when 'ultralight'
+            '.ultraLight'
+          when 'thin'
+            '.thin'
+          when 'light'
+            '.light'
+          when 'regular'
+            '.regular'
+          when 'medium'
+            '.medium'
+          when 'semibold'
+            '.semibold'
+          when 'bold'
+            '.bold'
+          when 'heavy'
+            '.heavy'
+          when 'black'
+            '.black'
+          else
+            '.regular'
           end
         end
       end

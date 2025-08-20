@@ -13,7 +13,6 @@ public struct PartialAttributedText: View {
     let lineSpacing: CGFloat?
     let lineLimit: Int?
     let textAlignment: TextAlignment
-    let onClickHandler: ((String) -> Void)?
     
     public init(
         _ text: String,
@@ -25,8 +24,7 @@ public struct PartialAttributedText: View {
         strikethrough: Bool = false,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
-        textAlignment: TextAlignment = .leading,
-        onClickHandler: ((String) -> Void)? = nil
+        textAlignment: TextAlignment = .leading
     ) {
         self.text = text
         self.partialAttributes = partialAttributes
@@ -38,7 +36,6 @@ public struct PartialAttributedText: View {
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
-        self.onClickHandler = onClickHandler
     }
     
     /// Convenience initializer for backward compatibility with dictionary format
@@ -52,12 +49,11 @@ public struct PartialAttributedText: View {
         strikethrough: Bool = false,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
-        textAlignment: TextAlignment = .leading,
-        onClickHandler: ((String) -> Void)? = nil
+        textAlignment: TextAlignment = .leading
     ) {
         self.text = text
         self.partialAttributes = partialAttributesDict?.compactMap { 
-            PartialAttribute(from: $0, onClickHandler: onClickHandler) 
+            PartialAttribute(from: $0) 
         } ?? []
         self.fontSize = fontSize
         self.fontWeight = fontWeight != nil ? Font.Weight.from(string: fontWeight!) : nil
@@ -67,7 +63,6 @@ public struct PartialAttributedText: View {
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
-        self.onClickHandler = onClickHandler
     }
     
     public var body: some View {
@@ -83,15 +78,13 @@ public struct PartialAttributedText: View {
                 .environment(\.openURL, OpenURLAction { url in
                     // Handle app:// URLs for onclick actions
                     if url.scheme == "app", let host = url.host {
-                        // Find the partial attribute with matching action name or ID
+                        // Find the partial attribute with matching action name
                         for partial in partialAttributes {
                             if let actionName = partial.onClickActionName, actionName == host {
                                 partial.onClick?()
                                 return .handled
                             }
                         }
-                        // Fallback to the old string-based handler if needed
-                        onClickHandler?(host)
                         return .handled
                     }
                     return .systemAction

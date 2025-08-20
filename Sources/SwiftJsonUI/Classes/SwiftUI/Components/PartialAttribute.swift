@@ -97,9 +97,8 @@ public struct PartialAttribute {
     }
     
     /// Initialize from dictionary (for backward compatibility)
-    /// Note: onClick will be nil when initialized from dictionary. 
-    /// The actual closure must be set via withOnClick method
-    public init?(from dictionary: [String: Any], onClickHandler: ((String) -> Void)? = nil) {
+    /// Note: onClick will be nil when initialized from dictionary.
+    public init?(from dictionary: [String: Any]) {
         // Parse range - can be either [Int, Int] array or String pattern
         if let rangeArray = dictionary["range"] as? [Int],
            rangeArray.count == 2,
@@ -143,13 +142,9 @@ public struct PartialAttribute {
             self.backgroundColor = nil
         }
         
-        // Store action name and create closure if handler provided
+        // Store action name for URL-based handling
         self.onClickActionName = dictionary["onclick"] as? String
-        if let actionName = self.onClickActionName, let handler = onClickHandler {
-            self.onClick = { handler(actionName) }
-        } else {
-            self.onClick = nil
-        }
+        self.onClick = nil  // Will be set in code generation
     }
 }
 
