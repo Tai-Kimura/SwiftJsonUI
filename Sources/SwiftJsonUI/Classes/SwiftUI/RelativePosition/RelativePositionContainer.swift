@@ -19,7 +19,6 @@ public struct RelativePositionContainer: View {
     @State private var viewSizes: [String: CGSize] = [:]
     @State private var viewPositions: [String: CGPoint] = [:]
     @State private var layoutPhase: LayoutPhase = .measuring
-    @State private var containerSize: CGSize = .zero
     
     private enum LayoutPhase {
         case measuring
@@ -98,9 +97,9 @@ public struct RelativePositionContainer: View {
                         }
                     }
                     .task(id: geometry.size) {
-                        if layoutPhase == .positioning && containerSize != geometry.size {
-                            containerSize = geometry.size
-                            calculatePositions()
+                        if layoutPhase == .positioning {
+                            let positions = calculatePositions(containerSize: geometry.size)
+                            viewPositions = positions
                             layoutPhase = .completed
                         }
                     }
@@ -109,11 +108,12 @@ public struct RelativePositionContainer: View {
         }
     }
 
-    private func calculatePositions() {
-        Logger.debug("🔧 calculatePositions() called")
+    private func calculatePositions(containerSize: CGSize) -> [String: CGPoint] {
+        Logger.debug("🔧 calculatePositions() called with containerSize: \(containerSize)")
         
         // Create local copies to avoid modifying state during calculation
         var localPositions: [String: CGPoint] = [:]
+        var localViewSizes = viewSizes  // ローカルコピーで作業
 
         // Process views in dependency order
         var processedViews = Set<String>()
@@ -130,7 +130,12 @@ public struct RelativePositionContainer: View {
         
         // Process parent-only constrained views first
         for child in parentOnlyViews {
-            let position = calculateChildPosition(child: child, localPositions: localPositions)
+            let position = calculateChildPosition(
+                child: child, 
+                localPositions: localPositions,
+                containerSize: containerSize,
+                viewSizes: &localViewSizes
+            )
             localPositions[child.id] = position
             processedViews.insert(child.id)
             Logger.debug("✅ Processed parent-constrained view: \(child.id)")
@@ -161,7 +166,12 @@ public struct RelativePositionContainer: View {
                 }
                 
                 if canProcess {
-                    let position = calculateChildPosition(child: child, localPositions: localPositions)
+                    let position = calculateChildPosition(
+                        child: child, 
+                        localPositions: localPositions,
+                        containerSize: containerSize,
+                        viewSizes: &localViewSizes
+                    )
                     localPositions[child.id] = position
                     processedViews.insert(child.id)
                     processedInThisIteration.append(child)
@@ -179,25 +189,31 @@ public struct RelativePositionContainer: View {
                 Logger.debug("⚠️ Circular dependency detected or unresolvable constraints")
                 // Process remaining views anyway
                 for child in remainingChildren {
-                    let position = calculateChildPosition(child: child, localPositions: localPositions)
+                    let position = calculateChildPosition(
+                        child: child, 
+                        localPositions: localPositions,
+                        containerSize: containerSize,
+                        viewSizes: &localViewSizes
+                    )
                     localPositions[child.id] = position
                 }
                 break
             }
         }
-
-        // Update the state with all calculated positions at once
-        viewPositions = localPositions
         
         Logger.debug("📍 All positions calculated:")
         for (id, pos) in localPositions {
             Logger.debug("   \(id): (\(pos.x), \(pos.y))")
         }
+        
+        return localPositions
     }
 
     private func calculateChildPosition(
         child: RelativeChildConfig,
-        localPositions: [String: CGPoint]
+        localPositions: [String: CGPoint],
+        containerSize: CGSize,
+        viewSizes: inout [String: CGSize]
     ) -> CGPoint {
         var childSize = viewSizes[child.id] ?? .zero
         
@@ -563,7 +579,7 @@ public struct RelativePositionContainer: View {
             let newWidth = abs(rightEdge - leftEdge)
             if newWidth > 0 {
                 childSize.width = newWidth
-                viewSizes[child.id] = childSize
+                viewSizes[child.id] = childSize  // ローカルコピーを更新
                 x = (leftEdge + rightEdge) / 2
                 Logger.debug("   Dynamic width calculated: \(newWidth), x = \(x)")
             }
@@ -619,7 +635,7 @@ public struct RelativePositionContainer: View {
             let newHeight = abs(bottomEdge - topEdge)
             if newHeight > 0 {
                 childSize.height = newHeight
-                viewSizes[child.id] = childSize
+                viewSizes[child.id] = childSize  // ローカルコピーを更新
                 y = (topEdge + bottomEdge) / 2
                 Logger.debug("   Dynamic height calculated: \(newHeight), y = \(y)")
             }
