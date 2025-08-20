@@ -257,7 +257,15 @@ public struct LabelConverter {
                 let actionId = UUID().uuidString
                 // Store the mapping for this onClick
                 urlMapping[actionId] = {
-                    viewModel.handleEvent(onclick, data: [:])
+                    // Call the event handler through DynamicEventManager
+                    let context = DynamicEventContext(
+                        componentId: component.id,
+                        eventType: .onClick,
+                        action: onclick,
+                        component: component,
+                        viewModel: viewModel
+                    )
+                    DynamicEventManager.shared.handleEvent(context)
                 }
                 // Create a custom URL scheme for internal actions
                 if let url = URL(string: "app://\(actionId)") {
