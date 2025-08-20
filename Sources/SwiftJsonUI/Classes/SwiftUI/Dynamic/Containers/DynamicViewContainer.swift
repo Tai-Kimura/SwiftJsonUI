@@ -53,7 +53,7 @@ public struct DynamicViewContainer: View {
         }
         
         // Apply tap gesture if canTap is true
-        if component.canTap == true {
+        let contentWithTap = if component.canTap == true {
             mainContent
                 .contentShape(Rectangle()) // Make entire area tappable
                 .onTapGesture {
@@ -65,6 +65,14 @@ public struct DynamicViewContainer: View {
         } else {
             mainContent
         }
+        
+        // Process data elements on appear to avoid state mutation during view update
+        contentWithTap
+            .onAppear {
+                if let child = component.childComponents {
+                    processDataElements(child)
+                }
+            }
     }
     
     @ViewBuilder
@@ -203,8 +211,8 @@ public struct DynamicViewContainer: View {
             for (index, comp) in child.enumerated() {
                 print("📝 Child[\(index)]: type=\(comp.type ?? "nil"), id=\(comp.id ?? "no-id"), include=\(comp.include ?? "nil"), data=\(comp.data != nil)")
             }
-            // Process data elements first
-            processDataElements(child)
+            // Don't process data elements here - it modifies state during view update
+            // processDataElements(child) // Removed to avoid state mutation
             // Then filter to get only valid components
             let filtered = filterDataElements(child)
             print("📝 Filtered children count: \(filtered.count)")
