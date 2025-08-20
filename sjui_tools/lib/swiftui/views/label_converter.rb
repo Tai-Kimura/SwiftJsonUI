@@ -19,94 +19,113 @@ module SjuiTools
           # Get text content with binding support
           text_content = label_handler.get_text_content(@component)
           
-          # Simply use the text content as-is
-          # The binding handler already handles the correct format
-          add_line "Text(#{text_content})"
-          
-          # SwiftJsonUIの属性に基づいたモディファイア
-          # Apply font modifiers using helper
-          apply_font_modifiers(@component, self)
-          
-          # fontColor (enabled状態に応じて色を変更)
-          if @component['enabled'] == false && @component['disabledFontColor']
-            # 無効状態のフォント色
-            color = hex_to_swiftui_color(@component['disabledFontColor'])
-            add_modifier_line ".foregroundColor(#{color})"
-          elsif @component['fontColor']
-            color = hex_to_swiftui_color(@component['fontColor'])
-            add_modifier_line ".foregroundColor(#{color})"
-          end
-          
-          # textAlign
-          if @component['textAlign']
-            alignment = text_alignment_to_swiftui(@component['textAlign'])
-            add_modifier_line ".multilineTextAlignment(#{alignment})"
-          end
-          
-          # lines
-          if @component['lines']
-            lines_value = @component['lines'].to_i
-            if lines_value == 0
-              # 0 means unlimited in UIKit, nil means unlimited in SwiftUI
-              add_modifier_line ".lineLimit(nil)"
-            else
-              add_modifier_line ".lineLimit(#{lines_value})"
-            end
-          end
-          
-          # lineHeightMultiple
-          if @component['lineHeightMultiple']
-            add_modifier_line ".lineSpacing(#{(@component['lineHeightMultiple'].to_f - 1) * (@component['fontSize'] || 17).to_i}))"
-          end
-          
-          # lineSpacing (直接指定)
-          if @component['lineSpacing']
-            add_modifier_line ".lineSpacing(#{@component['lineSpacing'].to_f})"
-          end
-          
-          # underline（下線）とlineStyle
-          if @component['underline']
-            # underlineがHashで詳細設定がある場合
-            if @component['underline'].is_a?(Hash) && @component['underline']['lineStyle']
-              line_style = @component['underline']['lineStyle']
-              case line_style
-              when 'Single', 'single'
-                add_modifier_line ".underline()"
-              when 'Double', 'double'
-                add_modifier_line ".underline()"
-                add_line "// Note: Double underline not directly supported, using single"
-              when 'Thick', 'thick'
-                add_modifier_line ".underline()"
-                add_line "// Note: Thick underline style applied as regular underline"
-              when 'Dashed', 'dashed'
-                add_modifier_line ".underline(pattern: .dash)"
-              when 'Dotted', 'dotted'
-                add_modifier_line ".underline(pattern: .dot)"
-              else
-                add_modifier_line ".underline()"
+          # Use PartialAttributedText for all text rendering
+          add_line "PartialAttributedText("
+          indent do
+            add_line "#{text_content},"
+            
+            # Add partialAttributes if present
+            if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array) && !@component['partialAttributes'].empty?
+              add_line "partialAttributes: ["
+              indent do
+                @component['partialAttributes'].each_with_index do |partial, index|
+                  add_line "["
+                  indent do
+                    if partial['range'] && partial['range'].is_a?(Array) && partial['range'].length == 2
+                      add_line "\"range\": [#{partial['range'][0]}, #{partial['range'][1]}],"
+                    end
+                    if partial['fontColor']
+                      add_line "\"fontColor\": \"#{partial['fontColor']}\","
+                    end
+                    if partial['fontSize']
+                      add_line "\"fontSize\": #{partial['fontSize']},"
+                    end
+                    if partial['fontWeight']
+                      add_line "\"fontWeight\": \"#{partial['fontWeight']}\","
+                    end
+                    if partial['underline']
+                      add_line "\"underline\": true,"
+                    end
+                    if partial['strikethrough']
+                      add_line "\"strikethrough\": true,"
+                    end
+                    if partial['background']
+                      add_line "\"background\": \"#{partial['background']}\","
+                    end
+                    if partial['onclick']
+                      add_line "\"onclick\": \"#{partial['onclick']}\","
+                    end
+                    # Remove trailing comma from last item
+                    @generated_code[-1] = @generated_code[-1].chomp(',')
+                  end
+                  add_line "]#{ index < @component['partialAttributes'].length - 1 ? ',' : '' }"
+                end
               end
-            else
-              # booleanまたは通常の下線
-              add_modifier_line ".underline()"
+              add_line "],"
             end
-          elsif @component['lineStyle']
-            # 独立したlineStyleプロパティ
-            case @component['lineStyle']
-            when 'Single', 'single'
-              add_modifier_line ".underline()"
-            when 'Dashed', 'dashed'
-              add_modifier_line ".underline(pattern: .dash)"
-            when 'Dotted', 'dotted'
-              add_modifier_line ".underline(pattern: .dot)"
-            else
-              add_line "// lineStyle: #{@component['lineStyle']} - Not directly supported"
+            
+            # Add fontSize
+            if @component['fontSize']
+              add_line "fontSize: #{@component['fontSize']},"
             end
+            
+            # Add fontWeight
+            if @component['fontWeight']
+              add_line "fontWeight: \"#{@component['fontWeight']}\","
+            end
+            
+            # Add fontColor
+            if @component['enabled'] == false && @component['disabledFontColor']
+              color = hex_to_swiftui_color(@component['disabledFontColor'])
+              add_line "fontColor: #{color},"
+            elsif @component['fontColor']
+              color = hex_to_swiftui_color(@component['fontColor'])
+              add_line "fontColor: #{color},"
+            end
+            
+            # Add underline
+            if @component['underline']
+              add_line "underline: true,"
+            end
+            
+            # Add strikethrough
+            if @component['strikethrough']
+              add_line "strikethrough: true,"
+            end
+            
+            # Add lineSpacing
+            if @component['lineHeightMultiple']
+              line_spacing = (@component['lineHeightMultiple'].to_f - 1) * (@component['fontSize'] || 17).to_i
+              add_line "lineSpacing: #{line_spacing},"
+            elsif @component['lineSpacing']
+              add_line "lineSpacing: #{@component['lineSpacing'].to_f},"
+            end
+            
+            # Add lineLimit
+            if @component['lines']
+              lines_value = @component['lines'].to_i
+              if lines_value == 0
+                add_line "lineLimit: nil,"
+              else
+                add_line "lineLimit: #{lines_value},"
+              end
+            elsif @component['autoShrink']
+              add_line "lineLimit: 1,"
+            end
+            
+            # Add textAlignment
+            if @component['textAlign']
+              alignment = text_alignment_to_swiftui(@component['textAlign'])
+              add_line "textAlignment: #{alignment},"
+            end
+            
+            # Remove trailing comma from last parameter
+            @generated_code[-1] = @generated_code[-1].chomp(',')
           end
+          add_line ")"
           
           # lineBreakMode (SwiftJsonUI uses short forms: Char, Clip, Word, Head, Middle, Tail)
           if @component['lineBreakMode']
-            # In SwiftUI, only truncation modes are available as modifiers
-            # Word wrapping and char wrapping are default behaviors
             mode = case @component['lineBreakMode']
                    when 'Head'
                      '.head'
@@ -115,12 +134,7 @@ module SjuiTools
                    when 'Tail'
                      '.tail'
                    when 'Clip'
-                     # SwiftUI doesn't have direct clip mode, use tail truncation
                      '.tail'
-                   when 'Word', 'Char'
-                     # These are wrapping modes, not truncation modes
-                     # SwiftUI handles wrapping automatically
-                     nil
                    else
                      nil
                    end
@@ -129,24 +143,19 @@ module SjuiTools
           
           # autoShrink & minimumScaleFactor
           if @component['autoShrink']
-            # minimumScaleFactorが指定されていればその値を、なければデフォルト値を使用
             scale_factor = @component['minimumScaleFactor'] || 0.5
             add_modifier_line ".minimumScaleFactor(#{scale_factor})"
-            add_modifier_line ".lineLimit(1)"  # autoShrinkは通常1行での縮小を想定
           elsif @component['minimumScaleFactor']
-            # minimumScaleFactorのみが指定されている場合
             add_modifier_line ".minimumScaleFactor(#{@component['minimumScaleFactor']})"
           end
           
-          # edgeInset (パディングとして適用)
+          # edgeInset (padding)
           if @component['edgeInset']
             add_modifier_line ".padding(#{@component['edgeInset'].to_i})"
           end
           
-          # linkable プロパティ（リンクとして動作）
+          # linkable
           if @component['linkable'] == true || @component['linkable'] == 'true'
-            # Linkとしてラップするためのコメント
-            add_line "// linkable: true - Consider wrapping in Link or adding .onTapGesture"
             if @component['url']
               add_modifier_line ".onTapGesture {"
               indent do
@@ -156,76 +165,6 @@ module SjuiTools
               end
               add_line "}"
             end
-          end
-          
-          # partialAttributes（部分的なテキストスタイリング）
-          if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array) && !@component['partialAttributes'].empty?
-            # AttributedStringを使用した実装
-            text = @component['text'] || ""
-            
-            # 最初のTextの行を削除（AttributedStringで置き換えるため）
-            @generated_code = []
-            
-            add_line "Text({"
-            indent do
-              add_line "var attributedString = AttributedString(\"#{text.gsub("\n", "\\n")}\")"
-              
-              @component['partialAttributes'].each_with_index do |partial, index|
-                if partial['range'] && partial['range'].is_a?(Array) && partial['range'].length == 2
-                  start_index = partial['range'][0]
-                  end_index = partial['range'][1]
-                  
-                  add_line ""
-                  add_line "// Apply partial attribute #{index + 1}"
-                  add_line "if let startIndex = attributedString.index(attributedString.startIndex, offsetByCharacters: #{start_index}),"
-                  add_line "   let endIndex = attributedString.index(attributedString.startIndex, offsetByCharacters: #{end_index}) {"
-                  indent do
-                    add_line "let range = startIndex..<endIndex"
-                    
-                    if partial['fontColor']
-                      color = hex_to_swiftui_color(partial['fontColor'])
-                      add_line "attributedString[range].foregroundColor = #{color}"
-                    end
-                    
-                    if partial['underline']
-                      add_line "attributedString[range].underlineStyle = .single"
-                      if partial['underline'].is_a?(Hash) && partial['underline']['lineStyle']
-                        add_line "// underline lineStyle: #{partial['underline']['lineStyle']}"
-                      end
-                    end
-                    
-                    if partial['onclick']
-                      add_line "// TODO: Add link for onclick: #{partial['onclick']}"
-                      add_line "// attributedString[range].link = URL(string: \"app://#{partial['onclick']}\")"
-                    end
-                  end
-                  add_line "}"
-                end
-              end
-              
-              add_line ""
-              add_line "return attributedString"
-            end
-            add_line "}())"
-            
-            # Apply modifiers after partialAttributes
-            apply_padding
-            apply_frame_size
-            
-            if @component['background']
-              color = hex_to_swiftui_color(@component['background'])
-              add_modifier_line ".background(#{color})"
-            end
-            
-            if @component['cornerRadius']
-              add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
-            end
-            
-            apply_margins
-            apply_other_modifiers
-            apply_binding_modifiers
-            
-            return generated_code # Return the generated code
           end
           
           # Apply frame modifiers for weighted views FIRST

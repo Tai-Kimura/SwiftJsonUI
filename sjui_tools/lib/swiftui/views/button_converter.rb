@@ -11,112 +11,8 @@ module SjuiTools
       class ButtonConverter < BaseViewConverter
         include SjuiTools::SwiftUI::Helpers::FontHelper
         def convert
-          # Check if we need to use StateAwareButton
-          if @component['tapBackground'] || @component['hilightColor'] || 
-             @component['disabledFontColor'] || @component['disabledBackground']
-            return convert_state_aware_button
-          end
-          
-          # Original convert method continues below
-          text = @component['text'] || "Button"
-          # onclickを使用（SwiftJsonUIの属性）
-          action = @component['onclick']
-          
-          # Buttonの基本構造（アクションを設定）
-          add_line "Button(action: {"
-          indent do
-            if action
-              # パラメータ付きメソッドの場合（例: "toggleMode:"）
-              if action.include?(':')
-                method_name = action.gsub(':', '')
-                add_line "viewModel.#{method_name}(self)"
-              else
-                # パラメータなしメソッドの場合
-                add_line "viewModel.#{action}()"
-              end
-            else
-              add_line "// No action specified"
-            end
-          end
-          add_line "}) {"
-          
-          indent do
-            # Process text with binding support
-            if text.include?('@{')
-              # Text with interpolation: "Some text @{property} more text"
-              interpolated = text.gsub(/@\{([^}]+)\}/) do |match|
-                property_name = $1
-                # For interpolated text, use viewModel.data directly
-                "\\(viewModel.data.#{property_name})"
-              end
-              escaped_text = interpolated.gsub('"', '\\"').gsub("\n", "\\n")
-              add_line "Text(\"#{escaped_text}\")"
-            else
-              # Regular text - escape double quotes
-              escaped_text = text.gsub('"', '\\"')
-              add_line "Text(\"#{escaped_text}\")"
-            end
-            
-            # Apply font modifiers using helper
-            apply_font_modifiers(@component, self)
-            
-            # fontColor (デフォルトは白)
-            if @component['fontColor']
-              color = hex_to_swiftui_color(@component['fontColor'])
-              add_modifier_line ".foregroundColor(#{color})"
-            else
-              add_modifier_line ".foregroundColor(Color(red: 1.0, green: 1.0, blue: 1.0))"
-            end
-            
-            # Apply padding to Text inside button (same as Dynamic mode)
-            apply_padding_to_text
-          end
-          add_line "}"
-          
-          # Apply frame modifiers (size constraints)
-          apply_frame_constraints
-          apply_frame_size
-          
-          # Button's background and corner radius (using buttonStyle)
-          if @component['background']
-            color = hex_to_swiftui_color(@component['background'])
-            add_modifier_line ".background(#{color})"
-          end
-          
-          if @component['cornerRadius']
-            add_modifier_line ".cornerRadius(#{@component['cornerRadius'].to_i})"
-          end
-          
-          # Apply margins (outer spacing)
-          apply_margins
-          
-          # enabled属性
-          if @component['enabled'] != nil
-            enabled_value = @component['enabled']
-            if enabled_value.is_a?(String) && enabled_value.start_with?('@{') && enabled_value.end_with?('}')
-              # Data binding
-              property_name = enabled_value[2...-1]
-              add_modifier_line ".disabled(!viewModel.data.#{property_name})"
-            elsif enabled_value == false
-              add_modifier_line ".disabled(true)"
-            elsif enabled_value == true
-              # Explicitly enabled, no need to add disabled modifier
-            end
-          end
-          
-          # opacity
-          if @component['alpha']
-            add_modifier_line ".opacity(#{@component['alpha']})"
-          elsif @component['opacity']
-            add_modifier_line ".opacity(#{@component['opacity']})"
-          end
-          
-          # hidden
-          if @component['hidden'] == true
-            add_modifier_line ".hidden()"
-          end
-          
-          generated_code
+          # Always use StateAwareButtonView for dynamic state change support
+          convert_state_aware_button
         end
         
         private
@@ -128,9 +24,61 @@ module SjuiTools
           # Use StateAwareButtonView for state-dependent styling
           add_line "StateAwareButtonView("
           indent do
-            # Text
-            escaped_text = text.gsub('"', '\\"')
-            add_line "text: \"#{escaped_text}\","
+            # Process text with binding support
+            if text.include?('@{')
+              # Text with interpolation: "Some text @{property} more text"
+              interpolated = text.gsub(/@\{([^}]+)\}/) do |match|
+                property_name = $1
+                # For interpolated text, use viewModel.data directly
+                "\\(viewModel.data.#{property_name})"
+              end
+              escaped_text = interpolated.gsub('"', '\\"').gsub("\n", "\\n")
+              add_line "text: \"#{escaped_text}\","
+            else
+              # Regular text - escape double quotes
+              escaped_text = text.gsub('"', '\\"')
+              add_line "text: \"#{escaped_text}\","
+            end
+            
+            # Add partialAttributes if present
+            if @component['partialAttributes'] && @component['partialAttributes'].is_a?(Array) && !@component['partialAttributes'].empty?
+              add_line "partialAttributes: ["
+              indent do
+                @component['partialAttributes'].each_with_index do |partial, index|
+                  add_line "["
+                  indent do
+                    if partial['range'] && partial['range'].is_a?(Array) && partial['range'].length == 2
+                      add_line "\"range\": [#{partial['range'][0]}, #{partial['range'][1]}],"
+                    end
+                    if partial['fontColor']
+                      add_line "\"fontColor\": \"#{partial['fontColor']}\","
+                    end
+                    if partial['fontSize']
+                      add_line "\"fontSize\": #{partial['fontSize']},"
+                    end
+                    if partial['fontWeight']
+                      add_line "\"fontWeight\": \"#{partial['fontWeight']}\","
+                    end
+                    if partial['underline']
+                      add_line "\"underline\": true,"
+                    end
+                    if partial['strikethrough']
+                      add_line "\"strikethrough\": true,"
+                    end
+                    if partial['background']
+                      add_line "\"background\": \"#{partial['background']}\","
+                    end
+                    if partial['onclick']
+                      add_line "\"onclick\": \"#{partial['onclick']}\","
+                    end
+                    # Remove trailing comma from last item
+                    @generated_code[-1] = @generated_code[-1].chomp(',')
+                  end
+                  add_line "]#{ index < @component['partialAttributes'].length - 1 ? ',' : '' }"
+                end
+              end
+              add_line "],"
+            end
             
             # Action
             if action
