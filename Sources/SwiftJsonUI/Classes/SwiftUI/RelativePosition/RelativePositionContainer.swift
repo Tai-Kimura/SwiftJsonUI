@@ -11,6 +11,7 @@ public struct RelativePositionContainer: View {
     @State private var viewPositions: [String: CGPoint] = [:]
     @State private var isFirstPass = true
     @State private var containerSize: CGSize = .zero
+    @State private var isCalculating = false
 
     public init(
         children: [RelativeChildConfig],
@@ -41,17 +42,21 @@ public struct RelativePositionContainer: View {
                                 GeometryReader { geometry in
                                     Color.clear
                                         .onAppear {
-                                            viewSizes[child.id] = geometry.size
-                                            Logger.debug(
-                                                "📏 Measured \(child.id): \(geometry.size)"
-                                            )
-                                            // After measuring all views, move to second pass
-                                            if viewSizes.count == children.count
-                                            {
+                                            if !isCalculating {
+                                                viewSizes[child.id] = geometry.size
                                                 Logger.debug(
-                                                    "📊 All views measured, moving to positioning phase..."
+                                                    "📏 Measured \(child.id): \(geometry.size)"
                                                 )
-                                                isFirstPass = false
+                                                // After measuring all views, move to second pass
+                                                if viewSizes.count == children.count {
+                                                    Logger.debug(
+                                                        "📊 All views measured, moving to positioning phase..."
+                                                    )
+                                                    // Defer state change to avoid "Publishing changes from within view updates"
+                                                    DispatchQueue.main.async {
+                                                        isFirstPass = false
+                                                    }
+                                                }
                                             }
                                         }
                                 }
@@ -64,9 +69,14 @@ public struct RelativePositionContainer: View {
                 GeometryReader { geometry in
                     Color.clear
                         .onAppear {
-                            if containerSize == .zero {
+                            if containerSize == .zero && !isCalculating {
                                 containerSize = geometry.size
-                                calculatePositions()
+                                // Defer position calculation to avoid state changes during view updates
+                                DispatchQueue.main.async {
+                                    isCalculating = true
+                                    calculatePositions()
+                                    isCalculating = false
+                                }
                             }
                         }
                     ForEach(children) { child in
@@ -90,6 +100,9 @@ public struct RelativePositionContainer: View {
 
     private func calculatePositions() {
         Logger.debug("🔧 calculatePositions() called")
+        
+        // Create local copies to avoid modifying state during calculation
+        var localPositions: [String: CGPoint] = [:]
 
         // Process views in dependency order
         var processedViews = Set<String>()
@@ -106,7 +119,8 @@ public struct RelativePositionContainer: View {
         
         // Process parent-only constrained views first
         for child in parentOnlyViews {
-            calculateChildPosition(child: child)
+            let position = calculateChildPosition(child: child, localPositions: localPositions)
+            localPositions[child.id] = position
             processedViews.insert(child.id)
             Logger.debug("✅ Processed parent-constrained view: \(child.id)")
         }
@@ -136,7 +150,8 @@ public struct RelativePositionContainer: View {
                 }
                 
                 if canProcess {
-                    calculateChildPosition(child: child)
+                    let position = calculateChildPosition(child: child, localPositions: localPositions)
+                    localPositions[child.id] = position
                     processedViews.insert(child.id)
                     processedInThisIteration.append(child)
                     Logger.debug("✅ Processed view with dependencies: \(child.id)")
@@ -153,21 +168,26 @@ public struct RelativePositionContainer: View {
                 Logger.debug("⚠️ Circular dependency detected or unresolvable constraints")
                 // Process remaining views anyway
                 for child in remainingChildren {
-                    calculateChildPosition(child: child)
+                    let position = calculateChildPosition(child: child, localPositions: localPositions)
+                    localPositions[child.id] = position
                 }
                 break
             }
         }
 
+        // Update the state with all calculated positions at once
+        viewPositions = localPositions
+        
         Logger.debug("📍 All positions calculated:")
-        for (id, pos) in viewPositions {
+        for (id, pos) in localPositions {
             Logger.debug("   \(id): (\(pos.x), \(pos.y))")
         }
     }
 
     private func calculateChildPosition(
-        child: RelativeChildConfig
-    ) {
+        child: RelativeChildConfig,
+        localPositions: [String: CGPoint]
+    ) -> CGPoint {
         var childSize = viewSizes[child.id] ?? .zero
         
         // Check if size should be dynamic based on constraints
@@ -280,28 +300,28 @@ public struct RelativePositionContainer: View {
             case .alignTop:
                 // Align top edges - child's top aligns with anchor's top
                 // Only apply self margin, not anchor's margin
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y - anchorSize.height / 2 + childSize.height / 2 + child.margins.top
                 // x position remains from default alignment calculation, don't change it
                 Logger.debug("   alignTop: y = \(y), x = \(x)")
             case .alignBottom:
                 // Align bottom edges - child's bottom aligns with anchor's bottom
                 // Only apply self margin, not anchor's margin
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y + anchorSize.height / 2 - childSize.height / 2 - child.margins.bottom
                 // x position remains from default alignment calculation, don't change it
                 Logger.debug("   alignBottom: y = \(y), x = \(x)")
             case .alignLeft:
                 // Align left edges - child's left aligns with anchor's left
                 // Only apply self margin, not anchor's margin
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x - anchorSize.width / 2 + childSize.width / 2 + child.margins.leading
                 // y position remains from default alignment calculation, don't change it
                 Logger.debug("   alignLeft: x = \(x), y = \(y)")
             case .alignRight:
                 // Align right edges - child's right aligns with anchor's right
                 // Only apply self margin, not anchor's margin
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x + anchorSize.width / 2 - childSize.width / 2 - child.margins.trailing
                 // y position remains from default alignment calculation, don't change it
                 Logger.debug("   alignRight: x = \(x), y = \(y)")
@@ -309,7 +329,7 @@ public struct RelativePositionContainer: View {
                 // Position above anchor - child's bottom touches anchor's top
                 // Apply both self and anchor margins
                 let anchorTopMargin = anchorChild?.margins.top ?? 0
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y - anchorSize.height / 2 - childSize.height / 2
                     - anchorTopMargin - child.margins.bottom
                 // x position remains from default alignment calculation, don't change it
@@ -320,7 +340,7 @@ public struct RelativePositionContainer: View {
                 // Position below anchor - child's top touches anchor's bottom
                 // Apply both self and anchor margins
                 let anchorBottomMargin = anchorChild?.margins.bottom ?? 0
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y + anchorSize.height / 2 + childSize.height / 2
                     + anchorBottomMargin + child.margins.top
                 // x position remains from default alignment calculation, don't change it
@@ -331,7 +351,7 @@ public struct RelativePositionContainer: View {
                 // Position to the left of anchor - child's right touches anchor's left
                 // Apply both self and anchor margins
                 let anchorLeftMargin = anchorChild?.margins.leading ?? 0
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x - anchorSize.width / 2 - childSize.width / 2
                     - anchorLeftMargin - child.margins.trailing
                 // y position remains from default alignment calculation, don't change it
@@ -342,7 +362,7 @@ public struct RelativePositionContainer: View {
                 // Position to the right of anchor - child's left touches anchor's right
                 // Apply both self and anchor margins
                 let anchorRightMargin = anchorChild?.margins.trailing ?? 0
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x + anchorSize.width / 2 + childSize.width / 2
                     + anchorRightMargin + child.margins.leading
                 // y position remains from default alignment calculation, don't change it
@@ -351,12 +371,12 @@ public struct RelativePositionContainer: View {
                 )
             case .centerVertical:
                 // Center vertically with another view
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 y = anchorPos.y
                 Logger.debug("   centerVertical: y = \(y) (aligned with \(constraint.targetId))")
             case .centerHorizontal:
                 // Center horizontally with another view
-                let anchorPos = anchorChild != nil ? viewPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? CGPoint.zero : CGPoint.zero
                 x = anchorPos.x
                 Logger.debug("   centerHorizontal: x = \(x) (aligned with \(constraint.targetId))")
             case .parentTop:
@@ -415,25 +435,25 @@ public struct RelativePositionContainer: View {
                     rightX = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
                 case .alignLeft:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         leftX = anchorPos.x - anchorSize.width / 2 + child.margins.leading
                     }
                 case .alignRight:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         rightX = anchorPos.x + anchorSize.width / 2 - child.margins.trailing
                     }
                 case .rightOf:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         leftX = anchorPos.x + anchorSize.width / 2 + targetView.margins.trailing + child.margins.leading
                     }
                 case .leftOf:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         rightX = anchorPos.x - anchorSize.width / 2 - targetView.margins.leading - child.margins.trailing
                     }
@@ -443,25 +463,25 @@ public struct RelativePositionContainer: View {
                     bottomY = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
                 case .alignTop:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         topY = anchorPos.y - anchorSize.height / 2 + child.margins.top
                     }
                 case .alignBottom:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         bottomY = anchorPos.y + anchorSize.height / 2 - child.margins.bottom
                     }
                 case .below:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         topY = anchorPos.y + anchorSize.height / 2 + targetView.margins.bottom + child.margins.top
                     }
                 case .above:
                     if let targetView = children.first(where: { $0.id == constraint.targetId }) {
-                        let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                        let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                         let anchorSize = viewSizes[targetView.id] ?? .zero
                         bottomY = anchorPos.y - anchorSize.height / 2 - targetView.margins.top - child.margins.bottom
                     }
@@ -496,13 +516,13 @@ public struct RelativePositionContainer: View {
                 leftEdge = -containerSize.width / 2 + child.margins.leading + parentPadding.leading
             case .alignLeft:
                 if let targetView = children.first(where: { $0.id == leftConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     leftEdge = anchorPos.x - anchorSize.width / 2 + child.margins.leading
                 }
             case .rightOf:
                 if let targetView = children.first(where: { $0.id == leftConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     leftEdge = anchorPos.x + anchorSize.width / 2 + targetView.margins.trailing + child.margins.leading
                 }
@@ -515,13 +535,13 @@ public struct RelativePositionContainer: View {
                 rightEdge = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
             case .alignRight:
                 if let targetView = children.first(where: { $0.id == rightConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     rightEdge = anchorPos.x + anchorSize.width / 2 - child.margins.trailing
                 }
             case .leftOf:
                 if let targetView = children.first(where: { $0.id == rightConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     rightEdge = anchorPos.x - anchorSize.width / 2 - targetView.margins.leading - child.margins.trailing
                 }
@@ -552,13 +572,13 @@ public struct RelativePositionContainer: View {
                 topEdge = -containerSize.height / 2 + child.margins.top + parentPadding.top
             case .alignTop:
                 if let targetView = children.first(where: { $0.id == topConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     topEdge = anchorPos.y - anchorSize.height / 2 + child.margins.top
                 }
             case .below:
                 if let targetView = children.first(where: { $0.id == topConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     topEdge = anchorPos.y + anchorSize.height / 2 + targetView.margins.bottom + child.margins.top
                 }
@@ -571,13 +591,13 @@ public struct RelativePositionContainer: View {
                 bottomEdge = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
             case .alignBottom:
                 if let targetView = children.first(where: { $0.id == bottomConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     bottomEdge = anchorPos.y + anchorSize.height / 2 - child.margins.bottom
                 }
             case .above:
                 if let targetView = children.first(where: { $0.id == bottomConstraint.targetId }) {
-                    let anchorPos = viewPositions[targetView.id] ?? CGPoint.zero
+                    let anchorPos = localPositions[targetView.id] ?? CGPoint.zero
                     let anchorSize = viewSizes[targetView.id] ?? .zero
                     bottomEdge = anchorPos.y - anchorSize.height / 2 - targetView.margins.top - child.margins.bottom
                 }
@@ -596,7 +616,7 @@ public struct RelativePositionContainer: View {
         
         Logger.debug("   Final position: (\(x), \(y))")
 
-        viewPositions[child.id] = CGPoint(x: x, y: y)
+        return CGPoint(x: x, y: y)
     }
 }
 
