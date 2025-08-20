@@ -31,7 +31,7 @@ public struct ButtonConverter {
                 )
                 // Skip padding in CommonModifiers since StateAwareButton handles it internally
                 .modifier(CommonModifiers(component: component, viewModel: viewModel, 
-                    customModifiers: CommonModifiers.CustomModifiers(skipPadding: true)))
+                    customModifiers: ModifierOverrides(skipPadding: true)))
             )
         }
         
