@@ -30,12 +30,11 @@ public struct TextFieldConverter {
         
         // Check if text has @{} binding syntax
         if let propertyName = extractPropertyName(from: component.text) {
-            // Get value from data dictionary
-            let value = viewModel.data[propertyName] as? String ?? ""
-            
             // Create binding that updates the data dictionary
             let binding = SwiftUI.Binding<String>(
-                get: { value },
+                get: { 
+                    viewModel.data[propertyName] as? String ?? ""
+                },
                 set: { newValue in
                     viewModel.data[propertyName] = newValue
                     // Removed objectWillChange.send() - @Published will handle notification

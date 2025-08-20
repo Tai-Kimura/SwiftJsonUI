@@ -69,20 +69,23 @@ public struct RelativePositionContainer: View {
                 }
                 .onPreferenceChange(SizePreferenceKey.self) { sizes in
                     print("📐 onPreferenceChange called with \(sizes.count) sizes")
-                    for (id, size) in sizes {
-                        if viewSizes[id] == nil {
-                            print("   📏 Measuring \(id): \(size)")
-                            viewSizes[id] = size
-                        } else {
-                            print("   ⚠️ Already measured \(id), skipping")
+                    // Use async dispatch to avoid state change during view update
+                    DispatchQueue.main.async {
+                        for (id, size) in sizes {
+                            if viewSizes[id] == nil {
+                                print("   📏 Measuring \(id): \(size)")
+                                viewSizes[id] = size
+                            } else {
+                                print("   ⚠️ Already measured \(id), skipping")
+                            }
                         }
-                    }
-                    // After measuring all views, move to positioning phase
-                    if viewSizes.count == children.count && layoutPhase == .measuring {
-                        print("📊 All \(children.count) views measured, transitioning to positioning phase")
-                        layoutPhase = .positioning
-                    } else {
-                        print("   📊 Progress: \(viewSizes.count)/\(children.count) measured")
+                        // After measuring all views, move to positioning phase
+                        if viewSizes.count == children.count && layoutPhase == .measuring {
+                            print("📊 All \(children.count) views measured, transitioning to positioning phase")
+                            layoutPhase = .positioning
+                        } else {
+                            print("   📊 Progress: \(viewSizes.count)/\(children.count) measured")
+                        }
                     }
                 }
                 
