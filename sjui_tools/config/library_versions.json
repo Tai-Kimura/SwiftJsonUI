@@ -1,0 +1,95 @@
+{
+  "version_mappings": {
+    "default": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "master"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "7.0.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "7.0.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "7.0.0-beta": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "7.0.0-beta"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "7.0.0-alpha": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "7.0.0-alpha"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "6.3.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "6.3.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "6.2.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "6.2.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "6.1.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "6.1.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "6.0.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "6.0.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "5.0.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "5.0.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "from": "5.4.0"
+      }
+    }
+  },
+  "_comment": "This file maps sjui_tools versions to their corresponding library versions"
+}
