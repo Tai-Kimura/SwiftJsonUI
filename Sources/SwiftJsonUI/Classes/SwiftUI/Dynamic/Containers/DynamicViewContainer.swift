@@ -52,27 +52,26 @@ public struct DynamicViewContainer: View {
             }
         }
         
-        // Apply tap gesture if canTap is true
-        let contentWithTap = if component.canTap == true {
-            mainContent
-                .contentShape(Rectangle()) // Make entire area tappable
-                .onTapGesture {
-                    // Handle tap action if onclick is defined
-                    if let onclick = component.onclick ?? component.onClick {
-                        viewModel.handleAction(onclick)
+        // Apply tap gesture if canTap is true and process data elements
+        Group {
+            if component.canTap == true {
+                mainContent
+                    .contentShape(Rectangle()) // Make entire area tappable
+                    .onTapGesture {
+                        // Handle tap action if onclick is defined
+                        if let onclick = component.onclick ?? component.onClick {
+                            viewModel.handleAction(onclick)
+                        }
                     }
-                }
-        } else {
-            mainContent
-        }
-        
-        // Process data elements on appear to avoid state mutation during view update
-        contentWithTap
-            .onAppear {
-                if let child = component.childComponents {
-                    processDataElements(child)
-                }
+            } else {
+                mainContent
             }
+        }
+        .onAppear {
+            if let child = component.childComponents {
+                processDataElements(child)
+            }
+        }
     }
     
     @ViewBuilder
