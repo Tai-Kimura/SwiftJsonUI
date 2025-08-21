@@ -144,15 +144,41 @@ public struct LabelConverter {
             )
         }
         
-        // If linkable is true, detect URLs and make them clickable
+        // If linkable is true, use PartialAttributedText with linkable flag
         if component.linkable == true {
-            // Use attributed string with link detection
-            if let attributedString = createLinkableAttributedString(from: text, component: component) {
-                return AnyView(
-                    Text(attributedString)
-                        .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            // Handle font: "bold" as fontWeight
+            let fontWeight: Font.Weight? = {
+                if let weight = component.fontWeight {
+                    return Font.Weight.from(string: weight)
+                } else if component.font == "bold" {
+                    return .bold
+                }
+                return nil
+            }()
+            
+            return AnyView(
+                PartialAttributedText(
+                    text,
+                    fontSize: component.fontSize,
+                    fontWeight: fontWeight,
+                    fontColor: DynamicHelpers.colorFromHex(component.fontColor),
+                    underline: component.underline == true,
+                    strikethrough: component.strikethrough == true,
+                    lineSpacing: component.lineHeightMultiple != nil
+                        ? (component.lineHeightMultiple! - 1) * (component.fontSize ?? 17)
+                        : nil,
+                    lineLimit: component.autoShrink == true ? 1 : nil,
+                    linkable: true
                 )
-            }
+                .shadow(
+                    color: getTextShadowColor(component),
+                    radius: getTextShadowRadius(component),
+                    x: getTextShadowX(component),
+                    y: getTextShadowY(component)
+                )
+                .padding(component.edgeInset ?? 0)
+                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+            )
         }
         
         // Build the text view with all modifiers applied at once
@@ -233,34 +259,5 @@ public struct LabelConverter {
             }
         }
         return 0
-    }
-    
-    private static func createLinkableAttributedString(from text: String, component: DynamicComponent) -> AttributedString? {
-        var attributedString = AttributedString(text)
-        
-        // Apply font and color to the entire string
-        let font = DynamicHelpers.fontFromComponent(component)
-        attributedString.font = font
-        
-        if let color = DynamicHelpers.colorFromHex(component.fontColor) {
-            attributedString.foregroundColor = color
-        }
-        
-        // Detect URLs and make them clickable
-        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-        let matches = detector?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) ?? []
-        
-        for match in matches {
-            if let range = Range(match.range, in: text),
-               let url = match.url {
-                if let attributedRange = Range(range, in: attributedString) {
-                    attributedString[attributedRange].link = url
-                    // Optionally style links differently
-                    attributedString[attributedRange].underlineStyle = .single
-                }
-            }
-        }
-        
-        return attributedString
     }
 }
