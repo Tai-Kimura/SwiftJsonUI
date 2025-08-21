@@ -220,23 +220,43 @@ public struct PartialAttributedText: View {
     }
     
     private func detectAndApplyLinks(_ attributedString: inout AttributedString) {
-        // Detect URLs in the text
-        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        // Detect URLs, phone numbers, and email addresses in the text
+        let types: NSTextCheckingResult.CheckingType = [.link, .phoneNumber]
+        let detector = try? NSDataDetector(types: types.rawValue)
         let matches = detector?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) ?? []
         
         for match in matches {
-            if let range = Range(match.range, in: text),
-               let url = match.url {
-                // Convert String range to AttributedString range
-                let startIndex = text.index(text.startIndex, offsetBy: range.lowerBound.utf16Offset(in: text))
-                let endIndex = text.index(text.startIndex, offsetBy: range.upperBound.utf16Offset(in: text))
+            if let range = Range(match.range, in: text) {
+                var url: URL?
                 
-                if let attrStartIndex = AttributedString.Index(startIndex, within: attributedString),
-                   let attrEndIndex = AttributedString.Index(endIndex, within: attributedString),
-                   attrStartIndex < attrEndIndex {
-                    let attrRange = attrStartIndex..<attrEndIndex
-                    attributedString[attrRange].link = url
-                    attributedString[attrRange].underlineStyle = .single
+                switch match.resultType {
+                case .link:
+                    url = match.url
+                case .phoneNumber:
+                    if let phoneNumber = match.phoneNumber {
+                        // Remove spaces and special characters for tel: URL
+                        let cleanedNumber = phoneNumber.replacingOccurrences(of: " ", with: "")
+                            .replacingOccurrences(of: "-", with: "")
+                            .replacingOccurrences(of: "(", with: "")
+                            .replacingOccurrences(of: ")", with: "")
+                        url = URL(string: "tel:\(cleanedNumber)")
+                    }
+                default:
+                    break
+                }
+                
+                if let url = url {
+                    // Convert String range to AttributedString range
+                    let startIndex = text.index(text.startIndex, offsetBy: range.lowerBound.utf16Offset(in: text))
+                    let endIndex = text.index(text.startIndex, offsetBy: range.upperBound.utf16Offset(in: text))
+                    
+                    if let attrStartIndex = AttributedString.Index(startIndex, within: attributedString),
+                       let attrEndIndex = AttributedString.Index(endIndex, within: attributedString),
+                       attrStartIndex < attrEndIndex {
+                        let attrRange = attrStartIndex..<attrEndIndex
+                        attributedString[attrRange].link = url
+                        attributedString[attrRange].underlineStyle = .single
+                    }
                 }
             }
         }
