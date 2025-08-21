@@ -97,7 +97,7 @@ public struct PartialAttributedText: View {
     }
     
     public var body: some View {
-        if !partialAttributes.isEmpty {
+        if !partialAttributes.isEmpty || linkable {
             let result = createAttributedStringWithMapping()
             Text(result.attributedString)
                 .applyTextModifiers(
