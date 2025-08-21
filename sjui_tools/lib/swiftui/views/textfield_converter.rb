@@ -51,6 +51,12 @@ module SjuiTools
             add_modifier_line ".foregroundColor(#{color})"
           end
           
+          # hintColor (placeholder color) - SwiftUIではプレースホルダーの色を直接変更できないためコメントとして記録
+          if @component['hintColor'] || @component['placeholderColor']
+            hint_color = @component['hintColor'] || @component['placeholderColor']
+            add_line "// hintColor/placeholderColor: #{hint_color} - Note: SwiftUI doesn't directly support placeholder color customization"
+          end
+          
           # textFieldStyle
           if @component['borderStyle']
             style = text_field_style(@component['borderStyle'])

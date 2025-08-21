@@ -24,7 +24,7 @@ public struct StateAwareButtonView: View {
     let fontColor: Color?
     let backgroundColor: Color?
     let tapBackground: Color?
-    let hilightColor: Color?
+    let highlightColor: Color?
     let disabledFontColor: Color?
     let disabledBackground: Color?
     let cornerRadius: CGFloat?
@@ -44,7 +44,7 @@ public struct StateAwareButtonView: View {
         fontColor: Color? = nil,
         backgroundColor: Color? = nil,
         tapBackground: Color? = nil,
-        hilightColor: Color? = nil,
+        highlightColor: Color? = nil,
         disabledFontColor: Color? = nil,
         disabledBackground: Color? = nil,
         cornerRadius: CGFloat? = nil,
@@ -61,7 +61,7 @@ public struct StateAwareButtonView: View {
         self.fontColor = fontColor
         self.backgroundColor = backgroundColor
         self.tapBackground = tapBackground
-        self.hilightColor = hilightColor
+        self.highlightColor = highlightColor
         self.disabledFontColor = disabledFontColor
         self.disabledBackground = disabledBackground
         self.cornerRadius = cornerRadius
@@ -81,7 +81,7 @@ public struct StateAwareButtonView: View {
         fontColor: Color? = nil,
         backgroundColor: Color? = nil,
         tapBackground: Color? = nil,
-        hilightColor: Color? = nil,
+        highlightColor: Color? = nil,
         disabledFontColor: Color? = nil,
         disabledBackground: Color? = nil,
         cornerRadius: CGFloat? = nil,
@@ -99,7 +99,7 @@ public struct StateAwareButtonView: View {
             fontColor: fontColor,
             backgroundColor: backgroundColor,
             tapBackground: tapBackground,
-            hilightColor: hilightColor,
+            highlightColor: highlightColor,
             disabledFontColor: disabledFontColor,
             disabledBackground: disabledBackground,
             cornerRadius: cornerRadius,
@@ -116,8 +116,8 @@ public struct StateAwareButtonView: View {
             // Use disabledFontColor if available
             return disabledFontColor ?? .gray
         } else if isPressed {
-            // Use hilightColor if available when pressed
-            return hilightColor ?? fontColor ?? .white
+            // Use highlightColor if available when pressed
+            return highlightColor ?? fontColor ?? .white
         } else {
             // Normal state - use fontColor
             return fontColor ?? .white

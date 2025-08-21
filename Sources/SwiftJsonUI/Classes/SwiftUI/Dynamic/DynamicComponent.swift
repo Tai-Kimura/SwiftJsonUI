@@ -28,7 +28,7 @@ public struct DynamicComponent: Decodable {
     let fontColor: String?
     let font: String?
     let fontWeight: String?
-    let hilightColor: String?  // Text color when highlighted (for Button)
+    let highlightColor: String?  // Text color when highlighted
     let disabledFontColor: String?  // Text color when disabled
     let disabledBackground: String?  // Background when disabled
     let edgeInset: CGFloat?  // Text padding for Label
@@ -263,7 +263,7 @@ public struct DynamicComponent: Decodable {
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
         case type, id, text, fontSize, fontColor, font, fontWeight
-        case hilightColor, disabledFontColor, disabledBackground, edgeInset
+        case highlightColor, disabledFontColor, disabledBackground, edgeInset
         case underline, strikethrough, lineHeightMultiple, autoShrink, minimumScaleFactor, textShadow, linkable
         case width, height, widthRaw, heightRaw, background, tapBackground
         case padding, margin, margins, paddings
@@ -335,7 +335,7 @@ public struct DynamicComponent: Decodable {
         fontColor = try container.decodeIfPresent(String.self, forKey: .fontColor)
         font = try container.decodeIfPresent(String.self, forKey: .font)
         fontWeight = try container.decodeIfPresent(String.self, forKey: .fontWeight)
-        hilightColor = try container.decodeIfPresent(String.self, forKey: .hilightColor)
+        highlightColor = try container.decodeIfPresent(String.self, forKey: .highlightColor)
         disabledFontColor = try container.decodeIfPresent(String.self, forKey: .disabledFontColor)
         disabledBackground = try container.decodeIfPresent(String.self, forKey: .disabledBackground)
         edgeInset = try container.decodeIfPresent(CGFloat.self, forKey: .edgeInset)

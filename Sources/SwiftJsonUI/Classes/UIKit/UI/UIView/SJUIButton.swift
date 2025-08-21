@@ -114,7 +114,7 @@ open class SJUIButton: UIButton {
             }
             b.configuration?.attributedTitle = AttributedString(attr["text"].stringValue.localized())
             b.defaultFontColor = UIColor.findColorByJSON(attr: attr["fontColor"])
-            let highlightFontColor = UIColor.findColorByJSON(attr: attr["hilightColor"])
+            let highlightFontColor = UIColor.findColorByJSON(attr: attr["highlightColor"])
             b.configurationUpdateHandler = { button in
                 guard let button = button as? SJUIButton else {
                     return
@@ -128,7 +128,7 @@ open class SJUIButton: UIButton {
             if let fontColor = UIColor.findColorByJSON(attr: attr["fontColor"]) {
                 b.setTitleColor(fontColor, for: UIControl.State())
             }
-            if let fontColor = UIColor.findColorByJSON(attr: attr["hilightColor"]) {
+            if let fontColor = UIColor.findColorByJSON(attr: attr["highlightColor"]) {
                 b.setTitleColor(fontColor, for: UIControl.State.highlighted)
             }
             if let image = attr["image"].string {

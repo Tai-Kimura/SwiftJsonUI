@@ -110,6 +110,11 @@ module SjuiTools
               add_line "fontColor: #{color},"
             end
             
+            # Add highlightColor
+            if @component['highlightColor']
+              add_line "// highlightColor: #{@component['highlightColor']} - Note: Text highlighting handled via selection in SwiftUI"
+            end
+            
             # Add underline
             if @component['underline']
               add_line "underline: true,"

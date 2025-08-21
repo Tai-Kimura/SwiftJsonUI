@@ -135,8 +135,8 @@ module SjuiTools
             if @component['tapBackground']
               add_line "tapBackground: #{hex_to_swiftui_color(@component['tapBackground'])},"
             end
-            if @component['hilightColor']
-              add_line "hilightColor: #{hex_to_swiftui_color(@component['hilightColor'])},"
+            if @component['highlightColor']
+              add_line "highlightColor: #{hex_to_swiftui_color(@component['highlightColor'])},"
             end
             if @component['disabledFontColor']
               add_line "disabledFontColor: #{hex_to_swiftui_color(@component['disabledFontColor'])},"
