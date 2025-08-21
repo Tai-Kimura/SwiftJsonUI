@@ -232,6 +232,11 @@ public struct PartialAttributedText: View {
                 switch match.resultType {
                 case .link:
                     url = match.url
+                    #if DEBUG
+                    if let url = url {
+                        print("[PartialAttributedText] Detected link: \(url.absoluteString)")
+                    }
+                    #endif
                 case .phoneNumber:
                     if let phoneNumber = match.phoneNumber {
                         // Remove spaces and special characters for tel: URL
@@ -240,6 +245,9 @@ public struct PartialAttributedText: View {
                             .replacingOccurrences(of: "(", with: "")
                             .replacingOccurrences(of: ")", with: "")
                         url = URL(string: "tel:\(cleanedNumber)")
+                        #if DEBUG
+                        print("[PartialAttributedText] Detected phone: \(phoneNumber) -> tel:\(cleanedNumber)")
+                        #endif
                     }
                 default:
                     break
