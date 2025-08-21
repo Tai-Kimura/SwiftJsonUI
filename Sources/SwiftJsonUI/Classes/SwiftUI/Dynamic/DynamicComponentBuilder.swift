@@ -234,6 +234,9 @@ public struct DynamicComponentBuilder: View {
         case "radio":
             RadioConverter.convert(component: component, viewModel: viewModel)
         
+        case "segment", "segmentedcontrol":
+            SegmentConverter.convert(component: component, viewModel: viewModel)
+        
         case "picker":
             PickerConverter.convert(component: component, viewModel: viewModel)
         
