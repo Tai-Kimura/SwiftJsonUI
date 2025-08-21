@@ -146,6 +146,11 @@ module SjuiTools
                        '.leading'
             add_line "textAlignment: #{alignment},"
             
+            # Add linkable if true
+            if @component['linkable'] == true || @component['linkable'] == 'true'
+              add_line "linkable: true,"
+            end
+            
             # Remove trailing comma from last parameter
             @generated_code[-1] = @generated_code[-1].chomp(',')
           end
@@ -179,19 +184,6 @@ module SjuiTools
           # edgeInset (padding)
           if @component['edgeInset']
             add_modifier_line ".padding(#{@component['edgeInset'].to_i})"
-          end
-          
-          # linkable
-          if @component['linkable'] == true || @component['linkable'] == 'true'
-            if @component['url']
-              add_modifier_line ".onTapGesture {"
-              indent do
-                add_line "if let url = URL(string: \"#{@component['url']}\") {"
-                add_line "    UIApplication.shared.open(url)"
-                add_line "}"
-              end
-              add_line "}"
-            end
           end
           
           # Apply frame modifiers for weighted views FIRST

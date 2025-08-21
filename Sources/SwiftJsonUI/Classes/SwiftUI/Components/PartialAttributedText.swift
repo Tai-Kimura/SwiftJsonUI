@@ -13,6 +13,7 @@ public struct PartialAttributedText: View {
     let lineSpacing: CGFloat?
     let lineLimit: Int?
     let textAlignment: TextAlignment
+    let linkable: Bool
     
     public init(
         _ text: String,
@@ -24,7 +25,8 @@ public struct PartialAttributedText: View {
         strikethrough: Bool = false,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
-        textAlignment: TextAlignment = .leading
+        textAlignment: TextAlignment = .leading,
+        linkable: Bool = false
     ) {
         self.text = text
         self.partialAttributes = partialAttributes
@@ -36,6 +38,7 @@ public struct PartialAttributedText: View {
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
+        self.linkable = linkable
     }
     
     /// Convenience initializer for generated code with string fontWeight
@@ -48,7 +51,8 @@ public struct PartialAttributedText: View {
         strikethrough: Bool = false,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
-        textAlignment: TextAlignment = .leading
+        textAlignment: TextAlignment = .leading,
+        linkable: Bool = false
     ) {
         self.text = text
         self.partialAttributes = []
@@ -60,6 +64,7 @@ public struct PartialAttributedText: View {
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
+        self.linkable = linkable
     }
     
     /// Convenience initializer for backward compatibility with dictionary format
@@ -73,7 +78,8 @@ public struct PartialAttributedText: View {
         strikethrough: Bool = false,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
-        textAlignment: TextAlignment = .leading
+        textAlignment: TextAlignment = .leading,
+        linkable: Bool = false
     ) {
         self.text = text
         self.partialAttributes = partialAttributesDict.compactMap { 
@@ -87,6 +93,7 @@ public struct PartialAttributedText: View {
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
+        self.linkable = linkable
     }
     
     public var body: some View {
@@ -141,6 +148,11 @@ public struct PartialAttributedText: View {
         
         if let fontColor = fontColor {
             attributedString.foregroundColor = fontColor
+        }
+        
+        // If linkable is true, detect URLs and make them clickable
+        if linkable {
+            detectAndApplyLinks(&attributedString)
         }
         
         // Apply partial attributes
@@ -205,6 +217,29 @@ public struct PartialAttributedText: View {
         }
         
         return (attributedString, urlMapping)
+    }
+    
+    private func detectAndApplyLinks(_ attributedString: inout AttributedString) {
+        // Detect URLs in the text
+        let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+        let matches = detector?.matches(in: text, options: [], range: NSRange(location: 0, length: text.utf16.count)) ?? []
+        
+        for match in matches {
+            if let range = Range(match.range, in: text),
+               let url = match.url {
+                // Convert String range to AttributedString range
+                let startIndex = text.index(text.startIndex, offsetBy: range.lowerBound.utf16Offset(in: text))
+                let endIndex = text.index(text.startIndex, offsetBy: range.upperBound.utf16Offset(in: text))
+                
+                if let attrStartIndex = AttributedString.Index(startIndex, within: attributedString),
+                   let attrEndIndex = AttributedString.Index(endIndex, within: attributedString),
+                   attrStartIndex < attrEndIndex {
+                    let attrRange = attrStartIndex..<attrEndIndex
+                    attributedString[attrRange].link = url
+                    attributedString[attrRange].underlineStyle = .single
+                }
+            }
+        }
     }
 }
 
