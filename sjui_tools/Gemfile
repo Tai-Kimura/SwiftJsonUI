@@ -11,8 +11,8 @@ gem 'fileutils', '~> 1.7'
 gem 'xcodeproj', '~> 1.27'
 
 # Web server for hot loader
-gem 'sinatra', '~> 3.0'
-gem 'thin', '~> 1.8'
+gem 'sinatra', '~> 4.1'
+gem 'thin', '~> 2.0'
 gem 'faye-websocket', '~> 0.11'
 
 # Development dependencies
