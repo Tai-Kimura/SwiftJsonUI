@@ -60,7 +60,7 @@ public struct StateAwareContainer<Content: View>: View {
 #if DEBUG
 // MARK: - Extension for Dynamic mode
 extension StateAwareContainer {
-    public init(component: DynamicComponent, @ViewBuilder content: () -> Content) {
+    public init(component: DynamicComponent, @ViewBuilder content: () -> Content) where Content: View {
         self.init(
             background: DynamicHelpers.colorFromHex(component.background),
             tapBackground: DynamicHelpers.colorFromHex(component.tapBackground),
