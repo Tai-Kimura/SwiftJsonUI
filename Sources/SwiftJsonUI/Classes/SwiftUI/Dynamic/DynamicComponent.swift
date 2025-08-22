@@ -87,6 +87,7 @@ public struct DynamicComponent: Decodable {
     let partialAttributes: AnyCodable?
     let highlightAttributes: AnyCodable?
     let hintAttributes: AnyCodable?
+    let hintColor: String?
     // Check/Radio attributes
     let label: String?
     let onSrc: String?
@@ -273,7 +274,7 @@ public struct DynamicComponent: Decodable {
         case highlightSrc, defaultImage, errorImage, loadingImage
         case maxZoom, minZoom
         case highlightBackground, highlighted, canTap, events
-        case partialAttributes, highlightAttributes, hintAttributes
+        case partialAttributes, highlightAttributes, hintAttributes, hintColor
         case label, onSrc, checked, icon, selectedIcon, group
         case normalColor, selectedColor
         case onTextChange, accessoryBackground, accessoryTextColor, doneText
@@ -401,6 +402,7 @@ public struct DynamicComponent: Decodable {
         highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
         highlightColor = try container.decodeIfPresent(String.self, forKey: .highlightColor)
         hintAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .hintAttributes)
+        hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         // Check/Radio attributes
         label = try container.decodeIfPresent(String.self, forKey: .label)
         onSrc = try container.decodeIfPresent(String.self, forKey: .onSrc)
