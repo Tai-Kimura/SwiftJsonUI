@@ -8,6 +8,7 @@
 
 import SwiftUI
 
+#if DEBUG
 public struct StateAwareContainer<Content: View>: View {
     let component: DynamicComponent
     let content: Content
@@ -49,3 +50,4 @@ public struct StateAwareContainer<Content: View>: View {
             )
     }
 }
+#endif // DEBUG

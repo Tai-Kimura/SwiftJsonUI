@@ -18,20 +18,65 @@ public struct ButtonConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        // Use StateAwareButton if any state-dependent properties are set
+        // Use StateAwareButtonView if any state-dependent properties are set
         if (component.highlightColor != nil) || 
            (component.disabledFontColor != nil) || 
            (component.disabledBackground != nil) ||
            (component.tapBackground != nil) {
+            
+            // Extract partialAttributes if available
+            let partialAttributes: [PartialAttribute]? = nil // TODO: Extract from component if needed
+            
+            // Determine if button is enabled
+            let isEnabled: Bool = {
+                if let enabled = component.enabled {
+                    if let boolValue = enabled.value as? Bool {
+                        return boolValue
+                    } else if let stringValue = enabled.value as? String {
+                        return !(stringValue.lowercased() == "false" || stringValue == "0")
+                    }
+                }
+                return true
+            }()
+            
+            // Map font weight string to Font.Weight
+            let fontWeight: Font.Weight? = {
+                guard let weight = component.fontWeight else { return nil }
+                switch weight.lowercased() {
+                case "bold": return .bold
+                case "heavy": return .heavy
+                case "light": return .light
+                case "medium": return .medium
+                case "semibold": return .semibold
+                case "thin": return .thin
+                case "ultralight": return .ultraLight
+                case "black": return .black
+                default: return nil
+                }
+            }()
+            
             return AnyView(
-                StateAwareButton(
-                    component: component,
-                    viewModel: viewModel,
+                StateAwareButtonView(
+                    text: viewModel.processText(component.text) ?? "",
+                    partialAttributes: partialAttributes,
                     action: {
                         handleButtonAction(component: component, viewModel: viewModel)
-                    }
+                    },
+                    fontSize: component.fontSize,
+                    fontWeight: fontWeight,
+                    fontColor: DynamicHelpers.colorFromHex(component.fontColor),
+                    backgroundColor: DynamicHelpers.colorFromHex(component.background),
+                    tapBackground: DynamicHelpers.colorFromHex(component.tapBackground),
+                    highlightColor: DynamicHelpers.colorFromHex(component.highlightColor),
+                    disabledFontColor: DynamicHelpers.colorFromHex(component.disabledFontColor),
+                    disabledBackground: DynamicHelpers.colorFromHex(component.disabledBackground),
+                    cornerRadius: component.cornerRadius,
+                    padding: DynamicHelpers.getPadding(from: component),
+                    isEnabled: isEnabled,
+                    width: component.width,
+                    height: component.height
                 )
-                // Skip padding in CommonModifiers since StateAwareButton handles it internally
+                // Skip padding in CommonModifiers since StateAwareButtonView handles it internally
                 .modifier(CommonModifiers(component: component, viewModel: viewModel, 
                     customModifiers: ModifierOverrides(skipPadding: true)))
             )

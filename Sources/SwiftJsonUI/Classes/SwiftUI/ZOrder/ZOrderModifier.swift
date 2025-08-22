@@ -17,18 +17,27 @@ struct ZIndexKey: PreferenceKey {
 }
 
 // MARK: - Z-Order Modifier
-struct ZOrderModifier: ViewModifier {
-    let component: DynamicComponent
+public struct ZOrderModifier: ViewModifier {
+    let id: String?
+    let indexAbove: String?
+    let indexBelow: String?
+    
     @State private var zIndices: [String: Double] = [:]
     @State private var myZIndex: Double = 0
     
-    func body(content: Content) -> some View {
+    public init(id: String? = nil, indexAbove: String? = nil, indexBelow: String? = nil) {
+        self.id = id
+        self.indexAbove = indexAbove
+        self.indexBelow = indexBelow
+    }
+    
+    public func body(content: Content) -> some View {
         content
             .zIndex(myZIndex)
             .background(GeometryReader { _ in
                 Color.clear
                     .preference(key: ZIndexKey.self,
-                               value: component.id != nil ? [component.id!: myZIndex] : [:])
+                               value: id != nil ? [id!: myZIndex] : [:])
             })
             .onPreferenceChange(ZIndexKey.self) { newIndices in
                 zIndices = newIndices
@@ -40,7 +49,7 @@ struct ZOrderModifier: ViewModifier {
         // Default z-index
         var newZIndex: Double = 0
         
-        if let targetId = component.indexAbove {
+        if let targetId = indexAbove {
             // Place above the specified view
             if let targetZIndex = zIndices[targetId] {
                 newZIndex = targetZIndex + 1
@@ -48,7 +57,7 @@ struct ZOrderModifier: ViewModifier {
                 // If target not found, use default higher z-index
                 newZIndex = 1
             }
-        } else if let targetId = component.indexBelow {
+        } else if let targetId = indexBelow {
             // Place below the specified view
             if let targetZIndex = zIndices[targetId] {
                 newZIndex = targetZIndex - 1
@@ -63,16 +72,28 @@ struct ZOrderModifier: ViewModifier {
             myZIndex = newZIndex
             
             // Update our own z-index in the preference
-            if let myId = component.id {
+            if let myId = id {
                 zIndices[myId] = newZIndex
             }
         }
     }
 }
 
-// MARK: - Extension for applying z-order
+// MARK: - Extension for applying z-order (non-Dynamic)
 extension View {
-    func zOrder(component: DynamicComponent) -> some View {
-        self.modifier(ZOrderModifier(component: component))
+    public func zOrder(id: String? = nil, indexAbove: String? = nil, indexBelow: String? = nil) -> some View {
+        self.modifier(ZOrderModifier(id: id, indexAbove: indexAbove, indexBelow: indexBelow))
     }
 }
+
+#if DEBUG
+// MARK: - Extension for Dynamic mode
+extension View {
+    func zOrder(component: DynamicComponent) -> some View {
+        self.modifier(ZOrderModifier(
+            id: component.id,
+            indexAbove: component.indexAbove,
+            indexBelow: component.indexBelow
+        ))
+    }
+}#endif // DEBUG
