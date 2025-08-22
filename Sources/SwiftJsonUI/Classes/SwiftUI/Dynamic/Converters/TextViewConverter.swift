@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - TextView-specific modifiers
 // Corresponding to Generated code: text_view_converter.rb
@@ -109,3 +111,4 @@ public struct TextViewConverter {
         )
     }
 }
+#endif // DEBUG

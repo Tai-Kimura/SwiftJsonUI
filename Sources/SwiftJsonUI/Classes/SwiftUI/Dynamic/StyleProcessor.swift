@@ -1,4 +1,6 @@
 import Foundation
+#if DEBUG
+
 
 /// Process and apply styles to Dynamic components
 public class StyleProcessor {
@@ -311,3 +313,4 @@ public class StyleProcessor {
         Logger.debug("[StyleProcessor] Cleared cache for style: \(styleName)")
     }
 }
+#endif // DEBUG

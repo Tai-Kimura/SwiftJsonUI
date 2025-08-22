@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Helper Functions
 public struct DynamicHelpers {
@@ -321,3 +323,4 @@ extension View {
         self.padding(DynamicHelpers.getMargins(from: component))
     }
 }
+#endif // DEBUG

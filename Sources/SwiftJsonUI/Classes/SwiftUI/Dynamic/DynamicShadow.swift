@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Shadow Model
 public struct ShadowConfig: Decodable {
@@ -106,3 +108,4 @@ public enum DynamicShadow: Decodable {
         }
     }
 }
+#endif // DEBUG

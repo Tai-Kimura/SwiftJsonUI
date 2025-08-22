@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct WebConverter {
     
@@ -32,3 +34,4 @@ public struct WebConverter {
         )
     }
 }
+#endif // DEBUG

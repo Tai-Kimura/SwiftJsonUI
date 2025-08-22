@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct GradientViewConverter {
     
@@ -104,3 +106,4 @@ public struct GradientViewConverter {
         )
     }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Wrapper view for included content
 struct IncludedContentView: View {
@@ -95,3 +97,4 @@ public struct IncludeConverter {
         )
     }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct SpacerConverter {
     
@@ -25,3 +27,4 @@ public struct SpacerConverter {
         )
     }
 }
+#endif // DEBUG

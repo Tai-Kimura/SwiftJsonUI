@@ -7,6 +7,8 @@
 
 import SwiftUI
 import Combine
+#if DEBUG
+
 
 // MARK: - Event Types
 public enum DynamicEventType: String {
@@ -229,3 +231,4 @@ extension View {
         }
     }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Child View with Visibility
 public struct ChildView: View {
@@ -34,3 +36,4 @@ public struct ChildView: View {
         }
     }
 }
+#endif // DEBUG

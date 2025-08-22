@@ -6,6 +6,8 @@
 //
 
 import Foundation
+#if DEBUG
+
 
 /// Wrapper for failable decoding of array elements
 struct FailableDecodable<T: Decodable>: Decodable {
@@ -25,3 +27,4 @@ extension Array where Element: Decodable {
         self = failableElements.compactMap { $0.value }
     }
 }
+#endif // DEBUG

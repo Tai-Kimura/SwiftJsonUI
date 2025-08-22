@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - SafeAreaView Container
 public struct DynamicSafeAreaViewContainer: View {
@@ -27,3 +29,4 @@ public struct DynamicSafeAreaViewContainer: View {
             // SafeAreaView explicitly respects safe area - no .ignoresSafeArea() applied
     }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct RelativePositionConverter {
     
@@ -233,3 +235,4 @@ extension DynamicComponent {
     var marginLeft: CGFloat? { nil }
     var marginRight: CGFloat? { nil }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct LabelConverter {
     
@@ -261,3 +263,4 @@ public struct LabelConverter {
         return 0
     }
 }
+#endif // DEBUG

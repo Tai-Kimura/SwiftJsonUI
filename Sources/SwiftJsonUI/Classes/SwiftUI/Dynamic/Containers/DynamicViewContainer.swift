@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - View Container
 public struct DynamicViewContainer: View {
@@ -287,3 +289,4 @@ public struct DynamicViewContainer: View {
         }
     }
 }
+#endif // DEBUG

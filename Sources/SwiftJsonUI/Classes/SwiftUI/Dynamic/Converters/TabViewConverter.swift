@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct TabViewConverter {
     
@@ -26,3 +28,4 @@ public struct TabViewConverter {
         )
     }
 }
+#endif // DEBUG

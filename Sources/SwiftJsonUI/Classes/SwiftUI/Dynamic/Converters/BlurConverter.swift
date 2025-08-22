@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct BlurConverter {
     
@@ -47,3 +49,4 @@ public struct BlurConverter {
         )
     }
 }
+#endif // DEBUG

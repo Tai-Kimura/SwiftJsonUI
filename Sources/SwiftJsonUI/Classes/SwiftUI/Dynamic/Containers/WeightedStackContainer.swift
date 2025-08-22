@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Weighted Stack Container
 public struct WeightedStackContainer: View {
@@ -112,3 +114,4 @@ public struct WeightedStackContainer: View {
         }
     }
 }
+#endif // DEBUG

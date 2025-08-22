@@ -7,6 +7,8 @@
 
 import SwiftUI
 import Combine
+#if DEBUG
+
 
 // MARK: - View Model
 public class DynamicViewModel: ObservableObject {
@@ -187,3 +189,4 @@ public class DynamicViewModel: ObservableObject {
         return processValue(value)
     }
 }
+#endif // DEBUG

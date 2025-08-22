@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct ProgressConverter {
     
@@ -112,3 +114,4 @@ public struct ProgressConverter {
         return .accentColor
     }
 }
+#endif // DEBUG

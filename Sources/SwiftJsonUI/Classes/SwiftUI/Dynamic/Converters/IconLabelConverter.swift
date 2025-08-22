@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct IconLabelConverter {
     
@@ -93,3 +95,4 @@ public struct IconLabelConverter {
         }
     }
 }
+#endif // DEBUG

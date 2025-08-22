@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct SegmentConverter {
     
@@ -107,3 +109,4 @@ public struct SegmentConverter {
         return nil
     }
 }
+#endif // DEBUG

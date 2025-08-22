@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct SliderConverter {
     
@@ -72,3 +74,4 @@ public struct SliderConverter {
         return AnyView(content)
     }
 }
+#endif // DEBUG

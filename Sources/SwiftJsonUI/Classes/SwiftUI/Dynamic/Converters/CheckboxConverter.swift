@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct CheckboxConverter {
     
@@ -149,3 +151,4 @@ public struct CheckboxConverter {
         }
     }
 }
+#endif // DEBUG

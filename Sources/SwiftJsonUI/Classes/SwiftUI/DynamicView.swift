@@ -8,6 +8,7 @@
 import SwiftUI
 import Combine
 
+#if DEBUG
 // MARK: - Dynamic View
 public struct DynamicView: View {
     @StateObject private var viewModel: DynamicViewModel
@@ -126,3 +127,4 @@ public struct DynamicViewPreview: View {
             }
     }
 }
+#endif // DEBUG

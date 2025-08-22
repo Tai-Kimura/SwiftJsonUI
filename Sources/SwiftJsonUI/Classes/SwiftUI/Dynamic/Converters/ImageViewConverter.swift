@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // Dynamic mode image converter
 // Generated code equivalent: sjui_tools/lib/swiftui/views/image_converter.rb
@@ -88,3 +90,4 @@ struct ImageModifiers: ViewModifier {
             .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Component Model
 public struct DynamicComponent: Decodable {
@@ -703,3 +705,4 @@ public struct AnyCodable: Codable {
         return value as? [DynamicComponent]
     }
 }
+#endif // DEBUG

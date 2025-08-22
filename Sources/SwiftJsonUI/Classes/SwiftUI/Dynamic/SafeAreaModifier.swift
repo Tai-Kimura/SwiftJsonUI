@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 /// Modifier that applies ignoresSafeArea for View and ScrollView types only
 struct SafeAreaModifier: ViewModifier {
@@ -24,3 +26,4 @@ struct SafeAreaModifier: ViewModifier {
         }
     }
 }
+#endif // DEBUG

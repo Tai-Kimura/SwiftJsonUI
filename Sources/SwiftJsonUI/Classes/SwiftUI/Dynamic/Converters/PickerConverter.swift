@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct PickerConverter {
     
@@ -71,3 +73,4 @@ public struct PickerConverter {
         )
     }
 }
+#endif // DEBUG

@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct IndicatorConverter {
     
@@ -65,3 +67,4 @@ public struct IndicatorConverter {
         return .primary
     }
 }
+#endif // DEBUG

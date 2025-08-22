@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct CollectionConverter {
     
@@ -140,3 +142,4 @@ public struct CollectionConverter {
     }
 }
 
+#endif // DEBUG

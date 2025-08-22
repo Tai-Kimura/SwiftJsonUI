@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct DividerConverter {
     
@@ -35,3 +37,4 @@ public struct DividerConverter {
         return Color.gray.opacity(0.3)
     }
 }
+#endif // DEBUG

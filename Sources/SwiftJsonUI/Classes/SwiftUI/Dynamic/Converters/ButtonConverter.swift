@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // Dynamic mode button converter
 // Generated code equivalent: sjui_tools/lib/swiftui/views/button_converter.rb
@@ -280,3 +282,4 @@ struct DynamicButtonStyle: ButtonStyle {
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
     }
 }
+#endif // DEBUG

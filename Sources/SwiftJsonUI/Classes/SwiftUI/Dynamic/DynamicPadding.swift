@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Flexible Padding Type
 public enum DynamicPadding: Decodable {
@@ -80,3 +82,4 @@ public enum DynamicPadding: Decodable {
         }
     }
 }
+#endif // DEBUG

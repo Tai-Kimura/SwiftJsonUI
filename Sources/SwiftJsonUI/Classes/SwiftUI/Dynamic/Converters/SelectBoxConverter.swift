@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - SelectBox-specific modifiers (margins and border only)
 // Corresponding to Generated code: selectbox_converter.rb
@@ -166,3 +168,4 @@ public struct SelectBoxConverter {
         )
     }
 }
+#endif // DEBUG

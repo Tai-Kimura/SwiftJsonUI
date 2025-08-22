@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - Component Builder
 public struct DynamicComponentBuilder: View {
@@ -293,3 +295,4 @@ public struct DynamicComponentBuilder: View {
         }
     }
 }
+#endif // DEBUG

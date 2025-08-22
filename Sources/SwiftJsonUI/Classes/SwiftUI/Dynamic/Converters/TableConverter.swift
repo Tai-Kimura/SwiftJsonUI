@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct TableConverter {
     
@@ -100,3 +102,4 @@ struct TableRow: View {
         .padding(.vertical, 8)
     }
 }
+#endif // DEBUG

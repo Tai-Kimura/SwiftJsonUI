@@ -7,6 +7,8 @@
 
 import Foundation
 import SwiftUI
+#if DEBUG
+
 
 public struct DynamicDecodingHelper {
     
@@ -345,3 +347,4 @@ public struct DynamicDecodingHelper {
         }
     }
 }
+#endif // DEBUG

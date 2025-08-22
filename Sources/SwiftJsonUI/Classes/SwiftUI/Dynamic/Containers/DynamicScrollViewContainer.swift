@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // MARK: - ScrollView Container
 public struct DynamicScrollViewContainer: View {
@@ -143,3 +145,4 @@ public struct DynamicScrollViewContainer: View {
         }
     }
 }
+#endif // DEBUG

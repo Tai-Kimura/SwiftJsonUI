@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // Dynamic mode text/label converter
 // Generated code equivalent: sjui_tools/lib/swiftui/views/label_converter.rb
@@ -105,3 +107,4 @@ struct TextModifiers: ViewModifier {
             .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
 }
+#endif // DEBUG

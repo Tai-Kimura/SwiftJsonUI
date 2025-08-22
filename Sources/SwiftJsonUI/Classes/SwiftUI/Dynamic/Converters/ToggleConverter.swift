@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct ToggleConverter {
     
@@ -115,3 +117,4 @@ public struct ToggleConverter {
         }
     }
 }
+#endif // DEBUG

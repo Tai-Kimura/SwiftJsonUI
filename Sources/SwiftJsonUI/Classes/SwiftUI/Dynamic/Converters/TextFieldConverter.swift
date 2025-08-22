@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 public struct TextFieldConverter {
     
@@ -199,3 +201,4 @@ public struct TextFieldConverter {
         return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
     }
 }
+#endif // DEBUG

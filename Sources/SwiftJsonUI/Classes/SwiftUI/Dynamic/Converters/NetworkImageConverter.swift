@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+#if DEBUG
+
 
 // Dynamic mode network image converter
 // Generated code equivalent: sjui_tools/lib/swiftui/views/network_image_converter.rb
@@ -55,3 +57,4 @@ struct NetworkImageModifiers: ViewModifier {
             .opacity(DynamicHelpers.isHidden(component) ? 0 : 1)
     }
 }
+#endif // DEBUG
