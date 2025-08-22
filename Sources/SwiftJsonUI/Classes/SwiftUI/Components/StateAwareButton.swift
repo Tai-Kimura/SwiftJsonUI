@@ -37,9 +37,9 @@ public struct StateAwareButton: View {
             }
             return .gray
         } else if isPressed {
-            // Use hilightColor if available when pressed
-            if let hilightColor = component.hilightColor {
-                return DynamicHelpers.colorFromHex(hilightColor) ?? .white
+            // Use highlightColor if available when pressed
+            if let highlightColor = component.highlightColor {
+                return DynamicHelpers.colorFromHex(highlightColor) ?? .white
             }
             return .white
         } else {

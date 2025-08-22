@@ -17,10 +17,10 @@ public struct ButtonConverter {
         viewModel: DynamicViewModel
     ) -> AnyView {
         // Use StateAwareButton if any state-dependent properties are set
-        if component.highlightColor != nil || 
-           component.disabledFontColor != nil || 
-           component.disabledBackground != nil ||
-           component.tapBackground != nil {
+        if (component.highlightColor != nil) || 
+           (component.disabledFontColor != nil) || 
+           (component.disabledBackground != nil) ||
+           (component.tapBackground != nil) {
             return AnyView(
                 StateAwareButton(
                     component: component,

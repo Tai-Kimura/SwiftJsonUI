@@ -275,7 +275,7 @@ public struct DynamicComponent: Decodable {
         case highlightSrc, defaultImage, errorImage, loadingImage
         case maxZoom, minZoom
         case highlightBackground, highlighted, canTap, events
-        case partialAttributes, highlightAttributes, highlightColor, hintAttributes
+        case partialAttributes, highlightAttributes, hintAttributes, hintColor
         case label, onSrc, checked, icon, selectedIcon, group
         case normalColor, selectedColor
         case onTextChange, accessoryBackground, accessoryTextColor, doneText

@@ -13,10 +13,10 @@ Unified command-line tools for SwiftJsonUI framework.
 
 ```bash
 # Install from GitHub
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/installer/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/tools/installer/bootstrap.sh | bash
 
 # Or with specific version
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/installer/bootstrap.sh | bash -s -- -v 7.0.0-alpha
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/tools/installer/bootstrap.sh | bash -s -- -v 7.0.0-alpha
 ```
 
 ## Ruby Version

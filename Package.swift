@@ -19,14 +19,7 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "SwiftJsonUI",
-            path: "Sources",
-            exclude: [
-                "../sjui_tools",
-                "../binding_builder", 
-                "../android_parser",
-                "../config",
-                "../installer"
-            ]),
+            path: "Sources"),
         .testTarget(
             name: "SwiftJsonUITests",
             dependencies: ["SwiftJsonUI"]),

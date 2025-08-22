@@ -4,16 +4,16 @@
 # This script downloads the installer and runs it with automatic Ruby setup
 #
 # Usage examples:
-#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/installer/bootstrap.sh | bash
-#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/installer/bootstrap.sh | bash -s -- -v 7.0.0
-#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/installer/bootstrap.sh | bash -s -- -d ./my-project
-#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/installer/bootstrap.sh | bash -s -- -v 7.0.0 -s
+#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/tools/installer/bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/tools/installer/bootstrap.sh | bash -s -- -v 7.0.0
+#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/tools/installer/bootstrap.sh | bash -s -- -d ./my-project
+#   curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/master/tools/installer/bootstrap.sh | bash -s -- -v 7.0.0 -s
 
 set -e
 
 # Configuration
 GITHUB_REPO="Tai-Kimura/SwiftJsonUI"
-INSTALLER_PATH="installer/install_sjui.sh"
+INSTALLER_PATH="tools/installer/install_sjui.sh"
 REQUIRED_RUBY_VERSION="3.2.2"
 MINIMUM_RUBY_VERSION="2.7.0"
 

@@ -7,7 +7,7 @@ This directory contains installation scripts for SwiftJsonUI tools.
 To install SwiftJsonUI tools in your project, run this command:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/tools/installer/bootstrap.sh | bash
 ```
 
 This will download and install:
@@ -19,28 +19,28 @@ This will download and install:
 
 ```bash
 # Install from a specific tag
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v v7.0.0
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/tools/installer/bootstrap.sh | bash -s -- -v v7.0.0
 
 # Install from a specific branch
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v feature-branch
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/tools/installer/bootstrap.sh | bash -s -- -v feature-branch
 ```
 
 ### Install in specific directory
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -d ./my-project
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/tools/installer/bootstrap.sh | bash -s -- -d ./my-project
 ```
 
 ### Skip Ruby dependency installation
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -s
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/tools/installer/bootstrap.sh | bash -s -- -s
 ```
 
 ### Combined options
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/installer/bootstrap.sh | bash -s -- -v v7.0.0 -d ./my-project -s
+curl -fsSL https://raw.githubusercontent.com/Tai-Kimura/SwiftJsonUI/main/tools/installer/bootstrap.sh | bash -s -- -v v7.0.0 -d ./my-project -s
 ```
 
 ## Manual Installation
