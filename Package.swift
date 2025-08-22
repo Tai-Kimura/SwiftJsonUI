@@ -19,12 +19,7 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "SwiftJsonUI",
-            path: "Sources",
-            swiftSettings: [
-                // Force incremental compilation for faster builds
-                .unsafeFlags(["-incremental"], .when(configuration: .release)),
-                .unsafeFlags(["-incremental"], .when(configuration: .debug))
-            ]),
+            path: "Sources"),
         .testTarget(
             name: "SwiftJsonUITests",
             dependencies: ["SwiftJsonUI"]),
