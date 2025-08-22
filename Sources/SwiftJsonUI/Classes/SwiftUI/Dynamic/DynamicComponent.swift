@@ -400,7 +400,6 @@ public struct DynamicComponent: Decodable {
         events = try container.decodeIfPresent(AnyCodable.self, forKey: .events)
         partialAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .partialAttributes)
         highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
-        highlightColor = try container.decodeIfPresent(String.self, forKey: .highlightColor)
         hintAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .hintAttributes)
         hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         // Check/Radio attributes
