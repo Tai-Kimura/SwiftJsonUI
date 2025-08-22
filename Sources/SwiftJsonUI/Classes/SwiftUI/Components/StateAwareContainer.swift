@@ -8,10 +8,11 @@
 
 import SwiftUI
 
-#if DEBUG
+// MARK: - State-aware Container (non-Dynamic)
 public struct StateAwareContainer<Content: View>: View {
-    let component: DynamicComponent
     let content: Content
+    let background: Color?
+    let tapBackground: Color?
     
     @State private var isPressed = false
     
@@ -19,21 +20,26 @@ public struct StateAwareContainer<Content: View>: View {
     private var backgroundColor: Color {
         if isPressed {
             // Use tapBackground if available when pressed
-            if let tapBg = component.tapBackground {
-                return DynamicHelpers.colorFromHex(tapBg) ?? Color.clear
+            if let tapBg = tapBackground {
+                return tapBg
             }
         }
         
         // Normal state - use regular background
-        if let bg = component.background {
-            return DynamicHelpers.colorFromHex(bg) ?? Color.clear
+        if let bg = background {
+            return bg
         }
         
         return Color.clear
     }
     
-    public init(component: DynamicComponent, @ViewBuilder content: () -> Content) {
-        self.component = component
+    public init(
+        background: Color? = nil,
+        tapBackground: Color? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.background = background
+        self.tapBackground = tapBackground
         self.content = content()
     }
     
@@ -48,6 +54,18 @@ public struct StateAwareContainer<Content: View>: View {
                 },
                 perform: {}
             )
+    }
+}
+
+#if DEBUG
+// MARK: - Extension for Dynamic mode
+extension StateAwareContainer {
+    public init(component: DynamicComponent, @ViewBuilder content: () -> Content) {
+        self.init(
+            background: DynamicHelpers.colorFromHex(component.background),
+            tapBackground: DynamicHelpers.colorFromHex(component.tapBackground),
+            content: content
+        )
     }
 }
 #endif // DEBUG
