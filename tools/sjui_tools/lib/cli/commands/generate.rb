@@ -12,7 +12,8 @@ module SjuiTools
           'view' => 'Generate a new view with JSON and binding',
           'partial' => 'Generate a partial view', 
           'collection' => 'Generate a collection view',
-          'binding' => 'Generate binding file'
+          'binding' => 'Generate binding file',
+          'converter' => 'Generate a custom converter'
         }.freeze
 
         def run(args)
@@ -41,6 +42,8 @@ module SjuiTools
             generate_collection(args, mode)
           when 'uikit'
             generate_binding(args, mode)
+          when 'converter'
+            generate_converter(args, mode)
           end
         end
 
@@ -149,6 +152,27 @@ module SjuiTools
           generator.generate
         end
 
+        def generate_converter(args, mode)
+          options = parse_converter_options(args)
+          name = args.shift
+          
+          if name.nil? || name.empty?
+            puts "Error: Converter name is required"
+            puts "Usage: sjui generate converter <name> [options]"
+            exit 1
+          end
+          
+          # Currently only SwiftUI mode supports custom converters
+          if mode != 'swiftui'
+            puts "Custom converter generation is only available in SwiftUI mode"
+            exit 1
+          end
+          
+          require_relative '../../swiftui/generators/converter_generator'
+          generator = SjuiTools::SwiftUI::Generators::ConverterGenerator.new(name, options)
+          generator.generate
+        end
+
         def parse_view_options(args)
           options = {
             root: false,
@@ -162,6 +186,31 @@ module SjuiTools
             
             opts.on('--mode MODE', 'Override mode (uikit, swiftui, dynamic)') do |mode|
               options[:mode] = mode
+            end
+          end.parse!(args)
+          
+          options
+        end
+
+        def parse_converter_options(args)
+          options = {
+            use_default_attributes: true,
+            attributes: {}
+          }
+          
+          OptionParser.new do |opts|
+            opts.on('--no-default-attributes', 'Do not use default attributes') do
+              options[:use_default_attributes] = false
+            end
+            
+            opts.on('--attributes KEY:TYPE', 'Add custom attribute (can be used multiple times)') do |attr|
+              key, type = attr.split(':')
+              if key && type
+                options[:attributes][key] = type
+              else
+                puts "Error: Invalid attribute format. Use KEY:TYPE"
+                exit 1
+              end
             end
           end.parse!(args)
           
@@ -182,6 +231,8 @@ module SjuiTools
           puts "  sjui g partial Header          # Generate a partial"
           puts "  sjui g collection Post/Cell    # Generate collection cell"
           puts "  sjui g binding CustomBinding   # Generate binding file"
+          puts "  sjui g converter MyConverter   # Generate custom converter"
+          puts "  sjui g converter MyConverter --attributes text:String color:Color"
         end
       end
     end
