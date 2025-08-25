@@ -127,35 +127,35 @@ module SjuiTools
                 module Views
                   module Extensions
                     class #{@class_name} < Converters::BaseConverter
-                    def convert
-                      result = []
-                      
-                      # Component name
-                      result << "\#{indent}#{to_camel_case(@name)} {"
-                      
-                      @indent_level += 1
-                      
-                      #{attributes_code}
-                      
-                      # Convert children if present
-                      if @component['children']
-                        @component['children'].each do |child|
-                          child_converter = @factory.create_converter(child, @indent_level, @action_manager, @registry, @binding_registry)
-                          result.concat(child_converter.convert)
+                      def convert
+                        result = []
+                        
+                        # Component name
+                        result << "\#{indent}#{to_camel_case(@name)} {"
+                        
+                        @indent_level += 1
+                        
+            #{attributes_code}
+                        
+                        # Convert children if present
+                        if @component['children']
+                          @component['children'].each do |child|
+                            child_converter = @factory.create_converter(child, @indent_level, @action_manager, @registry, @binding_registry)
+                            result.concat(child_converter.convert)
+                          end
                         end
+                        
+                        @indent_level -= 1
+                        result << "\#{indent}}"
+                        
+                        result
                       end
                       
-                      @indent_level -= 1
-                      result << "\#{indent}}"
+                      private
                       
-                      result
-                    end
-                    
-                    private
-                    
-                    def component_name
-                      "#{to_camel_case(@name)}"
-                    end
+                      def component_name
+                        "#{to_camel_case(@name)}"
+                      end
                     end
                   end
                 end
@@ -168,22 +168,22 @@ module SjuiTools
           lines = []
           
           if @options[:use_default_attributes]
-            lines << "# Default attributes"
-            lines << "apply_default_attributes(result)"
+            lines << "            # Default attributes"
+            lines << "            apply_default_attributes(result)"
             lines << ""
           end
           
           if @options[:attributes] && !@options[:attributes].empty?
-            lines << "# Custom attributes"
+            lines << "            # Custom attributes"
             @options[:attributes].each do |key, type|
-              lines << "if @component['#{key}']"
-              lines << "  result << \"\#{indent}.#{key}(@component['#{key}'])\""
-              lines << "end"
+              lines << "            if @component['#{key}']"
+              lines << "              result << \"\#{indent}.#{key}(@component['#{key}'])\""
+              lines << "            end"
               lines << ""
             end
           end
           
-          lines.join("\n                  ")
+          lines.join("\n")
         end
 
         def to_camel_case(str)
