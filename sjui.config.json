@@ -1,0 +1,8 @@
+{
+  "mode": "swiftui",
+  "project_name": "SwiftJsonUI",
+  "layouts_directory": "Layouts",
+  "swiftui": {
+    "output_directory": "Generated"
+  }
+}

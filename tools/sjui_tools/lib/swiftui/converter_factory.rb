@@ -32,6 +32,30 @@ module SjuiTools
       def initialize(binding_registry = nil)
         @view_registry = ViewRegistry.new
         @binding_registry = binding_registry
+        @custom_converters = load_custom_converters
+      end
+      
+      def load_custom_converters
+        mappings_file = File.join(__dir__, 'views', 'extensions', 'converter_mappings.rb')
+        
+        # Return empty hash if mappings file doesn't exist
+        return {} unless File.exist?(mappings_file)
+        
+        begin
+          # Load the mappings file
+          require_relative 'views/extensions/converter_mappings'
+          
+          # Get the mappings if the constant exists
+          if defined?(Views::Extensions::CONVERTER_MAPPINGS)
+            Views::Extensions::CONVERTER_MAPPINGS
+          else
+            {}
+          end
+        rescue LoadError, StandardError => e
+          # If there's any error loading the mappings, just use empty hash
+          puts "Warning: Could not load custom converter mappings: #{e.message}" if ENV['DEBUG']
+          {}
+        end
       end
       
       def create_converter(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil)
@@ -42,6 +66,26 @@ module SjuiTools
         
         component_type = component['type']
         registry = view_registry || @view_registry
+        
+        # Check if there's a custom converter for this component type
+        if @custom_converters && @custom_converters[component_type]
+          converter_class_name = @custom_converters[component_type]
+          
+          begin
+            # Load the custom converter file if not already loaded
+            converter_file = converter_class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
+            require_relative "views/extensions/#{converter_file}"
+            
+            # Get the converter class
+            converter_class = Views::Extensions.const_get(converter_class_name)
+            
+            # Create and return the custom converter instance
+            return converter_class.new(component, indent_level, action_manager, self, registry, @binding_registry)
+          rescue LoadError, NameError => e
+            puts "Warning: Could not load custom converter #{converter_class_name}: #{e.message}" if ENV['DEBUG']
+            # Fall through to standard converters
+          end
+        end
         
         case component_type
         when 'Label', 'Text'
