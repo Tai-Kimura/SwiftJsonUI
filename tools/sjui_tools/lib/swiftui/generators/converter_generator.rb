@@ -52,42 +52,43 @@ module SjuiTools
         def update_mappings_file
           mappings_file = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions', 'converter_mappings.rb')
           
-          # Read existing mappings
-          if File.exist?(mappings_file)
-            content = File.read(mappings_file)
-            
-            # Check if mapping already exists
-            component_type = to_camel_case(@name)
-            if content.include?("'#{component_type}' =>")
-              @logger.warn "Mapping for '#{component_type}' already exists in converter_mappings.rb"
-              return
-            end
-            
-            # Add new mapping
-            new_mapping = "          '#{component_type}' => '#{@class_name}',"
-            
-            # Insert the new mapping before the closing brace of CONVERTER_MAPPINGS
-            content.sub!(/(CONVERTER_MAPPINGS = \{[^}]*)(        \}\.freeze)/m) do
-              existing_mappings = $1
-              closing = $2
-              
-              # Add comma to last mapping if there are existing mappings
-              if existing_mappings =~ /[^{\s]/
-                "#{existing_mappings}\n#{new_mapping}\n#{closing}"
-              else
-                "#{existing_mappings}\n#{new_mapping}\n#{closing}"
-              end
-            end
-            
-            File.write(mappings_file, content)
-            @logger.info "Updated converter_mappings.rb with new mapping"
-          else
-            # Create new mappings file with the first mapping
-            create_initial_mappings_file(component_type)
+          # Create new mappings file if it doesn't exist
+          if !File.exist?(mappings_file)
+            create_initial_mappings_file
+            return
           end
+          
+          # Read existing mappings
+          content = File.read(mappings_file)
+          
+          # Check if mapping already exists
+          component_type = to_camel_case(@name)
+          if content.include?("'#{component_type}' =>")
+            @logger.warn "Mapping for '#{component_type}' already exists in converter_mappings.rb"
+            return
+          end
+          
+          # Add new mapping
+          new_mapping = "          '#{component_type}' => '#{@class_name}',"
+          
+          # Insert the new mapping before the closing brace of CONVERTER_MAPPINGS
+          content.sub!(/(CONVERTER_MAPPINGS = \{[^}]*)(        \}\.freeze)/m) do
+            existing_mappings = $1
+            closing = $2
+            
+            # Add comma to last mapping if there are existing mappings
+            if existing_mappings =~ /[^{\s]/
+              "#{existing_mappings}\n#{new_mapping}\n#{closing}"
+            else
+              "#{existing_mappings}\n#{new_mapping}\n#{closing}"
+            end
+          end
+          
+          File.write(mappings_file, content)
+          @logger.info "Updated converter_mappings.rb with new mapping"
         end
         
-        def create_initial_mappings_file(component_type)
+        def create_initial_mappings_file
           mappings_file = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions', 'converter_mappings.rb')
           
           content = <<~RUBY
