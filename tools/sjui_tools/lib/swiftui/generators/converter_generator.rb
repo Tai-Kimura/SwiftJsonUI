@@ -119,8 +119,6 @@ module SjuiTools
         end
 
         def converter_template
-          attributes_code = generate_attributes_code
-          
           <<~RUBY
             # frozen_string_literal: true
             
@@ -134,24 +132,30 @@ module SjuiTools
                       def convert
                         result = []
                         
-                        # Component name
-                        result << "\#{indent}#{to_camel_case(@name)} {"
+                        # Generate component with parameters
+                        component_line = "\#{indent}#{to_camel_case(@name)}("
                         
-                        @indent_level += 1
+                        # Collect parameters
+                        params = []
+            #{generate_parameter_collection}
                         
-            #{attributes_code}
-                        
-                        # Convert children if present
-                        if @component['children']
-                          @component['children'].each do |child|
-                            child_converter = @factory.create_converter(child, @indent_level, @action_manager, @registry, @binding_registry)
-                            result.concat(child_converter.convert)
+                        if params.empty?
+                          result << "\#{indent}#{to_camel_case(@name)}()"
+                        else
+                          result << component_line
+                          @indent_level += 1
+                          params.each_with_index do |param, index|
+                            if index == params.length - 1
+                              result << "\#{indent}\#{param}"
+                            else
+                              result << "\#{indent}\#{param},"
+                            end
                           end
+                          @indent_level -= 1
+                          result << "\#{indent})"
                         end
                         
-                        @indent_level -= 1
-                        result << "\#{indent}}"
-                        
+            #{generate_modifiers_code}
                         result
                       end
                       
@@ -159,6 +163,65 @@ module SjuiTools
                       
                       def component_name
                         "#{to_camel_case(@name)}"
+                      end
+                      
+                      # Helper method to format value based on type
+                      def format_value(value, type)
+                        case type.downcase
+                        when 'string'
+                          return nil unless value
+                          '"\' + value.to_s + '"'
+                        when 'int', 'integer'
+                          return nil unless value
+                          value.to_s
+                        when 'double', 'float'
+                          return nil unless value
+                          value.to_s
+                        when 'bool', 'boolean'
+                          return nil unless value
+                          value.to_s.downcase
+                        when 'color'
+                          format_color_value(value)
+                        when 'edgeinsets'
+                          format_edge_insets_value(value)
+                        else
+                          return nil unless value
+                          value.to_s
+                        end
+                      end
+                      
+                      def format_color_value(value)
+                        return nil unless value
+                        if value.is_a?(String) && value.start_with?('#')
+                          # Parse hex color
+                          hex = value.delete('#')
+                          r = hex[0..1].to_i(16) / 255.0
+                          g = hex[2..3].to_i(16) / 255.0
+                          b = hex[4..5].to_i(16) / 255.0
+                          "Color(red: \#{r}, green: \#{g}, blue: \#{b})"
+                        elsif value.is_a?(Hash)
+                          r = value['red'] || value['r'] || 0
+                          g = value['green'] || value['g'] || 0
+                          b = value['blue'] || value['b'] || 0
+                          "Color(red: \#{r}, green: \#{g}, blue: \#{b})"
+                        else
+                          "Color.\#{value}"
+                        end
+                      end
+                      
+                      def format_edge_insets_value(value)
+                        return nil unless value
+                        if value.is_a?(Hash)
+                          top = value['top'] || 0
+                          leading = value['leading'] || value['left'] || 0
+                          bottom = value['bottom'] || 0
+                          trailing = value['trailing'] || value['right'] || 0
+                          "EdgeInsets(top: \#{top}, leading: \#{leading}, bottom: \#{bottom}, trailing: \#{trailing})"
+                        elsif value.is_a?(Numeric)
+                          "EdgeInsets(top: \#{value}, leading: \#{value}, bottom: \#{value}, trailing: \#{value})"
+                        else
+                          nil
+                        end
                       end
                     end
                   end
@@ -168,26 +231,28 @@ module SjuiTools
           RUBY
         end
 
-        def generate_attributes_code
+        def generate_parameter_collection
+          return "" if !@options[:attributes] || @options[:attributes].empty?
+          
           lines = []
-          
-          if @options[:use_default_attributes]
-            lines << "            # Default attributes"
-            lines << "            apply_default_attributes(result)"
-            lines << ""
+          @options[:attributes].each do |key, type|
+            lines << "            if @component['#{key}']"
+            lines << "              formatted_value = format_value(@component['#{key}'], '#{type}')"
+            lines << "              params << \"#{key}: \\#\{formatted_value}\" if formatted_value"
+            lines << "            end"
           end
-          
-          if @options[:attributes] && !@options[:attributes].empty?
-            lines << "            # Custom attributes"
-            @options[:attributes].each do |key, type|
-              lines << "            if @component['#{key}']"
-              lines << "              result << \"\#{indent}.#{key}(@component['#{key}'])\""
-              lines << "            end"
-              lines << ""
-            end
-          end
-          
           lines.join("\n")
+        end
+        
+        def generate_modifiers_code
+          if @options[:use_default_attributes]
+            <<~CODE
+                        # Apply default modifiers
+                        apply_common_modifiers(result)
+            CODE
+          else
+            ""
+          end
         end
 
         def to_camel_case(str)
