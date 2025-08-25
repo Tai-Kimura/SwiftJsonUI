@@ -89,7 +89,11 @@ module SjuiTools
         end
         
         def create_initial_mappings_file
-          mappings_file = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions', 'converter_mappings.rb')
+          # Ensure views/extensions directory exists
+          extensions_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          FileUtils.mkdir_p(extensions_dir)
+          
+          mappings_file = File.join(extensions_dir, 'converter_mappings.rb')
           
           content = <<~RUBY
             # frozen_string_literal: true
