@@ -45,3 +45,6 @@ swiftui_builder/test/
 
 # Swift build directory
 .build/
+
+# Custom converter extensions
+tools/sjui_tools/lib/swiftui/views/extensions/

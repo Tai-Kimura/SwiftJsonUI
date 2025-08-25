@@ -22,21 +22,22 @@ module SjuiTools
           create_converter_file
           
           @logger.success "Successfully generated converter: #{@class_name}"
-          @logger.info "Converter file created at: converters/#{@name}_converter.rb"
+          @logger.info "Converter file created at: views/extensions/#{@name}_converter.rb"
           @logger.info ""
           @logger.info "To use this converter, register it in converter_factory.rb:"
           @logger.info "  when '#{to_camel_case(@name)}'"
-          @logger.info "    Converters::#{@class_name}.new(component, indent_level, action_manager, self, registry, @binding_registry)"
+          @logger.info "    require_relative '../views/extensions/#{@name}_converter'"
+          @logger.info "    Views::Extensions::#{@class_name}.new(component, indent_level, action_manager, self, registry, @binding_registry)"
         end
 
         private
 
         def create_converter_file
-          # Ensure converters directory exists
-          converters_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'converters')
-          FileUtils.mkdir_p(converters_dir)
+          # Ensure views/extensions directory exists
+          extensions_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          FileUtils.mkdir_p(extensions_dir)
           
-          file_path = File.join(converters_dir, "#{@name}_converter.rb")
+          file_path = File.join(extensions_dir, "#{@name}_converter.rb")
           
           if File.exist?(file_path)
             @logger.warn "Converter file already exists: #{file_path}"
@@ -55,12 +56,13 @@ module SjuiTools
           <<~RUBY
             # frozen_string_literal: true
             
-            require_relative 'base_converter'
+            require_relative '../../converters/base_converter'
             
             module SjuiTools
               module SwiftUI
-                module Converters
-                  class #{@class_name} < BaseConverter
+                module Views
+                  module Extensions
+                    class #{@class_name} < Converters::BaseConverter
                     def convert
                       result = []
                       
@@ -89,6 +91,7 @@ module SjuiTools
                     
                     def component_name
                       "#{to_camel_case(@name)}"
+                    end
                     end
                   end
                 end
