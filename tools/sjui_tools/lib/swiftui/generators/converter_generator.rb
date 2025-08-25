@@ -156,6 +156,7 @@ module SjuiTools
                         end
                         
             #{generate_modifiers_code}
+                        
                         result
                       end
                       
@@ -246,10 +247,7 @@ module SjuiTools
         
         def generate_modifiers_code
           if @options[:use_default_attributes]
-            <<~CODE
-                        # Apply default modifiers
-                        apply_common_modifiers(result)
-            CODE
+            "            # Apply default modifiers\n            apply_common_modifiers(result)"
           else
             ""
           end
