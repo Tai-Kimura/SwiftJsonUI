@@ -255,15 +255,21 @@ module SjuiTools
                       
                       # Helper method to format value based on type
                       def format_value(value, type)
+                        return nil unless value
+                        
+                        # Check if it's a binding expression @{propertyName}
+                        if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')
+                          # Extract property name and return as binding
+                          property_name = value[2..-2]  # Remove @{ and }
+                          return "$viewModel.data.\#{property_name}"
+                        end
+                        
                         case type.downcase
                         when 'string'
-                          return nil unless value
                           '"\' + value.to_s + '"'
                         when 'int', 'integer'
-                          return nil unless value
                           value.to_s
                         when 'double', 'float'
-                          return nil unless value
                           value.to_s
                         when 'bool', 'boolean'
                           return nil if value.nil?
@@ -273,7 +279,6 @@ module SjuiTools
                         when 'edgeinsets'
                           format_edge_insets_value(value)
                         else
-                          return nil unless value
                           value.to_s
                         end
                       end
@@ -335,15 +340,32 @@ module SjuiTools
           
           lines = []
           @options[:attributes].each do |key, type|
+            # Check if we need to handle the key existing vs nil differently
             if type.downcase == 'bool' || type.downcase == 'boolean'
               lines << "            if @component.key?('#{key}')"
-              lines << "              formatted_value = format_value(@component['#{key}'], '#{type}')"
-              lines << "              params << \"#{key}: \#{formatted_value}\" if formatted_value != nil"
+              lines << "              value = @component['#{key}']"
+              lines << "              if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')"
+              lines << "                # Handle binding"
+              lines << "                property_name = value[2..-2]"
+              lines << '                params << "' + "#{key}: $viewModel.data." + '#{property_name}"'
+              lines << "              else"
+              lines << "                # Handle static value"
+              lines << "                formatted_value = format_value(value, '#{type}')"
+              lines << '                params << "' + "#{key}: " + '#{formatted_value}" if formatted_value != nil'
+              lines << "              end"
               lines << "            end"
             else
               lines << "            if @component['#{key}']"
-              lines << "              formatted_value = format_value(@component['#{key}'], '#{type}')"
-              lines << "              params << \"#{key}: \#{formatted_value}\" if formatted_value"
+              lines << "              value = @component['#{key}']"
+              lines << "              if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')"
+              lines << "                # Handle binding"
+              lines << "                property_name = value[2..-2]"
+              lines << '                params << "' + "#{key}: $viewModel.data." + '#{property_name}"'
+              lines << "              else"
+              lines << "                # Handle static value"
+              lines << "                formatted_value = format_value(value, '#{type}')"
+              lines << '                params << "' + "#{key}: " + '#{formatted_value}" if formatted_value'
+              lines << "              end"
               lines << "            end"
             end
           end
