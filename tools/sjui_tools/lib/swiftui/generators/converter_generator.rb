@@ -4,6 +4,7 @@ require 'fileutils'
 require 'json'
 require_relative '../../core/logger'
 require_relative 'swift_component_generator'
+require_relative 'adapter_generator'
 
 module SjuiTools
   module SwiftUI
@@ -30,6 +31,10 @@ module SjuiTools
           # Create Swift file using separate generator
           swift_generator = SwiftComponentGenerator.new(@name, @options)
           swift_generator.generate
+          
+          # Generate adapter file if adapter_directory is configured
+          adapter_generator = AdapterGenerator.new(@name, @options)
+          adapter_generator.generate
           
           @logger.success "Successfully generated converter: #{@class_name}"
           @logger.info "Converter file created at: views/extensions/#{@name}_converter.rb"

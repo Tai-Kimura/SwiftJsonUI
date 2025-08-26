@@ -276,18 +276,29 @@ public struct DynamicComponentBuilder: View {
         
         // Default/Unknown
         default:
-            // Unknown component type - show error message
-            Text("Error: Unknown component type '\(type)'")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(Color.red)
-                .cornerRadius(6)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 6)
-                        .stroke(Color.red.opacity(0.8), lineWidth: 1)
+            // Check for registered custom component adapters
+            if let adapter = CustomComponentRegistry.shared.adapter(for: type) {
+                let _ = print("🔌 Using custom adapter for type: \(type)")
+                adapter.buildView(
+                    component: component,
+                    viewModel: viewModel,
+                    viewId: viewId,
+                    parentOrientation: parentOrientation
                 )
+            } else {
+                // Unknown component type - show error message
+                Text("Error: Unknown component type '\(type)'")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.red)
+                    .cornerRadius(6)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 6)
+                            .stroke(Color.red.opacity(0.8), lineWidth: 1)
+                    )
+            }
             }
         } else {
             // Skip components without type (data, include, etc.)
