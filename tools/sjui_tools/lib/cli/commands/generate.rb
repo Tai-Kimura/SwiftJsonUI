@@ -212,13 +212,16 @@ module SjuiTools
               options[:is_container] = false
             end
             
-            opts.on('--attributes KEY:TYPE', 'Add custom attribute (can be used multiple times)') do |attr|
-              key, type = attr.split(':')
-              if key && type
-                options[:attributes][key] = type
-              else
-                puts "Error: Invalid attribute format. Use KEY:TYPE"
-                exit 1
+            opts.on('--attributes KEY:TYPE', 'Add custom attribute (can be used multiple times or comma-separated)') do |attr|
+              # Handle comma-separated attributes
+              attr.split(',').each do |single_attr|
+                key, type = single_attr.strip.split(':', 2)
+                if key && type
+                  options[:attributes][key] = type
+                else
+                  puts "Error: Invalid attribute format. Use KEY:TYPE"
+                  exit 1
+                end
               end
             end
           end.parse!(args)

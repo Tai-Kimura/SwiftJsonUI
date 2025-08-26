@@ -32,6 +32,9 @@ module SjuiTools
           @logger.success "Successfully generated converter: #{@class_name}"
           @logger.info "Converter file created at: views/extensions/#{@name}_converter.rb"
           @logger.info "Mappings file updated with '#{to_camel_case(@name)}' => '#{@class_name}'"
+          
+          # Update membership exceptions to exclude the extensions directory
+          update_membership_exceptions_if_needed
         end
 
         private
@@ -314,6 +317,22 @@ module SjuiTools
 
         def to_camel_case(str)
           str.split('_').map(&:capitalize).join
+        end
+        
+        def update_membership_exceptions_if_needed
+          # Try to find and update the Xcode project file
+          require_relative '../../core/project_finder'
+          require_relative '../../core/pbxproj_manager'
+          
+          if Core::ProjectFinder.setup_paths && Core::ProjectFinder.project_file_path
+            begin
+              manager = Core::PbxprojManager.new(Core::ProjectFinder.project_file_path)
+              manager.setup_membership_exceptions
+              @logger.info "Updated Xcode project to exclude extensions directory"
+            rescue => e
+              @logger.warn "Could not update Xcode project exclusions: #{e.message}"
+            end
+          end
         end
       end
     end

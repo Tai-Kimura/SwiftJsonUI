@@ -33,20 +33,28 @@ module SjuiTools
         @view_registry = ViewRegistry.new
         @binding_registry = binding_registry
         @custom_converters = load_custom_converters
+        STDERR.puts "[ConverterFactory] Loaded custom converters: #{@custom_converters.inspect}"
       end
       
       def load_custom_converters
         mappings_file = File.join(__dir__, 'views', 'extensions', 'converter_mappings.rb')
         
+        puts "DEBUG: Looking for mappings at: #{mappings_file}" if ENV['DEBUG']
+        
         # Return empty hash if mappings file doesn't exist
-        return {} unless File.exist?(mappings_file)
+        unless File.exist?(mappings_file)
+          puts "DEBUG: Mappings file does not exist" if ENV['DEBUG']
+          return {}
+        end
         
         begin
           # Load the mappings file
           require_relative 'views/extensions/converter_mappings'
           
           # Get the mappings if the constant exists
-          if defined?(Views::Extensions::CONVERTER_MAPPINGS)
+          if defined?(SjuiTools::SwiftUI::Views::Extensions::CONVERTER_MAPPINGS)
+            SjuiTools::SwiftUI::Views::Extensions::CONVERTER_MAPPINGS
+          elsif defined?(Views::Extensions::CONVERTER_MAPPINGS)
             Views::Extensions::CONVERTER_MAPPINGS
           else
             {}
@@ -67,22 +75,41 @@ module SjuiTools
         component_type = component['type']
         registry = view_registry || @view_registry
         
+        File.open('/tmp/converter_debug.log', 'a') do |f|
+          f.puts "[ConverterFactory.create_converter] Component type: #{component_type}, Custom converters: #{@custom_converters.inspect}"
+        end
+        
         # Check if there's a custom converter for this component type
         if @custom_converters && @custom_converters[component_type]
           converter_class_name = @custom_converters[component_type]
+          puts "DEBUG: Found custom converter for #{component_type}: #{converter_class_name}" if ENV['DEBUG']
           
           begin
             # Load the custom converter file if not already loaded
             converter_file = converter_class_name.gsub(/([A-Z])/, '_\1').downcase.sub(/^_/, '')
+            File.open('/tmp/converter_debug.log', 'a') do |f|
+              f.puts "[Loading converter] File: views/extensions/#{converter_file}, Class: #{converter_class_name}"
+            end
             require_relative "views/extensions/#{converter_file}"
             
             # Get the converter class
-            converter_class = Views::Extensions.const_get(converter_class_name)
+            converter_class = if defined?(SjuiTools::SwiftUI::Views::Extensions)
+              SjuiTools::SwiftUI::Views::Extensions.const_get(converter_class_name)
+            else
+              Views::Extensions.const_get(converter_class_name)
+            end
+            
+            File.open('/tmp/converter_debug.log', 'a') do |f|
+              f.puts "[Converter loaded] Successfully loaded #{converter_class_name}"
+            end
             
             # Create and return the custom converter instance
             return converter_class.new(component, indent_level, action_manager, self, registry, @binding_registry)
           rescue LoadError, NameError => e
-            puts "Warning: Could not load custom converter #{converter_class_name}: #{e.message}" if ENV['DEBUG']
+            File.open('/tmp/converter_debug.log', 'a') do |f|
+              f.puts "[Converter error] Failed to load #{converter_class_name}: #{e.message}"
+              f.puts "  Backtrace: #{e.backtrace.first(3).join("\n  ")}"
+            end
             # Fall through to standard converters
           end
         end
