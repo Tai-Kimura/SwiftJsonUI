@@ -100,14 +100,18 @@ module SjuiTools
           new_mapping = "          '#{component_type}' => '#{@class_name}',"
           
           # Insert the new mapping before the closing brace of CONVERTER_MAPPINGS
-          content.sub!(/(CONVERTER_MAPPINGS = \{[^}]*)(        \}\.freeze)/m) do
+          content.sub!(/(CONVERTER_MAPPINGS = \{.*?)(,?)(\s*)(        \}\.freeze)/m) do
             existing_mappings = $1
-            closing = $2
+            last_comma = $2
+            whitespace = $3
+            closing = $4
             
-            # Add comma to last mapping if there are existing mappings
-            if existing_mappings =~ /[^{\s]/
-              "#{existing_mappings}\n#{new_mapping}\n#{closing}"
+            # If there are existing mappings, add the new one with proper formatting
+            if existing_mappings =~ /=>/
+              # Ensure the last existing mapping has a comma, then add the new mapping
+              "#{existing_mappings},\n#{new_mapping}\n#{closing}"
             else
+              # First mapping
               "#{existing_mappings}\n#{new_mapping}\n#{closing}"
             end
           end
