@@ -2,6 +2,7 @@
   "mode": "swiftui",
   "project_name": "SwiftJsonUI",
   "layouts_directory": "Layouts",
+  "extension_directory": "Sources/SwiftJsonUI/Extensions",
   "swiftui": {
     "output_directory": "Generated"
   }

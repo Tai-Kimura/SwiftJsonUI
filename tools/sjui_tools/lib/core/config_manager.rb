@@ -18,6 +18,7 @@ module SjuiTools
         'custom_view_types' => {},
         'hot_loader_directory' => '',
         'use_network' => true,
+        'extension_directory' => 'Extensions',
         'swiftui' => {
           'output_directory' => 'Generated'
         },
