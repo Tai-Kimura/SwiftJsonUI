@@ -215,7 +215,7 @@ module SjuiTools
           impl += param_lines.join(",\n")
           
           impl += "\n            )\n"
-          impl += "            .modifier(ButtonModifiers(component: component, viewModel: viewModel))\n"
+          impl += "            .modifier(CommonModifiers(component: component, viewModel: viewModel))\n"
           impl += "        )"
           
           impl
@@ -270,7 +270,7 @@ module SjuiTools
           impl += "            ) {\n"
           impl += "                content\n"
           impl += "            }\n"
-          impl += "            .modifier(ButtonModifiers(component: component, viewModel: viewModel))\n"
+          impl += "            .modifier(CommonModifiers(component: component, viewModel: viewModel))\n"
           impl += "        )"
           
           impl
