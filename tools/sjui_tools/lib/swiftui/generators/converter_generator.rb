@@ -161,19 +161,21 @@ module SjuiTools
           <<~RUBY
             # frozen_string_literal: true
             
-            require_relative '../../converters/base_converter'
+            require_relative '../base_view_converter'
             
             module SjuiTools
               module SwiftUI
                 module Views
                   module Extensions
-                    class #{@class_name} < Converters::BaseConverter
+                    class #{@class_name} < BaseViewConverter
+                      def initialize(component, indent_level = 0, action_manager = nil, converter_factory = nil, view_registry = nil, binding_registry = nil)
+                        super(component, indent_level, action_manager, binding_registry)
+                        @factory = converter_factory
+                        @registry = view_registry
+                      end
+                      
                       def convert
-                        result = []
-                        
             #{generate_container_check}
-                        # Generate component with parameters
-                        component_line = "\#{indent}#{@component_pascal_case}("
                         
                         # Collect parameters
                         params = []
@@ -182,47 +184,49 @@ module SjuiTools
                         if is_container
                           # Container component with children
                           if params.empty?
-                            result << "\#{indent}#{@component_pascal_case} {"
+                            add_line "#{@component_pascal_case} {"
                           else
-                            result << component_line
-                            @indent_level += 1
-                            params.each_with_index do |param, index|
-                              if index == params.length - 1
-                                result << "\#{indent}\#{param}"
-                              else
-                                result << "\#{indent}\#{param},"
+                            add_line "#{@component_pascal_case}("
+                            indent do
+                              params.each_with_index do |param, index|
+                                if index == params.length - 1
+                                  add_line param
+                                else
+                                  add_line "\#{param},"
+                                end
                               end
                             end
-                            @indent_level -= 1
-                            result << "\#{indent}) {"
+                            add_line ") {"
                           end
                           
                           # Process children
-                          process_children(result)
+                          indent do
+                            process_children
+                          end
                           
-                          result << "\#{indent}}"
+                          add_line "}"
                         else
                           # Non-container component
                           if params.empty?
-                            result << "\#{indent}#{@component_pascal_case}()"
+                            add_line "#{@component_pascal_case}()"
                           else
-                            result << component_line
-                            @indent_level += 1
-                            params.each_with_index do |param, index|
-                              if index == params.length - 1
-                                result << "\#{indent}\#{param}"
-                              else
-                                result << "\#{indent}\#{param},"
+                            add_line "#{@component_pascal_case}("
+                            indent do
+                              params.each_with_index do |param, index|
+                                if index == params.length - 1
+                                  add_line param
+                                else
+                                  add_line "\#{param},"
+                                end
                               end
                             end
-                            @indent_level -= 1
-                            result << "\#{indent})"
+                            add_line ")"
                           end
                         end
                         
             #{generate_modifiers_code}
                         
-                        result
+                        generated_code
                       end
                       
                       private
@@ -232,20 +236,16 @@ module SjuiTools
                       end
                       
                       # Process children components (handles both 'children' and 'child' keys)
-                      def process_children(result)
-                        @indent_level += 1
-                        
+                      def process_children
                         # Handle both 'children' and 'child' keys (both are arrays)
                         child_array = @component['children'] || @component['child']
                         
                         if child_array && child_array.is_a?(Array)
                           child_array.each do |child|
-                            child_converter = @factory.create_converter(child, @indent_level, @action_manager, @registry, @binding_registry)
-                            result.concat(child_converter.convert)
+                            child_converter = @factory.create_converter(child, @indent_level, @action_manager, @factory, @registry)
+                            @generated_code.concat(child_converter.convert.split("\\n"))
                           end
                         end
-                        
-                        @indent_level -= 1
                       end
                       
                       # Helper method to format value based on type
@@ -261,7 +261,7 @@ module SjuiTools
                           return nil unless value
                           value.to_s
                         when 'bool', 'boolean'
-                          return nil unless value
+                          return nil if value.nil?
                           value.to_s.downcase
                         when 'color'
                           format_color_value(value)
@@ -330,20 +330,23 @@ module SjuiTools
           
           lines = []
           @options[:attributes].each do |key, type|
-            lines << "            if @component['#{key}']"
-            lines << "              formatted_value = format_value(@component['#{key}'], '#{type}')"
-            lines << "              params << \"#{key}: \\#\{formatted_value}\" if formatted_value"
-            lines << "            end"
+            if type.downcase == 'bool' || type.downcase == 'boolean'
+              lines << "            if @component.key?('#{key}')"
+              lines << "              formatted_value = format_value(@component['#{key}'], '#{type}')"
+              lines << "              params << \"#{key}: \#{formatted_value}\" if formatted_value != nil"
+              lines << "            end"
+            else
+              lines << "            if @component['#{key}']"
+              lines << "              formatted_value = format_value(@component['#{key}'], '#{type}')"
+              lines << "              params << \"#{key}: \#{formatted_value}\" if formatted_value"
+              lines << "            end"
+            end
           end
           lines.join("\n")
         end
         
         def generate_modifiers_code
-          if @options[:use_default_attributes]
-            "            # Apply default modifiers\n            apply_common_modifiers(result)"
-          else
-            ""
-          end
+          "            # Apply default modifiers\n            apply_modifiers"
         end
 
         def to_camel_case(str)
