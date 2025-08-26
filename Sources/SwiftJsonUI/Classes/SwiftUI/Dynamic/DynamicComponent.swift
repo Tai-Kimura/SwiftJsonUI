@@ -191,6 +191,7 @@ public struct DynamicComponent: Decodable {
     let borderStyle: String?  // Border style for TextField
     let input: String?  // Keyboard type for TextField
     let action: String?
+    let isEnabled: Bool?  // Whether the component is enabled
     let iconOn: String?
     let iconOff: String?
     let iconColor: String?
@@ -330,14 +331,21 @@ public struct DynamicComponent: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         // Store raw JSON data for custom attributes
-        // Extract all keys into dictionary
-        var dict = [String: Any]()
-        for key in container.allKeys {
-            if let value = try? container.decode(AnyCodable.self, forKey: key) {
-                dict[key.stringValue] = value.value
+        // Try to decode as AnyCodable to get all properties including unknown ones
+        if let singleValue = try? decoder.singleValueContainer(),
+           let anyValue = try? singleValue.decode(AnyCodable.self),
+           let dict = anyValue.value as? [String: Any] {
+            self.rawData = dict
+        } else {
+            // Fallback: Extract all known keys into dictionary
+            var dict = [String: Any]()
+            for key in container.allKeys {
+                if let value = try? container.decode(AnyCodable.self, forKey: key) {
+                    dict[key.stringValue] = value.value
+                }
             }
+            self.rawData = dict
         }
-        self.rawData = dict
         
         // Type is optional - elements without type (include, data, etc.) will be skipped
         type = try container.decodeIfPresent(String.self, forKey: .type)
