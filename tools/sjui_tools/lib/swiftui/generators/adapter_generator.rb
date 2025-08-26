@@ -190,76 +190,81 @@ module SjuiTools
           impl = "// Extract attributes from raw JSON data\n"
           
           # First, extract all values and check for bindings
-          attributes.each do |name, type|
+          attributes.each do |name, attr_info|
+            type = attr_info[:type]
+            is_binding = attr_info[:is_binding]
             impl += "        // Extract #{name}\n"
             impl += "        let #{name}Value = component.rawData[\"#{name}\"]\n"
-            impl += "        let #{name}: "
             
-            # Check if it's a binding or static value
-            case type
+            # Check if it's a binding property that needs special handling
+            if is_binding
+              # Binding properties need to create SwiftUI.Binding
+              impl += generate_binding_extraction(name, type)
+            else
+              # Regular properties
+              case type
             when 'String'
-              impl += "Binding<String> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: String\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? String ?? \"\" },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? String ?? \"\"\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? String ?? \"\")\n"
+              impl += "            #{name} = #{name}Value as? String ?? \"\"\n"
               impl += "        }\n"
             when 'Bool'
-              impl += "Binding<Bool> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Bool\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Bool ?? false },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Bool ?? false\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Bool ?? false)\n"
+              impl += "            #{name} = #{name}Value as? Bool ?? false\n"
               impl += "        }\n"
             when 'Int'
-              impl += "Binding<Int> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Int\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Int ?? 0 },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Int ?? 0\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Int ?? 0)\n"
+              impl += "            #{name} = #{name}Value as? Int ?? 0\n"
               impl += "        }\n"
             when 'Double'
-              impl += "Binding<Double> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Double\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Double ?? 0.0 },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Double ?? 0.0\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Double ?? 0.0)\n"
+              impl += "            #{name} = #{name}Value as? Double ?? 0.0\n"
               impl += "        }\n"
             when 'Float'
-              impl += "Binding<Float> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Float\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Float ?? 0.0 },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Float ?? 0.0\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Float ?? 0.0)\n"
+              impl += "            #{name} = #{name}Value as? Float ?? 0.0\n"
               impl += "        }\n"
             else
-              # For other types, just use constant binding
-              impl += "Binding<#{type}> = .constant(#{name}Value as? #{type} ?? #{type}())\n"
+              # For model types, always expect binding format @{propertyName}
+              # Check if type ends with !! (force non-optional)
+              actual_type = type.is_a?(Hash) ? type[:type] : type
+              force_non_optional = actual_type.is_a?(String) ? actual_type.end_with?('!!') : false
+              clean_type = force_non_optional ? actual_type[0..-3] : actual_type
+              swift_type = force_non_optional ? clean_type : "#{clean_type}?"
+              
+              impl += "        var #{name}: #{swift_type}\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? #{clean_type}\n"
+              impl += "        } else {\n"
+              impl += "            #{name} = nil\n"
+              impl += "        }\n"
+              end
             end
           end
           
@@ -281,76 +286,81 @@ module SjuiTools
           impl = "// Extract attributes from raw JSON data\n"
           
           # First, extract all values and check for bindings
-          attributes.each do |name, type|
+          attributes.each do |name, attr_info|
+            type = attr_info.is_a?(Hash) ? attr_info[:type] : attr_info
+            is_binding = attr_info.is_a?(Hash) ? attr_info[:is_binding] : false
             impl += "        // Extract #{name}\n"
             impl += "        let #{name}Value = component.rawData[\"#{name}\"]\n"
-            impl += "        let #{name}: "
             
-            # Check if it's a binding or static value
-            case type
+            # Check if it's a binding property that needs special handling
+            if is_binding
+              # Binding properties need to create SwiftUI.Binding
+              impl += generate_binding_extraction(name, type)
+            else
+              # Regular properties
+              case type
             when 'String'
-              impl += "Binding<String> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: String\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? String ?? \"\" },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? String ?? \"\"\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? String ?? \"\")\n"
+              impl += "            #{name} = #{name}Value as? String ?? \"\"\n"
               impl += "        }\n"
             when 'Bool'
-              impl += "Binding<Bool> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Bool\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Bool ?? false },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Bool ?? false\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Bool ?? false)\n"
+              impl += "            #{name} = #{name}Value as? Bool ?? false\n"
               impl += "        }\n"
             when 'Int'
-              impl += "Binding<Int> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Int\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Int ?? 0 },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Int ?? 0\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Int ?? 0)\n"
+              impl += "            #{name} = #{name}Value as? Int ?? 0\n"
               impl += "        }\n"
             when 'Double'
-              impl += "Binding<Double> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Double\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Double ?? 0.0 },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Double ?? 0.0\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Double ?? 0.0)\n"
+              impl += "            #{name} = #{name}Value as? Double ?? 0.0\n"
               impl += "        }\n"
             when 'Float'
-              impl += "Binding<Float> = "
-              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "        var #{name}: Float\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
               impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
               impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
-              impl += "            Binding(\n"
-              impl += "                get: { viewModel.data[propertyName] as? Float ?? 0.0 },\n"
-              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
-              impl += "            )\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? Float ?? 0.0\n"
               impl += "        } else {\n"
-              impl += "            .constant(#{name}Value as? Float ?? 0.0)\n"
+              impl += "            #{name} = #{name}Value as? Float ?? 0.0\n"
               impl += "        }\n"
             else
-              # For other types, just use constant binding
-              impl += "Binding<#{type}> = .constant(#{name}Value as? #{type} ?? #{type}())\n"
+              # For model types, always expect binding format @{propertyName}
+              # Check if type ends with !! (force non-optional)
+              actual_type = type.is_a?(Hash) ? type[:type] : type
+              force_non_optional = actual_type.is_a?(String) ? actual_type.end_with?('!!') : false
+              clean_type = force_non_optional ? actual_type[0..-3] : actual_type
+              swift_type = force_non_optional ? clean_type : "#{clean_type}?"
+              
+              impl += "        var #{name}: #{swift_type}\n"
+              impl += "        if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            #{name} = viewModel.data[propertyName] as? #{clean_type}\n"
+              impl += "        } else {\n"
+              impl += "            #{name} = nil\n"
+              impl += "        }\n"
+              end
             end
           end
           
@@ -393,22 +403,101 @@ module SjuiTools
           
           # Handle both string and hash formats
           if @options[:attributes].is_a?(Hash)
-            # Already parsed as hash
-            return @options[:attributes]
+            # Already parsed as hash - check for binding properties
+            result = {}
+            @options[:attributes].each do |key, type|
+              actual_key = key.start_with?('@') ? key[1..-1] : key
+              result[actual_key] = { 
+                type: type,
+                is_binding: key.start_with?('@')
+              }
+            end
+            return result
           elsif @options[:attributes].is_a?(String)
-            # Parse attributes string like "text:String,isEnabled:Bool"
+            # Parse attributes string like "text:String,@isEnabled:Bool"
             attributes = {}
             @options[:attributes].split(',').each do |attr|
               parts = attr.strip.split(':')
               if parts.size == 2
                 name = parts[0].strip
+                is_binding = name.start_with?('@')
+                actual_name = is_binding ? name[1..-1] : name
                 type = parts[1].strip
-                attributes[name] = type
+                attributes[actual_name] = {
+                  type: type,
+                  is_binding: is_binding
+                }
               end
             end
             return attributes
           else
             return {}
+          end
+        end
+        
+        def generate_binding_extraction(name, type)
+          impl = ""
+          
+          # For binding properties, we need to create a SwiftUI.Binding
+          # We'll use the viewModel's binding mechanism
+          case type
+          when 'String', 'Bool', 'Int', 'Double', 'Float'
+            impl += "        let #{name}: SwiftUI.Binding<#{type}>\n"
+            impl += "        if let stringValue = #{name}Value as? String,\n"
+            impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+            impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+            impl += "            // Create binding from viewModel\n"
+            impl += "            #{name} = SwiftUI.Binding(\n"
+            impl += "                get: { viewModel.data[propertyName] as? #{type} ?? #{get_default_value_for_type(type)} },\n"
+            impl += "                set: { newValue in\n"
+            impl += "                    viewModel.data[propertyName] = newValue\n"
+            impl += "                }\n"
+            impl += "            )\n"
+            impl += "        } else {\n"
+            impl += "            // Create constant binding with default value\n"
+            default_value = get_default_value_for_type(type)
+            impl += "            #{name} = .constant(#{default_value})\n"
+            impl += "        }\n"
+          else
+            # Model types
+            force_non_optional = type.end_with?('!!')
+            clean_type = force_non_optional ? type[0..-3] : type
+            swift_type = force_non_optional ? clean_type : "#{clean_type}?"
+            
+            impl += "        let #{name}: SwiftUI.Binding<#{swift_type}>\n"
+            impl += "        if let stringValue = #{name}Value as? String,\n"
+            impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+            impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+            impl += "            // Create binding from viewModel for model type\n"
+            impl += "            #{name} = SwiftUI.Binding(\n"
+            impl += "                get: { viewModel.data[propertyName] as? #{clean_type} },\n"
+            impl += "                set: { newValue in\n"
+            impl += "                    viewModel.data[propertyName] = newValue\n"
+            impl += "                }\n"
+            impl += "            )\n"
+            impl += "        } else {\n"
+            impl += "            // Create constant binding with nil\n"
+            impl += "            #{name} = .constant(nil)\n"
+            impl += "        }\n"
+          end
+          
+          impl
+        end
+        
+        def get_default_value_for_type(type)
+          case type
+          when 'String'
+            '""'
+          when 'Bool'
+            'false'
+          when 'Int'
+            '0'
+          when 'Double'
+            '0.0'
+          when 'Float'
+            '0.0'
+          else
+            'nil'
           end
         end
         

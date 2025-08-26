@@ -20,10 +20,10 @@
         "branch": "master"
       }
     },
-    "7.1.0": {
+    "7.1.1": {
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
-        "branch": "7.1.0"
+        "branch": "7.1.1"
       },
       "R.swift": {
         "git": "https://github.com/mac-cain13/R.swift.Library",

@@ -13,8 +13,8 @@ When implementing SwiftUI support features:
    - Location: `~/resource/SwiftJsonUI`
 
 3. **Deployment**:
-   - Push changes to `7.0.0-beta` branch
-   - Move/update the `7.0.0-beta` tag
+   - Push changes to `7.1.1` branch
+   - Move/update the `7.1.1` tag
 
 ### Example Commands:
 ```bash
@@ -28,11 +28,11 @@ cd ~/resource/SwiftJsonUI
 # Apply same changes
 git add -A
 git commit -m "Your commit message"
-git push origin refs/heads/7.0.0-beta:refs/heads/7.0.0-beta
+git push origin refs/heads/7.1.1:refs/heads/7.1.1
 
 # Update tag
-git tag -f 7.0.0-beta
-git push origin 7.0.0-beta --force
+git tag -f 7.1.1
+git push origin 7.1.1 --force
 ```
 
 ## Important Rules

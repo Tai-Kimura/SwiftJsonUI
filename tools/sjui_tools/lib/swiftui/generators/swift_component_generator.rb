@@ -114,8 +114,15 @@ module SjuiTools
           
           if @options[:attributes] && !@options[:attributes].empty?
             @options[:attributes].each do |key, type|
-              swift_type = map_to_swift_type(type)
-              lines << "    let #{key}: #{swift_type}"
+              # Check if it's a binding property (starts with @)
+              if key.start_with?('@')
+                clean_key = key[1..-1]
+                swift_type = map_to_swift_type(type)
+                lines << "    @SwiftUI.Binding var #{clean_key}: #{swift_type}"
+              else
+                swift_type = map_to_swift_type(type)
+                lines << "    let #{key}: #{swift_type}"
+              end
             end
           end
           
@@ -161,8 +168,20 @@ module SjuiTools
           return "" if !@options[:attributes] || @options[:attributes].empty?
           
           @options[:attributes].map do |key, type|
-            swift_type = map_to_swift_type(type)
-            "#{key}: #{swift_type}, "
+            if key.start_with?('@')
+              # Binding property
+              clean_key = key[1..-1]
+              swift_type = map_to_swift_type(type)
+              "#{clean_key}: SwiftUI.Binding<#{swift_type}>, "
+            else
+              swift_type = map_to_swift_type(type)
+              # Add default value for optional model types
+              if swift_type.end_with?('?')
+                "#{key}: #{swift_type} = nil, "
+              else
+                "#{key}: #{swift_type}, "
+              end
+            end
           end.join("")
         end
 
@@ -170,7 +189,12 @@ module SjuiTools
           return "" if !@options[:attributes] || @options[:attributes].empty?
           
           @options[:attributes].map do |key, _|
-            "        self.#{key} = #{key}\n"
+            if key.start_with?('@')
+              clean_key = key[1..-1]
+              "        self._#{clean_key} = #{clean_key}\n"
+            else
+              "        self.#{key} = #{key}\n"
+            end
           end.join("")
         end
 
@@ -178,13 +202,23 @@ module SjuiTools
           return "" if !@options[:attributes] || @options[:attributes].empty?
           
           @options[:attributes].map do |key, type|
-            default_value = get_swift_default_value(type)
-            "#{key}: #{default_value}"
+            if key.start_with?('@')
+              clean_key = key[1..-1]
+              default_value = get_swift_default_value(type)
+              "#{clean_key}: .constant(#{default_value})"
+            else
+              default_value = get_swift_default_value(type)
+              "#{key}: #{default_value}"
+            end
           end.join(", ")
         end
 
         def map_to_swift_type(type)
-          case type.downcase
+          # Check if type ends with !! (force non-optional)
+          force_non_optional = type.end_with?('!!')
+          clean_type = force_non_optional ? type[0..-3] : type
+          
+          swift_type = case clean_type.downcase
           when 'string'
             'String'
           when 'int', 'integer'
@@ -198,12 +232,19 @@ module SjuiTools
           when 'edgeinsets'
             'EdgeInsets'
           else
-            type
+            # Model types are optional by default
+            return force_non_optional ? clean_type : "#{clean_type}?"
           end
+          
+          # Basic types remain non-optional by default
+          swift_type
         end
 
         def get_swift_default_value(type)
-          case type.downcase
+          # Remove !! suffix if present
+          clean_type = type.end_with?('!!') ? type[0..-3] : type
+          
+          case clean_type.downcase
           when 'string'
             '"Sample Text"'
           when 'int', 'integer'
@@ -217,7 +258,8 @@ module SjuiTools
           when 'edgeinsets'
             'EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)'
           else
-            'nil'
+            # For model types, use .mock for non-optional or nil for optional
+            type.end_with?('!!') ? "#{clean_type}.mock" : "nil"
           end
         end
 

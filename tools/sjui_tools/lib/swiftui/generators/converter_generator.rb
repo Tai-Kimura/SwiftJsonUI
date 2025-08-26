@@ -255,7 +255,7 @@ module SjuiTools
                       
                       # Helper method to format value based on type
                       def format_value(value, type)
-                        return nil unless value
+                        return nil if value.nil?
                         
                         # Check if it's a binding expression @{propertyName}
                         if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')
@@ -340,31 +340,46 @@ module SjuiTools
           
           lines = []
           @options[:attributes].each do |key, type|
+            # Check if this is a binding property (starts with @)
+            is_binding = key.start_with?('@')
+            actual_key = is_binding ? key[1..-1] : key
             # Check if we need to handle the key existing vs nil differently
-            if type.downcase == 'bool' || type.downcase == 'boolean'
-              lines << "            if @component.key?('#{key}')"
-              lines << "              value = @component['#{key}']"
+            if is_binding
+              # Binding property - always expect @{} format
+              lines << "            if @component['#{actual_key}']"
+              lines << "              value = @component['#{actual_key}']"
+              lines << "              if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')"
+              lines << "                property_name = value[2..-2]"
+              lines << '                params << "' + "#{actual_key}: $viewModel.data." + '#{property_name}"'
+              lines << "              else"
+              lines << "                # For binding properties, assume direct property binding if not @{} format"
+              lines << '                params << "' + "#{actual_key}: $viewModel.data." + '#{value}"'
+              lines << "              end"
+              lines << "            end"
+            elsif type.downcase == 'bool' || type.downcase == 'boolean'
+              lines << "            if @component.key?('#{actual_key}')"
+              lines << "              value = @component['#{actual_key}']"
               lines << "              if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')"
               lines << "                # Handle binding"
               lines << "                property_name = value[2..-2]"
-              lines << '                params << "' + "#{key}: $viewModel.data." + '#{property_name}"'
+              lines << '                params << "' + "#{actual_key}: $viewModel.data." + '#{property_name}"'
               lines << "              else"
               lines << "                # Handle static value"
               lines << "                formatted_value = format_value(value, '#{type}')"
-              lines << '                params << "' + "#{key}: " + '#{formatted_value}" if formatted_value != nil'
+              lines << '                params << "' + "#{actual_key}: " + '#{formatted_value}" unless formatted_value.nil?'
               lines << "              end"
               lines << "            end"
             else
-              lines << "            if @component['#{key}']"
-              lines << "              value = @component['#{key}']"
+              lines << "            if @component['#{actual_key}']"
+              lines << "              value = @component['#{actual_key}']"
               lines << "              if value.is_a?(String) && value.start_with?('@{') && value.end_with?('}')"
               lines << "                # Handle binding"
               lines << "                property_name = value[2..-2]"
-              lines << '                params << "' + "#{key}: $viewModel.data." + '#{property_name}"'
+              lines << '                params << "' + "#{actual_key}: $viewModel.data." + '#{property_name}"'
               lines << "              else"
               lines << "                # Handle static value"
               lines << "                formatted_value = format_value(value, '#{type}')"
-              lines << '                params << "' + "#{key}: " + '#{formatted_value}" if formatted_value'
+              lines << '                params << "' + "#{actual_key}: " + '#{formatted_value}" if formatted_value'
               lines << "              end"
               lines << "            end"
             end
