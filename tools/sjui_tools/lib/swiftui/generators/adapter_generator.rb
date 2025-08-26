@@ -189,21 +189,77 @@ module SjuiTools
         def build_non_container_implementation(attributes)
           impl = "// Extract attributes from raw JSON data\n"
           
+          # First, extract all values and check for bindings
           attributes.each do |name, type|
-            impl += "        let #{name} = "
+            impl += "        // Extract #{name}\n"
+            impl += "        let #{name}Value = component.rawData[\"#{name}\"]\n"
+            impl += "        let #{name}: "
+            
+            # Check if it's a binding or static value
             case type
             when 'String'
-              impl += "component.rawData[\"#{name}\"] as? String ?? \"\"\n"
+              impl += "Binding<String> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? String ?? \"\" },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? String ?? \"\")\n"
+              impl += "        }\n"
             when 'Bool'
-              impl += "component.rawData[\"#{name}\"] as? Bool ?? false\n"
+              impl += "Binding<Bool> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Bool ?? false },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Bool ?? false)\n"
+              impl += "        }\n"
             when 'Int'
-              impl += "component.rawData[\"#{name}\"] as? Int ?? 0\n"
+              impl += "Binding<Int> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Int ?? 0 },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Int ?? 0)\n"
+              impl += "        }\n"
             when 'Double'
-              impl += "component.rawData[\"#{name}\"] as? Double ?? 0.0\n"
+              impl += "Binding<Double> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Double ?? 0.0 },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Double ?? 0.0)\n"
+              impl += "        }\n"
             when 'Float'
-              impl += "component.rawData[\"#{name}\"] as? Float ?? 0.0\n"
+              impl += "Binding<Float> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Float ?? 0.0 },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Float ?? 0.0)\n"
+              impl += "        }\n"
             else
-              impl += "component.rawData[\"#{name}\"] as? #{type}\n"
+              # For other types, just use constant binding
+              impl += "Binding<#{type}> = .constant(#{name}Value as? #{type} ?? #{type}())\n"
             end
           end
           
@@ -224,21 +280,77 @@ module SjuiTools
         def build_container_implementation(attributes)
           impl = "// Extract attributes from raw JSON data\n"
           
+          # First, extract all values and check for bindings
           attributes.each do |name, type|
-            impl += "        let #{name} = "
+            impl += "        // Extract #{name}\n"
+            impl += "        let #{name}Value = component.rawData[\"#{name}\"]\n"
+            impl += "        let #{name}: "
+            
+            # Check if it's a binding or static value
             case type
             when 'String'
-              impl += "component.rawData[\"#{name}\"] as? String ?? \"\"\n"
+              impl += "Binding<String> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? String ?? \"\" },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? String ?? \"\")\n"
+              impl += "        }\n"
             when 'Bool'
-              impl += "component.rawData[\"#{name}\"] as? Bool ?? false\n"
+              impl += "Binding<Bool> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Bool ?? false },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Bool ?? false)\n"
+              impl += "        }\n"
             when 'Int'
-              impl += "component.rawData[\"#{name}\"] as? Int ?? 0\n"
+              impl += "Binding<Int> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Int ?? 0 },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Int ?? 0)\n"
+              impl += "        }\n"
             when 'Double'
-              impl += "component.rawData[\"#{name}\"] as? Double ?? 0.0\n"
+              impl += "Binding<Double> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Double ?? 0.0 },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Double ?? 0.0)\n"
+              impl += "        }\n"
             when 'Float'
-              impl += "component.rawData[\"#{name}\"] as? Float ?? 0.0\n"
+              impl += "Binding<Float> = "
+              impl += "if let stringValue = #{name}Value as? String,\n"
+              impl += "           stringValue.hasPrefix(\"@{\") && stringValue.hasSuffix(\"}\") {\n"
+              impl += "            let propertyName = String(stringValue.dropFirst(2).dropLast(1))\n"
+              impl += "            Binding(\n"
+              impl += "                get: { viewModel.data[propertyName] as? Float ?? 0.0 },\n"
+              impl += "                set: { viewModel.updateData(propertyName, value: $0) }\n"
+              impl += "            )\n"
+              impl += "        } else {\n"
+              impl += "            .constant(#{name}Value as? Float ?? 0.0)\n"
+              impl += "        }\n"
             else
-              impl += "component.rawData[\"#{name}\"] as? #{type}\n"
+              # For other types, just use constant binding
+              impl += "Binding<#{type}> = .constant(#{name}Value as? #{type} ?? #{type}())\n"
             end
           end
           

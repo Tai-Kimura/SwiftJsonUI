@@ -14,7 +14,6 @@ public struct CustomComponentRegistration {
     /// Register all custom component adapters with the registry
     public static func registerAll() {
         let adapters: [CustomComponentAdapter] = [
-            BindingTestComponentAdapter()
         ]
         
         CustomComponentRegistry.shared.registerAll(adapters)
