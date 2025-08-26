@@ -192,12 +192,15 @@ module SjuiTools
                         "#{to_camel_case(@name)}"
                       end
                       
-                      # Process children components
+                      # Process children components (handles both 'children' and 'child' keys)
                       def process_children(result)
                         @indent_level += 1
                         
-                        if @component['children']
-                          @component['children'].each do |child|
+                        # Handle both 'children' and 'child' keys (both are arrays)
+                        child_array = @component['children'] || @component['child']
+                        
+                        if child_array && child_array.is_a?(Array)
+                          child_array.each do |child|
                             child_converter = @factory.create_converter(child, @indent_level, @action_manager, @registry, @binding_registry)
                             result.concat(child_converter.convert)
                           end
@@ -279,7 +282,7 @@ module SjuiTools
           when false
             "            # Force non-container mode\n            is_container = false\n"
           else
-            "            # Auto-detect container based on children\n            is_container = @component['children'] && !@component['children'].empty?\n"
+            "            # Auto-detect container based on children or child\n            is_container = (@component['children'] && !@component['children'].empty?) || (@component['child'] && !@component['child'].empty?)\n"
           end
         end
         
