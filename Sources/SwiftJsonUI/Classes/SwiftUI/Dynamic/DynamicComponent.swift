@@ -330,18 +330,14 @@ public struct DynamicComponent: Decodable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         
         // Store raw JSON data for custom attributes
-        if let data = try? JSONSerialization.jsonObject(with: JSONEncoder().encode(decoder.singleValueContainer())) as? [String: Any] {
-            self.rawData = data
-        } else {
-            // Fallback: try to extract all keys into dictionary
-            var dict = [String: Any]()
-            for key in container.allKeys {
-                if let value = try? container.decode(AnyCodable.self, forKey: key) {
-                    dict[key.stringValue] = value.value
-                }
+        // Extract all keys into dictionary
+        var dict = [String: Any]()
+        for key in container.allKeys {
+            if let value = try? container.decode(AnyCodable.self, forKey: key) {
+                dict[key.stringValue] = value.value
             }
-            self.rawData = dict
         }
+        self.rawData = dict
         
         // Type is optional - elements without type (include, data, etc.) will be skipped
         type = try container.decodeIfPresent(String.self, forKey: .type)

@@ -118,13 +118,20 @@ module SjuiTools
             # Add adapter to the list
             if content =~ /let adapters:\s*\[CustomComponentAdapter\]\s*=\s*\[(.*?)\]/m
               existing_adapters = $1
-              new_adapter_list = existing_adapters.strip
-              new_adapter_list += ",\n" unless new_adapter_list.empty?
-              new_adapter_list += "            #{@adapter_class_name}()"
+              
+              # Split existing adapters and properly format
+              adapter_lines = existing_adapters.strip.split(/,\s*\n/)
+              adapter_lines = adapter_lines.reject(&:empty?)
+              
+              # Add new adapter
+              adapter_lines << "#{@adapter_class_name}()"
+              
+              # Format all adapters with proper indentation
+              formatted_adapters = adapter_lines.map { |a| "            #{a.strip}" }.join(",\n")
               
               new_content = content.sub(
                 /let adapters:\s*\[CustomComponentAdapter\]\s*=\s*\[.*?\]/m,
-                "let adapters: [CustomComponentAdapter] = [\n#{new_adapter_list}\n        ]"
+                "let adapters: [CustomComponentAdapter] = [\n#{formatted_adapters}\n        ]"
               )
               
               File.write(registration_file, new_content)
@@ -169,11 +176,12 @@ module SjuiTools
         end
         
         def build_view_implementation(attributes)
-          if @options[:no_container]
+          # Check both :no_container flag and :is_container flag
+          if @options[:no_container] || @options[:is_container] == false
             # Non-container component
             build_non_container_implementation(attributes)
           else
-            # Container component
+            # Container component (default)
             build_container_implementation(attributes)
           end
         end
