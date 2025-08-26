@@ -195,12 +195,21 @@ module SjuiTools
         def parse_converter_options(args)
           options = {
             use_default_attributes: true,
-            attributes: {}
+            attributes: {},
+            is_container: nil  # nil means auto-detect based on children
           }
           
           OptionParser.new do |opts|
             opts.on('--no-default-attributes', 'Do not use default attributes') do
               options[:use_default_attributes] = false
+            end
+            
+            opts.on('--container', 'Force component to be a container (handles children)') do
+              options[:is_container] = true
+            end
+            
+            opts.on('--no-container', 'Force component to not be a container (ignores children)') do
+              options[:is_container] = false
             end
             
             opts.on('--attributes KEY:TYPE', 'Add custom attribute (can be used multiple times)') do |attr|

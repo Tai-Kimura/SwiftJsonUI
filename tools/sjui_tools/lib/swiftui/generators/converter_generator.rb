@@ -132,6 +132,7 @@ module SjuiTools
                       def convert
                         result = []
                         
+            #{generate_container_check}
                         # Generate component with parameters
                         component_line = "\#{indent}#{to_camel_case(@name)}("
                         
@@ -139,20 +140,45 @@ module SjuiTools
                         params = []
             #{generate_parameter_collection}
                         
-                        if params.empty?
-                          result << "\#{indent}#{to_camel_case(@name)}()"
-                        else
-                          result << component_line
-                          @indent_level += 1
-                          params.each_with_index do |param, index|
-                            if index == params.length - 1
-                              result << "\#{indent}\#{param}"
-                            else
-                              result << "\#{indent}\#{param},"
+                        if is_container
+                          # Container component with children
+                          if params.empty?
+                            result << "\#{indent}#{to_camel_case(@name)} {"
+                          else
+                            result << component_line
+                            @indent_level += 1
+                            params.each_with_index do |param, index|
+                              if index == params.length - 1
+                                result << "\#{indent}\#{param}"
+                              else
+                                result << "\#{indent}\#{param},"
+                              end
                             end
+                            @indent_level -= 1
+                            result << "\#{indent}) {"
                           end
-                          @indent_level -= 1
-                          result << "\#{indent})"
+                          
+                          # Process children
+                          process_children(result)
+                          
+                          result << "\#{indent}}"
+                        else
+                          # Non-container component
+                          if params.empty?
+                            result << "\#{indent}#{to_camel_case(@name)}()"
+                          else
+                            result << component_line
+                            @indent_level += 1
+                            params.each_with_index do |param, index|
+                              if index == params.length - 1
+                                result << "\#{indent}\#{param}"
+                              else
+                                result << "\#{indent}\#{param},"
+                              end
+                            end
+                            @indent_level -= 1
+                            result << "\#{indent})"
+                          end
                         end
                         
             #{generate_modifiers_code}
@@ -164,6 +190,20 @@ module SjuiTools
                       
                       def component_name
                         "#{to_camel_case(@name)}"
+                      end
+                      
+                      # Process children components
+                      def process_children(result)
+                        @indent_level += 1
+                        
+                        if @component['children']
+                          @component['children'].each do |child|
+                            child_converter = @factory.create_converter(child, @indent_level, @action_manager, @registry, @binding_registry)
+                            result.concat(child_converter.convert)
+                          end
+                        end
+                        
+                        @indent_level -= 1
                       end
                       
                       # Helper method to format value based on type
@@ -232,6 +272,17 @@ module SjuiTools
           RUBY
         end
 
+        def generate_container_check
+          case @options[:is_container]
+          when true
+            "            # Force container mode\n            is_container = true\n"
+          when false
+            "            # Force non-container mode\n            is_container = false\n"
+          else
+            "            # Auto-detect container based on children\n            is_container = @component['children'] && !@component['children'].empty?\n"
+          end
+        end
+        
         def generate_parameter_collection
           return "" if !@options[:attributes] || @options[:attributes].empty?
           
