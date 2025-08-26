@@ -11,7 +11,9 @@ module SjuiTools
       class ConverterGenerator
         def initialize(name, options = {})
           @name = name
-          @class_name = to_camel_case(name) + "Converter"
+          # Keep original PascalCase name for component, add Converter suffix for class
+          @component_pascal_case = name  # e.g., MyTestCard
+          @class_name = name + "Converter"  # e.g., MyTestCardConverter
           @options = options
           @logger = Core::Logger
         end
@@ -31,7 +33,7 @@ module SjuiTools
           
           @logger.success "Successfully generated converter: #{@class_name}"
           @logger.info "Converter file created at: views/extensions/#{@name}_converter.rb"
-          @logger.info "Mappings file updated with '#{to_camel_case(@name)}' => '#{@class_name}'"
+          @logger.info "Mappings file updated with '#{@component_pascal_case}' => '#{@class_name}'"
           
           # Update membership exceptions to exclude the extensions directory
           update_membership_exceptions_if_needed
@@ -41,10 +43,21 @@ module SjuiTools
 
         def create_converter_file
           # Ensure views/extensions directory exists
-          extensions_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          # Check if we're in a test app or main SwiftJsonUI
+          if File.exist?(File.join(Dir.pwd, 'sjui_tools'))
+            # Test app structure
+            extensions_dir = File.join(Dir.pwd, 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          else
+            # Main SwiftJsonUI structure
+            extensions_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          end
           FileUtils.mkdir_p(extensions_dir)
           
-          file_path = File.join(extensions_dir, "#{@name}_converter.rb")
+          # Convert name to snake_case for file name
+          snake_case_name = @name.gsub(/([A-Z]+)([A-Z][a-z])/,'\1_\2').
+                                  gsub(/([a-z\d])([A-Z])/,'\1_\2').
+                                  downcase
+          file_path = File.join(extensions_dir, "#{snake_case_name}_converter.rb")
           
           if File.exist?(file_path)
             @logger.warn "Converter file already exists: #{file_path}"
@@ -70,7 +83,7 @@ module SjuiTools
           content = File.read(mappings_file)
           
           # Check if mapping already exists
-          component_type = to_camel_case(@name)
+          component_type = @component_pascal_case
           if content.include?("'#{component_type}' =>")
             @logger.warn "Mapping for '#{component_type}' already exists in converter_mappings.rb"
             return
@@ -98,7 +111,14 @@ module SjuiTools
         
         def create_initial_mappings_file
           # Ensure views/extensions directory exists
-          extensions_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          # Check if we're in a test app or main SwiftJsonUI
+          if File.exist?(File.join(Dir.pwd, 'sjui_tools'))
+            # Test app structure
+            extensions_dir = File.join(Dir.pwd, 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          else
+            # Main SwiftJsonUI structure
+            extensions_dir = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions')
+          end
           FileUtils.mkdir_p(extensions_dir)
           
           mappings_file = File.join(extensions_dir, 'converter_mappings.rb')
@@ -114,7 +134,7 @@ module SjuiTools
                 module Views
                   module Extensions
                     CONVERTER_MAPPINGS = {
-                      '#{to_camel_case(@name)}' => '#{@class_name}',
+                      '#{@component_pascal_case}' => '#{@class_name}',
                     }.freeze
                   end
                 end
@@ -142,7 +162,7 @@ module SjuiTools
                         
             #{generate_container_check}
                         # Generate component with parameters
-                        component_line = "\#{indent}#{to_camel_case(@name)}("
+                        component_line = "\#{indent}#{@component_pascal_case}("
                         
                         # Collect parameters
                         params = []
@@ -151,7 +171,7 @@ module SjuiTools
                         if is_container
                           # Container component with children
                           if params.empty?
-                            result << "\#{indent}#{to_camel_case(@name)} {"
+                            result << "\#{indent}#{@component_pascal_case} {"
                           else
                             result << component_line
                             @indent_level += 1
@@ -173,7 +193,7 @@ module SjuiTools
                         else
                           # Non-container component
                           if params.empty?
-                            result << "\#{indent}#{to_camel_case(@name)}()"
+                            result << "\#{indent}#{@component_pascal_case}()"
                           else
                             result << component_line
                             @indent_level += 1
@@ -197,7 +217,7 @@ module SjuiTools
                       private
                       
                       def component_name
-                        "#{to_camel_case(@name)}"
+                        "#{@component_pascal_case}"
                       end
                       
                       # Process children components (handles both 'children' and 'child' keys)

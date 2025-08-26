@@ -10,7 +10,8 @@ module SjuiTools
       class SwiftComponentGenerator
         def initialize(name, options = {})
           @name = name
-          @component_name = to_camel_case(name)
+          # Keep the original PascalCase name for Swift file
+          @component_name = name
           @options = options
           @logger = Core::Logger
         end
