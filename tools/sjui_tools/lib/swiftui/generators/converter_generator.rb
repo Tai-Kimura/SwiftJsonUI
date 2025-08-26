@@ -71,7 +71,14 @@ module SjuiTools
         end
         
         def update_mappings_file
-          mappings_file = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions', 'converter_mappings.rb')
+          # Check if we're in a test app or main SwiftJsonUI
+          if File.exist?(File.join(Dir.pwd, 'sjui_tools'))
+            # Test app structure
+            mappings_file = File.join(Dir.pwd, 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions', 'converter_mappings.rb')
+          else
+            # Main SwiftJsonUI structure
+            mappings_file = File.join(Dir.pwd, 'tools', 'sjui_tools', 'lib', 'swiftui', 'views', 'extensions', 'converter_mappings.rb')
+          end
           
           # Create new mappings file if it doesn't exist
           if !File.exist?(mappings_file)
