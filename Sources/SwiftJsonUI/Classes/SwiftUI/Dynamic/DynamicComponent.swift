@@ -191,7 +191,6 @@ public struct DynamicComponent: Decodable {
     let borderStyle: String?  // Border style for TextField
     let input: String?  // Keyboard type for TextField
     let action: String?
-    let isEnabled: Bool?  // Whether the component is enabled
     let iconOn: String?
     let iconOff: String?
     let iconColor: String?
