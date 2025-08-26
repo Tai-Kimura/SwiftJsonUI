@@ -74,9 +74,9 @@ module SjuiTools
             # Git command failed, continue with other methods
           end
           
-          # Fallback to 7.0.0-beta
-          puts "Using fallback version: 7.0.0-beta"
-          "7.0.0-beta"
+          # Fallback to 7.1.0
+          puts "Using fallback version: 7.1.0"
+          "7.1.0"
         end
         
         def load_library_versions
