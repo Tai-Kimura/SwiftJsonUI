@@ -43,39 +43,17 @@ public struct CollectionConverter {
             dataSource = viewModel.data[propertyName] as? CollectionDataSource
         }
         
-        // Determine if we should use section-based rendering
-        let useSections = !sections.isEmpty && dataSource != nil
-        
-        if useSections {
-            // Section-based rendering
-            return renderSectionBasedCollection(
-                component: component,
-                sections: sections,
-                dataSource: dataSource!,
-                globalColumns: globalColumns,
-                viewModel: viewModel,
-                viewId: viewId
-            )
-        } else {
-            // Legacy rendering (backward compatibility)
-            return renderLegacyCollection(
-                component: component,
-                globalColumns: globalColumns,
-                viewModel: viewModel,
-                viewId: viewId
+        guard let dataSource = dataSource, !sections.isEmpty else {
+            // Return empty view if no data source or sections
+            return AnyView(
+                Text("No collection data")
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
             )
         }
-    }
-    
-    /// Render collection using the new section-based structure
-    private static func renderSectionBasedCollection(
-        component: DynamicComponent,
-        sections: [[String: Any]],
-        dataSource: CollectionDataSource,
-        globalColumns: Int,
-        viewModel: DynamicViewModel,
-        viewId: String?
-    ) -> AnyView {
+        
+        // Section-based rendering
         return AnyView(
             ScrollView {
                 VStack(spacing: 10) {
@@ -152,191 +130,6 @@ public struct CollectionConverter {
             }
             .modifier(CommonModifiers(component: component, viewModel: viewModel))
         )
-    }
-    
-    /// Legacy rendering for backward compatibility
-    private static func renderLegacyCollection(
-        component: DynamicComponent,
-        globalColumns: Int,
-        viewModel: DynamicViewModel,
-        viewId: String?
-    ) -> AnyView {
-        // Legacy collection data extraction
-        var collectionData: [[String: Any]] = []
-        var cellClassName: String? = nil
-        
-        if let itemsBinding = component.rawData["items"] as? String,
-           itemsBinding.hasPrefix("@{") && itemsBinding.hasSuffix("}") {
-            let propertyName = String(itemsBinding.dropFirst(2).dropLast())
-            
-            if let dataSource = viewModel.data[propertyName] as? CollectionDataSource {
-                // For legacy, just get the first section's cells if available
-                if let firstSection = dataSource.sections.first,
-                   let cells = firstSection.cells {
-                    collectionData = cells.data
-                    cellClassName = cells.viewName
-                }
-            }
-        }
-        
-        // Extract header and footer class names for legacy
-        let headerClassName: String? = {
-            if let headerClasses = component.headerClasses?.value {
-                if let classesArray = headerClasses as? [String] {
-                    return classesArray.first
-                } else if let classesArray = headerClasses as? [[String: Any]] {
-                    return classesArray.first?["className"] as? String
-                }
-            }
-            return nil
-        }()
-        
-        let footerClassName: String? = {
-            if let footerClasses = component.footerClasses?.value {
-                if let classesArray = footerClasses as? [String] {
-                    return classesArray.first
-                } else if let classesArray = footerClasses as? [[String: Any]] {
-                    return classesArray.first?["className"] as? String
-                }
-            }
-            return nil
-        }()
-        
-        // Fallback to items as [String] for backward compatibility
-        let items = component.items ?? []
-        let isHorizontal = component.horizontalScroll ?? false
-        
-        if globalColumns == 1 && !isHorizontal {
-            // Single column - use List
-            return AnyView(
-                List {
-                    // CollectionDataSource-driven content
-                    if !collectionData.isEmpty {
-                        ForEach(Array(collectionData.enumerated()), id: \.offset) { index, data in
-                            if let className = cellClassName {
-                                buildCellView(
-                                    cellClassName: className,
-                                    data: data,
-                                    component: component,
-                                    viewModel: viewModel,
-                                    viewId: viewId
-                                )
-                            }
-                        }
-                    }
-                    // Items-driven content (backward compatibility)
-                    else if !items.isEmpty {
-                        ForEach(0..<items.count, id: \.self) { index in
-                            Text(items[index])
-                                .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                                .font(DynamicHelpers.fontFromComponent(component))
-                        }
-                    }
-                    // Child components
-                    else if let children = component.childComponents {
-                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                            DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                        }
-                    }
-                }
-                .listStyle(PlainListStyle())
-                .modifier(CommonModifiers(component: component, viewModel: viewModel))
-            )
-        } else {
-            // Grid layout
-            let gridColumns = Array(repeating: GridItem(.flexible(), spacing: component.lineSpacing ?? 10), count: globalColumns)
-            
-            return AnyView(
-                ScrollView {
-                    VStack(spacing: 10) {
-                        // Header
-                        if let headerClassName = headerClassName {
-                            buildHeaderView(
-                                headerClassName: headerClassName,
-                                data: [:],
-                                viewModel: viewModel,
-                                viewId: viewId
-                            )
-                        }
-                        
-                        LazyVGrid(columns: gridColumns, spacing: component.columnSpacing ?? component.spacing ?? 10) {
-                            // CollectionDataSource-driven content
-                            if !collectionData.isEmpty {
-                                ForEach(Array(collectionData.enumerated()), id: \.offset) { index, data in
-                                    if let className = cellClassName {
-                                        buildCellView(
-                                            cellClassName: className,
-                                            data: data,
-                                            component: component,
-                                            viewModel: viewModel,
-                                            viewId: viewId
-                                        )
-                                        .frame(maxWidth: .infinity)
-                                    }
-                                }
-                            }
-                            // Items-driven content (backward compatibility)
-                            else if !items.isEmpty {
-                                ForEach(0..<items.count, id: \.self) { index in
-                                    Text(items[index])
-                                        .font(DynamicHelpers.fontFromComponent(component))
-                                        .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
-                                        .frame(maxWidth: .infinity)
-                                        .padding()
-                                        .background(Color.gray.opacity(0.1))
-                                        .cornerRadius(8)
-                                }
-                            }
-                            // Child components
-                            else if let children = component.childComponents {
-                                ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                                    DynamicComponentBuilder(component: child, viewModel: viewModel, viewId: viewId)
-                                }
-                            }
-                        }
-                        
-                        // Footer
-                        if let footerClassName = footerClassName {
-                            buildFooterView(
-                                footerClassName: footerClassName,
-                                data: [:],
-                                viewModel: viewModel,
-                                viewId: viewId
-                            )
-                        }
-                    }
-                    .padding(getContentInsets(from: component))
-                }
-                .modifier(CommonModifiers(component: component, viewModel: viewModel))
-            )
-        }
-    }
-    
-    private static func getContentInsets(from component: DynamicComponent) -> EdgeInsets {
-        // Handle contentInsets
-        if let contentInsets = component.contentInsets {
-            if let array = contentInsets.value as? [CGFloat] {
-                return EdgeInsets(
-                    top: array.count > 0 ? array[0] : 0,
-                    leading: array.count > 1 ? array[1] : 0,
-                    bottom: array.count > 2 ? array[2] : 0,
-                    trailing: array.count > 3 ? array[3] : 0
-                )
-            } else if let value = contentInsets.value as? CGFloat {
-                return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
-            }
-        }
-        
-        // Handle insetHorizontal and insetVertical
-        let horizontal = component.insetHorizontal ?? 0
-        let vertical = component.insetVertical ?? 0
-        
-        if horizontal > 0 || vertical > 0 {
-            return EdgeInsets(top: vertical, leading: horizontal, bottom: vertical, trailing: horizontal)
-        }
-        
-        // Default padding
-        return EdgeInsets(top: 10, leading: 10, bottom: 10, trailing: 10)
     }
     
     /// Build cell view for collection data
