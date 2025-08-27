@@ -54,6 +54,20 @@ public class DynamicViewModel: ObservableObject {
                     // Apply styles
                     let processedJSON = StyleProcessor.processStyles(jsonObject)
                     
+                    #if DEBUG
+                    // Debug: Check what's in the processed JSON
+                    if let scrollView = processedJSON["children"] as? [[String: Any]],
+                       let firstChild = scrollView.first,
+                       let viewChildren = firstChild["children"] as? [[String: Any]],
+                       let innerView = viewChildren.first,
+                       let innerChildren = innerView["children"] as? [[String: Any]] {
+                        print("[DynamicViewModel] Inner view has \(innerChildren.count) children")
+                        for (index, child) in innerChildren.enumerated() {
+                            print("[DynamicViewModel] Child[\(index)]: type=\(child["type"] ?? "nil")")
+                        }
+                    }
+                    #endif
+                    
                     // Convert back to Data for decoding
                     let processedData = try JSONSerialization.data(withJSONObject: processedJSON, options: [])
                     
