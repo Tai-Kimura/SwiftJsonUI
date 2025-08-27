@@ -516,7 +516,16 @@ public struct DynamicComponent: Decodable {
         placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
         renderingMode = try container.decodeIfPresent(String.self, forKey: .renderingMode)
         headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
-        items = try container.decodeIfPresent([String].self, forKey: .items)
+        // items can be either an array of strings or a binding string like "@{items1}"
+        if let itemsArray = try? container.decode([String].self, forKey: .items) {
+            items = itemsArray
+        } else if let itemsString = try? container.decode(String.self, forKey: .items) {
+            // Store the binding string in rawData for later processing
+            // items array stays nil for binding case
+            items = nil
+        } else {
+            items = nil
+        }
         hint = try container.decodeIfPresent(String.self, forKey: .hint)
         // hintColor is already decoded above with hintAttributes
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)
