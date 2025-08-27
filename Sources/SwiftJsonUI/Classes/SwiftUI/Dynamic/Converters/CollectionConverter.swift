@@ -153,7 +153,7 @@ import SwiftUI
                                         sectionConfig["columns"] as? Int
                                         ?? globalColumns
 
-                                    VStack(spacing: 10) {
+                                    HStack(spacing: 10) {
                                         // Header
                                         if let headerName = sectionConfig[
                                             "header"
@@ -168,94 +168,29 @@ import SwiftUI
                                             )
                                         }
 
-                                        // Cells
+                                        // Cells - in horizontal layout, cells are side by side
                                         if let cellName = sectionConfig["cell"]
                                             as? String,
                                             let cellsData = sectionData.cells
                                         {
-                                            if isHorizontal {
-                                                // Horizontal layout - cells arranged horizontally
-                                                ForEach(
-                                                    0..<cellsData.data.count,
-                                                    id: \.self
-                                                ) { cellIndex in
-                                                    buildCellView(
-                                                        cellClassName: cellName,
-                                                        data: cellsData.data[
-                                                            cellIndex
-                                                        ],
-                                                        component: component,
-                                                        viewModel: viewModel,
-                                                        viewId: viewId
-                                                    )
-                                                    .frame(width: 150)  // Fixed width for horizontal items
-                                                }
-                                            } else if sectionColumns == 1 {
-                                                // List-style for single column
-                                                VStack(spacing: 8) {
-                                                    ForEach(
-                                                        0..<cellsData.data.count,
-                                                        id: \.self
-                                                    ) { cellIndex in
-                                                        buildCellView(
-                                                            cellClassName:
-                                                                cellName,
-                                                            data:
-                                                                cellsData.data[
-                                                                    cellIndex
-                                                                ],
-                                                            component:
-                                                                component,
-                                                            viewModel:
-                                                                viewModel,
-                                                            viewId: viewId
-                                                        )
-                                                    }
-                                                }
-                                            } else {
-                                                // Grid for multiple columns
-                                                let gridColumns = Array(
-                                                    repeating: GridItem(
-                                                        .flexible(),
-                                                        spacing: component
-                                                            .lineSpacing ?? 10
-                                                    ),
-                                                    count: sectionColumns
+                                            ForEach(
+                                                0..<cellsData.data.count,
+                                                id: \.self
+                                            ) { cellIndex in
+                                                buildCellView(
+                                                    cellClassName: cellName,
+                                                    data: cellsData.data[
+                                                        cellIndex
+                                                    ],
+                                                    component: component,
+                                                    viewModel: viewModel,
+                                                    viewId: viewId
                                                 )
-
-                                                LazyVGrid(
-                                                    columns: gridColumns,
-                                                    spacing: component
-                                                        .columnSpacing
-                                                        ?? component.spacing
-                                                        ?? 10
-                                                ) {
-                                                    ForEach(
-                                                        0..<cellsData.data.count,
-                                                        id: \.self
-                                                    ) { cellIndex in
-                                                        buildCellView(
-                                                            cellClassName:
-                                                                cellName,
-                                                            data:
-                                                                cellsData.data[
-                                                                    cellIndex
-                                                                ],
-                                                            component:
-                                                                component,
-                                                            viewModel:
-                                                                viewModel,
-                                                            viewId: viewId
-                                                        )
-                                                        .frame(
-                                                            maxWidth: .infinity
-                                                        )
-                                                    }
-                                                }
+                                                .frame(width: 150)  // Fixed width for horizontal items
                                             }
                                         }
 
-                                        // Footer
+                                        // Footer (also horizontal)
                                         if let footerName = sectionConfig[
                                             "footer"
                                         ] as? String,
