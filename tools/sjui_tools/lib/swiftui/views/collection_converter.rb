@@ -159,7 +159,7 @@ module SjuiTools
                                     end
               
               # Use the specified property with getCellData if it's a CollectionDataSource
-              add_line "ForEach(Array(viewModel.data.#{property_name}.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
+              add_line "ForEach(Array(viewModel.data.#{property_name}.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { (index: Int, item: [String: Any]) in"
             else
               # Default to collectionDataSource
               # Extract the original class name from the cell classes
@@ -172,7 +172,7 @@ module SjuiTools
                                       cell_class_name.sub('View', '')
                                     end
               
-              add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { index, item in"
+              add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { (index: Int, item: [String: Any]) in"
             end
             indent do
               # Create cell view with data initializer
