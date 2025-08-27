@@ -23,13 +23,16 @@ struct FailableDecodable<T: Decodable>: Decodable {
             print("[FailableDecodable] Failed to decode \(T.self): \(error)")
             // Try to get more info about what we're trying to decode
             if T.self == DynamicComponent.self {
-                // Try to decode as dictionary to see what's in there
-                if let dict = try? container.decode([String: Any].self) {
+                // Try to decode as AnyCodable to see what's in there
+                if let anyDict = try? container.decode(AnyCodable.self),
+                   let dict = anyDict.value as? [String: Any] {
                     print("[FailableDecodable] Component type: \(dict["type"] ?? "nil")")
                     if dict["type"] as? String == "Collection" {
                         print("[FailableDecodable] Collection component failed!")
                         print("[FailableDecodable] sections: \(dict["sections"] ?? "nil")")
                         print("[FailableDecodable] items: \(dict["items"] ?? "nil")")
+                        print("[FailableDecodable] height: \(dict["height"] ?? "nil")")
+                        print("[FailableDecodable] columns: \(dict["columns"] ?? "nil")")
                     }
                 }
             }
