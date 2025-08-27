@@ -122,6 +122,20 @@ public struct DynamicDecodingHelper {
             // Filter out nil values but keep all components (including those without type like include)
             // The actual filtering will be done later by DynamicViewContainer
             let validComponents = childArray.compactMap { $0.value }
+            
+            #if DEBUG
+            print("[DynamicDecodingHelper] Decoded \(childArray.count) children, \(validComponents.count) valid")
+            for (index, component) in validComponents.enumerated() {
+                print("[DynamicDecodingHelper] Child[\(index)]: type=\(component.type ?? "nil")")
+                if component.type == "Collection" {
+                    print("[DynamicDecodingHelper] Collection found at index \(index)")
+                    print("[DynamicDecodingHelper]   sections: \(component.sections?.count ?? 0)")
+                    print("[DynamicDecodingHelper]   items: \(component.items ?? [])")
+                    print("[DynamicDecodingHelper]   rawData.items: \(component.rawData["items"] ?? "nil")")
+                }
+            }
+            #endif
+            
             return validComponents.isEmpty ? nil : validComponents
         }
         
