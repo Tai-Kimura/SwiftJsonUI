@@ -147,21 +147,12 @@ public struct CollectionConverter {
             .replacingOccurrences(of: "View", with: "_view")
             .camelCaseToSnakeCase()
         
-        // Create a child viewModel with the cell data
-        let cellViewModel = DynamicViewModel(jsonName: jsonFileName)
-        
-        // Merge the cell data into the viewModel's data
-        for (key, value) in data {
-            cellViewModel.data[key] = value
-        }
-        
         // Load and render the cell view
         DynamicView(
             jsonName: jsonFileName,
             viewId: cellClassName,
             data: data
         )
-        .environmentObject(cellViewModel)
     }
     
     /// Build header view for collection
@@ -178,20 +169,12 @@ public struct CollectionConverter {
             .replacingOccurrences(of: "View", with: "_view")
             .camelCaseToSnakeCase()
         
-        let headerViewModel = DynamicViewModel(jsonName: jsonFileName)
-        
-        // Merge the header data into the viewModel's data
-        for (key, value) in data {
-            headerViewModel.data[key] = value
-        }
-        
         // Load and render the header view
         DynamicView(
             jsonName: jsonFileName,
             viewId: headerClassName,
             data: data
         )
-        .environmentObject(headerViewModel)
     }
     
     /// Build footer view for collection
@@ -208,20 +191,12 @@ public struct CollectionConverter {
             .replacingOccurrences(of: "View", with: "_view")
             .camelCaseToSnakeCase()
         
-        let footerViewModel = DynamicViewModel(jsonName: jsonFileName)
-        
-        // Merge the footer data into the viewModel's data
-        for (key, value) in data {
-            footerViewModel.data[key] = value
-        }
-        
         // Load and render the footer view
         DynamicView(
             jsonName: jsonFileName,
             viewId: footerClassName,
             data: data
         )
-        .environmentObject(footerViewModel)
     }
 }
 
