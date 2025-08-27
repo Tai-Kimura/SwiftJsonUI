@@ -135,6 +135,7 @@ public struct DynamicComponent: Decodable {
     let cellClasses: AnyCodable?
     let headerClasses: AnyCodable?
     let footerClasses: AnyCodable?
+    let sections: [[String: Any]]?
     let setTargetAsDelegate: Bool?
     let setTargetAsDataSource: Bool?
     // Switch/Toggle event
@@ -288,7 +289,7 @@ public struct DynamicComponent: Decodable {
         case touchDisabledState, touchEnabledViewIds
         case selectedFontColor, iconMargin
         case locations
-        case itemWeight, layout, cellClasses, headerClasses, footerClasses
+        case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
         case setTargetAsDelegate, setTargetAsDataSource
         case onValueChange
         case cornerRadius, borderWidth, borderColor
@@ -466,6 +467,7 @@ public struct DynamicComponent: Decodable {
         cellClasses = try container.decodeIfPresent(AnyCodable.self, forKey: .cellClasses)
         headerClasses = try container.decodeIfPresent(AnyCodable.self, forKey: .headerClasses)
         footerClasses = try container.decodeIfPresent(AnyCodable.self, forKey: .footerClasses)
+        sections = try container.decodeIfPresent(AnyCodable.self, forKey: .sections)?.value as? [[String: Any]]
         setTargetAsDelegate = try container.decodeIfPresent(Bool.self, forKey: .setTargetAsDelegate)
         setTargetAsDataSource = try container.decodeIfPresent(Bool.self, forKey: .setTargetAsDataSource)
         // Switch/Toggle event
