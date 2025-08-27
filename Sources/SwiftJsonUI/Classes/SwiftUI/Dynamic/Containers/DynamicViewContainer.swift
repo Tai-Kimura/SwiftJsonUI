@@ -211,6 +211,12 @@ public struct DynamicViewContainer: View {
             // Debug: Print all child types
             for (index, comp) in child.enumerated() {
                 print("📝 Child[\(index)]: type=\(comp.type ?? "nil"), id=\(comp.id ?? "no-id"), include=\(comp.include ?? "nil"), data=\(comp.data != nil)")
+                if comp.type == "Collection" {
+                    print("🔍 Collection child found!")
+                    print("   - sections: \(comp.sections?.count ?? 0)")
+                    print("   - items binding: \(comp.rawData["items"] ?? "nil")")
+                    print("   - height: \(comp.height ?? -999)")
+                }
             }
             // Don't process data elements here - it modifies state during view update
             // processDataElements(child) // Removed to avoid state mutation
