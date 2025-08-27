@@ -10,6 +10,15 @@ module SjuiTools
           id = @component['id'] || 'collection'
           columns = @component['columns'] || 2
           
+          # Add helper function for building cell views dynamically
+          needs_build_helper = @component['items'] && 
+                               @component['items'].start_with?('@{') && 
+                               @component['items'].end_with?('}')
+          
+          if needs_build_helper
+            generate_build_cell_view_helper
+          end
+          
           # cellClasses, headerClasses, footerClasses の処理
           cell_classes = @component['cellClasses'] || []
           header_classes = @component['headerClasses'] || []
@@ -137,46 +146,20 @@ module SjuiTools
           view_name
         end
         
-        def generate_collection_content(cell_class_name, id)
-          if cell_class_name
-            # Generate ForEach with the cell view
-            
-            # Check if items property is specified (e.g., "@{items}")
-            items_property = @component['items']
-            
-            if items_property && items_property.start_with?('@{') && items_property.end_with?('}')
-              # Extract property name from @{propertyName}
-              property_name = items_property[2...-1]
-              
-              # Extract the original class name for CollectionDataSource
-              cell_class_info = @component['cellClasses']&.first
-              original_class_name = if cell_class_info.is_a?(Hash)
-                                      cell_class_info['className']
-                                    elsif cell_class_info.is_a?(String)
-                                      cell_class_info
-                                    else
-                                      cell_class_name.sub('View', '')
-                                    end
-              
-              # Use the specified property with getCellData if it's a CollectionDataSource
-              add_line "ForEach(Array(viewModel.data.#{property_name}.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { (index: Int, item: [String: Any]) in"
-            else
-              # Default to collectionDataSource
-              # Extract the original class name from the cell classes
-              cell_class_info = @component['cellClasses']&.first
-              original_class_name = if cell_class_info.is_a?(Hash)
-                                      cell_class_info['className']
-                                    elsif cell_class_info.is_a?(String)
-                                      cell_class_info
-                                    else
-                                      cell_class_name.sub('View', '')
-                                    end
-              
-              add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { (index: Int, item: [String: Any]) in"
-            end
+        def generate_collection_content_sections(property_name)
+          # Generate ForEach for sections
+          add_line "ForEach(Array(viewModel.data.#{property_name}.sections.enumerated()), id: \\.offset) { (sectionIndex, section) in"
+          indent do
+            # Generate cells for this section
+            add_line "ForEach(Array(section.cells.enumerated()), id: \\.offset) { (cellIndex, cellData) in"
             indent do
-              # Create cell view with data initializer
-              add_line "#{cell_class_name}(data: item)"
+              add_line "// Render cell based on viewName"
+              add_line "let viewName = cellData.viewName"
+              add_line "let data = cellData.data as? [String: Any] ?? [:]"
+              add_line ""
+              add_line "// Each cell view is determined by the viewName in the data"
+              add_line "// The view should be created dynamically based on viewName"
+              add_line "AnyView(buildCellView(viewName: viewName, data: data))"
               
               # Cell-specific modifiers
               if @component['cellHeight']
@@ -184,6 +167,52 @@ module SjuiTools
               end
               
               # For grid layouts, ensure cells expand to fill width
+              if @component['columns'] && @component['columns'] > 1
+                add_modifier_line ".frame(maxWidth: .infinity)"
+              end
+            end
+            add_line "}"
+          end
+          add_line "}"
+        end
+        
+        def generate_collection_content(cell_class_name, id)
+          # Check if items property is specified (e.g., "@{items}")
+          items_property = @component['items']
+          
+          if items_property && items_property.start_with?('@{') && items_property.end_with?('}')
+            # Extract property name from @{propertyName}
+            property_name = items_property[2...-1]
+            
+            # Use section-based rendering
+            generate_collection_content_sections(property_name)
+          else
+            # Legacy behavior for backward compatibility
+            generate_collection_content_legacy(cell_class_name, id)
+          end
+        end
+        
+        def generate_collection_content_legacy(cell_class_name, id)
+          if cell_class_name
+            # Extract the original class name from the cell classes
+            cell_class_info = @component['cellClasses']&.first
+            original_class_name = if cell_class_info.is_a?(Hash)
+                                    cell_class_info['className']
+                                  elsif cell_class_info.is_a?(String)
+                                    cell_class_info
+                                  else
+                                    cell_class_name.sub('View', '')
+                                  end
+            
+            add_line "// Legacy non-section based collection"
+            add_line "ForEach(Array(viewModel.data.collectionDataSource.getCellData(for: \"#{original_class_name}\").enumerated()), id: \\.offset) { (index: Int, item: [String: Any]) in"
+            indent do
+              add_line "#{cell_class_name}(data: item)"
+              
+              if @component['cellHeight']
+                add_modifier_line ".frame(height: #{@component['cellHeight']})"
+              end
+              
               if @component['columns'] && @component['columns'] > 1
                 add_modifier_line ".frame(maxWidth: .infinity)"
               end
@@ -202,6 +231,37 @@ module SjuiTools
             end
             add_line "}"
           end
+        end
+        
+        def generate_build_cell_view_helper
+          add_line ""
+          add_line "@ViewBuilder"
+          add_line "func buildCellView(viewName: String, data: [String: Any]) -> some View {"
+          indent do
+            add_line "// This function should instantiate the appropriate view based on viewName"
+            add_line "// For now, return a placeholder"
+            add_line "switch viewName {"
+            
+            # Try to generate cases based on possible view names if we have cellClasses
+            if @component['cellClasses']
+              cell_classes = @component['cellClasses']
+              cell_classes.each do |cell_class|
+                view_name = extract_view_name(cell_class)
+                add_line "case \"#{view_name}\":"
+                indent do
+                  add_line "#{view_name}(data: data)"
+                end
+              end
+            end
+            
+            add_line "default:"
+            indent do
+              add_line "Text(\"Unknown view: \\(viewName)\")"
+              add_modifier_line ".foregroundColor(.red)"
+            end
+            add_line "}"
+          end
+          add_line "}"
         end
         
         def to_camel_case(str)
