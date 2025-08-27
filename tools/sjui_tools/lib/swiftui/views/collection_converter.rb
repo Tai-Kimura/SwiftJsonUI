@@ -74,7 +74,8 @@ module SjuiTools
             add_modifier_line ".listStyle(PlainListStyle())"
           elsif is_horizontal
             # Horizontal scroll collection
-            add_line "ScrollView(.horizontal, showsIndicators: false) {"
+            shows_indicators = @component['showsHorizontalScrollIndicator'] != false
+            add_line "ScrollView(.horizontal, showsIndicators: #{shows_indicators}) {"
             indent do
               # Check if we have sections defined
               if @component['sections'] && !@component['sections'].empty?
@@ -113,7 +114,8 @@ module SjuiTools
             add_line "}"
           else
             # Multiple columns - use ScrollView with LazyVGrid
-            add_line "ScrollView {"
+            shows_indicators = @component['showsVerticalScrollIndicator'] != false
+            add_line "ScrollView(.vertical, showsIndicators: #{shows_indicators}) {"
             indent do
               # Check if we have sections defined
               if @component['sections'] && !@component['sections'].empty?

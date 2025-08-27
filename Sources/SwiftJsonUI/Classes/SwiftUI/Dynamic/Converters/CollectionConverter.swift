@@ -54,8 +54,9 @@ public struct CollectionConverter {
         }
         
         // Section-based rendering
+        let showsIndicators = component.showsVerticalScrollIndicator ?? true
         return AnyView(
-            ScrollView {
+            ScrollView(.vertical, showsIndicators: showsIndicators) {
                 VStack(spacing: 10) {
                     // Iterate through sections
                     ForEach(0..<min(sections.count, dataSource.sections.count), id: \.self) { sectionIndex in

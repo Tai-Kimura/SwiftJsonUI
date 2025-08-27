@@ -161,6 +161,8 @@ public struct DynamicComponent: Decodable {
     let centerInParent: Bool?
     let weight: CGFloat?
     let enabled: AnyCodable?  // For button enabled state with data binding support
+    let showsHorizontalScrollIndicator: Bool?
+    let showsVerticalScrollIndicator: Bool?
     
     // Z-order
     let indexBelow: String?  // Place below specified view ID
@@ -298,6 +300,7 @@ public struct DynamicComponent: Decodable {
         case idealWidth, idealHeight
         case aspectWidth, aspectHeight
         case userInteractionEnabled, centerInParent, weight, enabled
+        case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
@@ -499,6 +502,8 @@ public struct DynamicComponent: Decodable {
         centerInParent = try container.decodeIfPresent(Bool.self, forKey: .centerInParent)
         weight = try container.decodeIfPresent(CGFloat.self, forKey: .weight)
         enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
+        showsHorizontalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsHorizontalScrollIndicator)
+        showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
         
         // Z-order
         indexBelow = try container.decodeIfPresent(String.self, forKey: .indexBelow)
