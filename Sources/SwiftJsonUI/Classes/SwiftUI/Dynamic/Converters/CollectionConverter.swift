@@ -8,6 +8,17 @@
 import SwiftUI
 #if DEBUG
 
+// MARK: - String Extension for camelCase to snake_case conversion
+extension String {
+    func camelCaseToSnakeCase() -> String {
+        let acronymPattern = "([A-Z]+)([A-Z][a-z]|[0-9])"
+        let normalPattern = "([a-z0-9])([A-Z])"
+        return self
+            .replacingOccurrences(of: acronymPattern, with: "$1_$2", options: .regularExpression)
+            .replacingOccurrences(of: normalPattern, with: "$1_$2", options: .regularExpression)
+            .lowercased()
+    }
+}
 
 public struct CollectionConverter {
     
@@ -21,6 +32,8 @@ public struct CollectionConverter {
         
         // Check if items is a binding reference (@{propertyName})
         var collectionData: [[String: Any]] = []
+        var cellClassName: String? = nil
+        
         if let itemsBinding = component.rawData["items"] as? String, 
            itemsBinding.hasPrefix("@{") && itemsBinding.hasSuffix("}") {
             // Extract property name from @{propertyName}
@@ -29,7 +42,7 @@ public struct CollectionConverter {
             // Try to get CollectionDataSource from viewModel data
             if let dataSource = viewModel.data[propertyName] as? CollectionDataSource {
                 // Get the first cell class name from cellClasses
-                let cellClassName: String? = {
+                cellClassName = {
                     if let cellClasses = component.cellClasses?.value {
                         if let classesArray = cellClasses as? [String] {
                             return classesArray.first
@@ -40,12 +53,35 @@ public struct CollectionConverter {
                     return nil
                 }()
                 
-                if let cellClassName = cellClassName {
+                if let className = cellClassName {
                     // Get cell data for the specified class
-                    collectionData = dataSource.getCellData(for: cellClassName)
+                    collectionData = dataSource.getCellData(for: className)
                 }
             }
         }
+        
+        // Extract header and footer class names
+        let headerClassName: String? = {
+            if let headerClasses = component.headerClasses?.value {
+                if let classesArray = headerClasses as? [String] {
+                    return classesArray.first
+                } else if let classesArray = headerClasses as? [[String: Any]] {
+                    return classesArray.first?["className"] as? String
+                }
+            }
+            return nil
+        }()
+        
+        let footerClassName: String? = {
+            if let footerClasses = component.footerClasses?.value {
+                if let classesArray = footerClasses as? [String] {
+                    return classesArray.first
+                } else if let classesArray = footerClasses as? [[String: Any]] {
+                    return classesArray.first?["className"] as? String
+                }
+            }
+            return nil
+        }()
         
         // Fallback to items as [String] for backward compatibility
         let items = component.items ?? []
@@ -130,7 +166,17 @@ public struct CollectionConverter {
                 
                 return AnyView(
                     ScrollView {
-                        LazyVGrid(columns: gridColumns, spacing: component.columnSpacing ?? component.spacing ?? 10) {
+                        VStack(spacing: 10) {
+                            // Header
+                            if let headerClassName = headerClassName {
+                                buildHeaderView(
+                                    headerClassName: headerClassName,
+                                    viewModel: viewModel,
+                                    viewId: viewId
+                                )
+                            }
+                            
+                            LazyVGrid(columns: gridColumns, spacing: component.columnSpacing ?? component.spacing ?? 10) {
                             // CollectionDataSource-driven content
                             if !collectionData.isEmpty {
                                 ForEach(Array(collectionData.enumerated()), id: \.offset) { index, data in
@@ -157,9 +203,19 @@ public struct CollectionConverter {
                                 }
                             }
                         }
-                    .padding(getContentInsets(from: component))
-                }
-                .modifier(CommonModifiers(component: component, viewModel: viewModel))
+                            
+                            // Footer
+                            if let footerClassName = footerClassName {
+                                buildFooterView(
+                                    footerClassName: footerClassName,
+                                    viewModel: viewModel,
+                                    viewId: viewId
+                                )
+                            }
+                        }
+                        .padding(getContentInsets(from: component))
+                    }
+                    .modifier(CommonModifiers(component: component, viewModel: viewModel))
                 )
             }
         }
@@ -200,27 +256,105 @@ public struct CollectionConverter {
         viewModel: DynamicViewModel,
         viewId: String?
     ) -> some View {
-        // For now, create a simple text view with the data
-        // In the future, this could instantiate custom cell views based on cellClasses
-        VStack(alignment: .leading, spacing: 4) {
-            // Display each key-value pair from the data
-            ForEach(Array(data.keys.sorted()), id: \.self) { key in
-                if let value = data[key] {
-                    HStack {
-                        Text(key + ":")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        Text(String(describing: value))
-                            .font(.caption)
-                            .foregroundColor(.primary)
+        // Get the cell class name to determine which JSON to load
+        let cellClassName: String? = {
+            if let cellClasses = component.cellClasses?.value {
+                if let classesArray = cellClasses as? [String] {
+                    return classesArray.first
+                } else if let classesArray = cellClasses as? [[String: Any]] {
+                    return classesArray.first?["className"] as? String
+                }
+            }
+            return nil
+        }()
+        
+        if let cellClassName = cellClassName {
+            // Convert cell class name to JSON file name (e.g., "ImageCell" -> "image_cell")
+            let jsonFileName = cellClassName
+                .replacingOccurrences(of: "Cell", with: "_cell")
+                .replacingOccurrences(of: "View", with: "_view")
+                .camelCaseToSnakeCase()
+            
+            // Create a child viewModel with the cell data
+            let cellViewModel = DynamicViewModel(jsonName: jsonFileName)
+            
+            // Merge the cell data into the viewModel's data
+            for (key, value) in data {
+                cellViewModel.data[key] = value
+            }
+            
+            // Load and render the cell view
+            DynamicView(
+                jsonName: jsonFileName,
+                viewId: cellClassName,
+                data: data
+            )
+            .environmentObject(cellViewModel)
+        } else {
+            // Fallback: simple text view if no cell class is specified
+            VStack(alignment: .leading, spacing: 4) {
+                ForEach(Array(data.keys.sorted()), id: \.self) { key in
+                    if let value = data[key] {
+                        HStack {
+                            Text(key + ":")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            Text(String(describing: value))
+                                .font(.caption)
+                                .foregroundColor(.primary)
+                        }
                     }
                 }
             }
+            .padding(8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color.gray.opacity(0.1))
+            .cornerRadius(8)
         }
-        .padding(8)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(8)
+    }
+    
+    /// Build header view for collection
+    @ViewBuilder
+    private static func buildHeaderView(
+        headerClassName: String,
+        viewModel: DynamicViewModel,
+        viewId: String?
+    ) -> some View {
+        // Convert header class name to JSON file name
+        let jsonFileName = headerClassName
+            .replacingOccurrences(of: "Header", with: "_header")
+            .replacingOccurrences(of: "View", with: "_view")
+            .camelCaseToSnakeCase()
+        
+        // Load and render the header view
+        DynamicView(
+            jsonName: jsonFileName,
+            viewId: headerClassName,
+            data: [:]
+        )
+        .environmentObject(DynamicViewModel(jsonName: jsonFileName))
+    }
+    
+    /// Build footer view for collection
+    @ViewBuilder
+    private static func buildFooterView(
+        footerClassName: String,
+        viewModel: DynamicViewModel,
+        viewId: String?
+    ) -> some View {
+        // Convert footer class name to JSON file name
+        let jsonFileName = footerClassName
+            .replacingOccurrences(of: "Footer", with: "_footer")
+            .replacingOccurrences(of: "View", with: "_view")
+            .camelCaseToSnakeCase()
+        
+        // Load and render the footer view
+        DynamicView(
+            jsonName: jsonFileName,
+            viewId: footerClassName,
+            data: [:]
+        )
+        .environmentObject(DynamicViewModel(jsonName: jsonFileName))
     }
 }
 
