@@ -31,7 +31,7 @@ public class StyleProcessor {
         }
         
         // Process child components recursively
-        if let child = json["child"] {
+        if let child = result["child"] {
             if let childArray = child as? [[String: Any]] {
                 result["child"] = childArray.map { processStyles($0) }
             } else if let childDict = child as? [String: Any] {
@@ -40,7 +40,7 @@ public class StyleProcessor {
         }
         
         // Process children array (for components like TabView)
-        if let children = json["children"] as? [[String: Any]] {
+        if let children = result["children"] as? [[String: Any]] {
             result["children"] = children.map { processStyles($0) }
         }
         
