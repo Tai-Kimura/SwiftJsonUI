@@ -31,6 +31,18 @@ public struct CollectionConverter {
         let globalColumns = component.columns ?? 2
         let sections = component.sections ?? []
         
+        #if DEBUG
+        print("=== CollectionConverter Debug ===")
+        print("Component type: \(component.type ?? "nil")")
+        print("Component has rawData: \(component.rawData.count) keys")
+        print("RawData keys: \(component.rawData.keys.joined(separator: ", "))")
+        if let items = component.rawData["items"] {
+            print("Items value: \(items)")
+            print("Items type: \(type(of: items))")
+        }
+        print("Sections count: \(sections.count)")
+        #endif
+        
         // Check if items is a binding reference (@{propertyName})
         var dataSource: CollectionDataSource? = nil
         
@@ -39,8 +51,28 @@ public struct CollectionConverter {
             // Extract property name from @{propertyName}
             let propertyName = String(itemsBinding.dropFirst(2).dropLast())
             
+            #if DEBUG
+            print("CollectionConverter: Binding detected - looking for property '\(propertyName)'")
+            print("CollectionConverter: viewModel.data keys: \(viewModel.data.keys.joined(separator: ", "))")
+            if let value = viewModel.data[propertyName] {
+                print("CollectionConverter: Found value of type: \(type(of: value))")
+                if let collectionData = value as? CollectionDataSource {
+                    print("CollectionConverter: Successfully cast to CollectionDataSource")
+                    print("CollectionConverter: Sections count in data: \(collectionData.sections.count)")
+                } else {
+                    print("CollectionConverter: Failed to cast to CollectionDataSource")
+                }
+            } else {
+                print("CollectionConverter: Property '\(propertyName)' not found in viewModel.data")
+            }
+            #endif
+            
             // Try to get CollectionDataSource from viewModel data
             dataSource = viewModel.data[propertyName] as? CollectionDataSource
+        } else {
+            #if DEBUG
+            print("CollectionConverter: No binding detected or items not a string")
+            #endif
         }
         
         guard let dataSource = dataSource, !sections.isEmpty else {
