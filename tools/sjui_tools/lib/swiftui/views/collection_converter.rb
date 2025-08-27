@@ -9,17 +9,13 @@ module SjuiTools
         def convert
           id = @component['id'] || 'collection'
           columns = @component['columns'] || 2
+          layout = @component['layout'] || 'vertical'
+          is_horizontal = layout == 'horizontal'
           
-          # Add helper function for building cell views dynamically
-          needs_build_helper = @component['items'] && 
-                               @component['items'].start_with?('@{') && 
-                               @component['items'].end_with?('}')
+          # Check if sections are defined
+          sections = @component['sections'] || []
           
-          if needs_build_helper
-            generate_build_cell_view_helper
-          end
-          
-          # cellClasses, headerClasses, footerClasses の処理
+          # Legacy: cellClasses, headerClasses, footerClasses の処理
           cell_classes = @component['cellClasses'] || []
           header_classes = @component['headerClasses'] || []
           footer_classes = @component['footerClasses'] || []
@@ -76,29 +72,115 @@ module SjuiTools
             end
             add_line "}"
             add_modifier_line ".listStyle(PlainListStyle())"
+          elsif is_horizontal
+            # Horizontal scroll collection
+            add_line "ScrollView(.horizontal, showsIndicators: false) {"
+            indent do
+              # Check if we have sections defined
+              if @component['sections'] && !@component['sections'].empty?
+                # For horizontal sections, use HStack
+                add_line "HStack(spacing: #{@component['itemSpacing'] || 10}) {"
+                indent do
+                  @component['sections'].each_with_index do |section, index|
+                    cell_view_name = extract_view_name(section['cell']) if section['cell']
+                    
+                    if cell_view_name
+                      property_name = extract_property_name(@component['items'])
+                      if property_name
+                        add_line "if let cellsData = viewModel.data.#{property_name}.sections[#{index}].cells?.data {"
+                        indent do
+                          add_line "ForEach(Array(cellsData.enumerated()), id: \\.offset) { cellIndex, cellData in"
+                          indent do
+                            add_line "#{cell_view_name}(data: cellData)"
+                            
+                            if @component['cellWidth']
+                              add_modifier_line ".frame(width: #{@component['cellWidth']})"
+                            else
+                              add_modifier_line ".frame(width: 150)"  # Default width for horizontal items
+                            end
+                          end
+                          add_line "}"
+                        end
+                        add_line "}"
+                      end
+                    end
+                  end
+                end
+                add_line "}"
+                add_modifier_line ".padding(.horizontal)"
+              end
+            end
+            add_line "}"
           else
             # Multiple columns - use ScrollView with LazyVGrid
             add_line "ScrollView {"
             indent do
-              # Header
-              if header_class_name
-                add_line "#{header_class_name}()"
+              # Check if we have sections defined
+              if @component['sections'] && !@component['sections'].empty?
+                # For sections, render header before grid, cells in grid, footer after grid
+                @component['sections'].each_with_index do |section, index|
+                  header_view_name = extract_view_name(section['header']) if section['header']
+                  cell_view_name = extract_view_name(section['cell']) if section['cell']
+                  footer_view_name = extract_view_name(section['footer']) if section['footer']
+                  
+                  # Header outside grid
+                  if header_view_name
+                    add_line "#{header_view_name}()"
+                    add_modifier_line ".padding(.horizontal)"
+                  end
+                  
+                  # Grid with cells - use section columns if specified, otherwise use component columns
+                  section_columns = section['columns'] || columns
+                  add_line "LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: #{@component['itemSpacing'] || 10}), count: #{section_columns}), spacing: #{@component['itemSpacing'] || 10}) {"
+                  indent do
+                    property_name = extract_property_name(@component['items'])
+                    if property_name && cell_view_name
+                      add_line "if let cellsData = viewModel.data.#{property_name}.sections[#{index}].cells?.data {"
+                      indent do
+                        add_line "ForEach(Array(cellsData.enumerated()), id: \\.offset) { cellIndex, cellData in"
+                        indent do
+                          add_line "#{cell_view_name}(data: cellData)"
+                          
+                          if @component['cellHeight']
+                            add_modifier_line ".frame(height: #{@component['cellHeight']})"
+                          end
+                          
+                          add_modifier_line ".frame(maxWidth: .infinity)"
+                        end
+                        add_line "}"
+                      end
+                      add_line "}"
+                    end
+                  end
+                  add_line "}"
+                  add_modifier_line ".padding(.horizontal)"
+                  
+                  # Footer outside grid
+                  if footer_view_name
+                    add_line ""
+                    add_line "#{footer_view_name}()"
+                    add_modifier_line ".padding(.horizontal)"
+                  end
+                end
+              else
+                # Legacy behavior - header/footer from cellClasses
+                if header_class_name
+                  add_line "#{header_class_name}()"
+                  add_modifier_line ".padding(.horizontal)"
+                end
+                
+                add_line "LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: #{@component['itemSpacing'] || 10}), count: #{columns}), spacing: #{@component['itemSpacing'] || 10}) {"
+                indent do
+                  generate_collection_content(cell_class_name, id)
+                end
+                add_line "}"
                 add_modifier_line ".padding(.horizontal)"
-              end
-              
-              # Grid content
-              add_line "LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: #{@component['itemSpacing'] || 10}), count: #{columns}), spacing: #{@component['itemSpacing'] || 10}) {"
-              indent do
-                generate_collection_content(cell_class_name, id)
-              end
-              add_line "}"
-              add_modifier_line ".padding(.horizontal)"
-              
-              # Footer
-              if footer_class_name
-                add_line ""
-                add_line "#{footer_class_name}()"
-                add_modifier_line ".padding(.horizontal)"
+                
+                if footer_class_name
+                  add_line ""
+                  add_line "#{footer_class_name}()"
+                  add_modifier_line ".padding(.horizontal)"
+                end
               end
             end
             add_line "}"
@@ -147,43 +229,123 @@ module SjuiTools
         end
         
         def generate_collection_content_sections(property_name)
-          # Generate ForEach for sections
-          add_line "ForEach(Array(viewModel.data.#{property_name}.sections.enumerated()), id: \\.offset) { (sectionIndex, section) in"
-          indent do
-            # Generate cells for this section
-            add_line "ForEach(Array(section.cells.enumerated()), id: \\.offset) { (cellIndex, cellData) in"
+          # If sections are defined in JSON, use those
+          if @component['sections'] && !@component['sections'].empty?
+            # Generate based on predefined sections structure
+            @component['sections'].each_with_index do |section, index|
+              cell_view_name = extract_view_name(section['cell']) if section['cell']
+              header_view_name = extract_view_name(section['header']) if section['header']
+              footer_view_name = extract_view_name(section['footer']) if section['footer']
+              
+              # Generate section - use section-specific columns if specified
+              section_columns = section['columns'] || @component['columns'] || 2
+              if section_columns == 1
+                # List-style section with header/footer
+                add_line "Section {"
+                indent do
+                  # Cells
+                  if cell_view_name
+                    add_line "if let cellsData = viewModel.data.#{property_name}.sections[#{index}].cells?.data {"
+                    indent do
+                      add_line "ForEach(Array(cellsData.enumerated()), id: \\.offset) { cellIndex, cellData in"
+                      indent do
+                        add_line "#{cell_view_name}(data: cellData)"
+                      end
+                      add_line "}"
+                    end
+                    add_line "}"
+                  end
+                end
+                
+                # Header
+                if header_view_name
+                  add_line "} header: {"
+                  indent do
+                    add_line "#{header_view_name}()"
+                  end
+                end
+                
+                add_line "}"
+                
+                # Footer (as separate section in List)
+                if footer_view_name
+                  add_line "Section {"
+                  indent do
+                    add_line "#{footer_view_name}()"
+                  end
+                  add_line "}"
+                end
+              else
+                # Grid-style sections don't work the same way - cells go in the grid
+                # This shouldn't happen in grid layout with sections
+                add_line "// Warning: Section-based rendering in grid layout"
+                if cell_view_name
+                  add_line "if let cellsData = viewModel.data.#{property_name}.sections[#{index}].cells?.data {"
+                  indent do
+                    add_line "ForEach(Array(cellsData.enumerated()), id: \\.offset) { cellIndex, cellData in"
+                    indent do
+                      add_line "#{cell_view_name}(data: cellData)"
+                      
+                      if @component['cellHeight']
+                        add_modifier_line ".frame(height: #{@component['cellHeight']})"
+                      end
+                      
+                      if @component['columns'] && @component['columns'] > 1
+                        add_modifier_line ".frame(maxWidth: .infinity)"
+                      end
+                    end
+                    add_line "}"
+                  end
+                  add_line "}"
+                end
+              end
+            end
+          else
+            # Fallback to dynamic sections from data (when sections not defined in JSON)
+            add_line "ForEach(Array(viewModel.data.#{property_name}.sections.enumerated()), id: \\.offset) { sectionIndex, section in"
             indent do
-              add_line "// Render cell based on viewName"
-              add_line "let viewName = cellData.viewName"
-              add_line "let data = cellData.data as? [String: Any] ?? [:]"
-              add_line ""
-              add_line "// Each cell view is determined by the viewName in the data"
-              add_line "// The view should be created dynamically based on viewName"
-              add_line "AnyView(buildCellView(viewName: viewName, data: data))"
-              
-              # Cell-specific modifiers
-              if @component['cellHeight']
-                add_modifier_line ".frame(height: #{@component['cellHeight']})"
+              # Generate cells for this section - need to dynamically instantiate view based on viewName
+              add_line "if let cellsData = section.cells?.data, let viewName = section.cells?.viewName {"
+              indent do
+                add_line "ForEach(Array(cellsData.enumerated()), id: \\.offset) { cellIndex, cellData in"
+                indent do
+                  # Since we don't know the view name at compile time, we need to use AnyView or a ViewBuilder
+                  add_line "// TODO: Implement dynamic view instantiation based on viewName"
+                  add_line "Text(\"\\(viewName): \\(cellIndex)\")"
+                  
+                  # Cell-specific modifiers
+                  if @component['cellHeight']
+                    add_modifier_line ".frame(height: #{@component['cellHeight']})"
+                  end
+                  
+                  # For grid layouts, ensure cells expand to fill width
+                  if @component['columns'] && @component['columns'] > 1
+                    add_modifier_line ".frame(maxWidth: .infinity)"
+                  end
+                end
+                add_line "}"
               end
-              
-              # For grid layouts, ensure cells expand to fill width
-              if @component['columns'] && @component['columns'] > 1
-                add_modifier_line ".frame(maxWidth: .infinity)"
-              end
+              add_line "}"
             end
             add_line "}"
           end
-          add_line "}"
+        end
+        
+        def extract_property_name(items_property)
+          return nil unless items_property
+          
+          if items_property.start_with?('@{') && items_property.end_with?('}')
+            items_property[2...-1]
+          else
+            nil
+          end
         end
         
         def generate_collection_content(cell_class_name, id)
           # Check if items property is specified (e.g., "@{items}")
-          items_property = @component['items']
+          property_name = extract_property_name(@component['items'])
           
-          if items_property && items_property.start_with?('@{') && items_property.end_with?('}')
-            # Extract property name from @{propertyName}
-            property_name = items_property[2...-1]
-            
+          if property_name
             # Use section-based rendering
             generate_collection_content_sections(property_name)
           else
@@ -231,37 +393,6 @@ module SjuiTools
             end
             add_line "}"
           end
-        end
-        
-        def generate_build_cell_view_helper
-          add_line ""
-          add_line "@ViewBuilder"
-          add_line "func buildCellView(viewName: String, data: [String: Any]) -> some View {"
-          indent do
-            add_line "// This function should instantiate the appropriate view based on viewName"
-            add_line "// For now, return a placeholder"
-            add_line "switch viewName {"
-            
-            # Try to generate cases based on possible view names if we have cellClasses
-            if @component['cellClasses']
-              cell_classes = @component['cellClasses']
-              cell_classes.each do |cell_class|
-                view_name = extract_view_name(cell_class)
-                add_line "case \"#{view_name}\":"
-                indent do
-                  add_line "#{view_name}(data: data)"
-                end
-              end
-            end
-            
-            add_line "default:"
-            indent do
-              add_line "Text(\"Unknown view: \\(viewName)\")"
-              add_modifier_line ".foregroundColor(.red)"
-            end
-            add_line "}"
-          end
-          add_line "}"
         end
         
         def to_camel_case(str)
