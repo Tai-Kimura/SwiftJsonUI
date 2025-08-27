@@ -86,10 +86,19 @@ public struct CollectionConverter {
         }
         
         // Section-based rendering
-        let showsIndicators = component.showsVerticalScrollIndicator ?? true
+        // Check if it's horizontal layout
+        let isHorizontal = component.layout == "horizontal"
+        let scrollAxis: Axis = isHorizontal ? .horizontal : .vertical
+        let showsIndicators = isHorizontal ? 
+            (component.showsHorizontalScrollIndicator ?? true) :
+            (component.showsVerticalScrollIndicator ?? true)
+        
         return AnyView(
-            ScrollView(.vertical, showsIndicators: showsIndicators) {
-                VStack(spacing: 10) {
+            ScrollView(scrollAxis, showsIndicators: showsIndicators) {
+                Group {
+                    if isHorizontal {
+                        // Horizontal layout
+                        HStack(spacing: 10) {
                     // Iterate through sections
                     ForEach(0..<min(sections.count, dataSource.sections.count), id: \.self) { sectionIndex in
                         let sectionConfig = sections[sectionIndex]
@@ -113,7 +122,19 @@ public struct CollectionConverter {
                             // Cells
                             if let cellName = sectionConfig["cell"] as? String,
                                let cellsData = sectionData.cells {
-                                if sectionColumns == 1 {
+                                if isHorizontal {
+                                    // Horizontal layout - cells arranged horizontally
+                                    ForEach(0..<cellsData.data.count, id: \.self) { cellIndex in
+                                        buildCellView(
+                                            cellClassName: cellName,
+                                            data: cellsData.data[cellIndex],
+                                            component: component,
+                                            viewModel: viewModel,
+                                            viewId: viewId
+                                        )
+                                        .frame(width: 150) // Fixed width for horizontal items
+                                    }
+                                } else if sectionColumns == 1 {
                                     // List-style for single column
                                     VStack(spacing: 8) {
                                         ForEach(0..<cellsData.data.count, id: \.self) { cellIndex in
@@ -157,6 +178,80 @@ public struct CollectionConverter {
                             }
                         }
                         .padding(.horizontal)
+                    }
+                        }
+                    } else {
+                        // Vertical layout (same as before)
+                        VStack(spacing: 10) {
+                            // Iterate through sections
+                            ForEach(0..<min(sections.count, dataSource.sections.count), id: \.self) { sectionIndex in
+                                let sectionConfig = sections[sectionIndex]
+                                let sectionData = dataSource.sections[sectionIndex]
+                                
+                                // Determine columns for this section
+                                let sectionColumns = sectionConfig["columns"] as? Int ?? globalColumns
+                                
+                                VStack(spacing: 10) {
+                                    // Header
+                                    if let headerName = sectionConfig["header"] as? String,
+                                       let headerData = sectionData.header {
+                                        buildHeaderView(
+                                            headerClassName: headerName,
+                                            data: headerData.data,
+                                            viewModel: viewModel,
+                                            viewId: viewId
+                                        )
+                                    }
+                                    
+                                    // Cells
+                                    if let cellName = sectionConfig["cell"] as? String,
+                                       let cellsData = sectionData.cells {
+                                        if sectionColumns == 1 {
+                                            // List-style for single column
+                                            VStack(spacing: 8) {
+                                                ForEach(0..<cellsData.data.count, id: \.self) { cellIndex in
+                                                    buildCellView(
+                                                        cellClassName: cellName,
+                                                        data: cellsData.data[cellIndex],
+                                                        component: component,
+                                                        viewModel: viewModel,
+                                                        viewId: viewId
+                                                    )
+                                                }
+                                            }
+                                        } else {
+                                            // Grid for multiple columns
+                                            let gridColumns = Array(repeating: GridItem(.flexible(), spacing: component.lineSpacing ?? 10), count: sectionColumns)
+                                            
+                                            LazyVGrid(columns: gridColumns, spacing: component.columnSpacing ?? component.spacing ?? 10) {
+                                                ForEach(0..<cellsData.data.count, id: \.self) { cellIndex in
+                                                    buildCellView(
+                                                        cellClassName: cellName,
+                                                        data: cellsData.data[cellIndex],
+                                                        component: component,
+                                                        viewModel: viewModel,
+                                                        viewId: viewId
+                                                    )
+                                                    .frame(maxWidth: .infinity)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Footer
+                                    if let footerName = sectionConfig["footer"] as? String,
+                                       let footerData = sectionData.footer {
+                                        buildFooterView(
+                                            footerClassName: footerName,
+                                            data: footerData.data,
+                                            viewModel: viewModel,
+                                            viewId: viewId
+                                        )
+                                    }
+                                }
+                                .padding(.horizontal)
+                            }
+                        }
                     }
                 }
                 .padding(.vertical, 10)
