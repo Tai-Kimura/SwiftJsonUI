@@ -72,6 +72,9 @@ module SjuiTools
         end
         
         Dir.glob("#{@layout_path}/**/*.json") do |file|
+          # Skip Resources folder
+          next if file.include?("#{@layout_path}/Resources/")
+          
           # Partial files (starting with _) are now processed too
           # next if File.basename(file).start_with?("_")
           

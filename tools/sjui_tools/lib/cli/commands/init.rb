@@ -130,6 +130,9 @@ module SjuiTools
               'view_directory' => 'View',
               'data_directory' => 'Data',  # Directory for data binding structs
               'viewmodel_directory' => 'ViewModel',  # Directory for ViewModels
+              'string_files' => [
+                "#{project_name}/Localizable.strings"
+              ],
               'swiftui' => {
                 'output_directory' => 'Generated'
               },
@@ -154,6 +157,9 @@ module SjuiTools
               'viewmodel_directory' => 'ViewModel',  # Directory for ViewModels
               'bindings_directory' => 'Bindings',
               'hot_loader_directory' => project_name,
+              'string_files' => [
+                "#{project_name}/Localizable.strings"
+              ],
               'use_network' => true,
               'hotloader' => {
                 'ip' => '127.0.0.1',
@@ -175,16 +181,21 @@ module SjuiTools
         end
 
         def create_uikit_structure
-          directories = %w[
-            Layouts
-            Bindings
-            View
-            Data
-            ViewModel
-            Styles
-            Core
-            Core/Base
-            Core/UI
+          # Read config to get directory names
+          config = Core::ConfigManager.load_config
+          layouts_dir = config['layouts_directory'] || 'Layouts'
+          
+          directories = [
+            layouts_dir,
+            "#{layouts_dir}/Resources",  # Add Resources subfolder
+            'Bindings',
+            'View',
+            'Data',
+            'ViewModel',
+            'Styles',
+            'Core',
+            'Core/Base',
+            'Core/UI'
           ]
           
           create_directories(directories)
@@ -193,9 +204,11 @@ module SjuiTools
         def create_swiftui_structure
           # Read config to get directory names
           config = Core::ConfigManager.load_config
+          layouts_dir = config['layouts_directory'] || 'Layouts'
           
           directories = [
-            config['layouts_directory'] || 'Layouts',
+            layouts_dir,
+            "#{layouts_dir}/Resources",  # Add Resources subfolder
             config['view_directory'] || 'View',
             config['data_directory'] || 'Data',
             config['viewmodel_directory'] || 'ViewModel',

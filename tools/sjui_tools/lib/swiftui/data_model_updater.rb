@@ -19,8 +19,11 @@ module SjuiTools
       end
 
       def update_data_models
-        # Process all JSON files in Layouts directory
-        json_files = Dir.glob(File.join(@layouts_dir, '**/*.json'))
+        # Process all JSON files in Layouts directory (excluding Resources folder)
+        json_files = Dir.glob(File.join(@layouts_dir, '**/*.json')).reject do |file|
+          # Skip Resources folder
+          file.include?(File.join(@layouts_dir, 'Resources'))
+        end
         
         json_files.each do |json_file|
           process_json_file(json_file)

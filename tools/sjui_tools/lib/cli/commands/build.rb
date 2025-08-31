@@ -4,6 +4,7 @@ require 'optparse'
 require_relative '../../core/config_manager'
 require_relative '../../core/project_finder'
 require_relative '../../core/logger'
+require_relative '../../core/resources_manager'
 
 module SjuiTools
   module CLI
@@ -14,6 +15,9 @@ module SjuiTools
           
           # Detect mode
           mode = options[:mode] || Core::ConfigManager.detect_mode
+          
+          # Process all JSON files for string extraction
+          process_strings_extraction
           
           case mode
           when 'uikit', 'all'
@@ -128,7 +132,10 @@ module SjuiTools
           style_dependencies = cache_manager.load_style_dependencies
           
           # Process all JSON files in Layouts directory
-          json_files = Dir.glob(File.join(layouts_dir, '**/*.json'))
+          json_files = Dir.glob(File.join(layouts_dir, '**/*.json')).reject do |file|
+            # Skip Resources folder
+            file.include?(File.join(layouts_dir, 'Resources'))
+          end
           
           if json_files.empty?
             Core::Logger.warn "No JSON files found in #{layouts_dir}"
@@ -218,6 +225,79 @@ module SjuiTools
           cache_manager.save_cache(new_including_files, new_style_dependencies)
           
           Core::Logger.success "SwiftUI build completed!"
+        end
+
+        def process_strings_extraction
+          Core::Logger.info "Processing strings extraction..."
+          
+          # Setup project paths
+          unless Core::ProjectFinder.setup_paths
+            Core::Logger.error "Could not find project file"
+            return
+          end
+          
+          config = Core::ConfigManager.load_config
+          source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
+          layouts_dir = File.join(source_path, config['layouts_directory'] || 'Layouts')
+          
+          # Load cache to check for modified files
+          cache_dir = File.join(source_path, '.sjui_cache')
+          last_updated_file = File.join(cache_dir, 'last_updated.json')
+          last_updated = {}
+          
+          if File.exist?(last_updated_file)
+            begin
+              last_updated = JSON.parse(File.read(last_updated_file))
+            rescue JSON::ParserError
+              Core::Logger.warn "Failed to parse cache file, processing all files"
+            end
+          end
+          
+          # Initialize ResourcesManager
+          resources_manager = Core::ResourcesManager.new
+          resources_manager.clear_extracted_strings
+          
+          # Get all JSON files (excluding Resources folder)
+          json_files = Dir.glob(File.join(layouts_dir, '**/*.json')).reject do |file|
+            file.include?(File.join(layouts_dir, 'Resources'))
+          end
+          
+          # Process each JSON file
+          processed_count = 0
+          skipped_count = 0
+          
+          json_files.each do |json_file|
+            begin
+              file_name = File.basename(json_file, '.json')
+              relative_path = Pathname.new(json_file).relative_path_from(Pathname.new(layouts_dir)).to_s
+              
+              # Check if file has been modified since last build
+              file_mtime = File.mtime(json_file).to_i
+              if last_updated[relative_path] && last_updated[relative_path] >= file_mtime
+                Core::Logger.debug "Skipping unchanged file: #{relative_path}"
+                skipped_count += 1
+                next
+              end
+              
+              Core::Logger.debug "Processing: #{relative_path}"
+              json_content = File.read(json_file)
+              json_data = JSON.parse(json_content)
+              
+              # Extract strings from JSON
+              resources_manager.extract_strings_from_json(json_data, file_name)
+              processed_count += 1
+            rescue JSON::ParserError => e
+              Core::Logger.warn "Failed to parse #{json_file}: #{e.message}"
+            rescue => e
+              Core::Logger.warn "Error processing #{json_file}: #{e.message}"
+            end
+          end
+          
+          # TODO: Update strings.json with extracted strings
+          extracted = resources_manager.get_extracted_strings
+          Core::Logger.info "Processed #{processed_count} files, skipped #{skipped_count} unchanged files"
+          Core::Logger.info "Extracted strings from #{extracted['strings'].keys.length} files"
+          Core::Logger.info "Found #{extracted['not_defined'].length} undefined strings" if extracted['not_defined'].any?
         end
       end
     end
