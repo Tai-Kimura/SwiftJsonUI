@@ -3,7 +3,7 @@
     "default": {
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
-        "branch": "master"
+        "branch": "7.2.0"
       },
       "R.swift": {
         "git": "https://github.com/mac-cain13/R.swift.Library",
