@@ -21,7 +21,7 @@ public struct TextConverter {
     ) -> AnyView {
         let processedText = viewModel.processText(component.text) ?? ""
         let text = processedText.localized()
-        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+        let textColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
         let alignment = DynamicHelpers.getTextAlignment(from: component)
         
         // Create text view with optional font
@@ -87,7 +87,7 @@ public struct TextConverter {
         return AnyView(
             result
                 .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
+                .background(DynamicHelpers.getColor(component.background) ?? .clear)
                 .cornerRadius(component.cornerRadius ?? 0)
                 .modifier(TextModifiers(component: component, viewModel: viewModel))  // External margins only
         )

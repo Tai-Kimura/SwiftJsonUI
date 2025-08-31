@@ -34,7 +34,7 @@ public struct TableConverter {
                         HStack {
                             {
                                 var text = Text(items[index])
-                                    .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+                                    .foregroundColor(DynamicHelpers.getColor(component.fontColor) ?? .primary)
                                 if let font = DynamicHelpers.fontFromComponent(component) {
                                     text = text.font(font)
                                 }

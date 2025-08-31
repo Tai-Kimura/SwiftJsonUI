@@ -102,14 +102,14 @@ public struct ProgressConverter {
     
     private static func getTextColor(_ component: DynamicComponent) -> Color {
         if let colorHex = component.fontColor {
-            return DynamicHelpers.colorFromHex(colorHex) ?? .primary
+            return DynamicHelpers.getColor(colorHex) ?? .primary
         }
         return .primary
     }
     
     private static func getTintColor(_ component: DynamicComponent) -> Color {
         if let tintColor = component.tintColor ?? component.tint {
-            return DynamicHelpers.colorFromHex(tintColor) ?? .accentColor
+            return DynamicHelpers.getColor(tintColor) ?? .accentColor
         }
         return .accentColor
     }

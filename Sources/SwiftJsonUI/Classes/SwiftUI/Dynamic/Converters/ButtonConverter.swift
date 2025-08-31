@@ -64,12 +64,12 @@ public struct ButtonConverter {
                     },
                     fontSize: component.fontSize,
                     fontWeight: fontWeight,
-                    fontColor: DynamicHelpers.colorFromHex(component.fontColor),
-                    backgroundColor: DynamicHelpers.colorFromHex(component.background),
-                    tapBackground: DynamicHelpers.colorFromHex(component.tapBackground),
-                    highlightColor: DynamicHelpers.colorFromHex(component.highlightColor),
-                    disabledFontColor: DynamicHelpers.colorFromHex(component.disabledFontColor),
-                    disabledBackground: DynamicHelpers.colorFromHex(component.disabledBackground),
+                    fontColor: DynamicHelpers.getColor(component.fontColor),
+                    backgroundColor: DynamicHelpers.getColor(component.background),
+                    tapBackground: DynamicHelpers.getColor(component.tapBackground),
+                    highlightColor: DynamicHelpers.getColor(component.highlightColor),
+                    disabledFontColor: DynamicHelpers.getColor(component.disabledFontColor),
+                    disabledBackground: DynamicHelpers.getColor(component.disabledBackground),
                     cornerRadius: component.cornerRadius,
                     padding: DynamicHelpers.getPadding(from: component),
                     isEnabled: isEnabled,
@@ -106,7 +106,7 @@ public struct ButtonConverter {
                 // Only expand to fill if button has explicit numeric width AND height (not wrapContent)
                 // Both must be explicit for frame expansion
                 // Use blue as default text color if fontColor is not specified (matches system button default)
-                let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? Color(UIColor.systemBlue)
+                let textColor = DynamicHelpers.getColor(component.fontColor) ?? Color(UIColor.systemBlue)
                 let padding = DynamicHelpers.getPadding(from: component)
                 
                 if hasExplicitWidth && component.width == .infinity {
@@ -207,7 +207,7 @@ public struct ButtonConverter {
     
     private static func getDynamicButtonStyle(_ component: DynamicComponent) -> some ButtonStyle {
         DynamicButtonStyle(
-            backgroundColor: DynamicHelpers.colorFromHex(component.background) ?? .blue,
+            backgroundColor: DynamicHelpers.getColor(component.background) ?? .blue,
             cornerRadius: component.cornerRadius ?? 8
         )
     }

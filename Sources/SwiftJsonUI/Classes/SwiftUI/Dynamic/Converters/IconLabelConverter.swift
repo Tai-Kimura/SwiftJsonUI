@@ -37,8 +37,8 @@ public struct IconLabelConverter {
                     iconSize: component.fontSize ?? 24,
                     iconMargin: 5,
                     fontSize: component.fontSize ?? 16,
-                    fontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .primary,
-                    selectedFontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .accentColor,
+                    fontColor: DynamicHelpers.getColor(component.fontColor) ?? .primary,
+                    selectedFontColor: DynamicHelpers.getColor(component.fontColor) ?? .accentColor,
                     fontName: component.font,
                     action: {
                         if let onClick = component.onClick {
@@ -70,8 +70,8 @@ public struct IconLabelConverter {
                     iconSize: component.fontSize ?? 24,
                     iconMargin: 5,
                     fontSize: component.fontSize ?? 16,
-                    fontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .primary,
-                    selectedFontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .accentColor,
+                    fontColor: DynamicHelpers.getColor(component.fontColor) ?? .primary,
+                    selectedFontColor: DynamicHelpers.getColor(component.fontColor) ?? .accentColor,
                     fontName: component.font,
                     isSelected: isSelected
                 )

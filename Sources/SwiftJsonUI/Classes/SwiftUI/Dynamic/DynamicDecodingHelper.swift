@@ -232,21 +232,14 @@ public struct DynamicDecodingHelper {
     
     // MARK: - String to Type Conversion Methods (JSON Data Transformations)
     
-    /// Convert hex string to Color
-    public static func colorFromHex(_ hex: String?) -> Color? {
-        guard let hex = hex else { return nil }
-        let cleanHex = hex.replacingOccurrences(of: "#", with: "")
+    /// Get color from identifier using SwiftJsonUIConfiguration
+    /// This supports both hex colors and color resource keys
+    public static func getColor(_ identifier: String?) -> Color? {
+        guard let identifier = identifier else { return nil }
         
-        guard cleanHex.count == 6,
-              let intValue = Int(cleanHex, radix: 16) else {
-            return nil
-        }
-        
-        let r = Double((intValue >> 16) & 0xFF) / 255.0
-        let g = Double((intValue >> 8) & 0xFF) / 255.0
-        let b = Double(intValue & 0xFF) / 255.0
-        
-        return Color(red: r, green: g, blue: b)
+        // Use SwiftJsonUIConfiguration to get color
+        // This will check colorProvider first, then fall back to hex conversion
+        return SwiftJsonUIConfiguration.shared.getColor(for: identifier)
     }
     
     /// Convert component properties to Font

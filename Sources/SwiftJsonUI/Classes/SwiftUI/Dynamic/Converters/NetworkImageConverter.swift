@@ -35,7 +35,7 @@ public struct NetworkImageConverter {
             )
             .frame(width: component.width, height: component.height)
             .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-            .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
+            .background(DynamicHelpers.getColor(component.background) ?? .clear)
             .cornerRadius(component.cornerRadius ?? 0)
             .modifier(NetworkImageModifiers(component: component, viewModel: viewModel))  // External margins only
         )

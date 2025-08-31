@@ -70,7 +70,7 @@ public struct GradientViewConverter {
         
         // Convert hex strings to Colors
         let colors = colorHexes.compactMap { hex in
-            DynamicHelpers.colorFromHex(hex)
+            DynamicHelpers.getColor(hex)
         }
         
         // If no colors, use default gradient

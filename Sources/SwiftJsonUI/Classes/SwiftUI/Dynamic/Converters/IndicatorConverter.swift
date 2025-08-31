@@ -62,7 +62,7 @@ public struct IndicatorConverter {
     private static func getIndicatorColor(_ component: DynamicComponent) -> Color {
         // Use color, tintColor, fontColor, or iconColor in that order
         if let colorHex = component.color ?? component.tintColor ?? component.tint ?? component.fontColor ?? component.iconColor {
-            return DynamicHelpers.colorFromHex(colorHex) ?? .primary
+            return DynamicHelpers.getColor(colorHex) ?? .primary
         }
         return .primary
     }

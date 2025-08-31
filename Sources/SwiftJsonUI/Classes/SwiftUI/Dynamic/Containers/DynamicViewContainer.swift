@@ -83,7 +83,7 @@ public struct DynamicViewContainer: View {
             // 子要素がない場合
             if component.background != nil {
                 Rectangle()
-                    .fill(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
+                    .fill(DynamicHelpers.getColor(component.background) ?? Color.clear)
             } else {
                 EmptyView()
             }

@@ -54,7 +54,7 @@ public struct SliderConverter {
         let content = VStack(alignment: .leading, spacing: 8) {
             if let text = component.text {
                 let processedText = viewModel.processText(text)
-                let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+                let textColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
                 
                 if let font = DynamicHelpers.fontFromComponent(component) {
                     Text(processedText)
@@ -67,7 +67,7 @@ public struct SliderConverter {
             }
             
             Slider(value: sliderBinding, in: minValue...maxValue)
-                .tint(DynamicHelpers.colorFromHex(component.tintColor ?? component.tint ?? component.iconColor ?? component.fontColor) ?? .accentColor)
+                .tint(DynamicHelpers.getColor(component.tintColor ?? component.tint ?? component.iconColor ?? component.fontColor) ?? .accentColor)
         }
         .modifier(CommonModifiers(component: component, viewModel: viewModel))
         

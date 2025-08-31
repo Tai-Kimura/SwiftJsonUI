@@ -45,7 +45,7 @@ public struct ToggleConverter {
                         }
                     )
                     
-                    let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+                    let textColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
                     let toggleView: AnyView
                     
                     if let font = DynamicHelpers.fontFromComponent(component) {
@@ -65,7 +65,7 @@ public struct ToggleConverter {
                     
                     // Apply tint color if specified
                     if let tintColor = component.tint ?? component.tintColor,
-                       let color = DynamicHelpers.colorFromHex(tintColor) {
+                       let color = DynamicHelpers.getColor(tintColor) {
                         return AnyView(
                             toggleView
                                 .tint(color)
@@ -83,7 +83,7 @@ public struct ToggleConverter {
         
         // Use static value if no binding found
         let isOn = component.isOn ?? false
-        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+        let textColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
         let toggleView: AnyView
         
         if let font = DynamicHelpers.fontFromComponent(component) {
@@ -103,7 +103,7 @@ public struct ToggleConverter {
         
         // Apply tint color if specified
         if let tintColor = component.tint ?? component.tintColor,
-           let color = DynamicHelpers.colorFromHex(tintColor) {
+           let color = DynamicHelpers.getColor(tintColor) {
             return AnyView(
                 toggleView
                     .tint(color)

@@ -66,10 +66,10 @@ public enum DynamicShadow: Decodable {
                 return Color.clear
             default:
                 // Try to parse as hex color
-                return DynamicHelpers.colorFromHex(value) ?? Color.black.opacity(0.1)
+                return DynamicHelpers.getColor(value) ?? Color.black.opacity(0.1)
             }
         case .config(let config):
-            let baseColor = DynamicHelpers.colorFromHex(config.color) ?? Color.black
+            let baseColor = DynamicHelpers.getColor(config.color) ?? Color.black
             return baseColor.opacity(config.opacity ?? 0.1)
         }
     }

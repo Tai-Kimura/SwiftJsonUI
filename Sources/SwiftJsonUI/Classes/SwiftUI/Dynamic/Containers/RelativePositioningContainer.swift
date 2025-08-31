@@ -55,7 +55,7 @@ public struct RelativePositioningContainer: View {
         
         // Extract parent background color
         let backgroundColor = parentComponent?.background != nil ? 
-            DynamicHelpers.colorFromHex(parentComponent!.background) : nil
+            DynamicHelpers.getColor(parentComponent!.background) : nil
         
         // Use SwiftJsonUI's RelativePositionContainer
         RelativePositionContainer(

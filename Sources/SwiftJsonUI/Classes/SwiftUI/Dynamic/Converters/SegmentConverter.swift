@@ -92,11 +92,11 @@ public struct SegmentConverter {
     private static func getTextColor(_ component: DynamicComponent, isSelected: Bool) -> Color {
         if isSelected {
             if let selectedColor = component.selectedColor {
-                return DynamicHelpers.colorFromHex(selectedColor) ?? .primary
+                return DynamicHelpers.getColor(selectedColor) ?? .primary
             }
         } else {
             if let normalColor = component.normalColor {
-                return DynamicHelpers.colorFromHex(normalColor) ?? .primary
+                return DynamicHelpers.getColor(normalColor) ?? .primary
             }
         }
         return .primary
@@ -104,7 +104,7 @@ public struct SegmentConverter {
     
     private static func getTintColor(_ component: DynamicComponent) -> Color? {
         if let tintColor = component.tintColor ?? component.tint {
-            return DynamicHelpers.colorFromHex(tintColor)
+            return DynamicHelpers.getColor(tintColor)
         }
         return nil
     }

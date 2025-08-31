@@ -272,7 +272,7 @@ public struct CommonModifiers: ViewModifier {
         Group {
             if let borderWidth = component.borderWidth,
                borderWidth > 0 {
-                let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+                let borderColor = DynamicHelpers.getColor(component.borderColor) ?? .gray
                 RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
                     .stroke(borderColor, lineWidth: borderWidth)
             }

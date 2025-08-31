@@ -78,7 +78,7 @@ struct SelectBoxModifiers: ViewModifier {
            borderWidth > 0,
            let borderColorString = component.borderColor {
             let _ = print("📦 [SelectBoxModifiers] Creating border with width: \(borderWidth), color: \(borderColorString)")
-            let borderColor = DynamicHelpers.colorFromHex(borderColorString) ?? .gray
+            let borderColor = DynamicHelpers.getColor(borderColorString) ?? .gray
             RoundedRectangle(cornerRadius: component.cornerRadius ?? 8)
                 .stroke(borderColor, lineWidth: borderWidth)
         } else {
@@ -152,8 +152,8 @@ public struct SelectBoxConverter {
                 id: id,
                 prompt: prompt,
                 fontSize: component.fontSize ?? 16,
-                fontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .primary,
-                backgroundColor: DynamicHelpers.colorFromHex(component.background) ?? Color(UIColor.systemGray6),
+                fontColor: DynamicHelpers.getColor(component.fontColor) ?? .primary,
+                backgroundColor: DynamicHelpers.getColor(component.background) ?? Color(UIColor.systemGray6),
                 cornerRadius: component.cornerRadius ?? 8,
                 selectItemType: selectItemType,
                 items: items,

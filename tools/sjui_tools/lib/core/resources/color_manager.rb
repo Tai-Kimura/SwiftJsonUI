@@ -452,7 +452,7 @@ module SjuiTools
           code << "        public static func color(for key: String) -> UIColor {"
           code << "            guard let hexString = ColorManager.colorsData[key] else {"
           code << "                print(\"Warning: Color key '\\(key)' not found in colors.json\")"
-          code << "                return UIColor.gray // Default fallback color"
+          code << "                return UIColor.colorWithHexString(key) // Try to parse key as hex color"
           code << "            }"
           code << "            return UIColor.colorWithHexString(hexString)"
           code << "        }"

@@ -87,7 +87,7 @@ public struct CheckboxConverter {
                     }
                     
                     if !text.isEmpty {
-                        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+                        let textColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
                         if let font = DynamicHelpers.fontFromComponent(component) {
                             Text(text)
                                 .font(font)
@@ -135,7 +135,7 @@ public struct CheckboxConverter {
                     }
                     
                     if !text.isEmpty {
-                        let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
+                        let textColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
                         if let font = DynamicHelpers.fontFromComponent(component) {
                             Text(text)
                                 .font(font)

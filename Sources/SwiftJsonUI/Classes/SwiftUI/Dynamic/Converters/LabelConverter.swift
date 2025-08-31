@@ -32,8 +32,8 @@ public struct LabelConverter {
                     let range = rangeArray[0]..<rangeArray[1]
                     
                     // Parse colors
-                    let fontColor = (dict["fontColor"] as? String).flatMap { DynamicHelpers.colorFromHex($0) }
-                    let backgroundColor = (dict["background"] as? String).flatMap { DynamicHelpers.colorFromHex($0) }
+                    let fontColor = (dict["fontColor"] as? String).flatMap { DynamicHelpers.getColor($0) }
+                    let backgroundColor = (dict["background"] as? String).flatMap { DynamicHelpers.getColor($0) }
                     
                     // Parse font properties
                     let fontSize = dict["fontSize"] as? CGFloat
@@ -73,8 +73,8 @@ public struct LabelConverter {
                     )
                 } else if let pattern = dict["range"] as? String {
                     // Text pattern
-                    let fontColor = (dict["fontColor"] as? String).flatMap { DynamicHelpers.colorFromHex($0) }
-                    let backgroundColor = (dict["background"] as? String).flatMap { DynamicHelpers.colorFromHex($0) }
+                    let fontColor = (dict["fontColor"] as? String).flatMap { DynamicHelpers.getColor($0) }
+                    let backgroundColor = (dict["background"] as? String).flatMap { DynamicHelpers.getColor($0) }
                     let fontSize = dict["fontSize"] as? CGFloat
                     let fontWeight = (dict["fontWeight"] as? String).flatMap { Font.Weight.from(string: $0) }
                     let underline = dict["underline"] as? Bool ?? false
@@ -128,7 +128,7 @@ public struct LabelConverter {
                     partialAttributes: partialAttributes,
                     fontSize: component.fontSize,
                     fontWeight: fontWeight,
-                    fontColor: DynamicHelpers.colorFromHex(component.fontColor),
+                    fontColor: DynamicHelpers.getColor(component.fontColor),
                     underline: component.underline == true,
                     strikethrough: component.strikethrough == true,
                     lineSpacing: component.lineHeightMultiple != nil
@@ -164,7 +164,7 @@ public struct LabelConverter {
                     text,
                     fontSize: component.fontSize,
                     fontWeight: fontWeight,
-                    fontColor: DynamicHelpers.colorFromHex(component.fontColor),
+                    fontColor: DynamicHelpers.getColor(component.fontColor),
                     underline: component.underline == true,
                     strikethrough: component.strikethrough == true,
                     lineSpacing: component.lineHeightMultiple != nil
@@ -186,7 +186,7 @@ public struct LabelConverter {
         
         // Build the text view with all modifiers applied at once
         var textView = Text(text)
-            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+            .foregroundColor(DynamicHelpers.getColor(component.fontColor) ?? .primary)
         
         if let font = DynamicHelpers.fontFromComponent(component) {
             textView = textView.font(font)
@@ -222,10 +222,10 @@ public struct LabelConverter {
         if let textShadowValue = component.textShadow?.value {
             if let shadowDict = textShadowValue as? [String: Any] {
                 let color = shadowDict["color"] as? String ?? "#000000"
-                return DynamicHelpers.colorFromHex(color) ?? .clear
+                return DynamicHelpers.getColor(color) ?? .clear
             } else if let shadowArray = textShadowValue as? [Any], shadowArray.count >= 3 {
                 let color = (shadowArray.count > 3 ? shadowArray[3] as? String : nil) ?? "#000000"
-                return DynamicHelpers.colorFromHex(color) ?? .clear
+                return DynamicHelpers.getColor(color) ?? .clear
             }
         }
         return .clear

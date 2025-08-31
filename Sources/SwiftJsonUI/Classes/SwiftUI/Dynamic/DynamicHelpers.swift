@@ -18,8 +18,8 @@ public struct DynamicHelpers {
         return DynamicDecodingHelper.fontFromComponent(component)
     }
     
-    public static func colorFromHex(_ hex: String?) -> Color? {
-        return DynamicDecodingHelper.colorFromHex(hex)
+    public static func getColor(_ identifier: String?) -> Color? {
+        return DynamicDecodingHelper.getColor(identifier)
     }
     
     public static func getContentMode(from component: DynamicComponent) -> ContentMode {
@@ -138,7 +138,7 @@ public struct DynamicHelpers {
     
     // Get background color from component
     public static func getBackground(from component: DynamicComponent) -> Color {
-        return DynamicDecodingHelper.colorFromHex(component.background) ?? .clear
+        return DynamicDecodingHelper.getColor(component.background) ?? .clear
     }
     
     // Get opacity from component
@@ -221,7 +221,7 @@ extension View {
                 minHeight: component.minHeight,
                 maxHeight: (heightValue == .infinity) ? .infinity : component.maxHeight
             )
-            .background(DynamicHelpers.colorFromHex(component.background) ?? Color.clear)
+            .background(DynamicHelpers.getColor(component.background) ?? Color.clear)
             .cornerRadius(component.cornerRadius ?? 0)
             .applyBorder(component)
             .dynamicClipped(component.clipToBounds == true)
@@ -256,7 +256,7 @@ extension View {
     func applyBorder(_ component: DynamicComponent) -> some View {
         if let borderWidth = component.borderWidth,
            let borderColor = component.borderColor {
-            let color = DynamicHelpers.colorFromHex(borderColor) ?? .clear
+            let color = DynamicHelpers.getColor(borderColor) ?? .clear
             let radius = component.cornerRadius ?? 0
             self.overlay(
                 RoundedRectangle(cornerRadius: radius)
@@ -278,7 +278,7 @@ extension View {
             let opacity = shadowDict["shadowOpacity"] as? Double ?? 0.3
             
             self.shadow(
-                color: (DynamicHelpers.colorFromHex(color) ?? Color.black).opacity(opacity),
+                color: (DynamicHelpers.getColor(color) ?? Color.black).opacity(opacity),
                 radius: radius,
                 x: offsetX,
                 y: offsetY

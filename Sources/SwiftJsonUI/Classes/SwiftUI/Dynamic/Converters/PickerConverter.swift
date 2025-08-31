@@ -61,7 +61,7 @@ public struct PickerConverter {
                 }
             }
             .pickerStyle(MenuPickerStyle())
-            .foregroundColor(DynamicHelpers.colorFromHex(component.fontColor) ?? .primary)
+            .foregroundColor(DynamicHelpers.getColor(component.fontColor) ?? .primary)
         )
         
         if let font = DynamicHelpers.fontFromComponent(component) {

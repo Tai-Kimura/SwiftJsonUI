@@ -153,7 +153,7 @@ public struct TextFieldConverter {
         
         // Apply foreground color
         if let fontColor = component.fontColor {
-            textField = AnyView(textField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
+            textField = AnyView(textField.foregroundColor(DynamicHelpers.getColor(fontColor) ?? .primary))
         }
         
         return AnyView(textField.modifier(CommonModifiers(component: component, viewModel: viewModel)))
@@ -195,7 +195,7 @@ public struct TextFieldConverter {
         
         // Apply foreground color
         if let fontColor = component.fontColor {
-            secureField = AnyView(secureField.foregroundColor(DynamicHelpers.colorFromHex(fontColor) ?? .primary))
+            secureField = AnyView(secureField.foregroundColor(DynamicHelpers.getColor(fontColor) ?? .primary))
         }
         
         return AnyView(secureField.modifier(CommonModifiers(component: component, viewModel: viewModel)))

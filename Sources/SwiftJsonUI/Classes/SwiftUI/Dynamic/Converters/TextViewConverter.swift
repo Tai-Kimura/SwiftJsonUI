@@ -30,7 +30,7 @@ struct TextViewModifiers: ViewModifier {
     private func getBorder() -> some View {
         if let borderWidth = component.borderWidth,
            borderWidth > 0 {
-            let borderColor = DynamicHelpers.colorFromHex(component.borderColor) ?? .gray
+            let borderColor = DynamicHelpers.getColor(component.borderColor) ?? .gray
             RoundedRectangle(cornerRadius: component.cornerRadius ?? 0)
                 .stroke(borderColor, lineWidth: borderWidth)
         }
@@ -94,13 +94,13 @@ public struct TextViewConverter {
             TextViewWithPlaceholder(
                 text: textBinding,
                 hint: (component.hint ?? component.placeholder)?.localized(),
-                hintColor: DynamicHelpers.colorFromHex(component.hintColor) ?? .gray,
+                hintColor: DynamicHelpers.getColor(component.hintColor) ?? .gray,
                 hintFont: component.hintFont,
                 hideOnFocused: component.hideOnFocused ?? true,
                 fontSize: component.fontSize ?? 16,
-                fontColor: DynamicHelpers.colorFromHex(component.fontColor) ?? .primary,
+                fontColor: DynamicHelpers.getColor(component.fontColor) ?? .primary,
                 fontName: component.font,
-                backgroundColor: DynamicHelpers.colorFromHex(component.background) ?? .clear,
+                backgroundColor: DynamicHelpers.getColor(component.background) ?? .clear,
                 cornerRadius: component.cornerRadius ?? 0,
                 containerInset: containerInset,
                 flexible: component.flexible ?? false,

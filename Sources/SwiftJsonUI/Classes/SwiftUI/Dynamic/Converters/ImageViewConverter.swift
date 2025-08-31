@@ -28,7 +28,7 @@ public struct ImageViewConverter {
                         .aspectRatio(contentMode: DynamicHelpers.getContentMode(from: component))
                         .frame(width: component.width, height: component.height)
                         .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                        .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
+                        .background(DynamicHelpers.getColor(component.background) ?? .clear)
                         .cornerRadius(component.cornerRadius ?? 0)
                         .modifier(ImageModifiers(component: component, viewModel: viewModel))  // External margins only
                 )
@@ -38,7 +38,7 @@ public struct ImageViewConverter {
                         .foregroundColor(.gray)
                         .frame(width: component.width, height: component.height)
                         .padding(DynamicHelpers.getPadding(from: component))  // Internal padding
-                        .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
+                        .background(DynamicHelpers.getColor(component.background) ?? .clear)
                         .cornerRadius(component.cornerRadius ?? 0)
                         .modifier(ImageModifiers(component: component, viewModel: viewModel))  // External margins only
                 )
@@ -63,7 +63,7 @@ public struct ImageViewConverter {
                 .foregroundColor(getImageColor(component))
                 .padding(DynamicHelpers.getPadding(from: component))  // Apply padding first
                 .frame(width: component.width, height: component.height)  // Then frame
-                .background(DynamicHelpers.colorFromHex(component.background) ?? .clear)
+                .background(DynamicHelpers.getColor(component.background) ?? .clear)
                 .cornerRadius(component.cornerRadius ?? 0)
                 .modifier(ImageModifiers(component: component, viewModel: viewModel))  // External margins only
         )
@@ -72,7 +72,7 @@ public struct ImageViewConverter {
     private static func getImageColor(_ component: DynamicComponent) -> Color? {
         // Use iconColor or fontColor for tinting
         let colorHex = component.iconColor ?? component.fontColor
-        return DynamicHelpers.colorFromHex(colorHex)
+        return DynamicHelpers.getColor(colorHex)
     }
 }
 

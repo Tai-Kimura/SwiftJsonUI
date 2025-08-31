@@ -29,10 +29,10 @@ public struct DividerConverter {
     
     private static func getColor(_ component: DynamicComponent) -> Color {
         if let bgColor = component.background {
-            return DynamicHelpers.colorFromHex(bgColor) ?? Color.gray.opacity(0.3)
+            return DynamicHelpers.getColor(bgColor) ?? Color.gray.opacity(0.3)
         }
         if let borderColor = component.borderColor {
-            return DynamicHelpers.colorFromHex(borderColor) ?? Color.gray.opacity(0.3)
+            return DynamicHelpers.getColor(borderColor) ?? Color.gray.opacity(0.3)
         }
         return Color.gray.opacity(0.3)
     }
