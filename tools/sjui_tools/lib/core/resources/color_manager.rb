@@ -340,18 +340,33 @@ module SjuiTools
           # Remove # if present
           hex = hex_color.gsub('#', '')
           
-          # Support both 3 and 6 digit hex
-          if hex.length == 3
+          # Support 3, 6, and 8 digit hex
+          case hex.length
+          when 3
+            # RGB (12-bit) - expand to 6 digits
             hex = hex.chars.map { |c| c * 2 }.join
+            [
+              hex[0..1].to_i(16),
+              hex[2..3].to_i(16),
+              hex[4..5].to_i(16)
+            ]
+          when 6
+            # RRGGBB (24-bit)
+            [
+              hex[0..1].to_i(16),
+              hex[2..3].to_i(16),
+              hex[4..5].to_i(16)
+            ]
+          when 8
+            # RRGGBBAA (32-bit) - ignore alpha for color naming
+            [
+              hex[0..1].to_i(16),
+              hex[2..3].to_i(16),
+              hex[4..5].to_i(16)
+            ]
+          else
+            nil
           end
-          
-          return nil unless hex.length == 6
-          
-          [
-            hex[0..1].to_i(16),
-            hex[2..3].to_i(16),
-            hex[4..5].to_i(16)
-          ]
         rescue
           nil
         end
@@ -359,7 +374,8 @@ module SjuiTools
         # Check if a value is a hex color
         def is_hex_color?(value)
           return false unless value.is_a?(String)
-          value.match?(/^#?[0-9A-Fa-f]{3}([0-9A-Fa-f]{3})?$/)
+          # Support 3, 6, or 8 digit hex colors (RGB, RRGGBB, RRGGBBAA)
+          value.match?(/^#?([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{8})$/)
         end
         
         # Normalize hex color format
@@ -371,6 +387,7 @@ module SjuiTools
             hex = hex.chars.map { |c| c * 2 }.join
           end
           
+          # Keep 6 or 8 digit hex as is
           "##{hex}"
         end
         
@@ -467,11 +484,7 @@ module SjuiTools
           code << ""
           code << "        // Get SwiftUI Color by key"
           code << "        public static func color(for key: String) -> Color {"
-          code << "            guard let hexString = ColorManager.colorsData[key] else {"
-          code << "                print(\"Warning: Color key '\\(key)' not found in colors.json\")"
-          code << "                return Color.gray // Default fallback color"
-          code << "            }"
-          code << "            return Color(hex: hexString) ?? Color.gray"
+          code << "            return Color(uiColor: uikit.color(for: key))"
           code << "        }"
           code << ""
           
@@ -480,15 +493,7 @@ module SjuiTools
             property_name = snake_to_camel(key)
             
             code << "        public static var #{property_name}: Color {"
-            
-            if @colors_data[key]
-              code << "            return Color(hex: \"#{@colors_data[key]}\") ?? Color.gray"
-            else
-              code << "            // Undefined color - needs to be defined in colors.json"
-              code << "            print(\"Warning: Color '#{key}' is not defined in colors.json\")"
-              code << "            return Color.gray // Fallback color"
-            end
-            
+            code << "            return Color(uiColor: uikit.#{property_name})"
             code << "        }"
             code << ""
           end
