@@ -78,15 +78,8 @@ module SjuiTools
             puts "Created directory: #{viewmodel_dir}"
           end
           
-          # Create Generated directory for SwiftUI output
-          if config['swiftui'] && config['swiftui']['output_directory']
-            output_dir = config['swiftui']['output_directory']
-            output_path = File.join(source_path, output_dir)
-            unless Dir.exist?(output_path)
-              FileUtils.mkdir_p(output_path)
-              puts "Created directory: #{output_dir}"
-            end
-          end
+          # SwiftUI doesn't need Generated directory anymore
+          # Views are generated directly in the View directory
         end
         
         def generate_hotloader_setup

@@ -228,8 +228,6 @@ module SjuiTools
         end
 
         def process_strings_extraction
-          Core::Logger.info "Processing strings extraction..."
-          
           # Setup project paths
           unless Core::ProjectFinder.setup_paths
             Core::Logger.error "Could not find project file"
@@ -242,62 +240,37 @@ module SjuiTools
           
           # Load cache to check for modified files
           cache_dir = File.join(source_path, '.sjui_cache')
-          last_updated_file = File.join(cache_dir, 'last_updated.json')
-          last_updated = {}
           
-          if File.exist?(last_updated_file)
-            begin
-              last_updated = JSON.parse(File.read(last_updated_file))
-            rescue JSON::ParserError
-              Core::Logger.warn "Failed to parse cache file, processing all files"
-            end
-          end
-          
-          # Initialize ResourcesManager
-          resources_manager = Core::ResourcesManager.new
-          resources_manager.clear_extracted_strings
-          
-          # Get all JSON files (excluding Resources folder)
-          json_files = Dir.glob(File.join(layouts_dir, '**/*.json')).reject do |file|
-            file.include?(File.join(layouts_dir, 'Resources'))
-          end
-          
-          # Process each JSON file
-          processed_count = 0
-          skipped_count = 0
-          
-          json_files.each do |json_file|
-            begin
-              file_name = File.basename(json_file, '.json')
-              relative_path = Pathname.new(json_file).relative_path_from(Pathname.new(layouts_dir)).to_s
-              
-              # Check if file has been modified since last build
-              file_mtime = File.mtime(json_file).to_i
-              if last_updated[relative_path] && last_updated[relative_path] >= file_mtime
-                Core::Logger.debug "Skipping unchanged file: #{relative_path}"
-                skipped_count += 1
-                next
+          # For SwiftUI mode, use swiftui_last_updated.txt
+          if config['mode'] == 'swiftui'
+            last_updated_file = File.join(cache_dir, 'swiftui_last_updated.txt')
+            last_updated = {}
+            
+            if File.exist?(last_updated_file)
+              File.readlines(last_updated_file).each do |line|
+                parts = line.strip.split(':', 2)
+                if parts.length == 2
+                  last_updated[parts[0]] = parts[1].to_i
+                end
               end
-              
-              Core::Logger.debug "Processing: #{relative_path}"
-              json_content = File.read(json_file)
-              json_data = JSON.parse(json_content)
-              
-              # Extract strings from JSON
-              resources_manager.extract_strings_from_json(json_data, file_name)
-              processed_count += 1
-            rescue JSON::ParserError => e
-              Core::Logger.warn "Failed to parse #{json_file}: #{e.message}"
-            rescue => e
-              Core::Logger.warn "Error processing #{json_file}: #{e.message}"
+            end
+          else
+            # For UIKit mode, use last_updated.json
+            last_updated_file = File.join(cache_dir, 'last_updated.json')
+            last_updated = {}
+            
+            if File.exist?(last_updated_file)
+              begin
+                last_updated = JSON.parse(File.read(last_updated_file))
+              rescue JSON::ParserError
+                Core::Logger.warn "Failed to parse cache file, processing all files"
+              end
             end
           end
           
-          # TODO: Update strings.json with extracted strings
-          extracted = resources_manager.get_extracted_strings
-          Core::Logger.info "Processed #{processed_count} files, skipped #{skipped_count} unchanged files"
-          Core::Logger.info "Extracted strings from #{extracted['strings'].keys.length} files"
-          Core::Logger.info "Found #{extracted['not_defined'].length} undefined strings" if extracted['not_defined'].any?
+          # Process all resources through ResourcesManager
+          resources_manager = Core::ResourcesManager.new
+          resources_manager.process_resources(layouts_dir, last_updated)
         end
       end
     end

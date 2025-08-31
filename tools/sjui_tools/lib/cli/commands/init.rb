@@ -130,12 +130,10 @@ module SjuiTools
               'view_directory' => 'View',
               'data_directory' => 'Data',  # Directory for data binding structs
               'viewmodel_directory' => 'ViewModel',  # Directory for ViewModels
+              'resource_manager_directory' => 'ResourceManager',  # Directory for resource managers
               'string_files' => [
                 "#{project_name}/Localizable.strings"
               ],
-              'swiftui' => {
-                'output_directory' => 'Generated'
-              },
               'use_network' => true,  # SwiftUI mode can use network for API calls
               'hotloader' => {
                 'ip' => '127.0.0.1',
@@ -168,12 +166,7 @@ module SjuiTools
               }
             }
             
-            # Add SwiftUI config if mode is 'all'
-            if mode == 'all'
-              config['swiftui'] = {
-                'output_directory' => 'Generated'
-              }
-            end
+            # No SwiftUI-specific config needed for 'all' mode anymore
           end
           
           File.write(config_file, JSON.pretty_generate(config))
@@ -215,10 +208,7 @@ module SjuiTools
             config['styles_directory'] || 'Styles'
           ]
           
-          # Add SwiftUI-specific directories if configured
-          if config['swiftui'] && config['swiftui']['output_directory']
-            directories << config['swiftui']['output_directory']
-          end
+          # SwiftUI doesn't need Generated directory anymore
           
           create_directories(directories)
         end

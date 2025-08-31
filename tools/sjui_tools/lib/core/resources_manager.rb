@@ -5,6 +5,7 @@ require 'fileutils'
 require_relative 'config_manager'
 require_relative 'project_finder'
 require_relative 'logger'
+require_relative 'resources/string_manager'
 
 module SjuiTools
   module Core
@@ -14,73 +15,66 @@ module SjuiTools
         @source_path = ProjectFinder.get_full_source_path || Dir.pwd
         @layouts_dir = File.join(@source_path, @config['layouts_directory'] || 'Layouts')
         @resources_dir = File.join(@layouts_dir, 'Resources')
-        @extracted_strings = {}
-        @not_defined_strings = []
+        @string_manager = Resources::StringManager.new
       end
       
-      # Extract strings from JSON data
-      def extract_strings_from_json(json_data, file_name)
-        @extracted_strings[file_name] ||= {}
-        extract_strings_recursive(json_data, file_name)
+      # Main method called from build command
+      def process_resources(layouts_dir, last_updated = {})
+        # Extract resources from JSON files
+        process_resource_extraction(layouts_dir, last_updated)
+        
+        # Apply extracted strings to .strings files
+        apply_extracted_strings
       end
       
-      # Clear extracted strings
-      def clear_extracted_strings
-        @extracted_strings = {}
-        @not_defined_strings = []
-      end
-      
-      # Get all extracted strings
-      def get_extracted_strings
-        {
-          'strings' => @extracted_strings,
-          'not_defined' => @not_defined_strings.uniq
-        }
+      # Extract resources from JSON files
+      def process_resource_extraction(layouts_dir, last_updated = {})
+        Core::Logger.info "Processing resource extraction..."
+        
+        # Get all JSON files (excluding Resources folder)
+        json_files = Dir.glob(File.join(layouts_dir, '**/*.json')).reject do |file|
+          file.include?(File.join(layouts_dir, 'Resources'))
+        end
+        
+        # Filter changed files
+        processed_files = []
+        processed_count = 0
+        skipped_count = 0
+        
+        json_files.each do |json_file|
+          begin
+            relative_path = Pathname.new(json_file).relative_path_from(Pathname.new(layouts_dir)).to_s
+            
+            # Check if file has been modified since last build
+            file_mtime = File.mtime(json_file).to_i
+            if last_updated[relative_path] && last_updated[relative_path] >= file_mtime
+              Core::Logger.debug "Skipping unchanged file: #{relative_path}"
+              skipped_count += 1
+              next
+            end
+            
+            Core::Logger.debug "Processing: #{relative_path}"
+            processed_files << json_file
+            processed_count += 1
+          rescue => e
+            Core::Logger.warn "Error checking #{json_file}: #{e.message}"
+          end
+        end
+        
+        # Process strings through StringManager
+        @string_manager.process_strings(processed_files, processed_count, skipped_count, @config)
+        
+        # TODO: Process colors
+        # TODO: Process dimensions
+        # TODO: Process other resources
       end
       
       private
       
-      def extract_strings_recursive(data, file_name)
-        return unless data.is_a?(Hash)
-        
-        # Check for 'text' key
-        if data['text'].is_a?(String) && !data['text'].empty?
-          process_string_value(data['text'], file_name)
-        end
-        
-        # Check for partial_attributes array
-        if data['partial_attributes'].is_a?(Array)
-          data['partial_attributes'].each do |attr|
-            if attr.is_a?(Hash) && attr['range'].is_a?(Hash) && attr['range']['text'].is_a?(String)
-              process_string_value(attr['range']['text'], file_name)
-            end
-          end
-        end
-        
-        # Recursively process children and other nested structures
-        data.each_value do |value|
-          if value.is_a?(Hash)
-            extract_strings_recursive(value, file_name)
-          elsif value.is_a?(Array)
-            value.each { |item| extract_strings_recursive(item, file_name) if item.is_a?(Hash) }
-          end
-        end
+      def apply_extracted_strings
+        Core::Logger.info "Applying extracted strings to .strings files..."
+        @string_manager.apply_to_strings_files
       end
-      
-      def process_string_value(text, file_name)
-        # Skip binding values (wrapped in @{})
-        return if text.match?(/^@\{.*\}$/)
-        
-        # Check if it's snake_case
-        if text.match?(/^[a-z]+(_[a-z]+)*$/)
-          @extracted_strings[file_name][text] = text
-        else
-          # Direct string value - add to not_defined
-          @not_defined_strings << text
-        end
-      end
-      
-      # TODO: Implement methods for managing resource files
     end
   end
 end
