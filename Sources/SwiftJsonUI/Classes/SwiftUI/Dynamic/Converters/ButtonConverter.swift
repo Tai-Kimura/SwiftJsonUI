@@ -57,7 +57,7 @@ public struct ButtonConverter {
             
             return AnyView(
                 StateAwareButtonView(
-                    text: viewModel.processText(component.text) ?? "",
+                    text: (viewModel.processText(component.text) ?? "").localized(),
                     partialAttributes: partialAttributes,
                     action: {
                         handleButtonAction(component: component, viewModel: viewModel)
@@ -83,7 +83,8 @@ public struct ButtonConverter {
         }
         
         // Original implementation for buttons without state properties
-        let text = viewModel.processText(component.text) ?? ""
+        let processedText = viewModel.processText(component.text) ?? ""
+        let text = processedText.localized()
         
         // Debug: Log button properties
         print("🔘 [ButtonConverter] Button properties:")

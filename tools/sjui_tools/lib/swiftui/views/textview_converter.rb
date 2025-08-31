@@ -1,11 +1,13 @@
 #!/usr/bin/env ruby
 
 require_relative 'base_view_converter'
+require_relative '../helpers/string_manager_helper'
 
 module SjuiTools
   module SwiftUI
     module Views
       class TextViewConverter < BaseViewConverter
+        include SjuiTools::SwiftUI::Helpers::StringManagerHelper
         def convert
           id = @component['id'] || 'textEditor'
           
@@ -32,7 +34,9 @@ module SjuiTools
             if @component['hint']
               # Escape newlines in hint text
               escaped_hint = @component['hint'].gsub("\n", "\\n")
-              add_line "hint: \"#{escaped_hint}\","
+              # Use localized strings for snake_case hint text
+              hint_text = get_text_with_string_manager("\"#{escaped_hint}\"")
+              add_line "hint: #{hint_text},"
             end
             
             # hintAttributes の処理

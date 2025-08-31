@@ -19,7 +19,8 @@ public struct TextConverter {
         viewModel: DynamicViewModel,
         parentOrientation: String? = nil
     ) -> AnyView {
-        let text = viewModel.processText(component.text) ?? ""
+        let processedText = viewModel.processText(component.text) ?? ""
+        let text = processedText.localized()
         let textColor = DynamicHelpers.colorFromHex(component.fontColor) ?? .primary
         let alignment = DynamicHelpers.getTextAlignment(from: component)
         

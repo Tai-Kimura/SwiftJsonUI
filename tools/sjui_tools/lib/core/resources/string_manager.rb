@@ -255,6 +255,16 @@ module SjuiTools
             process_string_value(data['text'], strings, not_defined, file_name)
           end
           
+          # Check for 'hint' key (for TextFields and TextViews)
+          if data['hint'].is_a?(String) && !data['hint'].empty?
+            process_string_value(data['hint'], strings, not_defined, file_name)
+          end
+          
+          # Check for 'placeholder' key (alternative to hint)
+          if data['placeholder'].is_a?(String) && !data['placeholder'].empty?
+            process_string_value(data['placeholder'], strings, not_defined, file_name)
+          end
+          
           # Check for partial_attributes array
           if data['partial_attributes'].is_a?(Array)
             data['partial_attributes'].each do |attr|

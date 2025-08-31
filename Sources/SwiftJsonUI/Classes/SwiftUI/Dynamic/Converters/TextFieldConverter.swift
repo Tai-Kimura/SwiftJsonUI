@@ -28,7 +28,7 @@ public struct TextFieldConverter {
         component: DynamicComponent,
         viewModel: DynamicViewModel
     ) -> AnyView {
-        let placeholder = component.hint ?? component.placeholder ?? ""
+        let placeholder = (component.hint ?? component.placeholder ?? "").localized()
         
         // Check if text has @{} binding syntax
         if let propertyName = extractPropertyName(from: component.text) {

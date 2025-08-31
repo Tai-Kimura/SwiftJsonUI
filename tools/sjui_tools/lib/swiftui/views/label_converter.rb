@@ -2,6 +2,7 @@
 
 require_relative 'base_view_converter'
 require_relative '../helpers/font_helper'
+require_relative '../helpers/string_manager_helper'
 require_relative 'frame_helper'
 
 module SjuiTools
@@ -11,6 +12,7 @@ module SjuiTools
       # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/TextConverter.swift
       class LabelConverter < BaseViewConverter
         include SjuiTools::SwiftUI::Helpers::FontHelper
+        include SjuiTools::SwiftUI::Helpers::StringManagerHelper
         include SjuiTools::SwiftUI::Views::FrameHelper
         def convert
           # Get text handler for this component
@@ -19,7 +21,7 @@ module SjuiTools
                           SjuiTools::SwiftUI::Binding::LabelBindingHandler.new
           
           # Get text content with binding support
-          text_content = label_handler.get_text_content(@component)
+          text_content = get_text_with_string_manager(label_handler.get_text_content(@component))
           
           # Use PartialAttributedText for all text rendering
           add_line "PartialAttributedText("
@@ -38,7 +40,9 @@ module SjuiTools
                       if partial['range'].is_a?(Array) && partial['range'].length == 2
                         add_line "range: #{partial['range'][0]}..<#{partial['range'][1]},"
                       elsif partial['range'].is_a?(String)
-                        add_line "textPattern: \"#{partial['range']}\","
+                        # Use StringManager for snake_case range text
+                        range_text = get_text_with_string_manager("\"#{partial['range']}\"")
+                        add_line "textPattern: #{range_text},"
                       end
                     end
                     

@@ -93,7 +93,7 @@ public struct TextViewConverter {
         return AnyView(
             TextViewWithPlaceholder(
                 text: textBinding,
-                hint: component.hint ?? component.placeholder,
+                hint: (component.hint ?? component.placeholder)?.localized(),
                 hintColor: DynamicHelpers.colorFromHex(component.hintColor) ?? .gray,
                 hintFont: component.hintFont,
                 hideOnFocused: component.hideOnFocused ?? true,

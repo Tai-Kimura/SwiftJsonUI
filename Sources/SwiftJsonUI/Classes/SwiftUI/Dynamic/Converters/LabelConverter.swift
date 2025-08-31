@@ -17,7 +17,8 @@ public struct LabelConverter {
         viewModel: DynamicViewModel,
         parentOrientation: String? = nil
     ) -> AnyView {
-        let text = viewModel.processText(component.text) ?? ""
+        let processedText = viewModel.processText(component.text) ?? ""
+        let text = processedText.localized()
         
         // Check for partialAttributes first
         if let partialAttributesValue = component.partialAttributes?.value,
@@ -96,7 +97,7 @@ public struct LabelConverter {
                     }
                     
                     return PartialAttribute(
-                        textPattern: pattern,
+                        textPattern: pattern.localized(),
                         fontColor: fontColor,
                         fontSize: fontSize,
                         fontWeight: fontWeight,

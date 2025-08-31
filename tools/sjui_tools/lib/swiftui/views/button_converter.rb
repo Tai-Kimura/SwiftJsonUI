@@ -2,6 +2,7 @@
 
 require_relative 'base_view_converter'
 require_relative '../helpers/font_helper'
+require_relative '../helpers/string_manager_helper'
 
 module SjuiTools
   module SwiftUI
@@ -10,6 +11,7 @@ module SjuiTools
       # Dynamic mode equivalent: Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Converters/ButtonConverter.swift
       class ButtonConverter < BaseViewConverter
         include SjuiTools::SwiftUI::Helpers::FontHelper
+        include SjuiTools::SwiftUI::Helpers::StringManagerHelper
         def convert
           # Always use StateAwareButtonView for dynamic state change support
           convert_state_aware_button
@@ -35,9 +37,16 @@ module SjuiTools
               escaped_text = interpolated.gsub('"', '\\"').gsub("\n", "\\n")
               add_line "text: \"#{escaped_text}\","
             else
-              # Regular text - escape double quotes
-              escaped_text = text.gsub('"', '\\"')
-              add_line "text: \"#{escaped_text}\","
+              # Check if it's snake_case for localized strings
+              text_content = get_text_with_string_manager("\"#{text}\"")
+              # If it's a localized string, use it directly, otherwise escape as normal
+              if text_content.end_with?('.localized()')
+                add_line "text: #{text_content},"
+              else
+                # Regular text - escape double quotes
+                escaped_text = text.gsub('"', '\\"')
+                add_line "text: \"#{escaped_text}\","
+              end
             end
             
             # Add partialAttributes if present (same as label)
@@ -52,7 +61,9 @@ module SjuiTools
                       if partial['range'].is_a?(Array) && partial['range'].length == 2
                         add_line "range: #{partial['range'][0]}..<#{partial['range'][1]},"
                       elsif partial['range'].is_a?(String)
-                        add_line "textPattern: \"#{partial['range']}\","
+                        # Use StringManager for snake_case range text
+                        range_text = get_text_with_string_manager("\"#{partial['range']}\"")
+                        add_line "textPattern: #{range_text},"
                       end
                     end
                     

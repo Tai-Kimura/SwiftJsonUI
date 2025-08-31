@@ -2,12 +2,14 @@
 
 require_relative 'base_view_converter'
 require_relative '../helpers/font_helper'
+require_relative '../helpers/string_manager_helper'
 
 module SjuiTools
   module SwiftUI
     module Views
       class TextFieldConverter < BaseViewConverter
         include SjuiTools::SwiftUI::Helpers::FontHelper
+        include SjuiTools::SwiftUI::Helpers::StringManagerHelper
         def convert
           # Get text field handler for this component
           textfield_handler = @binding_handler.is_a?(SjuiTools::SwiftUI::Binding::TextFieldBindingHandler) ?
@@ -15,7 +17,9 @@ module SjuiTools
                              SjuiTools::SwiftUI::Binding::TextFieldBindingHandler.new
           
           # hint (SwiftJsonUIではplaceholderではなくhint)
-          hint = @component['hint'] || @component['placeholder'] || ""
+          hint_text = @component['hint'] || @component['placeholder'] || ""
+          # Use localized strings for snake_case hint text
+          hint = get_text_with_string_manager("\"#{hint_text}\"")
           id = @component['id'] || "textField"
           
           # hintAttributes の処理
@@ -37,9 +41,9 @@ module SjuiTools
           
           # TextField or SecureField
           if is_secure
-            add_line "SecureField(\"#{hint}\", text: #{text_binding})"
+            add_line "SecureField(#{hint}, text: #{text_binding})"
           else
-            add_line "TextField(\"#{hint}\", text: #{text_binding})"
+            add_line "TextField(#{hint}, text: #{text_binding})"
           end
           
           # Apply font modifiers using helper
