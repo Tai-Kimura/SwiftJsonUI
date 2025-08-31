@@ -63,7 +63,7 @@ module SjuiTools
           
           # Apply background and corner radius
           if @component['background']
-            color = hex_to_swiftui_color(@component['background'])
+            color = get_swiftui_color(@component['background'])
             add_modifier_line ".background(#{color})"
           end
           

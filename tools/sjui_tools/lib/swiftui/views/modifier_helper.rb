@@ -10,7 +10,7 @@ module SjuiTools
         private
         
         def apply_gradient
-          colors = @component['gradient'].map { |color| hex_to_swiftui_color(color) }
+          colors = @component['gradient'].map { |color| get_swiftui_color(color) }
           direction = @component['gradientDirection'] || 'Vertical'
           
           gradient_type = case direction

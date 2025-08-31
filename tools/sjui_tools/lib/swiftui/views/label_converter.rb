@@ -48,7 +48,7 @@ module SjuiTools
                     
                     # Add fontColor
                     if partial['fontColor']
-                      color = hex_to_swiftui_color(partial['fontColor'])
+                      color = get_swiftui_color(partial['fontColor'])
                       add_line "fontColor: #{color},"
                     end
                     
@@ -75,7 +75,7 @@ module SjuiTools
                     
                     # Add backgroundColor
                     if partial['background']
-                      bg_color = hex_to_swiftui_color(partial['background'])
+                      bg_color = get_swiftui_color(partial['background'])
                       add_line "backgroundColor: #{bg_color},"
                     end
                     
@@ -107,10 +107,10 @@ module SjuiTools
             
             # Add fontColor
             if @component['enabled'] == false && @component['disabledFontColor']
-              color = hex_to_swiftui_color(@component['disabledFontColor'])
+              color = get_swiftui_color(@component['disabledFontColor'])
               add_line "fontColor: #{color},"
             elsif @component['fontColor']
-              color = hex_to_swiftui_color(@component['fontColor'])
+              color = get_swiftui_color(@component['fontColor'])
               add_line "fontColor: #{color},"
             end
             
@@ -221,7 +221,7 @@ module SjuiTools
           # Apply background and corner radius AFTER padding
           # This ensures the background includes the padding area
           if @component['background']
-            color = hex_to_swiftui_color(@component['background'])
+            color = get_swiftui_color(@component['background'])
             add_modifier_line ".background(#{color})"
           end
           

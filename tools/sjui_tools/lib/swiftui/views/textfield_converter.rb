@@ -51,7 +51,7 @@ module SjuiTools
           
           # fontColor
           if @component['fontColor']
-            color = hex_to_swiftui_color(@component['fontColor'])
+            color = get_swiftui_color(@component['fontColor'])
             add_modifier_line ".foregroundColor(#{color})"
           end
           
@@ -93,7 +93,7 @@ module SjuiTools
           
           # caretAttributes（カーソル色の設定）
           if @component['caretAttributes'] && @component['caretAttributes']['fontColor']
-            caret_color = hex_to_swiftui_color(@component['caretAttributes']['fontColor'])
+            caret_color = get_swiftui_color(@component['caretAttributes']['fontColor'])
             add_modifier_line ".accentColor(#{caret_color})"
             add_line "// caretAttributes applied as accentColor"
           end
@@ -131,7 +131,7 @@ module SjuiTools
           
           # Apply background
           if @component['background']
-            color = hex_to_swiftui_color(@component['background'])
+            color = get_swiftui_color(@component['background'])
             add_modifier_line ".background(#{color})"
           end
           
@@ -142,7 +142,7 @@ module SjuiTools
           
           # Apply border (after cornerRadius, before margins)
           if @component['borderWidth'] && @component['borderColor']
-            color = hex_to_swiftui_color(@component['borderColor'])
+            color = get_swiftui_color(@component['borderColor'])
             add_modifier_line ".overlay("
             indent do
               add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
@@ -168,7 +168,7 @@ module SjuiTools
               x = @component['shadow']['offsetX'] || 0
               y = @component['shadow']['offsetY'] || 0
               if @component['shadow']['color']
-                color = hex_to_swiftui_color(@component['shadow']['color'])
+                color = get_swiftui_color(@component['shadow']['color'])
                 add_modifier_line ".shadow(color: #{color}, radius: #{radius}, x: #{x}, y: #{y})"
               else
                 add_modifier_line ".shadow(radius: #{radius}, x: #{x}, y: #{y})"

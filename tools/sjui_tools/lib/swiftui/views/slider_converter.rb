@@ -38,7 +38,7 @@ module SjuiTools
           
           # Tint color
           if @component['tintColor']
-            color = hex_to_swiftui_color(@component['tintColor'])
+            color = get_swiftui_color(@component['tintColor'])
             add_modifier_line ".accentColor(#{color})"
           end
           

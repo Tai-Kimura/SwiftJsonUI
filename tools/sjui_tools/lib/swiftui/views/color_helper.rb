@@ -24,33 +24,13 @@ module SjuiTools
           end
         end
 
-        def hex_to_swiftui_color(hex)
-          return "Color.clear" if hex.nil? || hex.empty?
+        def get_swiftui_color(color_value)
+          return "Color.clear" if color_value.nil? || color_value.empty?
           
-          # 16進数カラーコードの処理
-          if hex.start_with?('#')
-            hex = hex[1..-1]
-          end
-          
-          hex = hex.upcase
-          
-          if hex.length == 6
-            # 6桁の16進数（RGB）
-            r = hex[0..1].to_i(16) / 255.0
-            g = hex[2..3].to_i(16) / 255.0
-            b = hex[4..5].to_i(16) / 255.0
-            "Color(red: #{r}, green: #{g}, blue: #{b})"
-          elsif hex.length == 8
-            # 8桁の16進数（RGBA）
-            # RGBAフォーマット: 最初の6桁がRGB、最後の2桁がアルファ
-            r = hex[0..1].to_i(16) / 255.0
-            g = hex[2..3].to_i(16) / 255.0
-            b = hex[4..5].to_i(16) / 255.0
-            a = hex[6..7].to_i(16) / 255.0
-            "Color(red: #{r}, green: #{g}, blue: #{b}).opacity(#{a})"
-          else
-            "Color.black"  # デフォルト
-          end
+          # SwiftJsonUIConfiguration.shared.getColor(for:) を使用して色を取得
+          # これにより、colorProviderが設定されていればそれを使用し、
+          # そうでなければhex変換にフォールバックする
+          "SwiftJsonUIConfiguration.shared.getColor(for: \"#{color_value}\") ?? Color.black"
         end
         
         def gradient_direction_to_swiftui(direction)

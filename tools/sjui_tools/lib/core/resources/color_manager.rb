@@ -430,19 +430,19 @@ module SjuiTools
           code << "    private init() {}"
           code << ""
           code << "    // Load colors from colors.json"
-          code << "    private static let colorsData: [String: String] = ["
-          
-          # Add defined colors from colors.json
-          @colors_data.each do |key, hex_value|
-            code << "        \"#{key}\": \"#{hex_value}\","
+          if @colors_data.empty?
+            code << "    private static let colorsData: [String: String] = [:]"
+          else
+            code << "    private static let colorsData: [String: String] = ["
+            
+            # Add defined colors from colors.json
+            @colors_data.each_with_index do |(key, hex_value), index|
+              comma = index < @colors_data.size - 1 ? "," : ""
+              code << "        \"#{key}\": \"#{hex_value}\"#{comma}"
+            end
+            
+            code << "    ]"
           end
-          
-          # Remove trailing comma from last item
-          if @colors_data.any?
-            code[-1] = code[-1].chomp(',')
-          end
-          
-          code << "    ]"
           code << ""
           code << "    // UIKit colors"
           code << "    public struct uikit {"

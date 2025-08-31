@@ -18,7 +18,7 @@ module SjuiTools
           
           # color
           if @component['color']
-            color = hex_to_swiftui_color(@component['color'])
+            color = get_swiftui_color(@component['color'])
             add_modifier_line ".tint(#{color})"
           end
           

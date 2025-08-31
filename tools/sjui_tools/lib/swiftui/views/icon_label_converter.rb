@@ -62,13 +62,13 @@ module SjuiTools
             
             # fontColor
             if @component['fontColor']
-              color = hex_to_swiftui_color(@component['fontColor'])
+              color = get_swiftui_color(@component['fontColor'])
               add_line "fontColor: #{color},"
             end
             
             # selectedFontColor
             if @component['selectedFontColor']
-              color = hex_to_swiftui_color(@component['selectedFontColor'])
+              color = get_swiftui_color(@component['selectedFontColor'])
               add_line "selectedFontColor: #{color},"
             end
             

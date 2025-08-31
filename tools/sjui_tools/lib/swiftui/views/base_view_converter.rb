@@ -130,14 +130,14 @@ module SjuiTools
           # enabled状態に応じて背景色を変更
           if @component['enabled'] == false && @component['disabledBackground']
             # 無効状態の背景色
-            color = hex_to_swiftui_color(@component['disabledBackground'])
+            color = get_swiftui_color(@component['disabledBackground'])
             add_modifier_line ".background(#{color})"
           elsif @component['background'] && !@skip_background
             processed_bg = process_template_value(@component['background'])
             if processed_bg.is_a?(Hash) && processed_bg[:template_var]
               add_modifier_line ".background(#{to_camel_case(processed_bg[:template_var])})"
             else
-              color = hex_to_swiftui_color(@component['background'])
+              color = get_swiftui_color(@component['background'])
               add_modifier_line ".background(#{color})"
             end
           end
@@ -150,7 +150,7 @@ module SjuiTools
           # ボーダー（cornerRadiusの直後、marginsの前に適用）
           # Dynamic mode: CommonModifiers.swift line 59
           if @component['borderWidth'] && @component['borderColor']
-            color = hex_to_swiftui_color(@component['borderColor'])
+            color = get_swiftui_color(@component['borderColor'])
             add_modifier_line ".overlay("
             indent do
               add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"
@@ -183,7 +183,7 @@ module SjuiTools
               color_hex = @component['shadow']['color']
               
               if color_hex
-                color = hex_to_swiftui_color(color_hex)
+                color = get_swiftui_color(color_hex)
                 add_modifier_line ".shadow(color: #{color}, radius: #{radius}, x: #{x}, y: #{y})"
               else
                 add_modifier_line ".shadow(radius: #{radius}, x: #{x}, y: #{y})"

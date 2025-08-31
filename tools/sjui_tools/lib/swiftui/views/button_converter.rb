@@ -69,7 +69,7 @@ module SjuiTools
                     
                     # Add fontColor
                     if partial['fontColor']
-                      color = hex_to_swiftui_color(partial['fontColor'])
+                      color = get_swiftui_color(partial['fontColor'])
                       add_line "fontColor: #{color},"
                     end
                     
@@ -96,7 +96,7 @@ module SjuiTools
                     
                     # Add backgroundColor
                     if partial['background']
-                      bg_color = hex_to_swiftui_color(partial['background'])
+                      bg_color = get_swiftui_color(partial['background'])
                       add_line "backgroundColor: #{bg_color},"
                     end
                     
@@ -136,24 +136,24 @@ module SjuiTools
             
             # Color properties
             if @component['fontColor']
-              add_line "fontColor: #{hex_to_swiftui_color(@component['fontColor'])},"
+              add_line "fontColor: #{get_swiftui_color(@component['fontColor'])},"
             end
             if @component['background']
-              add_line "backgroundColor: #{hex_to_swiftui_color(@component['background'])},"
+              add_line "backgroundColor: #{get_swiftui_color(@component['background'])},"
             end
             
             # State-dependent colors
             if @component['tapBackground']
-              add_line "tapBackground: #{hex_to_swiftui_color(@component['tapBackground'])},"
+              add_line "tapBackground: #{get_swiftui_color(@component['tapBackground'])},"
             end
             if @component['highlightColor']
-              add_line "highlightColor: #{hex_to_swiftui_color(@component['highlightColor'])},"
+              add_line "highlightColor: #{get_swiftui_color(@component['highlightColor'])},"
             end
             if @component['disabledFontColor']
-              add_line "disabledFontColor: #{hex_to_swiftui_color(@component['disabledFontColor'])},"
+              add_line "disabledFontColor: #{get_swiftui_color(@component['disabledFontColor'])},"
             end
             if @component['disabledBackground']
-              add_line "disabledBackground: #{hex_to_swiftui_color(@component['disabledBackground'])},"
+              add_line "disabledBackground: #{get_swiftui_color(@component['disabledBackground'])},"
             end
             
             # Other properties

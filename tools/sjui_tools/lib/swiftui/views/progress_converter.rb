@@ -26,13 +26,13 @@ module SjuiTools
           
           # progressTintColor
           if @component['progressTintColor']
-            color = hex_to_swiftui_color(@component['progressTintColor'])
+            color = get_swiftui_color(@component['progressTintColor'])
             add_modifier_line ".tint(#{color})"
           end
           
           # trackTintColor（SwiftUIでは背景として実装）
           if @component['trackTintColor']
-            color = hex_to_swiftui_color(@component['trackTintColor'])
+            color = get_swiftui_color(@component['trackTintColor'])
             add_modifier_line ".background(#{color})"
           end
           

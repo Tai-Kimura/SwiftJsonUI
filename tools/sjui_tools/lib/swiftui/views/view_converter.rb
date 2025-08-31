@@ -113,7 +113,7 @@ module SjuiTools
             # backgroundが設定されている場合はRectangleを使用（dividerなど）
             if @component['background']
               add_line "Rectangle()"
-              add_modifier_line ".fill(#{hex_to_swiftui_color(@component['background'])})"
+              add_modifier_line ".fill(#{get_swiftui_color(@component['background'])})"
               # Rectangleの場合はbackgroundを適用しない
               @skip_background = true
             else

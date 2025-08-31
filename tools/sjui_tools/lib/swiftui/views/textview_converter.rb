@@ -45,11 +45,11 @@ module SjuiTools
               hint_attrs = @component['hintAttributes']
               
               if hint_attrs['fontColor'] || hint_attrs['color']
-                color = hex_to_swiftui_color(hint_attrs['fontColor'] || hint_attrs['color'])
+                color = get_swiftui_color(hint_attrs['fontColor'] || hint_attrs['color'])
                 add_line "hintColor: #{color},"
               elsif @component['hintColor']
                 # 個別のhintColor属性も引き続きサポート
-                color = hex_to_swiftui_color(@component['hintColor'])
+                color = get_swiftui_color(@component['hintColor'])
                 add_line "hintColor: #{color},"
               end
               
@@ -65,7 +65,7 @@ module SjuiTools
             else
               # hintColor (個別属性)
               if @component['hintColor']
-                color = hex_to_swiftui_color(@component['hintColor'])
+                color = get_swiftui_color(@component['hintColor'])
                 add_line "hintColor: #{color},"
               end
               
@@ -87,7 +87,7 @@ module SjuiTools
             
             # fontColor
             if @component['fontColor']
-              color = hex_to_swiftui_color(@component['fontColor'])
+              color = get_swiftui_color(@component['fontColor'])
               add_line "fontColor: #{color},"
             end
             
@@ -98,7 +98,7 @@ module SjuiTools
             
             # background
             if @component['background']
-              bg_color = hex_to_swiftui_color(@component['background'])
+              bg_color = get_swiftui_color(@component['background'])
               add_line "backgroundColor: #{bg_color},"
             end
             
@@ -176,7 +176,7 @@ module SjuiTools
           
           # Apply border (after component's internal cornerRadius)
           if @component['borderWidth'] && @component['borderColor']
-            color = hex_to_swiftui_color(@component['borderColor'])
+            color = get_swiftui_color(@component['borderColor'])
             add_modifier_line ".overlay("
             indent do
               add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 0).to_i})"

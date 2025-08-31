@@ -47,10 +47,10 @@ module SjuiTools
               
               # fontColor
               if label_attrs['fontColor'] || label_attrs['color']
-                color = hex_to_swiftui_color(label_attrs['fontColor'] || label_attrs['color'])
+                color = get_swiftui_color(label_attrs['fontColor'] || label_attrs['color'])
                 add_modifier_line ".foregroundColor(#{color})"
               elsif @component['fontColor']
-                color = hex_to_swiftui_color(@component['fontColor'])
+                color = get_swiftui_color(@component['fontColor'])
                 add_modifier_line ".foregroundColor(#{color})"
               end
             else
@@ -59,7 +59,7 @@ module SjuiTools
               
               # fontColor
               if @component['fontColor']
-                color = hex_to_swiftui_color(@component['fontColor'])
+                color = get_swiftui_color(@component['fontColor'])
                 add_modifier_line ".foregroundColor(#{color})"
               end
             end

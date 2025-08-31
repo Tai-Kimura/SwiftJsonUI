@@ -64,7 +64,7 @@ module SjuiTools
         def apply_gradient_background
           # Handle colors property
           color_array = @component['colors'] || @component['gradient'] || []
-          colors = color_array.map { |color| hex_to_swiftui_color(color) }
+          colors = color_array.map { |color| get_swiftui_color(color) }
           
           # Handle start and end points
           if @component['startPoint'] && @component['endPoint']

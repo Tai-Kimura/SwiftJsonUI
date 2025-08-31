@@ -26,12 +26,12 @@ module SjuiTools
             end
             
             if @component['fontColor']
-              color = hex_to_swiftui_color(@component['fontColor'])
+              color = get_swiftui_color(@component['fontColor'])
               add_line "fontColor: #{color},"
             end
             
             if @component['background']
-              bg_color = hex_to_swiftui_color(@component['background'])
+              bg_color = get_swiftui_color(@component['background'])
               add_line "backgroundColor: #{bg_color},"
             end
             
@@ -146,7 +146,7 @@ module SjuiTools
           
           # Apply border (after component's internal cornerRadius)
           if @component['borderWidth'] && @component['borderColor']
-            color = hex_to_swiftui_color(@component['borderColor'])
+            color = get_swiftui_color(@component['borderColor'])
             add_modifier_line ".overlay("
             indent do
               add_line "RoundedRectangle(cornerRadius: #{(@component['cornerRadius'] || 8).to_i})"

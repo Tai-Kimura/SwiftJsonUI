@@ -253,7 +253,7 @@ module SjuiTools
                         else
                           add_modifier_line ".padding(#{padding_value.to_i})"
                         end
-                        color = hex_to_swiftui_color(background_color)
+                        color = get_swiftui_color(background_color)
                         add_modifier_line ".background(#{color})"
                       else
                         # Normal conversion for views without padding or without background
@@ -446,7 +446,7 @@ module SjuiTools
             
             # 背景色
             if @component['background']
-              bg_color = hex_to_swiftui_color(@component['background'])
+              bg_color = get_swiftui_color(@component['background'])
               add_line "backgroundColor: #{bg_color},"
             else
               add_line "backgroundColor: nil,"

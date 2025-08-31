@@ -89,7 +89,7 @@ module SjuiTools
                 apply_font_modifiers(@component, self)
                 
                 if @component['fontColor']
-                  color = hex_to_swiftui_color(@component['fontColor'])
+                  color = get_swiftui_color(@component['fontColor'])
                   add_modifier_line ".foregroundColor(#{color})"
                 end
               end
