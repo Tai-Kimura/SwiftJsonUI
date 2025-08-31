@@ -62,8 +62,8 @@ public struct StateAwareContainer<Content: View>: View {
 extension StateAwareContainer {
     public init(component: DynamicComponent, @ViewBuilder content: () -> Content) where Content: View {
         self.init(
-            background: DynamicHelpers.colorFromHex(component.background),
-            tapBackground: DynamicHelpers.colorFromHex(component.tapBackground),
+            background: DynamicHelpers.getColor(component.background),
+            tapBackground: DynamicHelpers.getColor(component.tapBackground),
             content: content
         )
     }
