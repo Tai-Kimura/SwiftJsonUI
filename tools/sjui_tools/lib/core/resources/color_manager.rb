@@ -149,6 +149,12 @@ module SjuiTools
             data.each do |key, value|
               # Check if this key is a color property and value is a string
               if is_color_property?(key) && value.is_a?(String)
+                # Skip binding expressions (starting with @{)
+                if value.start_with?('@{') && value.end_with?('}')
+                  Core::Logger.debug "Skipping binding expression: #{value}"
+                  next
+                end
+                
                 # Process and replace the color value (hex or string key)
                 new_value = process_and_replace_color(value)
                 if new_value != value
@@ -205,6 +211,11 @@ module SjuiTools
         
         # Process and replace a color value, returning the color key
         def process_and_replace_color(color_value)
+          # Skip binding expressions
+          if color_value.is_a?(String) && color_value.start_with?('@{') && color_value.end_with?('}')
+            return color_value
+          end
+          
           # Handle hex colors
           if is_hex_color?(color_value)
             # Normalize hex color (uppercase, with #)

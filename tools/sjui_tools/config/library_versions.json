@@ -3,7 +3,7 @@
     "default": {
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
-        "branch": "7.2.0"
+        "branch": "7.2.1"
       },
       "R.swift": {
         "git": "https://github.com/mac-cain13/R.swift.Library",
@@ -14,6 +14,16 @@
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
         "branch": "7.0.0"
+      },
+      "R.swift": {
+        "git": "https://github.com/mac-cain13/R.swift.Library",
+        "branch": "master"
+      }
+    },
+    "7.2.1": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI.git",
+        "branch": "7.2.1"
       },
       "R.swift": {
         "git": "https://github.com/mac-cain13/R.swift.Library",

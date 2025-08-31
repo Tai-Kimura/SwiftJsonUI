@@ -74,9 +74,9 @@ module SjuiTools
             # Git command failed, continue with other methods
           end
           
-          # Fallback to 7.2.0
-          puts "Using fallback version: 7.2.0"
-          "7.2.0"
+          # Fallback to 7.2.1
+          puts "Using fallback version: 7.2.1"
+          "7.2.1"
         end
         
         def load_library_versions
@@ -171,8 +171,8 @@ module SjuiTools
             elsif swiftjsonui_config['exact']
               package_info[:requirement][:exact_version] = swiftjsonui_config['exact']
             else
-              # Default to 7.2.0 branch
-              package_info[:requirement][:branch] = "7.2.0"
+              # Default to 7.2.1 branch
+              package_info[:requirement][:branch] = "7.2.1"
             end
               
             packages_to_add << package_info
@@ -182,7 +182,7 @@ module SjuiTools
             packages_to_add << {
               name: "SwiftJsonUI",
               url: "https://github.com/Tai-Kimura/SwiftJsonUI",
-              requirement: { branch: "7.2.0" }
+              requirement: { branch: "7.2.1" }
             }
           end
           
