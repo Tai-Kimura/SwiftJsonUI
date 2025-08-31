@@ -39,6 +39,7 @@ module SjuiTools
               layouts_path: File.join(source_path, @config['layouts_directory'] || 'Layouts'),
               layout_path: File.join(source_path, @config['layouts_directory'] || 'Layouts'),  # alias
               style_path: File.join(source_path, @config['styles_directory'] || 'Styles'),
+              resource_manager_path: File.join(source_path, @config['resource_manager_directory'] || 'ResourceManager'),
               core_path: File.join(source_path, 'Core'),
               ui_path: File.join(source_path, 'Core', 'UI'),
               base_path: File.join(source_path, 'Core', 'Base')  # Base should be at same level as UI
@@ -57,6 +58,7 @@ module SjuiTools
             check_and_add_directory(@paths.layout_path, @config['layouts_directory'] || 'Layouts', directories_to_create)
             check_and_add_directory(@paths.style_path, @config['styles_directory'] || 'Styles', directories_to_create)
             check_and_add_directory(@paths.bindings_path, @config['bindings_directory'] || 'Bindings', directories_to_create)
+            check_and_add_directory(@paths.resource_manager_path, @config['resource_manager_directory'] || 'ResourceManager', directories_to_create)
             check_and_add_directory(@paths.core_path, "Core", directories_to_create)
             check_and_add_directory(@paths.ui_path, "Core/UI", directories_to_create)
             check_and_add_directory(@paths.base_path, "Core/Base", directories_to_create)
@@ -76,6 +78,9 @@ module SjuiTools
             
             # ディレクトリが作成されたかどうかに関係なく、必要なCoreファイルをチェック・作成
             create_core_files_if_needed
+            
+            # ResourceManagerディレクトリにStringManager.swiftを作成
+            create_resource_manager_files_if_needed
             
             puts "Directory creation completed successfully!"
           end
@@ -236,6 +241,42 @@ module SjuiTools
               @xcode_manager.add_file(file_path, group_name)
             end
             puts "Added core files to Xcode project"
+          end
+          
+          def create_resource_manager_files_if_needed
+            puts "Checking for ResourceManager files..."
+            created_files = []
+            
+            # ResourceManagerディレクトリの存在をチェック
+            resource_manager_exists = Dir.exist?(@paths.resource_manager_path)
+            
+            if resource_manager_exists
+              # StringManager.swiftをチェック・作成
+              string_manager_file = File.join(@paths.resource_manager_path, "StringManager.swift")
+              unless File.exist?(string_manager_file)
+                puts "  Missing: StringManager.swift"
+                # Create empty StringManager.swift file
+                File.write(string_manager_file, "// StringManager.swift\n// Implementation will be added separately\n")
+                created_files << string_manager_file
+                puts "  Created: StringManager.swift"
+              else
+                puts "  Exists: StringManager.swift"
+              end
+            end
+            
+            # 作成されたファイルをXcodeプロジェクトに追加
+            unless created_files.empty?
+              puts "Created #{created_files.size} ResourceManager files"
+              add_resource_manager_files_to_xcode_project(created_files)
+            end
+          end
+          
+          def add_resource_manager_files_to_xcode_project(file_paths)
+            file_paths.each do |file_path|
+              group_name = @config['resource_manager_directory'] || 'ResourceManager'
+              @xcode_manager.add_file(file_path, group_name)
+            end
+            puts "Added ResourceManager files to Xcode project"
           end
         end
       end

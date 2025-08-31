@@ -30,10 +30,14 @@ module SjuiTools
           
           # Setup library if Xcode project (this handles everything)
           if Core::ProjectFinder.project_file_path&.end_with?('.xcodeproj')
-            if mode == 'swiftui'
+            case mode
+            when 'swiftui'
               setup_swiftui_project
-            else
-              setup_library
+            when 'uikit'
+              setup_uikit_project
+            when 'all'
+              setup_uikit_project
+              setup_swiftui_project
             end
           else
             puts "Error: No Xcode project found"
@@ -88,7 +92,7 @@ module SjuiTools
         end
 
 
-        def setup_library
+        def setup_uikit_project
           require_relative '../../uikit/xcode_project/setup/setup'
           
           # Use the full setup from the original setup.rb

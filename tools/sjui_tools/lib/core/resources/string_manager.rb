@@ -114,6 +114,37 @@ module SjuiTools
           }
         end
         
+        # Generate StringManager.swift file
+        def generate_swift_file
+          strings_json_path = File.join(@resources_dir, 'strings.json')
+          
+          unless File.exist?(strings_json_path)
+            Core::Logger.warn "strings.json not found at #{strings_json_path}"
+            return
+          end
+          
+          # Load strings.json
+          strings_data = JSON.parse(File.read(strings_json_path))
+          
+          # Process not_defined strings to add them to appropriate namespaces
+          process_not_defined_strings(strings_data)
+          
+          # Generate Swift code
+          swift_content = generate_swift_content(strings_data)
+          
+          # Write to StringManager.swift
+          resource_manager_dir = @config['resource_manager_directory'] || 'ResourceManager'
+          resource_manager_path = File.join(@source_path, resource_manager_dir)
+          
+          # Create ResourceManager directory if it doesn't exist
+          FileUtils.mkdir_p(resource_manager_path) unless Dir.exist?(resource_manager_path)
+          
+          string_manager_path = File.join(resource_manager_path, 'StringManager.swift')
+          
+          File.write(string_manager_path, swift_content)
+          Core::Logger.success "Generated StringManager.swift"
+        end
+        
         # Apply extracted strings to .strings files
         def apply_to_strings_files
           strings_json_path = File.join(@resources_dir, 'strings.json')
@@ -166,6 +197,9 @@ module SjuiTools
           # Write strings.json with extracted strings
           if processed_count > 0 || skipped_count == 0
             write_strings_json
+            
+            # Generate StringManager.swift file
+            generate_swift_file
           end
           
           # Get summary for logging
@@ -321,6 +355,152 @@ module SjuiTools
         
         def escape_json_string(str)
           str.gsub('"', '\\"').gsub("\n", '\\n').gsub("\r", '\\r').gsub("\t", '\\t')
+        end
+        
+        def generate_swift_content(strings_data)
+          content = []
+          content << "// StringManager.swift"
+          content << "// Auto-generated file - DO NOT EDIT"
+          content << "// Generated at: #{Time.now.strftime('%Y-%m-%d %H:%M:%S')}"
+          content << ""
+          content << "import Foundation"
+          content << "import SwiftJsonUI"
+          content << ""
+          content << "public struct StringManager {"
+          content << "    private init() {}"
+          content << ""
+          
+          # Generate nested structs for each file
+          strings_data.each do |file_name, strings|
+            # Skip 'not_defined' array
+            next if file_name == 'not_defined'
+            
+            # Convert file name to struct name (e.g., "home_view" -> "HomeView")
+            struct_name = file_name.split('_').map(&:capitalize).join
+            
+            content << "    public struct #{struct_name} {"
+            content << "        private init() {}"
+            content << ""
+            
+            # Generate static functions for each string key
+            strings.each do |key, value|
+              # Convert key to function name (e.g., "submit_button" -> "submitButton")
+              func_name = snake_to_camel(key)
+              full_key = "#{file_name}_#{key}"
+              
+              content << "        public static func #{func_name}("
+              content << "            tableName: String? = nil,"
+              content << "            bundle: Bundle = .main,"
+              content << "            value: String? = nil,"
+              content << "            comment: String = \"\""
+              content << "        ) -> String {"
+              content << "            return \"#{full_key}\".localized("
+              content << "                tableName: tableName,"
+              content << "                bundle: bundle,"
+              content << "                value: value,"
+              content << "                comment: comment"
+              content << "            )"
+              content << "        }"
+              content << ""
+            end
+            
+            content << "    }"
+            content << ""
+          end
+          
+          content << "}"
+          content << ""
+          content << "// Note: String.localized() extension is provided by SwiftJsonUI library"
+          
+          content.join("\n")
+        end
+        
+        def snake_to_camel(snake_str)
+          # Convert snake_case to camelCase
+          components = snake_str.split('_')
+          
+          # If the entire string is just a number, prepend "value"
+          if components.length == 1 && components[0].match?(/^\d+$/)
+            return "value" + components[0].capitalize
+          end
+          
+          # If last component is just a number, combine it with the previous component
+          if components.length > 1 && components.last.match?(/^\d+$/)
+            # e.g., ["transfer", "caution", "1"] -> ["transfer", "caution1"]
+            components[-2] = components[-2] + components[-1].capitalize
+            components.pop
+          end
+          
+          components[0] + components[1..-1].map(&:capitalize).join
+        end
+        
+        def escape_swift_string(str)
+          # Escape special characters for Swift string literals
+          str.gsub('\\', '\\\\')     # Backslash must be first
+             .gsub('"', '\\"')       # Double quotes
+             .gsub("\n", '\\n')      # Newlines
+             .gsub("\r", '\\r')      # Carriage returns
+             .gsub("\t", '\\t')      # Tabs
+        end
+        
+        def process_not_defined_strings(strings_data)
+          return unless strings_data['not_defined'].is_a?(Array)
+          
+          not_defined = strings_data['not_defined']
+          
+          # Group not_defined strings by namespace
+          not_defined.each do |string_key|
+            # Skip if not a valid snake_case key
+            next unless string_key.match?(/^[a-z]+(_[a-z0-9]+)*$/)
+            
+            # Check if this key exists in the cached .strings file
+            if @strings_cache && @strings_cache[string_key]
+              # Extract namespace from key (e.g., "transfer_request_confirm_transfer_caution_1" -> "transfer_request_confirm")
+              parts = string_key.split('_')
+              
+              # Try to find matching namespace by checking existing keys
+              namespace = nil
+              strings_data.each_key do |existing_namespace|
+                next if existing_namespace == 'not_defined'
+                # Check if the string key starts with this namespace
+                if string_key.start_with?("#{existing_namespace}_")
+                  namespace = existing_namespace
+                  break
+                end
+              end
+              
+              # If no exact namespace match, try to infer from key pattern
+              if namespace.nil? && parts.length >= 2
+                # Try different combinations to find a reasonable namespace
+                # e.g., "transfer_request_confirm" from "transfer_request_confirm_transfer_caution_1"
+                (2...[parts.length, 4].min).reverse_each do |length|
+                  potential_namespace = parts[0...length].join('_')
+                  # Check if this would be a reasonable namespace
+                  if strings_data.key?(potential_namespace) || string_key.start_with?("#{potential_namespace}_")
+                    namespace = potential_namespace
+                    break
+                  end
+                end
+              end
+              
+              # If still no namespace, create one from first 2-3 parts
+              if namespace.nil? && parts.length >= 2
+                namespace = parts[0...[parts.length, 3].min].join('_')
+              end
+              
+              if namespace
+                # Initialize namespace if it doesn't exist
+                strings_data[namespace] ||= {}
+                
+                # Extract the key part after namespace
+                key_without_namespace = string_key.sub(/^#{namespace}_/, '')
+                
+                # Add to namespace with the value from strings cache
+                # Note: The key transformation for numbers is handled in snake_to_camel
+                strings_data[namespace][key_without_namespace] = @strings_cache[string_key]
+              end
+            end
+          end
         end
         
         def update_strings_file(file_path, strings_data)

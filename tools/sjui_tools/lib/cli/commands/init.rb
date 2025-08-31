@@ -27,16 +27,6 @@ module SjuiTools
           # Create config file
           create_config_file(mode)
           
-          # Create directory structure based on mode
-          case mode
-          when 'uikit'
-            create_uikit_structure
-          when 'swiftui'
-            create_swiftui_structure
-          when 'all'
-            create_uikit_structure
-            create_swiftui_structure
-          end
           
           puts "Initialization complete!"
           puts
@@ -153,6 +143,7 @@ module SjuiTools
               'view_directory' => 'View',
               'data_directory' => 'Data',  # Directory for data binding structs
               'viewmodel_directory' => 'ViewModel',  # Directory for ViewModels
+              'resource_manager_directory' => 'ResourceManager',  # Directory for resource managers
               'bindings_directory' => 'Bindings',
               'hot_loader_directory' => project_name,
               'string_files' => [
@@ -173,57 +164,6 @@ module SjuiTools
           puts "Created config file: #{config_file}"
         end
 
-        def create_uikit_structure
-          # Read config to get directory names
-          config = Core::ConfigManager.load_config
-          layouts_dir = config['layouts_directory'] || 'Layouts'
-          
-          directories = [
-            layouts_dir,
-            "#{layouts_dir}/Resources",  # Add Resources subfolder
-            'Bindings',
-            'View',
-            'Data',
-            'ViewModel',
-            'Styles',
-            'Core',
-            'Core/Base',
-            'Core/UI'
-          ]
-          
-          create_directories(directories)
-        end
-
-        def create_swiftui_structure
-          # Read config to get directory names
-          config = Core::ConfigManager.load_config
-          layouts_dir = config['layouts_directory'] || 'Layouts'
-          
-          directories = [
-            layouts_dir,
-            "#{layouts_dir}/Resources",  # Add Resources subfolder
-            config['view_directory'] || 'View',
-            config['data_directory'] || 'Data',
-            config['viewmodel_directory'] || 'ViewModel',
-            config['styles_directory'] || 'Styles'
-          ]
-          
-          # SwiftUI doesn't need Generated directory anymore
-          
-          create_directories(directories)
-        end
-
-        def create_directories(directories)
-          source_path = Core::ProjectFinder.get_full_source_path || Dir.pwd
-          
-          directories.each do |dir|
-            path = File.join(source_path, dir)
-            unless Dir.exist?(path)
-              FileUtils.mkdir_p(path)
-              puts "Created directory: #{dir}"
-            end
-          end
-        end
       end
     end
   end

@@ -78,6 +78,17 @@ module SjuiTools
             puts "Created directory: #{viewmodel_dir}"
           end
           
+          # Create ResourceManager directory
+          resource_manager_dir = config['resource_manager_directory'] || 'ResourceManager'
+          resource_manager_path = File.join(source_path, resource_manager_dir)
+          unless Dir.exist?(resource_manager_path)
+            FileUtils.mkdir_p(resource_manager_path)
+            puts "Created directory: #{resource_manager_dir}"
+          end
+          
+          # Create StringManager.swift in ResourceManager directory
+          create_string_manager_file(resource_manager_path)
+          
           # SwiftUI doesn't need Generated directory anymore
           # Views are generated directly in the View directory
         end
@@ -141,6 +152,20 @@ module SjuiTools
             add_file_to_project(config_path)
           else
             puts "Warning: sjui.config.json not found at #{config_path}"
+          end
+        end
+        
+        def create_string_manager_file(resource_manager_path)
+          string_manager_path = File.join(resource_manager_path, 'StringManager.swift')
+          unless File.exist?(string_manager_path)
+            # Create empty StringManager.swift file
+            File.write(string_manager_path, "// StringManager.swift\n// Implementation will be added separately\n")
+            puts "Created file: StringManager.swift"
+            
+            # Add to Xcode project
+            add_file_to_project(string_manager_path)
+          else
+            puts "File already exists: StringManager.swift"
           end
         end
       end
