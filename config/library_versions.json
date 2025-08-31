@@ -1,5 +1,11 @@
 {
   "version_mappings": {
+    "7.2.0": {
+      "SwiftJsonUI": {
+        "git": "https://github.com/Tai-Kimura/SwiftJsonUI",
+        "branch": "7.2.0"
+      }
+    },
     "7.1.2": {
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI",
@@ -27,7 +33,7 @@
     "default": {
       "SwiftJsonUI": {
         "git": "https://github.com/Tai-Kimura/SwiftJsonUI",
-        "branch": "7.1.2"
+        "branch": "7.2.0"
       }
     }
   }

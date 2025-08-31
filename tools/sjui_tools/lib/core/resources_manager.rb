@@ -6,6 +6,7 @@ require_relative 'config_manager'
 require_relative 'project_finder'
 require_relative 'logger'
 require_relative 'resources/string_manager'
+require_relative 'resources/color_manager'
 
 module SjuiTools
   module Core
@@ -16,6 +17,7 @@ module SjuiTools
         @layouts_dir = File.join(@source_path, @config['layouts_directory'] || 'Layouts')
         @resources_dir = File.join(@layouts_dir, 'Resources')
         @string_manager = Resources::StringManager.new
+        @color_manager = Resources::ColorManager.new(@config, @source_path, @resources_dir)
       end
       
       # Main method called from build command
@@ -25,6 +27,9 @@ module SjuiTools
         
         # Apply extracted strings to .strings files
         apply_extracted_strings
+        
+        # Apply extracted colors
+        apply_extracted_colors
       end
       
       # Extract resources from JSON files
@@ -64,7 +69,8 @@ module SjuiTools
         # Process strings through StringManager
         @string_manager.process_strings(processed_files, processed_count, skipped_count, @config)
         
-        # TODO: Process colors
+        # Process colors through ColorManager
+        @color_manager.process_colors(processed_files, processed_count, skipped_count, @config)
         # TODO: Process dimensions
         # TODO: Process other resources
       end
@@ -74,6 +80,11 @@ module SjuiTools
       def apply_extracted_strings
         Core::Logger.info "Applying extracted strings to .strings files..."
         @string_manager.apply_to_strings_files
+      end
+      
+      def apply_extracted_colors
+        Core::Logger.info "Applying extracted colors..."
+        @color_manager.apply_to_color_assets
       end
     end
   end

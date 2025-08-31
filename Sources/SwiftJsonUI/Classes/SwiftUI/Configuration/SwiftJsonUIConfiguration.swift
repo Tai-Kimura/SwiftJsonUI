@@ -174,13 +174,17 @@ public class SwiftJsonUIConfiguration {
     
     /// Get color with fallback to color provider
     public func getColor(for identifier: Any) -> Color? {
-        // Try hex string first
+        // Try color provider first
+        if let color = colorProvider?(identifier) {
+            return color
+        }
+        
+        // Fallback to hex string conversion
         if let hexString = identifier as? String {
             return Color(hex: hexString)
         }
         
-        // Try color provider
-        return colorProvider?(identifier)
+        return nil
     }
     
     // MARK: - Private Methods
