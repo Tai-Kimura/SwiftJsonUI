@@ -157,7 +157,12 @@ class HotLoaderServer {
     const stylesDir = path.join(projectRoot, 'Styles');
     
     const watcher = chokidar.watch([layoutsDir, stylesDir], {
-      ignored: /(^|[\/\\])\../,
+      ignored: [
+        /(^|[\/\\])\../,  // Hidden files
+        /Resources\//,     // Ignore Resources folder to prevent infinite loops
+        /\.swiftpm\//,     // Ignore Swift package manager files
+        /\.build\//        // Ignore build folders
+      ],
       persistent: true
     });
     
