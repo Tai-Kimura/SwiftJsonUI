@@ -19,10 +19,23 @@ open class SJUITextField: UITextField {
     }
     
     public static var accessoryBackgroundColor = UIColor.gray
-    
+
     public static var accessoryTextColor = UIColor.blue
-    
+
     public static var defaultBorderColor = UIColor.lightGray
+
+    // Liquid Glass properties
+    public static var defaultApplyLiquidGlass: Bool = {
+        if #available(iOS 26.0, *) {
+            return true
+        } else {
+            return false
+        }
+    }()
+
+    public static var defaultAccessoryCornerRadius: CGFloat = 10.0
+
+    public static var defaultGlassEffectStyle: String = "systemMaterial"
     
     public var placeholderAttributes: [NSAttributedString.Key : Any]?
     
@@ -125,18 +138,90 @@ open class SJUITextField: UITextField {
                 t.keyboardType = .namePhonePad
             case "number", "decimal":
                 t.keyboardType = input == "decimal" ? .decimalPad : .numberPad
-                let accessory = UIView(frame: CGRect(x: 0,y: 0,width: UIScreen.main.bounds.size.width, height: 50.0))
-                accessory.backgroundColor = UIColor.findColorByJSON(attr: attr["accessoryBackground"]) ?? SJUITextField.accessoryBackgroundColor
-                let l  = SJUILabel(frame: CGRect(x: UIScreen.main.bounds.size.width - 100.0,y: 0, width: 100, height: 50))
-                l.textAlignment = NSTextAlignment.center
-                l.font = UIFont(name: SJUIViewCreator.defaultFont, size: 15.0)
-                l.textColor = UIColor.findColorByJSON(attr: attr["accessoryTextColor"]) ?? SJUITextField.accessoryTextColor
-                l.text = attr["doneText"].string == nil ? "done".localized() : attr["doneText"].stringValue.localized()
-                l.isUserInteractionEnabled = true
-                l.defaultBackgroundColor = UIColor.colorWithHexString("000000", alpha: 0)
-                l.addGestureRecognizer(UITapGestureRecognizer(target: target, action: #selector(SJUIViewController.returnNumberPad)))
-                accessory.addSubview(l)
-                t.inputAccessoryView = accessory
+
+                // Determine if liquid glass should be applied
+                let applyLiquidGlass = attr["applyLiquidGlass"].bool ?? SJUITextField.defaultApplyLiquidGlass
+                let accessoryRadius = attr["accessoryCornerRadius"].cgFloat ?? SJUITextField.defaultAccessoryCornerRadius
+                let glassEffectStyle = attr["glassEffectStyle"].string ?? SJUITextField.defaultGlassEffectStyle
+
+                if applyLiquidGlass && #available(iOS 13.0, *) {
+                    // Create visual effect view for liquid glass effect
+                    let blurEffect: UIBlurEffect
+                    switch glassEffectStyle {
+                    case "systemUltraThinMaterial":
+                        blurEffect = UIBlurEffect(style: .systemUltraThinMaterial)
+                    case "systemThinMaterial":
+                        blurEffect = UIBlurEffect(style: .systemThinMaterial)
+                    case "systemMaterial":
+                        blurEffect = UIBlurEffect(style: .systemMaterial)
+                    case "systemThickMaterial":
+                        blurEffect = UIBlurEffect(style: .systemThickMaterial)
+                    case "systemChromeMaterial":
+                        blurEffect = UIBlurEffect(style: .systemChromeMaterial)
+                    case "regular":
+                        blurEffect = UIBlurEffect(style: .regular)
+                    case "prominent":
+                        blurEffect = UIBlurEffect(style: .prominent)
+                    case "light":
+                        blurEffect = UIBlurEffect(style: .light)
+                    case "dark":
+                        blurEffect = UIBlurEffect(style: .dark)
+                    case "extraLight":
+                        blurEffect = UIBlurEffect(style: .extraLight)
+                    default:
+                        blurEffect = UIBlurEffect(style: .systemMaterial)
+                    }
+
+                    let visualEffectView = UIVisualEffectView(effect: blurEffect)
+                    visualEffectView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: 50.0)
+                    visualEffectView.layer.cornerRadius = accessoryRadius
+                    visualEffectView.clipsToBounds = true
+
+                    // Add a vibrancy effect for the text
+                    let vibrancyEffect = UIVibrancyEffect(blurEffect: blurEffect)
+                    let vibrancyView = UIVisualEffectView(effect: vibrancyEffect)
+                    vibrancyView.frame = visualEffectView.bounds
+                    vibrancyView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+
+                    let l = SJUILabel(frame: CGRect(x: UIScreen.main.bounds.size.width - 100.0, y: 0, width: 100, height: 50))
+                    l.textAlignment = NSTextAlignment.center
+                    l.font = UIFont(name: SJUIViewCreator.defaultFont, size: 15.0)
+                    l.textColor = UIColor.findColorByJSON(attr: attr["accessoryTextColor"]) ?? SJUITextField.accessoryTextColor
+                    l.text = attr["doneText"].string == nil ? "done".localized() : attr["doneText"].stringValue.localized()
+                    l.isUserInteractionEnabled = true
+                    l.defaultBackgroundColor = UIColor.colorWithHexString("000000", alpha: 0)
+                    l.addGestureRecognizer(UITapGestureRecognizer(target: target, action: #selector(SJUIViewController.returnNumberPad)))
+
+                    vibrancyView.contentView.addSubview(l)
+                    visualEffectView.contentView.addSubview(vibrancyView)
+
+                    // Set background color if specified (will show through the blur effect)
+                    if let bgColor = UIColor.findColorByJSON(attr: attr["accessoryBackground"]) {
+                        let backgroundView = UIView(frame: visualEffectView.bounds)
+                        backgroundView.backgroundColor = bgColor.withAlphaComponent(0.3) // Slight transparency for glass effect
+                        backgroundView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
+                        visualEffectView.contentView.insertSubview(backgroundView, at: 0)
+                    }
+
+                    t.inputAccessoryView = visualEffectView
+                } else {
+                    // Fallback to regular view for older iOS versions or when liquid glass is disabled
+                    let accessory = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: 50.0))
+                    accessory.backgroundColor = UIColor.findColorByJSON(attr: attr["accessoryBackground"]) ?? SJUITextField.accessoryBackgroundColor
+                    accessory.layer.cornerRadius = accessoryRadius
+                    accessory.clipsToBounds = true
+
+                    let l = SJUILabel(frame: CGRect(x: UIScreen.main.bounds.size.width - 100.0, y: 0, width: 100, height: 50))
+                    l.textAlignment = NSTextAlignment.center
+                    l.font = UIFont(name: SJUIViewCreator.defaultFont, size: 15.0)
+                    l.textColor = UIColor.findColorByJSON(attr: attr["accessoryTextColor"]) ?? SJUITextField.accessoryTextColor
+                    l.text = attr["doneText"].string == nil ? "done".localized() : attr["doneText"].stringValue.localized()
+                    l.isUserInteractionEnabled = true
+                    l.defaultBackgroundColor = UIColor.colorWithHexString("000000", alpha: 0)
+                    l.addGestureRecognizer(UITapGestureRecognizer(target: target, action: #selector(SJUIViewController.returnNumberPad)))
+                    accessory.addSubview(l)
+                    t.inputAccessoryView = accessory
+                }
             default:
                 break
             }
