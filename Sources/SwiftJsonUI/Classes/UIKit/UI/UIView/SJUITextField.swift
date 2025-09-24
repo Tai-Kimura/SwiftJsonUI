@@ -33,7 +33,7 @@ open class SJUITextField: UITextField {
         }
     }()
 
-    public static var defaultAccessoryCornerRadius: CGFloat = 10.0
+    public static var defaultAccessoryCornerRadius: CGFloat = 16.0
 
     public static var defaultGlassEffectStyle: String = "systemMaterial"
     
@@ -144,7 +144,7 @@ open class SJUITextField: UITextField {
                 let accessoryRadius = attr["accessoryCornerRadius"].cgFloat ?? SJUITextField.defaultAccessoryCornerRadius
                 let glassEffectStyle = attr["glassEffectStyle"].string ?? SJUITextField.defaultGlassEffectStyle
 
-                if applyLiquidGlass && #available(iOS 13.0, *) {
+                if applyLiquidGlass, #available(iOS 13.0, *) {
                     // Create visual effect view for liquid glass effect
                     let blurEffect: UIBlurEffect
                     switch glassEffectStyle {
