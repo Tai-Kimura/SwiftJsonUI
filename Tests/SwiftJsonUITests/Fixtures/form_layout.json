@@ -1,0 +1,74 @@
+{
+    "type": "ScrollView",
+    "id": "formScroll",
+    "width": "matchParent",
+    "height": "matchParent",
+    "child": [
+        {
+            "type": "View",
+            "id": "formContainer",
+            "orientation": "vertical",
+            "spacing": 16,
+            "paddings": [20],
+            "child": [
+                {
+                    "type": "Label",
+                    "text": "User Registration",
+                    "fontSize": 24,
+                    "fontWeight": "bold",
+                    "fontColor": "#1A1A1A"
+                },
+                {
+                    "type": "TextField",
+                    "id": "nameField",
+                    "hint": "Enter your name",
+                    "hintColor": "#999999",
+                    "borderStyle": "roundedRect",
+                    "returnKeyType": "next",
+                    "onTextChange": "onNameChange"
+                },
+                {
+                    "type": "TextField",
+                    "id": "emailField",
+                    "hint": "Enter your email",
+                    "hintColor": "#999999",
+                    "input": "email",
+                    "borderStyle": "roundedRect",
+                    "returnKeyType": "next"
+                },
+                {
+                    "type": "TextField",
+                    "id": "passwordField",
+                    "hint": "Enter password",
+                    "hintColor": "#999999",
+                    "secure": true,
+                    "borderStyle": "roundedRect",
+                    "returnKeyType": "done"
+                },
+                {
+                    "type": "SelectBox",
+                    "id": "countrySelect",
+                    "prompt": "Select Country",
+                    "items": ["Japan", "USA", "UK", "Canada", "Australia"],
+                    "onSelect": "onCountrySelect"
+                },
+                {
+                    "type": "Switch",
+                    "id": "agreeSwitch",
+                    "isOn": false,
+                    "onValueChange": "onAgreeChange"
+                },
+                {
+                    "type": "Button",
+                    "id": "submitButton",
+                    "text": "Register",
+                    "onClick": "handleSubmit",
+                    "background": "#4CAF50",
+                    "fontColor": "#FFFFFF",
+                    "cornerRadius": 8,
+                    "enabled": false
+                }
+            ]
+        }
+    ]
+}
