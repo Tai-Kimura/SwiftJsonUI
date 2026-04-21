@@ -19,7 +19,7 @@ pod 'SwiftJsonUI'
 ```
 
 ## Usage
-Documents are [here](https://github.com/Tai-Kimura/SwiftJsonUI/wiki)
+Documentation is being migrated to a new unified documentation site.
 
 ## Author
 

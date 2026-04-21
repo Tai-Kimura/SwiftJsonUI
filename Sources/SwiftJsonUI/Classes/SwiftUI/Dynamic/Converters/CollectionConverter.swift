@@ -112,8 +112,33 @@ public struct CollectionConverter {
             }
         }()
 
+        // lazy:false → render without any ScrollView / Lazy* container. The
+        // Collection is expected to live inside an already-scrollable parent
+        // (outer ScrollView, List, etc.). Paging is inherently lazy; it still
+        // goes through buildPagingHorizontalLayout regardless of this flag.
+        let isLazy = component.rawData["lazy"] as? Bool ?? true
+
         // 1. Build collection content based on layout type
         var result: AnyView
+
+        if !isLazy && !(isHorizontal && component.paging == true) {
+            result = buildNonLazyLayout(
+                component: component,
+                dataSource: dataSource,
+                sections: sections,
+                cellIdProperty: cellIdProperty,
+                isHorizontal: isHorizontal,
+                isFlow: isFlow,
+                globalColumns: globalColumns,
+                data: data,
+                viewId: viewId,
+                onItemAppear: onItemAppearCallback
+            )
+            // skipInsets mirrors the lazy branch; scrollEnabled/scrollTo/
+            // defaultScrollAnchor are no-ops when there is no scroll container.
+            result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
+            return result
+        }
 
         if isFlow {
             result = buildFlowLayout(
@@ -770,6 +795,135 @@ public struct CollectionConverter {
                 }
             }
         )
+    }
+
+    /// Non-lazy layout: no ScrollView, no Lazy* containers. Expects a parent
+    /// that already provides scrolling. Sticky headers, scrollTo, and page
+    /// anchors are not supported here.
+    private static func buildNonLazyLayout(
+        component: DynamicComponent,
+        dataSource: CollectionDataSource,
+        sections: [[String: Any]],
+        cellIdProperty: String?,
+        isHorizontal: Bool,
+        isFlow: Bool,
+        globalColumns: Int,
+        data: [String: Any],
+        viewId: String?,
+        onItemAppear: ((Int) -> Void)? = nil
+    ) -> AnyView {
+        let itemSpacing = component.itemSpacing ?? component.spacing ?? 0
+        let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+
+        let sectionBodies: (Int) -> AnyView = { sectionIndex in
+            let sectionConfig = sections[sectionIndex]
+            let sectionData = dataSource.sections[sectionIndex]
+            return AnyView(
+                Group {
+                    if let headerName = sectionConfig["header"] as? String,
+                       let headerData = sectionData.header {
+                        buildHeaderView(
+                            headerClassName: headerName,
+                            headerData: headerData.data,
+                            data: data,
+                            viewId: viewId
+                        )
+                    }
+
+                    if let cellName = sectionConfig["cell"] as? String,
+                       let cellsData = sectionData.cells {
+                        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                        if isFlow {
+                            FlowLayout(
+                                alignment: getFlowAlignment(from: component),
+                                horizontalSpacing: columnSpacing > 0 ? columnSpacing : 8,
+                                verticalSpacing: lineSpacing > 0 ? lineSpacing : 8
+                            ) {
+                                ForEach(items) { cell in
+                                    buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )
+                                    .id(cell.id)
+                                }
+                            }
+                        } else if !isHorizontal && globalColumns > 1 {
+                            let sectionColumns = sectionConfig["columns"] as? Int ?? globalColumns
+                            let gridColumns = Array(
+                                repeating: GridItem(.flexible(), spacing: itemSpacing),
+                                count: sectionColumns
+                            )
+                            LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
+                                ForEach(items) { cell in
+                                    buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )
+                                    .frame(maxWidth: .infinity)
+                                    .id(cell.id)
+                                }
+                            }
+                        } else {
+                            ForEach(items) { cell in
+                                buildCellView(
+                                    cellClassName: cellName,
+                                    cellData: cell.data,
+                                    cellIndex: cell.index,
+                                    component: component,
+                                    data: data,
+                                    viewId: viewId,
+                                    onItemAppear: onItemAppear
+                                )
+                                .id(cell.id)
+                            }
+                        }
+                    }
+
+                    if let footerName = sectionConfig["footer"] as? String,
+                       let footerData = sectionData.footer {
+                        buildFooterView(
+                            footerClassName: footerName,
+                            footerData: footerData.data,
+                            data: data,
+                            viewId: viewId
+                        )
+                    }
+                }
+            )
+        }
+
+        let sectionCount = min(sections.count, dataSource.sections.count)
+
+        if isHorizontal {
+            let hstackAlignment = getHStackAlignment(from: component)
+            return AnyView(
+                HStack(alignment: hstackAlignment, spacing: columnSpacing) {
+                    ForEach(0..<sectionCount, id: \.self) { sectionIndex in
+                        sectionBodies(sectionIndex)
+                    }
+                }
+            )
+        } else {
+            let vstackAlignment = getVStackAlignment(from: component)
+            return AnyView(
+                VStack(alignment: vstackAlignment, spacing: lineSpacing) {
+                    ForEach(0..<sectionCount, id: \.self) { sectionIndex in
+                        sectionBodies(sectionIndex)
+                    }
+                }
+            )
+        }
     }
 
     // MARK: - Cell/Header/Footer View Builders
