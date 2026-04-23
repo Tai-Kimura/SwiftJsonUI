@@ -6,9 +6,14 @@
 //
 
 import SwiftUI
+import Combine
 
 /// Global configuration for SwiftJsonUI
-public class SwiftJsonUIConfiguration {
+///
+/// Conforms to `ObservableObject` so SwiftUI views can subscribe to theme-mode
+/// changes via `@ObservedObject` / `@EnvironmentObject` and recompose when
+/// `setThemeMode(_:)` fires a `@Published` update on `currentThemeMode`.
+public class SwiftJsonUIConfiguration: ObservableObject {
 
     // MARK: - Singleton
     public static let shared = SwiftJsonUIConfiguration()
@@ -173,6 +178,49 @@ public class SwiftJsonUIConfiguration {
     /// Can be used to provide colors based on color IDs or names
     public var colorProvider: ((Any) -> Color?)? = nil
 
+    /// Theme-aware color provider. Called by `getColor(for:)` BEFORE
+    /// `colorProvider` whenever the requested identifier is a String, so
+    /// apps can route layout colors through a themed `ColorManager` without
+    /// replacing their existing non-themed `colorProvider`.
+    ///
+    /// Closure args: `(currentThemeMode, key)` → optional `Color`.
+    /// Return `nil` to fall through to the hex/`colorProvider` fallback.
+    ///
+    /// Wiring example with the tool-generated `ColorManager.swift`:
+    /// ```
+    /// SwiftJsonUIConfiguration.shared.themedColorProvider = { mode, key in
+    ///     guard let m = ColorManager.ColorMode(rawValue: mode) else { return nil }
+    ///     return ColorManager.swiftui.color(for: key, mode: m)
+    /// }
+    /// ```
+    public var themedColorProvider: ((_ mode: String, _ key: String) -> Color?)? = nil
+
+    /// Current theme mode (raw-string form — e.g. `"light"`, `"dark"`,
+    /// `"high_contrast"`). Purely a label: the actual color set lives in
+    /// `themedColorProvider`. Mutations go through `setThemeMode(_:)` so
+    /// subscribers + `@Published` fire.
+    @Published public private(set) var currentThemeMode: String = "light"
+
+    /// Switch the active theme mode. Notifies SwiftUI observers (via
+    /// `@Published`) AND registered callbacks, in that order. A no-op if
+    /// `mode` matches `currentThemeMode`.
+    public func setThemeMode(_ mode: String) {
+        guard currentThemeMode != mode else { return }
+        currentThemeMode = mode
+        themeChangeCallbacks.values.forEach { $0(mode) }
+    }
+
+    private var themeChangeCallbacks: [UUID: (String) -> Void] = [:]
+
+    /// Subscribe to theme-mode changes from non-SwiftUI code (UIKit, legacy
+    /// observers). Returns a closure that unsubscribes.
+    @discardableResult
+    public func subscribeToThemeChanges(_ callback: @escaping (String) -> Void) -> () -> Void {
+        let id = UUID()
+        themeChangeCallbacks[id] = callback
+        return { [weak self] in self?.themeChangeCallbacks.removeValue(forKey: id) }
+    }
+
     /// Custom font provider function
     /// Can be used to provide custom fonts based on font names
     public var fontProvider: ((String) -> Font?)? = nil
@@ -236,9 +284,14 @@ public class SwiftJsonUIConfiguration {
 
         // Providers
         colorProvider = nil
+        themedColorProvider = nil
         fontProvider = nil
         imageProvider = nil
         globalActionHandler = nil
+
+        // Theme state
+        currentThemeMode = "light"
+        themeChangeCallbacks.removeAll()
     }
 
     /// Configure with a closure for easy setup
@@ -246,14 +299,27 @@ public class SwiftJsonUIConfiguration {
         configuration(self)
     }
 
-    /// Get color with fallback to color provider
+    /// Get color with fallback chain:
+    ///   1. Already a `Color` — pass through.
+    ///   2. `themedColorProvider(currentThemeMode, key)` if identifier is a
+    ///      string — this is the theme-aware path; apps hook a generated
+    ///      `ColorManager` here so layout color keys follow the active mode.
+    ///   3. Legacy `colorProvider(identifier)` — pre-theme custom resolution.
+    ///   4. Hex string parse via `Color(hex:)`.
     public func getColor(for identifier: Any) -> Color? {
         // If already a Color, return as-is
         if let color = identifier as? Color {
             return color
         }
 
-        // Try color provider first
+        // Theme-aware provider (new in 9.1.0). Runs before the legacy
+        // `colorProvider` so apps that wire both get the themed result first.
+        if let key = identifier as? String,
+           let themed = themedColorProvider?(currentThemeMode, key) {
+            return themed
+        }
+
+        // Try color provider next
         if let color = colorProvider?(identifier) {
             return color
         }
