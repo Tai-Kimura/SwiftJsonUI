@@ -44,19 +44,47 @@ public class DynamicStringManager {
     }
 
     private func parseStringsJSON(_ json: [String: Any]) {
-        for (fileName, fileStrings) in json {
-            guard let strings = fileStrings as? [String: String] else { continue }
-            stringsData[fileName] = strings
+        // Preferred language for resolving `{en, ja, ...}` language-map entries
+        // inside strings.json. Falls back to "en" so value→key lookups still
+        // work when the device language isn't represented.
+        let preferredLang = Bundle.main.preferredLocalizations.first ?? "en"
 
-            for (key, value) in strings {
+        for (fileName, fileObject) in json {
+            guard let entries = fileObject as? [String: Any] else { continue }
+
+            var flatStrings: [String: String] = [:]
+            for (key, raw) in entries {
                 let localizationKey = "\(fileName)_\(key)"
-                // Value → key mapping (first match wins)
-                if valueToKey[value] == nil {
-                    valueToKey[value] = localizationKey
-                }
-                // Direct key → localization key
+                // Always record the snake_case key → localization key mapping
+                // even when we can't recover a concrete string value, because
+                // `.localized()` resolves the real translation through
+                // Localizable.strings (R.string on Kotlin). This is the
+                // mapping responsible for turning "cask_composition" into
+                // "whisky_detail_cask_composition" before NSLocalizedString.
                 textToKey[key] = localizationKey
+
+                // Extract a representative string value. Plain primitives
+                // (legacy schema) are used as-is; `{en, ja, ...}` language
+                // maps contribute their preferred-locale entry plus any
+                // other locale as value→key fallbacks.
+                if let stringValue = raw as? String {
+                    flatStrings[key] = stringValue
+                    if valueToKey[stringValue] == nil {
+                        valueToKey[stringValue] = localizationKey
+                    }
+                } else if let langMap = raw as? [String: String] {
+                    let primary = langMap[preferredLang] ?? langMap["en"] ?? langMap.values.first
+                    if let primary = primary {
+                        flatStrings[key] = primary
+                    }
+                    for (_, localized) in langMap {
+                        if valueToKey[localized] == nil {
+                            valueToKey[localized] = localizationKey
+                        }
+                    }
+                }
             }
+            stringsData[fileName] = flatStrings
         }
         Logger.debug("[DynamicStringManager] Loaded strings.json: \(stringsData.count) files, \(valueToKey.count) value mappings, \(textToKey.count) key mappings")
     }

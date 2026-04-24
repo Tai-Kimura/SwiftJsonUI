@@ -313,7 +313,28 @@ public class JSONLayoutLoader {
     #endif
 
     private static func loadFromBundle(named name: String) -> Data? {
-        guard let url = Bundle.main.url(forResource: name, withExtension: "json") else {
+        // Bundle.main.url(forResource:) treats the whole string as a resource
+        // name, so passing "whisky_detail/hero_section" never matches a file
+        // called "hero_section.json" at the bundle root (typical result when
+        // Layouts is added as a Xcode group — files are flattened). Accept any
+        // of: literal-name lookup, subdirectory split, or last-component
+        // fallback so sub-layout includes resolve in both folder-reference and
+        // group-reference bundlings.
+        let candidates: [URL]
+        if name.contains("/") {
+            let components = name.split(separator: "/").map(String.init)
+            let basename = components.last!
+            let subdirectory = components.dropLast().joined(separator: "/")
+            candidates = [
+                Bundle.main.url(forResource: name, withExtension: "json"),
+                Bundle.main.url(forResource: basename, withExtension: "json", subdirectory: subdirectory),
+                Bundle.main.url(forResource: basename, withExtension: "json")
+            ].compactMap { $0 }
+        } else {
+            candidates = [Bundle.main.url(forResource: name, withExtension: "json")].compactMap { $0 }
+        }
+
+        guard let url = candidates.first else {
             Logger.debug("[JSONLayoutLoader] File not found: \(name).json")
             return nil
         }
