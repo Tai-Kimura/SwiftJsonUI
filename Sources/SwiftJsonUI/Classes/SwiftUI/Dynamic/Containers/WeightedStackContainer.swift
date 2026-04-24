@@ -97,28 +97,28 @@ public struct WeightedStackContainer: View {
     public var body: some View {
         let spacingValue = component.spacing ?? 0
 
-        // Use Layout protocol directly for proper weight distribution.
-        // Add .fixedSize on the cross-axis so the layout reports intrinsic height/width
-        // instead of accepting the parent's proposed size (which would make it expand).
-        // .layoutWeight() must be applied OUTSIDE AnyView for LayoutValueKey to work.
+        // Route through the public WeightedHStack/WeightedVStack so the simple
+        // HStack/VStack path (used when weights are uniform) can give Text the
+        // natural width negotiation it needs to wrap. The Layout-protocol path
+        // proposes width:nil for cross-axis height measurement, which makes
+        // Text report its single-line height and suppresses wrapping — matching
+        // the tool-generated code fixes this by delegating to the same wrapper.
         if orientation == "horizontal" {
             let builtChildren = buildHorizontalChildren()
             let hasMatchParentHeight = children.contains { $0.height == .infinity || $0.height == -1 }
-            WeightedHStackLayout(alignment: getVerticalAlignment(), spacing: spacingValue) {
-                ForEach(0..<builtChildren.count, id: \.self) { index in
-                    builtChildren[index].view
-                        .layoutWeight(builtChildren[index].weight)
-                }
-            }
-            .fixedSize(horizontal: false, vertical: !hasMatchParentHeight)
+            WeightedHStack(
+                alignment: getVerticalAlignment(),
+                spacing: spacingValue,
+                children: builtChildren,
+                hasMatchParentCrossAxis: hasMatchParentHeight
+            )
         } else {
             let builtChildren = buildVerticalChildren()
-            WeightedVStackLayout(alignment: getHorizontalAlignment(), spacing: spacingValue) {
-                ForEach(0..<builtChildren.count, id: \.self) { index in
-                    builtChildren[index].view
-                        .layoutWeight(builtChildren[index].weight)
-                }
-            }
+            WeightedVStack(
+                alignment: getHorizontalAlignment(),
+                spacing: spacingValue,
+                children: builtChildren
+            )
         }
     }
 
