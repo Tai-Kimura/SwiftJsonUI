@@ -122,22 +122,38 @@ public struct WeightedStackContainer: View {
         }
     }
 
+    /// Extract horizontal gravity component (matches Ruby extract_horizontal_from_gravity)
+    private func extractHorizontalFromGravity(_ gravity: [String]?) -> String {
+        guard let parts = gravity, !parts.isEmpty else { return "left" }
+        if let h = parts.first(where: { ["left", "center", "right", "centerHorizontal"].contains($0) }) {
+            return h == "centerHorizontal" ? "center" : h
+        }
+        return "left"
+    }
+
+    /// Extract vertical gravity component (matches Ruby extract_vertical_from_gravity)
+    private func extractVerticalFromGravity(_ gravity: [String]?) -> String {
+        guard let parts = gravity, !parts.isEmpty else { return "top" }
+        if let v = parts.first(where: { ["top", "center", "bottom", "centerVertical"].contains($0) }) {
+            return v == "centerVertical" ? "center" : v
+        }
+        return "top"
+    }
+
     private func getVerticalAlignment() -> VerticalAlignment {
-        guard let alignment = component.alignment else { return .top }
-        switch alignment {
-        case .top, .topLeading, .topTrailing: return .top
-        case .bottom, .bottomLeading, .bottomTrailing: return .bottom
-        case .center, .leading, .trailing: return .center
+        let v = extractVerticalFromGravity(component.gravity)
+        switch v {
+        case "bottom": return .bottom
+        case "center": return .center
         default: return .top
         }
     }
 
     private func getHorizontalAlignment() -> HorizontalAlignment {
-        guard let alignment = component.alignment else { return .leading }
-        switch alignment {
-        case .leading, .topLeading, .bottomLeading: return .leading
-        case .trailing, .topTrailing, .bottomTrailing: return .trailing
-        case .center, .top, .bottom: return .center
+        let h = extractHorizontalFromGravity(component.gravity)
+        switch h {
+        case "right": return .trailing
+        case "center": return .center
         default: return .leading
         }
     }

@@ -273,8 +273,8 @@ public struct DynamicDecodingHelper {
     public static func gravityToAlignment(_ gravity: [String]?) -> Alignment? {
         guard let gravity = gravity, !gravity.isEmpty else { return nil }
         
-        var horizontal: HorizontalAlignment = .center
-        var vertical: VerticalAlignment = .center
+        var horizontal: HorizontalAlignment = .leading
+        var vertical: VerticalAlignment = .top
         
         for value in gravity {
             switch value.lowercased() {
