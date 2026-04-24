@@ -97,7 +97,15 @@ public struct DynamicModifierHelper {
         let fixedHeight = (height != nil && height != .infinity && height! > 0 && height!.isFinite) ? height : nil
 
         if fixedWidth != nil || fixedHeight != nil {
-            result = AnyView(result.frame(width: fixedWidth, height: fixedHeight))
+            // When both dimensions are fixed, apply gravity-based alignment so a
+            // frame larger than its content honors gravity (matches frame_helper.rb:
+            // .frame(width:, height:, alignment: gravity_to_frame_alignment)).
+            if fixedWidth != nil && fixedHeight != nil,
+               let alignment = frameAlignment(for: component, bothAxes: true) {
+                result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
+            } else {
+                result = AnyView(result.frame(width: fixedWidth, height: fixedHeight))
+            }
         }
 
         // matchParent (-1 or .infinity) → maxWidth/maxHeight: .infinity
