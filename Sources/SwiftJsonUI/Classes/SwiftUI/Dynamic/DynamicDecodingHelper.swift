@@ -11,7 +11,76 @@ import SwiftUI
 
 
 public struct DynamicDecodingHelper {
-    
+
+    // MARK: - Alias Coalescing
+
+    /// Return the first non-nil value from the variadic list. Used to bridge
+    /// attribute-name variations the tool may emit (e.g. `minimumValue` vs
+    /// `minimum`, `selectedIndex` vs `selectedTabIndex`) until the backfill
+    /// catalog declares `aliases` and loaders normalize up front.
+    public static func firstNonNil<T>(_ values: T?...) -> T? {
+        for value in values {
+            if let value = value { return value }
+        }
+        return nil
+    }
+
+    // MARK: - Bool-or-Binding
+
+    /// Resolve a value that may be either a Boolean or a `@{propertyName}`
+    /// binding string. Falls back to `default` when nothing usable is found.
+    /// Covers attributes like `enabled`, `disabled`, `isOn`, `checked`,
+    /// `scrollEnabled` where both shapes are valid per the shared catalog.
+    public static func resolveBoolOrBinding(
+        _ value: AnyCodable?,
+        data: [String: Any] = [:],
+        default defaultValue: Bool = false
+    ) -> Bool {
+        guard let value = value else { return defaultValue }
+
+        if let boolValue = value.value as? Bool {
+            return boolValue
+        }
+        if let stringValue = value.value as? String {
+            if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
+                let propertyName = String(stringValue.dropFirst(2).dropLast(1))
+                if let dataValue = data[propertyName] {
+                    if let boolValue = dataValue as? Bool { return boolValue }
+                    if let intValue = dataValue as? Int { return intValue != 0 }
+                    if let stringValue = dataValue as? String {
+                        return stringValue == "true" || stringValue == "1"
+                    }
+                }
+                return defaultValue
+            }
+            if stringValue == "true" || stringValue == "1" { return true }
+            if stringValue == "false" || stringValue == "0" { return false }
+        }
+        return defaultValue
+    }
+
+    // MARK: - Visibility
+
+    /// Resolve effective visibility for a component considering both the
+    /// legacy `hidden` boolean and the `visibility` three-state string.
+    /// `hidden == true` always wins; otherwise the `visibility` value is
+    /// returned as-is (`"visible"`, `"invisible"`, `"gone"`). Returns
+    /// `"visible"` when neither is present.
+    public static func resolveVisibility(
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> String {
+        if component.hidden == true {
+            return "gone"
+        }
+        switch component.visibility {
+        case "gone", "invisible", "visible":
+            return component.visibility ?? "visible"
+        default:
+            return "visible"
+        }
+    }
+
     /// Decode width or height value from JSON
     /// Returns: CGFloat value where .infinity = matchParent, nil = wrapContent, or specific value
     public static func decodeSizeValue(from container: KeyedDecodingContainer<DynamicComponent.CodingKeys>, 

@@ -55,12 +55,18 @@ public struct BlurConverter {
         // --- 2. .background(.ultraThinMaterial) ---
         result = AnyView(result.background(.ultraThinMaterial))
 
-        // --- 3. .preferredColorScheme() based on style ---
-        let style = component.rawData["style"] as? String ?? "regular"
-        switch style {
+        // --- 3. .preferredColorScheme() based on style / effectStyle ---
+        // `style` is the sjui SwiftUI attribute name; `effectStyle` is emitted
+        // by rjui/React and is listed as the canonical catalog enum (Light /
+        // Dark / ExtraLight). Accept both forms case-insensitively so shared
+        // specs render correctly on iOS.
+        let styleRaw = (component.rawData["style"] as? String)
+            ?? (component.rawData["effectStyle"] as? String)
+            ?? "regular"
+        switch styleRaw.lowercased() {
         case "dark":
             result = AnyView(result.preferredColorScheme(.dark))
-        case "light":
+        case "light", "extralight":
             result = AnyView(result.preferredColorScheme(.light))
         default:
             break // "regular" or other: no color scheme override

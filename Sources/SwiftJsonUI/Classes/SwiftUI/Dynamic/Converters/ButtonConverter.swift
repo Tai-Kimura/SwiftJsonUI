@@ -119,6 +119,26 @@ public struct ButtonConverter {
         // --- 4. apply_margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
+        // --- 4.5. buttonStyle (common attribute; plain/bordered/borderedProminent/borderless) ---
+        if let style = component.rawData["style"] as? String {
+            switch style {
+            case "plain": result = AnyView(result.buttonStyle(.plain))
+            case "bordered": result = AnyView(result.buttonStyle(.bordered))
+            case "borderedProminent": result = AnyView(result.buttonStyle(.borderedProminent))
+            case "borderless": result = AnyView(result.buttonStyle(.borderless))
+            case "automatic": result = AnyView(result.buttonStyle(.automatic))
+            default: break
+            }
+        }
+
+        // --- 4.6. confirmationDialog (iOS 15+, common attribute) ---
+        // Mirrored from DynamicModifierHelper.applyStandardModifiers so that
+        // Button — which runs its own modifier bag without applyStandardModifiers —
+        // still honors the shared `confirmationDialog` attribute.
+        if #available(iOS 15.0, *) {
+            result = DynamicModifierHelper.applyConfirmationDialog(result, component: component, data: data)
+        }
+
         // --- 5. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 

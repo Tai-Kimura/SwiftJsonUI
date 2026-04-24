@@ -152,7 +152,7 @@ public struct TextFieldConverter {
         }
 
         // --- 11. textPaddingLeft ---
-        if let textPaddingLeft = component.rawData["textPaddingLeft"] as? CGFloat {
+        if let textPaddingLeft = numericToCGFloat(component.rawData["textPaddingLeft"]) {
             result = AnyView(result.padding(.leading, textPaddingLeft))
         }
 
@@ -259,7 +259,7 @@ public struct TextFieldConverter {
         }
 
         // --- 11. textPaddingLeft ---
-        if let textPaddingLeft = component.rawData["textPaddingLeft"] as? CGFloat {
+        if let textPaddingLeft = numericToCGFloat(component.rawData["textPaddingLeft"]) {
             result = AnyView(result.padding(.leading, textPaddingLeft))
         }
 
@@ -360,5 +360,16 @@ public struct TextFieldConverter {
         default: return .done
         }
     }
+}
+
+/// Coerce a JSON-parsed numeric value to `CGFloat?` across Int / Double /
+/// CGFloat / NSNumber. Used by converters reading from `component.rawData`
+/// where the decoded type depends on the JSON literal form.
+fileprivate func numericToCGFloat(_ value: Any?) -> CGFloat? {
+    if let v = value as? CGFloat { return v }
+    if let v = value as? Double { return CGFloat(v) }
+    if let v = value as? Int { return CGFloat(v) }
+    if let v = value as? NSNumber { return CGFloat(truncating: v) }
+    return nil
 }
 #endif // DEBUG

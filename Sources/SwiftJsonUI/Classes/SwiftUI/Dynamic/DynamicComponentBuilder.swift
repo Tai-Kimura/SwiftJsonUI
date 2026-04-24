@@ -19,6 +19,11 @@ public struct DynamicComponentBuilder: View {
     let isWeightedChild: Bool
     let parentOrientation: String?
 
+    /// Observe global configuration so that published theme-mode changes
+    /// (`SwiftJsonUIConfiguration.setThemeMode(_:)`) recompose Dynamic views
+    /// and re-resolve colors via `themedColorProvider`.
+    @ObservedObject private var config = SwiftJsonUIConfiguration.shared
+
     public init(component: DynamicComponent, data: [String: Any], viewId: String? = nil, isWeightedChild: Bool = false, parentOrientation: String? = nil) {
         self.component = component
         self.data = data

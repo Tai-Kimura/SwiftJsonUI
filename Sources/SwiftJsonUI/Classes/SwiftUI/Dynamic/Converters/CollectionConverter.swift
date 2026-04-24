@@ -439,6 +439,7 @@ public struct CollectionConverter {
 
         let hasHeader = sectionConfig["header"] != nil && firstSection.header != nil
         let hasFooter = sectionConfig["footer"] != nil && firstSection.footer != nil
+        let hideSeparator = component.rawData["hideSeparator"] as? Bool ?? false
 
         let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
 
@@ -506,6 +507,7 @@ public struct CollectionConverter {
                 }
             }
             .listStyle(PlainListStyle())
+            .modifier(ListSeparatorModifier(hide: hideSeparator))
         )
     }
 
@@ -671,6 +673,10 @@ public struct CollectionConverter {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         let itemSpacing = component.itemSpacing ?? component.columnSpacing ?? component.spacing ?? 10
         let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 10
+        // `cellWidth` / `cellHeight` pin each cell to a fixed size inside the grid.
+        // When absent the existing flexible sizing path is preserved.
+        let cellWidth = cgFloatFromRaw(component.rawData["cellWidth"])
+        let cellHeight = cgFloatFromRaw(component.rawData["cellHeight"])
 
         return AnyView(
             ScrollViewReader { scrollProxy in
@@ -698,8 +704,9 @@ public struct CollectionConverter {
                         // Grid of cells
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
+                            let gridItemSize: GridItem.Size = cellWidth.map { .fixed($0) } ?? .flexible()
                             let gridColumns = Array(
-                                repeating: GridItem(.flexible(), spacing: itemSpacing),
+                                repeating: GridItem(gridItemSize, spacing: itemSpacing),
                                 count: sectionColumns
                             )
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
@@ -714,7 +721,7 @@ public struct CollectionConverter {
                                         viewId: viewId,
                                         onItemAppear: onItemAppear
                                     )
-                                    .frame(maxWidth: .infinity)
+                                    .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
                                     .id(cell.id)
                                 }
                             }
@@ -815,6 +822,8 @@ public struct CollectionConverter {
         let itemSpacing = component.itemSpacing ?? component.spacing ?? 0
         let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+        let cellWidth = cgFloatFromRaw(component.rawData["cellWidth"])
+        let cellHeight = cgFloatFromRaw(component.rawData["cellHeight"])
 
         let sectionBodies: (Int) -> AnyView = { sectionIndex in
             let sectionConfig = sections[sectionIndex]
@@ -855,8 +864,9 @@ public struct CollectionConverter {
                             }
                         } else if !isHorizontal && globalColumns > 1 {
                             let sectionColumns = sectionConfig["columns"] as? Int ?? globalColumns
+                            let gridItemSize: GridItem.Size = cellWidth.map { .fixed($0) } ?? .flexible()
                             let gridColumns = Array(
-                                repeating: GridItem(.flexible(), spacing: itemSpacing),
+                                repeating: GridItem(gridItemSize, spacing: itemSpacing),
                                 count: sectionColumns
                             )
                             LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
@@ -870,7 +880,7 @@ public struct CollectionConverter {
                                         viewId: viewId,
                                         onItemAppear: onItemAppear
                                     )
-                                    .frame(maxWidth: .infinity)
+                                    .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
                                     .id(cell.id)
                                 }
                             }
@@ -1079,6 +1089,32 @@ private struct PagingCollectionWrapperView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .onChange(of: effectiveSelection.wrappedValue) { newValue in
             onPageChangedCallback?(newValue)
+        }
+    }
+}
+
+/// Coerce a JSON-parsed value to `CGFloat?` regardless of whether it decoded
+/// into Int, Double, or CGFloat. Used for attributes like `cellWidth` /
+/// `cellHeight` that the tool emits as plain numbers.
+fileprivate func cgFloatFromRaw(_ value: Any?) -> CGFloat? {
+    if let v = value as? CGFloat { return v }
+    if let v = value as? Double { return CGFloat(v) }
+    if let v = value as? Int { return CGFloat(v) }
+    if let v = value as? NSNumber { return CGFloat(truncating: v) }
+    return nil
+}
+
+/// Apply `.listRowSeparator(.hidden)` across all rows when `hideSeparator: true`.
+/// Used by the Collection legacy single-column List path to honor the tool's
+/// `hideSeparator` attribute.
+private struct ListSeparatorModifier: ViewModifier {
+    let hide: Bool
+
+    func body(content: Content) -> some View {
+        if hide {
+            content.listRowSeparator(.hidden)
+        } else {
+            content
         }
     }
 }
