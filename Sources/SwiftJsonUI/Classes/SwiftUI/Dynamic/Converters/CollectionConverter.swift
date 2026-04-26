@@ -112,16 +112,21 @@ public struct CollectionConverter {
             }
         }()
 
-        // lazy:false → render without any ScrollView / Lazy* container. The
-        // Collection is expected to live inside an already-scrollable parent
-        // (outer ScrollView, List, etc.). Paging is inherently lazy; it still
-        // goes through buildPagingHorizontalLayout regardless of this flag.
-        let isLazy = component.rawData["lazy"] as? Bool ?? true
+        // `lazy` may be a boolean (legacy) or one of "lazy" / "eager" / "none".
+        // For binding values we resolve at runtime via DynamicBindingHelper so a
+        // toggle propagates through the same CollectionStackView wrapper without
+        // changing modifier-chain shape. Paging always wins (HorizontalPager is
+        // inherently lazy).
+        let resolvedLazy: Any? = DynamicBindingHelper.resolveValue(
+            component.rawData["lazy"],
+            data: data
+        )
+        let collectionMode = CollectionStackMode(json: resolvedLazy)
 
         // 1. Build collection content based on layout type
         var result: AnyView
 
-        if !isLazy && !(isHorizontal && component.paging == true) {
+        if collectionMode == .none && !(isHorizontal && component.paging == true) {
             result = buildNonLazyLayout(
                 component: component,
                 dataSource: dataSource,
@@ -153,7 +158,9 @@ public struct CollectionConverter {
                 onItemAppear: onItemAppearCallback
             )
         } else if globalColumns == 1 && !isHorizontal && hasSections {
-            // Section-based vertical: ScrollView + LazyVStack
+            // Section-based vertical: CollectionStackView delegates the
+            // outer container choice (lazy/eager/none) so the JSON `lazy`
+            // value (literal or binding-resolved) becomes a parameter.
             result = buildVerticalSectionLayout(
                 component: component,
                 dataSource: dataSource,
@@ -163,7 +170,8 @@ public struct CollectionConverter {
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
-                onItemAppear: onItemAppearCallback
+                onItemAppear: onItemAppearCallback,
+                mode: collectionMode
             )
         } else if globalColumns == 1 && !isHorizontal {
             // Legacy single column: List
@@ -335,7 +343,8 @@ public struct CollectionConverter {
 
     // MARK: - Layout Builders
 
-    /// Vertical section-based: ScrollView(.vertical) + LazyVStack
+    /// Vertical section-based: CollectionStackView dispatches between
+    /// lazy / eager / none modes for the outer container.
     private static func buildVerticalSectionLayout(
         component: DynamicComponent,
         dataSource: CollectionDataSource,
@@ -345,7 +354,8 @@ public struct CollectionConverter {
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
-        onItemAppear: ((Int) -> Void)? = nil
+        onItemAppear: ((Int) -> Void)? = nil,
+        mode: CollectionStackMode = .lazy
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
@@ -353,54 +363,58 @@ public struct CollectionConverter {
 
         return AnyView(
             ScrollViewReader { scrollProxy in
-                ScrollView(.vertical, showsIndicators: showsIndicators) {
-                    LazyVStack(alignment: vstackAlignment, spacing: lineSpacing) {
-                        ForEach(
-                            0..<min(sections.count, dataSource.sections.count),
-                            id: \.self
-                        ) { sectionIndex in
-                            let sectionConfig = sections[sectionIndex]
-                            let sectionData = dataSource.sections[sectionIndex]
+                CollectionStackView(
+                    mode: mode,
+                    axis: .vertical,
+                    horizontalAlignment: vstackAlignment,
+                    spacing: lineSpacing,
+                    showsIndicators: showsIndicators
+                ) {
+                    ForEach(
+                        0..<min(sections.count, dataSource.sections.count),
+                        id: \.self
+                    ) { sectionIndex in
+                        let sectionConfig = sections[sectionIndex]
+                        let sectionData = dataSource.sections[sectionIndex]
 
-                            // Header
-                            if let headerName = sectionConfig["header"] as? String,
-                               let headerData = sectionData.header {
-                                buildHeaderView(
-                                    headerClassName: headerName,
-                                    headerData: headerData.data,
+                        // Header
+                        if let headerName = sectionConfig["header"] as? String,
+                           let headerData = sectionData.header {
+                            buildHeaderView(
+                                headerClassName: headerName,
+                                headerData: headerData.data,
+                                data: data,
+                                viewId: viewId
+                            )
+                        }
+
+                        // Cells
+                        if let cellName = sectionConfig["cell"] as? String,
+                           let cellsData = sectionData.cells {
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            ForEach(items) { cell in
+                                buildCellView(
+                                    cellClassName: cellName,
+                                    cellData: cell.data,
+                                    cellIndex: cell.index,
+                                    component: component,
                                     data: data,
-                                    viewId: viewId
+                                    viewId: viewId,
+                                    onItemAppear: onItemAppear
                                 )
+                                .id(cell.id)
                             }
+                        }
 
-                            // Cells
-                            if let cellName = sectionConfig["cell"] as? String,
-                               let cellsData = sectionData.cells {
-                                let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
-                                ForEach(items) { cell in
-                                    buildCellView(
-                                        cellClassName: cellName,
-                                        cellData: cell.data,
-                                        cellIndex: cell.index,
-                                        component: component,
-                                        data: data,
-                                        viewId: viewId,
-                                        onItemAppear: onItemAppear
-                                    )
-                                    .id(cell.id)
-                                }
-                            }
-
-                            // Footer
-                            if let footerName = sectionConfig["footer"] as? String,
-                               let footerData = sectionData.footer {
-                                buildFooterView(
-                                    footerClassName: footerName,
-                                    footerData: footerData.data,
-                                    data: data,
-                                    viewId: viewId
-                                )
-                            }
+                        // Footer
+                        if let footerName = sectionConfig["footer"] as? String,
+                           let footerData = sectionData.footer {
+                            buildFooterView(
+                                footerClassName: footerName,
+                                footerData: footerData.data,
+                                data: data,
+                                viewId: viewId
+                            )
                         }
                     }
                 }
