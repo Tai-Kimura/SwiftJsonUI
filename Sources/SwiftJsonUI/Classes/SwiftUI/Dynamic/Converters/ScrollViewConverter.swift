@@ -7,7 +7,7 @@
 //
 //  Modifier order (matches scrollview_converter.rb):
 //    1. AdvancedKeyboardAvoidingScrollView(axes, showsIndicators, configuration?) { VStack/HStack { children + Spacer } .frame(maxWidth: .infinity, maxHeight: .infinity) }
-//    2. .disabled(true)                       -- when scrollEnabled == false
+//    2. .scrollDisabled(_:)                   -- always emitted (true when scrollEnabled == false)
 //    3. .ignoresSafeArea()                    -- when contentInsetAdjustmentBehavior == "never"
 //       .ignoresSafeArea(edges: .horizontal)  -- when contentInsetAdjustmentBehavior == "scrollableAxes"
 //    4. .scrollTargetBehavior(.paging)        -- when paging == true (iOS 17+)
@@ -85,8 +85,12 @@ public struct ScrollViewConverter {
             )
         }
 
-        // --- 2. .disabled(true) when scrollEnabled == false ---
-        var scrollEnabled = component.scrollEnabled
+        // --- 2. .scrollDisabled(_:) when scrollEnabled == false ---
+        // Use scrollDisabled (not disabled) so an in-flight pan / deceleration
+        // is not killed when the binding flips to false, and so the modifier
+        // chain shape stays the same regardless of value (preserves view identity
+        // across toggles).
+        var scrollEnabled: Bool = component.scrollEnabled ?? true
         if let scrollEnabledBinding = component.rawData["scrollEnabled"] as? String,
            scrollEnabledBinding.hasPrefix("@{") && scrollEnabledBinding.hasSuffix("}") {
             let propName = String(scrollEnabledBinding.dropFirst(2).dropLast())
@@ -94,9 +98,7 @@ public struct ScrollViewConverter {
                 scrollEnabled = value
             }
         }
-        if scrollEnabled == false {
-            result = AnyView(result.disabled(true))
-        }
+        result = AnyView(result.scrollDisabled(!scrollEnabled))
 
         // --- 3. .ignoresSafeArea() based on contentInsetAdjustmentBehavior ---
         if let behavior = component.contentInsetAdjustmentBehavior {

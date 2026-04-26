@@ -216,9 +216,12 @@ public struct CollectionConverter {
             )
         }
 
-        // 2. .disabled(true) when scrollEnabled == false
-        // Resolve scrollEnabled from binding if present
-        var scrollEnabled = component.scrollEnabled
+        // 2. .scrollDisabled(_:) when scrollEnabled == false
+        // Use scrollDisabled (not disabled) so an in-flight pan / deceleration
+        // is not killed when the binding flips to false, and so the modifier
+        // chain shape stays the same regardless of value (preserves
+        // ScrollViewReader / view identity across toggles).
+        var scrollEnabled: Bool = component.scrollEnabled ?? true
         if let scrollEnabledBinding = component.rawData["scrollEnabled"] as? String,
            scrollEnabledBinding.hasPrefix("@{") && scrollEnabledBinding.hasSuffix("}") {
             let propName = String(scrollEnabledBinding.dropFirst(2).dropLast())
@@ -226,9 +229,7 @@ public struct CollectionConverter {
                 scrollEnabled = value
             }
         }
-        if scrollEnabled == false {
-            result = AnyView(result.disabled(true))
-        }
+        result = AnyView(result.scrollDisabled(!scrollEnabled))
 
         // 2.5. .defaultScrollAnchor for iOS 17+
         var resolvedDefaultScrollAnchor = component.defaultScrollAnchor
