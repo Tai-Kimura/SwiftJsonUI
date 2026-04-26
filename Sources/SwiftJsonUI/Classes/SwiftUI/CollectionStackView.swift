@@ -140,6 +140,7 @@ public struct CollectionStackView<Content: View>: View {
             }
         }
         .scrollDisabled(scrollDisabled)
+        .applyDefaultScrollAnchor(defaultScrollAnchor)
     }
 }
 

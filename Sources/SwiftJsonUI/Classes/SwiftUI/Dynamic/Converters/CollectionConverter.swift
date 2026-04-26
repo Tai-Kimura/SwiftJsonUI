@@ -196,7 +196,8 @@ public struct CollectionConverter {
                 onItemAppear: onItemAppearCallback
             )
         } else if isHorizontal {
-            // Horizontal: ScrollView + LazyHStack
+            // Horizontal: CollectionStackView(axis: .horizontal) selects between
+            // LazyHStack / HStack / no-scroll based on `lazy`.
             result = buildHorizontalLayout(
                 component: component,
                 dataSource: dataSource,
@@ -206,7 +207,8 @@ public struct CollectionConverter {
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
-                onItemAppear: onItemAppearCallback
+                onItemAppear: onItemAppearCallback,
+                mode: collectionMode
             )
         } else {
             // Multiple columns: ScrollView + LazyVGrid
@@ -526,7 +528,7 @@ public struct CollectionConverter {
         )
     }
 
-    /// Horizontal: ScrollView(.horizontal) + LazyHStack
+    /// Horizontal: CollectionStackView(axis: .horizontal) wraps the cell ForEach.
     private static func buildHorizontalLayout(
         component: DynamicComponent,
         dataSource: CollectionDataSource,
@@ -536,7 +538,8 @@ public struct CollectionConverter {
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
-        onItemAppear: ((Int) -> Void)? = nil
+        onItemAppear: ((Int) -> Void)? = nil,
+        mode: CollectionStackMode = .lazy
     ) -> AnyView {
         let showsIndicators = component.showsHorizontalScrollIndicator ?? true
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.lineSpacing ?? component.spacing ?? 0
@@ -545,67 +548,57 @@ public struct CollectionConverter {
 
         return AnyView(
             ScrollViewReader { scrollProxy in
-                ScrollView(.horizontal, showsIndicators: showsIndicators) {
-                    HStack(spacing: 0) {
-                        // Leading inset spacer
-                        if insetHorizontal > 0 {
-                            Color.clear.frame(width: insetHorizontal)
+                CollectionStackView(
+                    mode: mode,
+                    axis: .horizontal,
+                    verticalAlignment: hstackAlignment,
+                    spacing: columnSpacing,
+                    showsIndicators: showsIndicators,
+                    insetLeading: CGFloat(insetHorizontal),
+                    insetTrailing: CGFloat(insetHorizontal)
+                ) {
+                    ForEach(
+                        0..<min(sections.count, dataSource.sections.count),
+                        id: \.self
+                    ) { sectionIndex in
+                        let sectionConfig = sections[sectionIndex]
+                        let sectionData = dataSource.sections[sectionIndex]
+
+                        if let headerName = sectionConfig["header"] as? String,
+                           let headerData = sectionData.header {
+                            buildHeaderView(
+                                headerClassName: headerName,
+                                headerData: headerData.data,
+                                data: data,
+                                viewId: viewId
+                            )
                         }
 
-                        // Content LazyHStack
-                        LazyHStack(alignment: hstackAlignment, spacing: columnSpacing) {
-                            ForEach(
-                                0..<min(sections.count, dataSource.sections.count),
-                                id: \.self
-                            ) { sectionIndex in
-                                let sectionConfig = sections[sectionIndex]
-                                let sectionData = dataSource.sections[sectionIndex]
-
-                                // Header
-                                if let headerName = sectionConfig["header"] as? String,
-                                   let headerData = sectionData.header {
-                                    buildHeaderView(
-                                        headerClassName: headerName,
-                                        headerData: headerData.data,
-                                        data: data,
-                                        viewId: viewId
-                                    )
-                                }
-
-                                // Cells
-                                if let cellName = sectionConfig["cell"] as? String,
-                                   let cellsData = sectionData.cells {
-                                    let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
-                                    ForEach(items) { cell in
-                                        buildCellView(
-                                            cellClassName: cellName,
-                                            cellData: cell.data,
-                                            cellIndex: cell.index,
-                                            component: component,
-                                            data: data,
-                                            viewId: viewId,
-                                            onItemAppear: onItemAppear
-                                        )
-                                        .id(cell.id)
-                                    }
-                                }
-
-                                // Footer
-                                if let footerName = sectionConfig["footer"] as? String,
-                                   let footerData = sectionData.footer {
-                                    buildFooterView(
-                                        footerClassName: footerName,
-                                        footerData: footerData.data,
-                                        data: data,
-                                        viewId: viewId
-                                    )
-                                }
+                        if let cellName = sectionConfig["cell"] as? String,
+                           let cellsData = sectionData.cells {
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            ForEach(items) { cell in
+                                buildCellView(
+                                    cellClassName: cellName,
+                                    cellData: cell.data,
+                                    cellIndex: cell.index,
+                                    component: component,
+                                    data: data,
+                                    viewId: viewId,
+                                    onItemAppear: onItemAppear
+                                )
+                                .id(cell.id)
                             }
                         }
 
-                        // Trailing inset spacer
-                        if insetHorizontal > 0 {
-                            Color.clear.frame(width: insetHorizontal)
+                        if let footerName = sectionConfig["footer"] as? String,
+                           let footerData = sectionData.footer {
+                            buildFooterView(
+                                footerClassName: footerName,
+                                footerData: footerData.data,
+                                data: data,
+                                viewId: viewId
+                            )
                         }
                     }
                 }
