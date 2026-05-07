@@ -1,0 +1,10 @@
+{
+    "type": "Label",
+    "id": "titleLabel",
+    "text": "Hello World",
+    "fontSize": 18,
+    "fontColor": "#333333",
+    "font": "Helvetica",
+    "fontWeight": "bold",
+    "textAlign": "center"
+}

@@ -1,0 +1,58 @@
+{
+    "type": "View",
+    "id": "relativeContainer",
+    "width": "matchParent",
+    "height": 200,
+    "background": "#F5F5F5",
+    "child": [
+        {
+            "type": "Label",
+            "id": "topLeftLabel",
+            "text": "Top Left",
+            "alignTop": true,
+            "alignLeft": true,
+            "margins": [8, 8, 8, 8]
+        },
+        {
+            "type": "Label",
+            "id": "topRightLabel",
+            "text": "Top Right",
+            "alignTop": true,
+            "alignRight": true,
+            "margins": [8, 8, 8, 8]
+        },
+        {
+            "type": "Label",
+            "id": "centerLabel",
+            "text": "Center",
+            "centerHorizontal": true,
+            "centerVertical": true
+        },
+        {
+            "type": "Label",
+            "id": "bottomLeftLabel",
+            "text": "Bottom Left",
+            "alignBottom": true,
+            "alignLeft": true,
+            "margins": [8, 8, 8, 8]
+        },
+        {
+            "type": "Label",
+            "id": "bottomRightLabel",
+            "text": "Bottom Right",
+            "alignBottom": true,
+            "alignRight": true,
+            "margins": [8, 8, 8, 8]
+        },
+        {
+            "type": "View",
+            "id": "belowCenter",
+            "alignBottomOfView": "centerLabel",
+            "centerHorizontal": true,
+            "topMargin": 8,
+            "width": 100,
+            "height": 30,
+            "background": "#007AFF"
+        }
+    ]
+}
