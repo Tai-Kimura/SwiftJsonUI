@@ -277,6 +277,9 @@ public struct DynamicComponentBuilder: View {
             case "tabview":
                 TabViewConverter.convert(component: component, data: data, viewId: viewId)
 
+            case "embed":
+                EmbedConverter.convert(component: component, data: data, viewId: viewId)
+
             case "web", "webview":
                 WebConverter.convert(component: component, data: data)
 
