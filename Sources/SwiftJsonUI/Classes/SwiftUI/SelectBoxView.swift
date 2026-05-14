@@ -257,17 +257,36 @@ public struct SelectBoxView: View {
                 VStack {
                     switch selectItemType {
                     case .normal:
+                        // When a prompt is supplied, insert it as the first
+                        // wheel item with tag -1. Selecting it clears the
+                        // selection (selectedText = "") so the button face
+                        // reverts to the prompt placeholder. The default
+                        // wheel position is -1 (unselected) when no item has
+                        // been picked yet, otherwise the current index.
                         Picker("Select", selection: SwiftUI.Binding<Int>(
-                            get: { selectedIndex ?? 0 },
+                            get: { selectedIndex ?? (prompt != nil ? -1 : 0) },
                             set: { newValue in
-                                selectedIndex = newValue
-                                selectedIndexBinding?.wrappedValue = newValue
-                                if items.indices.contains(newValue) {
-                                    selectedText = items[newValue]
-                                    onValueChange?(items[newValue])
+                                if newValue == -1 {
+                                    // Prompt option picked → revert to unselected.
+                                    selectedIndex = nil
+                                    selectedText = ""
+                                    selectedIndexBinding?.wrappedValue = -1
+                                    onValueChange?("")
+                                } else {
+                                    selectedIndex = newValue
+                                    selectedIndexBinding?.wrappedValue = newValue
+                                    if items.indices.contains(newValue) {
+                                        selectedText = items[newValue]
+                                        onValueChange?(items[newValue])
+                                    }
                                 }
                             }
                         )) {
+                            if let prompt = prompt {
+                                Text(prompt)
+                                    .foregroundColor(.gray)
+                                    .tag(-1)
+                            }
                             ForEach(0..<items.count, id: \.self) { index in
                                 Text(items[index]).tag(index)
                             }
