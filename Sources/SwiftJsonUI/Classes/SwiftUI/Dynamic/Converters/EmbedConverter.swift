@@ -32,6 +32,7 @@ public struct EmbedConverter {
         let embedId = (raw["id"] as? String) ?? (viewId ?? "embed")
         let navigationMode = parseNavigationMode(raw["navigationMode"] as? String)
         let resolvedParams = resolveParams(raw["params"], parentData: data)
+        let eventBridge = buildEventBridge(eventMap: raw["events"] as? [String: String], parentData: data)
 
         guard !screenName.isEmpty else {
             return AnyView(
@@ -46,7 +47,7 @@ public struct EmbedConverter {
                 screen: screenName,
                 params: resolvedParams,
                 navigationMode: navigationMode,
-                eventBridge: nil  // wired in P2
+                eventBridge: eventBridge
             ) {
                 buildEmbeddedScreen(
                     screenName: screenName,
@@ -59,6 +60,27 @@ public struct EmbedConverter {
 
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
         return result
+    }
+
+    /// Build an event bridge from the JSON `events: { onEventName: "parentHandlerName" }`
+    /// map. Each emitted `.named(name:payload:)` looks up the handler in the
+    /// parent data dict (handlers are functions / closures stored by name).
+    private static func buildEventBridge(
+        eventMap: [String: String]?,
+        parentData: [String: Any]
+    ) -> ((EmbeddedEvent) -> Void)? {
+        guard let eventMap = eventMap, !eventMap.isEmpty else { return nil }
+        return { event in
+            guard case .named(let name, let payload) = event else { return }
+            guard let handlerName = eventMap[name] else { return }
+            // The parent VM exposes handlers as either ([String: Any]) -> Void
+            // or () -> Void closures keyed by name in the data dict.
+            if let withPayload = parentData[handlerName] as? ([String: Any]) -> Void {
+                withPayload(payload)
+            } else if let noArgs = parentData[handlerName] as? () -> Void {
+                noArgs()
+            }
+        }
     }
 
     @ViewBuilder
