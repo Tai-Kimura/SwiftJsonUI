@@ -26,7 +26,12 @@ public struct ReactiveVisibilityWrapper<Content: View>: View {
         case "gone":
             EmptyView()
         case "invisible":
-            content().opacity(0)
+            // Keep invisible views out of the accessibility tree as well
+            // (matches VisibilityWrapper semantics)
+            content()
+                .opacity(0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
         default:
             content()
         }

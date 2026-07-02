@@ -414,6 +414,14 @@ public struct DynamicModifierHelper {
     public static func applyAccessibilityId(_ view: AnyView, component: DynamicComponent) -> AnyView {
         guard let id = component.id else { return view }
         let typeName = component.type?.lowercased() ?? ""
+        // Statically invisible components must not become accessibility
+        // elements at all — explicit accessibility containers ignore an
+        // ancestor's .accessibilityHidden(true), so creating one here would
+        // leave an invisible view findable by VoiceOver / UI tests.
+        // (VisibilityWrapper hides the rest of the subtree.)
+        if component.visibility == "invisible" {
+            return view
+        }
         if accessibilityContainerTypes.contains(typeName) {
             // Plain SwiftUI containers are not accessibility elements, so a bare
             // .accessibilityIdentifier is pushed down onto the nearest descendant
@@ -423,8 +431,19 @@ public struct DynamicModifierHelper {
             // Make the container an explicit accessibility container first; this
             // matches the UIKit path, where every UIView with an id is queryable
             // by XCUITest, and keeps all descendant elements accessible.
+            //
+            // The invisible zero-ish anchor overlay prevents SwiftUI from
+            // merging two nested containers when the outer one has exactly one
+            // accessibility child (the merge drops the inner container's
+            // identifier): with the anchor the container always has at least
+            // two children, so it is never collapsed into its single child.
             return AnyView(
                 view
+                    .overlay(alignment: .topLeading) {
+                        SwiftUI.Color.clear
+                            .frame(width: 0.5, height: 0.5)
+                            .accessibilityElement(children: .ignore)
+                    }
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(id)
             )

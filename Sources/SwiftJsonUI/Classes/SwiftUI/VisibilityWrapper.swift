@@ -41,9 +41,15 @@ public struct VisibilityWrapper<Content: View>: View {
             // gone: completely removed from layout
             EmptyView()
         case .invisible:
-            // invisible: takes space but not visible
+            // invisible: takes space but not visible — also hide it from
+            // accessibility (VoiceOver / UI tests must not see an invisible
+            // view). accessibilityHidden alone does not remove *explicit*
+            // accessibility containers created inside the subtree, so first
+            // collapse the subtree into a single anonymous element.
             content
                 .opacity(0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
         case .visible:
             // visible: show normally
             content
