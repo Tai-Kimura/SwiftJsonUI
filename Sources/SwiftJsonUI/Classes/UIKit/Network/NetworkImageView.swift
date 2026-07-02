@@ -38,7 +38,14 @@ open class NetworkImageView: SJUIImageView {
     }
     
     open func setImageURL(string: String!, headers: [String:String]? = nil) {
-        if let string = string, let url = URL(string: string) {
+        // iOS 17+'s lenient URL parser accepts almost any string (it
+        // percent-encodes as needed), so also require a scheme and host —
+        // otherwise clearly invalid strings started a doomed download
+        // instead of showing the error image.
+        if let string = string,
+           let url = URL(string: string),
+           url.scheme != nil,
+           url.host != nil || url.isFileURL {
             self.setImageURL(url: url, headers: headers)
         } else {
             self.setImageResource(errorImage ?? defaultImage)
