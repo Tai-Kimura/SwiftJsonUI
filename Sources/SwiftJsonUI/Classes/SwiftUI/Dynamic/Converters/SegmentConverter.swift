@@ -19,16 +19,14 @@ public struct SegmentConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        // Selection binding: check selectedIndex first, then selectedTabIndex
-        let selectionExpr: String? = {
-            if let si = component.rawData["selectedIndex"] as? String, si.hasPrefix("@{") {
-                return si
+        let attrs = component.typedAttributes(SegmentAttributes.self)
+
+        // Selection binding: selectedIndex first, then the undeclared
+        // legacy selectedTabIndex spelling
+        let selectionExpr: String? = attrs.selectedIndex?.bindingString
+            ?? (component.rawAttribute("selectedTabIndex") as? String).flatMap {
+                $0.hasPrefix("@{") ? $0 : nil
             }
-            if let sti = component.rawData["selectedTabIndex"] as? String, sti.hasPrefix("@{") {
-                return sti
-            }
-            return nil
-        }()
 
         let selectedBinding = DynamicBindingHelper.int(
             selectionExpr,
@@ -39,11 +37,12 @@ public struct SegmentConverter {
         let items = component.items ?? []
 
         // Resolve segment color attributes
-        let bgColor = DynamicHelpers.getColor(component.rawData["backgroundColor"] as? String, data: data)
-        let normalColor = DynamicHelpers.getColor(component.rawData["normalColor"] as? String, data: data)
+        let bgColor = DynamicHelpers.getColor(
+            component.rawAttribute("backgroundColor") as? String, data: data)
+        let normalColor = DynamicHelpers.getColor(attrs.normalColor?.rawString, data: data)
         let selectedColor = DynamicHelpers.getColor(
-            component.rawData["selectedColor"] as? String
-                ?? component.rawData["selectedSegmentTintColor"] as? String
+            attrs.selectedColor?.rawString
+                ?? component.rawAttribute("selectedSegmentTintColor") as? String
                 ?? component.tintColor,
             data: data
         )
@@ -69,15 +68,9 @@ public struct SegmentConverter {
         if let onValueChange = component.onValueChange,
            let handlerName = DynamicEventHelper.extractPropertyName(from: onValueChange) {
             // Determine the binding property to observe
-            let observeProperty: String? = {
-                if let si = component.rawData["selectedIndex"] as? String {
-                    return DynamicEventHelper.extractPropertyName(from: si)
-                }
-                if let sti = component.rawData["selectedTabIndex"] as? String {
-                    return DynamicEventHelper.extractPropertyName(from: sti)
-                }
-                return nil
-            }()
+            let observeProperty: String? = attrs.selectedIndex?.bindingExpression
+                ?? DynamicEventHelper.extractPropertyName(
+                    from: component.rawAttribute("selectedTabIndex") as? String)
 
             if let propName = observeProperty,
                let binding = data[propName] as? SwiftUI.Binding<Int> {
