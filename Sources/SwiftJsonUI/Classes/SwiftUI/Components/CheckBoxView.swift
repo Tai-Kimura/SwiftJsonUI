@@ -84,18 +84,26 @@ public struct CheckBoxView: View {
         HStack(spacing: spacing) {
             // Checkbox icon
             checkboxIcon
-                .onTapGesture {
-                    guard isEnabled else { return }
-                    isOn.wrappedValue.toggle()
-                    onValueChanged?(isOn.wrappedValue)
-                }
 
             // Label text if provided
             if let label = label, !label.isEmpty {
                 labelView(text: label)
             }
         }
+        // Whole row is tappable (label included), not just the icon
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard isEnabled else { return }
+            isOn.wrappedValue.toggle()
+            onValueChanged?(isOn.wrappedValue)
+        }
         .opacity(isEnabled ? 1.0 : 0.5)
+        // One accessibility element for the row whose label is the checkbox
+        // text — otherwise the SF Symbol image leaks its symbol name
+        // ("Square") as the element label.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label ?? "")
+        .accessibilityAddTraits(.isButton)
     }
 
     @ViewBuilder

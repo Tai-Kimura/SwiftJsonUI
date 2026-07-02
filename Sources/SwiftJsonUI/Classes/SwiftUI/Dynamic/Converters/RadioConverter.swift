@@ -159,18 +159,26 @@ public struct RadioConverter {
             HStack {
                 Image(systemName: groupSelectionBinding.wrappedValue == id ? "largecircle.fill.circle" : "circle")
                     .foregroundColor(.blue)
-                    .onTapGesture {
-                        groupSelectionBinding.wrappedValue = id
-                        // onClick handler
-                        if let onClick = component.onClick {
-                            DynamicEventHelper.call(onClick, data: data)
-                        }
-                    }
 
                 if !text.isEmpty {
                     buildLabelText(text: text, font: labelFont, color: labelColor)
                 }
             }
+            // Whole row is tappable (label included), not just the icon
+            .contentShape(Rectangle())
+            .onTapGesture {
+                groupSelectionBinding.wrappedValue = id
+                // onClick handler
+                if let onClick = component.onClick {
+                    DynamicEventHelper.call(onClick, data: data)
+                }
+            }
+            // One accessibility element for the row whose label is the radio
+            // text — otherwise the SF Symbol image leaks its symbol name
+            // ("circle") as the element label.
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(text.dynamicLocalized())
+            .accessibilityAddTraits(.isButton)
         )
     }
 
