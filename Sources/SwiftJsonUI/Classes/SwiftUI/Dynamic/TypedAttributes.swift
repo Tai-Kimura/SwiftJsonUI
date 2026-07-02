@@ -16,7 +16,7 @@
 //
 //  Keys that are NOT declared in attribute_definitions.json (legacy /
 //  extension keys a converter still honors) go through
-//  `component.undeclaredAttribute(_:)` so every remaining raw read is
+//  `component.rawAttribute(_:)` so every remaining raw read is
 //  explicit and greppable — the allowed set is pinned by
 //  scripts/check_converter_raw_reads.sh.
 //
@@ -74,12 +74,18 @@ extension DynamicComponent {
         return T(json: rawData, canonicalOnly: isNormalized)
     }
 
-    /// Explicit passthrough for keys a converter honors although they
-    /// are NOT declared in attribute_definitions.json (legacy /
-    /// extension keys). Keeping these behind a named accessor makes the
-    /// remaining raw reads greppable; the allowed key set is pinned by
+    /// Explicit raw passthrough for the two cases the typed extraction
+    /// cannot cover (mirrors the rjui pilot's undeclared-passthrough +
+    /// RAW_LOOKUP_KEYS):
+    ///   1. keys a converter honors although they are NOT declared in
+    ///      attribute_definitions.json (legacy / extension keys)
+    ///   2. declared keys whose accepted value space is wider than the
+    ///      declared kind (e.g. GradientView `gradient` accepts an
+    ///      object although the definitions type is array)
+    /// Keeping these behind a named accessor makes the remaining raw
+    /// reads greppable; the allowed key set is pinned by
     /// scripts/check_converter_raw_reads.sh.
-    public func undeclaredAttribute(_ key: String) -> Any? {
+    public func rawAttribute(_ key: String) -> Any? {
         let value = rawData[key]
         if value is NSNull { return nil }
         return value
@@ -135,11 +141,11 @@ public enum JsonUITypedAttributesRegistry {
     ]
 
     /// Undeclared keys the converters still honor (legacy / extension
-    /// keys — see `DynamicComponent.undeclaredAttribute`). Mirrors the
+    /// keys — see `DynamicComponent.rawAttribute`). Mirrors the
     /// allowlist in scripts/check_converter_raw_reads.sh.
     public static let consumedUndeclaredKeys: [String: Set<String>] = [
-        "checkbox": ["fontStyle", "toggleStyle"],
-        "check": ["fontStyle", "toggleStyle"],
+        "checkbox": ["fontStyle", "toggleStyle", "action", "onValueChanged"],
+        "check": ["fontStyle", "toggleStyle", "action", "onValueChanged"],
         "gradientview": ["colors", "startPoint", "endPoint"],
         "gradient": ["colors", "startPoint", "endPoint"],
         "image": ["onSrc"],
@@ -149,11 +155,15 @@ public enum JsonUITypedAttributesRegistry {
         "scroll": ["defaultScrollAnchor"],
         "segment": ["selectedTabIndex", "backgroundColor", "selectedSegmentTintColor"],
         "segmentedcontrol": ["selectedTabIndex", "backgroundColor", "selectedSegmentTintColor"],
-        "collection": ["hideSeparator", "cellWidth", "cellHeight", "defaultScrollAnchor"],
-        "table": ["hideSeparator", "cellWidth", "cellHeight", "listStyle", "defaultScrollAnchor"],
-        "list": ["hideSeparator", "cellWidth", "cellHeight", "listStyle", "defaultScrollAnchor"],
+        // onItemAppear IS in the definitions but is a callback type the
+        // extraction generator skips (function-valued) — treat as
+        // consumed-raw so the audit stays quiet.
+        "collection": ["hideSeparator", "cellWidth", "cellHeight", "defaultScrollAnchor", "onItemAppear"],
+        "table": ["hideSeparator", "cellWidth", "cellHeight", "listStyle", "defaultScrollAnchor", "onItemAppear"],
+        "list": ["hideSeparator", "cellWidth", "cellHeight", "listStyle", "defaultScrollAnchor", "onItemAppear"],
         "slider": ["range"],
         "radio": ["selectedValue"],
+        "picker": ["selectedIndex"],
         "toggle": ["toggleStyle"],
         "switch": ["toggleStyle"]
     ]

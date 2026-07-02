@@ -157,7 +157,7 @@ public struct LabelConverter {
         // --- 5. weight frame ---
         if let weight = component.weight, weight > 0 {
             let effectiveOrientation = parentOrientation
-                ?? component.undeclaredAttribute("parent_orientation") as? String
+                ?? component.rawAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
                 let frameAlignment: Alignment = {

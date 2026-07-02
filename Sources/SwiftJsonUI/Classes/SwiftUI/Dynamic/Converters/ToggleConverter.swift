@@ -84,7 +84,7 @@ public struct ToggleConverter {
         )
 
         // toggleStyle (undeclared legacy key — see check_converter_raw_reads.sh)
-        if let toggleStyle = component.undeclaredAttribute("toggleStyle") as? String {
+        if let toggleStyle = component.rawAttribute("toggleStyle") as? String {
             switch toggleStyle {
             case "switch":
                 result = AnyView(AnyViewWrapper(view: result).toggleStyle(SwitchToggleStyle()))

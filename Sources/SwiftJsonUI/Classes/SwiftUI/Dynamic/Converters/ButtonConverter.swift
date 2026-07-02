@@ -81,7 +81,7 @@ public struct ButtonConverter {
         // weight handling
         if let weight = component.weight, weight > 0 {
             let effectiveOrientation = parentOrientation
-                ?? component.undeclaredAttribute("parent_orientation") as? String
+                ?? component.rawAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {
                 buttonWidth = -1
             } else if effectiveOrientation == "vertical" {

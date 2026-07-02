@@ -57,7 +57,7 @@ public struct ImageViewConverter {
         }
 
         // --- 5. .onAppear (onSrc callback) ---
-        if let onSrc = component.undeclaredAttribute("onSrc") as? String {
+        if let onSrc = component.rawAttribute("onSrc") as? String {
             let propName = DynamicEventHelper.extractPropertyName(from: onSrc) ?? onSrc
             if let closure = data[propName] as? () -> Void {
                 result = AnyView(result.onAppear { closure() })
