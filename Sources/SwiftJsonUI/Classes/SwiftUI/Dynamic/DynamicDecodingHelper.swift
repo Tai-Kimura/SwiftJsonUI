@@ -232,41 +232,80 @@ public struct DynamicDecodingHelper {
         return 0
     }
 
+    // MARK: - Decode-Failure Containment
+
+    /// Component type of the synthetic node a failed child decode degrades
+    /// into. Rendered by `DynamicComponentBuilder` as a debug-visible error
+    /// placeholder — a malformed child must never silently vanish and
+    /// reshape its parent layout.
+    public static let decodeErrorType = "__jui_decode_error__"
+
+    /// Synthesize an error-placeholder component for a child whose decode
+    /// threw. Carries the original `type` / `id` (when recoverable) and the
+    /// decode error text via underscore-prefixed rawData keys (ignored by
+    /// the attribute audit).
+    static func makeDecodeErrorPlaceholder(
+        rawJSON: [String: Any]?,
+        error: Error?
+    ) -> DynamicComponent? {
+        var dict: [String: Any] = ["type": decodeErrorType]
+        if let originalType = rawJSON?["type"] as? String {
+            dict["_originalType"] = originalType
+        }
+        if let originalId = rawJSON?["id"] as? String {
+            dict["id"] = originalId
+        }
+        if let error = error {
+            dict["_decodeError"] = String(describing: error)
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: dict),
+              let placeholder = try? JSONDecoder().decode(DynamicComponent.self, from: data) else {
+            return nil
+        }
+        return placeholder
+    }
+
+    private static func warnDroppedChild(rawJSON: [String: Any]?, error: Error?) {
+        let type = rawJSON?["type"] as? String ?? "?"
+        let id = rawJSON?["id"] as? String ?? "?"
+        Logger.log(
+            "[SwiftJsonUI] ERROR: failed to decode child component "
+            + "(type=\(type), id=\(id)) — rendering an error placeholder "
+            + "instead of dropping it: \(error.map { String(describing: $0) } ?? "unknown error")"
+        )
+    }
+
     /// Decode child components from JSON
     /// Handles both single component and array of components
     /// Keeps all components including those without type (include, data, etc.) for later filtering
+    ///
+    /// A child whose decode throws is contained to that child: it becomes a
+    /// `decodeErrorType` placeholder (visible in DEBUG rendering + console
+    /// warning) so sibling layout never collapses.
     public static func decodeChildren(from container: KeyedDecodingContainer<DynamicComponent.CodingKeys>,
                                      forKey key: DynamicComponent.CodingKeys) -> [DynamicComponent]? {
-        // Try to decode as array first (using FailableDecodable to skip invalid elements)
+        // Absent or explicit-null key: no children (not an error)
+        guard container.contains(key),
+              (try? container.decodeNil(forKey: key)) != true else { return nil }
+
+        // Try to decode as array first (FailableDecodable contains failures per element)
         if let childArray = try? container.decode([FailableDecodable<DynamicComponent>].self, forKey: key) {
-            // Filter out nil values but keep all components (including those without type like include)
-            // The actual filtering will be done later by DynamicViewContainer
-            let validComponents = childArray.compactMap { $0.value }
-
-            #if DEBUG
-            print("[DynamicDecodingHelper] Decoded \(childArray.count) children, \(validComponents.count) valid")
-            for (index, component) in validComponents.enumerated() {
-                print("[DynamicDecodingHelper] Child[\(index)]: type=\(component.type ?? "nil")")
-                if component.type == "Collection" {
-                    print("[DynamicDecodingHelper] Collection found at index \(index)")
-                    print("[DynamicDecodingHelper]   sections: \(component.sections?.count ?? 0)")
-                    print("[DynamicDecodingHelper]   items: \(component.items ?? [])")
-                    print("[DynamicDecodingHelper]   rawData.items: \(component.rawData["items"] ?? "nil")")
-                }
+            let components = childArray.compactMap { element -> DynamicComponent? in
+                if let value = element.value { return value }
+                warnDroppedChild(rawJSON: element.rawJSON, error: element.decodingError)
+                return makeDecodeErrorPlaceholder(rawJSON: element.rawJSON, error: element.decodingError)
             }
-            #endif
-
-            return validComponents.isEmpty ? nil : validComponents
+            return components.isEmpty ? nil : components
         }
 
-        // Try to decode as single component
-        if let singleChild = try? container.decode(DynamicComponent.self, forKey: key) {
-            // Keep all components (including those without type like include)
-            return [singleChild]
+        // Try to decode as single component; degrade a failure to a placeholder
+        do {
+            return [try container.decode(DynamicComponent.self, forKey: key)]
+        } catch {
+            let rawJSON = (try? container.decode(AnyCodable.self, forKey: key))?.value as? [String: Any]
+            warnDroppedChild(rawJSON: rawJSON, error: error)
+            return makeDecodeErrorPlaceholder(rawJSON: rawJSON, error: error).map { [$0] }
         }
-
-        // No children found
-        return nil
     }
 
     /// Convert gravity string array to SwiftUI Alignment

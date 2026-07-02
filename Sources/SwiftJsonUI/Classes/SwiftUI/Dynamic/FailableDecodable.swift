@@ -9,35 +9,31 @@ import Foundation
 #if DEBUG
 
 
-/// Wrapper for failable decoding of array elements
+/// Wrapper for failable decoding of array elements.
+///
+/// A failed element never aborts the surrounding array decode; instead the
+/// failure is captured (`decodingError` + `rawJSON`) so callers can degrade
+/// it visibly — `DynamicDecodingHelper.decodeChildren` turns failed children
+/// into error-placeholder components instead of silently dropping them.
 struct FailableDecodable<T: Decodable>: Decodable {
     let value: T?
-    
+    /// The error thrown by `T`'s decode, when it failed.
+    let decodingError: Error?
+    /// The element's raw JSON object (when it was an object), for
+    /// diagnostics / placeholder synthesis.
+    let rawJSON: [String: Any]?
+
     init(from decoder: Decoder) throws {
         let container = try decoder.singleValueContainer()
         do {
             value = try container.decode(T.self)
+            decodingError = nil
+            rawJSON = nil
         } catch {
-            #if DEBUG
-            // Log decoding errors to help debug
-            print("[FailableDecodable] Failed to decode \(T.self): \(error)")
-            // Try to get more info about what we're trying to decode
-            if T.self == DynamicComponent.self {
-                // Try to decode as AnyCodable to see what's in there
-                if let anyDict = try? container.decode(AnyCodable.self),
-                   let dict = anyDict.value as? [String: Any] {
-                    print("[FailableDecodable] Component type: \(dict["type"] ?? "nil")")
-                    if dict["type"] as? String == "Collection" {
-                        print("[FailableDecodable] Collection component failed!")
-                        print("[FailableDecodable] sections: \(dict["sections"] ?? "nil")")
-                        print("[FailableDecodable] items: \(dict["items"] ?? "nil")")
-                        print("[FailableDecodable] height: \(dict["height"] ?? "nil")")
-                        print("[FailableDecodable] columns: \(dict["columns"] ?? "nil")")
-                    }
-                }
-            }
-            #endif
             value = nil
+            decodingError = error
+            rawJSON = (try? container.decode(AnyCodable.self))?.value as? [String: Any]
+            Logger.debug("[FailableDecodable] Failed to decode \(T.self): \(error)")
         }
     }
 }

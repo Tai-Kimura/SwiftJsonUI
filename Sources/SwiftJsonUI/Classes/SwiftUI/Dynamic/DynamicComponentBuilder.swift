@@ -297,6 +297,25 @@ public struct DynamicComponentBuilder: View {
             case "blur", "blurview":
                 BlurConverter.convert(component: component, data: data, viewId: viewId)
 
+            // Synthetic node for a child whose decode threw (see
+            // DynamicDecodingHelper.decodeChildren) — render a visible
+            // error box instead of letting the node vanish and the
+            // sibling layout collapse.
+            case DynamicDecodingHelper.decodeErrorType:
+                let originalType = component.rawData["_originalType"] as? String
+                let detail = [
+                    originalType.map { "type '\($0)'" },
+                    component.id.map { "id '\($0)'" }
+                ].compactMap { $0 }.joined(separator: ", ")
+                Text("Error: Failed to decode component"
+                     + (detail.isEmpty ? "" : " (\(detail))"))
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.red)
+                    .cornerRadius(6)
+
             // Default/Unknown
             default:
                 if let adapter = CustomComponentRegistry.shared.adapter(for: type) {

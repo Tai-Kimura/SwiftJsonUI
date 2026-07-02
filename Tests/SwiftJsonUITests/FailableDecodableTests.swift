@@ -135,6 +135,21 @@ final class FailableDecodableTests: XCTestCase {
         XCTAssertEqual(failable.value, "test")
     }
 
+    func testFailedDecodingCapturesErrorAndRawJSON() throws {
+        let json = """
+        {
+            "name": "test",
+            "value": "not-an-int"
+        }
+        """.data(using: .utf8)!
+
+        let failable = try JSONDecoder().decode(FailableDecodable<TestStruct>.self, from: json)
+
+        XCTAssertNil(failable.value)
+        XCTAssertNotNil(failable.decodingError, "the decode failure must be captured, not swallowed")
+        XCTAssertEqual(failable.rawJSON?["name"] as? String, "test")
+    }
+
     func testBoolDecoding() throws {
         let json = "true".data(using: .utf8)!
 

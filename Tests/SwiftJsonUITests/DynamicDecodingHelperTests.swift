@@ -217,5 +217,66 @@ final class DynamicDecodingHelperTests: XCTestCase {
         XCTAssertEqual(DynamicDecodingHelper.toTextAlignment(nil), .leading)
         XCTAssertEqual(DynamicDecodingHelper.toTextAlignment("unknown"), .leading)
     }
+
+    // MARK: - Decode-Failure Containment Tests
+
+    // A child whose decode throws must never silently vanish: it degrades
+    // to a visible error-placeholder node so the parent layout keeps its
+    // shape and the failure is debuggable.
+
+    func testMalformedChildBecomesErrorPlaceholderInsteadOfDropping() throws {
+        // `lines` is a plain Int decode — an object value makes the child's
+        // DynamicComponent.init(from:) throw.
+        let json = """
+        {
+            "type": "View",
+            "orientation": "vertical",
+            "child": [
+                { "type": "Label", "text": "header" },
+                { "type": "Label", "id": "broken_label", "lines": {"bad": true} },
+                { "type": "Label", "text": "footer" }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+        let children = try XCTUnwrap(component.childComponents)
+
+        XCTAssertEqual(children.count, 3, "a failing child must not collapse its siblings")
+        XCTAssertEqual(children[0].text, "header")
+        XCTAssertEqual(children[2].text, "footer")
+
+        let placeholder = children[1]
+        XCTAssertEqual(placeholder.type, DynamicDecodingHelper.decodeErrorType)
+        XCTAssertTrue(placeholder.isValid, "placeholder must survive container filtering")
+        XCTAssertEqual(placeholder.rawData["_originalType"] as? String, "Label")
+        XCTAssertEqual(placeholder.id, "broken_label")
+        XCTAssertNotNil(placeholder.rawData["_decodeError"] as? String)
+    }
+
+    func testMalformedSingleChildBecomesErrorPlaceholder() throws {
+        let json = """
+        {
+            "type": "View",
+            "child": { "type": "Label", "lines": {"bad": true} }
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+        let children = try XCTUnwrap(component.childComponents)
+
+        XCTAssertEqual(children.count, 1)
+        XCTAssertEqual(children[0].type, DynamicDecodingHelper.decodeErrorType)
+        XCTAssertEqual(children[0].rawData["_originalType"] as? String, "Label")
+    }
+
+    func testAbsentChildKeyStaysNil() throws {
+        let json = """
+        { "type": "View" }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+        XCTAssertNil(component.childComponents)
+    }
 }
 #endif
