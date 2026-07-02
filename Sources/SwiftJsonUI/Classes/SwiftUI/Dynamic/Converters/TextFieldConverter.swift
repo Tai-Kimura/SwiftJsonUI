@@ -103,7 +103,8 @@ public struct TextFieldConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let nextFocusId = component.rawData["nextFocus"] as? String
+        let attrs = component.typedAttributes(TextFieldAttributes.self)
+        let nextFocusId = attrs.nextFocus
 
         var result = AnyView(
             FocusableTextField(
@@ -142,7 +143,7 @@ public struct TextFieldConverter {
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
             if let tintColor = component.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
-            if let caretAttrs = component.rawData["caretAttributes"] as? [String: Any],
+            if let caretAttrs = attrs.caretAttributes,
                let caretFontColor = caretAttrs["fontColor"] as? String,
                let c = DynamicHelpers.getColor(caretFontColor) { return c }
             return nil
@@ -152,7 +153,7 @@ public struct TextFieldConverter {
         }
 
         // --- 11. textPaddingLeft ---
-        if let textPaddingLeft = numericToCGFloat(component.rawData["textPaddingLeft"]) {
+        if let textPaddingLeft = attrs.textPaddingLeft.map({ CGFloat($0) }) {
             result = AnyView(result.padding(.leading, textPaddingLeft))
         }
 
@@ -205,6 +206,7 @@ public struct TextFieldConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
+        let attrs = component.typedAttributes(TextFieldAttributes.self)
         var result = view
 
         // --- 2. font ---
@@ -232,7 +234,7 @@ public struct TextFieldConverter {
         }
 
         // --- 7. textContentType ---
-        if let contentType = component.rawData["contentType"] as? String {
+        if let contentType = attrs.contentType?.value {
             result = applyContentType(result, contentType: contentType)
         }
 
@@ -249,7 +251,7 @@ public struct TextFieldConverter {
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
             if let tintColor = component.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
-            if let caretAttrs = component.rawData["caretAttributes"] as? [String: Any],
+            if let caretAttrs = attrs.caretAttributes,
                let caretFontColor = caretAttrs["fontColor"] as? String,
                let c = DynamicHelpers.getColor(caretFontColor) { return c }
             return nil
@@ -259,7 +261,7 @@ public struct TextFieldConverter {
         }
 
         // --- 11. textPaddingLeft ---
-        if let textPaddingLeft = numericToCGFloat(component.rawData["textPaddingLeft"]) {
+        if let textPaddingLeft = attrs.textPaddingLeft.map({ CGFloat($0) }) {
             result = AnyView(result.padding(.leading, textPaddingLeft))
         }
 
@@ -365,11 +367,4 @@ public struct TextFieldConverter {
 /// Coerce a JSON-parsed numeric value to `CGFloat?` across Int / Double /
 /// CGFloat / NSNumber. Used by converters reading from `component.rawData`
 /// where the decoded type depends on the JSON literal form.
-fileprivate func numericToCGFloat(_ value: Any?) -> CGFloat? {
-    if let v = value as? CGFloat { return v }
-    if let v = value as? Double { return CGFloat(v) }
-    if let v = value as? Int { return CGFloat(v) }
-    if let v = value as? NSNumber { return CGFloat(truncating: v) }
-    return nil
-}
 #endif // DEBUG

@@ -33,6 +33,7 @@ public struct LabelConverter {
         data: [String: Any],
         parentOrientation: String? = nil
     ) -> AnyView {
+        let attrs = component.typedAttributes(LabelAttributes.self)
         // --- 1. Build PartialAttributedText ---
         let processedText = DynamicHelpers.processText(component.text, data: data) ?? ""
         let text = processedText.dynamicLocalized()
@@ -44,9 +45,7 @@ public struct LabelConverter {
         let fontSize = component.fontSize
         // Resolve font from binding if present (e.g., @{fontProp})
         let resolvedFont: String? = {
-            if let fontRaw = component.rawData["font"] as? String,
-               fontRaw.hasPrefix("@{") && fontRaw.hasSuffix("}") {
-                let propertyName = String(fontRaw.dropFirst(2).dropLast(1))
+            if let propertyName = attrs.font?.bindingExpression {
                 if let binding = data[propertyName] as? SwiftUI.Binding<String> {
                     return binding.wrappedValue
                 }
@@ -101,9 +100,7 @@ public struct LabelConverter {
 
         // fontFamily with binding support
         let fontFamily: String? = {
-            if let raw = component.rawData["fontFamily"] as? String,
-               raw.hasPrefix("@{") && raw.hasSuffix("}") {
-                let propertyName = String(raw.dropFirst(2).dropLast(1))
+            if let propertyName = attrs.fontFamily?.bindingExpression {
                 if let binding = data[propertyName] as? SwiftUI.Binding<String> {
                     return binding.wrappedValue
                 }
@@ -159,7 +156,8 @@ public struct LabelConverter {
 
         // --- 5. weight frame ---
         if let weight = component.weight, weight > 0 {
-            let effectiveOrientation = parentOrientation ?? component.rawData["parent_orientation"] as? String
+            let effectiveOrientation = parentOrientation
+                ?? component.undeclaredAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
                 let frameAlignment: Alignment = {

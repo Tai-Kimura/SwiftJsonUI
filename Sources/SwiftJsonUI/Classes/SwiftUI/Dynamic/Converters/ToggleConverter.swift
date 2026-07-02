@@ -23,22 +23,15 @@ public struct ToggleConverter {
         data: [String: Any]
     ) -> AnyView {
         let id = component.id ?? "toggle"
+        let attrs = component.typedAttributes(ToggleAttributes.self)
 
         // Resolve isOn binding: check isOn first, then checked
-        let isOnExpr: String? = {
-            if let expr = component.rawData["isOn"] as? String, expr.hasPrefix("@{") {
-                return expr
-            }
-            if let expr = component.rawData["checked"] as? String, expr.hasPrefix("@{") {
-                return expr
-            }
-            return nil
-        }()
+        let isOnExpr: String? = attrs.isOn?.bindingString ?? attrs.checked?.bindingString
 
         let isOnBinding = DynamicBindingHelper.bool(
             isOnExpr,
             data: data,
-            fallback: component.isOn ?? component.checked ?? false
+            fallback: attrs.isOn?.value ?? attrs.checked?.value ?? false
         )
 
         // Label text
@@ -48,7 +41,7 @@ public struct ToggleConverter {
         var result: AnyView
 
         // Determine font from component or labelAttributes
-        let labelAttrsDict = component.rawData["labelAttributes"] as? [String: Any]
+        let labelAttrsDict = attrs.labelAttributes
 
         // Build the label Text view with font and color modifiers
         let labelFont: Font? = {
@@ -90,8 +83,8 @@ public struct ToggleConverter {
             }
         )
 
-        // toggleStyle
-        if let toggleStyle = component.rawData["toggleStyle"] as? String {
+        // toggleStyle (undeclared legacy key — see check_converter_raw_reads.sh)
+        if let toggleStyle = component.undeclaredAttribute("toggleStyle") as? String {
             switch toggleStyle {
             case "switch":
                 result = AnyView(AnyViewWrapper(view: result).toggleStyle(SwitchToggleStyle()))
@@ -108,15 +101,8 @@ public struct ToggleConverter {
         if let onValueChange = component.onValueChange,
            let _ = DynamicEventHelper.extractPropertyName(from: onValueChange) {
             // Determine the binding property to observe
-            let observeProperty: String? = {
-                if let expr = component.rawData["isOn"] as? String {
-                    return DynamicEventHelper.extractPropertyName(from: expr)
-                }
-                if let expr = component.rawData["checked"] as? String {
-                    return DynamicEventHelper.extractPropertyName(from: expr)
-                }
-                return nil
-            }()
+            let observeProperty: String? = attrs.isOn?.bindingExpression
+                ?? attrs.checked?.bindingExpression
 
             if let propName = observeProperty,
                let binding = data[propName] as? SwiftUI.Binding<Bool> {

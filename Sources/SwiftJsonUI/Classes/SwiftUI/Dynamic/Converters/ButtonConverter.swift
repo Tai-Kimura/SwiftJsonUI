@@ -26,6 +26,7 @@ public struct ButtonConverter {
         data: [String: Any],
         parentOrientation: String? = nil
     ) -> AnyView {
+        let attrs = component.typedAttributes(ButtonAttributes.self)
         // --- 1. Build StateAwareButtonView ---
 
         // Text with binding support
@@ -79,7 +80,8 @@ public struct ButtonConverter {
 
         // weight handling
         if let weight = component.weight, weight > 0 {
-            let effectiveOrientation = parentOrientation ?? component.rawData["parent_orientation"] as? String
+            let effectiveOrientation = parentOrientation
+                ?? component.undeclaredAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {
                 buttonWidth = -1
             } else if effectiveOrientation == "vertical" {
@@ -120,7 +122,7 @@ public struct ButtonConverter {
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
         // --- 4.5. buttonStyle (common attribute; plain/bordered/borderedProminent/borderless) ---
-        if let style = component.rawData["style"] as? String {
+        if let style = attrs.common.style {
             switch style {
             case "plain": result = AnyView(result.buttonStyle(.plain))
             case "bordered": result = AnyView(result.buttonStyle(.bordered))
