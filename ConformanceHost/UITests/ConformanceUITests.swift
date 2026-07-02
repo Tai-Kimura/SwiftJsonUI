@@ -91,10 +91,13 @@ final class ConformanceUITests: XCTestCase {
     /// Seconds to wait for the fixture marker element after launch/advance.
     private let markerTimeout: TimeInterval = 15.0
 
-    /// Optional filter for debugging: run only fixtures whose id contains
-    /// this substring (env CONFORMANCE_FILTER via TEST_RUNNER_CONFORMANCE_FILTER).
-    private var idFilter: String? {
-        ProcessInfo.processInfo.environment["CONFORMANCE_FILTER"]
+    /// Optional filter for debugging: run only fixtures whose id contains one
+    /// of these comma-separated substrings
+    /// (env CONFORMANCE_FILTER via TEST_RUNNER_CONFORMANCE_FILTER).
+    private var idFilters: [String] {
+        guard let raw = ProcessInfo.processInfo.environment["CONFORMANCE_FILTER"] else { return [] }
+        return raw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
     }
 
     private var stagingDir: URL {
@@ -138,7 +141,7 @@ final class ConformanceUITests: XCTestCase {
             if let skip = skipReason(for: fixture) {
                 results[fixture.id] = FixtureResult(
                     id: fixture.id, status: "skipped", detail: skip, screenshot: nil)
-            } else if let filter = idFilter, !filter.isEmpty, !fixture.id.contains(filter) {
+            } else if !idFilters.isEmpty, !idFilters.contains(where: { fixture.id.contains($0) }) {
                 results[fixture.id] = FixtureResult(
                     id: fixture.id, status: "skipped", detail: "not executed in this run", screenshot: nil)
             } else {
