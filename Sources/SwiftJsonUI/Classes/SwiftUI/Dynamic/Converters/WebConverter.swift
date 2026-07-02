@@ -20,13 +20,14 @@ public struct WebConverter {
         data: [String: Any],
         viewId: String? = nil
     ) -> AnyView {
+        let attrs = component.typedAttributes(WebAttributes.self)
         // Resolve URL - supports both static string and @{binding} expression
         let urlString: String? = {
             if let src = component.src {
                 return resolveUrlString(src, data: data)
             }
-            // Fallback: check rawData for "url" key (Ruby converter uses 'url' attribute)
-            if let urlRaw = component.rawData["url"] as? String {
+            // Fallback: 'url' attribute (Ruby converter spelling)
+            if let urlRaw = attrs.url?.rawString {
                 return resolveUrlString(urlRaw, data: data)
             }
             return nil
@@ -42,7 +43,7 @@ public struct WebConverter {
 
         // Resolve background color
         let bgColor: UIColor? = {
-            if let bg = component.rawData["background"] as? String,
+            if let bg = attrs.common.background?.value,
                let color = SwiftJsonUIConfiguration.shared.getColor(for: bg) {
                 return UIColor(color)
             }
