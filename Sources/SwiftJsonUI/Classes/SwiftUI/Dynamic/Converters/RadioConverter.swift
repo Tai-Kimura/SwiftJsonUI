@@ -68,7 +68,7 @@ public struct RadioConverter {
     ) -> AnyView {
         // Get selection binding
         let selectionExpr: String? = {
-            if let expr = component.rawData["selectedValue"] as? String, expr.hasPrefix("@{") {
+            if let expr = component.rawAttribute("selectedValue") as? String, expr.hasPrefix("@{") {
                 return expr
             }
             return nil
