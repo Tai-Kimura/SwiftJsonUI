@@ -50,7 +50,7 @@ public struct PickerConverter {
         // Try Int binding first (selectedIndex), then String binding
         let selectionBinding: SwiftUI.Binding<Int> = {
             // Check for selectedIndex binding in rawData
-            if let selectedIndexExpr = component.rawData["selectedIndex"] as? String,
+            if let selectedIndexExpr = component.rawAttribute("selectedIndex") as? String,
                selectedIndexExpr.hasPrefix("@{") {
                 return DynamicBindingHelper.int(selectedIndexExpr, data: data, fallback: component.selectedIndex ?? 0)
             }
