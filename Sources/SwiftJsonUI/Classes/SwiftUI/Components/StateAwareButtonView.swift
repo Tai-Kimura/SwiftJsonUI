@@ -190,7 +190,6 @@ public struct StateAwareButtonView: View {
             borderWidth: borderWidth,
             borderColor: borderColor
         ))
-        .disabled(!isEnabled)
         .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity,
             pressing: { pressing in
                 withAnimation(.easeInOut(duration: 0.1)) {
@@ -205,5 +204,11 @@ public struct StateAwareButtonView: View {
                     // Handle tap
                 }
         )
+        // .disabled must come after the gesture modifiers: applied before them,
+        // the gesture wrappers re-enable interaction on the composed view and
+        // the accessibility element loses its "not enabled" state (XCUITest
+        // isEnabled stayed true for disabled buttons). Applying it last also
+        // disables the wrapping gestures themselves.
+        .disabled(!isEnabled)
     }
 }
