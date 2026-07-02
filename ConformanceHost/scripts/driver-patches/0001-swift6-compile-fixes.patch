@@ -1,0 +1,98 @@
+--- a/Runner/TestLoader.swift
++++ b/Runner/TestLoader.swift
+@@ -280,27 +280,27 @@
+         return TestStep(
+             action: step.action,
+             assert: step.assert,
+-            id: substituteArgsInString(step.id, args: args),
+-            ids: step.ids?.map { substituteArgsInString($0, args: args) ?? $0 },
+-            text: substituteArgsInString(step.text, args: args),
+-            value: substituteArgsInString(step.value, args: args),
++            id: substituteArgsInOptionalString(step.id, args: args),
++            ids: step.ids?.map { substituteArgsInString($0, args: args) },
++            text: substituteArgsInOptionalString(step.text, args: args),
++            value: substituteArgsInOptionalString(step.value, args: args),
+             direction: step.direction,
+             duration: step.duration,
+             timeout: step.timeout,
+             ms: step.ms,
+             name: step.name,
+             equals: substituteArgsInAnyCodable(step.equals, args: args),
+-            contains: substituteArgsInString(step.contains, args: args),
++            contains: substituteArgsInOptionalString(step.contains, args: args),
+             path: step.path,
+             amount: step.amount,
+-            button: substituteArgsInString(step.button, args: args),
+-            label: substituteArgsInString(step.label, args: args),
++            button: substituteArgsInOptionalString(step.button, args: args),
++            label: substituteArgsInOptionalString(step.label, args: args),
+             index: step.index
+         )
+     }
+ 
+     /// Substitute @{varName} placeholders in an optional string
+-    private func substituteArgsInString(_ string: String?, args: [String: Any]) -> String? {
++    private func substituteArgsInOptionalString(_ string: String?, args: [String: Any]) -> String? {
+         guard let string = string else { return nil }
+         return substituteArgsInString(string, args: args)
+     }
+--- a/Runner/TestRunner.swift
++++ b/Runner/TestRunner.swift
+@@ -351,27 +351,27 @@
+         return TestStep(
+             action: step.action,
+             assert: step.assert,
+-            id: substituteArgsInString(step.id, args: args),
+-            ids: step.ids?.map { substituteArgsInString($0, args: args) ?? $0 },
+-            text: substituteArgsInString(step.text, args: args),
+-            value: substituteArgsInString(step.value, args: args),
++            id: substituteArgsInOptionalString(step.id, args: args),
++            ids: step.ids?.map { substituteArgsInString($0, args: args) },
++            text: substituteArgsInOptionalString(step.text, args: args),
++            value: substituteArgsInOptionalString(step.value, args: args),
+             direction: step.direction,
+             duration: step.duration,
+             timeout: step.timeout,
+             ms: step.ms,
+             name: step.name,
+             equals: substituteArgsInAnyCodable(step.equals, args: args),
+-            contains: substituteArgsInString(step.contains, args: args),
++            contains: substituteArgsInOptionalString(step.contains, args: args),
+             path: step.path,
+             amount: step.amount,
+-            button: substituteArgsInString(step.button, args: args),
+-            label: substituteArgsInString(step.label, args: args),
++            button: substituteArgsInOptionalString(step.button, args: args),
++            label: substituteArgsInOptionalString(step.label, args: args),
+             index: step.index
+         )
+     }
+ 
+     /// Substitute @{varName} placeholders in an optional string
+-    private func substituteArgsInString(_ string: String?, args: [String: Any]) -> String? {
++    private func substituteArgsInOptionalString(_ string: String?, args: [String: Any]) -> String? {
+         guard let string = string else { return nil }
+         return substituteArgsInString(string, args: args)
+     }
+--- a/Assertions/AssertionExecutor.swift
++++ b/Assertions/AssertionExecutor.swift
+@@ -85,6 +85,7 @@
+             assert: flowStep.assert,
+             id: flowStep.id,
+             ids: flowStep.ids,
++            text: flowStep.text,
+             value: flowStep.value,
+             direction: flowStep.direction,
+             duration: flowStep.duration,
+@@ -94,7 +95,10 @@
+             equals: flowStep.equals,
+             contains: flowStep.contains,
+             path: flowStep.path,
+-            amount: flowStep.amount
++            amount: flowStep.amount,
++            button: flowStep.button,
++            label: flowStep.label,
++            index: flowStep.index
+         )
+ 
+         try execute(step: step, in: app)
