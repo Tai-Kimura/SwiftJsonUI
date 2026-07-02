@@ -415,6 +415,67 @@ public struct DynamicModifierHelper {
         "blur", "blurview", "gradientview", "gradient"
     ]
 
+    /// Component types guaranteed to surface at least one accessibility
+    /// element of their own when visible (text, controls, images). Types not
+    /// listed (Collection, Table, Web, TabView, includes, bare decorative
+    /// views…) may yield zero elements at runtime and are conservatively not
+    /// counted by `accessibilityMergeHazard`.
+    /// Keep in sync with sjui_tools BaseViewConverter::
+    /// CERTAIN_ACCESSIBILITY_ELEMENT_TYPES.
+    private static let certainAccessibilityElementTypes: Set<String> = [
+        "label", "text", "iconlabel", "button",
+        "textfield", "edittext", "input", "textview",
+        "image", "circleimage", "networkimage",
+        "switch", "toggle", "checkbox", "check", "radio",
+        "segment", "progress", "slider", "indicator", "selectbox"
+    ]
+
+    /// DEPTH BUDGET: the invisible anchor overlay is a secondary-child
+    /// layout node; its evaluation recurses through the container content
+    /// inline, so each anchored ancestor on a nesting path stays on the
+    /// stack while descending (~2.4 KB per site measured at -Onone; AnyView
+    /// erasure does NOT break this chain — plain modifiers stay at a
+    /// constant stack cost, the overlay grows linearly). Emitted for every
+    /// id-bearing container this exhausted the device main-thread stack on
+    /// large screens (EXC_BAD_ACCESS code=2). The merge hazard the anchor
+    /// guards against only exists when the container can end up with fewer
+    /// than two accessibility children, so the anchor is only applied for
+    /// those containers.
+    ///
+    /// Conservative approximation, kept in sync with sjui_tools
+    /// BaseViewConverter#accessibility_merge_hazard?: a child contributes
+    /// only when it is guaranteed present (no visibility binding /
+    /// invisible / gone) and guaranteed to surface accessibility elements —
+    /// a certain element type contributes 1, an id-bearing container
+    /// contributes 1 (it becomes an explicit accessibility container
+    /// itself), an id-less plain container contributes its own guaranteed
+    /// children (promoted to the grandparent). Uncertainty errs toward
+    /// emitting the anchor, never toward dropping a needed one.
+    static func accessibilityMergeHazard(_ component: DynamicComponent) -> Bool {
+        return guaranteedAccessibleChildCount(component) < 2
+    }
+
+    private static func guaranteedAccessibleChildCount(_ component: DynamicComponent) -> Int {
+        return (component.childComponents ?? []).reduce(0) { count, child in
+            count + guaranteedAccessibilityContribution(child)
+        }
+    }
+
+    private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {
+        if child.include != nil { return 0 } // unknown subtree
+        if let visibility = child.visibility, visibility != "visible" { return 0 }
+        let typeName = child.type?.lowercased() ?? ""
+        if accessibilityContainerTypes.contains(typeName) {
+            // id-bearing container: becomes an explicit accessibility
+            // container (a single element) under applyAccessibilityId
+            if child.id != nil { return 1 }
+            // plain container: guaranteed descendants are promoted (2 is
+            // enough — the caller only compares against 2)
+            return min(guaranteedAccessibleChildCount(child), 2)
+        }
+        return certainAccessibilityElementTypes.contains(typeName) ? 1 : 0
+    }
+
     public static func applyAccessibilityId(_ view: AnyView, component: DynamicComponent) -> AnyView {
         guard let id = component.id else { return view }
         let typeName = component.type?.lowercased() ?? ""
@@ -439,15 +500,24 @@ public struct DynamicModifierHelper {
             // The invisible zero-ish anchor overlay prevents SwiftUI from
             // merging two nested containers when the outer one has exactly one
             // accessibility child (the merge drops the inner container's
-            // identifier): with the anchor the container always has at least
-            // two children, so it is never collapsed into its single child.
+            // identifier): with the anchor the container has at least two
+            // children, so it is never collapsed into its single child.
+            // Only applied where that hazard exists — see
+            // accessibilityMergeHazard (device stack-depth budget).
+            if accessibilityMergeHazard(component) {
+                return AnyView(
+                    view
+                        .overlay(alignment: .topLeading) {
+                            SwiftUI.Color.clear
+                                .frame(width: 0.5, height: 0.5)
+                                .accessibilityElement(children: .ignore)
+                        }
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier(id)
+                )
+            }
             return AnyView(
                 view
-                    .overlay(alignment: .topLeading) {
-                        SwiftUI.Color.clear
-                            .frame(width: 0.5, height: 0.5)
-                            .accessibilityElement(children: .ignore)
-                    }
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(id)
             )
