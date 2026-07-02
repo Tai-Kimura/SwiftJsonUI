@@ -195,6 +195,11 @@ public struct DynamicComponentBuilder: View {
 
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
+        // Debug audit: warn once per (type, key) about attributes that
+        // were parsed from the layout but are not declared for the
+        // component (typo, or a definitions gap) — they will never be
+        // applied by the converter.
+        let _ = JsonUIAttributeAudit.audit(component: component)
         if component.include != nil {
             IncludeConverter.convert(component: component, data: data, viewId: viewId)
         } else if let type = component.type {
