@@ -42,8 +42,8 @@ final class RTLAttributesTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.type, "Label")
-        XCTAssertEqual(component.startMargin, 12)
-        XCTAssertEqual(component.endMargin, 18)
+        XCTAssertEqual(component.startMargin?.value as? Int, 12)
+        XCTAssertEqual(component.endMargin?.value as? Int, 18)
     }
 
     func testDecodeAllRTLAttributes() throws {
@@ -68,10 +68,10 @@ final class RTLAttributesTests: XCTestCase {
         XCTAssertEqual(component.paddingEnd, 12)
         XCTAssertEqual(component.paddingTop, 4)
         XCTAssertEqual(component.paddingBottom, 4)
-        XCTAssertEqual(component.startMargin, 16)
-        XCTAssertEqual(component.endMargin, 20)
-        XCTAssertEqual(component.topMargin, 8)
-        XCTAssertEqual(component.bottomMargin, 8)
+        XCTAssertEqual(component.startMargin?.value as? Int, 16)
+        XCTAssertEqual(component.endMargin?.value as? Int, 20)
+        XCTAssertEqual(component.topMargin?.value as? Int, 8)
+        XCTAssertEqual(component.bottomMargin?.value as? Int, 8)
     }
 
     // MARK: - DynamicHelpers getPadding Tests
@@ -285,15 +285,15 @@ final class RTLAttributesTests: XCTestCase {
 
         let label = component.child?[0]
         XCTAssertEqual(label?.type, "Label")
-        XCTAssertEqual(label?.startMargin, 0)
-        XCTAssertEqual(label?.endMargin, 0)
+        XCTAssertEqual(label?.startMargin?.value as? Int, 0)
+        XCTAssertEqual(label?.endMargin?.value as? Int, 0)
         XCTAssertEqual(label?.paddingStart, 8)
         XCTAssertEqual(label?.paddingEnd, 8)
 
         let button = component.child?[1]
         XCTAssertEqual(button?.type, "Button")
-        XCTAssertEqual(button?.startMargin, 16)
-        XCTAssertEqual(button?.endMargin, 16)
+        XCTAssertEqual(button?.startMargin?.value as? Int, 16)
+        XCTAssertEqual(button?.endMargin?.value as? Int, 16)
     }
 
     func testZeroPaddingAndMargin() throws {
@@ -312,8 +312,8 @@ final class RTLAttributesTests: XCTestCase {
 
         XCTAssertEqual(component.paddingStart, 0)
         XCTAssertEqual(component.paddingEnd, 0)
-        XCTAssertEqual(component.startMargin, 0)
-        XCTAssertEqual(component.endMargin, 0)
+        XCTAssertEqual(component.startMargin?.value as? Int, 0)
+        XCTAssertEqual(component.endMargin?.value as? Int, 0)
 
         let padding = DynamicHelpers.getPadding(from: component)
         XCTAssertEqual(padding.leading, 0)

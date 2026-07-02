@@ -159,8 +159,9 @@ final class SJUISelectBoxTests: XCTestCase {
         selectBox.selectedIndex = 1
         selectBox.selectedIndex = nil
 
-        // Implementation doesn't reset to nil, keeps the last value
-        XCTAssertNotNil(selectBox.selectedIndex)
+        // Setting nil clears the selection (the label is reset to the
+        // prompt / empty state, and selectedIndex reflects that)
+        XCTAssertNil(selectBox.selectedIndex)
     }
 
     // MARK: - Date Picker Tests

@@ -175,8 +175,8 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertNotNil(component.margins)
-        XCTAssertEqual(component.leftMargin, 16)
-        XCTAssertEqual(component.rightMargin, 16)
+        XCTAssertEqual(component.leftMargin?.value as? Int, 16)
+        XCTAssertEqual(component.rightMargin?.value as? Int, 16)
     }
 
     // MARK: - Child Components Tests
@@ -268,13 +268,13 @@ final class DynamicComponentTests: XCTestCase {
         let json = """
         {
             "type": "Button",
-            "onclick": "handleClick"
+            "onClick": "handleClick"
         }
         """.data(using: .utf8)!
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.onclick, "handleClick")
+        XCTAssertEqual(component.onClick, "handleClick")
     }
 
     // MARK: - Gravity Tests

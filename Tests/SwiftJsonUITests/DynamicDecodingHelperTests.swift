@@ -120,23 +120,26 @@ final class DynamicDecodingHelperTests: XCTestCase {
     }
 
     func testGravityToAlignmentTop() {
+        // JsonUI gravity semantics: an unspecified horizontal axis defaults
+        // to left/leading (Android convention), not SwiftUI's centered .top
         let result = DynamicDecodingHelper.gravityToAlignment(["top"])
-        XCTAssertEqual(result, .top)
+        XCTAssertEqual(result, .topLeading)
     }
 
     func testGravityToAlignmentBottom() {
         let result = DynamicDecodingHelper.gravityToAlignment(["bottom"])
-        XCTAssertEqual(result, .bottom)
+        XCTAssertEqual(result, .bottomLeading)
     }
 
     func testGravityToAlignmentStart() {
+        // Unspecified vertical axis defaults to top
         let result = DynamicDecodingHelper.gravityToAlignment(["start"])
-        XCTAssertEqual(result, .leading)
+        XCTAssertEqual(result, .topLeading)
     }
 
     func testGravityToAlignmentEnd() {
         let result = DynamicDecodingHelper.gravityToAlignment(["end"])
-        XCTAssertEqual(result, .trailing)
+        XCTAssertEqual(result, .topTrailing)
     }
 
     func testGravityToAlignmentNil() {
