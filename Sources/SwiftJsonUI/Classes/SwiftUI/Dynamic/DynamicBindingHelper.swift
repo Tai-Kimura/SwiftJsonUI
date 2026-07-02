@@ -25,6 +25,13 @@ public struct DynamicBindingHelper {
     /// Looks for Binding<String> in data dict, falls back to .constant()
     static func string(_ expression: String?, data: [String: Any], fallback: String = "") -> SwiftUI.Binding<String> {
         guard let propName = extractPropertyName(from: expression) else {
+            // Not a @{property} expression: a plain literal is the initial
+            // value (e.g. TextField/TextView "text": "static value") — the
+            // other platform renderers display it, so match them instead of
+            // silently dropping it.
+            if let literal = expression, !literal.isEmpty {
+                return .constant(literal.dynamicLocalized())
+            }
             return .constant(fallback)
         }
 
@@ -129,6 +136,13 @@ public struct DynamicBindingHelper {
     /// Supports negation: @{!propertyName}
     /// Automatically unwraps SwiftUI.Binding<Bool> if present
     static func resolveBool(_ expression: Any?, data: [String: Any], fallback: Bool = false) -> Bool {
+        // Unwrap AnyCodable (DynamicComponent stores attrs like `enabled` as
+        // AnyCodable) — otherwise a plain `false` never survives the casts
+        // below and the fallback silently wins.
+        var expression = expression
+        if let anyCodable = expression as? AnyCodable {
+            expression = anyCodable.value
+        }
         guard let stringValue = expression as? String else {
             if let binding = expression as? SwiftUI.Binding<Bool> {
                 return binding.wrappedValue
