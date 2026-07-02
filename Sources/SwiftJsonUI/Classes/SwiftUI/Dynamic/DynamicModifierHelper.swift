@@ -403,8 +403,32 @@ public struct DynamicModifierHelper {
 
     // MARK: - 17. Accessibility Identifier
 
+    /// Component types whose SwiftUI representation is a plain layout container
+    /// (HStack/VStack/ZStack/ScrollView wrapper) that does not become an
+    /// accessibility element on its own.
+    private static let accessibilityContainerTypes: Set<String> = [
+        "view", "safeareaview", "scrollview", "scroll",
+        "blur", "blurview", "gradientview", "gradient"
+    ]
+
     public static func applyAccessibilityId(_ view: AnyView, component: DynamicComponent) -> AnyView {
         guard let id = component.id else { return view }
+        let typeName = component.type?.lowercased() ?? ""
+        if accessibilityContainerTypes.contains(typeName) {
+            // Plain SwiftUI containers are not accessibility elements, so a bare
+            // .accessibilityIdentifier is pushed down onto the nearest descendant
+            // element — it never surfaces for the container itself and can
+            // clobber a child's own identifier (e.g. a screen root "root" View
+            // overwriting the id of the single control inside it).
+            // Make the container an explicit accessibility container first; this
+            // matches the UIKit path, where every UIView with an id is queryable
+            // by XCUITest, and keeps all descendant elements accessible.
+            return AnyView(
+                view
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier(id)
+            )
+        }
         return AnyView(view.accessibilityIdentifier(id))
     }
 
