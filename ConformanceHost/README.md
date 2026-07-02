@@ -51,6 +51,10 @@ CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
   reported as `skipped` / `not executed in this run` (the results file always
   contains one entry per manifest fixture).
 - `SIMULATOR_UDID=<udid>` pins an exact device when several share a name.
+  The run script freezes that simulator's status bar (clock → 9:41, full
+  signal/battery) before capturing screenshots; the live clock is otherwise
+  the largest source of visual-baseline noise (measured distance up to 31 vs
+  ≤6 frozen — see `conformance/baselines/README.md`).
 - The script always uses the `test` action: `TEST_RUNNER_*` variables only
   reach the runner when the test action evaluates them from xcodebuild's own
   environment (a repeat run with no source changes rebuilds incrementally

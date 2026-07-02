@@ -47,6 +47,28 @@ fi
 rm -rf "$STAGING"
 mkdir -p "$STAGING"
 
+# Freeze the simulator status bar before capturing screenshots. The
+# conformance screenshots are full-page captures that include the status
+# bar; a live clock is the single largest source of dHash noise (measured up
+# to distance 31 across the suite vs <=6 frozen — see
+# conformance/baselines/README.md). Requires a specific device (UDID or a
+# uniquely-named booted sim); skipped with a warning otherwise.
+STATUS_BAR_UDID="${SIMULATOR_UDID:-}"
+if [[ -z "$STATUS_BAR_UDID" ]]; then
+    STATUS_BAR_UDID="$(xcrun simctl list devices booted | grep -m1 "$SIMULATOR_NAME" | grep -oE '[0-9A-F-]{36}' || true)"
+fi
+if [[ -n "$STATUS_BAR_UDID" ]]; then
+    xcrun simctl bootstatus "$STATUS_BAR_UDID" -b >/dev/null 2>&1 || true
+    xcrun simctl status_bar "$STATUS_BAR_UDID" override \
+        --time "9:41" --batteryState charged --batteryLevel 100 \
+        --wifiBars 3 --cellularBars 4 --dataNetwork wifi --operatorName "" \
+        >/dev/null 2>&1 \
+        && echo "status bar frozen (9:41) on $STATUS_BAR_UDID" \
+        || echo "warning: could not freeze status bar on $STATUS_BAR_UDID (screenshots may drift)" >&2
+else
+    echo "warning: no specific simulator resolved — status bar not frozen; screenshot baselines will be noisy" >&2
+fi
+
 # TEST_RUNNER_* variables must be *environment variables of the xcodebuild
 # process* (not command-line build settings) to be forwarded into the test
 # runner's environment.
