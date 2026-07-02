@@ -19,9 +19,17 @@ public struct SliderConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        // Min/Max values: check range array first, then individual properties
-        var minValue: Double = component.rawData["minimumValue"] as? Double ?? component.minValue ?? 0
-        var maxValue: Double = component.rawData["maximumValue"] as? Double ?? component.maxValue ?? 1
+        // Min/Max values. Canonical names are minimum/maximum;
+        // minimumValue/minValue and maximumValue/maxValue are the
+        // definitions aliases (consulted only for raw L0 layouts).
+        var minValue: Double = component.minimum.map(Double.init)
+            ?? (component.isNormalized
+                ? 0
+                : (component.rawData["minimumValue"] as? Double ?? component.minValue ?? 0))
+        var maxValue: Double = component.maximum.map(Double.init)
+            ?? (component.isNormalized
+                ? 1
+                : (component.rawData["maximumValue"] as? Double ?? component.maxValue ?? 1))
 
         // range property (array format: [min, max])
         if let range = component.rawData["range"] as? [Double], range.count == 2 {
@@ -52,8 +60,10 @@ public struct SliderConverter {
             result = AnyView(result.disabled(true))
         }
 
-        // onValueChange / onValueChanged handler
-        let handler = component.onValueChange ?? component.rawData["onValueChanged"] as? String
+        // onValueChange handler (onValueChanged is the definitions
+        // alias — L0 fallback only)
+        let handler = component.onValueChange
+            ?? (component.isNormalized ? nil : component.rawData["onValueChanged"] as? String)
         if let handler = handler,
            let _ = DynamicEventHelper.extractPropertyName(from: handler) {
             // Determine the binding property to observe

@@ -264,8 +264,12 @@ public struct DynamicModifierHelper {
     // MARK: - 9. Opacity
 
     public static func applyOpacity(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        // Check for binding expression in opacity or alpha
-        let opacityStr = component.rawData["opacity"] as? String ?? component.rawData["alpha"] as? String
+        // Check for binding expression in opacity (alpha is the
+        // definitions alias — consulted only for raw L0 layouts)
+        var opacityStr = component.rawData["opacity"] as? String
+        if opacityStr == nil && !component.isNormalized {
+            opacityStr = component.rawData["alpha"] as? String
+        }
         if let opacityStr = opacityStr,
            opacityStr.hasPrefix("@{") && opacityStr.hasSuffix("}") {
             let propName = String(opacityStr.dropFirst(2).dropLast(1))
@@ -289,7 +293,7 @@ public struct DynamicModifierHelper {
         if let opacity = component.opacity {
             return AnyView(view.opacity(Double(opacity)))
         }
-        if let alpha = component.alpha {
+        if let alpha = component.alpha, !component.isNormalized {
             return AnyView(view.opacity(Double(alpha)))
         }
         if component.visibility == "invisible" {

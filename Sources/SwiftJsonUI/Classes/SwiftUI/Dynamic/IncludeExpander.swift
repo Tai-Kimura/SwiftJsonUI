@@ -245,7 +245,11 @@ public class IncludeExpander {
         for path in possiblePaths {
             if fm.fileExists(atPath: path),
                let data = try? Data(contentsOf: URL(fileURLWithPath: path)),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+               var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                // Included files carry their own `$jui` file-root marker
+                // when distributed normalized — it's metadata, not an
+                // attribute of the include host
+                _ = JsonUINormalization.consumeMarker(&json)
                 // Apply styles to included JSON
                 let processedJSON = StyleProcessor.processStyles(json)
                 Logger.debug("[IncludeExpander] Loaded include from: \(path)")
@@ -255,7 +259,8 @@ public class IncludeExpander {
 
         // Try loading from bundle
         if let data = JSONLayoutLoader.loadJSON(named: includePath),
-           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+           var json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            _ = JsonUINormalization.consumeMarker(&json)
             let processedJSON = StyleProcessor.processStyles(json)
             Logger.debug("[IncludeExpander] Loaded include from bundle: \(includePath)")
             return processedJSON

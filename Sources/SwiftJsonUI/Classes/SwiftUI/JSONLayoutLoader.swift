@@ -39,7 +39,12 @@ public class JSONLayoutLoader {
         guard let data = loadJSON(named: name) else { return nil }
 
         do {
-            if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+            if var jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                // `$jui` L1 marker: alias spellings were already
+                // canonicalized by `jui build` — strip the marker and
+                // take the canonical-only path
+                let normalized = JsonUINormalization.consumeMarker(&jsonObject)
+
                 // Apply styles first
                 var processedJSON = StyleProcessor.processStyles(jsonObject)
 
@@ -49,6 +54,7 @@ public class JSONLayoutLoader {
 
                 let processedData = try JSONSerialization.data(withJSONObject: processedJSON, options: [])
                 let decoder = JSONDecoder()
+                JsonUINormalization.apply(to: decoder, normalized: normalized)
                 let component = try decoder.decode(DynamicComponent.self, from: processedData)
 
                 // Cache the result
@@ -96,10 +102,16 @@ public class JSONLayoutLoader {
     }
 
     /// Decode a processed JSON dictionary into a DynamicComponent.
+    /// Honors the `$jui` L1 normalization marker (stripped before
+    /// decoding; nested components expose `isNormalized`).
     public static func decodeComponent(from json: [String: Any]) -> DynamicComponent? {
         do {
+            var json = json
+            let normalized = JsonUINormalization.consumeMarker(&json)
             let data = try JSONSerialization.data(withJSONObject: json, options: [])
-            return try JSONDecoder().decode(DynamicComponent.self, from: data)
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: normalized)
+            return try decoder.decode(DynamicComponent.self, from: data)
         } catch {
             Logger.debug("[JSONLayoutLoader] Error decoding component: \(error)")
             return nil

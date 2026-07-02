@@ -25,8 +25,10 @@ public struct TabViewConverter {
     ) -> AnyView {
         let tabs = component.tabs ?? []
 
-        // Resolve selectedIndex binding
+        // Resolve selectedIndex binding (selectedTabIndex is the
+        // definitions alias — L0 fallback only)
         let selectedIndexRaw = component.rawData["selectedIndex"] as? String
+            ?? (component.isNormalized ? nil : component.rawData["selectedTabIndex"] as? String)
         let hasSelectionBinding = selectedIndexRaw != nil
             && selectedIndexRaw!.hasPrefix("@{") && selectedIndexRaw!.hasSuffix("}")
         let selectionBinding: SwiftUI.Binding<Int> = {
@@ -53,9 +55,16 @@ public struct TabViewConverter {
         // Resolve tabBarBackground color
         let tabBarBackground: Color? = DynamicHelpers.getColor(component.tabBarBackground, data: data)
 
-        // Resolve onTabChange callback
+        // Resolve tab-change callback. onValueChange is the canonical
+        // name; onTabChange / onPageChanged are the definitions aliases
+        // (consulted only for raw L0 layouts).
         var onTabChangeCallback: ((Int) -> Void)? = nil
-        if let onTabChangeRaw = component.onTabChange,
+        let tabChangeRaw = component.onValueChange
+            ?? (component.isNormalized
+                ? nil
+                : (component.onTabChange
+                    ?? component.rawData["onPageChanged"] as? String))
+        if let onTabChangeRaw = tabChangeRaw,
            let propName = DynamicEventHelper.extractPropertyName(from: onTabChangeRaw) {
             onTabChangeCallback = data[propName] as? ((Int) -> Void)
         }

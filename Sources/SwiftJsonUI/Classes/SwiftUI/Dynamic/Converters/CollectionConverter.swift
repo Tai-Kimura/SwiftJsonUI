@@ -644,10 +644,17 @@ public struct CollectionConverter {
             return nil
         }()
 
-        // Resolve onPageChanged callback
+        // Resolve page-change callback. onValueChange is the canonical
+        // name; onValueChanged / onPageChanged are the definitions
+        // aliases (consulted only for raw L0 layouts).
         var onPageChangedCallback: ((Int) -> Void)? = nil
-        if let onPageChangedRaw = component.rawData["onPageChanged"] as? String,
-           let propName = DynamicEventHelper.extractPropertyName(from: onPageChangedRaw) {
+        let pageChangedRaw = component.onValueChange
+            ?? (component.isNormalized
+                ? nil
+                : (component.rawData["onValueChanged"] as? String
+                    ?? component.rawData["onPageChanged"] as? String))
+        if let pageChangedRaw = pageChangedRaw,
+           let propName = DynamicEventHelper.extractPropertyName(from: pageChangedRaw) {
             onPageChangedCallback = data[propName] as? ((Int) -> Void)
         }
 

@@ -15,7 +15,14 @@ public struct DynamicComponent: Decodable {
     
     /// Raw JSON data for this component (for custom attributes)
     public let rawData: [String: Any]
-    
+
+    /// True when this component came from an L1-normalized layout
+    /// (`$jui` marker — see `JsonUINormalization`). Alias attribute
+    /// spellings were already rewritten to canonical names, so
+    /// converters skip alias fallbacks. Propagated to every nested
+    /// component via `JSONDecoder.userInfo`.
+    public let isNormalized: Bool
+
     /// Check if this is a valid component (has type)
     public var isValid: Bool {
         return type != nil && !type!.isEmpty
@@ -360,12 +367,23 @@ public struct DynamicComponent: Decodable {
     
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        
+
+        // Normalization flag threaded from the layout root (see
+        // JsonUINormalization / JSONLayoutLoader)
+        self.isNormalized = decoder.userInfo[
+            JsonUINormalization.decoderUserInfoKey
+        ] as? Bool ?? false
+
         // Store raw JSON data for custom attributes
         // Try to decode as AnyCodable to get all properties including unknown ones
         if let singleValue = try? decoder.singleValueContainer(),
            let anyValue = try? singleValue.decode(AnyCodable.self),
-           let dict = anyValue.value as? [String: Any] {
+           var dict = anyValue.value as? [String: Any] {
+            // The `$jui` normalization marker is metadata, never an
+            // attribute — keep it out of rawData (it is stripped at the
+            // root by JSONLayoutLoader, but included subtrees may carry
+            // their own file-root marker)
+            dict.removeValue(forKey: JsonUINormalization.markerKey)
             self.rawData = dict
         } else {
             // Fallback: Extract all known keys into dictionary
@@ -375,6 +393,7 @@ public struct DynamicComponent: Decodable {
                     dict[key.stringValue] = value.value
                 }
             }
+            dict.removeValue(forKey: JsonUINormalization.markerKey)
             self.rawData = dict
         }
         
