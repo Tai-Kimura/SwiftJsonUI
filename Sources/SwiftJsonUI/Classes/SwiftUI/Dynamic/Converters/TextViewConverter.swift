@@ -220,7 +220,7 @@ public struct TextViewConverter {
 
         // --- 4. .overlay (border) ---
         // Note: background and cornerRadius are handled internally by TextViewWithPlaceholder
-        result = DynamicModifierHelper.applyBorder(result, component: component)
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
         // --- 5. apply_margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

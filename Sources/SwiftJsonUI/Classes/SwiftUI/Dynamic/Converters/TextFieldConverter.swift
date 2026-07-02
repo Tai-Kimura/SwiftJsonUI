@@ -180,7 +180,7 @@ public struct TextFieldConverter {
         }
 
         // --- 15. padding ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 16. frame_constraints ---
         result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
@@ -192,10 +192,10 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
         // --- 19. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 20. border ---
-        result = DynamicModifierHelper.applyBorder(result, component: component)
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
         // --- 21. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
@@ -288,7 +288,7 @@ public struct TextFieldConverter {
         }
 
         // --- 15. padding ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 16. frame_constraints ---
         result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
@@ -300,10 +300,10 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
         // --- 19. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 20. border ---
-        result = DynamicModifierHelper.applyBorder(result, component: component)
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
         // --- 21. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

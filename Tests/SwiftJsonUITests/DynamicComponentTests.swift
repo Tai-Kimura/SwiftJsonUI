@@ -616,5 +616,241 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.loadingImage, "loading")
         XCTAssertEqual(component.headers?["Authorization"], "Bearer token")
     }
+
+    // MARK: - Binding-capable Common Attribute Tolerance (Part 1)
+    //
+    // Common attrs declared `["number","binding"]` / `["boolean","binding"]`
+    // in the shared catalog must decode a `@{binding}` string WITHOUT throwing
+    // (the throw used to drop the node into the error placeholder and never
+    // resolve the value). The typed slot becomes nil for the binding spelling;
+    // the binding survives via rawData / typedAttributes(CommonAttributes).
+
+    func testCornerRadiusBindingDoesNotThrow() throws {
+        let json = """
+        {
+            "type": "View",
+            "id": "card",
+            "cornerRadius": "@{cardRadius}"
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        // Legacy typed slot stays nil for a binding spelling …
+        XCTAssertNil(component.cornerRadius)
+        // … but the binding survives raw and via typed CommonAttributes.
+        XCTAssertEqual(component.rawData["cornerRadius"] as? String, "@{cardRadius}")
+        XCTAssertEqual(
+            component.typedAttributes(CommonAttributes.self).cornerRadius?.bindingExpression,
+            "cardRadius"
+        )
+    }
+
+    func testWeightBindingDoesNotThrow() throws {
+        let json = """
+        {
+            "type": "Label",
+            "text": "flex",
+            "weight": "@{rowWeight}"
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        XCTAssertNil(component.weight)
+        XCTAssertEqual(component.rawData["weight"] as? String, "@{rowWeight}")
+    }
+
+    func testPaddingBindingDoesNotThrow() throws {
+        let json = """
+        {
+            "type": "View",
+            "paddingTop": "@{topPad}",
+            "paddingLeft": "@{leftPad}"
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        XCTAssertNil(component.paddingTop)
+        XCTAssertNil(component.paddingLeft)
+        XCTAssertEqual(
+            component.typedAttributes(CommonAttributes.self).paddingTop?.bindingExpression,
+            "topPad"
+        )
+    }
+
+    func testCanTapBindingDoesNotThrow() throws {
+        let json = """
+        {
+            "type": "View",
+            "canTap": "@{isTappable}"
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        XCTAssertNil(component.canTap)
+        XCTAssertEqual(
+            component.typedAttributes(CommonAttributes.self).canTap?.bindingExpression,
+            "isTappable"
+        )
+    }
+
+    func testBoundBindingChildSurvivesInsteadOfErrorPlaceholder() throws {
+        // Regression: a binding on a binding-capable common attr used to throw
+        // inside DynamicComponent.init(from:), degrading the child into the
+        // decode-error placeholder (or, pre-10.2.1, dropping it entirely).
+        let json = """
+        {
+            "type": "View",
+            "orientation": "vertical",
+            "child": [
+                { "type": "Label", "text": "header" },
+                {
+                    "type": "View",
+                    "id": "styled",
+                    "cornerRadius": "@{r}",
+                    "borderWidth": "@{bw}",
+                    "canTap": "@{tap}",
+                    "weight": "@{w}"
+                },
+                { "type": "Label", "text": "footer" }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+        let children = try XCTUnwrap(component.childComponents)
+
+        XCTAssertEqual(children.count, 3)
+        XCTAssertEqual(children[1].type, "View")
+        XCTAssertEqual(children[1].id, "styled")
+        XCTAssertNotEqual(children[1].type, DynamicDecodingHelper.decodeErrorType)
+    }
+
+    func testLiteralCommonAttrsUnchangedByToleranceChange() throws {
+        // The `try?` success path must return the same literal a plain typed
+        // decode did — non-binding layouts are byte-identical in behavior.
+        let json = """
+        {
+            "type": "View",
+            "cornerRadius": 12,
+            "borderWidth": 2,
+            "canTap": true,
+            "weight": 3,
+            "paddingTop": 8,
+            "minWidth": 100,
+            "aspectWidth": 16,
+            "widthWeight": 0.5,
+            "alignTop": true,
+            "centerInParent": false,
+            "lines": 2,
+            "spacing": 4
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        XCTAssertEqual(component.cornerRadius, 12)
+        XCTAssertEqual(component.borderWidth, 2)
+        XCTAssertEqual(component.canTap, true)
+        XCTAssertEqual(component.weight, 3)
+        XCTAssertEqual(component.paddingTop, 8)
+        XCTAssertEqual(component.minWidth, 100)
+        XCTAssertEqual(component.aspectWidth, 16)
+        XCTAssertEqual(component.widthWeight, 0.5)
+        XCTAssertEqual(component.alignTop, true)
+        XCTAssertEqual(component.centerInParent, false)
+        XCTAssertEqual(component.lines, 2)
+        XCTAssertEqual(component.spacing, 4)
+    }
+
+    // MARK: - Binding-capable Common Attribute Resolution (Part 2)
+    //
+    // For attrs with a concrete dynamic render helper, a bound value must
+    // actually resolve against `data` (not merely "not crash"). These exercise
+    // the DynamicHelpers resolvers the render helpers route through.
+
+    func testResolveNumberResolvesCornerRadiusBindingFromData() throws {
+        let json = """
+        { "type": "View", "cornerRadius": "@{cardRadius}" }
+        """.data(using: .utf8)!
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        let common = component.typedAttributes(CommonAttributes.self)
+        let data: [String: Any] = ["cardRadius": 16.0]
+
+        let resolved = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data)
+        XCTAssertEqual(resolved, 16)
+    }
+
+    func testResolveNumberResolvesPaddingBindingFromData() throws {
+        let json = """
+        { "type": "View", "paddingTop": "@{topPad}" }
+        """.data(using: .utf8)!
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        let common = component.typedAttributes(CommonAttributes.self)
+        // Int in data (layouts often store Ints) must resolve to CGFloat.
+        let data: [String: Any] = ["topPad": 24]
+
+        let resolved = DynamicHelpers.resolveNumber(common.paddingTop, legacy: component.paddingTop, data: data)
+        XCTAssertEqual(resolved, 24)
+    }
+
+    func testResolveNumberFallsBackToLiteralAndLegacy() throws {
+        // Literal: typed slot has the value, no binding.
+        let litJson = """
+        { "type": "View", "cornerRadius": 10 }
+        """.data(using: .utf8)!
+        let lit = try JSONDecoder().decode(DynamicComponent.self, from: litJson)
+        let litCommon = lit.typedAttributes(CommonAttributes.self)
+        XCTAssertEqual(DynamicHelpers.resolveNumber(litCommon.cornerRadius, legacy: lit.cornerRadius, data: [:]), 10)
+
+        // Binding but unresolved (key absent) → legacy (nil here).
+        let bindJson = """
+        { "type": "View", "cornerRadius": "@{missing}" }
+        """.data(using: .utf8)!
+        let bind = try JSONDecoder().decode(DynamicComponent.self, from: bindJson)
+        let bindCommon = bind.typedAttributes(CommonAttributes.self)
+        XCTAssertNil(DynamicHelpers.resolveNumber(bindCommon.cornerRadius, legacy: bind.cornerRadius, data: [:]))
+    }
+
+    func testResolveBoolResolvesCanTapBindingFromData() throws {
+        let json = """
+        { "type": "View", "canTap": "@{isTappable}" }
+        """.data(using: .utf8)!
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        let common = component.typedAttributes(CommonAttributes.self)
+
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(common.canTap, legacy: component.canTap, data: ["isTappable": true]),
+            true
+        )
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(common.canTap, legacy: component.canTap, data: ["isTappable": false]),
+            false
+        )
+    }
+
+    func testResolveWeightResolvesBindingAndLiteral() throws {
+        // Binding resolves from data.
+        let bindJson = """
+        { "type": "Label", "text": "x", "weight": "@{rowWeight}" }
+        """.data(using: .utf8)!
+        let bind = try JSONDecoder().decode(DynamicComponent.self, from: bindJson)
+        XCTAssertEqual(DynamicHelpers.resolveWeight(from: bind, data: ["rowWeight": 2]), 2)
+        // Unresolved binding → legacy (nil).
+        XCTAssertNil(DynamicHelpers.resolveWeight(from: bind, data: [:]))
+
+        // Literal weight resolves to the same value with no binding.
+        let litJson = """
+        { "type": "Label", "text": "x", "weight": 5 }
+        """.data(using: .utf8)!
+        let lit = try JSONDecoder().decode(DynamicComponent.self, from: litJson)
+        XCTAssertEqual(DynamicHelpers.resolveWeight(from: lit, data: [:]), 5)
+    }
 }
 #endif

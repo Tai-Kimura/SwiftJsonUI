@@ -414,12 +414,20 @@ public struct DynamicComponent: Decodable {
         edgeInset = try container.decodeIfPresent(AnyCodable.self, forKey: .edgeInset)
         underline = try container.decodeIfPresent(Bool.self, forKey: .underline)
         strikethrough = try container.decodeIfPresent(Bool.self, forKey: .strikethrough)
-        lineHeightMultiple = try container.decodeIfPresent(CGFloat.self, forKey: .lineHeightMultiple)
+        // These binding-capable attrs are declared `["number","binding"]` /
+        // `["boolean","binding"]` in the shared catalog (see generated
+        // LabelAttributes etc.). A `"@{binding}"` string makes a typed
+        // decodeIfPresent THROW (key present, wrong type) — `try?` swallows
+        // the throw so the typed slot becomes nil while the binding survives
+        // via rawData / typedAttributes and is resolved at render time. A
+        // literal still decodes identically, so non-binding layouts are
+        // byte-unchanged.
+        lineHeightMultiple = (try? container.decodeIfPresent(CGFloat.self, forKey: .lineHeightMultiple)) ?? nil
         autoShrink = try container.decodeIfPresent(Bool.self, forKey: .autoShrink)
-        minimumScaleFactor = try container.decodeIfPresent(CGFloat.self, forKey: .minimumScaleFactor)
+        minimumScaleFactor = (try? container.decodeIfPresent(CGFloat.self, forKey: .minimumScaleFactor)) ?? nil
         textShadow = try container.decodeIfPresent(AnyCodable.self, forKey: .textShadow)
-        linkable = try container.decodeIfPresent(Bool.self, forKey: .linkable)
-        lines = try container.decodeIfPresent(Int.self, forKey: .lines)
+        linkable = (try? container.decodeIfPresent(Bool.self, forKey: .linkable)) ?? nil
+        lines = (try? container.decodeIfPresent(Int.self, forKey: .lines)) ?? nil
         lineBreakMode = try container.decodeIfPresent(String.self, forKey: .lineBreakMode)
 
         // Size properties - use helper for decoding
@@ -442,35 +450,38 @@ public struct DynamicComponent: Decodable {
         rightMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .rightMargin)
         topMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .topMargin)
         bottomMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .bottomMargin)
-        paddingLeft = try container.decodeIfPresent(CGFloat.self, forKey: .paddingLeft)
-            ?? (try container.decodeIfPresent(CGFloat.self, forKey: .leftPadding))
-        paddingRight = try container.decodeIfPresent(CGFloat.self, forKey: .paddingRight)
-            ?? (try container.decodeIfPresent(CGFloat.self, forKey: .rightPadding))
-        paddingTop = try container.decodeIfPresent(CGFloat.self, forKey: .paddingTop)
-            ?? (try container.decodeIfPresent(CGFloat.self, forKey: .topPadding))
-        paddingBottom = try container.decodeIfPresent(CGFloat.self, forKey: .paddingBottom)
-            ?? (try container.decodeIfPresent(CGFloat.self, forKey: .bottomPadding))
+        // Individual padding overrides are declared `["number","binding"]`;
+        // a `@{binding}` spelling must not throw (see comment above). Binding
+        // resolution happens in DynamicModifierHelper.applyPadding via data.
+        paddingLeft = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingLeft)) ?? nil)
+            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .leftPadding)) ?? nil)
+        paddingRight = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingRight)) ?? nil)
+            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .rightPadding)) ?? nil)
+        paddingTop = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingTop)) ?? nil)
+            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .topPadding)) ?? nil)
+        paddingBottom = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingBottom)) ?? nil)
+            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .bottomPadding)) ?? nil)
         
         // RTL-aware padding/margin
-        paddingStart = try container.decodeIfPresent(CGFloat.self, forKey: .paddingStart)
-        paddingEnd = try container.decodeIfPresent(CGFloat.self, forKey: .paddingEnd)
+        paddingStart = (try? container.decodeIfPresent(CGFloat.self, forKey: .paddingStart)) ?? nil
+        paddingEnd = (try? container.decodeIfPresent(CGFloat.self, forKey: .paddingEnd)) ?? nil
         startMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .startMargin)
         endMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .endMargin)
         // Min/Max margin constraints
-        minTopMargin = try container.decodeIfPresent(CGFloat.self, forKey: .minTopMargin)
-        maxTopMargin = try container.decodeIfPresent(CGFloat.self, forKey: .maxTopMargin)
-        minBottomMargin = try container.decodeIfPresent(CGFloat.self, forKey: .minBottomMargin)
-        maxBottomMargin = try container.decodeIfPresent(CGFloat.self, forKey: .maxBottomMargin)
-        minLeftMargin = try container.decodeIfPresent(CGFloat.self, forKey: .minLeftMargin)
-        maxLeftMargin = try container.decodeIfPresent(CGFloat.self, forKey: .maxLeftMargin)
-        minRightMargin = try container.decodeIfPresent(CGFloat.self, forKey: .minRightMargin)
-        maxRightMargin = try container.decodeIfPresent(CGFloat.self, forKey: .maxRightMargin)
+        minTopMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minTopMargin)) ?? nil
+        maxTopMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxTopMargin)) ?? nil
+        minBottomMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minBottomMargin)) ?? nil
+        maxBottomMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxBottomMargin)) ?? nil
+        minLeftMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minLeftMargin)) ?? nil
+        maxLeftMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxLeftMargin)) ?? nil
+        minRightMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minRightMargin)) ?? nil
+        maxRightMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxRightMargin)) ?? nil
         insets = try container.decodeIfPresent(AnyCodable.self, forKey: .insets)
         insetHorizontal = try container.decodeIfPresent(CGFloat.self, forKey: .insetHorizontal)
         insetVertical = try container.decodeIfPresent(CGFloat.self, forKey: .insetVertical)
         horizontalScroll = try container.decodeIfPresent(Bool.self, forKey: .horizontalScroll)
         columnSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .columnSpacing)
-        lineSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .lineSpacing)
+        lineSpacing = (try? container.decodeIfPresent(CGFloat.self, forKey: .lineSpacing)) ?? nil
         itemSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .itemSpacing)
         contentInsets = try container.decodeIfPresent(AnyCodable.self, forKey: .contentInsets)
         tint = try container.decodeIfPresent(String.self, forKey: .tint)
@@ -487,7 +498,7 @@ public struct DynamicComponent: Decodable {
         minZoom = try container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
         highlightBackground = try container.decodeIfPresent(String.self, forKey: .highlightBackground)
         highlighted = try? container.decodeIfPresent(Bool.self, forKey: .highlighted)
-        canTap = try container.decodeIfPresent(Bool.self, forKey: .canTap)
+        canTap = (try? container.decodeIfPresent(Bool.self, forKey: .canTap)) ?? nil
         events = try container.decodeIfPresent(AnyCodable.self, forKey: .events)
         partialAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .partialAttributes)
         highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
@@ -545,9 +556,10 @@ public struct DynamicComponent: Decodable {
         // Switch/Toggle event
         onValueChange = try container.decodeIfPresent(String.self, forKey: .onValueChange)
         
-        // Style properties
-        cornerRadius = try container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)
-        borderWidth = try container.decodeIfPresent(CGFloat.self, forKey: .borderWidth)
+        // Style properties (cornerRadius/borderWidth are number|binding —
+        // tolerate a `@{binding}` string, resolved at render via data).
+        cornerRadius = (try? container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)) ?? nil
+        borderWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .borderWidth)) ?? nil
         borderColor = try container.decodeIfPresent(String.self, forKey: .borderColor)
         // Use try? because these can be binding strings like "@{sendButtonOpacity}"
         // decodeIfPresent throws (not returns nil) when the key exists but has wrong type
@@ -556,22 +568,24 @@ public struct DynamicComponent: Decodable {
         hidden = try? container.decodeIfPresent(Bool.self, forKey: .hidden)
         visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
         shadow = try container.decodeIfPresent(AnyCodable.self, forKey: .shadow)
-        clipToBounds = try container.decodeIfPresent(Bool.self, forKey: .clipToBounds)
+        clipToBounds = (try? container.decodeIfPresent(Bool.self, forKey: .clipToBounds)) ?? nil
         
         // Size constraints
-        minWidth = try container.decodeIfPresent(CGFloat.self, forKey: .minWidth)
-        maxWidth = try container.decodeIfPresent(CGFloat.self, forKey: .maxWidth)
-        minHeight = try container.decodeIfPresent(CGFloat.self, forKey: .minHeight)
-        maxHeight = try container.decodeIfPresent(CGFloat.self, forKey: .maxHeight)
+        minWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .minWidth)) ?? nil
+        maxWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxWidth)) ?? nil
+        minHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .minHeight)) ?? nil
+        maxHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxHeight)) ?? nil
+        // idealWidth/idealHeight are plain `number` (no binding) — leave typed.
         idealWidth = try container.decodeIfPresent(CGFloat.self, forKey: .idealWidth)
         idealHeight = try container.decodeIfPresent(CGFloat.self, forKey: .idealHeight)
-        aspectWidth = try container.decodeIfPresent(CGFloat.self, forKey: .aspectWidth)
-        aspectHeight = try container.decodeIfPresent(CGFloat.self, forKey: .aspectHeight)
+        aspectWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .aspectWidth)) ?? nil
+        aspectHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .aspectHeight)) ?? nil
         
-        // Interaction
-        userInteractionEnabled = try container.decodeIfPresent(Bool.self, forKey: .userInteractionEnabled)
-        centerInParent = try container.decodeIfPresent(Bool.self, forKey: .centerInParent)
-        weight = try container.decodeIfPresent(CGFloat.self, forKey: .weight)
+        // Interaction (userInteractionEnabled/centerInParent are
+        // boolean|binding, weight is number|binding — tolerate `@{binding}`).
+        userInteractionEnabled = (try? container.decodeIfPresent(Bool.self, forKey: .userInteractionEnabled)) ?? nil
+        centerInParent = (try? container.decodeIfPresent(Bool.self, forKey: .centerInParent)) ?? nil
+        weight = (try? container.decodeIfPresent(CGFloat.self, forKey: .weight)) ?? nil
         enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
         // Z-order
         indexBelow = try container.decodeIfPresent(String.self, forKey: .indexBelow)
@@ -656,7 +670,7 @@ public struct DynamicComponent: Decodable {
         } else {
             columns = nil  // Binding string will be read from rawData
         }
-        spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing)
+        spacing = (try? container.decodeIfPresent(CGFloat.self, forKey: .spacing)) ?? nil
         contentInsetAdjustmentBehavior = try container.decodeIfPresent(String.self, forKey: .contentInsetAdjustmentBehavior)
         showsHorizontalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsHorizontalScrollIndicator)
         showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
@@ -707,16 +721,17 @@ public struct DynamicComponent: Decodable {
         // Layout properties
         gravity = DynamicDecodingHelper.decodeGravity(from: container)
         alignment = DynamicDecodingHelper.gravityToAlignment(gravity)
-        widthWeight = try container.decodeIfPresent(Double.self, forKey: .widthWeight)
-        heightWeight = try container.decodeIfPresent(Double.self, forKey: .heightWeight)
+        widthWeight = (try? container.decodeIfPresent(Double.self, forKey: .widthWeight)) ?? nil
+        heightWeight = (try? container.decodeIfPresent(Double.self, forKey: .heightWeight)) ?? nil
         
         // Relative positioning
-        alignTop = try container.decodeIfPresent(Bool.self, forKey: .alignTop)
-        alignBottom = try container.decodeIfPresent(Bool.self, forKey: .alignBottom)
-        alignLeft = try container.decodeIfPresent(Bool.self, forKey: .alignLeft)
-        alignRight = try container.decodeIfPresent(Bool.self, forKey: .alignRight)
-        centerHorizontal = try container.decodeIfPresent(Bool.self, forKey: .centerHorizontal)
-        centerVertical = try container.decodeIfPresent(Bool.self, forKey: .centerVertical)
+        // Relative positioning booleans are all boolean|binding — tolerate.
+        alignTop = (try? container.decodeIfPresent(Bool.self, forKey: .alignTop)) ?? nil
+        alignBottom = (try? container.decodeIfPresent(Bool.self, forKey: .alignBottom)) ?? nil
+        alignLeft = (try? container.decodeIfPresent(Bool.self, forKey: .alignLeft)) ?? nil
+        alignRight = (try? container.decodeIfPresent(Bool.self, forKey: .alignRight)) ?? nil
+        centerHorizontal = (try? container.decodeIfPresent(Bool.self, forKey: .centerHorizontal)) ?? nil
+        centerVertical = (try? container.decodeIfPresent(Bool.self, forKey: .centerVertical)) ?? nil
         alignLeftOfView = try container.decodeIfPresent(String.self, forKey: .alignLeftOfView)
         alignRightOfView = try container.decodeIfPresent(String.self, forKey: .alignRightOfView)
         alignTopOfView = try container.decodeIfPresent(String.self, forKey: .alignTopOfView)

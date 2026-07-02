@@ -79,8 +79,8 @@ public struct ButtonConverter {
             buttonHeight = -1
         }
 
-        // weight handling
-        if let weight = component.weight, weight > 0 {
+        // weight handling (number|binding — resolve `@{binding}` from data)
+        if let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
             let effectiveOrientation = parentOrientation
                 ?? component.rawAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {

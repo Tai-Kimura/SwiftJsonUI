@@ -35,8 +35,9 @@ public struct WeightedStackContainer: View {
     // Build children array with weights for horizontal orientation
     private func buildHorizontalChildren() -> [(view: AnyView, weight: CGFloat)] {
         children.map { child in
-            let weightValue = child.weight ?? 0
-            let widthWeightValue = child.widthWeight ?? 0
+            // weight / widthWeight are number|binding — resolve `@{binding}` from data.
+            let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
+            let widthWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).widthWeight, legacy: child.widthWeight.map { CGFloat($0) }, data: data) ?? 0
             let weight = CGFloat(max(weightValue, widthWeightValue))
 
             var childData = data
@@ -66,8 +67,9 @@ public struct WeightedStackContainer: View {
     // Build children array with weights for vertical orientation
     private func buildVerticalChildren() -> [(view: AnyView, weight: CGFloat)] {
         children.map { child in
-            let weightValue = child.weight ?? 0
-            let heightWeightValue = child.heightWeight ?? 0
+            // weight / heightWeight are number|binding — resolve `@{binding}` from data.
+            let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
+            let heightWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).heightWeight, legacy: child.heightWeight.map { CGFloat($0) }, data: data) ?? 0
             let weight = CGFloat(max(weightValue, heightWeightValue))
 
             var childData = data

@@ -101,7 +101,8 @@ public struct TextConverter {
         }
 
         // --- 5. weight frame ---
-        if let weight = component.weight, weight > 0 {
+        // weight is number|binding — resolve a `@{binding}` from data.
+        if let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
             let effectiveOrientation = parentOrientation
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
@@ -122,7 +123,7 @@ public struct TextConverter {
         }
 
         // --- 6. padding (paddings / paddingTop etc.) ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 7. frame_size (width / height) ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
@@ -134,7 +135,7 @@ public struct TextConverter {
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
         // --- 10. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 11. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

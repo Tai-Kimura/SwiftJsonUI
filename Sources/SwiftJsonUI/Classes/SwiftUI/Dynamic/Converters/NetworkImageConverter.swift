@@ -76,13 +76,13 @@ public struct NetworkImageConverter {
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
         // --- 3. apply_padding (paddings/paddingTop etc.) ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 4. .background ---
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
         // --- 5. .cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 6. apply_margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

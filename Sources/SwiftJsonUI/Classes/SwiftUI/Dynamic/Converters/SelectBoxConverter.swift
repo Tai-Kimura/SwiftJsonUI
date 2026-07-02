@@ -199,7 +199,7 @@ public struct SelectBoxConverter {
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
         // --- 4. .overlay (border) ---
-        result = DynamicModifierHelper.applyBorder(result, component: component)
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
         // --- 5. apply_margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

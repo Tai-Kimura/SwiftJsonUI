@@ -59,7 +59,7 @@ public struct DividerConverter {
         }
 
         // --- 3. padding ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 4. frame_size (explicit, skipping height since already applied) ---
         // Only apply if width is set explicitly and not already handled above
@@ -69,10 +69,10 @@ public struct DividerConverter {
         result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
 
         // --- 6. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 7. border ---
-        result = DynamicModifierHelper.applyBorder(result, component: component)
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
         // --- 8. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

@@ -225,15 +225,18 @@ final class DynamicDecodingHelperTests: XCTestCase {
     // shape and the failure is debuggable.
 
     func testMalformedChildBecomesErrorPlaceholderInsteadOfDropping() throws {
-        // `lines` is a plain Int decode — an object value makes the child's
-        // DynamicComponent.init(from:) throw.
+        // `idealWidth` is a plain (non-binding) number decode — an object
+        // value makes the child's DynamicComponent.init(from:) throw. (Note:
+        // binding-capable numeric attrs like `lines`/`cornerRadius` are decoded
+        // tolerantly and no longer throw on a wrong-typed value, so an attr
+        // that is still a hard typed decode is used to exercise containment.)
         let json = """
         {
             "type": "View",
             "orientation": "vertical",
             "child": [
                 { "type": "Label", "text": "header" },
-                { "type": "Label", "id": "broken_label", "lines": {"bad": true} },
+                { "type": "Label", "id": "broken_label", "idealWidth": {"bad": true} },
                 { "type": "Label", "text": "footer" }
             ]
         }
@@ -258,7 +261,7 @@ final class DynamicDecodingHelperTests: XCTestCase {
         let json = """
         {
             "type": "View",
-            "child": { "type": "Label", "lines": {"bad": true} }
+            "child": { "type": "Label", "idealWidth": {"bad": true} }
         }
         """.data(using: .utf8)!
 

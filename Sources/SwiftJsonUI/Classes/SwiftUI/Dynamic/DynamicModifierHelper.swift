@@ -13,7 +13,7 @@ public struct DynamicModifierHelper {
 
     // MARK: - 1. Padding (internal spacing)
 
-    public static func applyPadding(_ view: AnyView, component: DynamicComponent) -> AnyView {
+    public static func applyPadding(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
         var result = view
 
         // 1. Base padding (paddings array or scalar "padding"/"paddings")
@@ -44,13 +44,17 @@ public struct DynamicModifierHelper {
         }
 
         // 2. Individual padding overrides (STACKING, not replacing)
-        //    Tool: .padding(.leading, N) added separately after base padding
-        let startPad = component.paddingStart
-        let endPad = component.paddingEnd
-        let leftPad = component.paddingLeft
-        let rightPad = component.paddingRight
-        let topPad = component.paddingTop
-        let bottomPad = component.paddingBottom
+        //    Tool: .padding(.leading, N) added separately after base padding.
+        //    Each override is number|binding — a `@{binding}` spelling left the
+        //    legacy typed slot nil during decode, so resolve it from the typed
+        //    CommonAttributes against `data` (falling back to the legacy value).
+        let common = component.typedAttributes(CommonAttributes.self)
+        let startPad = DynamicHelpers.resolveNumber(common.paddingStart, legacy: component.paddingStart, data: data)
+        let endPad = DynamicHelpers.resolveNumber(common.paddingEnd, legacy: component.paddingEnd, data: data)
+        let leftPad = DynamicHelpers.resolveNumber(common.paddingLeft ?? common.leftPadding, legacy: component.paddingLeft, data: data)
+        let rightPad = DynamicHelpers.resolveNumber(common.paddingRight ?? common.rightPadding, legacy: component.paddingRight, data: data)
+        let topPad = DynamicHelpers.resolveNumber(common.paddingTop ?? common.topPadding, legacy: component.paddingTop, data: data)
+        let bottomPad = DynamicHelpers.resolveNumber(common.paddingBottom ?? common.bottomPadding, legacy: component.paddingBottom, data: data)
 
         if let v = startPad ?? leftPad, v != 0 {
             result = AnyView(result.padding(.leading, v))
@@ -234,17 +238,25 @@ public struct DynamicModifierHelper {
 
     // MARK: - 6. Corner Radius
 
-    public static func applyCornerRadius(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        guard let cornerRadius = component.cornerRadius, cornerRadius > 0 else { return view }
+    public static func applyCornerRadius(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        // cornerRadius is number|binding — resolve a `@{binding}` from data
+        // (the legacy typed slot is nil for the binding spelling).
+        let common = component.typedAttributes(CommonAttributes.self)
+        guard let cornerRadius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data),
+              cornerRadius > 0 else { return view }
         return AnyView(view.cornerRadius(cornerRadius))
     }
 
     // MARK: - 7. Border
 
     public static func applyBorder(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        guard let borderWidth = component.borderWidth, borderWidth > 0 else { return view }
+        // borderWidth and cornerRadius are both number|binding — resolve any
+        // `@{binding}` spelling from data before drawing the stroke overlay.
+        let common = component.typedAttributes(CommonAttributes.self)
+        guard let borderWidth = DynamicHelpers.resolveNumber(common.borderWidth, legacy: component.borderWidth, data: data),
+              borderWidth > 0 else { return view }
         let borderColor = DynamicHelpers.getColor(component.borderColor, data: data) ?? .gray
-        let radius = component.cornerRadius ?? 0
+        let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data) ?? 0
         return AnyView(view.overlay(
             RoundedRectangle(cornerRadius: radius)
                 .stroke(borderColor, lineWidth: borderWidth)
@@ -613,7 +625,7 @@ public struct DynamicModifierHelper {
 
         // 1. padding (skipped for relative positioning containers)
         if !skipPadding {
-            result = applyPadding(result, component: component)
+            result = applyPadding(result, component: component, data: data)
         }
         // 2. frame constraints
         result = applyFrameConstraints(result, component: component)
@@ -626,7 +638,7 @@ public struct DynamicModifierHelper {
         // 5. background
         result = applyBackground(result, component: component, data: data)
         // 6. cornerRadius
-        result = applyCornerRadius(result, component: component)
+        result = applyCornerRadius(result, component: component, data: data)
         // 7. border
         result = applyBorder(result, component: component, data: data)
         // 8. margins

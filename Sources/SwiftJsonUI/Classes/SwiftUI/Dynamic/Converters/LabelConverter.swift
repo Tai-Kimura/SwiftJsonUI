@@ -155,7 +155,8 @@ public struct LabelConverter {
         }
 
         // --- 5. weight frame ---
-        if let weight = component.weight, weight > 0 {
+        // weight is number|binding — resolve a `@{binding}` from data.
+        if let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
             let effectiveOrientation = parentOrientation
                 ?? component.rawAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {
@@ -174,7 +175,7 @@ public struct LabelConverter {
         }
 
         // --- 6. apply_padding (paddings/paddingTop etc.) ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 7. apply_frame_size (width/height) ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
@@ -186,7 +187,7 @@ public struct LabelConverter {
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
         // --- 10. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 11. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

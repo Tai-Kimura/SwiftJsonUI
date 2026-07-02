@@ -345,6 +345,104 @@ public struct DynamicHelpers {
             return .regular
         }
     }
+
+    // MARK: - Binding-capable common-attribute resolution
+    //
+    // The generated `CommonAttributes` (built from the component's raw JSON via
+    // `component.typedAttributes(...)`) exposes number|binding / boolean|binding
+    // attrs as `AttrValue<Double>?` / `AttrValue<Bool>?`. When the layout wrote
+    // a `@{binding}` string, the legacy typed slot on `DynamicComponent` is nil
+    // (the tolerant decode swallowed the type mismatch); the binding must be
+    // resolved from `data` at render time. These mirror
+    // CollectionConverter.resolveGlobalColumns' `.value` / `.binding` handling.
+
+    /// Resolve an `AttrValue<Double>?` (number|binding) to a CGFloat.
+    /// - `.value(n)`   → the literal.
+    /// - `.binding(e)` → `data[e]` unwrapped (Double / CGFloat / Int / NSNumber /
+    ///   `SwiftUI.Binding<Double>`), or `legacy` when the binding is unresolved.
+    /// - `nil`         → `legacy` (the value the legacy typed decode captured for
+    ///   a plain-number layout).
+    public static func resolveNumber(
+        _ attr: AttrValue<Double>?,
+        legacy: CGFloat?,
+        data: [String: Any]
+    ) -> CGFloat? {
+        switch attr {
+        case .some(.value(let number)):
+            return CGFloat(number)
+        case .some(.binding(let expression)):
+            if let resolved = unwrapDouble(data[expression]) {
+                return CGFloat(resolved)
+            }
+            return legacy
+        case nil:
+            return legacy
+        }
+    }
+
+    /// Resolve an `AttrValue<Bool>?` (boolean|binding) to a Bool?.
+    /// Same shape as `resolveNumber`; a `@{!prop}` negation is honored.
+    public static func resolveBool(
+        _ attr: AttrValue<Bool>?,
+        legacy: Bool?,
+        data: [String: Any]
+    ) -> Bool? {
+        switch attr {
+        case .some(.value(let flag)):
+            return flag
+        case .some(.binding(let expression)):
+            var name = expression
+            var negate = false
+            if name.hasPrefix("!") {
+                negate = true
+                name = String(name.dropFirst())
+            }
+            if let binding = data[name] as? SwiftUI.Binding<Bool> {
+                return negate ? !binding.wrappedValue : binding.wrappedValue
+            }
+            if let value = data[name] as? Bool {
+                return negate ? !value : value
+            }
+            return legacy
+        case nil:
+            return legacy
+        }
+    }
+
+    /// Unwrap a data-dictionary value to a Double, handling
+    /// `SwiftUI.Binding<Double>` / `SwiftUI.Binding<Int>` and the plain numeric
+    /// types layouts store.
+    private static func unwrapDouble(_ raw: Any?) -> Double? {
+        guard let raw = raw else { return nil }
+        if let binding = raw as? SwiftUI.Binding<Double> { return binding.wrappedValue }
+        if let binding = raw as? SwiftUI.Binding<Int> { return Double(binding.wrappedValue) }
+        if let binding = raw as? SwiftUI.Binding<CGFloat> { return Double(binding.wrappedValue) }
+        if let d = raw as? Double { return d }
+        if let f = raw as? CGFloat { return Double(f) }
+        if let i = raw as? Int { return Double(i) }
+        if let n = raw as? NSNumber { return n.doubleValue }
+        return nil
+    }
+
+    /// Resolve the effective `weight` (number|binding) for a component.
+    /// `CommonAttributes.weight` is `AttrValue<Any>?` (passthrough coercion),
+    /// so a literal number arrives as `.value(<NSNumber/Int/Double>)` and a
+    /// `@{binding}` as `.binding(expr)`. Returns the resolved CGFloat, or the
+    /// legacy typed `component.weight` when there is no binding / it is
+    /// unresolved. Mirrors the weight read the WeightedStack / converters do.
+    public static func resolveWeight(from component: DynamicComponent, data: [String: Any]) -> CGFloat? {
+        let weightAttr = component.typedAttributes(CommonAttributes.self).weight
+        switch weightAttr {
+        case .some(.value(let raw)):
+            if let number = unwrapDouble(raw) { return CGFloat(number) }
+            return component.weight
+        case .some(.binding(let expression)):
+            if let number = unwrapDouble(data[expression]) { return CGFloat(number) }
+            return component.weight
+        case nil:
+            return component.weight
+        }
+    }
 }
 
 // MARK: - Conditional View Extension

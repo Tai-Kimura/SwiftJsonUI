@@ -34,6 +34,13 @@ public protocol JsonUIGeneratedAttributes {
     static var aliasMap: [String: String] { get }
 }
 
+// CommonAttributes is the shared (emitted-once) struct rather than a
+// per-component type, but it satisfies the same surface (init(json:
+// canonicalOnly:), declaredAttributes, aliasMap), so it can be built via
+// component.typedAttributes(CommonAttributes.self) to resolve
+// binding-capable common attrs (cornerRadius, weight, padding*, …) at
+// render time.
+extension CommonAttributes: JsonUIGeneratedAttributes {}
 extension BlurAttributes: JsonUIGeneratedAttributes {}
 extension ButtonAttributes: JsonUIGeneratedAttributes {}
 extension CheckAttributes: JsonUIGeneratedAttributes {}

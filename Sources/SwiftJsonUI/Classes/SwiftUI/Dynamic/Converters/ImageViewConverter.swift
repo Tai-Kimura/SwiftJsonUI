@@ -76,13 +76,13 @@ public struct ImageViewConverter {
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
         // --- 8. apply_padding ---
-        result = DynamicModifierHelper.applyPadding(result, component: component)
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 9. background ---
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
         // --- 10. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component)
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 11. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
