@@ -117,7 +117,15 @@ struct FixtureScreen: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         // Marker for the UITest runner: which fixture is on screen right now.
-        .accessibilityIdentifier("conformance_current_\(FixtureLoader.markerSafe(fixtureId))")
+        // The marker is its own (invisible, 1x1) accessibility element — an
+        // identifier on the wrapper itself would not surface as an element and
+        // would be pushed down onto the fixture content, clobbering its ids.
+        .overlay(alignment: .bottomTrailing) {
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("conformance_current_\(FixtureLoader.markerSafe(fixtureId))")
+        }
     }
 }
 

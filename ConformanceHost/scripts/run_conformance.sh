@@ -15,7 +15,11 @@
 #                        (default: /tmp/jsonui-conformance-ios)
 #   CONFORMANCE_FILTER   substring filter on fixture ids — everything else is
 #                        reported as skipped ("not executed in this run")
-#   SKIP_BUILD=1         reuse the last build (test-without-building)
+#
+# Note: always uses the `test` action (incremental rebuild is cheap).
+# `test-without-building` would ignore the TEST_RUNNER_* env overrides —
+# they are build-settings overrides and only reach the runner when the
+# test action evaluates build settings.
 #
 # Prerequisites: scripts/sync_fixtures.sh + scripts/generate_project.rb.
 #
@@ -43,21 +47,22 @@ fi
 rm -rf "$STAGING"
 mkdir -p "$STAGING"
 
-XCODEBUILD_ACTION=test
-if [[ "${SKIP_BUILD:-0}" == "1" ]]; then
-    XCODEBUILD_ACTION=test-without-building
+# TEST_RUNNER_* variables must be *environment variables of the xcodebuild
+# process* (not command-line build settings) to be forwarded into the test
+# runner's environment.
+export TEST_RUNNER_CONFORMANCE_STAGING_DIR="$STAGING"
+if [[ -n "${CONFORMANCE_FILTER:-}" ]]; then
+    export TEST_RUNNER_CONFORMANCE_FILTER="$CONFORMANCE_FILTER"
 fi
 
 set -x
-xcodebuild "$XCODEBUILD_ACTION" \
+xcodebuild test \
     -project "$HOST_DIR/ConformanceHost.xcodeproj" \
     -scheme ConformanceHost \
     -destination "$DESTINATION" \
     -derivedDataPath "$DERIVED_DATA" \
     -parallel-testing-enabled NO \
     -test-timeouts-enabled NO \
-    TEST_RUNNER_CONFORMANCE_STAGING_DIR="$STAGING" \
-    ${CONFORMANCE_FILTER:+TEST_RUNNER_CONFORMANCE_FILTER="$CONFORMANCE_FILTER"} \
     2>&1 | tail -40
 set +x
 
