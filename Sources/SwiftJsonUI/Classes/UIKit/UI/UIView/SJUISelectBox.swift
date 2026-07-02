@@ -63,11 +63,13 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         }
         
         set {
-            if let index = newValue {
+            if let index = newValue, items.indices.contains(index) {
                 self.didPickItem(row: index, inComponent: 0)
             } else {
+                // nil or out-of-range index clears the selection
+                _selectedIndex = nil
                 self.label.selected = !hasPrompt
-                self.label.applyAttributedText(hasPrompt ? items[0] : "")
+                self.label.applyAttributedText(hasPrompt ? (items.first ?? "") : "")
             }
         }
     }
@@ -387,6 +389,14 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
     }
     
     open func didPickItem(row: Int, inComponent component: Int) {
+        guard items.indices.contains(row) else {
+            // Out-of-range row (stale picker data / bad caller input): clear
+            // the selection instead of crashing on items[row]
+            _selectedIndex = nil
+            label.selected = !hasPrompt
+            label.applyAttributedText(hasPrompt ? (items.first ?? "") : "")
+            return
+        }
         _selectedIndex = row
         let text = items[row]
         label.selected = !hasPrompt || row != 0
