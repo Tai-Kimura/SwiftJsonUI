@@ -19,13 +19,11 @@ public struct ProgressConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
+        let attrs = component.typedAttributes(ProgressAttributes.self)
         // Progress value: check binding expression first, then static value
-        let progressExpr = component.rawData["progress"] as? String
         let progressValue: Double = {
             // Binding expression: @{propertyName}
-            if let expr = progressExpr,
-               expr.hasPrefix("@{") && expr.hasSuffix("}") {
-                let propName = String(expr.dropFirst(2).dropLast(1))
+            if let propName = attrs.progress?.bindingExpression {
                 return data[propName] as? Double ?? 0
             }
             // Static value from decoded property
@@ -38,13 +36,13 @@ public struct ProgressConverter {
         )
 
         // progressTintColor -> .tint()
-        if let progressTintColor = component.rawData["progressTintColor"] as? String,
+        if let progressTintColor = attrs.progressTintColor?.value,
            let color = DynamicHelpers.getColor(progressTintColor) {
             result = AnyView(result.tint(color))
         }
 
         // trackTintColor -> .background()
-        if let trackTintColor = component.rawData["trackTintColor"] as? String,
+        if let trackTintColor = attrs.trackTintColor?.value,
            let color = DynamicHelpers.getColor(trackTintColor) {
             result = AnyView(result.background(color))
         }
