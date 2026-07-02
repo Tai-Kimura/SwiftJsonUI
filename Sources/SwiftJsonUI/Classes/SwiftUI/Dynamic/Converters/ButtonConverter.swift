@@ -36,9 +36,10 @@ public struct ButtonConverter {
         // Build partialAttributes (same as label)
         let partialAttributes = buildPartialAttributes(component: component, data: data)
 
-        // Action - onClick uses binding format @{functionName}
+        // Action - onClick uses binding format @{functionName}; legacy
+        // "onclick" selector format resolves to the same data-dict closure.
         let action: () -> Void = {
-            if let onClick = component.onClick {
+            if let onClick = component.effectiveOnClick {
                 DynamicEventHelper.call(onClick, data: data)
             }
         }
@@ -140,6 +141,12 @@ public struct ButtonConverter {
         if #available(iOS 15.0, *) {
             result = DynamicModifierHelper.applyConfirmationDialog(result, component: component, data: data)
         }
+
+        // --- 4.7. onLongPress (common attribute) ---
+        // Button runs its own modifier bag (no applyStandardModifiers), so the
+        // shared onLongPress gesture is applied here; simultaneousGesture keeps
+        // the Button's own tap action working.
+        result = DynamicEventHelper.applyOnLongPress(result, component: component, data: data)
 
         // --- 5. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)

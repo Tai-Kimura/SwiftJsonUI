@@ -69,28 +69,50 @@ public struct TextFieldConverter {
             return component.input?.lowercased() == "password"
         }()
 
-        // Use FocusableTextField when component has an id (for focus chain support)
-        if let fieldId = component.id {
-            return createFocusableTextField(
-                placeholder: placeholder,
-                text: textBinding,
-                fieldId: fieldId,
-                isSecure: isSecure,
-                component: component,
-                data: data
-            )
+        // Field construction shared by the bound and local-state paths
+        let build: (SwiftUI.Binding<String>) -> AnyView = { binding in
+            var built: AnyView
+            // Use FocusableTextField when component has an id (for focus chain support)
+            if let fieldId = component.id {
+                built = createFocusableTextField(
+                    placeholder: placeholder,
+                    text: binding,
+                    fieldId: fieldId,
+                    isSecure: isSecure,
+                    component: component,
+                    data: data
+                )
+            } else {
+                if isSecure {
+                    built = AnyView(SecureField(placeholder, text: binding))
+                } else {
+                    built = AnyView(TextField(placeholder, text: binding))
+                }
+                // Apply all modifiers in textfield_converter.rb order
+                built = applyAllModifiers(built, component: component, data: data)
+            }
+
+            // --- 12. .onChange (onTextChange) ---
+            if let onTextChange = component.onTextChange,
+               DynamicEventHelper.handlerName(from: onTextChange) != nil {
+                built = AnyView(
+                    built.onChange(of: binding.wrappedValue) { _, newValue in
+                        DynamicEventHelper.callWithValue(onTextChange, id: id, value: newValue, data: data)
+                    }
+                )
+            }
+            return built
         }
 
-        // --- 1. Create base field ---
-        var result: AnyView
-        if isSecure {
-            result = AnyView(SecureField(placeholder, text: textBinding))
-        } else {
-            result = AnyView(TextField(placeholder, text: textBinding))
+        // Bound (or data-resolved) @{var} text: use the resolved binding.
+        if DynamicEventHelper.extractPropertyName(from: component.text) != nil {
+            return build(textBinding)
         }
 
-        // Apply all modifiers in textfield_converter.rb order
-        return applyAllModifiers(result, component: component, data: data)
+        // Unbound literal/absent text: local editing state — a native field
+        // is inherently stateful on every other JsonUI runtime, so a
+        // `.constant` SwiftUI field would wrongly reject edits here.
+        return AnyView(DynamicLocalState(initial: textBinding.wrappedValue, content: build))
     }
 
     // MARK: - FocusableTextField path

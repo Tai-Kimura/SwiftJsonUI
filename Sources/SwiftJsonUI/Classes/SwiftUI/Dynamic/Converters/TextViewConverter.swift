@@ -29,12 +29,31 @@ public struct TextViewConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
+        let resolvedBinding = DynamicBindingHelper.string(component.text, data: data)
+
+        // Bound (or data-resolved) @{var} text: use the resolved binding.
+        if DynamicEventHelper.extractPropertyName(from: component.text) != nil {
+            return convertBody(component: component, data: data, textBinding: resolvedBinding)
+        }
+
+        // Unbound literal/absent text: local editing state — a native text
+        // view is inherently stateful on every other JsonUI runtime, so a
+        // `.constant` SwiftUI editor would wrongly reject edits here.
+        return AnyView(
+            DynamicLocalState(initial: resolvedBinding.wrappedValue) { binding in
+                convertBody(component: component, data: data, textBinding: binding)
+            }
+        )
+    }
+
+    private static func convertBody(
+        component: DynamicComponent,
+        data: [String: Any],
+        textBinding: SwiftUI.Binding<String>
+    ) -> AnyView {
         let id = component.id ?? "textEditor"
 
         // --- 1. Build TextViewWithPlaceholder ---
-
-        // Text binding
-        let textBinding = DynamicBindingHelper.string(component.text, data: data)
 
         // hint (placeholder) - hint takes priority, fallback to placeholder
         let hint: String? = {
@@ -171,8 +190,10 @@ public struct TextViewConverter {
         )
 
         // --- 2. .onChange (onTextChange) ---
+        // Fires for bound AND local-state text (the handler does not require
+        // the text itself to be @{bound}).
         if let onTextChange = component.onTextChange,
-           let propName = DynamicEventHelper.extractPropertyName(from: component.text) {
+           DynamicEventHelper.handlerName(from: onTextChange) != nil {
             result = AnyView(
                 result.onChange(of: textBinding.wrappedValue) { _, newValue in
                     DynamicEventHelper.callWithValue(onTextChange, id: id, value: newValue, data: data)

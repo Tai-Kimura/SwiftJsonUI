@@ -28,11 +28,22 @@ public struct ToggleConverter {
         // Resolve isOn binding: check isOn first, then checked
         let isOnExpr: String? = attrs.isOn?.bindingString ?? attrs.checked?.bindingString
 
-        let isOnBinding = DynamicBindingHelper.bool(
-            isOnExpr,
-            data: data,
-            fallback: attrs.isOn?.value ?? attrs.checked?.value ?? false
-        )
+        // Two-way bound var if the expression resolves to a Binding<Bool> in
+        // data; otherwise the toggle gets local state (an unbound native
+        // switch is still flippable on every other JsonUI runtime).
+        let boundBinding = DynamicBindingHelper.extractBoolBinding(from: isOnExpr, data: data)
+        let initialValue: Bool = {
+            if let bound = boundBinding { return bound.wrappedValue }
+            return DynamicBindingHelper.bool(
+                isOnExpr,
+                data: data,
+                fallback: attrs.isOn?.value ?? attrs.checked?.value ?? false
+            ).wrappedValue
+        }()
+
+        // onValueChange handler (+ onValueChanged alias)
+        let handlerExpr: String? = component.onValueChange
+            ?? (component.rawAttribute("onValueChanged") as? String)
 
         // Label text
         let text = component.text ?? component.label ?? ""
@@ -77,37 +88,53 @@ public struct ToggleConverter {
             return nil
         }()
 
-        result = AnyView(
-            Toggle(isOn: isOnBinding) {
-                buildLabelText(text: text, font: labelFont, color: labelColor)
-            }
-        )
-
-        // toggleStyle (undeclared legacy key — see check_converter_raw_reads.sh)
-        if let toggleStyle = component.rawAttribute("toggleStyle") as? String {
-            switch toggleStyle {
-            case "switch":
-                result = AnyView(AnyViewWrapper(view: result).toggleStyle(SwitchToggleStyle()))
-            case "button":
-                if #available(iOS 15.0, *) {
-                    result = AnyView(AnyViewWrapper(view: result).toggleStyle(.button))
+        // Toggle construction shared by the bound and local-state paths
+        let buildToggle: (SwiftUI.Binding<Bool>) -> AnyView = { isOnBinding in
+            var built = AnyView(
+                Toggle(isOn: isOnBinding) {
+                    buildLabelText(text: text, font: labelFont, color: labelColor)
                 }
-            default:
-                result = AnyView(AnyViewWrapper(view: result).toggleStyle(DefaultToggleStyle()))
+            )
+
+            // toggleStyle (undeclared legacy key — see check_converter_raw_reads.sh)
+            if let toggleStyle = component.rawAttribute("toggleStyle") as? String {
+                switch toggleStyle {
+                case "switch":
+                    built = AnyView(AnyViewWrapper(view: built).toggleStyle(SwitchToggleStyle()))
+                case "button":
+                    if #available(iOS 15.0, *) {
+                        built = AnyView(AnyViewWrapper(view: built).toggleStyle(.button))
+                    }
+                default:
+                    built = AnyView(AnyViewWrapper(view: built).toggleStyle(DefaultToggleStyle()))
+                }
             }
+
+            // No label: hide the (empty) label slot so the control is just
+            // the switch — otherwise SwiftUI keeps a full-width row whose
+            // center (where taps land) is empty space, making the control
+            // effectively untappable. Matches kjui/rjui: an unlabeled
+            // switch hugs the control.
+            if text.isEmpty {
+                built = AnyView(built.labelsHidden())
+            }
+
+            // Explicit wrapContent: hug content instead of Toggle's greedy
+            // full-width layout.
+            if component.widthRaw == "wrapContent" {
+                built = AnyView(built.fixedSize(horizontal: true, vertical: false))
+            }
+            return built
         }
 
-        // onValueChange handler - called when toggle state changes
-        if let onValueChange = component.onValueChange,
-           let _ = DynamicEventHelper.extractPropertyName(from: onValueChange) {
-            // Determine the binding property to observe
-            let observeProperty: String? = attrs.isOn?.bindingExpression
-                ?? attrs.checked?.bindingExpression
+        if let bound = boundBinding {
+            result = buildToggle(bound)
 
-            if let propName = observeProperty,
-               let binding = data[propName] as? SwiftUI.Binding<Bool> {
+            // onValueChange handler - observe the bound var for changes
+            if let onValueChange = handlerExpr,
+               DynamicEventHelper.handlerName(from: onValueChange) != nil {
                 result = AnyView(
-                    result.onChange(of: binding.wrappedValue) { newValue in
+                    result.onChange(of: bound.wrappedValue) { newValue in
                         DynamicEventHelper.callWithValue(
                             onValueChange,
                             id: id,
@@ -117,6 +144,23 @@ public struct ToggleConverter {
                     }
                 )
             }
+        } else {
+            // Unbound: local state; onValueChange fires from the binding set
+            result = AnyView(
+                DynamicLocalState(
+                    initial: initialValue,
+                    onChange: { newValue in
+                        guard let onValueChange = handlerExpr else { return }
+                        DynamicEventHelper.callWithValue(
+                            onValueChange,
+                            id: id,
+                            value: newValue,
+                            data: data
+                        )
+                    },
+                    content: buildToggle
+                )
+            )
         }
 
         // Standard modifiers

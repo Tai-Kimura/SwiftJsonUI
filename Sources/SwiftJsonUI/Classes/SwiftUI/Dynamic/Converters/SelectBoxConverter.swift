@@ -125,6 +125,26 @@ public struct SelectBoxConverter {
             return nil
         }()
 
+        // onValueChange handler (+ onValueChanged alias)
+        let handlerExpr: String? = component.onValueChange
+            ?? (component.rawAttribute("onValueChanged") as? String)
+
+        // Which bound var (if any) can be observed for changes
+        let observedBindingProp: String? = attrs.selectedIndex?.bindingExpression
+            ?? attrs.selectedItem?.bindingExpression
+
+        // Without a bound var there is nothing to observe — pass the handler
+        // straight into SelectBoxView (it manages its own selection state and
+        // reports picks through this closure).
+        let directOnValueChange: ((String) -> Void)? = {
+            guard observedBindingProp == nil,
+                  let handler = handlerExpr,
+                  DynamicEventHelper.handlerName(from: handler) != nil else { return nil }
+            return { newValue in
+                DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data)
+            }
+        }()
+
         var result = AnyView(
             SelectBoxView(
                 id: id,
@@ -144,19 +164,16 @@ public struct SelectBoxConverter {
                 selectedIndex: selectedIndex,
                 selectedIndexBinding: selectedIndexBinding,
                 selectedDate: selectedDate,
-                padding: padding
+                padding: padding,
+                onValueChange: directOnValueChange
             )
         )
 
         // --- 2. .onChange (onValueChange) ---
         // Determine which binding property to observe for changes
-        if let onValueChange = component.onValueChange,
-           DynamicEventHelper.extractPropertyName(from: onValueChange) != nil {
-            // Find the binding property to observe
-            let bindingProp: String? = attrs.selectedIndex?.bindingExpression
-                ?? attrs.selectedItem?.bindingExpression
-
-            if let prop = bindingProp {
+        if let onValueChange = handlerExpr,
+           DynamicEventHelper.handlerName(from: onValueChange) != nil {
+            if let prop = observedBindingProp {
                 // Observe Int binding (selectedIndex)
                 if let binding = data[prop] as? SwiftUI.Binding<Int> {
                     result = AnyView(

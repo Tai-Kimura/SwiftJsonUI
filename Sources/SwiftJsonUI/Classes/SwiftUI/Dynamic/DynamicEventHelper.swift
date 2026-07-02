@@ -22,12 +22,24 @@ public struct DynamicEventHelper {
         return String(value.dropFirst(2).dropLast(1))
     }
 
+    /// Resolve a handler reference to the closure name in the data dictionary.
+    /// Handler attributes come in two canonical formats
+    /// (shared/core/attribute_definitions.json):
+    ///   - binding:  "@{handlerName}"  (camelCase attrs, e.g. onClick)
+    ///   - selector: "handlerName"     (legacy lowercase attrs, e.g. onclick)
+    /// Both resolve to the same data-dict closure in Dynamic mode.
+    public static func handlerName(from value: String?) -> String? {
+        if let name = extractPropertyName(from: value) { return name }
+        guard let value = value, !value.isEmpty, !value.contains("@{") else { return nil }
+        return value
+    }
+
     // MARK: - Simple call: data.handler?()
 
     /// Call a () -> Void closure from data dictionary
     /// Matches tool pattern: data.onMyClick?()
     static func call(_ bindingExpr: String?, data: [String: Any]) {
-        guard let name = extractPropertyName(from: bindingExpr) else { return }
+        guard let name = handlerName(from: bindingExpr) else { return }
         if let closure = data[name] as? () -> Void {
             closure()
         }
@@ -38,7 +50,7 @@ public struct DynamicEventHelper {
     /// Call a (String) -> Void closure with component id
     /// Matches tool pattern: data.onMyClick?("viewId")
     static func callWithId(_ bindingExpr: String?, id: String?, data: [String: Any]) {
-        guard let name = extractPropertyName(from: bindingExpr) else { return }
+        guard let name = handlerName(from: bindingExpr) else { return }
 
         // Try (String) -> Void first
         if let closure = data[name] as? (String) -> Void {
@@ -56,7 +68,7 @@ public struct DynamicEventHelper {
     /// Call a (String, T) -> Void closure with component id and value
     /// Matches tool pattern: data.onValueChange?("viewId", newValue)
     static func callWithValue<T>(_ bindingExpr: String?, id: String?, value: T, data: [String: Any]) {
-        guard let name = extractPropertyName(from: bindingExpr) else { return }
+        guard let name = handlerName(from: bindingExpr) else { return }
 
         // Try (String, T) -> Void
         if let closure = data[name] as? (String, T) -> Void {
@@ -82,7 +94,7 @@ public struct DynamicEventHelper {
         // Skip if component is disabled
         if component.enabled?.value as? Bool == false { return view }
 
-        guard let onClick = component.onClick else { return view }
+        guard let onClick = component.effectiveOnClick else { return view }
 
         // Note: canTap is a UIKit concept. In SwiftUI Dynamic mode,
         // if onClick is explicitly set in JSON, always apply the tap gesture.
@@ -93,6 +105,29 @@ public struct DynamicEventHelper {
                 .onTapGesture {
                     DynamicEventHelper.call(onClick, data: data)
                 }
+        )
+    }
+
+    // MARK: - onLongPress support
+
+    /// Apply a long-press gesture if onLongPress is defined
+    /// (common attribute, binding-only: "onLongPress": "@{handlerName}").
+    /// Uses simultaneousGesture so it composes with Button actions and
+    /// onClick tap gestures instead of swallowing them.
+    static func applyOnLongPress(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        // Skip if component is disabled
+        if component.enabled?.value as? Bool == false { return view }
+
+        guard let onLongPress = component.onLongPress else { return view }
+
+        return AnyView(
+            view
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+                        DynamicEventHelper.call(onLongPress, data: data)
+                    }
+                )
         )
     }
 
@@ -126,12 +161,24 @@ public struct DynamicEventHelper {
         return result
     }
 
-    /// Apply onClick + lifecycle events (common pattern for most components)
+    /// Apply onClick + onLongPress + lifecycle events (common pattern for most components)
     static func applyEvents(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         var result = view
         result = applyOnClick(result, component: component, data: data)
+        result = applyOnLongPress(result, component: component, data: data)
         result = applyLifecycleEvents(result, component: component, data: data)
         return result
+    }
+}
+
+extension DynamicComponent {
+    /// Click handler with both canonical spellings resolved:
+    /// `onClick` (camelCase, binding format) falls back to the legacy
+    /// `onclick` (lowercase, selector format) — attribute_definitions.json
+    /// declares both; only `onClick` is a typed DynamicComponent field.
+    var effectiveOnClick: String? {
+        if let onClick = onClick { return onClick }
+        return rawAttribute("onclick") as? String
     }
 }
 #endif // DEBUG
