@@ -85,23 +85,34 @@ public struct DynamicView: View {
     /// Extract defaultValue entries from the JSON data section and merge with external data.
     /// External data takes priority over defaults (matching generated code behavior where
     /// Data struct properties have default values that can be overridden).
+    ///
+    /// The data section comes in two shapes:
+    /// - canonical: `"data": [ {name, class, defaultValue} ]` directly on the
+    ///   root node (what codegen layouts and `jui conformance generate` emit)
+    /// - legacy dynamic: a type-less child element carrying only a data array
+    /// Both are read; the root-level array wins on duplicate names.
+    /// (KotlinJsonUI's applyDataSectionDefaults had the same child-only scan
+    /// bug — see docs/bugs 2026-07-02 root-level data section defaults.)
     private static func mergeDataDefaults(component: DynamicComponent, externalData: [String: Any]) -> [String: Any] {
-        guard let children = component.childComponents else {
-            Logger.debug("[DynamicView:mergeDefaults] No childComponents found")
-            return externalData
+        var dataEntries: [AnyCodable] = []
+
+        // Legacy shape: data section child (no type, has data array)
+        if let children = component.childComponents {
+            Logger.debug("[DynamicView:mergeDefaults] children count=\(children.count), types=\(children.map { $0.type ?? "(nil)" })")
+            if let dataChild = children.first(where: { $0.type == nil && $0.data != nil }),
+               let childEntries = dataChild.data {
+                dataEntries.append(contentsOf: childEntries)
+            }
         }
 
-        Logger.debug("[DynamicView:mergeDefaults] children count=\(children.count), types=\(children.map { $0.type ?? "(nil)" })")
+        // Canonical shape: data array on the node itself (appended last so
+        // root-level entries win on duplicate names)
+        if let rootEntries = component.data {
+            dataEntries.append(contentsOf: rootEntries)
+        }
 
-        // Find the data section child (no type, has data array)
-        guard let dataChild = children.first(where: { $0.type == nil && $0.data != nil }),
-              let dataEntries = dataChild.data else {
-            // Also check if the data child has type==nil but data is decoded differently
-            let nilTypeChildren = children.filter { $0.type == nil }
-            Logger.debug("[DynamicView:mergeDefaults] No data section found. nilType children=\(nilTypeChildren.count)")
-            for (i, child) in nilTypeChildren.enumerated() {
-                Logger.debug("[DynamicView:mergeDefaults]   nilType[\(i)] data=\(child.data != nil ? "YES(\(child.data!.count) entries)" : "nil"), include=\(child.include ?? "nil"), rawData keys=\(Array(child.rawData.keys))")
-            }
+        guard !dataEntries.isEmpty else {
+            Logger.debug("[DynamicView:mergeDefaults] No data section found (root-level or data-only child)")
             return externalData
         }
 
