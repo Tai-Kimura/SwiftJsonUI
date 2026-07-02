@@ -206,7 +206,9 @@ public struct DynamicComponentBuilder: View {
             case "button":
                 ButtonConverter.convert(component: component, data: data, parentOrientation: parentOrientation)
 
-            case "textfield":
+            // EditText / Input are component-name aliases of TextField
+            // (attribute_definitions.json `_alias_of`)
+            case "textfield", "edittext", "input":
                 TextFieldConverter.convert(component: component, data: data)
 
             case "textview":
