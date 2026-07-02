@@ -25,8 +25,8 @@ public struct IndicatorConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        // Check for animating property (read from rawData since not a typed field)
-        let animatingRaw = component.rawData["animating"]
+        // Check for animating property (undeclared legacy key)
+        let animatingRaw = component.rawAttribute("animating")
 
         // Static false - don't show indicator
         if let boolVal = animatingRaw as? Bool, boolVal == false {
@@ -59,7 +59,7 @@ public struct IndicatorConverter {
 
         // 2. progressViewStyle (indicatorStyle or style from rawData)
         let styleStr = component.indicatorStyle
-            ?? component.rawData["style"] as? String
+            ?? component.typedAttributes(IndicatorAttributes.self).common.style
         if let styleStr = styleStr {
             let scale = scaleForStyle(styleStr)
             result = applyProgressViewStyle(result, style: styleStr)
