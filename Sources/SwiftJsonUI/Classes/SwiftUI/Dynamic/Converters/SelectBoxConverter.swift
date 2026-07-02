@@ -30,6 +30,7 @@ public struct SelectBoxConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
+        let attrs = component.typedAttributes(SelectBoxAttributes.self)
         let id = component.id ?? "selectBox"
 
         // --- 1. Build SelectBoxView ---
@@ -62,10 +63,8 @@ public struct SelectBoxConverter {
             if let staticItems = component.items, !staticItems.isEmpty {
                 return staticItems
             }
-            // Check rawData for binding items
-            if let itemsStr = component.rawData["items"] as? String,
-               itemsStr.hasPrefix("@{") && itemsStr.hasSuffix("}") {
-                let propName = String(itemsStr.dropFirst(2).dropLast(1))
+            // Binding items
+            if let propName = attrs.items?.bindingExpression {
                 if let dataItems = data[propName] as? [String] {
                     return dataItems
                 }
@@ -110,7 +109,7 @@ public struct SelectBoxConverter {
         // selectedIndex (value for initial, binding for two-way sync)
         let selectedIndex = component.selectedIndex
         let selectedIndexBinding: SwiftUI.Binding<Int>? = {
-            if let si = component.rawData["selectedIndex"] as? String, si.hasPrefix("@{") {
+            if let si = attrs.selectedIndex?.bindingString {
                 let binding = DynamicBindingHelper.int(si, data: data, fallback: selectedIndex ?? 0)
                 return binding
             }
@@ -154,17 +153,8 @@ public struct SelectBoxConverter {
         if let onValueChange = component.onValueChange,
            DynamicEventHelper.extractPropertyName(from: onValueChange) != nil {
             // Find the binding property to observe
-            let bindingProp: String? = {
-                if let si = component.rawData["selectedIndex"] as? String,
-                   let prop = DynamicEventHelper.extractPropertyName(from: si) {
-                    return prop
-                }
-                if let si = component.rawData["selectedItem"] as? String,
-                   let prop = DynamicEventHelper.extractPropertyName(from: si) {
-                    return prop
-                }
-                return nil
-            }()
+            let bindingProp: String? = attrs.selectedIndex?.bindingExpression
+                ?? attrs.selectedItem?.bindingExpression
 
             if let prop = bindingProp {
                 // Observe Int binding (selectedIndex)
