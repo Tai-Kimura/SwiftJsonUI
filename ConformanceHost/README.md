@@ -63,6 +63,14 @@ CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
   `fixtures/<id>.layout.json`, applies `StyleProcessor`, decodes a
   `DynamicComponent` and renders it with `DynamicView` — the same pipeline
   Dynamic mode uses in real apps. Requires a Debug build (`#if DEBUG`).
+- **Interactive fixtures** (`App/ConformanceStateProvider.swift`): the one
+  generic state mechanism from `conformance/INTERACTIVE_HOST_CONTRACT.md`.
+  For every `class: interactive` fixture it reads the manifest `state`
+  declaration and injects, into the DynamicView data dictionary: a
+  `SwiftUI.Binding<String>` per var (initial value from the layout `data`
+  section defaults, two-way write-back for input-bound vars) and a
+  `() -> Void` closure per declared handler (sets one var to a literal;
+  callback payloads ignored). Zero per-fixture code.
 - **Batching**: one app launch serves up to 40 fixtures. The UITest runner
   advances the app to the next fixture by posting the Darwin notification
   `jsonui.conformance.advance`; the app confirms by exposing an invisible

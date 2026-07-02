@@ -104,10 +104,21 @@ struct ConformanceRootView: View {
 struct FixtureScreen: View {
     let fixtureId: String
 
+    /// Generic interactive-fixture state (INTERACTIVE_HOST_CONTRACT.md):
+    /// bindings + declared handler closures for `class: interactive`
+    /// fixtures, empty for everything else. Identity is per-fixture via
+    /// `.id(fixtureId)` on this view, so the store resets between fixtures.
+    @StateObject private var state: ConformanceStateStore
+
+    init(fixtureId: String) {
+        self.fixtureId = fixtureId
+        _state = StateObject(wrappedValue: ConformanceStateStore(fixtureId: fixtureId))
+    }
+
     var body: some View {
         ZStack {
             if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
-                DynamicView(component: component, viewId: "conformance")
+                DynamicView(component: component, viewId: "conformance", data: state.externalData)
             } else {
                 Text("Failed to load fixture: \(fixtureId)")
                     .foregroundColor(.red)
@@ -137,18 +148,22 @@ enum FixtureLoader {
         fixtureId.replacingOccurrences(of: "/", with: "_")
     }
 
-    /// Locate "fixtures/<id>.layout.json" inside the app bundle (the fixtures
+    /// Locate the fixture's layout inside the app bundle (the fixtures
     /// directory is bundled as a folder reference, preserving subdirectories).
+    /// The path comes from the manifest `layout` field — it is NOT always
+    /// "fixtures/<id>.layout.json": the generator appends `_N` to filenames
+    /// when two ids collide case-insensitively (onclick vs onClick).
     static func layoutURL(fixtureId: String) -> URL? {
         guard let resourceURL = Bundle.main.resourceURL else { return nil }
-        let direct = resourceURL
-            .appendingPathComponent("fixtures")
-            .appendingPathComponent("\(fixtureId).layout.json")
+        let relativePath = ConformanceStateIndex.layoutPath(for: fixtureId)
+            ?? "fixtures/\(fixtureId).layout.json"
+        let direct = resourceURL.appendingPathComponent(relativePath)
         if FileManager.default.fileExists(atPath: direct.path) {
             return direct
         }
         // Fallback: flattened bundling (group reference)
-        let basename = fixtureId.split(separator: "/").map(String.init).last ?? fixtureId
+        let basename = relativePath.split(separator: "/").map(String.init).last?
+            .replacingOccurrences(of: ".layout.json", with: "") ?? fixtureId
         return Bundle.main.url(forResource: "\(basename).layout", withExtension: "json")
     }
 

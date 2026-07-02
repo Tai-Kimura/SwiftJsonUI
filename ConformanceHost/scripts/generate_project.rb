@@ -48,7 +48,9 @@ app_target.add_resources([assets_ref])
 resources_group = project.main_group.new_group('Resources', 'Resources')
 fixtures_ref = resources_group.new_reference(File.join(host_dir, 'Resources', 'fixtures'))
 manifest_ref = resources_group.new_reference(File.join(host_dir, 'Resources', 'manifest.json'))
-app_target.add_resources([fixtures_ref])
+# the app also needs the manifest: ConformanceStateProvider reads each
+# interactive fixture's `state` declaration from it (INTERACTIVE_HOST_CONTRACT.md)
+app_target.add_resources([fixtures_ref, manifest_ref])
 
 # SwiftJsonUI local package (repo root, one level up from ConformanceHost/)
 package_ref = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)

@@ -1,0 +1,35 @@
+--- a/Actions/ActionExecutor.swift	2026-07-02 23:39:48
++++ b/Actions/ActionExecutor.swift	2026-07-02 23:48:09
+@@ -148,7 +148,11 @@
+         }
+ 
+         let element = try findElement(id: id, in: app)
+-        let duration = TimeInterval(step.duration ?? 500) / 1000.0
++        // Default 800ms, not 500ms: the iOS long-press recognizer minimum
++        // (SwiftUI LongPressGesture / UILongPressGestureRecognizer) is 0.5s,
++        // so a press of exactly 500ms races the recognizer and fires only
++        // sometimes. The press must comfortably exceed the threshold.
++        let duration = TimeInterval(step.duration ?? 800) / 1000.0
+         element.press(forDuration: duration)
+     }
+ 
+@@ -162,6 +166,19 @@
+ 
+         let element = try findElement(id: id, in: app)
+         element.tap()
++
++        // `input` SETS the field value (parity with the web driver's
++        // Playwright fill() and Android's setText): clear existing text
++        // first. Note element.value shows the placeholder when the field is
++        // empty, so clearing may no-op — that is harmless.
++        if let existing = element.value as? String, !existing.isEmpty {
++            // Caret position after tap() is unspecified (TextEditor tends to
++            // put it at the start): tap the bottom-right of the element to
++            // move the caret to the end, then backspace through everything.
++            element.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.9)).tap()
++            let deleteString = String(repeating: XCUIKeyboardKey.delete.rawValue, count: existing.count)
++            element.typeText(deleteString)
++        }
+         element.typeText(value)
+     }
+ 
