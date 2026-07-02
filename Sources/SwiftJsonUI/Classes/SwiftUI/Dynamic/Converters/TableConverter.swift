@@ -35,10 +35,10 @@ public struct TableConverter {
         )
 
         // .listStyle - hideSeparator takes precedence
-        if component.rawData["hideSeparator"] as? Bool == true {
+        if component.rawAttribute("hideSeparator") as? Bool == true {
             result = AnyView(result.listStyle(.plain))
             result = AnyView(result.listRowSeparator(.hidden))
-        } else if let listStyle = component.rawData["listStyle"] as? String {
+        } else if let listStyle = component.rawAttribute("listStyle") as? String {
             result = applyListStyle(result, style: listStyle)
         }
 
