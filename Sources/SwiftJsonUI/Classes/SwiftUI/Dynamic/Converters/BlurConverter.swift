@@ -60,8 +60,9 @@ public struct BlurConverter {
         // by rjui/React and is listed as the canonical catalog enum (Light /
         // Dark / ExtraLight). Accept both forms case-insensitively so shared
         // specs render correctly on iOS.
-        let styleRaw = (component.rawData["style"] as? String)
-            ?? (component.rawData["effectStyle"] as? String)
+        let attrs = component.typedAttributes(BlurAttributes.self)
+        let styleRaw = attrs.common.style
+            ?? attrs.effectStyle?.rawStringValue
             ?? "regular"
         switch styleRaw.lowercased() {
         case "dark":
