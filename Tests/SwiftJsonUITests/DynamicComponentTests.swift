@@ -447,6 +447,65 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.items, ["Item1", "Item2", "Item3"])
     }
 
+    func testDecodeCollectionColumnsBindingDoesNotThrow() throws {
+        // `columns` is declared `["number", "binding"]` in the shared
+        // attribute catalog — a `@{binding}` string must decode without
+        // failing the whole component (value-or-binding, like width/height).
+        let json = """
+        {
+            "type": "Collection",
+            "id": "grid_collection",
+            "columns": "@{gridColumnCount}",
+            "items": "@{gridItems}"
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+
+        XCTAssertEqual(component.type, "Collection")
+        // The legacy Int slot stays nil for the binding spelling …
+        XCTAssertNil(component.columns)
+        // … while the binding survives via rawData / typed attributes.
+        XCTAssertEqual(component.rawData["columns"] as? String, "@{gridColumnCount}")
+        XCTAssertEqual(
+            component.typedAttributes(CollectionAttributes.self).columns?.bindingExpression,
+            "gridColumnCount"
+        )
+    }
+
+    func testCollectionWithBindingColumnsSurvivesAsChild() throws {
+        // Regression: a binding `columns` used to throw inside
+        // DynamicComponent.init(from:), and the failing Collection node was
+        // silently dropped from the parent's children, collapsing the
+        // surrounding weighted layout.
+        let json = """
+        {
+            "type": "View",
+            "orientation": "vertical",
+            "child": [
+                { "type": "Label", "text": "header" },
+                {
+                    "type": "Collection",
+                    "id": "grid_collection",
+                    "width": "matchParent",
+                    "weight": 1,
+                    "columns": "@{gridColumnCount}",
+                    "items": "@{gridItems}"
+                },
+                { "type": "Label", "text": "footer" }
+            ]
+        }
+        """.data(using: .utf8)!
+
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
+        let children = try XCTUnwrap(component.childComponents)
+
+        XCTAssertEqual(children.count, 3)
+        XCTAssertEqual(children[1].type, "Collection")
+        XCTAssertEqual(children[1].id, "grid_collection")
+        XCTAssertEqual(children[1].weight, 1)
+    }
+
     // MARK: - Size Constraints Tests
 
     func testDecodeSizeConstraints() throws {

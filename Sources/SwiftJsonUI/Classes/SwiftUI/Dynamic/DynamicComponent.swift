@@ -646,7 +646,16 @@ public struct DynamicComponent: Decodable {
         tabs = try container.decodeIfPresent(AnyCodable.self, forKey: .tabs)?.value as? [[String: Any]]
         tabBarBackground = try container.decodeIfPresent(String.self, forKey: .tabBarBackground)
         onTabChange = try container.decodeIfPresent(String.self, forKey: .onTabChange)
-        columns = try container.decodeIfPresent(Int.self, forKey: .columns)
+        // columns is declared `["number", "binding"]` in the shared catalog —
+        // a "@{binding}" string must not fail the whole component decode
+        // (a decode throw here used to silently drop the node from its
+        // parent's children). The binding spelling stays available via
+        // rawData / CollectionAttributes and is resolved at render time.
+        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .columns) {
+            columns = intValue
+        } else {
+            columns = nil  // Binding string will be read from rawData
+        }
         spacing = try container.decodeIfPresent(CGFloat.self, forKey: .spacing)
         contentInsetAdjustmentBehavior = try container.decodeIfPresent(String.self, forKey: .contentInsetAdjustmentBehavior)
         showsHorizontalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsHorizontalScrollIndicator)

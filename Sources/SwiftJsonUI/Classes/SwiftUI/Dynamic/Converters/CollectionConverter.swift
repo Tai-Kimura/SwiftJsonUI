@@ -54,12 +54,23 @@ public struct CollectionConverter {
         data: [String: Any],
         viewId: String? = nil
     ) -> AnyView {
-        let globalColumns = component.columns ?? 1
         let sections = component.sections ?? []
         let isHorizontal = component.layout == "horizontal" || component.orientation == "horizontal"
         let isFlow = component.layout == "flow"
         let hasSections = !sections.isEmpty
         let attrs = component.typedAttributes(CollectionAttributes.self)
+        // `columns` accepts a literal number or a `@{binding}` (canonical
+        // kind: number | binding — the contract the static codegens already
+        // implement). Bindings resolve from `data` at render time and fall
+        // back to 1 when unresolved; per the shared contract a bound column
+        // count always renders on the grid path (LazyVGrid), even when it
+        // resolves to 1, so the container stays stable across runtime
+        // column-count changes.
+        let (globalColumns, columnsIsBinding) = resolveGlobalColumns(
+            attrs.columns,
+            legacyColumns: component.columns,
+            data: data
+        )
         let cellIdProperty = attrs.cellIdProperty
         let autoChangeTrackingId = attrs.autoChangeTrackingId ?? false
 
@@ -158,7 +169,7 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
             )
-        } else if globalColumns == 1 && !isHorizontal && hasSections {
+        } else if globalColumns == 1 && !isHorizontal && !columnsIsBinding && hasSections {
             // Section-based vertical: CollectionStackView delegates the
             // outer container choice (lazy/eager/none) so the JSON `lazy`
             // value (literal or binding-resolved) becomes a parameter.
@@ -174,7 +185,7 @@ public struct CollectionConverter {
                 onItemAppear: onItemAppearCallback,
                 mode: collectionMode
             )
-        } else if globalColumns == 1 && !isHorizontal {
+        } else if globalColumns == 1 && !isHorizontal && !columnsIsBinding {
             // Legacy single column: List
             result = buildListLayout(
                 component: component,
@@ -268,6 +279,42 @@ public struct CollectionConverter {
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
         return result
+    }
+
+    // MARK: - Columns Resolution
+
+    /// Resolve the effective global column count from the typed `columns`
+    /// attribute (`number | binding` per the shared catalog).
+    ///
+    /// - `.value(n)`   → literal count.
+    /// - `.binding(e)` → resolved from `data[e]` (Int / Double /
+    ///   `SwiftUI.Binding<Int>`), falling back to 1 when unresolved.
+    /// - `nil`         → legacy decoded Int (or 1).
+    ///
+    /// The count is clamped to `>= 1`. `isBinding` lets the caller keep
+    /// binding-driven Collections on the grid path even when the value
+    /// resolves to 1 (same contract as static emit, where the LazyVGrid
+    /// container must stay stable across runtime column-count changes).
+    static func resolveGlobalColumns(
+        _ columns: AttrValue<Double>?,
+        legacyColumns: Int?,
+        data: [String: Any]
+    ) -> (count: Int, isBinding: Bool) {
+        switch columns {
+        case .some(.value(let number)):
+            return (max(1, Int(number)), false)
+        case .some(.binding(let expression)):
+            let resolved: Int? = {
+                guard let raw = data[expression] else { return nil }
+                if let binding = raw as? SwiftUI.Binding<Int> { return binding.wrappedValue }
+                if let intValue = raw as? Int { return intValue }
+                if let doubleValue = raw as? Double { return Int(doubleValue) }
+                return nil
+            }()
+            return (max(1, resolved ?? 1), true)
+        case nil:
+            return (max(1, legacyColumns ?? 1), false)
+        }
     }
 
     // MARK: - Cell Identity Helper

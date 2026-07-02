@@ -165,6 +165,49 @@ final class TypedAttributeConverterTests: XCTestCase {
         XCTAssertEqual(attrs.currentPage?.bindingString, "@{page}")
     }
 
+    func testCollectionColumnsBindingResolution() throws {
+        let c = try component([
+            "type": "Collection", "items": "@{rows}", "columns": "@{gridColumnCount}"
+        ])
+        let attrs = c.typedAttributes(CollectionAttributes.self)
+        XCTAssertEqual(attrs.columns?.bindingExpression, "gridColumnCount")
+
+        // Literal number
+        let literal = CollectionConverter.resolveGlobalColumns(
+            .value(2), legacyColumns: nil, data: [:])
+        XCTAssertEqual(literal.count, 2)
+        XCTAssertFalse(literal.isBinding)
+
+        // Binding resolved from data (Int / Double / SwiftUI.Binding<Int>)
+        XCTAssertEqual(CollectionConverter.resolveGlobalColumns(
+            attrs.columns, legacyColumns: nil, data: ["gridColumnCount": 3]).count, 3)
+        XCTAssertEqual(CollectionConverter.resolveGlobalColumns(
+            attrs.columns, legacyColumns: nil, data: ["gridColumnCount": 2.0]).count, 2)
+        XCTAssertEqual(CollectionConverter.resolveGlobalColumns(
+            attrs.columns, legacyColumns: nil,
+            data: ["gridColumnCount": SwiftUI.Binding.constant(4)]).count, 4)
+        XCTAssertTrue(CollectionConverter.resolveGlobalColumns(
+            attrs.columns, legacyColumns: nil, data: ["gridColumnCount": 3]).isBinding)
+
+        // Unresolved binding falls back to 1 but stays flagged as binding
+        // (keeps the Collection on the grid path).
+        let unresolved = CollectionConverter.resolveGlobalColumns(
+            attrs.columns, legacyColumns: nil, data: [:])
+        XCTAssertEqual(unresolved.count, 1)
+        XCTAssertTrue(unresolved.isBinding)
+
+        // No typed attribute → legacy decoded Int, clamped to >= 1
+        XCTAssertEqual(CollectionConverter.resolveGlobalColumns(
+            nil, legacyColumns: 4, data: [:]).count, 4)
+        XCTAssertEqual(CollectionConverter.resolveGlobalColumns(
+            nil, legacyColumns: nil, data: [:]).count, 1)
+        XCTAssertEqual(CollectionConverter.resolveGlobalColumns(
+            .value(0), legacyColumns: nil, data: [:]).count, 1)
+
+        // Converter smoke: binding columns must not crash the convert path
+        _ = CollectionConverter.convert(component: c, data: ["gridColumnCount": 2])
+    }
+
     func testScrollViewConverterTypedKeyboardAvoidance() throws {
         let c = try component(["type": "ScrollView", "keyboardAvoidance": false, "scrollEnabled": "@{canScroll}"])
         let attrs = c.typedAttributes(ScrollViewAttributes.self)
