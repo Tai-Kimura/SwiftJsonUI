@@ -50,7 +50,11 @@ CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
 - `CONFORMANCE_FILTER=<substring>` runs a subset; all other fixtures are
   reported as `skipped` / `not executed in this run` (the results file always
   contains one entry per manifest fixture).
-- `SKIP_BUILD=1` reuses the previous build (`test-without-building`).
+- `SIMULATOR_UDID=<udid>` pins an exact device when several share a name.
+- The script always uses the `test` action: `TEST_RUNNER_*` variables only
+  reach the runner when the test action evaluates them from xcodebuild's own
+  environment (a repeat run with no source changes rebuilds incrementally
+  and is fast).
 
 ## How it works
 
