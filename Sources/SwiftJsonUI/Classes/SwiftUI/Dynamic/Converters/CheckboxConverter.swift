@@ -21,20 +21,12 @@ public struct CheckboxConverter {
         data: [String: Any]
     ) -> AnyView {
         let id = component.id ?? "checkbox"
+        let attrs = component.typedAttributes(CheckBoxAttributes.self)
 
         // Resolve isOn binding: check isOn, checked, bind
-        let isOnExpr: String? = {
-            if let expr = component.rawData["isOn"] as? String, expr.hasPrefix("@{") {
-                return expr
-            }
-            if let expr = component.rawData["checked"] as? String, expr.hasPrefix("@{") {
-                return expr
-            }
-            if let expr = component.rawData["bind"] as? String, expr.hasPrefix("@{") {
-                return expr
-            }
-            return nil
-        }()
+        let isOnExpr: String? = attrs.isOn?.bindingString
+            ?? attrs.checked?.bindingString
+            ?? attrs.bind?.bindingString
 
         let isOnBinding = DynamicBindingHelper.bool(
             isOnExpr,
@@ -61,7 +53,7 @@ public struct CheckboxConverter {
         // Font properties
         let fontSize = component.fontSize
         let fontWeight: Font.Weight? = {
-            if let style = component.rawData["fontStyle"] as? String {
+            if let style = component.rawAttribute("fontStyle") as? String {
                 return DynamicHelpers.fontWeightFromString(style)
             }
             if let weight = component.fontWeight {
@@ -95,28 +87,26 @@ public struct CheckboxConverter {
 
         // Enabled state (supports binding)
         let isEnabled: Bool = {
-            if let enabledStr = component.rawData["enabled"] as? String,
-               enabledStr.hasPrefix("@{") {
-                return DynamicBindingHelper.resolveBool(enabledStr, data: data, fallback: true)
+            switch attrs.common.enabled {
+            case .binding(let expr):
+                return DynamicBindingHelper.resolveBool("@{\(expr)}", data: data, fallback: true)
+            case .value(let v):
+                return v
+            case nil:
+                return true
             }
-            if let enabledBool = component.rawData["enabled"] as? Bool {
-                return enabledBool
-            }
-            return true
         }()
 
         // onValueChange callback
         // Support: onValueChange, onClick, action, onValueChanged (backward compat)
-        let handlerExpr: String? = {
-            let candidates = ["onValueChange", "onClick", "action", "onValueChanged"]
-            for key in candidates {
-                if let expr = component.rawData[key] as? String,
-                   expr.hasPrefix("@{") && expr.hasSuffix("}") {
-                    return expr
-                }
+        let handlerExpr: String? = attrs.onValueChange?.bindingString
+            ?? attrs.common.onClick?.bindingString
+            ?? (component.rawAttribute("action") as? String).flatMap { expr in
+                expr.hasPrefix("@{") && expr.hasSuffix("}") ? expr : nil
             }
-            return nil
-        }()
+            ?? (component.rawAttribute("onValueChanged") as? String).flatMap { expr in
+                expr.hasPrefix("@{") && expr.hasSuffix("}") ? expr : nil
+            }
 
         let onValueChanged: ((Bool) -> Void)? = {
             guard let expr = handlerExpr else { return nil }
