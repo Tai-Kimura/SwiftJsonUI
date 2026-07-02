@@ -19,26 +19,23 @@ public struct SliderConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        // Min/Max values. Canonical names are minimum/maximum;
-        // minimumValue/minValue and maximumValue/maxValue are the
-        // definitions aliases (consulted only for raw L0 layouts).
-        var minValue: Double = component.minimum.map(Double.init)
-            ?? (component.isNormalized
-                ? 0
-                : (component.rawData["minimumValue"] as? Double ?? component.minValue ?? 0))
-        var maxValue: Double = component.maximum.map(Double.init)
-            ?? (component.isNormalized
-                ? 1
-                : (component.rawData["maximumValue"] as? Double ?? component.maxValue ?? 1))
+        let attrs = component.typedAttributes(SliderAttributes.self)
 
-        // range property (array format: [min, max])
-        if let range = component.rawData["range"] as? [Double], range.count == 2 {
+        // Min/Max values. Canonical names are minimum/maximum; the
+        // minimumValue/minValue and maximumValue/maxValue alias
+        // spellings are resolved inside the generated extraction
+        // (raw L0 layouts only).
+        var minValue: Double = attrs.minimum?.value ?? 0
+        var maxValue: Double = attrs.maximum?.value ?? 1
+
+        // range property (array format: [min, max] — undeclared legacy key)
+        if let range = component.rawAttribute("range") as? [Double], range.count == 2 {
             minValue = range[0]
             maxValue = range[1]
         }
 
-        // Value binding: check "value" key in rawData for binding expression
-        let valueExpr = component.rawData["value"] as? String
+        // Value binding expression ("@{prop}")
+        let valueExpr = attrs.value?.bindingString
         let valueBinding = DynamicBindingHelper.double(
             valueExpr,
             data: data,
@@ -60,10 +57,9 @@ public struct SliderConverter {
             result = AnyView(result.disabled(true))
         }
 
-        // onValueChange handler (onValueChanged is the definitions
-        // alias — L0 fallback only)
-        let handler = component.onValueChange
-            ?? (component.isNormalized ? nil : component.rawData["onValueChanged"] as? String)
+        // onValueChange handler (onValueChanged alias resolved inside
+        // the generated extraction, L0 only)
+        let handler = attrs.onValueChange?.rawRepresentation as? String
         if let handler = handler,
            let _ = DynamicEventHelper.extractPropertyName(from: handler) {
             // Determine the binding property to observe
