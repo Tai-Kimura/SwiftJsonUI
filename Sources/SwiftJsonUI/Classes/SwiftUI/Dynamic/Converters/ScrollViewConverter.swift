@@ -53,7 +53,7 @@ public struct ScrollViewConverter {
         }
 
         // --- Keyboard avoidance ---
-        let keyboardAvoidance = (component.rawData["keyboardAvoidance"] as? Bool) ?? true
+        let keyboardAvoidance = component.typedAttributes(ScrollViewAttributes.self).keyboardAvoidance ?? true
 
         // --- Build inner stack content ---
         let innerContent = buildInnerContent(
@@ -91,9 +91,7 @@ public struct ScrollViewConverter {
         // chain shape stays the same regardless of value (preserves view identity
         // across toggles).
         var scrollEnabled: Bool = component.scrollEnabled ?? true
-        if let scrollEnabledBinding = component.rawData["scrollEnabled"] as? String,
-           scrollEnabledBinding.hasPrefix("@{") && scrollEnabledBinding.hasSuffix("}") {
-            let propName = String(scrollEnabledBinding.dropFirst(2).dropLast())
+        if let propName = component.typedAttributes(ScrollViewAttributes.self).scrollEnabled?.bindingExpression {
             if let value = data[propName] as? Bool {
                 scrollEnabled = value
             }
@@ -122,7 +120,7 @@ public struct ScrollViewConverter {
 
         // --- 4.5. .defaultScrollAnchor for iOS 17+ ---
         var resolvedDefaultScrollAnchor = component.defaultScrollAnchor
-        if let binding = component.rawData["defaultScrollAnchor"] as? String,
+        if let binding = component.rawAttribute("defaultScrollAnchor") as? String,
            binding.hasPrefix("@{") && binding.hasSuffix("}") {
             let propName = String(binding.dropFirst(2).dropLast())
             if let value = data[propName] as? String {
