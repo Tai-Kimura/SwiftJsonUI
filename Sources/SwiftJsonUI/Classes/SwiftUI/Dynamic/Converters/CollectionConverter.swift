@@ -59,8 +59,9 @@ public struct CollectionConverter {
         let isHorizontal = component.layout == "horizontal" || component.orientation == "horizontal"
         let isFlow = component.layout == "flow"
         let hasSections = !sections.isEmpty
-        let cellIdProperty = component.rawData["cellIdProperty"] as? String
-        let autoChangeTrackingId = component.rawData["autoChangeTrackingId"] as? Bool ?? false
+        let attrs = component.typedAttributes(CollectionAttributes.self)
+        let cellIdProperty = attrs.cellIdProperty
+        let autoChangeTrackingId = attrs.autoChangeTrackingId ?? false
 
         if autoChangeTrackingId && (cellIdProperty == nil || cellIdProperty!.isEmpty) {
             logAutoTrackingMisconfiguration(componentId: component.id)
@@ -68,9 +69,7 @@ public struct CollectionConverter {
 
         // Resolve data source from items binding
         var dataSource: CollectionDataSource? = nil
-        if let itemsBinding = component.rawData["items"] as? String,
-           itemsBinding.hasPrefix("@{") && itemsBinding.hasSuffix("}") {
-            let propertyName = String(itemsBinding.dropFirst(2).dropLast())
+        if let propertyName = attrs.items?.bindingExpression {
             if let resolved = data[propertyName] as? CollectionDataSource {
                 dataSource = resolved.reconfigured(
                     cellIdProperty: cellIdProperty,
@@ -89,7 +88,7 @@ public struct CollectionConverter {
 
         // Resolve onItemAppear callback
         var onItemAppearCallback: ((Int) -> Void)? = nil
-        if let onItemAppearRaw = component.rawData["onItemAppear"] as? String,
+        if let onItemAppearRaw = component.rawAttribute("onItemAppear") as? String,
            let propName = DynamicEventHelper.extractPropertyName(from: onItemAppearRaw) {
             onItemAppearCallback = data[propName] as? ((Int) -> Void)
         }
@@ -117,8 +116,10 @@ public struct CollectionConverter {
         // toggle propagates through the same CollectionStackView wrapper without
         // changing modifier-chain shape. Paging always wins (HorizontalPager is
         // inherently lazy).
+        // `lazy` accepts a legacy boolean besides the declared enum —
+        // wider than the declared kind, so raw passthrough.
         let resolvedLazy: Any? = DynamicBindingHelper.resolveValue(
-            component.rawData["lazy"],
+            component.rawAttribute("lazy"),
             data: data
         )
         let collectionMode = CollectionStackMode(json: resolvedLazy)
@@ -232,9 +233,8 @@ public struct CollectionConverter {
         // chain shape stays the same regardless of value (preserves
         // ScrollViewReader / view identity across toggles).
         var scrollEnabled: Bool = component.scrollEnabled ?? true
-        if let scrollEnabledBinding = component.rawData["scrollEnabled"] as? String,
-           scrollEnabledBinding.hasPrefix("@{") && scrollEnabledBinding.hasSuffix("}") {
-            let propName = String(scrollEnabledBinding.dropFirst(2).dropLast())
+        if let propName = component.typedAttributes(CollectionAttributes.self)
+            .scrollEnabled?.bindingExpression {
             if let value = data[propName] as? Bool {
                 scrollEnabled = value
             }
@@ -243,7 +243,7 @@ public struct CollectionConverter {
 
         // 2.5. .defaultScrollAnchor for iOS 17+
         var resolvedDefaultScrollAnchor = component.defaultScrollAnchor
-        if let binding = component.rawData["defaultScrollAnchor"] as? String,
+        if let binding = component.rawAttribute("defaultScrollAnchor") as? String,
            binding.hasPrefix("@{") && binding.hasSuffix("}") {
             let propName = String(binding.dropFirst(2).dropLast())
             if let value = data[propName] as? String {
@@ -456,7 +456,7 @@ public struct CollectionConverter {
 
         let hasHeader = sectionConfig["header"] != nil && firstSection.header != nil
         let hasFooter = sectionConfig["footer"] != nil && firstSection.footer != nil
-        let hideSeparator = component.rawData["hideSeparator"] as? Bool ?? false
+        let hideSeparator = component.rawAttribute("hideSeparator") as? Bool ?? false
 
         let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
 
@@ -633,7 +633,8 @@ public struct CollectionConverter {
         let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
 
         // Resolve currentPage binding
-        let currentPageRaw = component.rawData["currentPage"] as? String
+        let currentPageRaw = component.typedAttributes(CollectionAttributes.self)
+            .currentPage?.bindingString
         let currentPageBinding: SwiftUI.Binding<Int>? = {
             if let raw = currentPageRaw,
                let propName = DynamicEventHelper.extractPropertyName(from: raw) {
@@ -648,11 +649,10 @@ public struct CollectionConverter {
         // name; onValueChanged / onPageChanged are the definitions
         // aliases (consulted only for raw L0 layouts).
         var onPageChangedCallback: ((Int) -> Void)? = nil
-        let pageChangedRaw = component.onValueChange
-            ?? (component.isNormalized
-                ? nil
-                : (component.rawData["onValueChanged"] as? String
-                    ?? component.rawData["onPageChanged"] as? String))
+        // onValueChanged / onPageChanged aliases are resolved inside the
+        // generated extraction (raw L0 layouts only)
+        let pageChangedRaw = component.typedAttributes(CollectionAttributes.self)
+            .onValueChange?.rawRepresentation as? String
         if let pageChangedRaw = pageChangedRaw,
            let propName = DynamicEventHelper.extractPropertyName(from: pageChangedRaw) {
             onPageChangedCallback = data[propName] as? ((Int) -> Void)
@@ -690,8 +690,8 @@ public struct CollectionConverter {
         let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 10
         // `cellWidth` / `cellHeight` pin each cell to a fixed size inside the grid.
         // When absent the existing flexible sizing path is preserved.
-        let cellWidth = cgFloatFromRaw(component.rawData["cellWidth"])
-        let cellHeight = cgFloatFromRaw(component.rawData["cellHeight"])
+        let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
+        let cellHeight = cgFloatFromRaw(component.rawAttribute("cellHeight"))
 
         return AnyView(
             ScrollViewReader { scrollProxy in
@@ -837,8 +837,8 @@ public struct CollectionConverter {
         let itemSpacing = component.itemSpacing ?? component.spacing ?? 0
         let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
-        let cellWidth = cgFloatFromRaw(component.rawData["cellWidth"])
-        let cellHeight = cgFloatFromRaw(component.rawData["cellHeight"])
+        let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
+        let cellHeight = cgFloatFromRaw(component.rawAttribute("cellHeight"))
 
         let sectionBodies: (Int) -> AnyView = { sectionIndex in
             let sectionConfig = sections[sectionIndex]
