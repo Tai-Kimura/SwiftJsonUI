@@ -51,12 +51,17 @@ public struct GradientViewConverter {
         // --- 2. .background(LinearGradient(...)) ---
         // Colors + locations may live at the top level (legacy) or nested inside
         // a `gradient` object emitted by the tool: `{colors, locations, startPoint, endPoint}`.
-        let gradientObject = component.rawData["gradient"] as? [String: Any]
+        let attrs = component.typedAttributes(GradientViewAttributes.self)
+        // `gradient` is declared as an array, but the tool may emit an
+        // object {colors, locations, startPoint, endPoint} — wider than
+        // the declared kind, so the object form goes through the raw
+        // passthrough (see TypedAttributes RAW_LOOKUP rationale).
+        let gradientObject = component.rawAttribute("gradient") as? [String: Any]
         let colorArray = (gradientObject?["colors"] as? [String])
-            ?? (component.rawData["colors"] as? [String])
-            ?? (component.rawData["gradient"] as? [String])
+            ?? (component.rawAttribute("colors") as? [String])
+            ?? (attrs.gradient as? [String])
         let locations = (gradientObject?["locations"] as? [Any])
-            ?? (component.rawData["locations"] as? [Any])
+            ?? attrs.locations
         if let colorArray = colorArray, !colorArray.isEmpty {
             let gradient = buildLinearGradient(
                 colorArray: colorArray,
@@ -127,8 +132,8 @@ public struct GradientViewConverter {
         component: DynamicComponent,
         gradientObject: [String: Any]?
     ) -> (UnitPoint, UnitPoint) {
-        if let startDict = component.rawData["startPoint"] as? [String: Any],
-           let endDict = component.rawData["endPoint"] as? [String: Any] {
+        if let startDict = component.rawAttribute("startPoint") as? [String: Any],
+           let endDict = component.rawAttribute("endPoint") as? [String: Any] {
             return (gradientUnitPoint(from: startDict), gradientUnitPoint(from: endDict))
         }
         if let startDict = gradientObject?["startPoint"] as? [String: Any],
@@ -136,14 +141,15 @@ public struct GradientViewConverter {
             return (gradientUnitPoint(from: startDict), gradientUnitPoint(from: endDict))
         }
         let startName = (gradientObject?["startPoint"] as? String)
-            ?? (component.rawData["startPoint"] as? String)
+            ?? (component.rawAttribute("startPoint") as? String)
         let endName = (gradientObject?["endPoint"] as? String)
-            ?? (component.rawData["endPoint"] as? String)
+            ?? (component.rawAttribute("endPoint") as? String)
         if let startName = startName, let endName = endName {
             return (namedUnitPoint(startName), namedUnitPoint(endName))
         }
 
-        let direction = component.rawData["gradientDirection"] as? String ?? "Vertical"
+        let direction = component.typedAttributes(GradientViewAttributes.self)
+            .gradientDirection?.rawStringValue ?? "Vertical"
         switch direction {
         case "Horizontal", "horizontal", "leftToRight":
             return (.leading, .trailing)
