@@ -6,8 +6,8 @@
 [![Platform](https://img.shields.io/cocoapods/p/SwiftJsonUI.svg?style=flat)](https://cocoapods.org/pods/SwiftJsonUI)
 
 ## Requirements
-iOS8 or later<br>
-Swift4+
+iOS 13 or later (CocoaPods) / iOS 17 or later (Swift Package Manager)<br>
+Swift 5.8+
 
 ## Installation
 
