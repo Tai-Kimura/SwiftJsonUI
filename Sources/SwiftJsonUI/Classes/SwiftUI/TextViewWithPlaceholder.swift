@@ -35,7 +35,12 @@ public struct TextViewWithPlaceholder: View {
     
     @FocusState private var isFocused: Bool
     @State private var textHeight: CGFloat = 0
-    
+
+    /// Optional external focus binding (e.g. the generated `data.<id>IsFocused`)
+    /// kept in two-way sync with the internal `@FocusState`, so a ViewModel can
+    /// drive focus (`data.xIsFocused = true` → focus + keyboard) and observe it.
+    private let externalFocus: SwiftUI.Binding<Bool>?
+
     public init(
         text: SwiftUI.Binding<String>,
         hint: String? = nil,
@@ -52,9 +57,11 @@ public struct TextViewWithPlaceholder: View {
         containerInset: EdgeInsets = EdgeInsets(top: 8, leading: 5, bottom: 8, trailing: 5),
         flexible: Bool = false,
         minHeight: CGFloat? = nil,
-        maxHeight: CGFloat? = nil
+        maxHeight: CGFloat? = nil,
+        isFocused: SwiftUI.Binding<Bool>? = nil
     ) {
         self._text = text
+        self.externalFocus = isFocused
         self.hint = hint
         self.hintColor = hintColor
         self.hintFontSize = hintFontSize
@@ -162,6 +169,23 @@ public struct TextViewWithPlaceholder: View {
         }
         .background(backgroundColor)
         .cornerRadius(cornerRadius)
+        // Two-way sync between the internal FocusState and the optional
+        // external binding (guarded both ways to avoid update loops).
+        .onChange(of: isFocused) { _, newValue in
+            if let externalFocus, externalFocus.wrappedValue != newValue {
+                externalFocus.wrappedValue = newValue
+            }
+        }
+        .onChange(of: externalFocus?.wrappedValue) { _, newValue in
+            if let newValue, isFocused != newValue {
+                isFocused = newValue
+            }
+        }
+        .onAppear {
+            if externalFocus?.wrappedValue == true {
+                isFocused = true
+            }
+        }
     }
     
     private func calculateHeight() -> CGFloat {
