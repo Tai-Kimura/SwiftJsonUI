@@ -14,6 +14,12 @@ public struct ScrollViewAttributes {
         case scrollableAxes = "scrollableAxes"
     }
 
+    public enum KeyboardDismissMode: String {
+        case none = "none"
+        case onDrag = "onDrag"
+        case interactive = "interactive"
+    }
+
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
@@ -93,8 +99,8 @@ public struct ScrollViewAttributes {
     /// Enable keyboard avoidance
     public let keyboardAvoidance: Bool?
 
-    /// Keyboard dismiss mode
-    public let keyboardDismissMode: String?
+    /// How scrolling dismisses the soft keyboard. Default 'none': scrolling never dismisses (keyboard stays). 'interactive': dragging down over the keyboard dismisses it interactively. 'onDrag': any scroll dismisses immediately. Value names follow UIKit UIScrollView.keyboardDismissMode; SwiftUI mode maps to scrollDismissesKeyboard(.never/.interactively/.immediately). iOS-effective; other platforms currently ignore it.
+    public let keyboardDismissMode: AttrEnum<KeyboardDismissMode>?
 
     /// Maximum zoom scale (binding supported)
     public let maxZoom: AttrValue<Double>?
@@ -139,7 +145,7 @@ public struct ScrollViewAttributes {
         self.decelerationRate = AttrCoerce.string(AttrCoerce.lookup(json, "decelerationRate"))
         self.indicatorStyle = AttrCoerce.string(AttrCoerce.lookup(json, "indicatorStyle"))
         self.keyboardAvoidance = AttrCoerce.boolean(AttrCoerce.lookup(json, "keyboardAvoidance"))
-        self.keyboardDismissMode = AttrCoerce.string(AttrCoerce.lookup(json, "keyboardDismissMode"))
+        self.keyboardDismissMode = Self.parseKeyboardDismissMode(AttrCoerce.lookup(json, "keyboardDismissMode"))
         self.maxZoom = AttrCoerce.attrValue(AttrCoerce.lookup(json, "maxZoom"), AttrCoerce.number)
         self.minZoom = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minZoom"), AttrCoerce.number)
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
@@ -164,6 +170,20 @@ public struct ScrollViewAttributes {
             }
         }
         AttrCodegenWarnings.emit("ScrollView.contentInsetAdjustmentBehavior: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseKeyboardDismissMode(_ raw: Any?) -> AttrEnum<KeyboardDismissMode>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "none": return .known(KeyboardDismissMode.none)
+            case "ondrag": return .known(KeyboardDismissMode.onDrag)
+            case "interactive": return .known(KeyboardDismissMode.interactive)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("ScrollView.keyboardDismissMode: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

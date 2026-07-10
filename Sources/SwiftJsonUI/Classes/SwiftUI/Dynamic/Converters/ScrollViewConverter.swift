@@ -66,7 +66,7 @@ public struct ScrollViewConverter {
         )
 
         // --- 1. AdvancedKeyboardAvoidingScrollView ---
-        let keyboardDismissMode = component.typedAttributes(ScrollViewAttributes.self).keyboardDismissMode
+        let keyboardDismissMode = component.typedAttributes(ScrollViewAttributes.self).keyboardDismissMode?.knownValue?.rawValue
         var result: AnyView
         if keyboardAvoidance {
             result = AnyView(
