@@ -20,18 +20,33 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
     private let axes: Axis.Set
     private let showsIndicators: Bool
     private let configuration: KeyboardAvoidanceConfiguration
+    private let keyboardDismissMode: String?
     private let content: Content
-    
+
     public init(
         _ axes: Axis.Set = .vertical,
         showsIndicators: Bool = true,
         configuration: KeyboardAvoidanceConfiguration = .default,
+        keyboardDismissMode: String? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.axes = axes
         self.showsIndicators = showsIndicators
         self.configuration = configuration
+        self.keyboardDismissMode = keyboardDismissMode
         self.content = content()
+    }
+
+    /// JSON `keyboardDismissMode` (UIKit value names) → SwiftUI mode.
+    /// Default none/.never — scrolling never dismisses the keyboard unless
+    /// the layout opts in. (SwiftUI's own ScrollView default measures as
+    /// never-dismissing, so unset stays behavior-identical.)
+    private var scrollDismissMode: ScrollDismissesKeyboardMode {
+        switch keyboardDismissMode {
+        case "interactive": return .interactively
+        case "onDrag": return .immediately
+        default: return .never
+        }
     }
     
     public var body: some View {
@@ -67,6 +82,7 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                     }
                     .frame(minHeight: geometry.size.height)
                 }
+                .scrollDismissesKeyboard(scrollDismissMode)
                 .coordinateSpace(name: scrollSpace)
                 .onAppear {
                     self.scrollProxy = proxy

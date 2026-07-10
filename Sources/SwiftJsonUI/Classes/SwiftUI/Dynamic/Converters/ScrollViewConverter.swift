@@ -66,10 +66,15 @@ public struct ScrollViewConverter {
         )
 
         // --- 1. AdvancedKeyboardAvoidingScrollView ---
+        let keyboardDismissMode = component.typedAttributes(ScrollViewAttributes.self).keyboardDismissMode
         var result: AnyView
         if keyboardAvoidance {
             result = AnyView(
-                AdvancedKeyboardAvoidingScrollView(axes, showsIndicators: showsIndicators) {
+                AdvancedKeyboardAvoidingScrollView(
+                    axes,
+                    showsIndicators: showsIndicators,
+                    keyboardDismissMode: keyboardDismissMode
+                ) {
                     innerContent
                 }
             )
@@ -78,7 +83,8 @@ public struct ScrollViewConverter {
                 AdvancedKeyboardAvoidingScrollView(
                     axes,
                     showsIndicators: showsIndicators,
-                    configuration: KeyboardAvoidanceConfiguration(isEnabled: false)
+                    configuration: KeyboardAvoidanceConfiguration(isEnabled: false),
+                    keyboardDismissMode: keyboardDismissMode
                 ) {
                     innerContent
                 }

@@ -58,10 +58,15 @@ public struct DynamicScrollViewContainer: View {
         var result: AnyView
 
         let keyboardAvoidance = component.rawData["keyboardAvoidance"] as? Bool ?? true
+        let keyboardDismissMode = component.rawData["keyboardDismissMode"] as? String
 
         if keyboardAvoidance {
             result = AnyView(
-                AdvancedKeyboardAvoidingScrollView(axes, showsIndicators: showsIndicators) {
+                AdvancedKeyboardAvoidingScrollView(
+                    axes,
+                    showsIndicators: showsIndicators,
+                    keyboardDismissMode: keyboardDismissMode
+                ) {
                     scrollContent(children: children, isHorizontal: isHorizontal)
                 }
             )
@@ -70,7 +75,8 @@ public struct DynamicScrollViewContainer: View {
                 AdvancedKeyboardAvoidingScrollView(
                     axes,
                     showsIndicators: showsIndicators,
-                    configuration: KeyboardAvoidanceConfiguration(isEnabled: false)
+                    configuration: KeyboardAvoidanceConfiguration(isEnabled: false),
+                    keyboardDismissMode: keyboardDismissMode
                 ) {
                     scrollContent(children: children, isHorizontal: isHorizontal)
                 }
