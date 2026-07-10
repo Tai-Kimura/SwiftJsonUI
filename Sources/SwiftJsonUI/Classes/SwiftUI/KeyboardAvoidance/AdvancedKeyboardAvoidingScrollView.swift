@@ -67,6 +67,12 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                     }
                     .frame(minHeight: geometry.size.height)
                 }
+                // Platform-idiomatic interactive dismissal (SwiftUI ScrollView
+                // does NOT enable it by default — measured): dragging down over
+                // the keyboard closes it. Without this, a screen whose submit
+                // button sits under a number-pad keyboard (no return key) is a
+                // dead end for users and UI tests alike.
+                .scrollDismissesKeyboard(.interactively)
                 .coordinateSpace(name: scrollSpace)
                 .onAppear {
                     self.scrollProxy = proxy
