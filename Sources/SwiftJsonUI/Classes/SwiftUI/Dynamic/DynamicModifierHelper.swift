@@ -422,9 +422,18 @@ public struct DynamicModifierHelper {
     /// Component types whose SwiftUI representation is a plain layout container
     /// (HStack/VStack/ZStack/ScrollView wrapper) that does not become an
     /// accessibility element on its own.
+    /// `embed` is included because EmbedContainer is a plain wrapper view: a
+    /// bare .accessibilityIdentifier on it is pushed down into the embedded
+    /// screen and clobbers the identifier of that screen's root container
+    /// (its nearest descendant element) — the embedded root id then never
+    /// resolves in XCUITest while pane leaves still do. An id-bearing Embed
+    /// always gets the merge-hazard anchor (subtree unknown, contribution 0).
+    /// Keep in sync with sjui_tools BaseViewConverter::
+    /// ACCESSIBILITY_CONTAINER_TYPES.
     private static let accessibilityContainerTypes: Set<String> = [
         "view", "safeareaview", "scrollview", "scroll",
-        "blur", "blurview", "gradientview", "gradient"
+        "blur", "blurview", "gradientview", "gradient",
+        "embed"
     ]
 
     /// Component types guaranteed to surface at least one accessibility
