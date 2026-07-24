@@ -10,6 +10,7 @@ import Foundation
 public struct EmbedAttributes {
     public enum NavigationMode: String {
         case delegate = "delegate"
+        case isolated = "isolated"
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -36,10 +37,10 @@ public struct EmbedAttributes {
     /// Map of embedded-screen event names → parent VM handler names. Event keys must follow on[A-Z]... pattern. Handler values must reference existing entries in the parent VM's dataFlow.viewModel.methods or stateManagement.eventHandlers. Embedded VMs emit events via the lib-provided emit(name, payload) helper (no spec declaration required).
     public let events: [String: Any]?
 
-    /// v1 supports 'delegate' only: embedded screen shares the parent's NavController/Router. push() bubbles to the parent; pop/dismiss/navigateBack are bounded at the embed (do not close the embed itself). 'isolated' (private nav stack) is deferred to v1.5. [default: delegate]
+    /// 'delegate' (default): embedded screen shares the parent's NavController/Router. push() bubbles to the parent; pop/dismiss/navigateBack are bounded at the embed (do not close the embed itself). 'isolated': the embed owns a private navigation stack (nested NavigationStack/NavHost/memory stack); push stays inside the embed, pop stops at the embed stack's root, OS gestures/browser back are platform-delegated, and present-type transitions (sheet/dialog/dismiss) are forbidden in the embedded screen's spec. Requires SwiftJsonUI >= 10.5.0 / KotlinJsonUI >= 2.12.0 / EmbedContainer.tsx template v2. [default: delegate]
     public let navigationMode: AttrEnum<NavigationMode>?
 
-    /// Init params handed to the embedded screen's ViewModel (flat dict, no nesting in v1). Keys must be camelCase. Values may be literals or @{varName} bindings against the parent VM. VMs that implement applyInitParams(_:) receive these; others ignore them.
+    /// Init params handed to the embedded screen's ViewModel. Keys must be camelCase at every level. Values form a tree: intermediate nodes must be literal objects; leaves may be scalar literals or @{varName} bindings against the parent VM (bindings are leaf-only — an @{} at an object position is a validation error; arrays are not supported). A callback-typed parent VM property passed as a leaf binding is the canonical escape hatch for navigation out of an isolated embed. VMs that implement applyInitParams(_:) receive these; others ignore them.
     public let params: AttrValue<[String: Any]>?
 
     /// Layout JSON filename of the screen to embed (snake_case, no extension, relative to layout root). Codegen converts to PascalCase for the generated View class name; dynamic mode loads the layout JSON as-is. [required]
@@ -60,6 +61,7 @@ public struct EmbedAttributes {
         if let s = raw as? String {
             switch s.lowercased() {
             case "delegate": return .known(NavigationMode.delegate)
+            case "isolated": return .known(NavigationMode.isolated)
             default: break
             }
         }

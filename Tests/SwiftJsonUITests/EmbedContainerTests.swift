@@ -121,5 +121,91 @@ final class EmbedContainerTests: XCTestCase {
         ]
         XCTAssertEqual(modes, ["delegate", "isolated"])
     }
+
+    // MARK: - EmbedNavigator (isolated private stack, 10.5.0)
+
+    func testNavigator_pushIncreasesDepth() {
+        let nav = EmbedNavigator()
+        XCTAssertEqual(nav.depth, 0)
+        nav.push(screen: "order_detail")
+        XCTAssertEqual(nav.depth, 1)
+        nav.push(screen: "order_history", params: ["orderId": "a"])
+        XCTAssertEqual(nav.depth, 2)
+    }
+
+    func testNavigator_popStopsAtRoot() {
+        let nav = EmbedNavigator()
+        nav.push(screen: "a")
+        nav.pop()
+        XCTAssertEqual(nav.depth, 0)
+        // Bounded at the embed stack root: extra pops are no-ops, never
+        // negative, never escape the embed.
+        nav.pop()
+        nav.pop()
+        XCTAssertEqual(nav.depth, 0)
+    }
+
+    func testNavigator_popToRootClearsAllPushedEntries() {
+        let nav = EmbedNavigator()
+        nav.push(screen: "a")
+        nav.push(screen: "b")
+        nav.push(screen: "c")
+        nav.popToRoot()
+        XCTAssertEqual(nav.depth, 0)
+        nav.popToRoot() // no-op at root
+        XCTAssertEqual(nav.depth, 0)
+    }
+
+    func testNavigator_supportsAppDefinedHashableRoutes() {
+        struct Route: Hashable { let id: Int }
+        let nav = EmbedNavigator()
+        nav.push(Route(id: 1))
+        XCTAssertEqual(nav.depth, 1)
+        nav.pop()
+        XCTAssertEqual(nav.depth, 0)
+    }
+
+    // MARK: - EmbedDestination hashability
+
+    func testEmbedDestination_equalityIncludesParams() {
+        let a = EmbedDestination(screen: "detail", params: ["id": "1"])
+        let b = EmbedDestination(screen: "detail", params: ["id": "1"])
+        let c = EmbedDestination(screen: "detail", params: ["id": "2"])
+        XCTAssertEqual(a, b)
+        XCTAssertNotEqual(a, c)
+        XCTAssertEqual(a.hashValue, b.hashValue)
+    }
+
+    func testEmbedDestination_nestedParamsAffectFingerprint() {
+        let a = EmbedDestination(screen: "s", params: ["profile": ["name": "Ada"]])
+        let b = EmbedDestination(screen: "s", params: ["profile": ["name": "Bob"]])
+        XCTAssertNotEqual(a, b)
+    }
+
+    // MARK: - EmbeddedScreenContext.navigator plumbing
+
+    func testContext_carriesNavigatorInIsolatedMode() {
+        let nav = EmbedNavigator()
+        let ctx = EmbeddedScreenContext(
+            embedId: "pane",
+            screen: "order_detail",
+            params: [:],
+            navigationDelegate: EmbeddedNavigationDelegate(boundedAtEmbed: false),
+            eventBridge: nil,
+            navigator: nav
+        )
+        XCTAssertTrue(ctx.navigator === nav)
+    }
+
+    func testContext_navigatorDefaultsToNilForDelegateMode() {
+        let ctx = EmbeddedScreenContext(
+            embedId: "pane",
+            screen: "order_detail",
+            params: [:],
+            navigationDelegate: EmbeddedNavigationDelegate(boundedAtEmbed: true),
+            eventBridge: nil
+        )
+        XCTAssertNil(ctx.navigator)
+    }
 }
 #endif
