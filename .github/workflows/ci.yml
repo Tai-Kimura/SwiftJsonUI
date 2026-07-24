@@ -42,7 +42,7 @@ jobs:
           # fresh checkout. Resolve dynamically, preferring the package
           # scheme when present.
           SCHEME=$(xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' \
-            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs)
+            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs || true)
           if [ -z "$SCHEME" ]; then
             echo "No usable scheme found:" >&2
             xcodebuild -list >&2 || true
@@ -54,10 +54,13 @@ jobs:
           # xcodebuild's eligible list, not simctl's; runner images vary.
           DESTS=$(xcodebuild -scheme "$SCHEME" -showdestinations 2>&1 \
             | grep 'platform:iOS Simulator' || true)
+          # `|| true` on every extraction: with -e + pipefail a no-match
+          # grep (exit 1) would otherwise kill the script before the
+          # fallback can run (exactly what the second CI attempt did).
           DEST_ID=$(echo "$DESTS" | grep 'name:iPhone' | head -1 \
-            | sed -E 's/.*id:([A-F0-9-]+).*/\1/')
+            | sed -E 's/.*id:([A-F0-9-]+).*/\1/' || true)
           if [ -z "$DEST_ID" ]; then
-            DEST_ID=$(echo "$DESTS" | head -1 | sed -E 's/.*id:([A-F0-9-]+).*/\1/')
+            DEST_ID=$(echo "$DESTS" | head -1 | sed -E 's/.*id:([A-F0-9-]+).*/\1/' || true)
           fi
           if [ -z "$DEST_ID" ]; then
             echo "No eligible iOS Simulator destination found; raw list:" >&2
