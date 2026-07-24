@@ -375,32 +375,83 @@ public extension View {
     func receiveEmbedInitParams<VM: EmbeddedInitParamsReceiver>(to viewModel: VM) -> some View {
         modifier(EmbedInitParamsModifier(viewModel: viewModel))
     }
+
+    /// Type-erased overload for generated wiring: codegen emits this
+    /// unconditionally for every embedded screen's view, without knowing
+    /// whether the VM conforms to `EmbeddedInitParamsReceiver`. The cast is
+    /// dynamic — a non-conforming view model makes this a no-op.
+    ///
+    /// The consecutive same-params guard (`EmbedInitParamsApplyGuard`) lets
+    /// this generated wiring coexist with legacy manual
+    /// `.receiveEmbedInitParams(to:)` calls during migration: the second
+    /// apply of identical params to the same VM instance is suppressed.
+    @ViewBuilder
+    func receiveEmbedInitParams(to viewModel: Any) -> some View {
+        if let receiver = viewModel as? EmbeddedInitParamsReceiver {
+            modifier(EmbedInitParamsModifier(viewModel: receiver))
+        } else {
+            self
+        }
+    }
 }
 
-private struct EmbedInitParamsModifier<VM: EmbeddedInitParamsReceiver>: ViewModifier {
+// MARK: - Double-drive guard
+
+/// Suppresses a consecutive apply of the SAME params to the same VM
+/// instance. Needed while generated wiring (unconditional emit, 15-4) and
+/// legacy manual `.receiveEmbedInitParams(to:)` calls coexist on one view —
+/// both fire on appear, but `applyInitParams` must run once per distinct
+/// params snapshot. The last-applied fingerprint is stored on the VM
+/// instance itself (associated object) so instance identity — not a
+/// reusable memory address — scopes the guard.
+enum EmbedInitParamsApplyGuard {
+    private static var fingerprintKey: UInt8 = 0
+
+    /// Stable fingerprint of a params snapshot (sorted keys + value
+    /// descriptions; nested dicts stringify via their description, so
+    /// nested leaf changes still flip the fingerprint).
+    static func fingerprint(_ params: [String: Any]) -> String {
+        return params.keys.sorted().map { "\($0)=\(params[$0] ?? "nil")" }.joined(separator: "|")
+    }
+
+    /// Returns true when the apply should proceed (params differ from the
+    /// previous apply on this VM instance), recording the new fingerprint.
+    static func shouldApply(_ params: [String: Any], to receiver: EmbeddedInitParamsReceiver) -> Bool {
+        let next = fingerprint(params)
+        let last = objc_getAssociatedObject(receiver, &fingerprintKey) as? String
+        if last == next { return false }
+        objc_setAssociatedObject(receiver, &fingerprintKey, next, .OBJC_ASSOCIATION_RETAIN_NONATOMIC)
+        return true
+    }
+}
+
+private struct EmbedInitParamsModifier: ViewModifier {
     @Environment(\.embeddedScreenContext) private var context
-    let viewModel: VM
+    let viewModel: any EmbeddedInitParamsReceiver
 
     func body(content: Content) -> some View {
         content
             .onAppear {
                 if let params = context?.params, !params.isEmpty {
-                    viewModel.applyInitParams(params)
+                    apply(params)
                 }
             }
             .onChange(of: paramsFingerprint) { _, _ in
                 if let params = context?.params {
-                    viewModel.applyInitParams(params)
+                    apply(params)
                 }
             }
     }
 
+    private func apply(_ params: [String: Any]) {
+        guard EmbedInitParamsApplyGuard.shouldApply(params, to: viewModel) else { return }
+        viewModel.applyInitParams(params)
+    }
+
     /// `[String: Any]` is not Equatable. We synthesize a fingerprint from
     /// the description so `.onChange` fires when the dict content shifts.
-    /// Good enough for params (small snapshots; nested dicts stringify via
-    /// their description, so nested leaf changes still flip the fingerprint).
     private var paramsFingerprint: String {
         guard let params = context?.params else { return "" }
-        return params.keys.sorted().map { "\($0)=\(params[$0] ?? "nil")" }.joined(separator: "|")
+        return EmbedInitParamsApplyGuard.fingerprint(params)
     }
 }

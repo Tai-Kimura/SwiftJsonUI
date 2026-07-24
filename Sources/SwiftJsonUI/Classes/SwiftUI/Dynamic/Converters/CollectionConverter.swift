@@ -107,8 +107,8 @@ public struct CollectionConverter {
         // Resolve scroll publisher
         var scrollPublisher: AnyPublisher<Int, Never>? = nil
         if let scrollToBinding = component.scrollTo,
-           scrollToBinding.hasPrefix("@{") && scrollToBinding.hasSuffix("}") {
-            let propName = String(scrollToBinding.dropFirst(2).dropLast())
+           let propName = DynamicBindingResolver.inner(of: scrollToBinding) {
+            // Reactive plumbing: subjects live under flat keys by design
             if let subject = data[propName] as? PassthroughSubject<Int, Never> {
                 scrollPublisher = subject.eraseToAnyPublisher()
             }
@@ -244,9 +244,10 @@ public struct CollectionConverter {
         // chain shape stays the same regardless of value (preserves
         // ScrollViewReader / view identity across toggles).
         var scrollEnabled: Bool = component.scrollEnabled ?? true
-        if let propName = component.typedAttributes(CollectionAttributes.self)
+        if let expr = component.typedAttributes(CollectionAttributes.self)
             .scrollEnabled?.bindingExpression {
-            if let value = data[propName] as? Bool {
+            // Canonical bool value context (coercion table / dot-path / default)
+            if let value = DynamicBindingResolver.resolveBool(expression: expr, data: data) {
                 scrollEnabled = value
             }
         }
@@ -255,9 +256,9 @@ public struct CollectionConverter {
         // 2.5. .defaultScrollAnchor for iOS 17+
         var resolvedDefaultScrollAnchor = component.defaultScrollAnchor
         if let binding = component.rawAttribute("defaultScrollAnchor") as? String,
-           binding.hasPrefix("@{") && binding.hasSuffix("}") {
-            let propName = String(binding.dropFirst(2).dropLast())
-            if let value = data[propName] as? String {
+           let inner = DynamicBindingResolver.inner(of: binding) {
+            // Canonical string value context (dot-path / `??` default)
+            if let value = DynamicBindingResolver.resolveString(expression: inner, data: data) {
                 resolvedDefaultScrollAnchor = value
             }
         }

@@ -63,13 +63,20 @@ public struct WebConverter {
 
     /// Resolve a URL string that may contain @{binding} expression
     private static func resolveUrlString(_ value: String, data: [String: Any]) -> String {
-        if value.hasPrefix("@{") && value.hasSuffix("}") {
-            let propertyName = String(value.dropFirst(2).dropLast(1))
-            if let resolved = data[propertyName] as? String {
-                return resolved
+        if let inner = DynamicBindingResolver.inner(of: value) {
+            let expression = DynamicBindingResolver.parse(inner)
+            if !expression.negated,
+               let raw = DynamicBindingResolver.lookupRaw(path: expression.path, in: data) {
+                // URL-typed values are checked at the value layer
+                if let resolvedUrl = DynamicBindingResolver.unwrap(raw) as? URL {
+                    return resolvedUrl.absoluteString
+                }
+                if let resolved = DynamicBindingResolver.stringify(raw) {
+                    return resolved
+                }
             }
-            if let resolvedUrl = data[propertyName] as? URL {
-                return resolvedUrl.absoluteString
+            if case .string(let fallback)? = expression.defaultLiteral {
+                return fallback
             }
             return value
         }

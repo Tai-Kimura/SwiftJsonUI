@@ -30,8 +30,7 @@ public struct TabViewConverter {
         // Resolve selectedIndex binding (selectedTabIndex alias is
         // resolved inside the generated extraction, L0 only)
         let selectedIndexRaw = attrs.selectedIndex?.bindingString
-        let hasSelectionBinding = selectedIndexRaw != nil
-            && selectedIndexRaw!.hasPrefix("@{") && selectedIndexRaw!.hasSuffix("}")
+        let hasSelectionBinding = DynamicBindingResolver.isBindingExpression(selectedIndexRaw)
         let selectionBinding: SwiftUI.Binding<Int> = {
             if hasSelectionBinding {
                 return DynamicBindingHelper.int(selectedIndexRaw, data: data)
@@ -221,11 +220,11 @@ private extension View {
             if let intBadge = badge as? Int {
                 self.badge(intBadge)
             } else if let stringBadge = badge as? String {
-                if stringBadge.hasPrefix("@{") && stringBadge.hasSuffix("}") {
-                    let bindingProp = String(stringBadge.dropFirst(2).dropLast())
-                    if let boundValue = data[bindingProp] as? Int {
+                if let inner = DynamicBindingResolver.inner(of: stringBadge) {
+                    // Canonical value context: Int badge first, then String
+                    if let boundValue = DynamicBindingResolver.resolveInt(expression: inner, data: data) {
                         self.badge(boundValue)
-                    } else if let boundValue = data[bindingProp] as? String {
+                    } else if let boundValue = DynamicBindingResolver.resolveString(expression: inner, data: data) {
                         self.badge(boundValue)
                     } else {
                         self

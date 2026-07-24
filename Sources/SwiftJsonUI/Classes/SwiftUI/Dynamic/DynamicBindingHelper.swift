@@ -120,13 +120,10 @@ public struct DynamicBindingHelper {
             return expression as? T
         }
 
-        if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
-            let propName = String(stringValue.dropFirst(2).dropLast(1))
-            // Unwrap SwiftUI.Binding if present
-            if let binding = data[propName] as? SwiftUI.Binding<T> {
-                return binding.wrappedValue
-            }
-            return data[propName] as? T
+        if let inner = DynamicBindingResolver.inner(of: stringValue) {
+            // Canonical value-context resolution: flat-first / dot-path /
+            // bracket-index lookup, `??` default, Binding<T> unwrap.
+            return DynamicBindingResolver.resolveTyped(expression: inner, data: data)
         }
 
         return stringValue as? T
@@ -136,37 +133,21 @@ public struct DynamicBindingHelper {
     /// Supports negation: @{!propertyName}
     /// Automatically unwraps SwiftUI.Binding<Bool> if present
     static func resolveBool(_ expression: Any?, data: [String: Any], fallback: Bool = false) -> Bool {
-        // Unwrap AnyCodable (DynamicComponent stores attrs like `enabled` as
-        // AnyCodable) — otherwise a plain `false` never survives the casts
-        // below and the fallback silently wins.
-        var expression = expression
-        if let anyCodable = expression as? AnyCodable {
-            expression = anyCodable.value
-        }
-        guard let stringValue = expression as? String else {
-            if let binding = expression as? SwiftUI.Binding<Bool> {
-                return binding.wrappedValue
-            }
-            return expression as? Bool ?? fallback
+        // Unwrap AnyCodable / Binding<Bool> at the value layer
+        // (DynamicComponent stores attrs like `enabled` as AnyCodable).
+        let unwrapped = DynamicBindingResolver.unwrap(expression)
+        guard let stringValue = unwrapped as? String else {
+            return DynamicBindingResolver.coerceBool(unwrapped) ?? fallback
         }
 
-        if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
-            var propName = String(stringValue.dropFirst(2).dropLast(1))
-            var negate = false
-            if propName.hasPrefix("!") {
-                negate = true
-                propName = String(propName.dropFirst())
-            }
-            // Unwrap SwiftUI.Binding<Bool> if present
-            if let binding = data[propName] as? SwiftUI.Binding<Bool> {
-                let value = binding.wrappedValue
-                return negate ? !value : value
-            }
-            let value = data[propName] as? Bool ?? fallback
-            return negate ? !value : value
+        if let inner = DynamicBindingResolver.inner(of: stringValue) {
+            // Canonical bool value context: one coercion table, `!` negation,
+            // dot-path / bracket-index lookup, typed `??` default.
+            return DynamicBindingResolver.resolveBool(expression: inner, data: data) ?? fallback
         }
 
-        return fallback
+        // Literal string: canonical bool coercion ("true"/"1"/"false"/"0").
+        return DynamicBindingResolver.coerceBool(stringValue) ?? fallback
     }
 
     // MARK: - Binding extraction from data dictionary
@@ -184,14 +165,13 @@ public struct DynamicBindingHelper {
 
     /// Extract SwiftUI.Binding<Bool> from @{property} expression, supporting negation
     static func extractBoolBinding(from expression: String?, data: [String: Any]) -> SwiftUI.Binding<Bool>? {
-        guard let propName = extractPropertyName(from: expression) else { return nil }
-        var name = propName
-        var negate = false
-        if name.hasPrefix("!") {
-            negate = true
-            name = String(name.dropFirst())
-        }
-        guard let binding = data[name] as? SwiftUI.Binding<Bool> else { return nil }
+        guard let inner = DynamicBindingResolver.inner(of: expression) else { return nil }
+        // Central expression parse; reactive Binding<Bool> extraction itself
+        // stays a flat-identifier lookup by design (reactive wrappers live
+        // under flat keys in generated data dicts).
+        let parsed = DynamicBindingResolver.parse(inner)
+        let negate = parsed.negated
+        guard let binding = data[parsed.path] as? SwiftUI.Binding<Bool> else { return nil }
         if negate {
             return SwiftUI.Binding<Bool>(
                 get: { !binding.wrappedValue },

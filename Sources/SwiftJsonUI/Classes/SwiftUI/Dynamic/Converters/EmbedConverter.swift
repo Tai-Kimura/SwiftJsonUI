@@ -154,17 +154,20 @@ public struct EmbedConverter {
     }
 
     /// Resolve `params` tree: for each leaf whose value is a @{binding} string,
-    /// look up the parent data dict and substitute the bound value. Literals
-    /// pass through. Intermediate nodes are literal objects (validated by the
-    /// CLI: bindings are leaf-only, arrays unsupported) — recursed here so
-    /// nested leaves resolve too.
-    private static func resolveParams(_ raw: Any?, parentData: [String: Any]) -> [String: Any] {
+    /// resolve it against the parent data dict via the canonical path lookup
+    /// (flat-first, then dot-path / bracket-index traversal). Literals pass
+    /// through with their native JSON types preserved. Intermediate nodes are
+    /// literal objects (validated by the CLI: bindings are leaf-only, arrays
+    /// unsupported) — recursed here so nested leaves resolve too.
+    /// `internal` (not private) so the shared binding vectors can drive it.
+    static func resolveParams(_ raw: Any?, parentData: [String: Any]) -> [String: Any] {
         guard let dict = raw as? [String: Any] else { return [:] }
         var resolved: [String: Any] = [:]
         for (key, value) in dict {
-            if let s = value as? String, s.hasPrefix("@{"), s.hasSuffix("}") {
-                let prop = String(s.dropFirst(2).dropLast())
-                if let bound = parentData[prop] {
+            if let s = value as? String,
+               let inner = DynamicBindingResolver.inner(of: s) {
+                if let bound = DynamicBindingResolver.resolveParamValue(
+                    expression: inner, parentData: parentData) {
                     resolved[key] = bound
                 }
                 // unresolved binding → key dropped (let embedded layout's defaultValue apply)

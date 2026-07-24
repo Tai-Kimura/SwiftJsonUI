@@ -35,8 +35,8 @@ public struct IndicatorConverter {
 
         // Binding expression - wrap in conditional visibility
         if let stringVal = animatingRaw as? String,
-           stringVal.hasPrefix("@{") && stringVal.hasSuffix("}") {
-            let varName = toCamelCase(String(stringVal.dropFirst(2).dropLast(1)))
+           DynamicBindingResolver.isBindingExpression(stringVal) {
+            // Canonical bool value context via the central resolver
             let isAnimating = DynamicBindingHelper.resolveBool(stringVal, data: data, fallback: false)
             if !isAnimating {
                 return AnyView(EmptyView())
@@ -104,11 +104,5 @@ public struct IndicatorConverter {
         }
     }
 
-    /// Convert snake_case to camelCase
-    private static func toCamelCase(_ str: String) -> String {
-        let parts = str.split(separator: "_")
-        guard let first = parts.first else { return str }
-        return String(first) + parts.dropFirst().map { $0.prefix(1).uppercased() + $0.dropFirst() }.joined()
-    }
 }
 #endif // DEBUG

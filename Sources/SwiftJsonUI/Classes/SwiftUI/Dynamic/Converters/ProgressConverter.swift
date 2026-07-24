@@ -22,9 +22,10 @@ public struct ProgressConverter {
         let attrs = component.typedAttributes(ProgressAttributes.self)
         // Progress value: check binding expression first, then static value
         let progressValue: Double = {
-            // Binding expression: @{propertyName}
-            if let propName = attrs.progress?.bindingExpression {
-                return data[propName] as? Double ?? 0
+            // Binding expression: @{propertyName} — canonical number
+            // value context (dot-path / default / Binding<Double> unwrap)
+            if let expr = attrs.progress?.bindingExpression {
+                return DynamicBindingResolver.resolveDouble(expression: expr, data: data) ?? 0
             }
             // Static value from decoded property
             return component.progress ?? 0.5

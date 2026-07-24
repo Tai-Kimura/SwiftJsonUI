@@ -25,7 +25,7 @@ public struct SegmentConverter {
         // legacy selectedTabIndex spelling
         let selectionExpr: String? = attrs.selectedIndex?.bindingString
             ?? (component.rawAttribute("selectedTabIndex") as? String).flatMap {
-                $0.hasPrefix("@{") ? $0 : nil
+                DynamicBindingResolver.isBindingExpression($0) ? $0 : nil
             }
 
         let selectedBinding = DynamicBindingHelper.int(

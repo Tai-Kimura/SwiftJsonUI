@@ -45,11 +45,9 @@ public struct LabelConverter {
         let fontSize = component.fontSize
         // Resolve font from binding if present (e.g., @{fontProp})
         let resolvedFont: String? = {
-            if let propertyName = attrs.font?.bindingExpression {
-                if let binding = data[propertyName] as? SwiftUI.Binding<String> {
-                    return binding.wrappedValue
-                }
-                if let fontString = data[propertyName] as? String {
+            if let expr = attrs.font?.bindingExpression {
+                // Canonical string value context (Binding<String> unwraps)
+                if let fontString = DynamicBindingResolver.resolveString(expression: expr, data: data) {
                     return fontString
                 }
             }
@@ -100,11 +98,12 @@ public struct LabelConverter {
 
         // fontFamily with binding support
         let fontFamily: String? = {
-            if let propertyName = attrs.fontFamily?.bindingExpression {
-                if let binding = data[propertyName] as? SwiftUI.Binding<String> {
-                    return binding.wrappedValue
+            if let expr = attrs.fontFamily?.bindingExpression {
+                // Canonical string value context (Binding<String> unwraps)
+                if let family = DynamicBindingResolver.resolveString(expression: expr, data: data) {
+                    return family
                 }
-                return data[propertyName] as? String
+                return nil
             }
             return component.fontFamily
         }()

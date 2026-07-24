@@ -41,12 +41,13 @@ public struct IncludeConverter {
         var processedData: [String: Any] = [:]
         for (key, value) in mergedData {
             if let stringValue = value as? String {
-                if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
-                    let startIndex = stringValue.index(stringValue.startIndex, offsetBy: 2)
-                    let endIndex = stringValue.index(stringValue.endIndex, offsetBy: -1)
-                    let propertyName = String(stringValue[startIndex..<endIndex])
-
-                    if let parentValue = data[propertyName] {
+                if let inner = DynamicBindingResolver.inner(of: stringValue) {
+                    // Canonical raw-preserving lookup (dot paths / `??`
+                    // defaults resolve; reactive wrappers survive).
+                    // Unresolved keeps the original literal (legacy include
+                    // behavior — richer than the embed-params drop rule).
+                    if let parentValue = DynamicBindingResolver.resolveDataValue(
+                        expression: inner, parentData: data) {
                         processedData[key] = parentValue
                     } else {
                         processedData[key] = stringValue

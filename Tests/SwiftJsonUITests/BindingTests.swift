@@ -317,4 +317,60 @@ final class BindingTests: XCTestCase {
 
         XCTAssertNil(value)
     }
+
+    // MARK: - Array index bounds (dot-numeric legacy paths)
+
+    private func makeLabelBinding(bindingPath: String) -> (SJUILabel, TestBinding) {
+        let viewHolder = TestViewHolder()
+        let label = SJUILabel()
+        label.binding = bindingPath
+        label.propertyName = "testLabel"
+        viewHolder._views["label1"] = label
+
+        let binding = TestBinding(viewHolder: viewHolder)
+        binding.bindView()
+        return (label, binding)
+    }
+
+    func testDataBindingWithArrayIndexInRange() {
+        let (label, binding) = makeLabelBinding(bindingPath: "items.0.title")
+
+        let data: [String: Any] = ["items": [["title": "First"], ["title": "Second"]]]
+        binding.data = data
+
+        XCTAssertEqual(label.text, "First")
+    }
+
+    func testDataBindingWithArrayIndexOutOfRangeDoesNotCrash() {
+        // Regression: fetchValue trapped on out-of-range indices when the
+        // bound array was shorter than the layout's dot-numeric path
+        // expected. It must resolve to nil (unresolved-key semantics).
+        let (label, binding) = makeLabelBinding(bindingPath: "items.5.title")
+        label.text = "Original"
+
+        let data: [String: Any] = ["items": [["title": "First"]]]
+        binding.data = data
+
+        XCTAssertEqual(label.text, "Original")
+    }
+
+    func testDataBindingWithNegativeArrayIndexDoesNotCrash() {
+        let (label, binding) = makeLabelBinding(bindingPath: "items.-1.title")
+        label.text = "Original"
+
+        let data: [String: Any] = ["items": [["title": "First"]]]
+        binding.data = data
+
+        XCTAssertEqual(label.text, "Original")
+    }
+
+    func testDataBindingWithEmptyArrayDoesNotCrash() {
+        let (label, binding) = makeLabelBinding(bindingPath: "items.0")
+        label.text = "Original"
+
+        let data: [String: Any] = ["items": [String]()]
+        binding.data = data
+
+        XCTAssertEqual(label.text, "Original")
+    }
 }

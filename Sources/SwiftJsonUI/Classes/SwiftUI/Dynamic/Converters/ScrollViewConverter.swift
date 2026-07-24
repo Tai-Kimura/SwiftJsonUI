@@ -97,8 +97,9 @@ public struct ScrollViewConverter {
         // chain shape stays the same regardless of value (preserves view identity
         // across toggles).
         var scrollEnabled: Bool = component.scrollEnabled ?? true
-        if let propName = component.typedAttributes(ScrollViewAttributes.self).scrollEnabled?.bindingExpression {
-            if let value = data[propName] as? Bool {
+        if let expr = component.typedAttributes(ScrollViewAttributes.self).scrollEnabled?.bindingExpression {
+            // Canonical bool value context (coercion table / dot-path / default)
+            if let value = DynamicBindingResolver.resolveBool(expression: expr, data: data) {
                 scrollEnabled = value
             }
         }
@@ -127,9 +128,9 @@ public struct ScrollViewConverter {
         // --- 4.5. .defaultScrollAnchor for iOS 17+ ---
         var resolvedDefaultScrollAnchor = component.defaultScrollAnchor
         if let binding = component.rawAttribute("defaultScrollAnchor") as? String,
-           binding.hasPrefix("@{") && binding.hasSuffix("}") {
-            let propName = String(binding.dropFirst(2).dropLast())
-            if let value = data[propName] as? String {
+           let inner = DynamicBindingResolver.inner(of: binding) {
+            // Canonical string value context (dot-path / `??` default)
+            if let value = DynamicBindingResolver.resolveString(expression: inner, data: data) {
                 resolvedDefaultScrollAnchor = value
             }
         }

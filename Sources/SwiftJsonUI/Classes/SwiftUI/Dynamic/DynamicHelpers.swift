@@ -14,90 +14,62 @@ public struct DynamicHelpers {
 
     // MARK: - Variable Processing (moved from DynamicViewModel)
 
-    /// Process text with @{} variable placeholders
+    /// Process text with @{} variable placeholders.
+    /// Canonical mixed-text interpolation (binding_semantics.json `text`
+    /// context) — flat-first / dot-path / bracket-index lookup, `??`
+    /// defaults, empty string per unresolved occurrence. One implementation:
+    /// DynamicBindingResolver.interpolate.
     public static func processText(_ text: String?, data: [String: Any]) -> String {
         guard let text = text else { return "" }
-        guard text.contains("@{") else { return text }
-
-        var result = text
-        let pattern = "@\\{([^}]+)\\}"
-        if let regex = try? NSRegularExpression(pattern: pattern, options: []) {
-            let matches = regex.matches(in: text, options: [], range: NSRange(location: 0, length: text.count))
-            for match in matches.reversed() {
-                if let range = Range(match.range, in: text),
-                   let varRange = Range(match.range(at: 1), in: text) {
-                    let varName = String(text[varRange])
-                    let cleanVarName = varName
-                        .replacingOccurrences(of: " ?? ''", with: "")
-                        .replacingOccurrences(of: "?", with: "")
-                        .trimmingCharacters(in: .whitespaces)
-
-                    let value: String
-                    // Flat lookup first; dot paths ("profile.name") traverse
-                    // nested dictionaries — nested Embed params bindings
-                    // rendered empty without this (caught by the
-                    // Embed/params__nested_leaf* conformance fixtures).
-                    if let dataValue = data[cleanVarName] ?? nestedValue(for: cleanVarName, in: data) {
-                        // Unwrap SwiftUI.Binding if present (from toDictionary(binding:))
-                        if let binding = dataValue as? SwiftUI.Binding<String> {
-                            value = binding.wrappedValue
-                        } else if let binding = dataValue as? SwiftUI.Binding<Int> {
-                            value = String(binding.wrappedValue)
-                        } else if let binding = dataValue as? SwiftUI.Binding<Double> {
-                            value = String(binding.wrappedValue)
-                        } else if let binding = dataValue as? SwiftUI.Binding<Bool> {
-                            value = String(binding.wrappedValue)
-                        } else {
-                            value = String(describing: dataValue)
-                        }
-                        Logger.debug("[DynamicHelpers] processText: '\(cleanVarName)' = '\(value)'")
-                    } else {
-                        value = ""
-                        Logger.debug("[DynamicHelpers] processText: '\(cleanVarName)' NOT FOUND in data. Available keys: \(Array(data.keys))")
-                    }
-                    result.replaceSubrange(range, with: value)
-                }
-            }
-        }
-        return result
-    }
-
-    /// Resolve a dot path ("profile.name", "profile.meta.age") against
-    /// nested `[String: Any]` dictionaries. Returns nil when the name has
-    /// no dot or any segment is missing / not a dictionary.
-    private static func nestedValue(for path: String, in data: [String: Any]) -> Any? {
-        guard path.contains(".") else { return nil }
-        var current: Any? = data
-        for part in path.split(separator: ".").map(String.init) {
-            guard let dict = current as? [String: Any] else { return nil }
-            current = dict[part]
-        }
-        return current
+        return DynamicBindingResolver.interpolate(text, data: data)
     }
 
     /// Process any value that might contain @{} reference
     /// Automatically unwraps SwiftUI.Binding<T> from data dictionary
     public static func processValue<T>(_ value: Any?, data: [String: Any]) -> T? {
         guard let value = value else { return nil }
-        if let stringValue = value as? String {
-            if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
-                let startIndex = stringValue.index(stringValue.startIndex, offsetBy: 2)
-                let endIndex = stringValue.index(stringValue.endIndex, offsetBy: -1)
-                let varName = String(stringValue[startIndex..<endIndex])
-                // Unwrap SwiftUI.Binding if present
-                if let binding = data[varName] as? SwiftUI.Binding<T> {
-                    return binding.wrappedValue
-                }
-                return data[varName] as? T
-            }
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveTyped(expression: inner, data: data)
         }
         return value as? T
     }
 
-    public static func processBool(_ value: Any?, data: [String: Any]) -> Bool { processValue(value, data: data) ?? false }
-    public static func processDouble(_ value: Any?, data: [String: Any]) -> Double { processValue(value, data: data) ?? 0.0 }
-    public static func processInt(_ value: Any?, data: [String: Any]) -> Int { processValue(value, data: data) ?? 0 }
-    public static func processString(_ value: Any?, data: [String: Any]) -> String? { processValue(value, data: data) }
+    public static func processBool(_ value: Any?, data: [String: Any]) -> Bool {
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveBool(expression: inner, data: data) ?? false
+        }
+        return DynamicBindingResolver.coerceBool(value) ?? false
+    }
+
+    public static func processDouble(_ value: Any?, data: [String: Any]) -> Double {
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveDouble(expression: inner, data: data) ?? 0.0
+        }
+        return DynamicBindingResolver.coerceDouble(value) ?? 0.0
+    }
+
+    public static func processInt(_ value: Any?, data: [String: Any]) -> Int {
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveInt(expression: inner, data: data) ?? 0
+        }
+        if let int = value as? Int { return int }
+        return DynamicBindingResolver.coerceDouble(value).flatMap { Int(exactly: $0.rounded()) } ?? 0
+    }
+
+    public static func processString(_ value: Any?, data: [String: Any]) -> String? {
+        guard let value = value else { return nil }
+        if let stringValue = value as? String {
+            if let inner = DynamicBindingResolver.inner(of: stringValue) {
+                return DynamicBindingResolver.resolveString(expression: inner, data: data)
+            }
+            return stringValue
+        }
+        return value as? String
+    }
 
     /// Handle action by posting notification
     public static func handleAction(_ action: String?) {
@@ -121,16 +93,11 @@ public struct DynamicHelpers {
     public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]) -> Font? {
         // Check if font attribute is a binding expression
         if let fontRaw = component.rawData["font"] as? String,
-           fontRaw.hasPrefix("@{") && fontRaw.hasSuffix("}") {
-            let propertyName = String(fontRaw.dropFirst(2).dropLast(1))
-            var resolvedFontName: String? = nil
-
-            // Try to get font name from data
-            if let binding = data[propertyName] as? SwiftUI.Binding<String> {
-                resolvedFontName = binding.wrappedValue
-            } else if let fontString = data[propertyName] as? String {
-                resolvedFontName = fontString
-            }
+           let fontInner = DynamicBindingResolver.inner(of: fontRaw) {
+            // Canonical value-context resolution (flat / dot-path / default);
+            // Binding<String> unwraps at the value layer.
+            let resolvedFontName = DynamicBindingResolver.resolveString(
+                expression: fontInner, data: data)
 
             if let fontName = resolvedFontName {
                 let config = SwiftJsonUIConfiguration.shared
@@ -175,23 +142,24 @@ public struct DynamicHelpers {
         guard let identifier = identifier else { return nil }
 
         // Check if it's a binding expression
-        if identifier.hasPrefix("@{") && identifier.hasSuffix("}") {
-            let propertyName = String(identifier.dropFirst(2).dropLast(1))
-            // Try SwiftUI.Binding<Color>
-            if let binding = data[propertyName] as? SwiftUI.Binding<Color> {
-                return binding.wrappedValue
+        if let inner = DynamicBindingResolver.inner(of: identifier) {
+            let expression = DynamicBindingResolver.parse(inner)
+            if !expression.negated,
+               let raw = DynamicBindingResolver.lookupRaw(path: expression.path, in: data) {
+                // Color-typed values are checked at the value layer (they
+                // have no canonical string form).
+                if let binding = raw as? SwiftUI.Binding<Color> {
+                    return binding.wrappedValue
+                }
+                if let color = DynamicBindingResolver.unwrap(raw) as? Color {
+                    return color
+                }
+                if let colorString = DynamicBindingResolver.stringify(raw) {
+                    return DynamicDecodingHelper.getColor(colorString)
+                }
             }
-            // Try to get Color from data
-            if let color = data[propertyName] as? Color {
-                return color
-            }
-            // Try SwiftUI.Binding<String> and convert
-            if let binding = data[propertyName] as? SwiftUI.Binding<String> {
-                return DynamicDecodingHelper.getColor(binding.wrappedValue)
-            }
-            // Try to get color string from data and convert
-            if let colorString = data[propertyName] as? String {
-                return DynamicDecodingHelper.getColor(colorString)
+            if case .string(let fallback)? = expression.defaultLiteral {
+                return DynamicDecodingHelper.getColor(fallback)
             }
             return nil
         }
@@ -388,7 +356,7 @@ public struct DynamicHelpers {
         case .some(.value(let number)):
             return CGFloat(number)
         case .some(.binding(let expression)):
-            if let resolved = unwrapDouble(data[expression]) {
+            if let resolved = DynamicBindingResolver.resolveDouble(expression: expression, data: data) {
                 return CGFloat(resolved)
             }
             return legacy
@@ -408,17 +376,8 @@ public struct DynamicHelpers {
         case .some(.value(let flag)):
             return flag
         case .some(.binding(let expression)):
-            var name = expression
-            var negate = false
-            if name.hasPrefix("!") {
-                negate = true
-                name = String(name.dropFirst())
-            }
-            if let binding = data[name] as? SwiftUI.Binding<Bool> {
-                return negate ? !binding.wrappedValue : binding.wrappedValue
-            }
-            if let value = data[name] as? Bool {
-                return negate ? !value : value
+            if let resolved = DynamicBindingResolver.resolveBool(expression: expression, data: data) {
+                return resolved
             }
             return legacy
         case nil:
@@ -426,18 +385,13 @@ public struct DynamicHelpers {
         }
     }
 
-    /// Unwrap a data-dictionary value to a Double, handling
-    /// `SwiftUI.Binding<Double>` / `SwiftUI.Binding<Int>` and the plain numeric
-    /// types layouts store.
+    /// Unwrap a data-dictionary value to a Double (Binding / numeric types).
     private static func unwrapDouble(_ raw: Any?) -> Double? {
-        guard let raw = raw else { return nil }
-        if let binding = raw as? SwiftUI.Binding<Double> { return binding.wrappedValue }
-        if let binding = raw as? SwiftUI.Binding<Int> { return Double(binding.wrappedValue) }
-        if let binding = raw as? SwiftUI.Binding<CGFloat> { return Double(binding.wrappedValue) }
-        if let d = raw as? Double { return d }
-        if let f = raw as? CGFloat { return Double(f) }
-        if let i = raw as? Int { return Double(i) }
-        if let n = raw as? NSNumber { return n.doubleValue }
+        guard let value = DynamicBindingResolver.unwrap(raw) else { return nil }
+        if let f = value as? CGFloat { return Double(f) }
+        if let n = value as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() {
+            return n.doubleValue
+        }
         return nil
     }
 
@@ -454,7 +408,9 @@ public struct DynamicHelpers {
             if let number = unwrapDouble(raw) { return CGFloat(number) }
             return component.weight
         case .some(.binding(let expression)):
-            if let number = unwrapDouble(data[expression]) { return CGFloat(number) }
+            if let number = DynamicBindingResolver.resolveDouble(expression: expression, data: data) {
+                return CGFloat(number)
+            }
             return component.weight
         case nil:
             return component.weight

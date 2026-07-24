@@ -50,23 +50,36 @@ public struct DynamicComponentBuilder: View {
                 buildComponentWithModifiers()
             }
         } else if let visibilityValue = component.visibility {
-            if visibilityValue.hasPrefix("@{") && visibilityValue.hasSuffix("}") {
-                let varName = String(visibilityValue.dropFirst(2).dropLast())
+            if let inner = DynamicBindingResolver.inner(of: visibilityValue) {
+                let expression = DynamicBindingResolver.parse(inner)
+                let rawValue = expression.negated
+                    ? nil
+                    : DynamicBindingResolver.lookupRaw(path: expression.path, in: data)
                 // Check for SwiftUI.Binding<String> in data (reactive)
-                if let binding = data[varName] as? SwiftUI.Binding<String> {
-                    let _ = Logger.debug("[Visibility] id=\(component.id ?? "?") varName=\(varName) → Binding<String>=\(binding.wrappedValue)")
+                if let binding = rawValue as? SwiftUI.Binding<String> {
+                    let _ = Logger.debug("[Visibility] id=\(component.id ?? "?") varName=\(expression.path) → Binding<String>=\(binding.wrappedValue)")
                     ReactiveVisibilityWrapper(visibility: binding) {
                         buildComponentWithModifiers()
                     }
                 } else {
-                    // Fallback: unwrap Binding or use plain value
+                    // Fallback: unwrap Binding / plain value via the
+                    // canonical lookup (dot paths and `??` defaults resolve)
                     let resolved: String? = {
-                        if let b = data[varName] as? SwiftUI.Binding<Bool> {
+                        if let b = rawValue as? SwiftUI.Binding<Bool> {
                             return b.wrappedValue ? "visible" : "gone"
                         }
-                        return data[varName] as? String
+                        if let b = DynamicBindingResolver.strictBool(rawValue) {
+                            return b ? "visible" : "gone"
+                        }
+                        if let s = DynamicBindingResolver.stringify(rawValue) {
+                            return s
+                        }
+                        if case .string(let fallback)? = expression.defaultLiteral {
+                            return fallback
+                        }
+                        return nil
                     }()
-                    let _ = Logger.debug("[Visibility] id=\(component.id ?? "?") varName=\(varName) → resolved=\(resolved ?? "nil") (dataType=\(data[varName].map { String(describing: type(of: $0)) } ?? "missing"))")
+                    let _ = Logger.debug("[Visibility] id=\(component.id ?? "?") varName=\(expression.path) → resolved=\(resolved ?? "nil")")
                     VisibilityWrapper(resolved) {
                         buildComponentWithModifiers()
                     }

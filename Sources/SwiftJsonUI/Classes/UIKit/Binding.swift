@@ -111,6 +111,10 @@ open class Binding: NSObject {
         } else if let model = data as? DataBindingModel, let value = model[binding] {
             return value
         } else if let array = data as? [Any], let index = Int(binding) {
+            // Bounds-checked: a negative / out-of-range index resolves to nil
+            // (the unresolved-key semantics) instead of trapping — data-driven
+            // arrays may be shorter than the layout's dot-numeric path expects.
+            guard array.indices.contains(index) else { return nil }
             return array[index]
         } else if let array = data as? [String], let index = array.firstIndex(of: binding) {
             return array[index]

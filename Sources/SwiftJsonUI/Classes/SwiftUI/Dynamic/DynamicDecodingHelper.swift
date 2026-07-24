@@ -38,25 +38,15 @@ public struct DynamicDecodingHelper {
     ) -> Bool {
         guard let value = value else { return defaultValue }
 
-        if let boolValue = value.value as? Bool {
-            return boolValue
+        if let stringValue = value.value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            // Canonical bool value context (one coercion table, negation,
+            // dot-path / bracket-index lookup, typed `??` default).
+            return DynamicBindingResolver.resolveBool(expression: inner, data: data) ?? defaultValue
         }
-        if let stringValue = value.value as? String {
-            if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
-                let propertyName = String(stringValue.dropFirst(2).dropLast(1))
-                if let dataValue = data[propertyName] {
-                    if let boolValue = dataValue as? Bool { return boolValue }
-                    if let intValue = dataValue as? Int { return intValue != 0 }
-                    if let stringValue = dataValue as? String {
-                        return stringValue == "true" || stringValue == "1"
-                    }
-                }
-                return defaultValue
-            }
-            if stringValue == "true" || stringValue == "1" { return true }
-            if stringValue == "false" || stringValue == "0" { return false }
-        }
-        return defaultValue
+        // Literal: same canonical coercion table (Bool; Int != 0;
+        // "true"/"1"/"false"/"0" case-insensitive).
+        return DynamicBindingResolver.coerceBool(value.value) ?? defaultValue
     }
 
     // MARK: - Visibility
@@ -202,23 +192,12 @@ public struct DynamicDecodingHelper {
 
         // Handle string values (including bindings)
         if let stringValue = value.value as? String {
-            // Check for binding pattern @{propertyName}
-            if stringValue.hasPrefix("@{") && stringValue.hasSuffix("}") {
-                let startIndex = stringValue.index(stringValue.startIndex, offsetBy: 2)
-                let endIndex = stringValue.index(stringValue.endIndex, offsetBy: -1)
-                let propertyName = String(stringValue[startIndex..<endIndex])
-
-                // Look up value in data dictionary
-                if let dataValue = data[propertyName] {
-                    if let floatValue = dataValue as? CGFloat {
-                        return floatValue
-                    }
-                    if let doubleValue = dataValue as? Double {
-                        return CGFloat(doubleValue)
-                    }
-                    if let intValue = dataValue as? Int {
-                        return CGFloat(intValue)
-                    }
+            // Binding pattern @{...}: canonical number value context
+            // (dot-path / bracket-index lookup, `??` default, numeric-string
+            // coercion). Unresolved → 0 (existing margin default).
+            if let inner = DynamicBindingResolver.inner(of: stringValue) {
+                if let resolved = DynamicBindingResolver.resolveDouble(expression: inner, data: data) {
+                    return CGFloat(resolved)
                 }
                 return 0 // Binding not resolved
             }

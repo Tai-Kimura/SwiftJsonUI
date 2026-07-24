@@ -33,16 +33,10 @@ public struct NetworkImageConverter {
         let urlString: String? = {
             let src = component.src ?? component.srcName
             guard let src = src else { return nil }
-            if src.hasPrefix("@{") && src.hasSuffix("}") {
-                let propName = String(src.dropFirst(2).dropLast(1))
-                // Try plain String first, then Binding<String>
-                if let str = data[propName] as? String {
-                    return str
-                }
-                if let binding = data[propName] as? SwiftUI.Binding<String> {
-                    return binding.wrappedValue
-                }
-                return nil
+            if let inner = DynamicBindingResolver.inner(of: src) {
+                // Canonical string value context (Binding<String> unwraps
+                // at the value layer; dot-path / `??` default resolve)
+                return DynamicBindingResolver.resolveString(expression: inner, data: data)
             }
             return src
         }()

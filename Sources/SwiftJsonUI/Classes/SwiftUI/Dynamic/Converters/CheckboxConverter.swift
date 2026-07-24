@@ -102,10 +102,10 @@ public struct CheckboxConverter {
         let handlerExpr: String? = attrs.onValueChange?.bindingString
             ?? attrs.common.onClick?.bindingString
             ?? (component.rawAttribute("action") as? String).flatMap { expr in
-                expr.hasPrefix("@{") && expr.hasSuffix("}") ? expr : nil
+                DynamicBindingResolver.isBindingExpression(expr) ? expr : nil
             }
             ?? (component.rawAttribute("onValueChanged") as? String).flatMap { expr in
-                expr.hasPrefix("@{") && expr.hasSuffix("}") ? expr : nil
+                DynamicBindingResolver.isBindingExpression(expr) ? expr : nil
             }
 
         let onValueChanged: ((Bool) -> Void)? = {

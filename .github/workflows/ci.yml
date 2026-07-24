@@ -1,0 +1,57 @@
+# SwiftJsonUI library CI — unit tests on an iOS Simulator.
+#
+# `swift build` does NOT work on macOS (UIKit dependency): tests run via
+# xcodebuild against an iOS Simulator, same as local release verification
+# (e.g. 10.5.0: xcodebuild test -scheme SwiftJsonUI on an iPad simulator).
+#
+# This job is also the CI consumer of the shared binding vectors
+# (Tests/SwiftJsonUITests/Fixtures/binding_vectors.json, vendored from
+# jsonui-cli shared/core/binding_vectors.json) via BindingVectorTests.
+#
+# Budget: local full suite ~6 min wall incl. build; CI runners are 5-7x
+# slower => ~30-40 min worst case. timeout 60 min leaves headroom without
+# masking hangs for a week (weekly cron matches conformance-mobile).
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: '0 18 * * 0' # weekly (Sunday 18:00 UTC), same slot as conformance-mobile
+
+jobs:
+  unit-tests:
+    name: Library unit tests (iOS Simulator)
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode / simulator inventory
+        run: |
+          xcodebuild -version
+          xcodebuild -scheme SwiftJsonUI -showdestinations 2>/dev/null \
+            | grep 'platform:iOS Simulator' || true
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          # Pick the first eligible iPhone simulator from xcodebuild's own
+          # destination list (names must match xcodebuild's eligible list,
+          # not simctl's — runner images vary by Xcode version).
+          DEST_ID=$(xcodebuild -scheme SwiftJsonUI -showdestinations 2>/dev/null \
+            | grep 'platform:iOS Simulator' \
+            | grep 'name:iPhone' \
+            | head -1 \
+            | sed -E 's/.*id:([A-F0-9-]+).*/\1/')
+          if [ -z "$DEST_ID" ]; then
+            echo "No eligible iPhone simulator destination found" >&2
+            exit 1
+          fi
+          echo "Using destination id=$DEST_ID"
+          xcodebuild test \
+            -scheme SwiftJsonUI \
+            -destination "platform=iOS Simulator,id=$DEST_ID" \
+            | tail -100

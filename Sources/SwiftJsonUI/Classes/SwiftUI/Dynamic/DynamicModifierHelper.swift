@@ -283,23 +283,18 @@ public struct DynamicModifierHelper {
             opacityStr = component.rawData["alpha"] as? String
         }
         if let opacityStr = opacityStr,
-           opacityStr.hasPrefix("@{") && opacityStr.hasSuffix("}") {
-            let propName = String(opacityStr.dropFirst(2).dropLast(1))
-            if let binding = data[propName] as? SwiftUI.Binding<Double> {
+           let inner = DynamicBindingResolver.inner(of: opacityStr) {
+            let expression = DynamicBindingResolver.parse(inner)
+            let rawValue = expression.negated
+                ? nil
+                : DynamicBindingResolver.lookupRaw(path: expression.path, in: data)
+            // Reactive Binding<Double> keeps its wrapper
+            if let binding = rawValue as? SwiftUI.Binding<Double> {
                 return AnyView(ReactiveOpacityWrapper(opacity: binding, content: view))
             }
-            // Try plain numeric value from data
-            if let value = data[propName] as? Double {
+            // Canonical number value context (dot-path / default / coercion)
+            if let value = DynamicBindingResolver.resolveDouble(expression: inner, data: data) {
                 return AnyView(view.opacity(value))
-            }
-            if let value = data[propName] as? CGFloat {
-                return AnyView(view.opacity(Double(value)))
-            }
-            if let value = data[propName] as? Float {
-                return AnyView(view.opacity(Double(value)))
-            }
-            if let value = data[propName] as? NSNumber {
-                return AnyView(view.opacity(value.doubleValue))
             }
         }
         if let opacity = component.opacity {
@@ -358,7 +353,7 @@ public struct DynamicModifierHelper {
 
         // Binding hidden: @{propertyName} or @{!propertyName}
         if let hiddenValue = component.rawData["hidden"] as? String,
-           hiddenValue.hasPrefix("@{") && hiddenValue.hasSuffix("}") {
+           DynamicBindingResolver.isBindingExpression(hiddenValue) {
             // Try reactive SwiftUI.Binding<Bool> first
             if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
                 return AnyView(ReactiveHiddenWrapper(isHidden: binding, content: view))
@@ -387,7 +382,7 @@ public struct DynamicModifierHelper {
         }
         // Binding: @{!isEnabled} or @{isEnabled}
         if let enabledValue = component.rawData["enabled"] as? String,
-           enabledValue.hasPrefix("@{") && enabledValue.hasSuffix("}") {
+           DynamicBindingResolver.isBindingExpression(enabledValue) {
             // Try reactive SwiftUI.Binding<Bool> — negate for disabled
             if let enabledBinding = DynamicBindingHelper.extractBoolBinding(from: enabledValue, data: data) {
                 let disabledBinding = SwiftUI.Binding<Bool>(
