@@ -29,29 +29,43 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show Xcode / simulator inventory
+      - name: Show Xcode / scheme / simulator inventory
         run: |
           xcodebuild -version
-          xcodebuild -scheme SwiftJsonUI -showdestinations 2>/dev/null \
-            | grep 'platform:iOS Simulator' || true
+          xcodebuild -list 2>&1 | sed -n '/Schemes:/,$p' || true
 
       - name: Run unit tests
         run: |
           set -o pipefail
-          # Pick the first eligible iPhone simulator from xcodebuild's own
-          # destination list (names must match xcodebuild's eligible list,
-          # not simctl's — runner images vary by Xcode version).
-          DEST_ID=$(xcodebuild -scheme SwiftJsonUI -showdestinations 2>/dev/null \
-            | grep 'platform:iOS Simulator' \
-            | grep 'name:iPhone' \
-            | head -1 \
+          # Only SwiftJsonUITests.xcscheme is tracked; the "SwiftJsonUI"
+          # scheme is Xcode-local auto-generation and does NOT exist on a
+          # fresh checkout. Resolve dynamically, preferring the package
+          # scheme when present.
+          SCHEME=$(xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' \
+            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs)
+          if [ -z "$SCHEME" ]; then
+            echo "No usable scheme found:" >&2
+            xcodebuild -list >&2 || true
+            exit 1
+          fi
+          echo "Using scheme=$SCHEME"
+          # Pick the first eligible iOS Simulator (prefer iPhone) from
+          # xcodebuild's own destination list — names must match
+          # xcodebuild's eligible list, not simctl's; runner images vary.
+          DESTS=$(xcodebuild -scheme "$SCHEME" -showdestinations 2>&1 \
+            | grep 'platform:iOS Simulator' || true)
+          DEST_ID=$(echo "$DESTS" | grep 'name:iPhone' | head -1 \
             | sed -E 's/.*id:([A-F0-9-]+).*/\1/')
           if [ -z "$DEST_ID" ]; then
-            echo "No eligible iPhone simulator destination found" >&2
+            DEST_ID=$(echo "$DESTS" | head -1 | sed -E 's/.*id:([A-F0-9-]+).*/\1/')
+          fi
+          if [ -z "$DEST_ID" ]; then
+            echo "No eligible iOS Simulator destination found; raw list:" >&2
+            xcodebuild -scheme "$SCHEME" -showdestinations >&2 || true
             exit 1
           fi
           echo "Using destination id=$DEST_ID"
           xcodebuild test \
-            -scheme SwiftJsonUI \
+            -scheme "$SCHEME" \
             -destination "platform=iOS Simulator,id=$DEST_ID" \
             | tail -100
