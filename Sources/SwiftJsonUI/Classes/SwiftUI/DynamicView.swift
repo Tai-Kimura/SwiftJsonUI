@@ -42,7 +42,15 @@ public struct DynamicView: View {
         if let component = directComponent {
             return component
         }
-        if let name = jsonName {
+        if let baseName = jsonName {
+            // Responsive variant files (home@regular.json): swap the whole
+            // tree for the current size-class tier; the caller-owned data
+            // dictionary (VM state) survives the swap. Size-class changes
+            // recompute this body, hot-reload updates invalidate the
+            // existence cache via clearComponentCache.
+            let name = JSONLayoutLoader.resolveVariantLayoutName(
+                baseName, horizontalSizeClass: horizontalSizeClass
+            )
             // Try loading the processed JSON dictionary so we can resolve
             // responsive overrides based on the current size class environment.
             if let processedJSON = JSONLayoutLoader.loadProcessedJSON(named: name) {

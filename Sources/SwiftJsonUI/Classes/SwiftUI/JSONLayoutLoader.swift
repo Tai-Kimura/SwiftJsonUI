@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 // MARK: - JSON Loader
 public class JSONLayoutLoader {
@@ -123,6 +124,7 @@ public class JSONLayoutLoader {
         cacheLock.lock()
         componentCache.removeAll()
         jsonDictCache.removeAll()
+        variantExistsCache.removeAll()
         cacheLock.unlock()
     }
 
@@ -131,7 +133,51 @@ public class JSONLayoutLoader {
         cacheLock.lock()
         componentCache.removeValue(forKey: name)
         jsonDictCache.removeValue(forKey: name)
+        variantExistsCache.removeValue(forKey: name)
         cacheLock.unlock()
+    }
+
+    // MARK: - Responsive variant files (home@regular.json)
+
+    /// Existence probes are cached; HotLoader updates invalidate through
+    /// clearComponentCache so a variant delivered over hot reload starts
+    /// winning without an app restart.
+    private static var variantExistsCache: [String: Bool] = [:]
+
+    /// True when a layout with this name is loadable (cache dir in DEBUG,
+    /// bundle otherwise) — used only for variant probing.
+    static func layoutExists(named name: String) -> Bool {
+        cacheLock.lock()
+        if let cached = variantExistsCache[name] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
+        let exists = loadJSON(named: name) != nil
+        cacheLock.lock()
+        variantExistsCache[name] = exists
+        cacheLock.unlock()
+        return exists
+    }
+
+    /// Resolve the effective layout for the current horizontal size class
+    /// (responsive variant files, 06 track). Regular tier → `<name>@regular`
+    /// when present; compact tier → `<name>@compact`, else `<name>@medium`
+    /// (iOS has no medium size class — the fold mirrors the inline
+    /// `responsive` resolution), else the base. No cross-tier promotion.
+    public static func resolveVariantLayoutName(
+        _ name: String,
+        horizontalSizeClass: UserInterfaceSizeClass?
+    ) -> String {
+        guard !name.contains("@") else { return name }
+        let candidates = horizontalSizeClass == .regular
+            ? ["\(name)@regular"]
+            : ["\(name)@compact", "\(name)@medium"]
+        for candidate in candidates where layoutExists(named: candidate) {
+            return candidate
+        }
+        return name
     }
     #endif
 
