@@ -347,8 +347,15 @@ public struct DynamicModifierHelper {
     // MARK: - 13. Hidden
 
     public static func applyHidden(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        if component.hidden == true || component.visibility == "gone" {
+        if component.visibility == "gone" {
             return AnyView(view.hidden())
+        }
+        // hidden == visibility:"invisible" (canonical spec): keep the layout
+        // space, draw nothing, leave the accessibility tree. Collapsing is
+        // "gone" only. This fallback is only reached off the builder path
+        // (DynamicComponentBuilder wraps hidden in VisibilityWrapper).
+        if component.hidden == true {
+            return invisible(view)
         }
 
         // Binding hidden: @{propertyName} or @{!propertyName}
@@ -358,21 +365,26 @@ public struct DynamicModifierHelper {
             if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
                 return AnyView(ReactiveHiddenWrapper(isHidden: binding, content: view))
             }
-            // Fallback to plain value — must match the literal path's
-            // observable semantics: .hidden() takes the element out of the
-            // accessibility tree (XCUITest "not visible") while preserving
-            // its layout space. opacity(0) kept the frame AND left the
-            // element visible to XCUITest, so a resolved-true binding
-            // diverged from `hidden: true`. Plain values re-resolve on every
-            // data-driven rebuild, so the conditional stays reactive.
+            // Plain value re-resolves on every data-driven rebuild.
             let isHidden = DynamicBindingHelper.resolveBool(hiddenValue, data: data, fallback: false)
             if isHidden {
-                return AnyView(view.hidden())
+                return invisible(view)
             }
             return view
         }
 
         return view
+    }
+
+    /// visibility:"invisible" mechanics — mirrors VisibilityWrapper's
+    /// `.invisible` branch (space kept, not drawn, accessibility-hidden).
+    private static func invisible(_ view: AnyView) -> AnyView {
+        AnyView(
+            view
+                .opacity(0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
+        )
     }
 
     // MARK: - 14. Tint

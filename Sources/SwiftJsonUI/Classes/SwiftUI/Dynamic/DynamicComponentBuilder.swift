@@ -33,12 +33,12 @@ public struct DynamicComponentBuilder: View {
     }
 
     public var body: some View {
-        // Check if component needs visibility wrapper. A binding-typed
-        // hidden ("@{flag}" / "@{!flag}") must go through the SAME
-        // VisibilityWrapper("gone") collapse as a literal `hidden: true` —
-        // Android (conditional composition) and web (display:none) both
-        // collapse, and the modifier-level .hidden() keeps the element
-        // visible to XCUITest.
+        // Check if component needs visibility wrapper. `hidden` — literal or
+        // binding-typed ("@{flag}" / "@{!flag}") — is the boolean shorthand
+        // for visibility:"invisible" (canonical spec on every platform): the
+        // view KEEPS its layout space, is not drawn, and is removed from the
+        // accessibility tree. It must NOT collapse — collapsing is
+        // visibility:"gone" only.
         let needsVisibilityWrapper = component.visibility != nil || component.hidden == true
             || bindingHiddenExpression != nil
 
@@ -61,13 +61,15 @@ public struct DynamicComponentBuilder: View {
     @ViewBuilder
     private func buildWithVisibility() -> some View {
         if component.hidden == true {
-            VisibilityWrapper("gone") {
+            // hidden: true == visibility:"invisible" (space kept, not drawn,
+            // accessibility-hidden) — NOT "gone".
+            VisibilityWrapper("invisible") {
                 buildComponentWithModifiers()
             }
         } else if let hiddenValue = bindingHiddenExpression {
             if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
                 ReactiveVisibilityWrapper(visibility: SwiftUI.Binding(
-                    get: { binding.wrappedValue ? "gone" : "visible" },
+                    get: { binding.wrappedValue ? "invisible" : "visible" },
                     set: { _ in }
                 )) {
                     buildComponentWithModifiers()
@@ -76,7 +78,7 @@ public struct DynamicComponentBuilder: View {
                 // Plain value: re-resolves on every data-driven rebuild.
                 VisibilityWrapper(
                     DynamicBindingHelper.resolveBool(hiddenValue, data: data, fallback: false)
-                        ? "gone" : "visible"
+                        ? "invisible" : "visible"
                 ) {
                     buildComponentWithModifiers()
                 }

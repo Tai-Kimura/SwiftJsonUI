@@ -39,6 +39,9 @@ public struct ReactiveVisibilityWrapper<Content: View>: View {
 }
 
 // MARK: - Reactive Hidden Wrapper
+/// `hidden` == visibility:"invisible" (canonical spec): the hidden branch
+/// keeps the layout space, is not drawn, and leaves the accessibility tree
+/// — same mechanism as VisibilityWrapper's `.invisible`.
 public struct ReactiveHiddenWrapper: View {
     @SwiftUI.Binding var isHidden: Bool
     let content: AnyView
@@ -50,7 +53,10 @@ public struct ReactiveHiddenWrapper: View {
 
     public var body: some View {
         if isHidden {
-            content.hidden()
+            content
+                .opacity(0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
         } else {
             content
         }

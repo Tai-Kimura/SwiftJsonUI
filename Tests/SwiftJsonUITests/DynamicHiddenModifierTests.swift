@@ -2,12 +2,19 @@
 //  DynamicHiddenModifierTests.swift
 //  SwiftJsonUITests
 //
-//  Regression tests for DynamicModifierHelper.applyHidden — a binding-resolved
-//  `hidden` must produce the SAME observable mechanism as the literal
-//  `hidden: true` path (.hidden(): out of the accessibility tree, layout space
-//  preserved). The former fallback `.opacity(isHidden ? 0 : 1)` kept the
-//  element visible to XCUITest (conformance fixture
-//  common/hidden__binding_negation failed with "Expected not visible").
+//  Canonical spec: `hidden: true` is the boolean shorthand for
+//  visibility:"invisible" — the view KEEPS its layout space, is not drawn,
+//  and is removed from the accessibility tree. It must NOT collapse (that
+//  is visibility:"gone").
+//
+//  These tests lock in the invisible mechanism (opacity(0) +
+//  .accessibilityElement(children: .ignore) + .accessibilityHidden(true),
+//  mirroring VisibilityWrapper.invisible) on every path:
+//  - DynamicModifierHelper.applyHidden (off-builder fallback): literal,
+//    plain binding, reactive binding (ReactiveHiddenWrapper)
+//  - DynamicComponentBuilder.buildWithVisibility: literal hidden maps to
+//    VisibilityWrapper("invisible"), binding hidden maps to
+//    "invisible"/"visible" (plain and reactive)
 //
 
 import XCTest
@@ -24,8 +31,7 @@ final class DynamicHiddenModifierTests: XCTestCase {
     }
 
     /// Type name of the AnyView's erased storage — lets us compare the exact
-    /// modifier mechanism (e.g. ModifiedContent<AnyView, _HiddenModifier>)
-    /// without hard-coding SwiftUI internal type names.
+    /// modifier mechanism without hard-coding SwiftUI internal type names.
     private func storageTypeName(_ view: AnyView) -> String {
         let mirror = Mirror(reflecting: view)
         if let storage = mirror.children.first(where: { $0.label == "storage" })?.value {
@@ -36,8 +42,18 @@ final class DynamicHiddenModifierTests: XCTestCase {
 
     private var baseView: AnyView { AnyView(Text("probe")) }
 
-    /// The mechanism the literal path uses: AnyView(view.hidden())
-    private var literalHiddenTypeName: String {
+    /// Self-calibrated reference for the invisible mechanism
+    /// (mirrors VisibilityWrapper's `.invisible` branch).
+    private var invisibleReferenceTypeName: String {
+        storageTypeName(AnyView(
+            baseView.opacity(0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
+        ))
+    }
+
+    /// The mechanism visibility:"gone" still uses off-builder: AnyView(view.hidden())
+    private var hiddenModifierTypeName: String {
         storageTypeName(AnyView(baseView.hidden()))
     }
 
@@ -46,14 +62,16 @@ final class DynamicHiddenModifierTests: XCTestCase {
         storageTypeName(baseView)
     }
 
-    // MARK: - Literal path (baseline)
+    // MARK: - Literal path
 
-    func testLiteralHiddenTrueUsesHiddenModifier() throws {
+    func testLiteralHiddenTrueUsesInvisibleMechanism() throws {
         let c = try component("""
         { "type": "View", "hidden": true }
         """)
         let result = DynamicModifierHelper.applyHidden(baseView, component: c)
-        XCTAssertEqual(storageTypeName(result), literalHiddenTypeName)
+        // hidden == invisible: space kept + accessibility-hidden — NOT bare .hidden()
+        XCTAssertEqual(storageTypeName(result), invisibleReferenceTypeName)
+        XCTAssertNotEqual(storageTypeName(result), hiddenModifierTypeName)
     }
 
     func testLiteralHiddenFalseIsPassthrough() throws {
@@ -64,25 +82,26 @@ final class DynamicHiddenModifierTests: XCTestCase {
         XCTAssertEqual(storageTypeName(result), passthroughTypeName)
     }
 
-    func testVisibilityGoneUsesHiddenModifier() throws {
+    /// visibility:"gone" literal handling stays as-is (.hidden() fallback).
+    func testVisibilityGoneKeepsHiddenModifier() throws {
         let c = try component("""
         { "type": "View", "visibility": "gone" }
         """)
         let result = DynamicModifierHelper.applyHidden(baseView, component: c)
-        XCTAssertEqual(storageTypeName(result), literalHiddenTypeName)
+        XCTAssertEqual(storageTypeName(result), hiddenModifierTypeName)
     }
 
-    // MARK: - Binding path, plain value (the regression)
+    // MARK: - Binding path, plain value
 
-    func testBindingHiddenTruePlainValueMatchesLiteralMechanism() throws {
+    func testBindingHiddenTruePlainValueUsesInvisibleMechanism() throws {
         let c = try component("""
         { "type": "View", "hidden": "@{isHidden}" }
         """)
         let result = DynamicModifierHelper.applyHidden(
             baseView, component: c, data: ["isHidden": true])
-        // MUST be the same mechanism as literal hidden: true — NOT opacity(0)
-        XCTAssertEqual(storageTypeName(result), literalHiddenTypeName)
-        XCTAssertFalse(storageTypeName(result).lowercased().contains("opacity"))
+        // Same mechanism as literal hidden: true (invisible), not .hidden()
+        XCTAssertEqual(storageTypeName(result), invisibleReferenceTypeName)
+        XCTAssertNotEqual(storageTypeName(result), hiddenModifierTypeName)
     }
 
     func testBindingHiddenFalsePlainValueIsPassthrough() throws {
@@ -91,20 +110,18 @@ final class DynamicHiddenModifierTests: XCTestCase {
         """)
         let result = DynamicModifierHelper.applyHidden(
             baseView, component: c, data: ["isHidden": false])
-        // The old fallback wrapped in .opacity(1) even when visible —
-        // resolved-false must now leave the view untouched.
         XCTAssertEqual(storageTypeName(result), passthroughTypeName)
     }
 
-    /// The exact fixture shape that failed: hidden: "@{!flag}" with flag=false
-    /// resolves to hidden=true — the element must leave the accessibility tree.
-    func testBindingNegationResolvedTrueMatchesLiteralMechanism() throws {
+    /// hidden: "@{!flag}" with flag=false resolves to hidden=true — the
+    /// element keeps its space but leaves the accessibility tree.
+    func testBindingNegationResolvedTrueUsesInvisibleMechanism() throws {
         let c = try component("""
         { "type": "View", "hidden": "@{!isShown}" }
         """)
         let result = DynamicModifierHelper.applyHidden(
             baseView, component: c, data: ["isShown": false])
-        XCTAssertEqual(storageTypeName(result), literalHiddenTypeName)
+        XCTAssertEqual(storageTypeName(result), invisibleReferenceTypeName)
     }
 
     func testBindingNegationResolvedFalseIsPassthrough() throws {
@@ -150,16 +167,91 @@ final class DynamicHiddenModifierTests: XCTestCase {
 
     // MARK: - ReactiveHiddenWrapper mechanism parity
 
-    /// ReactiveHiddenWrapper's hidden branch must also use .hidden()
-    /// (it does — this locks the parity in).
-    func testReactiveHiddenWrapperHiddenBranchUsesHiddenModifier() {
+    /// ReactiveHiddenWrapper's hidden branch must use the invisible
+    /// mechanism (space kept + accessibility-hidden), not bare .hidden().
+    func testReactiveHiddenWrapperHiddenBranchUsesInvisibleMechanism() {
         var flag = true
         let binding = SwiftUI.Binding<Bool>(get: { flag }, set: { flag = $0 })
         let wrapper = ReactiveHiddenWrapper(isHidden: binding, content: baseView)
         let bodyName = String(describing: type(of: wrapper.body))
-        // _ConditionalContent branch types carry the .hidden() ModifiedContent
-        XCTAssertTrue(bodyName.contains("Hidden"), "body type was \(bodyName)")
-        XCTAssertFalse(bodyName.lowercased().contains("opacity"))
+        // Self-calibrated: the true branch type is exactly the invisible chain
+        // applied to the AnyView content.
+        let reference = String(describing: type(of:
+            baseView.opacity(0)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
+        ))
+        XCTAssertTrue(bodyName.contains(reference), "body type was \(bodyName)")
+    }
+
+    // MARK: - Builder-level mapping (hidden == visibility:"invisible")
+
+    /// Recursively search a view tree (via Mirror) for a wrapper whose type
+    /// name starts with the given prefix.
+    private func findWrapper(in value: Any, typePrefix: String, depth: Int = 0) -> Any? {
+        if depth > 16 { return nil }
+        if String(describing: type(of: value)).hasPrefix(typePrefix) { return value }
+        for child in Mirror(reflecting: value).children {
+            if let found = findWrapper(in: child.value, typePrefix: typePrefix, depth: depth + 1) {
+                return found
+            }
+        }
+        return nil
+    }
+
+    private func visibilityOf(_ wrapper: Any) -> String? {
+        Mirror(reflecting: wrapper).children
+            .first { $0.label == "visibility" }
+            .map { String(describing: $0.value) }
+    }
+
+    func testBuilderLiteralHiddenMapsToInvisibleWrapper() throws {
+        let c = try component("""
+        { "type": "View", "hidden": true }
+        """)
+        let builder = DynamicComponentBuilder(component: c, data: [:])
+        let wrapper = findWrapper(in: builder.body, typePrefix: "VisibilityWrapper<")
+        XCTAssertNotNil(wrapper, "literal hidden must wrap in VisibilityWrapper")
+        XCTAssertEqual(wrapper.flatMap(visibilityOf), "invisible")
+    }
+
+    func testBuilderPlainBindingHiddenTrueMapsToInvisibleWrapper() throws {
+        let c = try component("""
+        { "type": "View", "hidden": "@{isHidden}" }
+        """)
+        let builder = DynamicComponentBuilder(component: c, data: ["isHidden": true])
+        let wrapper = findWrapper(in: builder.body, typePrefix: "VisibilityWrapper<")
+        XCTAssertNotNil(wrapper)
+        XCTAssertEqual(wrapper.flatMap(visibilityOf), "invisible")
+    }
+
+    func testBuilderPlainBindingHiddenFalseMapsToVisibleWrapper() throws {
+        let c = try component("""
+        { "type": "View", "hidden": "@{isHidden}" }
+        """)
+        let builder = DynamicComponentBuilder(component: c, data: ["isHidden": false])
+        let wrapper = findWrapper(in: builder.body, typePrefix: "VisibilityWrapper<")
+        XCTAssertNotNil(wrapper)
+        XCTAssertEqual(wrapper.flatMap(visibilityOf), "visible")
+    }
+
+    func testBuilderReactiveBindingMapsToInvisibleAndBackToVisible() throws {
+        let c = try component("""
+        { "type": "View", "hidden": "@{isHidden}" }
+        """)
+        var flag = true
+        let binding = SwiftUI.Binding<Bool>(get: { flag }, set: { flag = $0 })
+        let builder = DynamicComponentBuilder(component: c, data: ["isHidden": binding])
+        let wrapper = findWrapper(in: builder.body, typePrefix: "ReactiveVisibilityWrapper<")
+        XCTAssertNotNil(wrapper, "reactive hidden must wrap in ReactiveVisibilityWrapper")
+        let visibilityBinding = wrapper.flatMap { w in
+            Mirror(reflecting: w).children
+                .first { $0.label == "_visibility" }?
+                .value as? SwiftUI.Binding<String>
+        }
+        XCTAssertEqual(visibilityBinding?.wrappedValue, "invisible")
+        flag = false
+        XCTAssertEqual(visibilityBinding?.wrappedValue, "visible")
     }
 }
 #endif // DEBUG
