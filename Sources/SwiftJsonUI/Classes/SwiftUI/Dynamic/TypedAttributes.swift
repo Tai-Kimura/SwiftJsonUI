@@ -144,6 +144,8 @@ public enum JsonUITypedAttributesRegistry {
         "type", "id", "child", "children", "data", "include",
         "shared_data", "variables", "binding_id", "style", "styles",
         "parent_orientation", "cellClasses", "sections",
+        // build directives consumed (and removed) at distribution time
+        "platform", "platforms",
         JsonUINormalization.markerKey
     ]
 

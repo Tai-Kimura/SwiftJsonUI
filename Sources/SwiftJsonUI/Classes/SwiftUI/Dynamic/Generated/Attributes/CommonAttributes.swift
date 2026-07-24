@@ -350,7 +350,7 @@ public struct CommonAttributes {
     /// Height weight for flexible layouts (binding supported)
     public let heightWeight: AttrValue<Double>?
 
-    /// Whether component is hidden (can be data binding)
+    /// Whether the component is hidden: keeps its layout space but is not drawn and is hidden from accessibility (boolean shorthand for visibility:'invisible'; can be a data binding)
     public let hidden: AttrValue<Bool>?
 
     /// Background color when highlighted - hex string or color name from colors.json (binding supported)
