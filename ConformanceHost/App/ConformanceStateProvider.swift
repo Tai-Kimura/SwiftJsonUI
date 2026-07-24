@@ -29,6 +29,7 @@
 //
 
 import SwiftUI
+import SwiftJsonUI
 
 // MARK: - Manifest `state` declaration (subset of manifest.json)
 
@@ -43,8 +44,17 @@ struct ConformanceStateDecl: Decodable {
             let `var`: String
             let value: String
         }
+        /// Second handler kind (INTERACTIVE_HOST_CONTRACT.md): drive an
+        /// isolated embed's private stack through EmbedNavigatorRegistry.
+        struct EmbedOp: Decodable {
+            let id: String
+            let action: String
+            let screen: String?
+            let params: [String: String]?
+        }
         let name: String
-        let set: SetOp
+        let set: SetOp?
+        let embed: EmbedOp?
     }
 
     let vars: [Var]
@@ -125,8 +135,27 @@ final class ConformanceStateStore: ObservableObject {
             )
         }
         for handler in decl.handlers {
-            let varName = handler.set.var
-            let literal = handler.set.value
+            if let embedOp = handler.embed {
+                let closure: () -> Void = {
+                    guard let navigator = EmbedNavigatorRegistry.shared.navigator(for: embedOp.id) else {
+                        return
+                    }
+                    switch embedOp.action {
+                    case "push":
+                        guard let screen = embedOp.screen else { return }
+                        navigator.push(screen: screen, params: embedOp.params ?? [:])
+                    case "pop":
+                        navigator.pop()
+                    default:
+                        break
+                    }
+                }
+                out[handler.name] = closure
+                continue
+            }
+            guard let setOp = handler.set else { continue }
+            let varName = setOp.var
+            let literal = setOp.value
             let closure: () -> Void = { [weak self] in
                 self?.values[varName] = literal
             }

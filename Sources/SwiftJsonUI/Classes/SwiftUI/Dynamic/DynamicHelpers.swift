@@ -33,7 +33,11 @@ public struct DynamicHelpers {
                         .trimmingCharacters(in: .whitespaces)
 
                     let value: String
-                    if let dataValue = data[cleanVarName] {
+                    // Flat lookup first; dot paths ("profile.name") traverse
+                    // nested dictionaries — nested Embed params bindings
+                    // rendered empty without this (caught by the
+                    // Embed/params__nested_leaf* conformance fixtures).
+                    if let dataValue = data[cleanVarName] ?? nestedValue(for: cleanVarName, in: data) {
                         // Unwrap SwiftUI.Binding if present (from toDictionary(binding:))
                         if let binding = dataValue as? SwiftUI.Binding<String> {
                             value = binding.wrappedValue
@@ -56,6 +60,19 @@ public struct DynamicHelpers {
             }
         }
         return result
+    }
+
+    /// Resolve a dot path ("profile.name", "profile.meta.age") against
+    /// nested `[String: Any]` dictionaries. Returns nil when the name has
+    /// no dot or any segment is missing / not a dictionary.
+    private static func nestedValue(for path: String, in data: [String: Any]) -> Any? {
+        guard path.contains(".") else { return nil }
+        var current: Any? = data
+        for part in path.split(separator: ".").map(String.init) {
+            guard let dict = current as? [String: Any] else { return nil }
+            current = dict[part]
+        }
+        return current
     }
 
     /// Process any value that might contain @{} reference

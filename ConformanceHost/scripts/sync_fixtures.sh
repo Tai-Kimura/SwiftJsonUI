@@ -48,6 +48,33 @@ mkdir -p "$HOST_DIR/Resources"
 rsync -a --delete "$CONFORMANCE_DIR/fixtures/" "$HOST_DIR/Resources/fixtures/"
 cp "$CONFORMANCE_DIR/manifest.json" "$HOST_DIR/Resources/manifest.json"
 
+# --- companion embedded-screen layouts -> Resources/Layouts/
+# Embed fixtures reference other screens by bare name (screen:"embed_root");
+# JSONLayoutLoader resolves those against the bundle's Layouts/ directory,
+# so every manifest `companions` entry is mirrored there under its bare
+# name (embed_root.layout.json -> Layouts/embed_root.json).
+rm -rf "$HOST_DIR/Resources/Layouts"
+python3 - "$CONFORMANCE_DIR" "$HOST_DIR" <<'EOF'
+import json, pathlib, shutil, sys
+
+conformance = pathlib.Path(sys.argv[1])
+host = pathlib.Path(sys.argv[2])
+manifest = json.loads((conformance / "manifest.json").read_text())
+companions = sorted({
+    c
+    for fixture in manifest.get("fixtures", [])
+    for c in (fixture.get("companions") or [])
+})
+if companions:
+    layouts = host / "Resources" / "Layouts"
+    layouts.mkdir(parents=True)
+    for companion in companions:
+        src = conformance / companion
+        bare = src.name.replace(".layout.json", ".json")
+        shutil.copyfile(src, layouts / bare)
+    print(f"synced {len(companions)} companion layout(s) -> Resources/Layouts")
+EOF
+
 # --- driver sources -> UITests/Vendor/JsonUITestRunner
 rm -rf "$HOST_DIR/UITests/Vendor/JsonUITestRunner"
 mkdir -p "$HOST_DIR/UITests/Vendor"

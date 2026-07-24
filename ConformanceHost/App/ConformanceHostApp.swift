@@ -83,7 +83,9 @@ struct ConformanceRootView: View {
 
     var body: some View {
         Group {
-            if batch.fixtureIds.isEmpty {
+            if ProcessInfo.processInfo.arguments.contains("-gestureProbe") {
+                GestureProbeView()
+            } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
                     .accessibilityIdentifier("conformance_idle")

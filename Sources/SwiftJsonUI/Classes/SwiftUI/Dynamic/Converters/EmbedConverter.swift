@@ -30,7 +30,7 @@ public struct EmbedConverter {
         let raw = component.rawData
         let screenName = (raw["screen"] as? String) ?? ""
         let embedId = (raw["id"] as? String) ?? (viewId ?? "embed")
-        let navigationMode = parseNavigationMode(raw["navigationMode"] as? String)
+        let rawMode = raw["navigationMode"] as? String
         let resolvedParams = resolveParams(raw["params"], parentData: data)
         let eventBridge = buildEventBridge(eventMap: raw["events"] as? [String: String], parentData: data)
 
@@ -41,22 +41,56 @@ public struct EmbedConverter {
             )
         }
 
-        var result = AnyView(
-            EmbedContainer(
-                embedId: embedId,
-                screen: screenName,
-                params: resolvedParams,
-                navigationMode: navigationMode,
-                eventBridge: eventBridge
-            ) {
-                buildEmbeddedScreen(
-                    screenName: screenName,
+        // Version-skew guard: an unknown navigationMode means the layout was
+        // authored against a newer attribute vocabulary than this runtime.
+        // Never silently degrade to delegate — surface it (same red-box
+        // convention as DynamicComponentBuilder's unknown-component branch).
+        guard let navigationMode = parseNavigationMode(rawMode) else {
+            return AnyView(
+                Text("Embed: unknown navigationMode '\(rawMode ?? "")' — update SwiftJsonUI")
+                    .foregroundColor(.white)
+                    .padding(8)
+                    .background(Color.red)
+            )
+        }
+
+        var result: AnyView
+        if navigationMode == .isolated {
+            result = AnyView(
+                EmbedContainer(
                     embedId: embedId,
+                    screen: screenName,
                     params: resolvedParams,
-                    component: component
-                )
-            }
-        )
+                    navigationMode: .isolated,
+                    isolatedNavigation: .automatic,
+                    eventBridge: eventBridge
+                ) {
+                    buildEmbeddedScreen(
+                        screenName: screenName,
+                        embedId: embedId,
+                        params: resolvedParams,
+                        component: component
+                    )
+                }
+            )
+        } else {
+            result = AnyView(
+                EmbedContainer(
+                    embedId: embedId,
+                    screen: screenName,
+                    params: resolvedParams,
+                    navigationMode: navigationMode,
+                    eventBridge: eventBridge
+                ) {
+                    buildEmbeddedScreen(
+                        screenName: screenName,
+                        embedId: embedId,
+                        params: resolvedParams,
+                        component: component
+                    )
+                }
+            )
+        }
 
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
         return result
@@ -110,15 +144,20 @@ public struct EmbedConverter {
         }
     }
 
-    private static func parseNavigationMode(_ raw: String?) -> EmbedNavigationMode {
+    /// nil = unknown value (version skew) — caller renders an explicit error.
+    private static func parseNavigationMode(_ raw: String?) -> EmbedNavigationMode? {
         switch raw {
+        case nil, "delegate": return .delegate
         case "isolated": return .isolated
-        default: return .delegate
+        default: return nil
         }
     }
 
-    /// Resolve `params` object: for each key whose value is a @{binding} string,
-    /// look up the parent data dict and substitute the bound value. Literals pass through.
+    /// Resolve `params` tree: for each leaf whose value is a @{binding} string,
+    /// look up the parent data dict and substitute the bound value. Literals
+    /// pass through. Intermediate nodes are literal objects (validated by the
+    /// CLI: bindings are leaf-only, arrays unsupported) — recursed here so
+    /// nested leaves resolve too.
     private static func resolveParams(_ raw: Any?, parentData: [String: Any]) -> [String: Any] {
         guard let dict = raw as? [String: Any] else { return [:] }
         var resolved: [String: Any] = [:]
@@ -129,6 +168,8 @@ public struct EmbedConverter {
                     resolved[key] = bound
                 }
                 // unresolved binding → key dropped (let embedded layout's defaultValue apply)
+            } else if let nested = value as? [String: Any] {
+                resolved[key] = resolveParams(nested, parentData: parentData)
             } else {
                 resolved[key] = value
             }
