@@ -19,7 +19,9 @@ public struct RadioAttributes {
         "iconColor",
         "iconSize",
         "label",
+        "onValueChange",
         "selectedIcon",
+        "selectedValue",
         "selected_icon",
         "spacing",
         "text",
@@ -70,8 +72,14 @@ public struct RadioAttributes {
     /// Radio label (can be data binding)
     public let label: AttrValue<String>?
 
+    /// Value change handler - binding only (@{functionName})
+    public let onValueChange: AttrValue<Any>?
+
     /// Selected icon name
     public let selectedIcon: String?
+
+    /// Selected value of the radio group (binding for two-way)
+    public let selectedValue: AttrValue<String>?
 
     /// Selected icon name (underscore alias)
     public let selected_icon: String?
@@ -102,7 +110,9 @@ public struct RadioAttributes {
         self.iconColor = AttrCoerce.string(AttrCoerce.lookup(json, "iconColor"))
         self.iconSize = AttrCoerce.number(AttrCoerce.lookup(json, "iconSize"))
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label"), AttrCoerce.string)
+        self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
         self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon"))
+        self.selectedValue = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedValue"), AttrCoerce.string)
         self.selected_icon = AttrCoerce.string(AttrCoerce.lookup(json, "selected_icon"))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
