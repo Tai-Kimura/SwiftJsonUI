@@ -91,6 +91,27 @@ final class DynamicHiddenModifierTests: XCTestCase {
         XCTAssertEqual(storageTypeName(result), hiddenModifierTypeName)
     }
 
+    // MARK: - applyOpacity literal visibility:"invisible" (builder-bypass path)
+
+    /// applyOpacity's literal invisible branch must use the same invisible
+    /// mechanism as VisibilityWrapper / applyHidden — a bare .opacity(0)
+    /// keeps the view findable by VoiceOver / UI tests.
+    func testApplyOpacityInvisibleUsesInvisibleMechanism() throws {
+        let c = try component("""
+        { "type": "View", "visibility": "invisible" }
+        """)
+        let result = DynamicModifierHelper.applyOpacity(baseView, component: c)
+        XCTAssertEqual(storageTypeName(result), invisibleReferenceTypeName)
+    }
+
+    func testApplyOpacityVisibleIsPassthrough() throws {
+        let c = try component("""
+        { "type": "View", "visibility": "visible" }
+        """)
+        let result = DynamicModifierHelper.applyOpacity(baseView, component: c)
+        XCTAssertEqual(storageTypeName(result), passthroughTypeName)
+    }
+
     // MARK: - Binding path, plain value
 
     func testBindingHiddenTruePlainValueUsesInvisibleMechanism() throws {
