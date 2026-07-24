@@ -53,18 +53,30 @@ jobs:
           # xcodebuild's own destination list — names must match
           # xcodebuild's eligible list, not simctl's; runner images vary.
           DESTS=$(xcodebuild -scheme "$SCHEME" -showdestinations 2>&1 \
-            | grep 'platform:iOS Simulator' || true)
+            | grep 'platform:iOS Simulator' | grep -v 'placeholder' || true)
           # `|| true` on every extraction: with -e + pipefail a no-match
           # grep (exit 1) would otherwise kill the script before the
           # fallback can run (exactly what the second CI attempt did).
+          # sed uses -n/p so a non-matching line yields NOTHING — a plain
+          # s///-only sed passes the whole line through, which once fed a
+          # brace-laden placeholder line into -destination (exit 64).
           DEST_ID=$(echo "$DESTS" | grep 'name:iPhone' | head -1 \
-            | sed -E 's/.*id:([A-F0-9-]+).*/\1/' || true)
+            | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
           if [ -z "$DEST_ID" ]; then
-            DEST_ID=$(echo "$DESTS" | head -1 | sed -E 's/.*id:([A-F0-9-]+).*/\1/' || true)
+            DEST_ID=$(echo "$DESTS" | head -1 \
+              | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
+          fi
+          if [ -z "$DEST_ID" ]; then
+            # Last resort: ask simctl for any available iPhone UDID
+            # (UDIDs are shared between simctl and xcodebuild's list).
+            DEST_ID=$(xcrun simctl list devices available \
+              | grep -m1 -E '^\s+iPhone' \
+              | sed -nE 's/.*\(([A-F0-9-]{8,})\).*/\1/p' || true)
           fi
           if [ -z "$DEST_ID" ]; then
             echo "No eligible iOS Simulator destination found; raw list:" >&2
             xcodebuild -scheme "$SCHEME" -showdestinations >&2 || true
+            xcrun simctl list devices available >&2 || true
             exit 1
           fi
           echo "Using destination id=$DEST_ID"
