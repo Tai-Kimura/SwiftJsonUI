@@ -317,5 +317,40 @@ final class DynamicHelpersTests: XCTestCase {
         let data = try! JSONSerialization.data(withJSONObject: jsonDict)
         return try! JSONDecoder().decode(DynamicComponent.self, from: data)
     }
+
+    // MARK: - processText binding resolution (flat + dot paths)
+
+    private let bindingData: [String: Any] = [
+        "userName": "Ada",
+        "profile": [
+            "name": "Grace",
+            "meta": ["age": "36"]
+        ] as [String: Any]
+    ]
+
+    func testProcessText_flatBindingResolves() {
+        XCTAssertEqual(DynamicHelpers.processText("@{userName}", data: bindingData), "Ada")
+    }
+
+    func testProcessText_dotPathBindingResolves() {
+        // Nested Embed params bindings rendered empty when this was a flat
+        // data[key] lookup (caught by Embed/params__nested_leaf* fixtures).
+        XCTAssertEqual(DynamicHelpers.processText("@{profile.name}", data: bindingData), "Grace")
+    }
+
+    func testProcessText_deepDotPathBindingResolves() {
+        XCTAssertEqual(DynamicHelpers.processText("@{profile.meta.age}", data: bindingData), "36")
+    }
+
+    func testProcessText_unresolvedBindingRendersEmpty() {
+        XCTAssertEqual(DynamicHelpers.processText("@{missing.path}", data: bindingData), "")
+    }
+
+    func testProcessText_mixedTextInterpolates() {
+        XCTAssertEqual(
+            DynamicHelpers.processText("Hello @{profile.name}!", data: bindingData),
+            "Hello Grace!"
+        )
+    }
 }
 #endif

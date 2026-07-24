@@ -52,6 +52,14 @@ manifest_ref = resources_group.new_reference(File.join(host_dir, 'Resources', 'm
 # interactive fixture's `state` declaration from it (INTERACTIVE_HOST_CONTRACT.md)
 app_target.add_resources([fixtures_ref, manifest_ref])
 
+# companion embedded-screen layouts (Embed fixtures): bundled as a Layouts/
+# folder reference so JSONLayoutLoader resolves screen names inside embeds
+layouts_dir = File.join(host_dir, 'Resources', 'Layouts')
+if File.directory?(layouts_dir)
+  layouts_ref = resources_group.new_reference(layouts_dir)
+  app_target.add_resources([layouts_ref])
+end
+
 # SwiftJsonUI local package (repo root, one level up from ConformanceHost/)
 package_ref = project.new(Xcodeproj::Project::Object::XCLocalSwiftPackageReference)
 package_ref.relative_path = '..'

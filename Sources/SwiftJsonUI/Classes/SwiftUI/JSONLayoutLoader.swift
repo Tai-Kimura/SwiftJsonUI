@@ -343,7 +343,13 @@ public class JSONLayoutLoader {
                 Bundle.main.url(forResource: basename, withExtension: "json")
             ].compactMap { $0 }
         } else {
-            candidates = [Bundle.main.url(forResource: name, withExtension: "json")].compactMap { $0 }
+            // Folder-reference bundlings keep the Layouts/ subdirectory in
+            // the bundle (group-reference bundlings flatten to the root), so
+            // try both. Android mirrors this with assets/Layouts/<name>.json.
+            candidates = [
+                Bundle.main.url(forResource: name, withExtension: "json"),
+                Bundle.main.url(forResource: name, withExtension: "json", subdirectory: layoutsDirectoryName)
+            ].compactMap { $0 }
         }
 
         guard let url = candidates.first else {
