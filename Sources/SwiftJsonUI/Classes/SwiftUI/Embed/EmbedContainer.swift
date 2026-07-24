@@ -234,6 +234,12 @@ private struct IsolatedEmbedBody<Content: View>: View {
         }
         .id(embedId)
         .environment(\.embeddedScreenContext, context)
+        .onAppear {
+            EmbedNavigatorRegistry.shared.register(navigator, for: embedId)
+        }
+        .onDisappear {
+            EmbedNavigatorRegistry.shared.unregister(embedId, ifCurrent: navigator)
+        }
     }
 
     @ViewBuilder

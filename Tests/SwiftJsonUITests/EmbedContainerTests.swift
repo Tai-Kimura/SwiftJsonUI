@@ -207,5 +207,34 @@ final class EmbedContainerTests: XCTestCase {
         )
         XCTAssertNil(ctx.navigator)
     }
+
+    // MARK: - EmbedNavigatorRegistry (host-side imperative lookup, 10.5.0)
+
+    func testRegistry_lookupReturnsRegisteredNavigator() {
+        let nav = EmbedNavigator()
+        EmbedNavigatorRegistry.shared.register(nav, for: "registry-pane-a")
+        defer { EmbedNavigatorRegistry.shared.unregister("registry-pane-a", ifCurrent: nav) }
+        XCTAssertTrue(EmbedNavigatorRegistry.shared.navigator(for: "registry-pane-a") === nav)
+        XCTAssertNil(EmbedNavigatorRegistry.shared.navigator(for: "registry-pane-unknown"))
+    }
+
+    func testRegistry_lastRegistrationWinsAndStaleUnregisterIsIgnored() {
+        let first = EmbedNavigator()
+        let second = EmbedNavigator()
+        EmbedNavigatorRegistry.shared.register(first, for: "registry-pane-b")
+        EmbedNavigatorRegistry.shared.register(second, for: "registry-pane-b")
+        // The earlier container's teardown must not clobber the newer mount.
+        EmbedNavigatorRegistry.shared.unregister("registry-pane-b", ifCurrent: first)
+        XCTAssertTrue(EmbedNavigatorRegistry.shared.navigator(for: "registry-pane-b") === second)
+        EmbedNavigatorRegistry.shared.unregister("registry-pane-b", ifCurrent: second)
+        XCTAssertNil(EmbedNavigatorRegistry.shared.navigator(for: "registry-pane-b"))
+    }
+
+    func testRegistry_holdsNavigatorWeakly() {
+        var nav: EmbedNavigator? = EmbedNavigator()
+        EmbedNavigatorRegistry.shared.register(nav!, for: "registry-pane-c")
+        nav = nil
+        XCTAssertNil(EmbedNavigatorRegistry.shared.navigator(for: "registry-pane-c"))
+    }
 }
 #endif
