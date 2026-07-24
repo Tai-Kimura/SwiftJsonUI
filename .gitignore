@@ -1,0 +1,65 @@
+# OS X
+.DS_Store
+
+# Xcode
+build/
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+*.xccheckout
+profile
+*.moved-aside
+DerivedData
+*.hmap
+*.ipa
+hot_loader/public/*
+hot_loader/node_modules/*
+android_parser/results/*
+Example/*
+
+# Bundler
+.bundle
+
+# Add this line if you want to avoid checking in source code from Carthage dependencies.
+# Carthage/Checkouts
+
+Carthage/Build
+
+# We recommend against adding the Pods directory to your .gitignore. However
+# you should judge for yourself, the pros and cons are mentioned at:
+# https://guides.cocoapods.org/using/using-cocoapods.html#should-i-ignore-the-pods-directory-in-source-control
+#
+# Note: if you ignore the Pods directory, make sure to uncomment
+# `pod install` in .travis.yml
+#
+# Pods/
+
+# SwiftUI Builder test folder
+swiftui_builder/test/
+
+# Swift build directory
+.build/
+
+# Custom converter extensions (SwiftUI)
+tools/sjui_tools/lib/swiftui/views/extensions/
+
+# Custom converter extensions (UIKit)
+tools/sjui_tools/lib/uikit/extensions/
+tools/sjui_tools/lib/uikit/handlers/extensions/
+
+# Test app folder
+test_app/
+
+# Local Claude Code settings
+.claude/settings.local.json
+
+# Coverage reports
+coverage/
+*.xcresult
+.claude/

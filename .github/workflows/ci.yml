@@ -1,0 +1,86 @@
+# SwiftJsonUI library CI — unit tests on an iOS Simulator.
+#
+# `swift build` does NOT work on macOS (UIKit dependency): tests run via
+# xcodebuild against an iOS Simulator, same as local release verification
+# (e.g. 10.5.0: xcodebuild test -scheme SwiftJsonUI on an iPad simulator).
+#
+# This job is also the CI consumer of the shared binding vectors
+# (Tests/SwiftJsonUITests/Fixtures/binding_vectors.json, vendored from
+# jsonui-cli shared/core/binding_vectors.json) via BindingVectorTests.
+#
+# Budget: local full suite ~6 min wall incl. build; CI runners are 5-7x
+# slower => ~30-40 min worst case. timeout 60 min leaves headroom without
+# masking hangs for a week (weekly cron matches conformance-mobile).
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: '0 18 * * 0' # weekly (Sunday 18:00 UTC), same slot as conformance-mobile
+
+jobs:
+  unit-tests:
+    name: Library unit tests (iOS Simulator)
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode / scheme / simulator inventory
+        run: |
+          xcodebuild -version
+          xcodebuild -list 2>&1 | sed -n '/Schemes:/,$p' || true
+
+      - name: Run unit tests
+        run: |
+          set -o pipefail
+          # Only SwiftJsonUITests.xcscheme is tracked; the "SwiftJsonUI"
+          # scheme is Xcode-local auto-generation and does NOT exist on a
+          # fresh checkout. Resolve dynamically, preferring the package
+          # scheme when present.
+          SCHEME=$(xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' \
+            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs || true)
+          if [ -z "$SCHEME" ]; then
+            echo "No usable scheme found:" >&2
+            xcodebuild -list >&2 || true
+            exit 1
+          fi
+          echo "Using scheme=$SCHEME"
+          # Pick the first eligible iOS Simulator (prefer iPhone) from
+          # xcodebuild's own destination list — names must match
+          # xcodebuild's eligible list, not simctl's; runner images vary.
+          DESTS=$(xcodebuild -scheme "$SCHEME" -showdestinations 2>&1 \
+            | grep 'platform:iOS Simulator' | grep -v 'placeholder' || true)
+          # `|| true` on every extraction: with -e + pipefail a no-match
+          # grep (exit 1) would otherwise kill the script before the
+          # fallback can run (exactly what the second CI attempt did).
+          # sed uses -n/p so a non-matching line yields NOTHING — a plain
+          # s///-only sed passes the whole line through, which once fed a
+          # brace-laden placeholder line into -destination (exit 64).
+          DEST_ID=$(echo "$DESTS" | grep 'name:iPhone' | head -1 \
+            | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
+          if [ -z "$DEST_ID" ]; then
+            DEST_ID=$(echo "$DESTS" | head -1 \
+              | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
+          fi
+          if [ -z "$DEST_ID" ]; then
+            # Last resort: ask simctl for any available iPhone UDID
+            # (UDIDs are shared between simctl and xcodebuild's list).
+            DEST_ID=$(xcrun simctl list devices available \
+              | grep -m1 -E '^\s+iPhone' \
+              | sed -nE 's/.*\(([A-F0-9-]{8,})\).*/\1/p' || true)
+          fi
+          if [ -z "$DEST_ID" ]; then
+            echo "No eligible iOS Simulator destination found; raw list:" >&2
+            xcodebuild -scheme "$SCHEME" -showdestinations >&2 || true
+            xcrun simctl list devices available >&2 || true
+            exit 1
+          fi
+          echo "Using destination id=$DEST_ID"
+          xcodebuild test \
+            -scheme "$SCHEME" \
+            -destination "platform=iOS Simulator,id=$DEST_ID" \
+            | tail -100

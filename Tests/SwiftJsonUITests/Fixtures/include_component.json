@@ -1,0 +1,33 @@
+{
+    "type": "View",
+    "id": "mainContainer",
+    "child": [
+        {
+            "include": "common_header",
+            "variables": {
+                "title": "Main Page",
+                "showBackButton": true
+            }
+        },
+        {
+            "type": "View",
+            "id": "content",
+            "child": [
+                {
+                    "type": "Label",
+                    "text": "Page Content"
+                }
+            ]
+        },
+        {
+            "include": "common_footer",
+            "data": {
+                "copyright": "2024",
+                "links": ["Privacy", "Terms", "Contact"]
+            },
+            "shared_data": {
+                "theme": "light"
+            }
+        }
+    ]
+}
