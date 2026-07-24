@@ -304,7 +304,17 @@ public struct DynamicModifierHelper {
             return AnyView(view.opacity(Double(alpha)))
         }
         if component.visibility == "invisible" {
-            return AnyView(view.opacity(0))
+            // Full invisible mechanism, mirroring VisibilityWrapper /
+            // applyHidden: a bare .opacity(0) keeps the view findable by
+            // VoiceOver and UI tests. Normally the builder wraps first and
+            // this branch never fires — it must still agree on the
+            // semantics for builder-bypassing callers.
+            return AnyView(
+                view
+                    .opacity(0)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityHidden(true)
+            )
         }
         return view
     }
