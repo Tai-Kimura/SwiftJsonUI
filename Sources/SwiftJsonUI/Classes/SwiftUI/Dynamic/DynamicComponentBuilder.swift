@@ -33,8 +33,14 @@ public struct DynamicComponentBuilder: View {
     }
 
     public var body: some View {
-        // Check if component needs visibility wrapper
+        // Check if component needs visibility wrapper. A binding-typed
+        // hidden ("@{flag}" / "@{!flag}") must go through the SAME
+        // VisibilityWrapper("gone") collapse as a literal `hidden: true` —
+        // Android (conditional composition) and web (display:none) both
+        // collapse, and the modifier-level .hidden() keeps the element
+        // visible to XCUITest.
         let needsVisibilityWrapper = component.visibility != nil || component.hidden == true
+            || bindingHiddenExpression != nil
 
         if needsVisibilityWrapper {
             buildWithVisibility()
@@ -43,11 +49,37 @@ public struct DynamicComponentBuilder: View {
         }
     }
 
+    /// The raw `hidden` value when it is a binding expression (a literal
+    /// bool decodes into `component.hidden` and never lands here).
+    private var bindingHiddenExpression: String? {
+        guard component.hidden == nil,
+              let raw = component.rawData["hidden"] as? String,
+              DynamicBindingResolver.isBindingExpression(raw) else { return nil }
+        return raw
+    }
+
     @ViewBuilder
     private func buildWithVisibility() -> some View {
         if component.hidden == true {
             VisibilityWrapper("gone") {
                 buildComponentWithModifiers()
+            }
+        } else if let hiddenValue = bindingHiddenExpression {
+            if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
+                ReactiveVisibilityWrapper(visibility: SwiftUI.Binding(
+                    get: { binding.wrappedValue ? "gone" : "visible" },
+                    set: { _ in }
+                )) {
+                    buildComponentWithModifiers()
+                }
+            } else {
+                // Plain value: re-resolves on every data-driven rebuild.
+                VisibilityWrapper(
+                    DynamicBindingHelper.resolveBool(hiddenValue, data: data, fallback: false)
+                        ? "gone" : "visible"
+                ) {
+                    buildComponentWithModifiers()
+                }
             }
         } else if let visibilityValue = component.visibility {
             if let inner = DynamicBindingResolver.inner(of: visibilityValue) {
