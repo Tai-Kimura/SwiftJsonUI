@@ -358,9 +358,18 @@ public struct DynamicModifierHelper {
             if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
                 return AnyView(ReactiveHiddenWrapper(isHidden: binding, content: view))
             }
-            // Fallback to plain value
+            // Fallback to plain value — must match the literal path's
+            // observable semantics: .hidden() takes the element out of the
+            // accessibility tree (XCUITest "not visible") while preserving
+            // its layout space. opacity(0) kept the frame AND left the
+            // element visible to XCUITest, so a resolved-true binding
+            // diverged from `hidden: true`. Plain values re-resolve on every
+            // data-driven rebuild, so the conditional stays reactive.
             let isHidden = DynamicBindingHelper.resolveBool(hiddenValue, data: data, fallback: false)
-            return AnyView(view.opacity(isHidden ? 0 : 1))
+            if isHidden {
+                return AnyView(view.hidden())
+            }
+            return view
         }
 
         return view
