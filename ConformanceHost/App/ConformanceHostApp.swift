@@ -91,6 +91,8 @@ struct ConformanceRootView: View {
                 ScreenMarkerSplitProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerFullScreenProbe") {
                 ScreenMarkerFullScreenProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerOverlayProbe") {
+                ScreenMarkerOverlayProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
