@@ -28,6 +28,7 @@
 //
 
 import SwiftUI
+import SwiftJsonUI
 
 // MARK: - Marker shapes under test
 
@@ -105,7 +106,13 @@ struct ScreenMarkerProbeView: View {
                     ProbeScreenBody(screenId: "containerhost", childCount: 1)
                         .containerMarker("containerhost")
 
-                    NavigationLink("go-pushed") { PushedScreen() }
+                    // The LIBRARY's real modifier, so the runtime spelling of the
+            // identifier is measured rather than assumed — codegen passes a
+            // bare screen id and the modifier forms `__screen_<id>`.
+            ProbeScreenBody(screenId: "libhost", childCount: 1)
+                .jsonUIScreenMarker("lib_probe")
+
+            NavigationLink("go-pushed") { PushedScreen() }
                         .accessibilityIdentifier("go_pushed")
                     Button("open-sheet") { showSheet = true }
                         .accessibilityIdentifier("open_sheet")

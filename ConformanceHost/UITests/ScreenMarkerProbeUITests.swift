@@ -3,8 +3,8 @@
 //  ConformanceHostUITests
 //
 //  Screen-marker measurement (screen-identity track, Phase 0) — NOT part of
-//  the conformance suite. Runs only with SCREEN_MARKER_PROBE=1
-//  (pass TEST_RUNNER_SCREEN_MARKER_PROBE=1 to xcodebuild).
+//  the conformance suite. Compiled in only when built with
+//  OTHER_SWIFT_FLAGS='$(inherited) -DSCREEN_MARKER_PROBE'.
 //
 //  These tests measure two things the canon cannot assume:
 //
@@ -60,10 +60,16 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         return app
     }
 
+    /// Compile-time gate, deliberately not an environment variable:
+    /// `TEST_RUNNER_*` forwarding was measured NOT to reach the runner
+    /// process with this toolchain (only SIMULATOR_* arrives), so an env
+    /// gate would silently skip forever. A command-line build setting always
+    /// reaches the compiler, so this one cannot rot unnoticed — and with the
+    /// flag absent the probe compiles out of the nightly full-scheme run.
     private func skipUnlessEnabled() throws {
-        guard ProcessInfo.processInfo.environment["SCREEN_MARKER_PROBE"] == "1" else {
-            throw XCTSkip("screen marker probe: set TEST_RUNNER_SCREEN_MARKER_PROBE=1 to run")
-        }
+        #if !SCREEN_MARKER_PROBE
+        throw XCTSkip("screen marker probe: build with OTHER_SWIFT_FLAGS='$(inherited) -DSCREEN_MARKER_PROBE' to run")
+        #endif
     }
 
     // MARK: - Shape: does the marker damage the screen it marks?
@@ -91,6 +97,23 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         let childVisible = element(app, "containerhost_child_0").exists
         print("[screen-marker] container shape: root_id_visible=\(rootVisible) child_id_visible=\(childVisible)")
         print("[screen-marker] leaf shape: root_id_visible=\(element(app, "leafhost_root_view").exists) child_id_visible=\(element(app, "leafhost_child_0").exists)")
+    }
+
+    /// The library modifier's runtime spelling: exactly one element whose
+    /// identifier is `__screen_<id>` — not a doubled prefix, and not zero.
+    func testLibraryModifierSpellsTheIdentifierOnce() throws {
+        try skipUnlessEnabled()
+        let app = launchProbe()
+        XCTAssertTrue(marker(app, "lib_probe").waitForExistence(timeout: 15),
+                      "library modifier produced no marker")
+
+        XCTAssertEqual(count(app, "__screen_lib_probe"), 1)
+        XCTAssertEqual(count(app, "__screen___screen_lib_probe"), 0,
+                       "prefix applied twice")
+        // And it must not have cost the marked screen its own ids.
+        XCTAssertTrue(element(app, "libhost_root_view").exists)
+        XCTAssertTrue(element(app, "libhost_child_0").exists)
+        print("  " + snapshot(app, "library jsonUIScreenMarker", "__screen_lib_probe"))
     }
 
     func testMarkerIsUnique() throws {
