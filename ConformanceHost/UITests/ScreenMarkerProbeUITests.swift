@@ -165,6 +165,85 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         )
     }
 
+    // MARK: - Predicate: displayed vs. covered by another SCREEN
+
+    /// Screen ids other than `screenId` whose markers are currently hittable.
+    private func otherHittableScreens(_ app: XCUIApplication, excluding screenId: String) -> [String] {
+        let prefix = "__screen_"
+        let query = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", prefix))
+        return (0..<query.count).compactMap { index -> String? in
+            let element = query.element(boundBy: index)
+            let identifier = element.identifier
+            guard identifier.hasPrefix(prefix) else { return nil }
+            let id = String(identifier.dropFirst(prefix.count))
+            guard id != screenId, element.isHittable else { return nil }
+            return id
+        }
+    }
+
+    /// The CANDIDATE predicate, mirroring what the driver is to implement:
+    /// the screen is displayed when its marker is present and either
+    /// reachable, or nothing else claims to be the displayed screen.
+    ///
+    /// Keep this spelled the same as `AssertionExecutor.assertScreen`.
+    private func isDisplayed(_ app: XCUIApplication, _ screenId: String) -> Bool {
+        let element = marker(app, screenId)
+        guard element.exists else { return false }
+        if element.isHittable { return true }
+        return otherHittableScreens(app, excluding: screenId).isEmpty
+    }
+
+    /// A full-screen app overlay layered OUTSIDE the generated view covers the
+    /// marker, but the screen is still the one on display.
+    ///
+    /// `exists && isHittable` cannot tell this apart from a sheet, because
+    /// the marker is inside the generated view and the overlay is outside it
+    /// — so it necessarily loses. The screen has not been replaced, and
+    /// nothing else claims to be displayed.
+    func testAppLevelOverlayDoesNotHideTheScreen() throws {
+        try skipUnlessEnabled()
+        let app = launchProbe("-screenMarkerOverlayProbe")
+        let element = marker(app, "overlaid_probe")
+        XCTAssertTrue(element.waitForExistence(timeout: 15), "marker missing under the overlay")
+
+        print("  " + snapshot(app, "overlaid marker", "__screen_overlaid_probe"))
+        // Recorded, not required: this is the reading that made the old
+        // predicate fail in the field.
+        print("  overlay covers the marker: isHittable=\(element.isHittable)")
+
+        XCTAssertTrue(
+            otherHittableScreens(app, excluding: "overlaid_probe").isEmpty,
+            "no other SCREEN is present — only an app overlay"
+        )
+        XCTAssertTrue(
+            isDisplayed(app, "overlaid_probe"),
+            "a screen covered by its own app's overlay must still count as displayed. "
+                + snapshot(app, "marker", "__screen_overlaid_probe")
+        )
+    }
+
+    /// The discriminating case the predicate exists for: another SCREEN on
+    /// top must still read as not-displayed under the new rule, otherwise
+    /// the change trades one false negative for a false positive.
+    func testSheetStillHidesThePresenterUnderTheNewPredicate() throws {
+        try skipUnlessEnabled()
+        let app = launchProbe("-screenMarkerFullScreenProbe")
+        XCTAssertTrue(marker(app, "fullbleed_probe").waitForExistence(timeout: 15))
+        XCTAssertTrue(isDisplayed(app, "fullbleed_probe"), "precondition: displayed before covering")
+
+        app.buttons["fullbleed_open_sheet"].tap()
+        XCTAssertTrue(marker(app, "fullbleed_sheet").waitForExistence(timeout: 15), "sheet did not present")
+
+        print("  covering screens: \(otherHittableScreens(app, excluding: "fullbleed_probe"))")
+        XCTAssertFalse(
+            isDisplayed(app, "fullbleed_probe"),
+            "a sheet is another SCREEN and must still hide the presenter. "
+                + snapshot(app, "covered", "__screen_fullbleed_probe")
+        )
+        XCTAssertTrue(isDisplayed(app, "fullbleed_sheet"), "the sheet itself is displayed")
+    }
+
     /// The other direction: the predicate must still say NO when the screen
     /// is covered. A marker that is always hittable would make every screen
     /// assertion pass, which is a worse failure than the one being fixed.

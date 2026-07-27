@@ -201,6 +201,45 @@ struct ScreenMarkerFullScreenProbeView: View {
     }
 }
 
+/// A generated screen wrapped from the OUTSIDE by a full-screen, tap-catching
+/// app overlay — a coach mark, a loading scrim, a hand-rolled modal.
+///
+/// This is ordinary composition, not an exotic setup, and it is invisible to
+/// the eye: the scrim can be fully transparent and still take every hit. The
+/// marker lives INSIDE the generated view by construction, so an overlay
+/// layered outside it always covers the marker and drives isHittable to
+/// false while the screen is plainly still the one on display.
+///
+/// The probe had no case like this, which is why it stayed green while real
+/// apps failed — the same blind spot as the topLeading placement.
+struct ScreenMarkerOverlayProbeView: View {
+    var body: some View {
+        ZStack {
+            NavigationStack {
+                VStack(spacing: 8) {
+                    Text("overlaid-child-0")
+                        .accessibilityIdentifier("overlaid_child_0")
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityElement(children: .contain)
+                .accessibilityIdentifier("overlaid_root_view")
+                .navigationTitle("Overlaid")
+                .jsonUIScreenMarker("overlaid_probe")
+            }
+
+            // Deliberately near-transparent: the failure in the field came
+            // from the tap-catching layer, not from the visible card.
+            Color.black.opacity(0.35)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .contentShape(Rectangle())
+                .onTapGesture { }
+                .ignoresSafeArea()
+                .accessibilityIdentifier("app_level_overlay")
+        }
+    }
+}
+
 /// Side-by-side panes: both screens are genuinely displayed at once, which
 /// is why the assertion's meaning is "this screen is displayed", never
 /// "only this screen is displayed".
