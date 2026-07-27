@@ -116,6 +116,77 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         print("  " + snapshot(app, "library jsonUIScreenMarker", "__screen_lib_probe"))
     }
 
+    /// The marker must satisfy the DRIVER'S predicate, not merely exist.
+    ///
+    /// This assertion is the one the probe was missing. Every check above
+    /// is an existence or count check, so the suite stayed green while the
+    /// shipped marker carried `.allowsHitTesting(false)` — which makes
+    /// hit-testing resolve past it and `isHittable` structurally false, so
+    /// `assert: "screen"` could never pass on a real app. Existence checks
+    /// cannot catch a predicate bug; only the predicate can.
+    ///
+    /// Keep this spelled the same as
+    /// `AssertionExecutor.assertScreen` (`exists && isHittable`). If that
+    /// predicate changes, change it here in the same commit.
+    func testMarkerSatisfiesTheDriverPredicate() throws {
+        try skipUnlessEnabled()
+        let app = launchProbe()
+        let element = marker(app, "lib_probe")
+        XCTAssertTrue(element.waitForExistence(timeout: 15), "library modifier produced no marker")
+
+        XCTAssertTrue(
+            element.exists && element.isHittable,
+            "marker fails the driver predicate 'exists && isHittable' — "
+                + "assert: \"screen\" cannot pass against this build. "
+                + snapshot(app, "marker", "__screen_lib_probe")
+        )
+    }
+
+    /// The same predicate, on a screen shaped the way code generation really
+    /// emits one: a root that FILLS the screen inside a NavigationStack.
+    ///
+    /// This is the case a real app hits and the probe above does not. The
+    /// marker's topLeading overlay lands in the screen's top-left corner,
+    /// under the navigation and status bars, rather than in clear space
+    /// mid-VStack.
+    func testFullScreenRootMarkerSatisfiesTheDriverPredicate() throws {
+        try skipUnlessEnabled()
+        let app = launchProbe("-screenMarkerFullScreenProbe")
+        let element = marker(app, "fullbleed_probe")
+        XCTAssertTrue(element.waitForExistence(timeout: 15), "library modifier produced no marker")
+
+        print("  " + snapshot(app, "library marker (centered)", "__screen_fullbleed_probe"))
+        print("  " + snapshot(app, "control (topLeading, rejected)", "__probe_v_topleading"))
+        XCTAssertTrue(
+            element.exists && element.isHittable,
+            "marker on a full-screen root fails 'exists && isHittable' — "
+                + "assert: \"screen\" cannot pass on a real generated screen. "
+                + snapshot(app, "marker", "__screen_fullbleed_probe")
+        )
+    }
+
+    /// The other direction: the predicate must still say NO when the screen
+    /// is covered. A marker that is always hittable would make every screen
+    /// assertion pass, which is a worse failure than the one being fixed.
+    func testFullScreenRootMarkerIsNotHittableWhenCovered() throws {
+        try skipUnlessEnabled()
+        let app = launchProbe("-screenMarkerFullScreenProbe")
+        let element = marker(app, "fullbleed_probe")
+        XCTAssertTrue(element.waitForExistence(timeout: 15))
+        XCTAssertTrue(element.isHittable, "precondition: marker hittable before covering")
+
+        app.buttons["fullbleed_open_sheet"].tap()
+        XCTAssertTrue(marker(app, "fullbleed_sheet").waitForExistence(timeout: 15), "sheet did not present")
+
+        print("  " + snapshot(app, "covered(fullbleed_probe)", "__screen_fullbleed_probe"))
+        XCTAssertFalse(
+            element.isHittable,
+            "a covered screen's marker is still hittable — the predicate no "
+                + "longer distinguishes displayed from covered. "
+                + snapshot(app, "covered", "__screen_fullbleed_probe")
+        )
+    }
+
     func testMarkerIsUnique() throws {
         try skipUnlessEnabled()
         let app = launchProbe()

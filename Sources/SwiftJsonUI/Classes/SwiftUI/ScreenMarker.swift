@@ -22,16 +22,31 @@ private struct ScreenMarkerModifier: ViewModifier {
     let screenId: String
 
     func body(content: Content) -> some View {
-        content.overlay(alignment: .topLeading) {
+        content.overlay(alignment: .center) {
             // A LEAF, deliberately: measured on iOS 18.6, making the screen
             // root an accessibility CONTAINER instead makes the screen's own
             // root identifier disappear, and a container also reports
             // isHittable == false while fully visible — which would break the
             // `exists && isHittable` predicate the drivers use.
             //
+            // CENTERED, also deliberately. This shipped aligned .topLeading
+            // and every screen assertion failed on real apps with
+            // "exists but is not hittable": a generated screen root fills the
+            // screen, so its top-left corner sits under the navigation bar,
+            // and hit-testing there resolves to the chrome instead of the
+            // marker. Measured on iOS 18.6 — same screen, same 0.5pt leaf:
+            // topLeading isHittable == false, center isHittable == true.
+            // It went unnoticed because the probe marked a small view in the
+            // middle of a stack, where the corner is clear.
+            //
             // The overlay attaches to the screen root rather than to its
             // content, so a scrollable screen cannot scroll its own marker
             // out of the viewport.
+            //
+            // allowsHitTesting(false) keeps the marker out of the real touch
+            // path. Measured: it does NOT affect isHittable either way, so
+            // the marker stays untappable by a user while remaining
+            // hit-testable by XCUITest.
             Color.clear
                 .frame(width: 0.5, height: 0.5)
                 .allowsHitTesting(false)

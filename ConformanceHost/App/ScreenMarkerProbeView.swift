@@ -153,6 +153,54 @@ private struct PushedScreen: View {
     }
 }
 
+/// A screen shaped the way CODE GENERATION really emits one: the marker is
+/// applied to a root that FILLS the screen, inside a NavigationStack with a
+/// title bar.
+///
+/// The other probe screens mark a small view sitting mid-VStack, so their
+/// topLeading overlay lands in clear space. A generated screen's topLeading
+/// is the top-left corner of the whole screen — underneath the navigation
+/// bar and the status bar. Whether the marker is still hit-testable there
+/// is the question this screen exists to answer, and it is the difference
+/// between the probe passing and a real app failing every screen assertion.
+struct ScreenMarkerFullScreenProbeView: View {
+    @State private var showSheet = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 8) {
+                Text("fullbleed-child-0")
+                    .accessibilityIdentifier("fullbleed_child_0")
+                Spacer()
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("fullbleed_root_view")
+            .navigationTitle("Full Bleed")
+            .jsonUIScreenMarker("fullbleed_probe")
+            // The rejected placement, kept as a control at its original
+            // corner: this is what shipped, and on a screen with navigation
+            // chrome it is not hit-testable.
+            .overlay(alignment: .topLeading) {
+                Color.clear.frame(width: 0.5, height: 0.5)
+                    .allowsHitTesting(false)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityIdentifier("__probe_v_topleading")
+            }
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button("cover") { showSheet = true }
+                        .accessibilityIdentifier("fullbleed_open_sheet")
+                }
+            }
+        }
+        .sheet(isPresented: $showSheet) {
+            ProbeScreenBody(screenId: "fullbleed_sheet", childCount: 1)
+                .leafMarker("fullbleed_sheet")
+        }
+    }
+}
+
 /// Side-by-side panes: both screens are genuinely displayed at once, which
 /// is why the assertion's meaning is "this screen is displayed", never
 /// "only this screen is displayed".

@@ -40,7 +40,20 @@ public extension Binding {
         // A sibling view rather than an identifier on the root itself: the
         // root's own identifier is load-bearing for existing tests, and
         // every platform has one identifier slot per node.
-        let marker = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+        //
+        // CENTERED, not at the origin. The marker first shipped at (0, 0)
+        // and every screen assertion failed with "exists but is not
+        // hittable": the root view's top-left corner sits under the
+        // navigation bar, so hit-testing there resolves to the chrome. The
+        // driver predicate is `exists && isHittable`, and the SwiftUI marker
+        // was measured to flip from false to true on the same screen purely
+        // by moving topLeading -> center. Autoresizing keeps it centred
+        // across rotation and layout changes.
+        let marker = UIView(frame: CGRect(x: root.bounds.midX, y: root.bounds.midY, width: 1, height: 1))
+        marker.autoresizingMask = [
+            .flexibleLeftMargin, .flexibleRightMargin,
+            .flexibleTopMargin, .flexibleBottomMargin,
+        ]
         marker.isUserInteractionEnabled = false
         marker.isAccessibilityElement = true
         marker.accessibilityIdentifier = identifier
