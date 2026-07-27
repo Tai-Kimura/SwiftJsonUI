@@ -85,6 +85,10 @@ struct ConformanceRootView: View {
         Group {
             if ProcessInfo.processInfo.arguments.contains("-gestureProbe") {
                 GestureProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerProbe") {
+                ScreenMarkerProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerSplitProbe") {
+                ScreenMarkerSplitProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
