@@ -55,15 +55,17 @@ public struct BlurConverter {
         // --- 2. .background(.ultraThinMaterial) ---
         result = AnyView(result.background(.ultraThinMaterial))
 
-        // --- 3. .preferredColorScheme() based on style / effectStyle ---
-        // `style` is the sjui SwiftUI attribute name; `effectStyle` is emitted
-        // by rjui/React and is listed as the canonical catalog enum (Light /
-        // Dark / ExtraLight). Accept both forms case-insensitively so shared
-        // specs render correctly on iOS.
+        // --- 3. .preferredColorScheme() based on effectStyle ---
+        // `effectStyle` is the declared attribute (Light / Dark / ExtraLight),
+        // matched case-insensitively.
+        //
+        // `common.style` used to be consulted first. That is the STYLE FILE
+        // name, not an appearance, so a Blur inside a styled screen had its
+        // style-file reference matched against blur appearances — and because
+        // it came first, it also masked a correctly written `effectStyle`.
+        // The codegens had the same misread and have been fixed to match.
         let attrs = component.typedAttributes(BlurAttributes.self)
-        let styleRaw = attrs.common.style
-            ?? attrs.effectStyle?.rawStringValue
-            ?? "regular"
+        let styleRaw = attrs.effectStyle?.rawStringValue ?? "regular"
         switch styleRaw.lowercased() {
         case "dark":
             result = AnyView(result.preferredColorScheme(.dark))
