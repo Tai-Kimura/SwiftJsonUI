@@ -16,6 +16,7 @@ public struct BlurAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "blurRadius",
         "effectStyle",
     ])
 
@@ -32,6 +33,9 @@ public struct BlurAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
+    /// Blur radius in dp. Android only: Compose has no material-blur equivalent of UIVisualEffectView, so effectStyle resolves to a radius there and this overrides it.
+    public let blurRadius: Double?
+
     /// Blur effect style
     public let effectStyle: AttrEnum<EffectStyle>?
 
@@ -39,6 +43,7 @@ public struct BlurAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.blurRadius = AttrCoerce.number(AttrCoerce.lookup(json, "blurRadius"))
         self.effectStyle = Self.parseEffectStyle(AttrCoerce.lookup(json, "effectStyle"))
     }
 
