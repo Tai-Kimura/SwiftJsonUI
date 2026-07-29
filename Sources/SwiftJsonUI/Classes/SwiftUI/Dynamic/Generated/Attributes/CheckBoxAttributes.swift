@@ -87,7 +87,7 @@ public struct CheckBoxAttributes {
     /// Value change handler - binding only (@{functionName})
     public let onValueChange: AttrValue<Any>?
 
-    /// Selected icon name
+    /// Selected icon name [aliases: onSrc]
     public let selectedIcon: String?
 
     /// Space between icon and text (binding supported)
@@ -123,7 +123,7 @@ public struct CheckBoxAttributes {
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label"), AttrCoerce.string)
         self.onSrc = AttrCoerce.string(AttrCoerce.lookup(json, "onSrc"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
-        self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon"))
+        self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon", ["onSrc"], canonicalOnly: canonicalOnly))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
         self.src = AttrCoerce.string(AttrCoerce.lookup(json, "src"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)

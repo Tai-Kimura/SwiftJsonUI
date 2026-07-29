@@ -72,7 +72,7 @@ public struct SwitchAttributes {
     /// Toggle handler function - binding only (@{functionName}). Alias of onValueChange.
     public let onToggle: AttrValue<Any>?
 
-    /// Value change handler - binding only (@{functionName})
+    /// Value change handler - binding only (@{functionName}) [aliases: onToggle]
     public let onValueChange: AttrValue<Any>?
 
     /// Thumb tint color - hex string or color name from colors.json (binding supported)
@@ -103,7 +103,7 @@ public struct SwitchAttributes {
         self.offTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "offTintColor"), AttrCoerce.string)
         self.onTintColor = AttrCoerce.string(AttrCoerce.lookup(json, "onTintColor"))
         self.onToggle = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onToggle"))
-        self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
+        self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange", ["onToggle"], canonicalOnly: canonicalOnly))
         self.thumbTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "thumbTintColor"), AttrCoerce.string)
         self.tint = AttrCoerce.attrValue(AttrCoerce.lookup(json, "tint"), AttrCoerce.string)
         self.tintColor = AttrCoerce.string(AttrCoerce.lookup(json, "tintColor"))
