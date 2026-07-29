@@ -29,8 +29,22 @@ public struct ButtonConverter {
         let attrs = component.typedAttributes(ButtonAttributes.self)
         // --- 1. Build StateAwareButtonView ---
 
-        // Text with binding support
-        let processedText = DynamicHelpers.processText(component.text, data: data) ?? "Button"
+        // Icon (`image`) — a bare name is an asset name, a binding resolves
+        // through data (same resolution as Image#srcName).
+        let image = DynamicHelpers.processText(attrs.image, data: data)
+        let hasImage = !image.isEmpty
+
+        // Text with binding support. "Button" is the placeholder for a button
+        // with nothing in it, so it does not apply once there is an icon —
+        // otherwise an icon-only button renders the word "Button" beside it
+        // (button_converter.rb makes the same call).
+        //
+        // processText returns "" for a missing text, never nil, so the old
+        // `?? "Button"` never fired and a text-less button rendered blank
+        // here while the generated code rendered "Button". Checking the
+        // empty string restores that parity.
+        let rawText = DynamicHelpers.processText(component.text, data: data)
+        let processedText = (rawText.isEmpty && !hasImage) ? "Button" : rawText
         let text = processedText.dynamicLocalized()
 
         // Build partialAttributes (same as label)
@@ -55,6 +69,14 @@ public struct ButtonConverter {
         let highlightColor = DynamicHelpers.getColor(component.highlightColor, data: data)
         let disabledFontColor = DynamicHelpers.getColor(component.disabledFontColor, data: data)
         let disabledBackground = DynamicHelpers.getColor(component.disabledBackground, data: data)
+
+        // Icon tint: only when the layout asked for one — a template
+        // rendering mode would flatten a multi-colour asset to a single
+        // colour. Same rule as the Compose and web converters.
+        let imageTint = hasImage
+            ? DynamicHelpers.getColor(component.tintColor, data: data)
+                ?? DynamicHelpers.getColor(component.fontColor, data: data)
+            : nil
 
         // Corner radius, border - all applied inside StateAwareButtonView
         let cornerRadius = component.cornerRadius
@@ -109,7 +131,9 @@ public struct ButtonConverter {
                 padding: padding,
                 isEnabled: isEnabled,
                 width: buttonWidth,
-                height: buttonHeight
+                height: buttonHeight,
+                image: hasImage ? image : nil,
+                imageTint: imageTint
             )
         )
 

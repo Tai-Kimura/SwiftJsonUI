@@ -45,6 +45,17 @@ public struct StateAwareButtonView: View {
     let isEnabled: Bool
     let width: CGFloat?
     let height: CGFloat?
+    /// Asset name of the button's icon (`image`), or nil for a text-only button.
+    let image: String?
+    /// Icon tint (`tintColor`). nil draws the asset as authored — a template
+    /// rendering mode would flatten a multi-colour asset to a single colour.
+    let imageTint: Color?
+
+    /// Gap between the icon and the label, matching the other platforms'
+    /// button converters.
+    private static let iconLabelSpacing: CGFloat = 8
+    /// Icon box when no font size is set, matching Android's default.
+    private static let defaultIconSize: CGFloat = 18
 
     @State private var isPressed = false
 
@@ -66,7 +77,9 @@ public struct StateAwareButtonView: View {
         padding: EdgeInsets? = nil,
         isEnabled: Bool = true,
         width: CGFloat? = nil,
-        height: CGFloat? = nil
+        height: CGFloat? = nil,
+        image: String? = nil,
+        imageTint: Color? = nil
     ) {
         self.text = text
         self.partialAttributes = partialAttributes
@@ -86,8 +99,10 @@ public struct StateAwareButtonView: View {
         self.isEnabled = isEnabled
         self.width = width
         self.height = height
+        self.image = image
+        self.imageTint = imageTint
     }
-    
+
     /// Convenience initializer for backward compatibility with string fontWeight
     public init(
         text: String,
@@ -107,7 +122,9 @@ public struct StateAwareButtonView: View {
         padding: EdgeInsets? = nil,
         isEnabled: Bool = true,
         width: CGFloat? = nil,
-        height: CGFloat? = nil
+        height: CGFloat? = nil,
+        image: String? = nil,
+        imageTint: Color? = nil
     ) {
         self.init(
             text: text,
@@ -127,7 +144,9 @@ public struct StateAwareButtonView: View {
             padding: padding,
             isEnabled: isEnabled,
             width: width,
-            height: height
+            height: height,
+            image: image,
+            imageTint: imageTint
         )
     }
     
@@ -163,15 +182,46 @@ public struct StateAwareButtonView: View {
         }
     }
     
+    /// The label is the icon, the text, or both. An icon-only button carries
+    /// its accessible name on the icon (a `Button` whose only child is a
+    /// decorative image has no accessible name at all); alongside text the
+    /// icon is decorative.
+    @ViewBuilder
+    private var label: some View {
+        if let image = image, !image.isEmpty {
+            // Scales with the label like the web converter's 1.25em box, and
+            // lands on Android's 18pt default for an unsized button.
+            let iconSize = fontSize.map { $0 * 1.25 } ?? Self.defaultIconSize
+            HStack(spacing: text.isEmpty ? 0 : Self.iconLabelSpacing) {
+                Image(image)
+                    .renderingMode(imageTint == nil ? .original : .template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: iconSize, height: iconSize)
+                    .foregroundColor(imageTint)
+                    .accessibilityHidden(!text.isEmpty)
+                if !text.isEmpty {
+                    textLabel
+                }
+            }
+        } else {
+            textLabel
+        }
+    }
+
+    private var textLabel: some View {
+        PartialAttributedText(
+            text,
+            partialAttributes: partialAttributes ?? [],
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            fontColor: textColor
+        )
+    }
+
     public var body: some View {
         Button(action: action) {
-            PartialAttributedText(
-                text,
-                partialAttributes: partialAttributes ?? [],
-                fontSize: fontSize,
-                fontWeight: fontWeight,
-                fontColor: textColor
-            )
+            label
             .padding(padding ?? EdgeInsets())
             .frame(
                 minWidth: nil,
