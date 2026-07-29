@@ -27,9 +27,38 @@ set -euo pipefail
 
 HOST_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SIMULATOR_NAME="${SIMULATOR_NAME:-iPhone 16 Pro}"
+
+# Resolve the name to one concrete device, so the status-bar override below
+# and the test run target the same simulator. Passing a name to xcodebuild
+# leaves that ambiguous — several runtimes ship a device with the same name —
+# and the override could only ever find an already-BOOTED one, which on a
+# fresh CI runner is none of them. The result was an unfrozen clock in every
+# screenshot: measured run-to-run dHash distance 7-16 across all 490 iOS
+# fixtures, i.e. a baseline that could never be met twice.
+if [[ -z "${SIMULATOR_UDID:-}" ]]; then
+    SIMULATOR_UDID="$(xcrun simctl list -j devices available 2>/dev/null | python3 -c '
+import json, re, sys
+
+name = sys.argv[1]
+best = None
+for runtime, devices in json.load(sys.stdin).get("devices", {}).items():
+    if "SimRuntime.iOS" not in runtime:
+        continue
+    version = tuple(int(n) for n in re.findall(r"\d+", runtime.rsplit(".", 1)[-1]))
+    for device in devices:
+        if device.get("name") != name or not device.get("isAvailable", True):
+            continue
+        # Newest runtime wins — the same one xcodebuild picks by default.
+        if best is None or version > best[0]:
+            best = (version, device["udid"])
+print(best[1] if best else "")
+' "$SIMULATOR_NAME" || true)"
+fi
+
 if [[ -n "${SIMULATOR_UDID:-}" ]]; then
     DESTINATION="platform=iOS Simulator,id=$SIMULATOR_UDID"
 else
+    echo "warning: no simulator named '$SIMULATOR_NAME' resolved — falling back to name matching" >&2
     DESTINATION="platform=iOS Simulator,name=$SIMULATOR_NAME"
 fi
 STAGING="${CONFORMANCE_STAGING:-/tmp/jsonui-conformance-ios}"
@@ -54,10 +83,10 @@ mkdir -p "$STAGING"
 # conformance/baselines/README.md). Requires a specific device (UDID or a
 # uniquely-named booted sim); skipped with a warning otherwise.
 STATUS_BAR_UDID="${SIMULATOR_UDID:-}"
-if [[ -z "$STATUS_BAR_UDID" ]]; then
-    STATUS_BAR_UDID="$(xcrun simctl list devices booted | grep -m1 "$SIMULATOR_NAME" | grep -oE '[0-9A-F-]{36}' || true)"
-fi
 if [[ -n "$STATUS_BAR_UDID" ]]; then
+    # The override only sticks on a booted device, and `simctl boot` is a
+    # no-op error when it already is.
+    xcrun simctl boot "$STATUS_BAR_UDID" >/dev/null 2>&1 || true
     xcrun simctl bootstatus "$STATUS_BAR_UDID" -b >/dev/null 2>&1 || true
     xcrun simctl status_bar "$STATUS_BAR_UDID" override \
         --time "9:41" --batteryState charged --batteryLevel 100 \
