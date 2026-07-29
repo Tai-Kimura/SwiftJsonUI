@@ -31,7 +31,11 @@ public struct ButtonConverter {
 
         // Icon (`image`) — a bare name is an asset name, a binding resolves
         // through data (same resolution as Image#srcName).
-        let image = DynamicHelpers.processText(attrs.image, data: data)
+        // rawRepresentation gives back the layout spelling — the static name
+        // or "@{expr}" — which processText then interpolates against data.
+        let image = DynamicHelpers.processText(
+            attrs.image?.rawRepresentation as? String, data: data
+        )
         let hasImage = !image.isEmpty
 
         // Text with binding support. "Button" is the placeholder for a button

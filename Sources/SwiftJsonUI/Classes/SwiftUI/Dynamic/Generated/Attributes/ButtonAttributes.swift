@@ -81,8 +81,8 @@ public struct ButtonAttributes {
     /// Highlight color - hex string or color name from colors.json (typo alias)
     public let hilightColor: String?
 
-    /// Button image
-    public let image: String?
+    /// Button image - asset name (binding supported)
+    public let image: AttrValue<String>?
 
     /// Background when tapped - hex string or color name from colors.json
     public let tapBackground: String?
@@ -107,7 +107,7 @@ public struct ButtonAttributes {
         self.highlightBackground = AttrCoerce.string(AttrCoerce.lookup(json, "highlightBackground"))
         self.highlightColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightColor", ["hilightColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.hilightColor = AttrCoerce.string(AttrCoerce.lookup(json, "hilightColor"))
-        self.image = AttrCoerce.string(AttrCoerce.lookup(json, "image"))
+        self.image = AttrCoerce.attrValue(AttrCoerce.lookup(json, "image"), AttrCoerce.string)
         self.tapBackground = AttrCoerce.string(AttrCoerce.lookup(json, "tapBackground"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.textAlign = Self.parseTextAlign(AttrCoerce.lookup(json, "textAlign"))
