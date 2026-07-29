@@ -33,7 +33,7 @@ public struct BlurAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Blur radius in dp. Android only: Compose has no material-blur equivalent of UIVisualEffectView, so effectStyle resolves to a radius there and this overrides it.
+    /// Blur radius in px/dp. Android and Web only: both blur by radius, while UIKit/SwiftUI express the appearance as effectStyle (UIVisualEffectView has styles, not radii). Overrides the radius effectStyle resolves to.
     public let blurRadius: Double?
 
     /// Blur effect style
