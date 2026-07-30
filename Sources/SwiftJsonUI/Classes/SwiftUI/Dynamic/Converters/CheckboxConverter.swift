@@ -26,7 +26,7 @@ public struct CheckboxConverter {
         // Resolve isOn binding: check isOn, checked, bind
         let isOnExpr: String? = attrs.isOn?.bindingString
             ?? attrs.checked?.bindingString
-            ?? attrs.bind?.bindingString
+            ?? attrs.common.bind?.bindingString
 
         let isOnBinding = DynamicBindingHelper.bool(
             isOnExpr,
