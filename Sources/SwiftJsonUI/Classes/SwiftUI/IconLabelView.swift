@@ -129,10 +129,17 @@ public struct IconLabelButton: View {
     let fontColor: Color
     let selectedFontColor: Color
     let fontName: String?
+    /// `selected` from the layout. When supplied the ViewModel owns the state,
+    /// so the tap does not toggle it — a self-toggling button would fight the
+    /// binding it was told to follow. Left nil, the button keeps its own state,
+    /// which is what a layout with no `selected` asks for.
+    let isSelectedOverride: Bool?
     let action: (() -> Void)?
-    
-    @State private var isSelected = false
-    
+
+    @State private var internalSelected = false
+
+    private var isSelected: Bool { isSelectedOverride ?? internalSelected }
+
     public init(
         text: String,
         iconOn: String? = nil,
@@ -144,6 +151,7 @@ public struct IconLabelButton: View {
         fontColor: Color = .primary,
         selectedFontColor: Color = .accentColor,
         fontName: String? = nil,
+        isSelected: Bool? = nil,
         action: (() -> Void)? = nil
     ) {
         self.text = text
@@ -156,12 +164,15 @@ public struct IconLabelButton: View {
         self.fontColor = fontColor
         self.selectedFontColor = selectedFontColor
         self.fontName = fontName
+        self.isSelectedOverride = isSelected
         self.action = action
     }
-    
+
     public var body: some View {
         Button(action: {
-            isSelected.toggle()
+            if isSelectedOverride == nil {
+                internalSelected.toggle()
+            }
             action?()
         }) {
             IconLabelView(

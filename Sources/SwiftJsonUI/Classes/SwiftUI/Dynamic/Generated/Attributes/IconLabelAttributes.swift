@@ -63,7 +63,7 @@ public struct IconLabelAttributes {
     /// Selected icon
     public let icon_on: String?
 
-    /// Selected state (binding supported)
+    /// Selected state (binding supported). Chooses icon_on over icon_off and selectedFontColor over fontColor, so every platform declaring those needs this too.
     public let selected: AttrValue<Bool>?
 
     /// Selected text color - hex string or color name from colors.json
