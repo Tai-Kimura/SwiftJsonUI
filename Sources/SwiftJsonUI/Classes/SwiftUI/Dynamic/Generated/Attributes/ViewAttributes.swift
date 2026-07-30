@@ -6,7 +6,7 @@ import Foundation
 
 /// Typed attribute extraction for the `View` component.
 /// Shared attributes are available via `common`.
-/// Overrides the common definition of: `alignment`, `distribution` (use the property on this struct).
+/// Overrides the common definition of: `distribution` (use the property on this struct).
 public struct ViewAttributes {
     public enum Direction: String {
         case topToBottom = "topToBottom"
@@ -36,7 +36,6 @@ public struct ViewAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
-        "alignment",
         "child",
         "children",
         "direction",
@@ -69,9 +68,6 @@ public struct ViewAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
-
-    /// Child alignment
-    public let alignment: String?
 
     /// Child component(s)
     public let child: [Any]?
@@ -131,7 +127,6 @@ public struct ViewAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.alignment = AttrCoerce.string(AttrCoerce.lookup(json, "alignment"))
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.direction = Self.parseDirection(AttrCoerce.lookup(json, "direction"))
