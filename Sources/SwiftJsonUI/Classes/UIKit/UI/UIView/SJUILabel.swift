@@ -508,7 +508,30 @@ open class SJUILabel: UILabel {
             let highlightSize = highlightAttr["fontSize"].cgFloat != nil ? highlightAttr["fontSize"].cgFloatValue : size
             let highlightName = highlightAttr["font"].string != nil ? highlightAttr["font"].stringValue : name
             let highlightFont = UIFont(name: highlightName, size: highlightSize) ?? (highlightName == "bold" ? UIFont.boldSystemFont(ofSize: highlightSize) : UIFont.systemFont(ofSize: highlightSize))
-            var highlightAttributes = [NSAttributedString.Key.paragraphStyle: paragraphStyle, NSAttributedString.Key.font: highlightFont, NSAttributedString.Key.foregroundColor: color]
+
+            // The highlight dictionary used to share the BASE paragraph style
+            // object, so a highlight `lineHeightMultiple` or `textAlign` was
+            // declared but silently dropped. It gets its own copy, seeded from
+            // the base (line break mode, indents) and overridden per declared
+            // key. Copying matters: mutating the shared object would retro-apply
+            // the highlight spacing to the unselected state as well.
+            let highlightParagraphStyle = (paragraphStyle.mutableCopy() as? NSMutableParagraphStyle) ?? paragraphStyle
+            if let highlightMultiple = highlightAttr["lineHeightMultiple"].cgFloat {
+                highlightParagraphStyle.lineHeightMultiple = highlightMultiple
+            }
+            if let highlightAlignment = highlightAttr["textAlign"].string {
+                switch highlightAlignment.lowercased() {
+                case "left":
+                    highlightParagraphStyle.alignment = .left
+                case "right":
+                    highlightParagraphStyle.alignment = .right
+                case "center":
+                    highlightParagraphStyle.alignment = .center
+                default:
+                    break
+                }
+            }
+            var highlightAttributes = [NSAttributedString.Key.paragraphStyle: highlightParagraphStyle, NSAttributedString.Key.font: highlightFont, NSAttributedString.Key.foregroundColor: color]
             if let highlightColor = UIColor.findColorByJSON(attr: highlightAttr["fontColor"]) {
                 highlightAttributes[NSAttributedString.Key.foregroundColor] = highlightColor
             }
