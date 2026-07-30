@@ -251,10 +251,10 @@ public struct CommonAttributes {
     /// Background color - hex string (#RRGGBB or #RRGGBBAA) or color name from colors.json (can be data binding)
     public let background: AttrValue<String>?
 
-    /// Data binding expression (alias) [accepts: string | object]
-    public let bind: Any?
+    /// Two-way binding for the component's primary value — Switch/Check isOn, Slider value, Segment selectedIndex, SelectBox selectedValue, Progress progress, Table items. An alternative spelling to each component's own value attribute, which takes precedence when both are set. [binding: two-way]
+    public let bind: AttrValue<Any>?
 
-    /// Data binding expression [accepts: string | object]
+    /// Legacy UIKit KVC binding: names the data property a view is bound to (SJUIViewCreator sets view.binding / view.bindingSet, and UIKit's Binding class pushes values through it). The object form is also the pre-@{} Table data source ({"data": "@{items}"}). Superseded by '@{...}' in the attribute value itself — use `bind` or the component's own value attribute instead. [accepts: string | object]
     public let binding: Any?
 
     /// Custom Swift binding code
@@ -645,7 +645,7 @@ public struct CommonAttributes {
         self.aspectHeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "aspectHeight"), AttrCoerce.number)
         self.aspectWidth = AttrCoerce.attrValue(AttrCoerce.lookup(json, "aspectWidth"), AttrCoerce.number)
         self.background = AttrCoerce.attrValue(AttrCoerce.lookup(json, "background"), AttrCoerce.string)
-        self.bind = AttrCoerce.any(AttrCoerce.lookup(json, "bind"))
+        self.bind = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "bind"))
         self.binding = AttrCoerce.any(AttrCoerce.lookup(json, "binding"))
         self.bindingScript = AttrCoerce.string(AttrCoerce.lookup(json, "bindingScript"))
         self.binding_group = AttrCoerce.any(AttrCoerce.lookup(json, "binding_group"))
