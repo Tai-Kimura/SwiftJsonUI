@@ -11,16 +11,32 @@ import Combine
 
 public struct WebView: UIViewRepresentable {
     let url: URL?
+    /// Raw HTML to render when there is no `url`, matching the web platform's
+    /// own precedence (iframe `src` wins over `srcdoc`).
+    let html: String?
     var backgroundColor: UIColor?
+    /// WebKit defaults both of these to true, so the defaults here keep the
+    /// previous behaviour for callers that do not pass them.
+    var allowsLinkPreview: Bool
+    var allowsBackForwardNavigationGestures: Bool
     @SwiftUI.Binding var isLoading: Bool
     @SwiftUI.Binding var canGoBack: Bool
     @SwiftUI.Binding var canGoForward: Bool
     var onNavigationCommit: ((URL?) -> Void)?
 
     // Simple initializer for basic usage
-    public init(url: URL?, backgroundColor: UIColor? = nil) {
+    public init(
+        url: URL?,
+        html: String? = nil,
+        backgroundColor: UIColor? = nil,
+        allowsLinkPreview: Bool = true,
+        allowsBackForwardNavigationGestures: Bool = true
+    ) {
         self.url = url
+        self.html = html
         self.backgroundColor = backgroundColor
+        self.allowsLinkPreview = allowsLinkPreview
+        self.allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures
         self._isLoading = .constant(false)
         self._canGoBack = .constant(false)
         self._canGoForward = .constant(false)
@@ -29,13 +45,19 @@ public struct WebView: UIViewRepresentable {
 
     // Full initializer with bindings
     public init(url: URL?,
+                html: String? = nil,
                 backgroundColor: UIColor? = nil,
+                allowsLinkPreview: Bool = true,
+                allowsBackForwardNavigationGestures: Bool = true,
                 isLoading: SwiftUI.Binding<Bool>,
                 canGoBack: SwiftUI.Binding<Bool>,
                 canGoForward: SwiftUI.Binding<Bool>,
                 onNavigationCommit: ((URL?) -> Void)? = nil) {
         self.url = url
+        self.html = html
         self.backgroundColor = backgroundColor
+        self.allowsLinkPreview = allowsLinkPreview
+        self.allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures
         self._isLoading = isLoading
         self._canGoBack = canGoBack
         self._canGoForward = canGoForward
@@ -45,7 +67,8 @@ public struct WebView: UIViewRepresentable {
     public func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
-        webView.allowsBackForwardNavigationGestures = true
+        webView.allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures
+        webView.allowsLinkPreview = allowsLinkPreview
 
         // Background color
         if let bgColor = backgroundColor {
@@ -54,10 +77,13 @@ public struct WebView: UIViewRepresentable {
             webView.scrollView.backgroundColor = bgColor
         }
 
-        // Load initial URL if provided
+        // Load initial URL if provided, otherwise the raw HTML
         if let url = url {
             let request = URLRequest(url: url)
             webView.load(request)
+        } else if let html = html {
+            webView.loadHTMLString(html, baseURL: nil)
+            context.coordinator.lastLoadedHTML = html
         }
 
         return webView
@@ -69,6 +95,11 @@ public struct WebView: UIViewRepresentable {
             let request = URLRequest(url: url)
             webView.load(request)
             context.coordinator.lastLoadedURL = url
+        } else if url == nil, let html = html, html != context.coordinator.lastLoadedHTML {
+            // Guarded on the string so a re-render does not reload the document
+            // and throw away scroll position, the same way the URL path is.
+            webView.loadHTMLString(html, baseURL: nil)
+            context.coordinator.lastLoadedHTML = html
         }
     }
     
@@ -79,6 +110,7 @@ public struct WebView: UIViewRepresentable {
     public class Coordinator: NSObject, WKNavigationDelegate {
         var parent: WebView
         var lastLoadedURL: URL?
+        var lastLoadedHTML: String?
         
         init(_ parent: WebView) {
             self.parent = parent
