@@ -19,6 +19,9 @@ public struct FocusableTextField: View {
     let textAlignment: TextAlignment
     let nextFocusId: String?
     let onSubmitAction: (() -> Void)?
+    /// `clearButtonMode`. Applied here rather than by the caller because
+    /// `whileEditing` / `unlessEditing` need the focus state this view owns.
+    let clearButtonMode: TextFieldClearButtonMode?
 
     @FocusState private var isFocused: Bool
 
@@ -31,7 +34,8 @@ public struct FocusableTextField: View {
         submitLabel: SubmitLabel = .done,
         textAlignment: TextAlignment = .leading,
         nextFocusId: String? = nil,
-        onSubmitAction: (() -> Void)? = nil
+        onSubmitAction: (() -> Void)? = nil,
+        clearButtonMode: TextFieldClearButtonMode? = nil
     ) {
         self.placeholder = placeholder
         self._text = text
@@ -42,6 +46,7 @@ public struct FocusableTextField: View {
         self.textAlignment = textAlignment
         self.nextFocusId = nextFocusId
         self.onSubmitAction = onSubmitAction
+        self.clearButtonMode = clearButtonMode
     }
 
     public var body: some View {
@@ -57,6 +62,7 @@ public struct FocusableTextField: View {
             }
         }
         .focused($isFocused)
+        .textFieldClearButton(mode: clearButtonMode ?? .never, text: $text, isEditing: isFocused)
         .onSubmit {
             if let nextId = nextFocusId {
                 FocusManager.shared.requestFocus(fieldId: nextId)
