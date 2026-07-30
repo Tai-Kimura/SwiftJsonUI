@@ -8,6 +8,7 @@ public struct CheckBoxView: View {
     let icon: String?
     let selectedIcon: String?
     let iconSize: CGFloat
+    let iconColor: Color?
     let spacing: CGFloat
     let fontSize: CGFloat?
     let fontWeight: Font.Weight?
@@ -23,6 +24,7 @@ public struct CheckBoxView: View {
         icon: String? = nil,
         selectedIcon: String? = nil,
         iconSize: CGFloat = 24,
+        iconColor: Color? = nil,
         spacing: CGFloat = 8,
         fontSize: CGFloat? = nil,
         fontWeight: Font.Weight? = nil,
@@ -37,6 +39,7 @@ public struct CheckBoxView: View {
         self.icon = icon
         self.selectedIcon = selectedIcon
         self.iconSize = iconSize
+        self.iconColor = iconColor
         self.spacing = spacing
         self.fontSize = fontSize
         self.fontWeight = fontWeight
@@ -54,6 +57,7 @@ public struct CheckBoxView: View {
         icon: String? = nil,
         selectedIcon: String? = nil,
         iconSize: CGFloat = 24,
+        iconColor: Color? = nil,
         spacing: CGFloat = 8,
         fontSize: CGFloat? = nil,
         fontWeight: String,
@@ -69,6 +73,7 @@ public struct CheckBoxView: View {
             icon: icon,
             selectedIcon: selectedIcon,
             iconSize: iconSize,
+            iconColor: iconColor,
             spacing: spacing,
             fontSize: fontSize,
             fontWeight: Font.Weight.from(string: fontWeight),
@@ -110,18 +115,30 @@ public struct CheckBoxView: View {
     private var checkboxIcon: some View {
         if let customIcon = isOn.wrappedValue ? selectedIcon : icon,
            !customIcon.isEmpty {
-            // Custom icon provided
-            Image(customIcon)
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: iconSize, height: iconSize)
+            // Custom icon provided. A tint only reaches an asset rendered as a
+            // template, so iconColor decides the rendering mode as well —
+            // applying .foregroundColor to an original-mode asset does nothing.
+            if let iconColor = iconColor {
+                Image(customIcon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: iconSize, height: iconSize)
+                    .foregroundColor(iconColor)
+            } else {
+                Image(customIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: iconSize, height: iconSize)
+            }
         } else {
-            // System checkbox icons
+            // System checkbox icons. iconColor is one tint for both states, so
+            // it wins over the checked/unchecked pair when given.
             Image(systemName: isOn.wrappedValue ? "checkmark.square.fill" : "square")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: iconSize, height: iconSize)
-                .foregroundColor(isOn.wrappedValue ? checkedColor : uncheckedColor)
+                .foregroundColor(iconColor ?? (isOn.wrappedValue ? checkedColor : uncheckedColor))
         }
     }
 

@@ -22,7 +22,6 @@ public struct CheckBoxAttributes {
         "iconSize",
         "isOn",
         "label",
-        "onSrc",
         "onValueChange",
         "selectedIcon",
         "spacing",
@@ -35,7 +34,9 @@ public struct CheckBoxAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "onSrc": "selectedIcon",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -81,9 +82,6 @@ public struct CheckBoxAttributes {
     /// Checkbox label (can be data binding)
     public let label: AttrValue<String>?
 
-    /// Selected icon name (alias)
-    public let onSrc: String?
-
     /// Value change handler - binding only (@{functionName})
     public let onValueChange: AttrValue<Any>?
 
@@ -121,7 +119,6 @@ public struct CheckBoxAttributes {
         self.iconSize = AttrCoerce.number(AttrCoerce.lookup(json, "iconSize"))
         self.isOn = AttrCoerce.attrValue(AttrCoerce.lookup(json, "isOn"), AttrCoerce.boolean)
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label"), AttrCoerce.string)
-        self.onSrc = AttrCoerce.string(AttrCoerce.lookup(json, "onSrc"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
         self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon", ["onSrc"], canonicalOnly: canonicalOnly))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
