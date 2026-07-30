@@ -69,7 +69,7 @@ public struct NetworkImageAttributes {
     /// Error image name
     public let errorImage: String?
 
-    /// HTTP headers for the image request (Coil ImageRequest.Builder.addHeader).
+    /// HTTP headers for the image request (Coil 3: httpHeaders(NetworkHeaders) on ImageRequest.Builder).
     public let headers: [String: Any]?
 
     /// Placeholder image name (primary)
