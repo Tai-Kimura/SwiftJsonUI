@@ -6,7 +6,7 @@ import Foundation
 
 /// Typed attribute extraction for the `Toggle` component.
 /// Shared attributes are available via `common`.
-/// Overrides the common definition of: `bind`, `enabled`, `tintColor` (use the property on this struct).
+/// Overrides the common definition of: `enabled`, `tintColor` (use the property on this struct).
 public struct ToggleAttributes {
     public enum LabelPosition: String {
         case leading = "leading"
@@ -15,7 +15,6 @@ public struct ToggleAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
-        "bind",
         "checked",
         "enabled",
         "isOn",
@@ -44,9 +43,6 @@ public struct ToggleAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
-
-    /// Two-way binding @{variable} [binding: two-way]
-    public let bind: AttrValue<Any>?
 
     /// Toggle state alias (binding for two-way) [binding: two-way]
     public let checked: AttrValue<Bool>?
@@ -94,7 +90,6 @@ public struct ToggleAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.bind = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "bind"))
         self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
         self.isOn = AttrCoerce.attrValue(AttrCoerce.lookup(json, "isOn"), AttrCoerce.boolean)

@@ -6,11 +6,10 @@ import Foundation
 
 /// Typed attribute extraction for the `Check` component.
 /// Shared attributes are available via `common`.
-/// Overrides the common definition of: `bind`, `enabled` (use the property on this struct).
+/// Overrides the common definition of: `enabled` (use the property on this struct).
 public struct CheckAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
-        "bind",
         "checked",
         "checkedColor",
         "enabled",
@@ -44,9 +43,6 @@ public struct CheckAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
-
-    /// Two-way binding @{variable} [binding: two-way]
-    public let bind: AttrValue<Any>?
 
     /// Check state (binding for two-way) [binding: two-way]
     public let checked: AttrValue<Bool>?
@@ -103,7 +99,6 @@ public struct CheckAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.bind = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "bind"))
         self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
         self.checkedColor = AttrCoerce.string(AttrCoerce.lookup(json, "checkedColor"))
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
