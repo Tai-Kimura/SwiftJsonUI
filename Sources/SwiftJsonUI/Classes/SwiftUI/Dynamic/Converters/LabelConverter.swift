@@ -108,6 +108,10 @@ public struct LabelConverter {
             return component.fontFamily
         }()
 
+        // highlightAttributes / highlightColor, driven by `selected`
+        let highlight = buildHighlight(component: component, attrs: attrs, data: data)
+        let isHighlighted = DynamicHelpers.resolveBool(attrs.selected, legacy: nil, data: data) ?? false
+
         var result = AnyView(
             PartialAttributedText(
                 text,
@@ -121,7 +125,9 @@ public struct LabelConverter {
                 lineSpacing: lineSpacing,
                 lineLimit: hasLineLimit ? lineLimit : nil,
                 textAlignment: textAlignment,
-                linkable: linkable
+                linkable: linkable,
+                highlightAttributes: highlight,
+                isHighlighted: isHighlighted
             )
         )
 
@@ -203,6 +209,66 @@ public struct LabelConverter {
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
         return result
+    }
+
+    // MARK: - Highlight builder
+
+    /// `highlightAttributes` / `highlightColor` -> the styling that takes over
+    /// while `selected` is true.
+    ///
+    /// Mirrors `label_converter.rb#emit_highlight_attributes` and, through it,
+    /// the UIKit precedence in SJUILabel's creator: a non-empty attribute object
+    /// wins, an object with no recognised key falls through to `highlightColor`.
+    private static func buildHighlight(
+        component: DynamicComponent,
+        attrs: LabelAttributes,
+        data: [String: Any]
+    ) -> TextHighlightAttributes? {
+        var highlight = TextHighlightAttributes()
+        var recognised = false
+
+        if let dict = attrs.highlightAttributes {
+            if let font = dict["font"] as? String {
+                // UIKit resolves the literal name "bold" to the bold system
+                // font rather than to a family.
+                if font.lowercased() == "bold" {
+                    highlight.fontWeight = .bold
+                } else {
+                    highlight.fontFamily = font
+                }
+                recognised = true
+            }
+            if let size = dict["fontSize"] as? NSNumber {
+                highlight.fontSize = CGFloat(size.doubleValue)
+                recognised = true
+            }
+            if let color = dict["fontColor"] as? String,
+               let resolved = DynamicHelpers.getColor(color, data: data) {
+                highlight.fontColor = resolved
+                recognised = true
+            }
+            if let multiple = dict["lineHeightMultiple"] as? NSNumber {
+                highlight.lineHeightMultiple = CGFloat(multiple.doubleValue)
+                recognised = true
+            }
+            if let align = dict["textAlign"] as? String {
+                switch align.lowercased() {
+                case "left": highlight.textAlignment = .leading
+                case "center": highlight.textAlignment = .center
+                case "right": highlight.textAlignment = .trailing
+                default: break
+                }
+                recognised = highlight.textAlignment != nil || recognised
+            }
+        }
+
+        if recognised {
+            return highlight
+        }
+        if let color = DynamicHelpers.getColor(component.highlightColor, data: data) {
+            return TextHighlightAttributes(fontColor: color)
+        }
+        return nil
     }
 
     // MARK: - PartialAttributes builder

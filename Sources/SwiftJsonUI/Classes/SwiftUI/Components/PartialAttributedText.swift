@@ -1,5 +1,43 @@
 import SwiftUI
 
+/// The styling a label switches to while it is selected.
+///
+/// UIKit keeps two attribute dictionaries and swaps between them when
+/// `SJUILabel.selected` flips (`applyAttributedText`:
+/// `let attr = selected ? highlightAttributes : attributes`). SwiftUI has no
+/// highlighted state on `Text`, so the same swap happens here instead: every
+/// field left nil falls through to the base value, mirroring the way the UIKit
+/// dictionary seeds itself from the base font and colour and only overrides the
+/// keys the layout actually names.
+///
+/// The fields are the declared `highlightAttributes` keys. `font` splits into
+/// `fontFamily` and `fontWeight` because UIKit resolves the literal name
+/// `"bold"` to the bold system font rather than to a family.
+public struct TextHighlightAttributes {
+    public var fontFamily: String?
+    public var fontSize: CGFloat?
+    public var fontWeight: Font.Weight?
+    public var fontColor: Color?
+    public var lineHeightMultiple: CGFloat?
+    public var textAlignment: TextAlignment?
+
+    public init(
+        fontFamily: String? = nil,
+        fontSize: CGFloat? = nil,
+        fontWeight: Font.Weight? = nil,
+        fontColor: Color? = nil,
+        lineHeightMultiple: CGFloat? = nil,
+        textAlignment: TextAlignment? = nil
+    ) {
+        self.fontFamily = fontFamily
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.fontColor = fontColor
+        self.lineHeightMultiple = lineHeightMultiple
+        self.textAlignment = textAlignment
+    }
+}
+
 /// A text component that supports partial text attributes
 /// Used for all text rendering with support for partial styling
 public struct PartialAttributedText: View {
@@ -15,6 +53,8 @@ public struct PartialAttributedText: View {
     let lineLimit: Int?
     let textAlignment: TextAlignment
     let linkable: Bool
+    let highlightAttributes: TextHighlightAttributes?
+    let isHighlighted: Bool
 
     public init(
         _ text: String,
@@ -28,7 +68,9 @@ public struct PartialAttributedText: View {
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
-        linkable: Bool = false
+        linkable: Bool = false,
+        highlightAttributes: TextHighlightAttributes? = nil,
+        isHighlighted: Bool = false
     ) {
         self.text = text
         self.partialAttributes = partialAttributes
@@ -42,6 +84,8 @@ public struct PartialAttributedText: View {
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
+        self.highlightAttributes = highlightAttributes
+        self.isHighlighted = isHighlighted
     }
 
     /// Convenience initializer for generated code with string fontWeight
@@ -56,7 +100,9 @@ public struct PartialAttributedText: View {
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
-        linkable: Bool = false
+        linkable: Bool = false,
+        highlightAttributes: TextHighlightAttributes? = nil,
+        isHighlighted: Bool = false
     ) {
         self.text = text
         self.partialAttributes = []
@@ -70,6 +116,8 @@ public struct PartialAttributedText: View {
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
+        self.highlightAttributes = highlightAttributes
+        self.isHighlighted = isHighlighted
     }
 
     /// Convenience initializer for backward compatibility with dictionary format
@@ -85,7 +133,9 @@ public struct PartialAttributedText: View {
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
-        linkable: Bool = false
+        linkable: Bool = false,
+        highlightAttributes: TextHighlightAttributes? = nil,
+        isHighlighted: Bool = false
     ) {
         self.text = text
         self.partialAttributes = partialAttributesDict.compactMap {
@@ -101,6 +151,49 @@ public struct PartialAttributedText: View {
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
+        self.highlightAttributes = highlightAttributes
+        self.isHighlighted = isHighlighted
+    }
+
+    // MARK: - Highlight resolution
+    //
+    // Resolved once here rather than at each use so the two render paths below
+    // (attributed and plain) cannot drift apart: a label with partialAttributes
+    // has to honour the highlight swap exactly like one without.
+
+    private var activeHighlight: TextHighlightAttributes? {
+        isHighlighted ? highlightAttributes : nil
+    }
+
+    private var effectiveFontSize: CGFloat? {
+        activeHighlight?.fontSize ?? fontSize
+    }
+
+    private var effectiveFontWeight: Font.Weight? {
+        activeHighlight?.fontWeight ?? fontWeight
+    }
+
+    private var effectiveFontFamily: String? {
+        activeHighlight?.fontFamily ?? fontFamily
+    }
+
+    private var effectiveFontColor: Color? {
+        activeHighlight?.fontColor ?? fontColor
+    }
+
+    private var effectiveTextAlignment: TextAlignment {
+        activeHighlight?.textAlignment ?? textAlignment
+    }
+
+    /// `lineHeightMultiple` is a multiple of the line height; SwiftUI takes the
+    /// extra space between lines. The conversion needs the font size in force,
+    /// which is why it happens here and not in the caller.
+    private var effectiveLineSpacing: CGFloat? {
+        guard let multiple = activeHighlight?.lineHeightMultiple else {
+            return lineSpacing
+        }
+        let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
+        return max(0, (multiple - 1) * size)
     }
 
     public var body: some View {
@@ -110,9 +203,9 @@ public struct PartialAttributedText: View {
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
-                    lineSpacing: lineSpacing,
+                    lineSpacing: effectiveLineSpacing,
                     lineLimit: lineLimit,
-                    textAlignment: textAlignment
+                    textAlignment: effectiveTextAlignment
                 )
                 .environment(\.openURL, OpenURLAction { url in
                     // Handle app:// URLs for onclick actions
@@ -128,14 +221,18 @@ public struct PartialAttributedText: View {
                 })
         } else {
             Text(text)
-                .applyBaseFont(fontSize: fontSize, fontWeight: fontWeight, fontFamily: fontFamily)
-                .applyTextColor(fontColor)
+                .applyBaseFont(
+                    fontSize: effectiveFontSize,
+                    fontWeight: effectiveFontWeight,
+                    fontFamily: effectiveFontFamily
+                )
+                .applyTextColor(effectiveFontColor)
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
-                    lineSpacing: lineSpacing,
+                    lineSpacing: effectiveLineSpacing,
                     lineLimit: lineLimit,
-                    textAlignment: textAlignment
+                    textAlignment: effectiveTextAlignment
                 )
         }
     }
@@ -147,18 +244,23 @@ public struct PartialAttributedText: View {
         // Apply base styles to entire string.
         // fontFamily routes through the unified resolver so apps with a
         // `fontProvider` see the full FontSpec (family + weight + size).
-        if let fontFamily = fontFamily {
-            let size = fontSize ?? SwiftJsonUIConfiguration.shared.font.size
+        if let fontFamily = effectiveFontFamily {
+            let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
             attributedString.font = SwiftJsonUIConfiguration.shared.resolveFont(
-                FontSpec(family: fontFamily, weight: fontWeight, size: size)
+                FontSpec(family: fontFamily, weight: effectiveFontWeight, size: size)
             )
-        } else if let fontSize = fontSize, let fontWeight = fontWeight {
+        } else if let fontSize = effectiveFontSize, let fontWeight = effectiveFontWeight {
             attributedString.font = .system(size: fontSize, weight: fontWeight)
-        } else if let fontSize = fontSize {
+        } else if let fontSize = effectiveFontSize {
             attributedString.font = .system(size: fontSize)
+        } else if let fontWeight = effectiveFontWeight {
+            attributedString.font = .system(
+                size: SwiftJsonUIConfiguration.shared.font.size,
+                weight: fontWeight
+            )
         }
 
-        if let fontColor = fontColor {
+        if let fontColor = effectiveFontColor {
             attributedString.foregroundColor = fontColor
         }
 
@@ -197,7 +299,7 @@ public struct PartialAttributedText: View {
                 attributedString[range].font = .system(size: size, weight: partial.fontWeight ?? .regular)
             } else if let weight = partial.fontWeight {
                 // Apply only weight if fontSize not specified
-                let size = fontSize ?? SwiftJsonUIConfiguration.shared.font.size
+                let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
                 attributedString[range].font = .system(size: size, weight: weight)
             }
 

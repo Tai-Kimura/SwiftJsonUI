@@ -137,7 +137,7 @@ public struct LabelAttributes {
     /// Placeholder text when empty (alias for hint)
     public let placeholder: String?
 
-    /// Selected state (binding supported)
+    /// Selected state (binding supported). Decides which attribute set is in force: while true the label renders with 'highlightAttributes' (or 'highlightColor'), otherwise with its base font and colour.
     public let selected: AttrValue<Bool>?
 
     /// Strikethrough styling (boolean for simple, object for styled) [accepts: boolean | object]
