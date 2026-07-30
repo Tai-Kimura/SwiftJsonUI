@@ -35,7 +35,7 @@ public struct EditTextAttributes {
     /// Placeholder color - hex string or color name from colors.json (binding supported)
     public let hintColor: AttrValue<String>?
 
-    /// Input type for Android
+    /// Input type for Android (Android-only; `input` is the cross-platform attribute)
     public let inputType: String?
 
     /// Placeholder text (alias for hint)

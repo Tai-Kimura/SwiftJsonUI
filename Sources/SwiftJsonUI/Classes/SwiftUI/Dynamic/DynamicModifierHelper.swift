@@ -266,11 +266,37 @@ public struct DynamicModifierHelper {
     // MARK: - 8. Margins (external spacing)
 
     public static func applyMargins(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        var result = view
         let margins = DynamicHelpers.getMargins(from: component, data: data)
         if margins.top != 0 || margins.leading != 0 || margins.bottom != 0 || margins.trailing != 0 {
-            return AnyView(view.padding(margins))
+            result = AnyView(result.padding(margins))
         }
-        return view
+        return applyFlexibleMargins(result, component: component)
+    }
+
+    /// min/max{Start,End}Margin — a bounded margin rather than a fixed inset.
+    /// A fixed margin on the same side wins, matching both UIKit and the
+    /// generated-code path (`SpacingHelper#apply_flexible_margins`); `margins`
+    /// covers every side, so it suppresses both.
+    private static func applyFlexibleMargins(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard component.margins == nil else { return view }
+        let common = component.typedAttributes(CommonAttributes.self)
+
+        let leadingFixed = component.startMargin != nil || component.leftMargin != nil
+        let trailingFixed = component.endMargin != nil || component.rightMargin != nil
+
+        let minStart = leadingFixed ? nil : common.minStartMargin
+        let maxStart = leadingFixed ? nil : common.maxStartMargin
+        let minEnd = trailingFixed ? nil : common.minEndMargin
+        let maxEnd = trailingFixed ? nil : common.maxEndMargin
+        guard minStart != nil || maxStart != nil || minEnd != nil || maxEnd != nil else { return view }
+
+        return AnyView(view.flexibleHorizontalMargin(
+            minStart: minStart.map { CGFloat($0) },
+            maxStart: maxStart.map { CGFloat($0) },
+            minEnd: minEnd.map { CGFloat($0) },
+            maxEnd: maxEnd.map { CGFloat($0) }
+        ))
     }
 
     // MARK: - 9. Opacity

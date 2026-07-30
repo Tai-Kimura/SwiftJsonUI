@@ -88,6 +88,12 @@ public struct TextFieldConverter {
                 } else {
                     built = AnyView(TextField(placeholder, text: binding))
                 }
+                // clearButtonMode without an id: no focus state to read, so
+                // `whileEditing` / `unlessEditing` cannot be evaluated. Same
+                // trade-off as the focus chain, which also needs an id.
+                if let mode = clearButtonMode(from: component.typedAttributes(TextFieldAttributes.self)) {
+                    built = AnyView(built.textFieldClearButton(mode: mode, text: binding))
+                }
                 // Apply all modifiers in textfield_converter.rb order
                 built = applyAllModifiers(built, component: component, data: data)
             }
@@ -115,6 +121,13 @@ public struct TextFieldConverter {
         return AnyView(DynamicLocalState(initial: textBinding.wrappedValue, content: build))
     }
 
+    /// `clearButtonMode` — UIKit's `UITextField.ViewMode` spelling. An
+    /// unrecognised value leaves the field alone rather than guessing a mode.
+    private static func clearButtonMode(from attrs: TextFieldAttributes) -> TextFieldClearButtonMode? {
+        guard let raw = attrs.clearButtonMode else { return nil }
+        return TextFieldClearButtonMode(layoutValue: raw)
+    }
+
     // MARK: - FocusableTextField path
 
     private static func createFocusableTextField(
@@ -137,7 +150,8 @@ public struct TextFieldConverter {
                 keyboardType: getKeyboardType(from: component.input),
                 submitLabel: getSubmitLabel(from: component.returnKeyType),
                 textAlignment: DynamicHelpers.getTextAlignment(from: component),
-                nextFocusId: nextFocusId
+                nextFocusId: nextFocusId,
+                clearButtonMode: clearButtonMode(from: attrs)
             )
         )
 
