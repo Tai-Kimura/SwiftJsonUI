@@ -131,6 +131,50 @@ public struct DynamicEventHelper {
         )
     }
 
+    // MARK: - onPan / onPinch support
+
+    /// Apply a drag gesture if onPan is defined (common attribute,
+    /// binding-only: "onPan": "@{handlerName}"). Fires on every drag change
+    /// with the cumulative translation (CGSize) since the gesture began;
+    /// callWithValue's ladder lets () -> Void handlers ignore the payload.
+    static func applyOnPan(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        // Skip if component is disabled
+        if component.enabled?.value as? Bool == false { return view }
+
+        guard let onPan = component.onPan else { return view }
+
+        return AnyView(
+            view
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 10).onChanged { value in
+                        DynamicEventHelper.callWithValue(onPan, id: component.id, value: value.translation, data: data)
+                    }
+                )
+        )
+    }
+
+    /// Apply a pinch gesture if onPinch is defined. Fires on every
+    /// magnification change with the cumulative scale factor (CGFloat).
+    /// MagnifyGesture is the iOS 17+ replacement for the deprecated
+    /// MagnificationGesture — the package floor is iOS 17.
+    static func applyOnPinch(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        // Skip if component is disabled
+        if component.enabled?.value as? Bool == false { return view }
+
+        guard let onPinch = component.onPinch else { return view }
+
+        return AnyView(
+            view
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    MagnifyGesture().onChanged { value in
+                        DynamicEventHelper.callWithValue(onPinch, id: component.id, value: value.magnification, data: data)
+                    }
+                )
+        )
+    }
+
     // MARK: - Lifecycle events
 
     /// Apply onAppear handler
@@ -161,11 +205,14 @@ public struct DynamicEventHelper {
         return result
     }
 
-    /// Apply onClick + onLongPress + lifecycle events (common pattern for most components)
+    /// Apply onClick + onLongPress + onPan + onPinch + lifecycle events
+    /// (common pattern for most components)
     static func applyEvents(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         var result = view
         result = applyOnClick(result, component: component, data: data)
         result = applyOnLongPress(result, component: component, data: data)
+        result = applyOnPan(result, component: component, data: data)
+        result = applyOnPinch(result, component: component, data: data)
         result = applyLifecycleEvents(result, component: component, data: data)
         return result
     }
