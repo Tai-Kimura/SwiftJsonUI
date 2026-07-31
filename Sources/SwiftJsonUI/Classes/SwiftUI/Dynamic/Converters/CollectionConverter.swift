@@ -151,9 +151,13 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
             )
-            // skipInsets mirrors the lazy branch; scrollEnabled/scrollTo/
-            // defaultScrollAnchor are no-ops when there is no scroll container.
-            result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
+            // Insets flow through applyInsets like every other component —
+            // the old skipInsets claim ("Collection handles insets with
+            // spacers") was false: no path here ever read them, measured as
+            // insets/insetHorizontal/insetVertical active on android only.
+            // scrollEnabled/scrollTo/defaultScrollAnchor are no-ops when
+            // there is no scroll container.
+            result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
             return result
         }
 
@@ -275,9 +279,10 @@ public struct CollectionConverter {
             }
         }
 
-        // 3. applyStandardModifiers()
+        // 3. applyStandardModifiers() — insets included; the old skipInsets
+        // claim ("Collection handles insets with spacers") was false.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.width)) height=\(String(describing: component.height)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
-        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
+        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
 
         return result
     }
@@ -734,8 +739,11 @@ public struct CollectionConverter {
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
-        let itemSpacing = component.itemSpacing ?? component.columnSpacing ?? component.spacing ?? 10
-        let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 10
+        // Declaration-faithful: undeclared spacing is 0, matching Compose
+        // (no Arrangement.spacedBy) and the static codegens. The old `?? 10`
+        // was an iOS-only implicit default.
+        let itemSpacing = component.itemSpacing ?? component.columnSpacing ?? component.spacing ?? 0
+        let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
         // `cellWidth` / `cellHeight` pin each cell to a fixed size inside the grid.
         // When absent the existing flexible sizing path is preserved.
         let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
@@ -761,7 +769,6 @@ public struct CollectionConverter {
                                 data: data,
                                 viewId: viewId
                             )
-                            .padding(.horizontal)
                         }
 
                         // Grid of cells
@@ -788,7 +795,6 @@ public struct CollectionConverter {
                                     .id(cell.id)
                                 }
                             }
-                            .padding(.horizontal)
                         }
 
                         // Footer
@@ -800,7 +806,6 @@ public struct CollectionConverter {
                                 data: data,
                                 viewId: viewId
                             )
-                            .padding(.horizontal)
                         }
                     }
                 }
