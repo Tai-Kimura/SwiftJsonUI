@@ -71,7 +71,6 @@ public struct CollectionAttributes {
         "scrollAnimated",
         "scrollEnabled",
         "scrollTo",
-        "sectionSticky",
         "sections",
         "setTargetAsDataSource",
         "setTargetAsDelegate",
@@ -191,9 +190,6 @@ public struct CollectionAttributes {
     /// PassthroughSubject<Int, Never> for programmatic scrolling to cell index
     public let scrollTo: AttrValue<Any>?
 
-    /// When true, section headers stick using LazyColumn.stickyHeader (Compose).
-    public let sectionSticky: Bool?
-
     /// Section-based configuration
     public let sections: [Any]?
 
@@ -245,7 +241,6 @@ public struct CollectionAttributes {
         self.scrollAnimated = AttrCoerce.boolean(AttrCoerce.lookup(json, "scrollAnimated"))
         self.scrollEnabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "scrollEnabled"), AttrCoerce.boolean)
         self.scrollTo = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "scrollTo"))
-        self.sectionSticky = AttrCoerce.boolean(AttrCoerce.lookup(json, "sectionSticky"))
         self.sections = AttrCoerce.array(AttrCoerce.lookup(json, "sections"))
         self.setTargetAsDataSource = AttrCoerce.boolean(AttrCoerce.lookup(json, "setTargetAsDataSource"))
         self.setTargetAsDelegate = AttrCoerce.boolean(AttrCoerce.lookup(json, "setTargetAsDelegate"))
