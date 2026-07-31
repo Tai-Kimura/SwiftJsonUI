@@ -172,9 +172,9 @@ public struct TextFieldConverter {
         result = applyTextFieldStyle(result, component: component)
 
         // --- 9. disabled ---
-        if component.enabled?.value as? Bool == false {
-            result = AnyView(result.disabled(true))
-        }
+        // applyDisabled covers the bound form too; the literal-only check
+        // here let `enabled: "@{x}"` fall through silently.
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
 
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
@@ -280,9 +280,9 @@ public struct TextFieldConverter {
         }
 
         // --- 9. disabled ---
-        if component.enabled?.value as? Bool == false {
-            result = AnyView(result.disabled(true))
-        }
+        // applyDisabled covers the bound form too; the literal-only check
+        // here let `enabled: "@{x}"` fall through silently.
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
 
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
