@@ -741,8 +741,9 @@ public struct CollectionConverter {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         // Declaration-faithful: undeclared spacing is 0, matching Compose
         // (no Arrangement.spacedBy) and the static codegens. The old `?? 10`
-        // was an iOS-only implicit default.
-        let itemSpacing = component.itemSpacing ?? component.columnSpacing ?? component.spacing ?? 0
+        // was an iOS-only implicit default. Chain order mirrors kjui:
+        // inter-column prefers columnSpacing, inter-row prefers lineSpacing.
+        let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
         let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
         // `cellWidth` / `cellHeight` pin each cell to a fixed size inside the grid.
         // When absent the existing flexible sizing path is preserved.
