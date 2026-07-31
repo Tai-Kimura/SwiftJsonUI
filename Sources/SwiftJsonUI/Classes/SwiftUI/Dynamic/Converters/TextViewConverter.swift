@@ -232,6 +232,12 @@ public struct TextViewConverter {
         // --- 7. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
+        // --- 8. .disabled (enabled) ---
+        // TextField applies this as its final step; TextView never did, so a
+        // declared `enabled` (literal or bound) gated nothing here while
+        // codegen, Compose and web all gate input.
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
         return result
     }
 }
