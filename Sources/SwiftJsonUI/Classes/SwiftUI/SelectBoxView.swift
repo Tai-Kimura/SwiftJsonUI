@@ -58,6 +58,7 @@ public struct SelectBoxView: View {
     let prompt: String?
     let fontSize: CGFloat
     let fontColor: Color
+    let hintColor: Color
     let backgroundColor: Color
     let cornerRadius: CGFloat
     let selectItemType: SelectItemType
@@ -105,6 +106,9 @@ public struct SelectBoxView: View {
         prompt: String? = nil,
         fontSize: CGFloat = 16,
         fontColor: Color = .primary,
+        // Placeholder colour for the empty state; .gray was hard-wired at
+        // every empty-state branch before this parameter existed.
+        hintColor: Color = .gray,
         backgroundColor: Color = Color(UIColor.systemGray6),
         cornerRadius: CGFloat = 8,
         selectItemType: SelectItemType = .normal,
@@ -125,6 +129,7 @@ public struct SelectBoxView: View {
         self.prompt = prompt
         self.fontSize = fontSize
         self.fontColor = fontColor
+        self.hintColor = hintColor
         self.backgroundColor = backgroundColor
         self.cornerRadius = cornerRadius
         self.selectItemType = selectItemType
@@ -173,7 +178,7 @@ public struct SelectBoxView: View {
                     case .date:
                         if let prompt = prompt {
                             Text(dateText.isEmpty ? prompt : dateText)
-                                .foregroundColor(dateText.isEmpty ? .gray : fontColor)
+                                .foregroundColor(dateText.isEmpty ? hintColor : fontColor)
                         } else {
                             Text(dateText)
                                 .foregroundColor(fontColor)
@@ -181,7 +186,7 @@ public struct SelectBoxView: View {
                     case .normal:
                         if let prompt = prompt {
                             Text(selectedText.isEmpty ? prompt : selectedText)
-                                .foregroundColor(selectedText.isEmpty ? .gray : fontColor)
+                                .foregroundColor(selectedText.isEmpty ? hintColor : fontColor)
                         } else {
                             Text(selectedText)
                                 .foregroundColor(fontColor)
