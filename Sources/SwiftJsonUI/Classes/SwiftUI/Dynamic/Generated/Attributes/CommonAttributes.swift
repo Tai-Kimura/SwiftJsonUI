@@ -500,10 +500,10 @@ public struct CommonAttributes {
     /// Long press gesture handler (camelCase) - binding only (@{functionName}) [binding: one-way]
     public let onLongPress: AttrValue<Any>?
 
-    /// Pan gesture handler (camelCase) - binding only (@{functionName})
+    /// Pan gesture handler (camelCase) - binding only (@{functionName}). Invoked repeatedly while the user drags. Payload: cumulative translation since the gesture began (iOS CGSize, Android Offset; web passes the PointerEvent). A handler declared () -> Void is called without the payload.
     public let onPan: AttrValue<Any>?
 
-    /// Pinch gesture handler (camelCase) - binding only (@{functionName})
+    /// Pinch gesture handler (camelCase) - binding only (@{functionName}). Invoked repeatedly while the user pinches. Payload: cumulative scale factor since the gesture began (iOS CGFloat, Android Float; web passes the TouchEvent). A handler declared () -> Void is called without the payload.
     public let onPinch: AttrValue<Any>?
 
     /// Click handler function name (selector-based, lowercase) - string only, no binding [accepts: string | array]
