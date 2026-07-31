@@ -728,6 +728,15 @@ public struct DynamicModifierHelper {
         }
         // 19. accessibilityId
         result = applyAccessibilityId(result, component: component)
+        // 20. disabled again, OUTSIDE the accessibility element. Step 14 put
+        // .disabled inside the chain, but applyAccessibilityId creates the
+        // container's a11y element on top of it — an element outside the
+        // disabled environment never gets the notEnabled trait, so
+        // XCUITest read the target as enabled (measured: the View-hosted
+        // enabled__false conformance fixture). Re-applying outermost puts
+        // the element inside the disabled environment. Double-application
+        // is harmless.
+        result = applyDisabled(result, component: component, data: data)
 
         return result
     }
