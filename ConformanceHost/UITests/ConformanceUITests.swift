@@ -35,7 +35,8 @@ struct ConformanceManifest: Decodable {
     struct Fixture: Decodable {
         let id: String
         let component: String
-        let attribute: String
+        // null for __control fixtures — a control view belongs to no attribute
+        let attribute: String?
         let `case`: String
         let `class`: String
         let aliasOf: String?

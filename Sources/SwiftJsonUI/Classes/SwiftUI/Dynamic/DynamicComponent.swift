@@ -262,6 +262,8 @@ public struct DynamicComponent: Decodable {
     // Event handlers
     let onClick: String?
     let onLongPress: String?
+    let onPan: String?
+    let onPinch: String?
     let onAppear: String?
     let onDisappear: String?
     let onChange: String?
@@ -352,7 +354,7 @@ public struct DynamicComponent: Decodable {
         case scrollTo, scrollAnchor, defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat, minimumDate, maximumDate, selectedDate
-        case onClick, onLongPress, onAppear, onDisappear
+        case onClick, onLongPress, onPan, onPinch, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
         case includeData  // Will be handled specially in decoder
@@ -694,6 +696,8 @@ public struct DynamicComponent: Decodable {
         // Event handlers
         onClick = try container.decodeIfPresent(String.self, forKey: .onClick)
         onLongPress = try container.decodeIfPresent(String.self, forKey: .onLongPress)
+        onPan = try container.decodeIfPresent(String.self, forKey: .onPan)
+        onPinch = try container.decodeIfPresent(String.self, forKey: .onPinch)
         onAppear = try container.decodeIfPresent(String.self, forKey: .onAppear)
         onDisappear = try container.decodeIfPresent(String.self, forKey: .onDisappear)
         onChange = try container.decodeIfPresent(String.self, forKey: .onChange)
