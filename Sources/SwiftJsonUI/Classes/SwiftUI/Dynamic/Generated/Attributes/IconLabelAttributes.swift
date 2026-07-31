@@ -72,8 +72,8 @@ public struct IconLabelAttributes {
     /// Label text (can be data binding)
     public let text: AttrValue<String>?
 
-    /// Text shadow
-    public let textShadow: String?
+    /// Text shadow — same object contract as Label ({color, blur, offset: [x, y]}; the UIKit runtime passes the identical JSON to both) [accepts: string | object]
+    public let textShadow: Any?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
@@ -89,7 +89,7 @@ public struct IconLabelAttributes {
         self.selected = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selected"), AttrCoerce.boolean)
         self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
-        self.textShadow = AttrCoerce.string(AttrCoerce.lookup(json, "textShadow"))
+        self.textShadow = AttrCoerce.any(AttrCoerce.lookup(json, "textShadow"))
     }
 
     private static func parseIconPosition(_ raw: Any?) -> AttrEnum<IconPosition>? {
