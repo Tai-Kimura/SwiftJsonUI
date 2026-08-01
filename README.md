@@ -1,25 +1,27 @@
 # SwiftJsonUI
 
-[![CI Status](https://img.shields.io/travis/kimura@tanosys.com/SwiftJsonUI.svg?style=flat)](https://travis-ci.org/kimura@tanosys.com/SwiftJsonUI)
-[![Version](https://img.shields.io/cocoapods/v/SwiftJsonUI.svg?style=flat)](https://cocoapods.org/pods/SwiftJsonUI)
-[![License](https://img.shields.io/cocoapods/l/SwiftJsonUI.svg?style=flat)](https://cocoapods.org/pods/SwiftJsonUI)
-[![Platform](https://img.shields.io/cocoapods/p/SwiftJsonUI.svg?style=flat)](https://cocoapods.org/pods/SwiftJsonUI)
+SwiftJsonUI is distributed via Swift Package Manager only. CocoaPods is no longer supported.
 
 ## Requirements
-iOS 13 or later (CocoaPods) / iOS 17 or later (Swift Package Manager)<br>
+iOS 17 or later<br>
 Swift 5.8+
 
 ## Installation
 
-SwiftJsonUI is available through [CocoaPods](https://cocoapods.org). To install
-it, simply add the following line to your Podfile:
+Add the package in Xcode (File > Add Package Dependencies) or in your `Package.swift`:
 
-```ruby
-pod 'SwiftJsonUI'
+```swift
+dependencies: [
+    .package(url: "https://github.com/Tai-Kimura/SwiftJsonUI.git", from: "10.12.0")
+]
 ```
 
 ## Usage
 Documentation is being migrated to a new unified documentation site.
+
+SwiftUI attribute coverage gaps are tracked in the machine-checked ledger
+[`conformance/coverage.json`](https://github.com/Tai-Kimura/jsonui-cli/blob/main/conformance/coverage.json)
+in the jsonui-cli repository.
 
 ## Author
 
