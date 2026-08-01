@@ -5,6 +5,7 @@
 import Foundation
 
 /// Typed attribute extraction for the `Toggle` component.
+/// Component alias of `Switch` — full clone of the canonical table (the runtime selects tables by raw spelling).
 /// Shared attributes are available via `common`.
 /// Overrides the common definition of: `enabled`, `tintColor` (use the property on this struct).
 public struct ToggleAttributes {
@@ -44,13 +45,13 @@ public struct ToggleAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Toggle state alias (binding for two-way) [binding: two-way]
+    /// Switch state alias (binding for two-way) [binding: two-way]
     public let checked: AttrValue<Bool>?
 
     /// Whether enabled (can be data binding)
     public let enabled: AttrValue<Bool>?
 
-    /// Toggle state (binding for two-way) [binding: two-way]
+    /// Switch state (binding for two-way) [binding: two-way]
     public let isOn: AttrValue<Bool>?
 
     /// Label styling for Toggle
@@ -83,7 +84,7 @@ public struct ToggleAttributes {
     /// Deprecated on swift. [DEPRECATED: SwiftUI Toggle uses unified tint only.]
     public let trackTintColor: String?
 
-    /// Toggle state alias (binding for two-way) [binding: two-way]
+    /// Switch state alias (binding for two-way) [binding: two-way]
     public let value: AttrValue<Bool>?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
