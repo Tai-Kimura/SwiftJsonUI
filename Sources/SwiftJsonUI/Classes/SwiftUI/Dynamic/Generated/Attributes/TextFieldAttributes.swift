@@ -75,6 +75,7 @@ public struct TextFieldAttributes {
         "hintFont",
         "hintFontSize",
         "input",
+        "inputType",
         "keyboardAppearance",
         "leftView",
         "leftViewMode",
@@ -200,6 +201,9 @@ public struct TextFieldAttributes {
 
     /// Input type (includes 'allphabet' typo for backward compatibility)
     public let input: AttrEnum<Input>?
+
+    /// Input type for Android (Android-only; `input` is the cross-platform attribute)
+    public let inputType: String?
 
     /// Keyboard appearance: dark, light [DEPRECATED: Compose keyboard appearance is system-controlled.]
     public let keyboardAppearance: String?
@@ -330,6 +334,7 @@ public struct TextFieldAttributes {
         self.hintFont = AttrCoerce.string(AttrCoerce.lookup(json, "hintFont"))
         self.hintFontSize = AttrCoerce.number(AttrCoerce.lookup(json, "hintFontSize"))
         self.input = Self.parseInput(AttrCoerce.lookup(json, "input"))
+        self.inputType = AttrCoerce.string(AttrCoerce.lookup(json, "inputType"))
         self.keyboardAppearance = AttrCoerce.string(AttrCoerce.lookup(json, "keyboardAppearance"))
         self.leftView = AttrCoerce.object(AttrCoerce.lookup(json, "leftView"))
         self.leftViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "leftViewMode"))

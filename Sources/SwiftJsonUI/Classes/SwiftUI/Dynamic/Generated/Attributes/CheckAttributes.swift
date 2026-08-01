@@ -5,6 +5,7 @@
 import Foundation
 
 /// Typed attribute extraction for the `Check` component.
+/// Component alias of `CheckBox` — full clone of the canonical table (the runtime selects tables by raw spelling).
 /// Shared attributes are available via `common`.
 /// Overrides the common definition of: `enabled` (use the property on this struct).
 public struct CheckAttributes {
@@ -27,6 +28,7 @@ public struct CheckAttributes {
         "src",
         "text",
         "uncheckedColor",
+        "value",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -44,7 +46,7 @@ public struct CheckAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Check state (binding for two-way) [binding: two-way]
+    /// Checked state alias (binding for two-way) [binding: two-way]
     public let checked: AttrValue<Bool>?
 
     /// Color when checked.
@@ -74,7 +76,7 @@ public struct CheckAttributes {
     /// Checked state (binding for two-way) [binding: two-way]
     public let isOn: AttrValue<Bool>?
 
-    /// Check label text (can be data binding)
+    /// Checkbox label (can be data binding)
     public let label: AttrValue<String>?
 
     /// Value change handler - binding only (@{functionName})
@@ -86,14 +88,17 @@ public struct CheckAttributes {
     /// Space between icon and text (binding supported)
     public let spacing: AttrValue<Double>?
 
-    /// Image source for unchecked state
+    /// Icon name for unchecked state (alias)
     public let src: String?
 
-    /// Check label text alias (can be data binding)
+    /// Checkbox label (alias, can be data binding)
     public let text: AttrValue<String>?
 
     /// Color when unchecked.
     public let uncheckedColor: String?
+
+    /// Associated value when checked
+    public let value: Any?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
@@ -116,5 +121,6 @@ public struct CheckAttributes {
         self.src = AttrCoerce.string(AttrCoerce.lookup(json, "src"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.uncheckedColor = AttrCoerce.string(AttrCoerce.lookup(json, "uncheckedColor"))
+        self.value = AttrCoerce.any(AttrCoerce.lookup(json, "value"))
     }
 }
