@@ -22,6 +22,69 @@ on:
     - cron: '0 18 * * 0' # weekly (Sunday 18:00 UTC), same slot as conformance-mobile
 
 jobs:
+  # ------------------------------------------------------------------ #
+  # Vendored attr tables ↔ jsonui-cli manifest. The Dynamic/Generated/
+  # Attributes tree is hand-rsynced from jsonui-cli's attr-codegen emit;
+  # this job is the gate that the rsync discipline used to be. It fetches
+  # build/attr_codegen/manifest.json at the pinned jsonui-cli ref and
+  # compares sha256 bidirectionally (mismatch, missing, or stray file all
+  # fail). PIN BUMP: the commit that re-vendors the tables updates
+  # JSONUI_CLI_MANIFEST_REF in the SAME commit — prefer a release tag
+  # once the next jsonui-cli release lands (manifest exists from 2299153
+  # onward; tags v1.2.1 and earlier predate it).
+  # ------------------------------------------------------------------ #
+  vendored-attr-guard:
+    name: Vendored attr tables match jsonui-cli manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      JSONUI_CLI_MANIFEST_REF: 2299153b0918038b2020d6effce4d51aef535c79
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify sha256 against pinned manifest
+        run: |
+          python3 - <<'EOF'
+          import hashlib, json, os, sys, urllib.request
+
+          ref = os.environ["JSONUI_CLI_MANIFEST_REF"]
+          url = (
+              "https://raw.githubusercontent.com/Tai-Kimura/jsonui-cli/"
+              f"{ref}/build/attr_codegen/manifest.json"
+          )
+          manifest = json.load(urllib.request.urlopen(url))
+          vendored = "Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Generated/Attributes"
+          # skipped_attributes.json is emit metadata and is deliberately
+          # not vendored into the library repos.
+          expected = {
+              name.split("/", 1)[1]: sha
+              for name, sha in manifest["files"].items()
+              if name.startswith("swift/")
+              and not name.endswith("skipped_attributes.json")
+          }
+          actual = {
+              entry: hashlib.sha256(
+                  open(os.path.join(vendored, entry), "rb").read()
+              ).hexdigest()
+              for entry in sorted(os.listdir(vendored))
+              if os.path.isfile(os.path.join(vendored, entry))
+          }
+          problems = [
+              f"missing from vendored dir: {n}" for n in expected if n not in actual
+          ] + [
+              f"hash mismatch (re-vendor + bump the pin together): {n}"
+              for n in expected
+              if n in actual and actual[n] != expected[n]
+          ] + [
+              f"not in manifest (stray or renamed): {n}" for n in actual if n not in expected
+          ]
+          if problems:
+              print(f"vendored attr tables diverge from jsonui-cli manifest @ {ref}:")
+              for p in problems:
+                  print(f"  - {p}")
+              sys.exit(1)
+          print(f"vendored attr tables match manifest @ {ref[:12]} ({len(expected)} files)")
+          EOF
+
   unit-tests:
     name: Library unit tests (iOS Simulator)
     runs-on: macos-15
