@@ -61,7 +61,16 @@ else
     echo "warning: no simulator named '$SIMULATOR_NAME' resolved — falling back to name matching" >&2
     DESTINATION="platform=iOS Simulator,name=$SIMULATOR_NAME"
 fi
-STAGING="${CONFORMANCE_STAGING:-/tmp/jsonui-conformance-ios}"
+# HOST_MODE=codegen renders fixtures through the sjui-GENERATED views
+# (scripts/generate_codegen_host.rb output) instead of DynamicView, and
+# lands output in codegen-suffixed locations so a parity comparison never
+# clobbers the dynamic artifacts. Default: dynamic.
+HOST_MODE="${HOST_MODE:-dynamic}"
+if [[ "$HOST_MODE" == "codegen" ]]; then
+    STAGING="${CONFORMANCE_STAGING:-/tmp/jsonui-conformance-ios-codegen}"
+else
+    STAGING="${CONFORMANCE_STAGING:-/tmp/jsonui-conformance-ios}"
+fi
 DERIVED_DATA="${DERIVED_DATA:-$HOST_DIR/build/DerivedData}"
 
 if [[ -z "${CONFORMANCE_DIR:-}" ]]; then
@@ -105,6 +114,9 @@ export TEST_RUNNER_CONFORMANCE_STAGING_DIR="$STAGING"
 if [[ -n "${CONFORMANCE_FILTER:-}" ]]; then
     export TEST_RUNNER_CONFORMANCE_FILTER="$CONFORMANCE_FILTER"
 fi
+if [[ "$HOST_MODE" == "codegen" ]]; then
+    export TEST_RUNNER_CONFORMANCE_HOST_MODE="codegen"
+fi
 
 set -x
 xcodebuild test \
@@ -117,4 +129,4 @@ xcodebuild test \
     2>&1 | tail -40
 set +x
 
-CONFORMANCE_STAGING="$STAGING" "$HOST_DIR/scripts/collect_results.sh"
+CONFORMANCE_STAGING="$STAGING" HOST_MODE="$HOST_MODE" "$HOST_DIR/scripts/collect_results.sh"
