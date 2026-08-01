@@ -11,38 +11,26 @@ Always check these before guessing attribute names or behavior.
 
 ## SwiftUI Support Testing Workflow
 
-When implementing SwiftUI support features:
+sjui_tools (codegen/CLI) and the SwiftJsonUI library are separate codebases with
+separate flows:
 
-1. **Test Project Location**: `~/resource/swiftUITestApp/swiftUITestApp`
-   - Modify: `swiftUITestApp/sjui_tools/` for testing
-   - Test the changes in the SwiftUI test app
+1. **Codegen / CLI changes** — edit the canonical tool in the jsonui-cli monorepo:
+   - Canonical source: `~/resource/jsonui-cli/sjui_tools/`
+   - Run its rspec suite there before distributing
+   - Distribution: update the installed copy (`~/.jsonui-cli/`), then consumer
+     projects pick it up via `jui sync_tool` (project-local converter extensions
+     are preserved)
+   - Never apply codegen changes by editing a consumer project's local
+     `sjui_tools/` mirror as the primary copy
 
-2. **After Testing Success**:
-   - Apply the same modifications to main SwiftJsonUI repository
-   - Location: `~/resource/SwiftJsonUI`
+2. **Library (runtime Swift) changes** — edit this repository:
+   - Verify with `ConformanceHost` (see `ConformanceHost/scripts/`) and/or a
+     consumer app embedding SwiftJsonUI via SPM
+   - Note: `swift build` fails on macOS (no UIKit) — use xcodebuild with an
+     iOS Simulator destination
 
-3. **Deployment**:
-   - Push changes to current branch (e.g., `7.4.0`)
-   - Move/update the tag if needed
-
-### Example Commands:
-```bash
-# Testing in SwiftUI test app
-cd ~/resource/swiftUITestApp/swiftUITestApp
-# Make changes to sjui_tools/
-./sjui_tools/bin/sjui build
-
-# After testing, apply to main repo
-cd ~/resource/SwiftJsonUI
-# Apply same changes
-git add -A
-git commit -m "Your commit message"
-git push origin HEAD
-
-# Update tag (if needed)
-git tag -f <version>
-git push origin <version> --force
-```
+3. **Release** — tag this repo and update consumer SPM pins per the release
+   playbook in `~/resource/jsonui-cli/docs/dev-guide/09-release-distribution.md`
 
 ## Important Rules
 
