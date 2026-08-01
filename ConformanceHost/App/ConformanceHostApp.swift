@@ -25,8 +25,33 @@
 import SwiftUI
 import SwiftJsonUI
 
+/// Which rendering pipeline this host exercises for the current launch.
+///
+/// - `dynamic` (default): DynamicView interprets the fixture layout JSON at
+///   runtime — the pipeline the conformance baselines were built on.
+/// - `codegen`: the fixture is rendered by the **generated SwiftUI view**
+///   (sjui build output, compiled in by scripts/generate_codegen_host.rb) —
+///   the pipeline production apps actually ship. Selected with the launch
+///   env `CONFORMANCE_HOST_MODE=codegen`; parity between the two pipelines
+///   is judged by `jui conformance parity` against the dynamic baselines.
+enum ConformanceHostMode {
+    static let isCodegen: Bool =
+        ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
+}
+
 @main
 struct ConformanceHostApp: App {
+    init() {
+        if ConformanceHostMode.isCodegen {
+            // Generated views check ViewSwitcher.isDynamicMode inside their
+            // body (DEBUG builds render DynamicView while it is true). Flip
+            // it synchronously before the first render — setDynamicMode()
+            // dispatches async and would let the first fixture slip through
+            // the dynamic path.
+            ViewSwitcher.shared.isDynamic = false
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             ConformanceRootView()
@@ -127,7 +152,21 @@ struct FixtureScreen: View {
 
     var body: some View {
         ZStack {
-            if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
+            if ConformanceHostMode.isCodegen {
+                if let generated = CodegenFixtureRegistry.view(for: fixtureId) {
+                    generated
+                } else {
+                    // Same marker the dynamic path uses for an unloadable
+                    // fixture, so the UITest reports it as an error rather
+                    // than timing out — a fixture the codegen registry does
+                    // not carry (generation failed / deliberately skipped)
+                    // must not look like a hang.
+                    Text("No generated view for fixture: \(fixtureId)")
+                        .foregroundColor(.red)
+                        .padding()
+                        .accessibilityIdentifier("conformance_load_error")
+                }
+            } else if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
                 DynamicView(component: component, viewId: "conformance", data: state.externalData)
             } else {
                 Text("Failed to load fixture: \(fixtureId)")

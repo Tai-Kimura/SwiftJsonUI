@@ -175,10 +175,25 @@ final class ConformanceUITests: XCTestCase {
 
     // MARK: Skip policy
 
+    /// codegen host mode (CONFORMANCE_HOST_MODE=codegen, forwarded to the app
+    /// at launch): the fixture renders through the sjui-GENERATED SwiftUI view
+    /// instead of DynamicView. Parity of the two pipelines is judged outside
+    /// the run (`jui conformance parity`).
+    private var isCodegenHostMode: Bool {
+        ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
+    }
+
     /// This host renders SwiftUI dynamic mode only.
     private func skipReason(for fixture: ConformanceManifest.Fixture) -> String? {
         if !fixture.platforms.contains("ios") {
             return "not applicable to ios"
+        }
+        if isCodegenHostMode && fixture.`class` != "visual" {
+            // Parity is a visual question (screenshot vs dynamic baseline).
+            // Interactive fixtures drive bindings through the dynamic state
+            // store, and assert-only fixtures have no screenshot to compare —
+            // neither says anything the codegen host can measure.
+            return "class \(fixture.`class`) not hosted (codegen parity host is visual-only)"
         }
         if let mode = fixture.mode {
             let values = mode.values
@@ -199,6 +214,9 @@ final class ConformanceUITests: XCTestCase {
             let app = XCUIApplication()
             app.launchEnvironment["CONFORMANCE_FIXTURE_IDS"] =
                 remaining.map { $0.id }.joined(separator: ",")
+            if isCodegenHostMode {
+                app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen"
+            }
             app.launch()
 
             var crashed = false

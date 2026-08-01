@@ -8,3 +8,7 @@ UITests/Vendor/
 # Build output
 build/
 DerivedData/
+
+# Codegen host output (scripts/generate_codegen_host.rb) — @generated
+CodegenStaging/
+codegen-build.log

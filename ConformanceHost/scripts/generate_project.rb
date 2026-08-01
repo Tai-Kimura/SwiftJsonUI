@@ -23,6 +23,22 @@ project_path = File.join(host_dir, 'ConformanceHost.xcodeproj')
 app_sources = Dir[File.join(host_dir, 'App', '**', '*.swift')].sort
 uitest_sources = Dir[File.join(host_dir, 'UITests', '**', '*.swift')].sort
 
+# Codegen host sources (scripts/generate_codegen_host.rb output, gitignored):
+# sjui-generated views/data/resource managers + the fixture registry. When
+# present they replace the compile-time default registry stub — exactly one
+# CodegenFixtureRegistry must exist per build.
+codegen_sources = %w[View Data ResourceManager]
+  .flat_map { |dir| Dir[File.join(host_dir, 'CodegenStaging', dir, '**', '*.swift')] }
+  .push(File.join(host_dir, 'CodegenStaging', 'CodegenFixtureRegistry.swift'))
+  .select { |f| File.file?(f) }
+  .sort
+if codegen_sources.any? { |f| f.end_with?('CodegenFixtureRegistry.swift') }
+  app_sources.reject! { |f| f.end_with?('CodegenFixtureRegistryDefault.swift') }
+  app_sources += codegen_sources
+else
+  codegen_sources = []
+end
+
 if uitest_sources.none? { |f| f.include?('Vendor/JsonUITestRunner') }
   abort 'error: UITests/Vendor/JsonUITestRunner is empty — run scripts/sync_fixtures.sh first'
 end
@@ -116,3 +132,4 @@ scheme.save_as(project_path, 'ConformanceHost', true)
 puts "generated #{project_path}"
 puts "  app sources:    #{app_sources.size}"
 puts "  uitest sources: #{uitest_sources.size}"
+puts "  codegen sources: #{codegen_sources.size}#{codegen_sources.empty? ? ' (dynamic-only build)' : ''}"
