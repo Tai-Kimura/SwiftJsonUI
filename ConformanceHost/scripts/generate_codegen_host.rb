@@ -104,8 +104,16 @@ File.write(File.join(build_dir, 'sjui.config.json'), JSON.pretty_generate(
   'styles_directory' => 'Styles',
   'resources_directory' => 'Resources',
   'resource_manager_directory' => 'ResourceManager',
+  # The generated views resolve text through StringManager →
+  # NSLocalizedString; without a bundled .strings table every label
+  # renders its KEY (measured: 338/499 parity mismatches, all
+  # "fx_0013_sample"-style). The extractor only writes tables that
+  # already exist, so seed one and bundle it into the host app.
+  'string_files' => ['Resources/Localizable.strings'],
   'swiftui' => { 'output_directory' => 'Generated' }
 ) + "\n")
+FileUtils.mkdir_p(File.join(build_dir, 'Resources'))
+File.write(File.join(build_dir, 'Resources', 'Localizable.strings'), "")
 # sjui build refuses to run without a project file; the staging dir is not a
 # real app, so a marker package satisfies the lookup.
 File.write(File.join(build_dir, 'Package.swift'), <<~SWIFT)
@@ -128,6 +136,11 @@ end
 %w[View Data ResourceManager].each do |dir|
   src = File.join(build_dir, dir)
   FileUtils.cp_r(src, File.join(staging, dir)) if File.directory?(src)
+end
+strings_table = File.join(build_dir, 'Resources', 'Localizable.strings')
+if File.file?(strings_table)
+  FileUtils.mkdir_p(File.join(staging, 'Resources'))
+  FileUtils.cp(strings_table, File.join(staging, 'Resources', 'Localizable.strings'))
 end
 
 # ---------------------------------------------------------------- registry
