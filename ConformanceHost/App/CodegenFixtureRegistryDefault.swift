@@ -17,6 +17,11 @@
 import SwiftUI
 
 enum CodegenFixtureRegistry {
+    /// Launch-time wiring for the generated pipeline (resource providers).
+    /// No-op here: the generated registry overrides it with the consumer
+    /// contract (colorProvider → generated ColorManager).
+    static func activate() {}
+
     static func view(for fixtureId: String) -> AnyView? {
         nil
     }

@@ -151,6 +151,7 @@ lines << '// Fixture id → sjui-generated SwiftUI view (production codegen pipe
 lines << '// Compiled in place of CodegenFixtureRegistryDefault.swift by generate_project.rb.'
 lines << ''
 lines << 'import SwiftUI'
+lines << 'import SwiftJsonUI'
 lines << ''
 hosts = []
 cases = []
@@ -175,6 +176,15 @@ entries.each_with_index do |fixture, i|
 end
 
 lines << 'enum CodegenFixtureRegistry {'
+lines << '    // Same launch contract real consumers wire: named colors resolve'
+lines << '    // through SwiftJsonUIConfiguration → the generated ColorManager.'
+lines << '    static func activate() {'
+lines << '        SwiftJsonUIConfiguration.shared.colorProvider = { key in'
+lines << '            guard let key = key as? String else { return nil }'
+lines << '            return ColorManager.swiftui.color(for: key)'
+lines << '        }'
+lines << '    }'
+lines << ''
 lines << '    static func view(for fixtureId: String) -> AnyView? {'
 lines << '        switch fixtureId {'
 lines.concat(cases)

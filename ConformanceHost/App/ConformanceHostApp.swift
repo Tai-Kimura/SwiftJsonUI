@@ -49,6 +49,14 @@ struct ConformanceHostApp: App {
             // dispatches async and would let the first fixture slip through
             // the dynamic path.
             ViewSwitcher.shared.isDynamic = false
+            // Resource providers the generated code resolves through (named
+            // colors via SwiftJsonUIConfiguration.getColor — 31 F6: without
+            // the registration every named color is nil, fills go black,
+            // backgrounds vanish; 93 parity entries were that single miss).
+            // Indirected through the registry because the generated
+            // ColorManager only exists in codegen builds — the committed
+            // default stub is a no-op so dynamic-only builds keep compiling.
+            CodegenFixtureRegistry.activate()
         }
     }
 
