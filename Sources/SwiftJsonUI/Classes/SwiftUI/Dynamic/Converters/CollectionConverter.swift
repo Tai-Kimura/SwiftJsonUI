@@ -90,11 +90,12 @@ public struct CollectionConverter {
         }
 
         guard let dataSource = dataSource, hasSections else {
-            return AnyView(
-                Text("No collection data")
-                    .foregroundColor(.gray)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-            )
+            // Declaration-faithful (2026-08-02 ruling): no declared data
+            // source → nothing rendered. Color.clear (not EmptyView) keeps
+            // the container occupying its declared frame and showing its
+            // declared background; the old "No collection data" debug text
+            // was undeclared behavior.
+            return AnyView(Color.clear)
         }
 
         // Resolve onItemAppear callback
