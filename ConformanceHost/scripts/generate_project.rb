@@ -60,6 +60,15 @@ end
 assets_ref = app_group.new_reference(File.join(host_dir, 'App', 'Assets.xcassets'))
 app_target.add_resources([assets_ref])
 
+# Codegen strings table (generate_codegen_host.rb output): StringManager
+# resolves through NSLocalizedString, so the table must ship in the app
+# bundle or every generated label renders its key.
+codegen_strings = File.join(host_dir, 'CodegenStaging', 'Resources', 'Localizable.strings')
+if File.file?(codegen_strings)
+  strings_ref = app_group.new_reference(codegen_strings)
+  app_target.add_resources([strings_ref])
+end
+
 # fixtures folder reference (blue folder → preserves subdirectories in bundle)
 resources_group = project.main_group.new_group('Resources', 'Resources')
 fixtures_ref = resources_group.new_reference(File.join(host_dir, 'Resources', 'fixtures'))
