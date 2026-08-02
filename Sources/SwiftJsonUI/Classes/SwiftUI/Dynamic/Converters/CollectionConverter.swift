@@ -55,10 +55,19 @@ public struct CollectionConverter {
         viewId: String? = nil
     ) -> AnyView {
         let sections = component.sections ?? []
-        let isHorizontal = component.layout == "horizontal" || component.orientation == "horizontal"
-        let isFlow = component.layout == "flow"
-        let hasSections = !sections.isEmpty
         let attrs = component.typedAttributes(CollectionAttributes.self)
+        // `horizontalScroll: true` is the declared boolean spelling of the
+        // same direction fact (ScrollView's vocabulary — real carousels use
+        // it). The static codegens honor it; the android dynamic renderer
+        // gained the same reading in the F4-P2 parity cycle.
+        let isHorizontal = component.layout == "horizontal"
+            || component.orientation == "horizontal"
+            || attrs.horizontalScroll == true
+        // Case-insensitive: the declared enum admits 'Flow' as well as
+        // 'flow' (the static codegens compare casecmp since the F4-P2
+        // parity cycle).
+        let isFlow = component.layout?.lowercased() == "flow"
+        let hasSections = !sections.isEmpty
         // `columns` accepts a literal number or a `@{binding}` (canonical
         // kind: number | binding — the contract the static codegens already
         // implement). Bindings resolve from `data` at render time and fall
