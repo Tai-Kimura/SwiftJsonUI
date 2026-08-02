@@ -91,11 +91,15 @@ public struct CollectionConverter {
 
         guard let dataSource = dataSource, hasSections else {
             // Declaration-faithful (2026-08-02 ruling): no declared data
-            // source → nothing rendered. Color.clear (not EmptyView) keeps
-            // the container occupying its declared frame and showing its
-            // declared background; the old "No collection data" debug text
-            // was undeclared behavior.
-            return AnyView(Color.clear)
+            // source → no items rendered, but the container still carries
+            // its declared frame/background — route the empty view through
+            // the same standard-modifier chain as every populated path.
+            // The old early return skipped it, so the whole container
+            // vanished (and the still-older "No collection data" debug text
+            // was undeclared behavior).
+            return DynamicModifierHelper.applyStandardModifiers(
+                AnyView(Color.clear), component: component, data: data
+            )
         }
 
         // Resolve onItemAppear callback
