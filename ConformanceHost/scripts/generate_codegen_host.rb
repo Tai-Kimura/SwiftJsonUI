@@ -213,6 +213,31 @@ lines << '    }'
 lines << '}'
 lines << ''
 lines.concat(hosts)
+
+# Cell companion wrappers. sjui build emits <Cell>GeneratedView + <Cell>Data;
+# the `<Cell>View(data: Any)` wrapper the generated collection code calls is
+# consumer scaffold (user-owned in real projects), so the host synthesizes
+# the standard minimal shape: map the cell dictionary through
+# Data.update(dictionary:), hand a Binding to the generated view. Equatable
+# is required — the collection call site chains .equatable().
+cell_companions.each do |companion|
+  pascal = File.basename(companion).sub(/\.layout\.json\z/, '').split('_').map(&:capitalize).join
+  lines << ''
+  lines << <<~SWIFT
+    struct #{pascal}View: View, Equatable {
+        @State private var data: #{pascal}Data
+        private let cellKey: String
+        init(data: Any) {
+            var d = #{pascal}Data()
+            if let dict = data as? [String: Any] { d.update(dictionary: dict) }
+            _data = State(initialValue: d)
+            cellKey = String(describing: data)
+        }
+        static func == (lhs: Self, rhs: Self) -> Bool { lhs.cellKey == rhs.cellKey }
+        var body: some View { #{pascal}GeneratedView(data: $data) }
+    }
+  SWIFT
+end
 File.write(File.join(staging, 'CodegenFixtureRegistry.swift'), lines.join("\n"))
 
 map = {
