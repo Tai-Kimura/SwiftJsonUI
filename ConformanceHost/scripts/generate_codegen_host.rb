@@ -80,7 +80,14 @@ manifest.fetch('fixtures', []).each do |fixture|
     skipped << { 'id' => fixture['id'], 'reason' => "mode #{mode_values.join(',')} not hosted" }
     next
   end
-  if (fixture['companions'] || []).any?
+  # Companions split by directory: __screens/ layouts are Embed screens the
+  # generated code cannot resolve by name (dynamic-loader navigation story) —
+  # still skipped. __cells/ layouts are Collection cell views: staging them
+  # under their bare name is all codegen needs — sjui build generates
+  # ConformanceCellView from conformance_cell.json and the collection code
+  # references exactly that struct.
+  screen_companions = (fixture['companions'] || []).reject { |c| c.include?('__cells/') }
+  if screen_companions.any?
     skipped << { 'id' => fixture['id'], 'reason' => 'embed-companion resolution not hosted in codegen yet' }
     next
   end
@@ -93,7 +100,19 @@ entries.each_with_index do |fixture, i|
     File.join(layouts_dir, format('fx_%04d.json', i + 1))
   )
 end
-puts "[codegen-host] staged #{entries.size} visual fixture layout(s), skipped #{skipped.size}"
+
+cell_companions = entries
+  .flat_map { |f| f['companions'] || [] }
+  .select { |c| c.include?('__cells/') }
+  .uniq
+  .sort
+cell_companions.each do |companion|
+  src = File.join(conformance_dir, companion)
+  abort "error: cell companion layout missing: #{companion}" unless File.file?(src)
+  bare = File.basename(companion).sub(/\.layout\.json\z/, '') + '.json'
+  FileUtils.cp(src, File.join(layouts_dir, bare))
+end
+puts "[codegen-host] staged #{entries.size} visual fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
 
 # ---------------------------------------------------------------- sjui build
 File.write(File.join(build_dir, 'sjui.config.json'), JSON.pretty_generate(
