@@ -22,6 +22,15 @@
 //   3. Two-way write-back — every var is exposed as a SwiftUI.Binding<String>
 //      (per DynamicBindingHelper.string), so `text: "@{var}"` on
 //      TextField/TextView writes edits back and mirror Labels re-render.
+//   4. Collection data supply — every layout `data` entry declared with
+//      `class: "CollectionDataSource"` is materialized into a real
+//      SwiftJsonUI.CollectionDataSource and exposed under its name, because
+//      CollectionConverter resolves `items: "@{prop}"` via
+//      `data[prop] as? CollectionDataSource` — a raw defaultValue dictionary
+//      never survives that cast. The host plays the consumer ViewModel's
+//      role here, generically (F4 Phase 2 prerequisite). This channel is
+//      independent of the manifest `state` block: Collection fixtures are
+//      static, not interactive.
 //
 //  Re-render: the store is an ObservableObject; any var mutation (handler
 //  fire or input write-back) publishes and the observing FixtureScreen
@@ -104,15 +113,23 @@ enum ConformanceStateIndex {
 final class ConformanceStateStore: ObservableObject {
     @Published private var values: [String: String] = [:]
     private let decl: ConformanceStateDecl?
+    /// Requirement 4: materialized `class: "CollectionDataSource"` entries
+    /// from the layout data section, keyed by declared name. Static data —
+    /// never mutated after init, so no @Published needed.
+    private let collectionData: [String: CollectionDataSource]
 
     init(fixtureId: String) {
         let decl = ConformanceStateIndex.state(for: fixtureId)
         self.decl = decl
+
+        let dataEntries = Self.dataSectionEntries(fixtureId: fixtureId)
+        self.collectionData = Self.collectionDataSources(from: dataEntries)
+
         guard let decl else { return }
 
         // Requirement 1: initial values from the layout data section
         // (production defaults path), manifest defaultValue as fallback.
-        let layoutDefaults = Self.dataSectionDefaults(fixtureId: fixtureId)
+        let layoutDefaults = Self.dataSectionDefaults(from: dataEntries)
         var seeded: [String: String] = [:]
         for varDecl in decl.vars {
             seeded[varDecl.name] = layoutDefaults[varDecl.name] ?? varDecl.defaultValue
@@ -120,13 +137,18 @@ final class ConformanceStateStore: ObservableObject {
         self.values = seeded
     }
 
-    /// External data for DynamicView: one Binding<String> per declared var
-    /// (requirements 1 + 3) and one `() -> Void` closure per declared
-    /// handler (requirement 2). Empty for non-interactive fixtures, so
-    /// DynamicView.mergeDataDefaults alone drives static rendering.
+    /// External data for DynamicView: one CollectionDataSource per declared
+    /// collection entry (requirement 4 — supplied for static fixtures too),
+    /// one Binding<String> per declared var (requirements 1 + 3) and one
+    /// `() -> Void` closure per declared handler (requirement 2). On a name
+    /// collision the interactive var wins — a declared var is the more
+    /// specific intent.
     var externalData: [String: Any] {
-        guard let decl else { return [:] }
         var out: [String: Any] = [:]
+        for (name, source) in collectionData {
+            out[name] = source
+        }
+        guard let decl else { return out }
         for varDecl in decl.vars {
             let name = varDecl.name
             out[name] = SwiftUI.Binding<String>(
@@ -164,16 +186,21 @@ final class ConformanceStateStore: ObservableObject {
         return out
     }
 
-    /// Read the `data` section defaults straight from the fixture layout
-    /// JSON — the identical source DynamicView.mergeDataDefaults extracts
-    /// defaults from at render time.
-    private static func dataSectionDefaults(fixtureId: String) -> [String: String] {
+    /// Read the fixture layout's root-level `data` section — the identical
+    /// source DynamicView.mergeDataDefaults extracts defaults from at render
+    /// time. Parsed once per fixture; both the var defaults (requirement 1)
+    /// and the collection supply (requirement 4) feed from it.
+    private static func dataSectionEntries(fixtureId: String) -> [[String: Any]] {
         guard let url = FixtureLoader.layoutURL(fixtureId: fixtureId),
               let data = try? Data(contentsOf: url),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let entries = json["data"] as? [[String: Any]] else {
-            return [:]
+            return []
         }
+        return entries
+    }
+
+    private static func dataSectionDefaults(from entries: [[String: Any]]) -> [String: String] {
         var out: [String: String] = [:]
         for entry in entries {
             guard let name = entry["name"] as? String else { continue }
@@ -184,5 +211,49 @@ final class ConformanceStateStore: ObservableObject {
             }
         }
         return out
+    }
+
+    /// Requirement 4: `{"name": N, "class": "CollectionDataSource",
+    /// "defaultValue": ...}` entries become real CollectionDataSource values.
+    /// Two accepted defaultValue shapes (INTERACTIVE_HOST_CONTRACT.md §4):
+    ///   - `[ {...}, ... ]` — shorthand: one section holding these cell dicts
+    ///   - `{"sections": [{"cell": name?, "cells": [ {...}, ... ]}, ...]}`
+    /// The dynamic renderer takes each cell's view name from the Collection
+    /// node's own `sections` declaration, so the per-section `cell` here is
+    /// carried only for tuple fidelity (UIKit-path readers use it).
+    private static func collectionDataSources(
+        from entries: [[String: Any]]
+    ) -> [String: CollectionDataSource] {
+        var out: [String: CollectionDataSource] = [:]
+        for entry in entries {
+            guard let name = entry["name"] as? String,
+                  (entry["class"] as? String) == "CollectionDataSource",
+                  let defaultValue = entry["defaultValue"] else { continue }
+            out[name] = materializeCollection(defaultValue)
+        }
+        return out
+    }
+
+    private static func materializeCollection(_ raw: Any) -> CollectionDataSource {
+        var source = CollectionDataSource()
+        if let cells = raw as? [[String: Any]] {
+            var section = CollectionDataSection()
+            section.setCells(viewName: "", data: cells)
+            source.addSection(section)
+            return source
+        }
+        guard let dict = raw as? [String: Any],
+              let sections = dict["sections"] as? [[String: Any]] else {
+            return source
+        }
+        for sectionRaw in sections {
+            var section = CollectionDataSection()
+            section.setCells(
+                viewName: sectionRaw["cell"] as? String ?? "",
+                data: sectionRaw["cells"] as? [[String: Any]] ?? []
+            )
+            source.addSection(section)
+        }
+        return source
     }
 }
