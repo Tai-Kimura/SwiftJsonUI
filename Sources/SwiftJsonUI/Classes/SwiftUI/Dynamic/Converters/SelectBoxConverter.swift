@@ -107,7 +107,15 @@ public struct SelectBoxConverter {
         let minuteInterval = component.minuteInterval ?? 1
 
         // selectedIndex (value for initial, binding for two-way sync)
-        let selectedIndex = component.selectedIndex
+        // A literal selectedValue seeds the initial selection by resolving
+        // its index in items (33 cross-effect: ios ignored it while the
+        // selectedIndex spelling worked).
+        let literalValueIndex: Int? = {
+            guard let value = attrs.selectedValue?.value,
+                  attrs.selectedValue?.bindingExpression == nil else { return nil }
+            return items.firstIndex(of: value)
+        }()
+        let selectedIndex = component.selectedIndex ?? literalValueIndex
         let selectedIndexBinding: SwiftUI.Binding<Int>? = {
             if let si = attrs.selectedIndex?.bindingString {
                 let binding = DynamicBindingHelper.int(si, data: data, fallback: selectedIndex ?? 0)
