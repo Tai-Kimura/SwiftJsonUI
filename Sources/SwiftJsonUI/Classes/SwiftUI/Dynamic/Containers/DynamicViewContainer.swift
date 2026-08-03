@@ -63,11 +63,16 @@ public struct DynamicViewContainer: View {
         }
 
         // --- 2. applyStandardModifiers (use original data with weighted flags for self) ---
+        // Empty view with background: emptyContent already painted it as
+        // Rectangle().fill (the codegen leaf contract, no safe-area bleed) —
+        // painting again via .background stacked a second opaque layer.
+        let backgroundPaintedByContent = children.isEmpty && component.background != nil
         result = DynamicModifierHelper.applyStandardModifiers(
             result,
             component: component,
             data: data,
-            skipPadding: needsRelativePositioning
+            skipPadding: needsRelativePositioning,
+            skipBackground: backgroundPaintedByContent
         )
 
         // --- 3. gradient ---
@@ -126,6 +131,14 @@ public struct DynamicViewContainer: View {
             (component.widthWeight ?? 0) > 0 ||
             (component.heightWeight ?? 0) > 0
 
+        // Rectangle().fill is the codegen leaf contract: opaque paint that
+        // does NOT bleed into the safe area (unlike .background, whose
+        // default extends the colour under the status bar when the view
+        // touches a safe-area edge — a declared 40pt child measured 102pt
+        // tall through the status bar). The standard chain's applyBackground
+        // is skipped for this case (buildBody passes skipBackground) so the
+        // colour is painted exactly once — the double opaque layer used to
+        // cast the declared .shadow twice.
         if component.background != nil {
             Rectangle()
                 .fill(DynamicHelpers.getColor(component.background) ?? Color.clear)

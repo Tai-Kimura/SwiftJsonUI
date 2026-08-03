@@ -25,8 +25,12 @@ public struct ToggleConverter {
         let id = component.id ?? "toggle"
         let attrs = component.typedAttributes(ToggleAttributes.self)
 
-        // Resolve isOn binding: check isOn first, then checked
-        let isOnExpr: String? = attrs.isOn?.bindingString ?? attrs.checked?.bindingString
+        // Resolve isOn binding: isOn first, then checked, then `value` —
+        // the cross-platform alias of the on/off state (toggle_converter.rb
+        // reads the same chain).
+        let isOnExpr: String? = attrs.isOn?.bindingString
+            ?? attrs.checked?.bindingString
+            ?? attrs.value?.bindingString
 
         // Two-way bound var if the expression resolves to a Binding<Bool> in
         // data; otherwise the toggle gets local state (an unbound native
@@ -37,7 +41,7 @@ public struct ToggleConverter {
             return DynamicBindingHelper.bool(
                 isOnExpr,
                 data: data,
-                fallback: attrs.isOn?.value ?? attrs.checked?.value ?? false
+                fallback: attrs.isOn?.value ?? attrs.checked?.value ?? attrs.value?.value ?? false
             ).wrappedValue
         }()
 
@@ -161,6 +165,17 @@ public struct ToggleConverter {
                     content: buildToggle
                 )
             )
+        }
+
+        // thumbTintColor — the knob, not the track. `.tint()` colours the
+        // track and SwiftUI exposes nothing for the knob, so this goes
+        // through UISwitch.appearance() at appear time — the same route the
+        // codegen takes (toggle_converter.rb apply_thumb_tint_color).
+        if let thumb = component.rawData["thumbTintColor"] as? String,
+           let color = DynamicHelpers.getColor(thumb) {
+            result = AnyView(result.onAppear {
+                UISwitch.appearance().thumbTintColor = UIColor(color)
+            })
         }
 
         // Standard modifiers
