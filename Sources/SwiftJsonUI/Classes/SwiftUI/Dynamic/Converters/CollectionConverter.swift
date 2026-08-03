@@ -171,6 +171,7 @@ public struct CollectionConverter {
             // insets/insetHorizontal/insetVertical active on android only.
             // scrollEnabled/scrollTo/defaultScrollAnchor are no-ops when
             // there is no scroll container.
+            result = applyContainerInset(result, component: component)
             result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
             return result
         }
@@ -296,9 +297,30 @@ public struct CollectionConverter {
         // 3. applyStandardModifiers() — insets included; the old skipInsets
         // claim ("Collection handles insets with spacers") was false.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.width)) height=\(String(describing: component.height)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
+        result = applyContainerInset(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
 
         return result
+    }
+
+    /// `containerInset` — container-level insets on the scroll content
+    /// (`.contentMargins(for: .scrollContent)`), the mapping sjui codegen
+    /// emits. The dynamic path never read the attribute — measured as
+    /// parity d=63 on Collection/containerInset__static. The decoder
+    /// expands a scalar to [v,v,v,v]; a 2-element array is [vertical,
+    /// horizontal], 4 is [top, leading, bottom, trailing].
+    private static func applyContainerInset(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let inset = component.containerInset else { return view }
+        let edges: EdgeInsets
+        switch inset.count {
+        case 2:
+            edges = EdgeInsets(top: inset[0], leading: inset[1], bottom: inset[0], trailing: inset[1])
+        case 4:
+            edges = EdgeInsets(top: inset[0], leading: inset[1], bottom: inset[2], trailing: inset[3])
+        default:
+            return view
+        }
+        return AnyView(view.contentMargins(.all, edges, for: .scrollContent))
     }
 
     // MARK: - Columns Resolution
