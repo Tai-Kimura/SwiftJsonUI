@@ -59,6 +59,12 @@ public struct CheckboxConverter {
             if let weight = component.fontWeight {
                 return DynamicHelpers.fontWeightFromString(weight)
             }
+            // 'font' carries the weight spelling on selection controls
+            // (kjui reads it the same way — 33 cross-effect: ios rendered
+            // the default weight for font: bold).
+            if let font = component.font {
+                return DynamicHelpers.fontWeightFromString(font)
+            }
             return nil
         }()
 

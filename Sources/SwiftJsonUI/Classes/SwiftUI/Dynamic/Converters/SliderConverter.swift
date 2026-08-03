@@ -49,7 +49,9 @@ public struct SliderConverter {
 
         // Tint color (.accentColor to match Ruby converter)
         if let tintColor = component.tintColor, let color = DynamicHelpers.getColor(tintColor) {
-            result = AnyView(result.accentColor(color))
+            // .tint is the modern accent path — .accentColor alone left the
+            // conformance render untinted (33 cross-effect, ios inert).
+            result = AnyView(result.tint(color).accentColor(color))
         }
 
         // Disabled state
