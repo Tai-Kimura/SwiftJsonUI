@@ -452,6 +452,21 @@ public struct DynamicDecodingHelper {
         }
     }
 
+    /// Positional contentModes (center/top/bottom/left/right): the image
+    /// draws UNSCALED, aligned inside the declared frame and cropped
+    /// (UIKit contentMode positions — 33 cross-effect measured both
+    /// mobile platforms dropping them to fit).
+    public static func positionalContentAlignment(_ mode: String?) -> Alignment? {
+        switch mode?.lowercased() {
+        case "center": return .center
+        case "top": return .top
+        case "bottom": return .bottom
+        case "left": return .leading
+        case "right": return .trailing
+        default: return nil
+        }
+    }
+
     /// fill/scaleToFill are the stretch (canonical image.fill = stretch,
     /// shared/core/attribute_semantics.json). SwiftUI's `ContentMode` has no
     /// stretch member — `.resizable()` WITHOUT an `.aspectRatio` modifier is
@@ -474,6 +489,14 @@ public struct DynamicDecodingHelper {
             return .fit
         case "center", "Center":
             return .center
+        case "top", "Top":
+            return .top
+        case "bottom", "Bottom":
+            return .bottom
+        case "left", "Left":
+            return .left
+        case "right", "Right":
+            return .right
         case "fill", "Fill", "scaleToFill", "ScaleToFill", "scaletofill":
             // fill = stretch (canonical image.fill = stretch).
             return .stretch

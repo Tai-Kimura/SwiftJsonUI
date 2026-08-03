@@ -71,6 +71,19 @@ public struct ImageViewConverter {
         var result: AnyView
         if DynamicDecodingHelper.isStretchContentMode(component.contentMode) {
             result = AnyView(renderedImage.resizable())
+        } else if let alignment = DynamicDecodingHelper.positionalContentAlignment(component.contentMode) {
+            // Positional: unscaled image, aligned in the declared frame,
+            // cropped — mirrors image_converter.rb.
+            if let w = component.width, w.isFinite,
+               let h = component.height, h.isFinite {
+                result = AnyView(
+                    renderedImage
+                        .frame(width: w, height: h, alignment: alignment)
+                        .clipped()
+                )
+            } else {
+                result = AnyView(renderedImage)
+            }
         } else {
             let contentMode = DynamicHelpers.getContentMode(from: component)
             result = AnyView(renderedImage.resizable().aspectRatio(contentMode: contentMode))
