@@ -74,9 +74,20 @@ public struct DynamicSafeAreaViewContainer: View {
                     )
                 )
             } else if orientation == "horizontal" {
+                // Gravity-driven spacers, same as DynamicViewContainer (and
+                // view_converter.rb): default gravity is left|top, so an
+                // expanding stack pins content to the leading/top edge with a
+                // trailing Spacer. Without them SwiftUI centered the stack —
+                // measured as SafeAreaView_orientation__* parity d=50/73.
                 let spacingValue = component.spacing ?? 0
+                let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
+                    component.width == .infinity || component.width == -1
+                let hGravity = Self.extractHorizontalFromGravity(component.gravity)
                 result = AnyView(
                     HStack(alignment: getVerticalAlignment(), spacing: spacingValue) {
+                        if widthExpands && hGravity == "right" {
+                            Spacer(minLength: 0)
+                        }
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                             DynamicComponentBuilder(
                                 component: child,
@@ -85,12 +96,21 @@ public struct DynamicSafeAreaViewContainer: View {
                                 parentOrientation: "horizontal"
                             )
                         }
+                        if widthExpands && hGravity == "left" {
+                            Spacer(minLength: 0)
+                        }
                     }
                 )
             } else if orientation == "vertical" {
                 let spacingValue = component.spacing ?? 0
+                let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
+                    component.height == .infinity || component.height == -1
+                let vGravity = Self.extractVerticalFromGravity(component.gravity)
                 result = AnyView(
                     VStack(alignment: getHorizontalAlignment(), spacing: spacingValue) {
+                        if heightExpands && vGravity == "bottom" {
+                            Spacer(minLength: 0)
+                        }
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                             DynamicComponentBuilder(
                                 component: child,
@@ -98,6 +118,9 @@ public struct DynamicSafeAreaViewContainer: View {
                                 viewId: viewId,
                                 parentOrientation: "vertical"
                             )
+                        }
+                        if heightExpands && vGravity == "top" {
+                            Spacer(minLength: 0)
                         }
                     }
                 )
@@ -160,6 +183,24 @@ public struct DynamicSafeAreaViewContainer: View {
         case .trailing, .topTrailing, .bottomTrailing: return .trailing
         default: return .center
         }
+    }
+
+    /// Matches Ruby extract_horizontal_from_gravity (default left).
+    static func extractHorizontalFromGravity(_ gravity: [String]?) -> String {
+        guard let parts = gravity, !parts.isEmpty else { return "left" }
+        if let h = parts.first(where: { ["left", "center", "right", "centerHorizontal"].contains($0) }) {
+            return h == "centerHorizontal" ? "center" : h
+        }
+        return "left"
+    }
+
+    /// Matches Ruby extract_vertical_from_gravity (default top).
+    static func extractVerticalFromGravity(_ gravity: [String]?) -> String {
+        guard let parts = gravity, !parts.isEmpty else { return "top" }
+        if let v = parts.first(where: { ["top", "center", "bottom", "centerVertical"].contains($0) }) {
+            return v == "centerVertical" ? "center" : v
+        }
+        return "top"
     }
 }
 // MARK: - Force re-evaluation when data dictionary changes
