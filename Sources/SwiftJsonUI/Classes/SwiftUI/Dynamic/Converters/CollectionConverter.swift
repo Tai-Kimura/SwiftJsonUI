@@ -65,8 +65,10 @@ public struct CollectionConverter {
             || attrs.horizontalScroll == true
         // Case-insensitive: the declared enum admits 'Flow' as well as
         // 'flow' (the static codegens compare casecmp since the F4-P2
-        // parity cycle).
-        let isFlow = component.layout?.lowercased() == "flow"
+        // parity cycle). 'leftAligned' is an alias spelling of flow (SSoT
+        // valueAliases, 2026-08-03 unification — the generated enum folds
+        // it the same way).
+        let isFlow = ["flow", "leftaligned"].contains(component.layout?.lowercased() ?? "")
         let hasSections = !sections.isEmpty
         // `columns` accepts a literal number or a `@{binding}` (canonical
         // kind: number | binding — the contract the static codegens already

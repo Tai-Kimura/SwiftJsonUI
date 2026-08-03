@@ -17,7 +17,6 @@ public struct CollectionAttributes {
         case vertical = "vertical"
         case horizontal = "horizontal"
         case flow = "flow"
-        case leftAligned = "LeftAligned"
     }
 
     public enum Lazy: String {
@@ -157,7 +156,7 @@ public struct CollectionAttributes {
     /// Enable keyboard avoidance
     public let keyboardAvoidance: Bool?
 
-    /// Layout type (flow: wrapping layout, LeftAligned: left-aligned wrapping)
+    /// Layout type (vertical | horizontal | flow — wrapping layout packed to the leading edge). Flow/LeftAligned/leftAligned are accepted alias spellings of flow (2026-08-03 unification ruling; the old 'left-aligned wrapping' distinction was a frozen-UIKit fossil — no modern path ever implemented it).
     public let layout: AttrEnum<Layout>?
 
     /// Outer container shape for the Collection (single-column section path uses CollectionStackView/CollectionStack). Accepts: 'lazy' (default) -> ScrollView+LazyVStack/LazyHStack on iOS, LazyColumn/LazyRow on Android, with virtualized cell rendering. 'eager' -> ScrollView+VStack/HStack on iOS, Column(verticalScroll)/Row(horizontalScroll) on Android — no virtualization, smooth scrolling for heavy cells (markdown / images / attributed text) that suffer from LazyVStack re-evaluation. 'none' -> VStack/HStack only, no scroll container, parent must already be scrollable. Bindings (@{prop}) are resolved at runtime via the wrapper's mode parameter so toggles preserve view identity. Sticky headers and paging require 'lazy'. [default: lazy]
@@ -268,8 +267,7 @@ public struct CollectionAttributes {
             switch s.lowercased() {
             case "vertical": return .known(Layout.vertical)
             case "horizontal": return .known(Layout.horizontal)
-            case "flow": return .known(Layout.flow)
-            case "leftaligned": return .known(Layout.leftAligned)
+            case "flow", "leftaligned": return .known(Layout.flow)
             default: break
             }
         }
