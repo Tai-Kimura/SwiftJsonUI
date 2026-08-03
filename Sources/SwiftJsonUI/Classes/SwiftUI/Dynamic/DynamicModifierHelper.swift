@@ -761,7 +761,7 @@ public struct DynamicModifierHelper {
     // → safeAreaInsets → disabled → tag → hitTesting → tintColor
     // → onClick → lifecycle → confirmationDialog → accessibilityId
 
-    public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false) -> AnyView {
+    public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false, skipBackground: Bool = false) -> AnyView {
         var result = view
 
         // 1. padding (skipped for relative positioning containers)
@@ -776,8 +776,11 @@ public struct DynamicModifierHelper {
         if !skipInsets {
             result = applyInsets(result, component: component)
         }
-        // 5. background
-        result = applyBackground(result, component: component, data: data)
+        // 5. background (skipped when the caller already painted it —
+        // an empty View renders Rectangle().fill, the codegen leaf contract)
+        if !skipBackground {
+            result = applyBackground(result, component: component, data: data)
+        }
         // 6. cornerRadius
         result = applyCornerRadius(result, component: component, data: data)
         // 7. border

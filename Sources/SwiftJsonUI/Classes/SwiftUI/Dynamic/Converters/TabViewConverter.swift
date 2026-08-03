@@ -35,6 +35,12 @@ public struct TabViewConverter {
             if hasSelectionBinding {
                 return DynamicBindingHelper.int(selectedIndexRaw, data: data)
             }
+            // The typed value carries the selectedTabIndex alias too — the
+            // legacy decode slot only ever saw the canonical spelling, so a
+            // literal alias opened tab 0.
+            if let literal = attrs.selectedIndex?.value {
+                return .constant(Int(literal))
+            }
             return .constant(component.selectedIndex ?? 0)
         }()
 

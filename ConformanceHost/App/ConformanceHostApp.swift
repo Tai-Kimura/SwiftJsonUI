@@ -168,6 +168,9 @@ struct FixtureScreen: View {
         appearance.selectedSegmentTintColor = nil
         appearance.setTitleTextAttributes(nil, for: .normal)
         appearance.setTitleTextAttributes(nil, for: .selected)
+        // UISwitch.appearance() leaks the same way: thumbTintColor set by a
+        // Switch colour fixture restyled every later switch's knob.
+        UISwitch.appearance().thumbTintColor = nil
     }
 
     var body: some View {
