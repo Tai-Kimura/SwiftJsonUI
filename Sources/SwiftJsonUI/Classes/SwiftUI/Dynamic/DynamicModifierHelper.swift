@@ -134,20 +134,29 @@ public struct DynamicModifierHelper {
             let _ = Logger.debug("[applyFrameSize] id=\(component.id ?? "?") width=\(String(describing: width)) height=\(String(describing: height)) isMatchW=\(isMatchParentWidth) isMatchH=\(isMatchParentHeight)")
         }
 
+        // matchParent clamps to a declared max bound (canonical
+        // size.maxBoundsClampFill, shared/core/attribute_semantics.json):
+        // the fill frame carries the bound itself — .frame(maxWidth: 120)
+        // IS min(parent, 120) — so no modifier-order game can lose it.
+        // (applyFrameConstraints deliberately skips max bounds on
+        // matchParent axes for the same reason.)
+        let fillMaxWidth = component.maxWidth ?? .infinity
+        let fillMaxHeight = component.maxHeight ?? .infinity
+
         if isMatchParentWidth && isMatchParentHeight {
             if let alignment = frameAlignment(for: component, bothAxes: true) {
-                result = AnyView(result.frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment))
+                result = AnyView(result.frame(maxWidth: fillMaxWidth, maxHeight: fillMaxHeight, alignment: alignment))
             } else {
-                result = AnyView(result.frame(maxWidth: .infinity, maxHeight: .infinity))
+                result = AnyView(result.frame(maxWidth: fillMaxWidth, maxHeight: fillMaxHeight))
             }
         } else if isMatchParentWidth {
             if let alignment = frameAlignment(for: component, bothAxes: false) {
-                result = AnyView(result.frame(maxWidth: .infinity, alignment: alignment))
+                result = AnyView(result.frame(maxWidth: fillMaxWidth, alignment: alignment))
             } else {
-                result = AnyView(result.frame(maxWidth: .infinity))
+                result = AnyView(result.frame(maxWidth: fillMaxWidth))
             }
         } else if isMatchParentHeight {
-            result = AnyView(result.frame(maxHeight: .infinity))
+            result = AnyView(result.frame(maxHeight: fillMaxHeight))
         }
 
         return result
