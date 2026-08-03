@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 2299153b0918038b2020d6effce4d51aef535c79
+      JSONUI_CLI_MANIFEST_REF: v1.4.0
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
