@@ -199,7 +199,11 @@ public struct RadioConverter {
     // selection, iconColor stays the single-colour override.
     private static func radioGlyph(component: DynamicComponent, selected: Bool) -> AnyView {
         let icon = component.icon
+        // 'selected_icon' is the declared snake alias (the generated kjui
+        // table resolves it; the ios decoder only knew the camel spelling —
+        // 33 cross-effect: ios rendered the default glyph).
         let selectedIcon = component.selectedIcon
+            ?? component.rawAttribute("selected_icon") as? String
         let size = component.iconSize
         let iconColor = component.iconColor.flatMap { DynamicHelpers.getColor($0) }
         let checked = component.checkedColor.flatMap { DynamicHelpers.getColor($0) }
