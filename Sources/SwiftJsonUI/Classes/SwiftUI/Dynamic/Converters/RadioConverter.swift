@@ -155,9 +155,15 @@ public struct RadioConverter {
             return nil
         }()
 
+        // A literal checked: true seeds the selection when no group state
+        // exists (33 cross-effect: both mobiles ignored it).
+        let literalChecked = (component.rawAttribute("checked") as? Bool) == true
+        let isGlyphSelected = groupSelectionBinding.wrappedValue == id ||
+            (literalChecked && groupSelectionBinding.wrappedValue.isEmpty)
+
         return AnyView(
             HStack {
-                radioGlyph(component: component, selected: groupSelectionBinding.wrappedValue == id)
+                radioGlyph(component: component, selected: isGlyphSelected)
 
                 if !text.isEmpty {
                     buildLabelText(text: text, font: labelFont, color: labelColor)

@@ -15,6 +15,12 @@ public struct IconLabelView: View {
     let iconSize: CGFloat
     let iconMargin: CGFloat
     let fontSize: CGFloat
+    // 'font: bold' carries the weight; textShadow the {color,blur,offset}
+    // object — both were dropped on the SwiftUI path (33 cross-effect).
+    var fontWeight: Font.Weight? = nil
+    var textShadowColor: Color? = nil
+    var textShadowRadius: CGFloat = 1
+    var textShadowOffset: CGSize = CGSize(width: 0, height: 1)
     let fontColor: Color
     let selectedFontColor: Color
     let fontName: String?
@@ -38,7 +44,11 @@ public struct IconLabelView: View {
         fontColor: Color = .primary,
         selectedFontColor: Color = .accentColor,
         fontName: String? = nil,
-        isSelected: Bool = false
+        isSelected: Bool = false,
+        fontWeight: Font.Weight? = nil,
+        textShadowColor: Color? = nil,
+        textShadowRadius: CGFloat = 1,
+        textShadowOffset: CGSize = CGSize(width: 0, height: 1)
     ) {
         self.text = text
         self.iconOn = iconOn
@@ -51,6 +61,10 @@ public struct IconLabelView: View {
         self.selectedFontColor = selectedFontColor
         self.fontName = fontName
         self.isSelected = isSelected
+        self.fontWeight = fontWeight
+        self.textShadowColor = textShadowColor
+        self.textShadowRadius = textShadowRadius
+        self.textShadowOffset = textShadowOffset
     }
     
     public var body: some View {
@@ -103,17 +117,32 @@ public struct IconLabelView: View {
     
     @ViewBuilder
     private var textView: some View {
-        Text(text)
+        let base = Text(text)
             .font(font)
             .foregroundColor(isSelected ? selectedFontColor : fontColor)
+        if let shadow = textShadowColor {
+            base.shadow(
+                color: shadow,
+                radius: textShadowRadius,
+                x: textShadowOffset.width,
+                y: textShadowOffset.height
+            )
+        } else {
+            base
+        }
     }
     
     private var font: Font {
+        let resolved: Font
         if let fontName = fontName {
-            return .custom(fontName, size: fontSize)
+            resolved = .custom(fontName, size: fontSize)
         } else {
-            return .system(size: fontSize)
+            resolved = .system(size: fontSize)
         }
+        if let weight = fontWeight {
+            return resolved.weight(weight)
+        }
+        return resolved
     }
 }
 
@@ -126,6 +155,12 @@ public struct IconLabelButton: View {
     let iconSize: CGFloat
     let iconMargin: CGFloat
     let fontSize: CGFloat
+    // 'font: bold' carries the weight; textShadow the {color,blur,offset}
+    // object — both were dropped on the SwiftUI path (33 cross-effect).
+    var fontWeight: Font.Weight? = nil
+    var textShadowColor: Color? = nil
+    var textShadowRadius: CGFloat = 1
+    var textShadowOffset: CGSize = CGSize(width: 0, height: 1)
     let fontColor: Color
     let selectedFontColor: Color
     let fontName: String?
