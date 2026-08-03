@@ -165,14 +165,15 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
             )
-            // Insets flow through applyInsets like every other component —
-            // the old skipInsets claim ("Collection handles insets with
-            // spacers") was false: no path here ever read them, measured as
-            // insets/insetHorizontal/insetVertical active on android only.
-            // scrollEnabled/scrollTo/defaultScrollAnchor are no-ops when
-            // there is no scroll container.
+            // Collection insets are CONTENT padding: applied to the content
+            // before frame/background so cells inset within the declared
+            // container, exactly what the sjui codegen emits. The generic
+            // applyInsets pads before background in the standard chain and
+            // GROWS the container instead (measured: d=134 on
+            // Collection/contentInsets__static) — hence skipInsets.
+            result = applyCollectionContentInsets(result, component: component)
             result = applyContainerInset(result, component: component)
-            result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
+            result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
             return result
         }
 
@@ -294,13 +295,42 @@ public struct CollectionConverter {
             }
         }
 
-        // 3. applyStandardModifiers() — insets included; the old skipInsets
-        // claim ("Collection handles insets with spacers") was false.
+        // 3. applyStandardModifiers() — insets excluded: Collection insets
+        // are content padding (see applyCollectionContentInsets), not the
+        // container-growing pre-background padding the generic chain applies.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.width)) height=\(String(describing: component.height)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
+        result = applyCollectionContentInsets(result, component: component)
         result = applyContainerInset(result, component: component)
-        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
+        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
         return result
+    }
+
+    /// insets / contentInsets / insetHorizontal / insetVertical as CONTENT
+    /// padding — applied to the collection content before frame/background
+    /// so cells inset within the declared container, mirroring the sjui
+    /// codegen (`apply_grid_padding`: `insets` wins over the declared
+    /// `contentInsets` alias, matching the UIKit runtime's order; the
+    /// scalar pair adds on top).
+    private static func applyCollectionContentInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
+        if let edges = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
+            ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) {
+            top += edges.top
+            leading += edges.leading
+            bottom += edges.bottom
+            trailing += edges.trailing
+        }
+        if let h = component.insetHorizontal {
+            leading += h
+            trailing += h
+        }
+        if let v = component.insetVertical {
+            top += v
+            bottom += v
+        }
+        guard top != 0 || leading != 0 || bottom != 0 || trailing != 0 else { return view }
+        return AnyView(view.padding(EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)))
     }
 
     /// `containerInset` — container-level insets on the scroll content

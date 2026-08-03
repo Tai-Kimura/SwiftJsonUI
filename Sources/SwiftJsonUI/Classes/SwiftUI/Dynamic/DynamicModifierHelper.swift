@@ -185,18 +185,12 @@ public struct DynamicModifierHelper {
         return result
     }
 
-    // MARK: - 4. Insets (insets, contentInsets, insetHorizontal, insetVertical)
+    // MARK: - 4. Insets (insets, insetHorizontal, insetVertical)
 
     public static func applyInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
         var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
 
-        // `contentInsets` is the declared alias of `insets` (UIKit's
-        // vocabulary); `insets` wins when both are present, matching the
-        // UIKit runtime and the sjui codegen fallback chain. Reading only
-        // `insets` here dropped contentInsets on the dynamic path —
-        // measured as parity d=63 on Collection/contentInsets__static.
-        if let insetInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
-            ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) {
+        if let insetInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets) {
             top += insetInsets.top
             leading += insetInsets.leading
             bottom += insetInsets.bottom
