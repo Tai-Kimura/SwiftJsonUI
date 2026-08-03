@@ -267,9 +267,27 @@ public struct DynamicModifierHelper {
 
     public static func applyMargins(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
         var result = view
-        let margins = DynamicHelpers.getMargins(from: component, data: data)
-        if margins.top != 0 || margins.leading != 0 || margins.bottom != 0 || margins.trailing != 0 {
-            result = AnyView(result.padding(margins))
+        // ZStack children get their individual margins as a full-margin
+        // offset from the parent container (DynamicViewContainer
+        // zStackContent, the codegen contract) — padding here on top of
+        // that double-applied them. The `margins` array is not part of the
+        // offset computation and keeps its padding on every path.
+        let offsetOwnsIndividuals = data["__zstackMarginChild"] as? Bool == true
+            && component.margins == nil
+        if !offsetOwnsIndividuals {
+            let margins = DynamicHelpers.getMargins(from: component, data: data)
+            if margins.top != 0 || margins.leading != 0 || margins.bottom != 0 || margins.trailing != 0 {
+                result = AnyView(result.padding(margins))
+            }
+        } else {
+            // start/endMargin are not consumed by the offset; keep their
+            // padding (re-derived alone, without the left/right fallback
+            // getMargins would apply).
+            let leading = DynamicDecodingHelper.marginValueToCGFloat(component.startMargin, data: data)
+            let trailing = DynamicDecodingHelper.marginValueToCGFloat(component.endMargin, data: data)
+            if leading != 0 || trailing != 0 {
+                result = AnyView(result.padding(EdgeInsets(top: 0, leading: leading, bottom: 0, trailing: trailing)))
+            }
         }
         return applyFlexibleMargins(result, component: component)
     }
