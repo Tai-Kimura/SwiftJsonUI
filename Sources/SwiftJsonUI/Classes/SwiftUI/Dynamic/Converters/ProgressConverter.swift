@@ -27,8 +27,9 @@ public struct ProgressConverter {
             if let expr = attrs.progress?.bindingExpression {
                 return DynamicBindingResolver.resolveDouble(expression: expr, data: data) ?? 0
             }
-            // Static value from decoded property
-            return component.progress ?? 0.5
+            // Static value from decoded property. Undeclared renders an EMPTY
+            // bar (see shared/core/attribute_semantics.json → progressValue).
+            return component.progress ?? 0
         }()
 
         // ProgressView
