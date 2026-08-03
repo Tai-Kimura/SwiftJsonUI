@@ -348,7 +348,18 @@ public struct DynamicModifierHelper {
     // MARK: - 10. Shadow
 
     public static func applyShadow(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        guard let shadow = component.shadow, let shadowDict = shadow.value as? [String: Any] else { return view }
+        guard let shadow = component.shadow else { return view }
+        // The declared STRING form ('color|offsetX|offsetY|opacity|radius')
+        // renders the default shadow, the same reduction sjui codegen and
+        // the android dynamic renderer apply — the object-only cast dropped
+        // it entirely (parity d=104 on common/shadow__static). Full pipe
+        // parsing across all four paths is a recorded follow-up.
+        guard let shadowDict = shadow.value as? [String: Any] else {
+            if shadow.value is String {
+                return AnyView(view.shadow(radius: 5))
+            }
+            return view
+        }
 
         let colorHex = shadowDict["color"] as? String ?? shadowDict["shadowColor"] as? String
         let radius = CGFloat(shadowDict["radius"] as? Double ?? shadowDict["shadowRadius"] as? Double ?? 5.0)
