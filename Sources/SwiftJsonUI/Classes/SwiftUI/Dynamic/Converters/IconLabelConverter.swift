@@ -23,8 +23,12 @@ public struct IconLabelConverter {
         viewId: String? = nil
     ) -> AnyView {
         let text = DynamicHelpers.processText(component.text, data: data).dynamicLocalized()
-        let iconOn = component.iconOn
-        let iconOff = component.iconOff
+        // The canonical keys are snake_case (`icon_on` / `icon_off`, the
+        // SSoT/UIKit spelling) — the legacy camelCase decode slots never
+        // matched them, so declared icons silently dropped.
+        let attrs = component.typedAttributes(IconLabelAttributes.self)
+        let iconOn = attrs.icon_on ?? component.iconOn
+        let iconOff = attrs.icon_off ?? component.iconOff
         let iconPosition = resolveIconPosition(component.iconPosition)
 
         // Optional parameters from JSON

@@ -33,7 +33,14 @@ public struct WebConverter {
             return nil
         }()
 
-        guard let resolvedUrl = urlString, let url = URL(string: resolvedUrl) else {
+        // `url` wins over `html`, matching web_converter.rb and the web
+        // platform's own precedence (iframe src over srcdoc).
+        let htmlString: String? = attrs.html.map {
+            DynamicHelpers.processText($0, data: data)
+        }
+
+        let url = urlString.flatMap { URL(string: $0) }
+        guard url != nil || htmlString != nil else {
             return AnyView(
                 Text("Invalid URL")
                     .foregroundColor(.gray)
@@ -50,8 +57,8 @@ public struct WebConverter {
             return nil
         }()
 
-        // 1. WebView(url:, backgroundColor:)
-        var result = AnyView(WebView(url: url, backgroundColor: bgColor))
+        // 1. WebView(url:, html:, backgroundColor:)
+        var result = AnyView(WebView(url: url, html: htmlString, backgroundColor: bgColor))
 
         // 2. applyStandardModifiers()
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)

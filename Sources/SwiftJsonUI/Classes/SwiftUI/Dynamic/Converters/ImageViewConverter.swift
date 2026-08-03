@@ -40,16 +40,32 @@ public struct ImageViewConverter {
             image = Image(srcName)
         } else if let src = component.src {
             let processedSrc = DynamicHelpers.processText(src, data: data)
-            image = Image(processedSrc)
+            // systemIcon reinterprets `src` as an SF Symbol name rather than
+            // an asset name — a different Image initializer, decided here
+            // (mirrors image_converter.rb).
+            if component.systemIcon == true {
+                image = Image(systemName: processedSrc)
+            } else {
+                image = Image(processedSrc)
+            }
         } else if let defaultImage = component.defaultImage {
             image = Image(defaultImage)
         } else {
             image = Image(systemName: "photo")
         }
 
-        // --- 3. .aspectRatio(contentMode:) ---
+        // --- 3. .renderingMode + .aspectRatio(contentMode:) ---
+        // renderingMode is an Image-level modifier: template tints via
+        // .foregroundColor/tint, original suppresses tinting (mirrors
+        // image_converter.rb, which emits it before .resizable()).
+        let renderedImage: Image
+        if let renderingMode = DynamicHelpers.getRenderingMode(from: component) {
+            renderedImage = image.renderingMode(renderingMode)
+        } else {
+            renderedImage = image
+        }
         let contentMode = DynamicHelpers.getContentMode(from: component)
-        var result = AnyView(image.resizable().aspectRatio(contentMode: contentMode))
+        var result = AnyView(renderedImage.resizable().aspectRatio(contentMode: contentMode))
 
         // --- 4. .clipShape(Circle()) for CircleImage ---
         if component.type?.lowercased() == "circleimage" {
