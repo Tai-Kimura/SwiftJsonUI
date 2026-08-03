@@ -60,6 +60,9 @@ public struct TabViewConverter {
 
         // Resolve tabBarBackground color
         let tabBarBackground: Color? = DynamicHelpers.getColor(component.tabBarBackground, data: data)
+        // unselectedColor was parsed but never read (33 cross-effect: ios
+        // rendered the default gray for a declared unselectedColor).
+        let unselectedColor: Color? = attrs.unselectedColor?.value.flatMap { DynamicHelpers.getColor($0, data: data) }
 
         // Resolve tab-change callback. onValueChange is the canonical
         // name; onTabChange / onPageChanged are the definitions aliases
@@ -77,6 +80,7 @@ public struct TabViewConverter {
                 tabItems: tabItems,
                 selectionBinding: selectionBinding,
                 tabBarBackground: tabBarBackground,
+                unselectedColor: unselectedColor,
                 onTabChangeCallback: onTabChangeCallback,
                 component: component,
                 data: data,
@@ -109,6 +113,7 @@ private struct TabViewWrapperView: View {
     let tabItems: [TabItemModel]
     @SwiftUI.Binding var selectedTab: Int
     let tabBarBackground: Color?
+    let unselectedColor: Color?
     let onTabChangeCallback: ((Int) -> Void)?
     let component: DynamicComponent
     let data: [String: Any]
@@ -118,6 +123,7 @@ private struct TabViewWrapperView: View {
         tabItems: [TabItemModel],
         selectionBinding: SwiftUI.Binding<Int>,
         tabBarBackground: Color?,
+        unselectedColor: Color? = nil,
         onTabChangeCallback: ((Int) -> Void)?,
         component: DynamicComponent,
         data: [String: Any],
@@ -126,6 +132,7 @@ private struct TabViewWrapperView: View {
         self.tabItems = tabItems
         self._selectedTab = selectionBinding
         self.tabBarBackground = tabBarBackground
+        self.unselectedColor = unselectedColor
         self.onTabChangeCallback = onTabChangeCallback
         self.component = component
         self.data = data
@@ -145,6 +152,19 @@ private struct TabViewWrapperView: View {
         // 2. .toolbarBackground() (tabBarBackground)
         // 3. .toolbarBackground(.visible)
         .applyTabBarBackground(tabBarBackground)
+        // 3b. UITabBar appearance — SwiftUI has no per-view unselected item
+        // color, and the SwiftUI toolbarBackground alone left the bar
+        // unstyled on the conformance render (33 cross-effect). The host
+        // resets UIKit appearances between fixtures (the
+        // UISegmentedControl.appearance precedent, ConformanceHost 7ab0f5f).
+        .onAppear {
+            if let unselected = unselectedColor {
+                UITabBar.appearance().unselectedItemTintColor = UIColor(unselected)
+            }
+            if let bg = tabBarBackground {
+                UITabBar.appearance().backgroundColor = UIColor(bg)
+            }
+        }
         // 4. .onChange(onTabChange)
         .onChange(of: selectedTab) { _, newValue in
             onTabChangeCallback?(newValue)
