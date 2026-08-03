@@ -36,8 +36,25 @@ public struct ProgressConverter {
             ProgressView(value: progressValue)
         )
 
-        // progressTintColor -> .tint()
-        if let progressTintColor = attrs.progressTintColor?.value,
+        // indicatorStyle — same vocabulary as Indicator (linear/circular); a
+        // determinate bar defaults to linear, so only apply when declared
+        // (mirrors progress_converter.rb).
+        let indicatorStyle = component.indicatorStyle ?? component.rawAttribute("style") as? String
+        if let style = indicatorStyle {
+            if style.lowercased() == "linear" {
+                result = AnyView(result.progressViewStyle(LinearProgressViewStyle()))
+            } else {
+                result = AnyView(result.progressViewStyle(CircularProgressViewStyle()))
+            }
+        }
+
+        // progressTintColor -> .tint() — `color` / `tintColor` are the
+        // Indicator/UIKit spellings of the same accent; the specific name
+        // wins (mirrors progress_converter.rb).
+        let tintSpelling = attrs.progressTintColor?.value
+            ?? component.rawAttribute("color") as? String
+            ?? component.tintColor
+        if let progressTintColor = tintSpelling,
            let color = DynamicHelpers.getColor(progressTintColor) {
             result = AnyView(result.tint(color))
         }

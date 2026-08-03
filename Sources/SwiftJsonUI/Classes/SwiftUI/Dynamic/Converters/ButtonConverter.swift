@@ -63,8 +63,17 @@ public struct ButtonConverter {
         }
 
         // Font properties
+        // `font` doubles as a weight spelling ("bold" etc.) — the codegen
+        // path resolves it through apply_font_modifiers; the explicit
+        // fontWeight wins when both are declared.
         let fontSize = component.fontSize
-        let fontWeight = component.fontWeight
+        let fontWeight = component.fontWeight ?? {
+            if let f = component.font,
+               ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black"].contains(f.lowercased()) {
+                return f
+            }
+            return nil
+        }()
 
         // Color properties
         let fontColor = DynamicHelpers.getColor(component.fontColor, data: data)

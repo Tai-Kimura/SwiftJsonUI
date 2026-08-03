@@ -193,6 +193,13 @@ public struct TextFieldConverter {
             result = AnyView(result.padding(.leading, textPaddingLeft))
         }
 
+        // --- 12. fieldPadding ---
+        // Uniform inner padding around the field content (codegen:
+        // textfield_converter.rb emits .padding(N) into the padding slot).
+        if let fieldPadding = component.fieldPadding {
+            result = AnyView(result.padding(fieldPadding))
+        }
+
         // --- 15. padding ---
         result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
@@ -299,6 +306,13 @@ public struct TextFieldConverter {
         // --- 11. textPaddingLeft ---
         if let textPaddingLeft = attrs.textPaddingLeft.map({ CGFloat($0) }) {
             result = AnyView(result.padding(.leading, textPaddingLeft))
+        }
+
+        // --- 12. fieldPadding ---
+        // Uniform inner padding around the field content (codegen:
+        // textfield_converter.rb emits .padding(N) into the padding slot).
+        if let fieldPadding = component.fieldPadding {
+            result = AnyView(result.padding(fieldPadding))
         }
 
         // --- 15. padding ---

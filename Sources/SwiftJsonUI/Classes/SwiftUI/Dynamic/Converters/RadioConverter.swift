@@ -100,8 +100,7 @@ public struct RadioConverter {
                 // Radio items
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                     HStack {
-                        Image(systemName: selectionBinding.wrappedValue == item ? "largecircle.fill.circle" : "circle")
-                            .foregroundColor(.blue)
+                        radioGlyph(component: component, selected: selectionBinding.wrappedValue == item)
                             .onTapGesture {
                                 selectionBinding.wrappedValue = item
                                 // onValueChange handler
@@ -158,8 +157,7 @@ public struct RadioConverter {
 
         return AnyView(
             HStack {
-                Image(systemName: groupSelectionBinding.wrappedValue == id ? "largecircle.fill.circle" : "circle")
-                    .foregroundColor(.blue)
+                radioGlyph(component: component, selected: groupSelectionBinding.wrappedValue == id)
 
                 if !text.isEmpty {
                     buildLabelText(text: text, font: labelFont, color: labelColor)
@@ -184,6 +182,51 @@ public struct RadioConverter {
     }
 
     // MARK: - Private helpers
+
+    // The radio glyph, mirroring the codegen contract (radio_converter.rb
+    // add_radio_icon_lines): `icon` / `selectedIcon` name asset images
+    // (on = selectedIcon ?? icon, off = icon ?? selectedIcon); without them
+    // the SF Symbol pair is used. `iconColor` replaces the hard-coded blue
+    // and reaches a custom asset only through template rendering. `iconSize`
+    // needs .resizable() because an SF Symbol otherwise scales with the font
+    // rather than the frame. checkedColor / uncheckedColor swap with the
+    // selection, iconColor stays the single-colour override.
+    private static func radioGlyph(component: DynamicComponent, selected: Bool) -> AnyView {
+        let icon = component.icon
+        let selectedIcon = component.selectedIcon
+        let size = component.iconSize
+        let iconColor = component.iconColor.flatMap { DynamicHelpers.getColor($0) }
+        let checked = component.checkedColor.flatMap { DynamicHelpers.getColor($0) }
+        let unchecked = component.uncheckedColor.flatMap { DynamicHelpers.getColor($0) }
+
+        let tint: Color
+        if checked != nil || unchecked != nil {
+            tint = selected ? (checked ?? iconColor ?? .blue) : (unchecked ?? iconColor ?? .gray)
+        } else {
+            tint = iconColor ?? .blue
+        }
+
+        if icon != nil || selectedIcon != nil {
+            let onName = selectedIcon ?? icon ?? ""
+            let offName = icon ?? selectedIcon ?? ""
+            var image = Image(selected ? onName : offName)
+            if iconColor != nil {
+                image = image.renderingMode(.template)
+            }
+            var view = AnyView(image.resizable().aspectRatio(contentMode: .fit))
+            if let size {
+                view = AnyView(view.frame(width: size, height: size))
+            }
+            return AnyView(view.foregroundColor(tint))
+        }
+
+        let image = Image(systemName: selected ? "largecircle.fill.circle" : "circle")
+        var view = AnyView(image)
+        if let size {
+            view = AnyView(image.resizable().aspectRatio(contentMode: .fit).frame(width: size, height: size))
+        }
+        return AnyView(view.foregroundColor(tint))
+    }
 
     @ViewBuilder
     private static func buildTitleText(text: String, font: Font?, color: Color?) -> some View {

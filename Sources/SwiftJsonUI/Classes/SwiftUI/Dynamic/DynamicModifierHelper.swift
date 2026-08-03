@@ -104,9 +104,21 @@ public struct DynamicModifierHelper {
             // When both dimensions are fixed, apply gravity-based alignment so a
             // frame larger than its content honors gravity (matches frame_helper.rb:
             // .frame(width:, height:, alignment: gravity_to_frame_alignment)).
+            let typeStr = component.type?.lowercased() ?? ""
+            let isTextComponent = ["label", "text"].contains(typeStr)
+            let hasDeclaredTextFrameAlign = isTextComponent &&
+                (component.textAlign != nil || component.gravity != nil)
             if fixedWidth != nil && fixedHeight != nil,
                let alignment = frameAlignment(for: component, bothAxes: true) {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
+            } else if fixedWidth != nil, fixedHeight == nil, hasDeclaredTextFrameAlign,
+                      let alignment = frameAlignment(for: component, bothAxes: false) {
+                // Fixed width + wrapContent height on a text component honors
+                // declared textAlign / gravity — frame_helper.rb's width-only
+                // branch emits the alignment only when one of them is
+                // declared, so a bare width stays at SwiftUI's implicit
+                // center.
+                result = AnyView(result.frame(width: fixedWidth, alignment: alignment))
             } else {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight))
             }
@@ -255,6 +267,11 @@ public struct DynamicModifierHelper {
         let common = component.typedAttributes(CommonAttributes.self)
         guard let borderWidth = DynamicHelpers.resolveNumber(common.borderWidth, legacy: component.borderWidth, data: data),
               borderWidth > 0 else { return view }
+        // Both attributes are required to draw: borderWidth alone means no
+        // border (the canonical cross-platform semantics — android draws
+        // nothing either). A declared-but-unresolvable color still falls
+        // back to gray rather than silently dropping a declared border.
+        guard component.borderColor != nil else { return view }
         let borderColor = DynamicHelpers.getColor(component.borderColor, data: data) ?? .gray
         let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data) ?? 0
         return AnyView(view.overlay(
@@ -367,28 +384,40 @@ public struct DynamicModifierHelper {
 
     public static func applyShadow(_ view: AnyView, component: DynamicComponent) -> AnyView {
         guard let shadow = component.shadow else { return view }
-        // The declared STRING form ('color|offsetX|offsetY|opacity|radius')
-        // renders the default shadow, the same reduction sjui codegen and
-        // the android dynamic renderer apply — the object-only cast dropped
-        // it entirely (parity d=104 on common/shadow__static). Full pipe
-        // parsing across all four paths is a recorded follow-up.
+        // The declared STRING form is the UIKit pipe contract
+        // 'color|offsetX|offsetY|opacity|radius' — exactly five fields;
+        // anything else draws nothing (SJUIViewCreator's count == 5 guard,
+        // the canonical semantics all four render paths share).
         guard let shadowDict = shadow.value as? [String: Any] else {
-            if shadow.value is String {
-                return AnyView(view.shadow(radius: 5))
+            if let pipe = shadow.value as? String {
+                let parts = pipe.components(separatedBy: "|")
+                if parts.count == 5,
+                   let color = DynamicHelpers.getColor(parts[0]),
+                   let x = Double(parts[1]), let y = Double(parts[2]),
+                   let opacity = Double(parts[3]), let radius = Double(parts[4]) {
+                    return AnyView(view.shadow(
+                        color: color.opacity(opacity),
+                        radius: CGFloat(radius), x: CGFloat(x), y: CGFloat(y)
+                    ))
+                }
             }
             return view
         }
 
+        // Object form mirrors sjui codegen (build_shadow_modifier): no
+        // declared opacity leaves the colour at full strength, and no
+        // declared colour falls through to SwiftUI's default shadow colour.
         let colorHex = shadowDict["color"] as? String ?? shadowDict["shadowColor"] as? String
         let radius = CGFloat(shadowDict["radius"] as? Double ?? shadowDict["shadowRadius"] as? Double ?? 5.0)
         let offsetX = CGFloat(shadowDict["offsetX"] as? Double ?? shadowDict["shadowOffsetX"] as? Double ?? 0.0)
         let offsetY = CGFloat(shadowDict["offsetY"] as? Double ?? shadowDict["shadowOffsetY"] as? Double ?? 0.0)
-        let opacity = shadowDict["opacity"] as? Double ?? shadowDict["shadowOpacity"] as? Double ?? 0.3
+        let opacity = shadowDict["opacity"] as? Double ?? shadowDict["shadowOpacity"] as? Double
 
         if let hex = colorHex, let color = DynamicHelpers.getColor(hex) {
-            return AnyView(view.shadow(color: color.opacity(opacity), radius: radius, x: offsetX, y: offsetY))
+            let resolved = opacity.map { color.opacity($0) } ?? color
+            return AnyView(view.shadow(color: resolved, radius: radius, x: offsetX, y: offsetY))
         }
-        return AnyView(view.shadow(color: Color.black.opacity(opacity), radius: radius, x: offsetX, y: offsetY))
+        return AnyView(view.shadow(radius: radius, x: offsetX, y: offsetY))
     }
 
     // MARK: - 11. Clipped
@@ -405,6 +434,28 @@ public struct DynamicModifierHelper {
         let y = component.rawData["offsetY"] as? CGFloat ?? 0
         if x != 0 || y != 0 {
             return AnyView(view.offset(x: x, y: y))
+        }
+        return view
+    }
+
+    // MARK: - 12b. zIndex (indexBelow / indexAbove)
+
+    public static func applyZIndex(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        // Mirrors base_view_converter.rb: a numeric value becomes ∓N, a
+        // view-ID reference degrades to ∓1 (SwiftUI has no relative z-order
+        // between named siblings, only zIndex).
+        func magnitude(_ raw: Any) -> Double {
+            if let n = raw as? NSNumber { return n.doubleValue }
+            if let s = raw as? String, let n = Double(s), s.range(of: #"^\d+$"#, options: .regularExpression) != nil {
+                return n
+            }
+            return 1
+        }
+        if let below = component.rawData["indexBelow"] {
+            return AnyView(view.zIndex(-magnitude(below)))
+        }
+        if let above = component.rawData["indexAbove"] {
+            return AnyView(view.zIndex(magnitude(above)))
         }
         return view
     }
@@ -741,6 +792,8 @@ public struct DynamicModifierHelper {
         result = applyClipped(result, component: component)
         // 12. offset
         result = applyOffset(result, component: component)
+        // 12b. zIndex (indexBelow / indexAbove)
+        result = applyZIndex(result, component: component)
         // 13. hidden
         result = applyHidden(result, component: component, data: data)
         // 14. disabled
@@ -781,10 +834,10 @@ public struct DynamicModifierHelper {
 
         if isTextComponent {
             // Match frame_helper.rb: Label/Text use textAlign for frame alignment
-            switch component.textAlign {
+            switch component.textAlign?.lowercased() {
             case "center":
                 return bothAxes ? .center : .center
-            case "right":
+            case "right", "trailing":
                 return bothAxes ? .topTrailing : .trailing
             default:
                 return bothAxes ? .topLeading : .leading
