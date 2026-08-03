@@ -36,7 +36,9 @@ public struct CheckboxConverter {
 
         // Label text (supports binding)
         let labelText: String = {
-            let raw = component.text ?? component.label ?? ""
+            // 'label' is the CheckBox-specific spelling and wins over the
+            // generic text (kjui order — 33 adjudication).
+            let raw = component.label ?? component.text ?? ""
             return DynamicHelpers.processText(raw, data: data).dynamicLocalized()
         }()
 
