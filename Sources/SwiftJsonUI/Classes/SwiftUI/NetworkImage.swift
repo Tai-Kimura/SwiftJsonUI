@@ -203,6 +203,12 @@ public struct NetworkImage: View {
         /// shared/core/attribute_semantics.json): resizable without an
         /// aspectRatio modifier — SwiftUI has no stretch ContentMode member.
         case stretch
+        // Positional modes: the image draws UNSCALED, aligned inside the
+        // available frame and cropped (UIKit contentMode positions).
+        case top
+        case bottom
+        case left
+        case right
     }
 
     public init(
@@ -232,26 +238,14 @@ public struct NetworkImage: View {
     public var body: some View {
         Group {
             if let image = loader.loadedImage {
-                Image(uiImage: image)
-                    .resizable()
-                    .renderingMode(renderingMode)
-                    .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                styledImage(Image(uiImage: image))
             } else if loader.isLoading {
                 if let loadingImage = loadingImage {
-                    Image(loadingImage)
-                        .resizable()
-                        .renderingMode(renderingMode)
-                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                    styledImage(Image(loadingImage))
                 } else if let placeholder = placeholder {
-                    Image(placeholder)
-                        .resizable()
-                        .renderingMode(renderingMode)
-                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                    styledImage(Image(placeholder))
                 } else if let defaultImage = defaultImage {
-                    Image(defaultImage)
-                        .resizable()
-                        .renderingMode(renderingMode)
-                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                    styledImage(Image(defaultImage))
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -261,21 +255,12 @@ public struct NetworkImage: View {
                     loader.retry(url: url, headers: headers)
                 } label: {
                     if let errorImage = errorImage {
-                        Image(errorImage)
-                            .resizable()
-                            .renderingMode(renderingMode)
-                            .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                        styledImage(Image(errorImage))
                     } else if let defaultImage = defaultImage {
                         // error falls back to defaultImage (canonical chain).
-                        Image(defaultImage)
-                            .resizable()
-                            .renderingMode(renderingMode)
-                            .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                        styledImage(Image(defaultImage))
                     } else if let placeholder = placeholder {
-                        Image(placeholder)
-                            .resizable()
-                            .renderingMode(renderingMode)
-                            .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                        styledImage(Image(placeholder))
                     } else {
                         VStack(spacing: 4) {
                             Image(systemName: "arrow.clockwise")
@@ -291,15 +276,9 @@ public struct NetworkImage: View {
                 // No src at all: defaultImage first (canonical
                 // networkImage.noSrc = defaultImage), then placeholder.
                 if let defaultImage = defaultImage {
-                    Image(defaultImage)
-                        .resizable()
-                        .renderingMode(renderingMode)
-                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                    styledImage(Image(defaultImage))
                 } else if let placeholder = placeholder {
-                    Image(placeholder)
-                        .resizable()
-                        .renderingMode(renderingMode)
-                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                    styledImage(Image(placeholder))
                 } else {
                     Color.clear
                 }
@@ -333,11 +312,44 @@ public struct NetworkImage: View {
             return .fit
         case .fill:
             return .fill
-        case .center:
-            return .fit
-        case .stretch:
-            // nil = no aspectRatio modifier; .resizable() alone stretches.
+        case .stretch, .center, .top, .bottom, .left, .right:
+            // nil = no aspectRatio modifier (stretch), or a positional mode
+            // handled by styledImage's unscaled-aligned branch.
             return nil
+        }
+    }
+
+    /// Alignment for the positional modes; nil for the scaling ones.
+    private var positionalAlignment: Alignment? {
+        switch contentMode {
+        case .center: return .center
+        case .top: return .top
+        case .bottom: return .bottom
+        case .left: return .leading
+        case .right: return .trailing
+        default: return nil
+        }
+    }
+
+    /// One image-styling path for every state branch: positional modes are
+    /// unscaled + aligned + clipped; scaling modes are resizable with or
+    /// without an aspect ratio (nil aspect = the stretch spelling).
+    @ViewBuilder
+    private func styledImage(_ img: Image) -> some View {
+        if let alignment = positionalAlignment {
+            img
+                .renderingMode(renderingMode)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
+                .clipped()
+        } else if let mode = contentModeToSwiftUI() {
+            img
+                .resizable()
+                .renderingMode(renderingMode)
+                .aspectRatio(contentMode: mode)
+        } else {
+            img
+                .resizable()
+                .renderingMode(renderingMode)
         }
     }
 }
