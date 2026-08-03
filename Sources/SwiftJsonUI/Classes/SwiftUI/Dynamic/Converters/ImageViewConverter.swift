@@ -64,8 +64,17 @@ public struct ImageViewConverter {
         } else {
             renderedImage = image
         }
-        let contentMode = DynamicHelpers.getContentMode(from: component)
-        var result = AnyView(renderedImage.resizable().aspectRatio(contentMode: contentMode))
+        // fill/scaleToFill are the stretch (canonical image.fill = stretch,
+        // shared/core/attribute_semantics.json): resizable WITHOUT an
+        // aspectRatio modifier fills the frame on both axes — the same
+        // branch image_converter.rb emits.
+        var result: AnyView
+        if DynamicDecodingHelper.isStretchContentMode(component.contentMode) {
+            result = AnyView(renderedImage.resizable())
+        } else {
+            let contentMode = DynamicHelpers.getContentMode(from: component)
+            result = AnyView(renderedImage.resizable().aspectRatio(contentMode: contentMode))
+        }
 
         // --- 4. .clipShape(Circle()) for CircleImage ---
         if component.type?.lowercased() == "circleimage" {

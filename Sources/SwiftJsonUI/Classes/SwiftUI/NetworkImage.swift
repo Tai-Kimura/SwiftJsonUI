@@ -199,6 +199,10 @@ public struct NetworkImage: View {
         case fit
         case fill
         case center
+        /// fill = stretch (canonical image.fill = stretch,
+        /// shared/core/attribute_semantics.json): resizable without an
+        /// aspectRatio modifier — SwiftUI has no stretch ContentMode member.
+        case stretch
     }
 
     public init(
@@ -212,7 +216,11 @@ public struct NetworkImage: View {
         headers: [String: String] = [:]
     ) {
         self.url = url
-        self.placeholder = placeholder ?? defaultImage
+        // Kept distinct from defaultImage: the no-src state shows
+        // defaultImage FIRST (canonical networkImage.noSrc = defaultImage,
+        // shared/core/attribute_semantics.json); placeholder belongs to the
+        // loading state.
+        self.placeholder = placeholder
         self.defaultImage = defaultImage
         self.errorImage = errorImage
         self.loadingImage = loadingImage
@@ -227,18 +235,23 @@ public struct NetworkImage: View {
                 Image(uiImage: image)
                     .resizable()
                     .renderingMode(renderingMode)
-                    .aspectRatio(contentMode: contentModeToSwiftUI())
+                    .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
             } else if loader.isLoading {
                 if let loadingImage = loadingImage {
                     Image(loadingImage)
                         .resizable()
                         .renderingMode(renderingMode)
-                        .aspectRatio(contentMode: contentModeToSwiftUI())
+                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
                 } else if let placeholder = placeholder {
                     Image(placeholder)
                         .resizable()
                         .renderingMode(renderingMode)
-                        .aspectRatio(contentMode: contentModeToSwiftUI())
+                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                } else if let defaultImage = defaultImage {
+                    Image(defaultImage)
+                        .resizable()
+                        .renderingMode(renderingMode)
+                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -251,12 +264,18 @@ public struct NetworkImage: View {
                         Image(errorImage)
                             .resizable()
                             .renderingMode(renderingMode)
-                            .aspectRatio(contentMode: contentModeToSwiftUI())
+                            .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                    } else if let defaultImage = defaultImage {
+                        // error falls back to defaultImage (canonical chain).
+                        Image(defaultImage)
+                            .resizable()
+                            .renderingMode(renderingMode)
+                            .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
                     } else if let placeholder = placeholder {
                         Image(placeholder)
                             .resizable()
                             .renderingMode(renderingMode)
-                            .aspectRatio(contentMode: contentModeToSwiftUI())
+                            .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
                     } else {
                         VStack(spacing: 4) {
                             Image(systemName: "arrow.clockwise")
@@ -269,11 +288,18 @@ public struct NetworkImage: View {
                 }
                 .buttonStyle(.plain)
             } else {
-                if let placeholder = placeholder {
+                // No src at all: defaultImage first (canonical
+                // networkImage.noSrc = defaultImage), then placeholder.
+                if let defaultImage = defaultImage {
+                    Image(defaultImage)
+                        .resizable()
+                        .renderingMode(renderingMode)
+                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
+                } else if let placeholder = placeholder {
                     Image(placeholder)
                         .resizable()
                         .renderingMode(renderingMode)
-                        .aspectRatio(contentMode: contentModeToSwiftUI())
+                        .modifier(AspectRatioIfPresent(mode: contentModeToSwiftUI()))
                 } else {
                     Color.clear
                 }
@@ -287,7 +313,21 @@ public struct NetworkImage: View {
         }
     }
 
-    private func contentModeToSwiftUI() -> SwiftUI.ContentMode {
+    /// Applies `.aspectRatio` only when a SwiftUI ContentMode exists —
+    /// `.stretch` deliberately has none (absence of the modifier IS the
+    /// stretch spelling).
+    private struct AspectRatioIfPresent: ViewModifier {
+        let mode: SwiftUI.ContentMode?
+        func body(content: Content) -> some View {
+            if let mode = mode {
+                content.aspectRatio(contentMode: mode)
+            } else {
+                content
+            }
+        }
+    }
+
+    private func contentModeToSwiftUI() -> SwiftUI.ContentMode? {
         switch contentMode {
         case .fit:
             return .fit
@@ -295,6 +335,9 @@ public struct NetworkImage: View {
             return .fill
         case .center:
             return .fit
+        case .stretch:
+            // nil = no aspectRatio modifier; .resizable() alone stretches.
+            return nil
         }
     }
 }

@@ -452,6 +452,19 @@ public struct DynamicDecodingHelper {
         }
     }
 
+    /// fill/scaleToFill are the stretch (canonical image.fill = stretch,
+    /// shared/core/attribute_semantics.json). SwiftUI's `ContentMode` has no
+    /// stretch member — `.resizable()` WITHOUT an `.aspectRatio` modifier is
+    /// the spelling, so converters branch on this before `toContentMode`.
+    public static func isStretchContentMode(_ mode: String?) -> Bool {
+        switch mode?.lowercased() {
+        case "fill", "scaletofill":
+            return true
+        default:
+            return false
+        }
+    }
+
     /// Convert content mode string to NetworkImage.ContentMode
     public static func toNetworkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
         switch mode {
@@ -461,6 +474,9 @@ public struct DynamicDecodingHelper {
             return .fit
         case "center", "Center":
             return .center
+        case "fill", "Fill", "scaleToFill", "ScaleToFill", "scaletofill":
+            // fill = stretch (canonical image.fill = stretch).
+            return .stretch
         default:
             return .fit
         }

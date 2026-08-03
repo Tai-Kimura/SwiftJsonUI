@@ -164,8 +164,16 @@ public struct TextViewConverter {
         // flexible
         let flexible = component.flexible ?? false
 
-        // minHeight / maxHeight
-        let minHeight = component.minHeight
+        // minHeight / maxHeight. Under flexible the declared height is the
+        // GROWTH FLOOR (canonical textView.flexibleHeight, shared/core/
+        // attribute_semantics.json): min = minHeight ?? height — the view
+        // grows past it and never shrinks below it (android is the
+        // reference; matchParent/.infinity and wrapContent/nil don't
+        // participate).
+        let declaredHeight = component.height.flatMap { $0.isFinite ? $0 : nil }
+        let minHeight = flexible
+            ? (component.minHeight ?? declaredHeight)
+            : component.minHeight
         let maxHeight = component.maxHeight
 
         var result = AnyView(
