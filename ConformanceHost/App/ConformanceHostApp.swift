@@ -156,6 +156,18 @@ struct FixtureScreen: View {
     init(fixtureId: String) {
         self.fixtureId = fixtureId
         _state = StateObject(wrappedValue: ConformanceStateStore(fixtureId: fixtureId))
+        // UISegmentedControl.appearance() is process-wide: a fixture that
+        // declares segment colours restyles every later fixture's segments
+        // (both render paths reach through .appearance(), see
+        // segment_converter.rb), which made the Segment measurements
+        // order-dependent — the normalColor screenshot carried a selected
+        // pill tint leaked from a colour fixture rendered earlier in the
+        // batch. Reset before each fixture so declared colours are the only
+        // ones on screen.
+        let appearance = UISegmentedControl.appearance()
+        appearance.selectedSegmentTintColor = nil
+        appearance.setTitleTextAttributes(nil, for: .normal)
+        appearance.setTitleTextAttributes(nil, for: .selected)
     }
 
     var body: some View {
