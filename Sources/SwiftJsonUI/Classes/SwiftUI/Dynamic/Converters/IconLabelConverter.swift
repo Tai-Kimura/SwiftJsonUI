@@ -38,6 +38,26 @@ public struct IconLabelConverter {
         let fontColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
         let selectedFontColor = DynamicHelpers.getColor(component.selectedFontColor) ?? .accentColor
         let fontName = (component.font != nil && component.font != "bold") ? component.font : nil
+        // 'font: bold' is the weight spelling; textShadow the shadow object
+        // (33 cross-effect: ios rendered default weight and no shadow).
+        let fontWeight: Font.Weight? = component.font == "bold" ? .bold : nil
+        var shadowColor: Color? = nil
+        var shadowRadius: CGFloat = 1
+        var shadowOffset = CGSize(width: 0, height: 1)
+        if let shadow = component.rawAttribute("textShadow") as? [String: Any] {
+            shadowColor = (shadow["color"] as? String).flatMap { DynamicHelpers.getColor($0) }
+                ?? Color.black.opacity(0.3)
+            if let blur = shadow["blur"] as? Double { shadowRadius = CGFloat(blur) }
+            else if let blur = shadow["blur"] as? Int { shadowRadius = CGFloat(blur) }
+            if let off = shadow["offset"] as? [Any], off.count >= 2 {
+                let x = (off[0] as? Double) ?? Double(off[0] as? Int ?? 0)
+                let y = (off[1] as? Double) ?? Double(off[1] as? Int ?? 1)
+                shadowOffset = CGSize(width: x, height: y)
+            }
+        } else if let shadowName = component.rawAttribute("textShadow") as? String,
+                  let color = DynamicHelpers.getColor(shadowName) {
+            shadowColor = color
+        }
 
         // Determine if it's a button (has onClick)
         let hasAction = component.onClick != nil
@@ -78,7 +98,11 @@ public struct IconLabelConverter {
                     fontColor: fontColor,
                     selectedFontColor: selectedFontColor,
                     fontName: fontName,
-                    isSelected: isSelected
+                    isSelected: isSelected,
+                    fontWeight: fontWeight,
+                    textShadowColor: shadowColor,
+                    textShadowRadius: shadowRadius,
+                    textShadowOffset: shadowOffset
                 )
             )
         }

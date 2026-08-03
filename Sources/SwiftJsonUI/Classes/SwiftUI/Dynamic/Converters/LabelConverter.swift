@@ -194,6 +194,27 @@ public struct LabelConverter {
         // --- 10. cornerRadius ---
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
+        // --- 10b. textShadow — { color:, blur:, offset: [x, y] } (or a bare
+        // color string, UIKit default 1pt blur). Mirrors label_converter.rb
+        // apply_text_shadow; the dynamic path never read it (33 cross-effect:
+        // ios rendered flat for a declared shadow).
+        if let shadow = component.rawAttribute("textShadow") {
+            if let colorName = shadow as? String,
+               let color = DynamicHelpers.getColor(colorName) {
+                result = AnyView(result.shadow(color: color, radius: 1, x: 0, y: 1))
+            } else if let dict = shadow as? [String: Any] {
+                let color = (dict["color"] as? String).flatMap { DynamicHelpers.getColor($0) }
+                    ?? Color.black.opacity(0.3)
+                let blur = (dict["blur"] as? Double) ?? (dict["blur"] as? Int).map(Double.init) ?? 1
+                var x: Double = 0, y: Double = 1
+                if let offset = dict["offset"] as? [Any], offset.count >= 2 {
+                    x = (offset[0] as? Double) ?? (offset[0] as? Int).map(Double.init) ?? 0
+                    y = (offset[1] as? Double) ?? (offset[1] as? Int).map(Double.init) ?? 1
+                }
+                result = AnyView(result.shadow(color: color, radius: blur, x: x, y: y))
+            }
+        }
+
         // --- 11. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 

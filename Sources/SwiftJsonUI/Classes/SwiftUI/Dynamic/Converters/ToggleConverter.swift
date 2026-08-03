@@ -167,6 +167,16 @@ public struct ToggleConverter {
             )
         }
 
+        // onTintColor — the ON-state track (UISwitch heritage). `.tint()`
+        // is the SwiftUI spelling; it only shows when the switch is on
+        // (33 cross-effect: ios rendered the default green for a declared
+        // onTintColor on an ON switch).
+        if let onTint = component.rawData["onTintColor"] as? String
+            ?? component.rawData["tint"] as? String,
+           let trackColor = DynamicHelpers.getColor(onTint) {
+            result = AnyView(result.tint(trackColor))
+        }
+
         // thumbTintColor — the knob, not the track. `.tint()` colours the
         // track and SwiftUI exposes nothing for the knob, so this goes
         // through UISwitch.appearance() at appear time — the same route the
