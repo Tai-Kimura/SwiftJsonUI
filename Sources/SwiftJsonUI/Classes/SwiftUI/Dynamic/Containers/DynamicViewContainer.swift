@@ -224,12 +224,47 @@ public struct DynamicViewContainer: View {
 
     @ViewBuilder
     private func zStackContent(children: [DynamicComponent]) -> some View {
+        // Frame-context margins: individual left/right/top/bottomMargin on a
+        // ZStack child are a full-margin OFFSET (the codegen contract —
+        // apply_zstack_positioning), not padding. Padding around the child
+        // half-shifts inside a center-aligned frame (measured d up to 143 on
+        // the common margin fixtures); the offset moves the child by exactly
+        // the declared margin in every context. The child's own padding pass
+        // is suppressed via __zstackMarginChild; center* declarations reset
+        // the matching axis, same as the codegen helper.
         ZStack(alignment: component.alignment ?? .topLeading) {
             ForEach(Array(children.enumerated()), id: \.offset) { _, child in
-                DynamicComponentBuilder(component: child, data: childData, viewId: viewId)
+                DynamicComponentBuilder(
+                    component: child,
+                    data: zstackChildData,
+                    viewId: viewId
+                )
+                .offset(zstackMarginOffset(for: child))
             }
         }
         .modifier(SafeAreaModifier(component: component))
+    }
+
+    private var zstackChildData: [String: Any] {
+        var d = childData
+        d["__zstackMarginChild"] = true
+        return d
+    }
+
+    private func zstackMarginOffset(for child: DynamicComponent) -> CGSize {
+        guard child.margins == nil else { return .zero }
+        let left = DynamicDecodingHelper.marginValueToCGFloat(child.leftMargin, data: childData)
+        let right = DynamicDecodingHelper.marginValueToCGFloat(child.rightMargin, data: childData)
+        let top = DynamicDecodingHelper.marginValueToCGFloat(child.topMargin, data: childData)
+        let bottom = DynamicDecodingHelper.marginValueToCGFloat(child.bottomMargin, data: childData)
+        var x = left - right
+        var y = top - bottom
+        if child.centerInParent == true {
+            return .zero
+        }
+        if child.centerHorizontal == true { x = 0 }
+        if child.centerVertical == true { y = 0 }
+        return CGSize(width: x, height: y)
     }
 
     // MARK: - Gradient
