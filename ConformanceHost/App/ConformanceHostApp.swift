@@ -171,6 +171,11 @@ struct FixtureScreen: View {
         // UISwitch.appearance() leaks the same way: thumbTintColor set by a
         // Switch colour fixture restyled every later switch's knob.
         UISwitch.appearance().thumbTintColor = nil
+        // UITabBar.appearance() too: tabBarBackground goes through the proxy
+        // (TabViewConverter), so a background fixture painted every later
+        // tab bar — showLabels measured against a leaked red bar (32 parity).
+        UITabBar.appearance().backgroundColor = nil
+        UITabBar.appearance().unselectedItemTintColor = nil
     }
 
     var body: some View {
