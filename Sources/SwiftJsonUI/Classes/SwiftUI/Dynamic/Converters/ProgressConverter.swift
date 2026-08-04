@@ -53,7 +53,7 @@ public struct ProgressConverter {
         // Indicator/UIKit spellings of the same accent; the specific name
         // wins (mirrors progress_converter.rb).
         let tintSpelling = attrs.progressTintColor?.value
-            ?? component.rawAttribute("color") as? String
+            ?? attrs.color
             ?? component.tintColor
         if let progressTintColor = tintSpelling,
            let color = DynamicHelpers.getColor(progressTintColor) {

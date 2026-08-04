@@ -44,6 +44,11 @@ ALLOWED_RAW_KEYS=(
     selectedTabIndex
     selectedValue
     startPoint
+    # `style` is the Indicator-era spelling of `indicatorStyle` and is
+    # UNDECLARED in the SSoT — there is no typed slot to read it from, so the
+    # raw passthrough is the only honest route. Undeclared legacy key, like
+    # `action` and `animating` above.
+    style
     toggleStyle
 )
 
