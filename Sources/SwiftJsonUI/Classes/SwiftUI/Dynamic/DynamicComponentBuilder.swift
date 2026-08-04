@@ -49,13 +49,16 @@ public struct DynamicComponentBuilder: View {
         }
     }
 
-    /// The raw `hidden` value when it is a binding expression (a literal
-    /// bool decodes into `component.hidden` and never lands here).
+    /// The `hidden` value when it is a binding expression (a literal bool is
+    /// carried by the `.value` case and never lands here).
+    ///
+    /// The generated extraction already separates the two forms, so this no
+    /// longer has to re-detect a binding by looking at the raw string.
     private var bindingHiddenExpression: String? {
-        guard component.hidden == nil,
-              let raw = component.rawData["hidden"] as? String,
-              DynamicBindingResolver.isBindingExpression(raw) else { return nil }
-        return raw
+        guard let expression = component
+            .typedAttributes(CommonAttributes.self).hidden?.bindingExpression
+        else { return nil }
+        return "@{\(expression)}"
     }
 
     @ViewBuilder

@@ -57,8 +57,12 @@ public struct DynamicScrollViewContainer: View {
         // --- 1. ScrollView with content ---
         var result: AnyView
 
-        let keyboardAvoidance = component.rawData["keyboardAvoidance"] as? Bool ?? true
-        let keyboardDismissMode = component.rawData["keyboardDismissMode"] as? String
+        // `keyboardDismissMode` is a declared enum, so the generated parser
+        // canonicalises the alias spellings — reading the raw string here
+        // would keep whatever the layout wrote instead.
+        let scrollAttrs = component.typedAttributes(ScrollViewAttributes.self)
+        let keyboardAvoidance = scrollAttrs.keyboardAvoidance ?? true
+        let keyboardDismissMode = scrollAttrs.keyboardDismissMode?.knownValue?.rawValue
 
         if keyboardAvoidance {
             result = AnyView(

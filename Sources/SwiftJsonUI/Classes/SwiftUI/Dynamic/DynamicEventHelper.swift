@@ -225,7 +225,7 @@ extension DynamicComponent {
     /// declares both; only `onClick` is a typed DynamicComponent field.
     var effectiveOnClick: String? {
         if let onClick = onClick { return onClick }
-        return rawAttribute("onclick") as? String
+        return typedAttributes(CommonAttributes.self).onclick as? String
     }
 }
 #endif // DEBUG

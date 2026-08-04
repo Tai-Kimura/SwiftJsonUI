@@ -816,36 +816,18 @@
       "file": "Containers/DynamicScrollViewContainer.swift",
       "kind": "rawData",
       "key": "horizontalScroll",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Containers/DynamicScrollViewContainer.swift",
-      "kind": "rawData",
-      "key": "keyboardAvoidance",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Containers/DynamicScrollViewContainer.swift",
-      "kind": "rawData",
-      "key": "keyboardDismissMode",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+      "owner": "—",
+      "plan": "—",
+      "reason": "ScrollView / common とも SSoT 未宣言。typed slot が生成されないので raw 以外に読み方が無い"
     },
     {
       "gate": "raw-read",
       "file": "Containers/DynamicViewContainer.swift",
       "kind": "rawData",
       "key": "gradient",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+      "owner": "—",
+      "plan": "—",
+      "reason": "宣言は array だが tool は {colors, locations, startPoint, endPoint} のオブジェクト形も出す — 受理する値空間が宣言より広い族"
     },
     {
       "gate": "raw-read",
@@ -960,9 +942,9 @@
       "file": "Converters/GradientViewConverter.swift",
       "kind": "rawAttribute",
       "key": "gradient",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+      "owner": "—",
+      "plan": "—",
+      "reason": "同上(オブジェクト形。TypedAttributes.swift の RAW_LOOKUP 根拠と同じ)"
     },
     {
       "gate": "raw-read",
@@ -1125,24 +1107,6 @@
       "owner": "—",
       "plan": "恒久例外",
       "reason": "属性ではないビルダ内部マーカー(SSoT に宣言が存在しない)"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponentBuilder.swift",
-      "kind": "rawData",
-      "key": "hidden",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicEventHelper.swift",
-      "kind": "rawAttribute",
-      "key": "onclick",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
     },
     {
       "gate": "raw-read",
