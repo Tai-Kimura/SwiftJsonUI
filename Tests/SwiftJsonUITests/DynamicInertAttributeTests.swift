@@ -190,6 +190,43 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertTrue(TextFieldPlaceholderStyle().isEmpty)
     }
 
+    // MARK: - SelectBox.font
+
+    /// SelectBoxView hard-wired `.font(.system(size:))` *inside* itself, so an
+    /// outer `.font()` was always overridden and a declared `font` did
+    /// nothing. Codegen (B) emits `fontName:`, so the dynamic path has to
+    /// resolve it from the same place or the two render differently.
+    func testSelectBoxViewHonoursFontName() {
+        XCTAssertEqual(
+            SelectBoxView(fontSize: 20, fontName: "Helvetica").labelFont,
+            Font.custom("Helvetica", size: 20)
+        )
+        // "bold" is the weight spelling, not a family.
+        XCTAssertEqual(
+            SelectBoxView(fontSize: 20, fontName: "bold").labelFont,
+            Font.system(size: 20, weight: .bold)
+        )
+        // Undeclared keeps the previous appearance exactly.
+        XCTAssertEqual(
+            SelectBoxView(fontSize: 20).labelFont,
+            Font.system(size: 20)
+        )
+    }
+
+    /// `labelAttributes.font` wins over the component-level spelling — the
+    /// precedence `selectbox_converter.rb` already applies to fontSize and
+    /// fontColor.
+    func testSelectBoxLabelAttributesFontWinsOverComponentFont() throws {
+        let c = try component("""
+        { "type": "SelectBox", "font": "Helvetica",
+          "labelAttributes": { "font": "Courier" } }
+        """)
+        let attrs = c.typedAttributes(SelectBoxAttributes.self)
+
+        XCTAssertEqual(attrs.labelAttributes?["font"] as? String, "Courier")
+        XCTAssertEqual(c.font, "Helvetica")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the

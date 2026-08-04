@@ -58,6 +58,13 @@ public struct SelectBoxView: View {
     let prompt: String?
     let fontSize: CGFloat
     let fontColor: Color
+    /// The label font, resolved from `font` + `fontSize` at init.
+    ///
+    /// The label used to hard-wire `.font(.system(size: fontSize))`, which
+    /// sits *inside* the view — so a `.font()` applied from outside was
+    /// always overridden and a declared `font` did nothing. The name has to
+    /// come in as a parameter for the modifier to be able to honour it.
+    let labelFont: Font
     let hintColor: Color
     let backgroundColor: Color
     let cornerRadius: CGFloat
@@ -106,6 +113,10 @@ public struct SelectBoxView: View {
         prompt: String? = nil,
         fontSize: CGFloat = 16,
         fontColor: Color = .primary,
+        // Font family (or "bold") for the label. Same spelling and same
+        // resolution rule as TextViewWithPlaceholder and IconLabelView —
+        // one convention for one idea.
+        fontName: String? = nil,
         // Placeholder colour for the empty state; .gray was hard-wired at
         // every empty-state branch before this parameter existed.
         hintColor: Color = .gray,
@@ -129,6 +140,15 @@ public struct SelectBoxView: View {
         self.prompt = prompt
         self.fontSize = fontSize
         self.fontColor = fontColor
+        // "bold" is the weight spelling, not a family — the rule
+        // TextViewWithPlaceholder.init and IconLabelView already use.
+        if let fontName, fontName != "bold" {
+            self.labelFont = .custom(fontName, size: fontSize)
+        } else if fontName == "bold" {
+            self.labelFont = .system(size: fontSize, weight: .bold)
+        } else {
+            self.labelFont = .system(size: fontSize)
+        }
         self.hintColor = hintColor
         self.backgroundColor = backgroundColor
         self.cornerRadius = cornerRadius
@@ -193,8 +213,8 @@ public struct SelectBoxView: View {
                         }
                     }
                 }
-                .font(.system(size: fontSize))
-                
+                .font(labelFont)
+
                 Spacer()
                 
                 // Caret icon
