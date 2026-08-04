@@ -474,9 +474,23 @@ public struct DynamicModifierHelper {
 
     // MARK: - 11. Clipped
 
-    public static func applyClipped(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        guard component.clipToBounds == true else { return view }
-        return AnyView(view.clipped())
+    /// `clipToBounds` — literal or bound.
+    ///
+    /// The hand-decoded `component.clipToBounds` is nil for `@{expr}`, so a
+    /// bound declaration never clipped. The generated extraction carries
+    /// both forms, and `View.clipToBounds(_:)` is the same public seam the
+    /// generated code calls — one rule, both paths.
+    public static func applyClipped(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        let enabled = DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).clipToBounds,
+            legacy: component.clipToBounds,
+            data: data
+        ) ?? false
+        return AnyView(view.clipToBounds(enabled))
     }
 
     // MARK: - 12. Offset
@@ -844,7 +858,7 @@ public struct DynamicModifierHelper {
         // 10. shadow
         result = applyShadow(result, component: component)
         // 11. clipped
-        result = applyClipped(result, component: component)
+        result = applyClipped(result, component: component, data: data)
         // 12. offset
         result = applyOffset(result, component: component)
         // 12b. zIndex (indexBelow / indexAbove)

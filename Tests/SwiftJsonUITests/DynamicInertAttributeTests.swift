@@ -257,6 +257,100 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(c.font, "Helvetica")
     }
 
+    /// `hintAttributes` is the nested spelling of the same three keys.
+    /// `textfield_converter.rb` merges it into the flat ones, so dynamic has
+    /// to as well — otherwise one layout draws two different pictures.
+    func testTextFieldHintAttributesFeedsThePlaceholderStyle() throws {
+        let c = try component("""
+        { "type": "TextField", "hint": "Name",
+          "hintAttributes": { "fontSize": 12, "fontColor": "#FF0000" } }
+        """)
+
+        let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
+        XCTAssertEqual(style.font, Font.system(size: 12))
+        XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
+    }
+
+    /// The flat keys win; the nested ones only fill in. That is the `||=`
+    /// merge codegen performs.
+    func testTextFieldFlatHintKeysWinOverNested() throws {
+        let c = try component("""
+        { "type": "TextField", "hint": "Name", "hintFontSize": 20,
+          "hintAttributes": { "fontSize": 12 } }
+        """)
+
+        XCTAssertEqual(
+            TextFieldConverter.placeholderStyle(component: c, data: [:]).font,
+            Font.system(size: 20)
+        )
+    }
+
+    // MARK: - 49-B handoff: bound forms the raw cast dropped
+
+    /// `checked` is boolean|binding. `rawAttribute("checked") as? Bool` is nil
+    /// for `@{expr}`, so a bound declaration seeded no selection at all.
+    func testRadioCheckedResolvesBoundForm() throws {
+        let c = try component("""
+        { "type": "Radio", "id": "target", "group": "g", "checked": "@{isPicked}" }
+        """)
+        let attrs = c.typedAttributes(RadioAttributes.self)
+
+        XCTAssertNil(c.rawAttribute("checked") as? Bool, "the raw cast is what used to drop it")
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(attrs.checked, legacy: nil, data: ["isPicked": true]),
+            true
+        )
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(attrs.checked, legacy: nil, data: ["isPicked": false]),
+            false
+        )
+    }
+
+    /// The literal form has to keep working unchanged.
+    func testRadioCheckedLiteralStillRead() throws {
+        let c = try component("""
+        { "type": "Radio", "id": "target", "group": "g", "checked": true }
+        """)
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(
+                c.typedAttributes(RadioAttributes.self).checked, legacy: nil, data: [:]
+            ),
+            true
+        )
+    }
+
+    /// `clipToBounds` is boolean|binding too, and had the same hole: the
+    /// hand-decoded slot is nil for `@{expr}`, so a bound declaration never
+    /// clipped. `View.clipToBounds(_:)` is the public seam codegen calls.
+    func testClipToBoundsResolvesBoundForm() throws {
+        let c = try component("""
+        { "type": "View", "id": "target", "clipToBounds": "@{shouldClip}" }
+        """)
+        let attrs = c.typedAttributes(CommonAttributes.self)
+
+        XCTAssertNil(c.clipToBounds, "the hand-decoded slot is what used to drop it")
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(attrs.clipToBounds, legacy: nil, data: ["shouldClip": true]),
+            true
+        )
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(attrs.clipToBounds, legacy: nil, data: ["shouldClip": false]),
+            false
+        )
+    }
+
+    func testClipToBoundsLiteralStillRead() throws {
+        let c = try component("""
+        { "type": "View", "id": "target", "clipToBounds": true }
+        """)
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(
+                c.typedAttributes(CommonAttributes.self).clipToBounds, legacy: c.clipToBounds, data: [:]
+            ),
+            true
+        )
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
