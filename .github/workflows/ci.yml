@@ -85,6 +85,13 @@ jobs:
           print(f"vendored attr tables match manifest @ {ref[:12]} ({len(expected)} files)")
           EOF
 
+      # Read-discipline gate (plan 50). Runs in this job because it reads
+      # the vendored tables to learn which attributes are binding-capable:
+      # if the step above failed, this one's input is untrustworthy and its
+      # verdict would be meaningless.
+      - name: Attribute read discipline (raw reads + hand-written binding slots)
+        run: bash scripts/check_converter_raw_reads.sh
+
   unit-tests:
     name: Library unit tests (iOS Simulator)
     runs-on: macos-15
