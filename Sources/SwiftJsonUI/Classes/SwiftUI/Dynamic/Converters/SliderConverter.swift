@@ -62,6 +62,20 @@ public struct SliderConverter {
             result = AnyView(result.tint(color).accentColor(color))
         }
 
+        // trackTintColor — the UNFILLED part of the track. `.tint()` colours
+        // the filled part and SwiftUI exposes nothing for the rest, so this
+        // goes through UISlider.appearance() at appear time. Same route
+        // ToggleConverter already takes for thumbTintColor, which is why the
+        // "SwiftUI Slider uses unified tint only" deprecation was wrong twice
+        // over: the filled track has a modifier, and the unfilled one has a
+        // precedent in this repo.
+        if let track = attrs.trackTintColor,
+           let color = DynamicHelpers.getColor(track) {
+            result = AnyView(result.onAppear {
+                UISlider.appearance().maximumTrackTintColor = UIColor(color)
+            })
+        }
+
         // Disabled state
         if component.enabled?.value as? Bool == false {
             result = AnyView(result.disabled(true))

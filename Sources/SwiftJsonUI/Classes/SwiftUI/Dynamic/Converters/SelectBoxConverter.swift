@@ -38,22 +38,29 @@ public struct SelectBoxConverter {
         // prompt
         let prompt = (component.prompt ?? component.hint ?? component.placeholder)?.dynamicLocalized()
 
+        // `labelAttributes` styles the closed-state label. The nested keys win
+        // over the component-level spellings — the cascade rule adjudicated in
+        // 49-F #7, and what selectbox_converter.rb:36-45, the rjui converter
+        // and the Compose one all implement.
+        let labelAttributes = attrs.labelAttributes
+
         // fontSize
-        let fontSize = component.fontSize ?? 16
+        let fontSize = (labelAttributes?["fontSize"] as? Double).map { CGFloat($0) }
+            ?? (labelAttributes?["fontSize"] as? Int).map { CGFloat($0) }
+            ?? component.fontSize
+            ?? 16
 
         // fontColor
-        let fontColor: Color = DynamicHelpers.getColor(component.fontColor, data: data) ?? .primary
+        let fontColor: Color = DynamicHelpers.getColor(
+            (labelAttributes?["fontColor"] as? String) ?? component.fontColor, data: data
+        ) ?? .primary
 
         // font — the label family (or "bold"). SelectBoxView hard-wired
         // .font(.system(size:)) inside itself, so a declared font had
         // nowhere to land; the view now takes the name.
         //
-        // `labelAttributes.font` wins over the component-level spelling,
-        // the precedence selectbox_converter.rb already applies to the
-        // sibling keys. The REST of labelAttributes (fontSize / fontColor /
-        // textAlign / …) is still unread here — that is queue item
-        // `SelectBox.labelAttributes`, which is waiting on the signal.
-        let fontName: String? = (attrs.labelAttributes?["font"] as? String) ?? component.font
+        // Same cascade as fontSize / fontColor above.
+        let fontName: String? = (labelAttributes?["font"] as? String) ?? component.font
 
         // backgroundColor
         let backgroundColor: Color = DynamicHelpers.getColor(component.background, data: data) ?? Color(UIColor.systemGray6)

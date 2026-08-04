@@ -463,6 +463,60 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(c.typedAttributes(ProgressAttributes.self).hidesWhenStopped, true)
     }
 
+    // MARK: - 部分ゴーサイン: the three that needed new machinery
+
+    /// `labelAttributes` styles the closed-state label, and the nested keys
+    /// win — the cascade adjudicated for hintAttributes, which rjui, kjui and
+    /// selectbox_converter.rb all already implement.
+    func testSelectBoxLabelAttributesWinOverComponentKeys() throws {
+        let c = try component("""
+        { "type": "SelectBox", "items": ["a"], "fontSize": 20, "fontColor": "#0000FF", "font": "Courier",
+          "labelAttributes": { "fontSize": 12, "fontColor": "#FF0000", "font": "Helvetica" } }
+        """)
+        let nested = c.typedAttributes(SelectBoxAttributes.self).labelAttributes
+
+        XCTAssertEqual(nested?["fontSize"] as? Int, 12)
+        XCTAssertEqual(nested?["fontColor"] as? String, "#FF0000")
+        XCTAssertEqual(nested?["font"] as? String, "Helvetica")
+        // …and the component-level ones remain as the per-key fallback.
+        XCTAssertEqual(c.fontSize, 20)
+    }
+
+    /// `trackTintColor` is the unfilled part of the track. SwiftUI exposes no
+    /// modifier for it, so it goes through UISlider.appearance() — the route
+    /// ToggleConverter already uses for thumbTintColor.
+    func testSliderTrackTintColorIsDeclared() throws {
+        let c = try component("""
+        { "type": "Slider", "value": 0.5, "trackTintColor": "#FF0000" }
+        """)
+        XCTAssertEqual(c.typedAttributes(SliderAttributes.self).trackTintColor, "#FF0000")
+    }
+
+    /// `highlightSrc` was decoded by DynamicComponent all along and read by
+    /// nobody.
+    func testImageHighlightSrcIsDeclared() throws {
+        let c = try component("""
+        { "type": "Image", "src": "base", "highlightSrc": "pressed" }
+        """)
+        XCTAssertEqual(
+            c.typedAttributes(ImageAttributes.self).highlightSrc?.rawRepresentation as? String,
+            "pressed"
+        )
+    }
+
+    /// The bound form has to survive too — `highlightSrc` is string|binding.
+    func testImageHighlightSrcAcceptsBoundForm() throws {
+        let c = try component("""
+        { "type": "Image", "src": "base", "highlightSrc": "@{pressedAsset}" }
+        """)
+        let raw = c.typedAttributes(ImageAttributes.self).highlightSrc?.rawRepresentation as? String
+        XCTAssertEqual(raw, "@{pressedAsset}")
+        XCTAssertEqual(
+            DynamicHelpers.processText(raw, data: ["pressedAsset": "from_data"]),
+            "from_data"
+        )
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
