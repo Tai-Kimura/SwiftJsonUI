@@ -59,11 +59,15 @@ public struct RelativePositioningContainer: View {
         let backgroundColor = parentComponent?.background != nil ?
             DynamicHelpers.getColor(parentComponent!.background) : nil
 
+        let containerModes = RelativePositionConverter.containerSizeModes(for: parentComponent)
+
         RelativePositionContainer(
             children: childConfigs,
             alignment: .topLeading,
             backgroundColor: backgroundColor,
-            parentPadding: parentPadding
+            parentPadding: parentPadding,
+            containerWidthMode: containerModes.width,
+            containerHeightMode: containerModes.height
         )
     }
 

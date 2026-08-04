@@ -36,6 +36,19 @@ public struct RelativePositionConverter {
         )
     }
 
+    /// The CONTAINER's own size intent, read off the parent component so a
+    /// `matchParent` parent does not collapse to content size (which left
+    /// every parent-relative constraint nothing to resolve against).
+    static func containerSizeModes(
+        for parent: DynamicComponent?
+    ) -> (width: RelativeSizeMode, height: RelativeSizeMode) {
+        guard let parent else { return (.wrapContent, .wrapContent) }
+        return (
+            buildSizeMode(from: parent.widthRaw, numericValue: parent.width),
+            buildSizeMode(from: parent.heightRaw, numericValue: parent.height)
+        )
+    }
+
     /// Build RelativeSizeMode from raw string value and numeric value
     private static func buildSizeMode(from rawValue: String?, numericValue: CGFloat?) -> RelativeSizeMode {
         // Check raw string value first

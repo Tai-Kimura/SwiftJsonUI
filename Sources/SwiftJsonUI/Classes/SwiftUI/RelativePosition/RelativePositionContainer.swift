@@ -7,17 +7,33 @@ public struct RelativePositionContainer: View {
     public let alignment: Alignment
     public let backgroundColor: Color?
     public let parentPadding: EdgeInsets
+    /// The CONTAINER's own size intent, i.e. the parent view's declared
+    /// `width` / `height`.
+    ///
+    /// Without it the layout could only expand when a CHILD asked to fill,
+    /// so a `matchParent` parent collapsed to its content size — and every
+    /// parent-relative constraint (`alignTop`, `centerVertical`, …) then
+    /// resolved inside a box exactly as big as the child, which is why all
+    /// seven of them measured inert on iOS while the view-relative ones
+    /// worked. Defaults keep the pre-existing wrap-content behaviour for
+    /// callers that do not pass them.
+    public let containerWidthMode: RelativeSizeMode
+    public let containerHeightMode: RelativeSizeMode
 
     public init(
         children: [RelativeChildConfig],
         alignment: Alignment = .topLeading,
         backgroundColor: Color? = nil,
-        parentPadding: EdgeInsets = .init()
+        parentPadding: EdgeInsets = .init(),
+        containerWidthMode: RelativeSizeMode = .wrapContent,
+        containerHeightMode: RelativeSizeMode = .wrapContent
     ) {
         self.children = children
         self.alignment = alignment
         self.backgroundColor = backgroundColor
         self.parentPadding = parentPadding
+        self.containerWidthMode = containerWidthMode
+        self.containerHeightMode = containerHeightMode
     }
 
     public var body: some View {
@@ -25,7 +41,9 @@ public struct RelativePositionContainer: View {
         RelativePositionLayout(
             children: children,
             alignment: alignment,
-            parentPadding: parentPadding
+            parentPadding: parentPadding,
+            containerWidthMode: containerWidthMode,
+            containerHeightMode: containerHeightMode
         ) {
             ForEach(children) { child in
                 child.view
@@ -47,14 +65,23 @@ struct RelativePositionLayout: Layout {
     let children: [RelativeChildConfig]
     let alignment: Alignment
     let parentPadding: EdgeInsets
+    var containerWidthMode: RelativeSizeMode = .wrapContent
+    var containerHeightMode: RelativeSizeMode = .wrapContent
 
     func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let childIds = children.map { $0.id }
         Logger.debug("[RelativePositionLayout] sizeThatFits children=\(childIds), proposal: \(proposal.width ?? -1), \(proposal.height ?? -1)")
 
-        // Check if any child has matchParent mode
-        let hasWidthMatchParent = children.contains { if case .matchParent = $0.widthMode { return true } else { return false } }
-        let hasHeightMatchParent = children.contains { if case .matchParent = $0.heightMode { return true } else { return false } }
+        // Take the proposed size when the CONTAINER itself fills, not only
+        // when a child does: a `matchParent` parent that collapsed to content
+        // size left every parent-relative constraint nothing to resolve
+        // against (see `containerWidthMode`).
+        let hasWidthMatchParent =
+            isMatchParent(containerWidthMode)
+            || children.contains { if case .matchParent = $0.widthMode { return true } else { return false } }
+        let hasHeightMatchParent =
+            isMatchParent(containerHeightMode)
+            || children.contains { if case .matchParent = $0.heightMode { return true } else { return false } }
 
         var width: CGFloat = 0
         var height: CGFloat = 0
@@ -125,6 +152,11 @@ struct RelativePositionLayout: Layout {
         Logger.debug("[RelativePositionLayout] sizeThatFits returning: \(safeWidth), \(safeHeight)")
 
         return CGSize(width: safeWidth, height: safeHeight)
+    }
+
+    private func isMatchParent(_ mode: RelativeSizeMode) -> Bool {
+        if case .matchParent = mode { return true }
+        return false
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
