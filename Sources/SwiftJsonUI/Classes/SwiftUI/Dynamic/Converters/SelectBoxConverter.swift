@@ -44,6 +44,17 @@ public struct SelectBoxConverter {
         // fontColor
         let fontColor: Color = DynamicHelpers.getColor(component.fontColor, data: data) ?? .primary
 
+        // font — the label family (or "bold"). SelectBoxView hard-wired
+        // .font(.system(size:)) inside itself, so a declared font had
+        // nowhere to land; the view now takes the name.
+        //
+        // `labelAttributes.font` wins over the component-level spelling,
+        // the precedence selectbox_converter.rb already applies to the
+        // sibling keys. The REST of labelAttributes (fontSize / fontColor /
+        // textAlign / …) is still unread here — that is queue item
+        // `SelectBox.labelAttributes`, which is waiting on the signal.
+        let fontName: String? = (attrs.labelAttributes?["font"] as? String) ?? component.font
+
         // backgroundColor
         let backgroundColor: Color = DynamicHelpers.getColor(component.background, data: data) ?? Color(UIColor.systemGray6)
 
@@ -159,6 +170,7 @@ public struct SelectBoxConverter {
                 prompt: prompt,
                 fontSize: fontSize,
                 fontColor: fontColor,
+                fontName: fontName,
                 backgroundColor: backgroundColor,
                 cornerRadius: cornerRadius,
                 selectItemType: selectItemType,
