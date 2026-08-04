@@ -237,8 +237,12 @@ public struct DynamicModifierHelper {
 
     public static func applyBackground(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
         // enabled=false + disabledBackground
-        if component.enabled?.value as? Bool == false, let disabledBg = component.rawData["disabledBackground"] as? String,
-           let color = DynamicHelpers.getColor(disabledBg) {
+        // `disabledBackground` is string|binding: the raw String cast read a
+        // bound spelling as a literal colour name, which resolves to nothing.
+        if component.enabled?.value as? Bool == false,
+           let disabledBg = component.typedAttributes(CommonAttributes.self)
+               .disabledBackground?.rawRepresentation as? String,
+           let color = DynamicHelpers.getColor(disabledBg, data: data) {
             return AnyView(view.background(color))
         }
 
@@ -389,12 +393,12 @@ public struct DynamicModifierHelper {
     // MARK: - 9. Opacity
 
     public static func applyOpacity(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        // Check for binding expression in opacity (alpha is the
-        // definitions alias — consulted only for raw L0 layouts)
-        var opacityStr = component.rawData["opacity"] as? String
-        if opacityStr == nil && !component.isNormalized {
-            opacityStr = component.rawData["alpha"] as? String
-        }
+        // Only the bound spelling is a String; a literal opacity decodes as a
+        // number and falls through to the legacy path below. `alpha` needs no
+        // special case any more — 49-E made it a declared alias, so the
+        // generated lookup resolves it into `opacity` itself.
+        let opacityStr = component.typedAttributes(CommonAttributes.self)
+            .opacity?.rawRepresentation as? String
         if let opacityStr = opacityStr,
            let inner = DynamicBindingResolver.inner(of: opacityStr) {
             let expression = DynamicBindingResolver.parse(inner)
@@ -618,8 +622,8 @@ public struct DynamicModifierHelper {
         }
 
         // Binding hidden: @{propertyName} or @{!propertyName}
-        if let hiddenValue = component.rawData["hidden"] as? String,
-           DynamicBindingResolver.isBindingExpression(hiddenValue) {
+        if let expr = component.typedAttributes(CommonAttributes.self).hidden?.bindingExpression {
+            let hiddenValue = "@{\(expr)}"
             // Try reactive SwiftUI.Binding<Bool> first
             if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
                 return AnyView(ReactiveHiddenWrapper(isHidden: binding, content: view))
@@ -661,8 +665,8 @@ public struct DynamicModifierHelper {
             return AnyView(view.disabled(true))
         }
         // Binding: @{!isEnabled} or @{isEnabled}
-        if let enabledValue = component.rawData["enabled"] as? String,
-           DynamicBindingResolver.isBindingExpression(enabledValue) {
+        if let expr = component.typedAttributes(CommonAttributes.self).enabled?.bindingExpression {
+            let enabledValue = "@{\(expr)}"
             // Try reactive SwiftUI.Binding<Bool> — negate for disabled
             if let enabledBinding = DynamicBindingHelper.extractBoolBinding(from: enabledValue, data: data) {
                 let disabledBinding = SwiftUI.Binding<Bool>(
@@ -696,7 +700,7 @@ public struct DynamicModifierHelper {
         ) == false {
             return AnyView(view.allowsHitTesting(false))
         }
-        if component.rawData["touchDisabledState"] != nil {
+        if component.typedAttributes(CommonAttributes.self).touchDisabledState != nil {
             return AnyView(view.allowsHitTesting(false))
         }
         return view
@@ -835,7 +839,7 @@ public struct DynamicModifierHelper {
 
     @available(iOS 15.0, *)
     public static func applyConfirmationDialog(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
-        guard let dialogConfig = component.rawData["confirmationDialog"] as? [String: Any],
+        guard let dialogConfig = component.typedAttributes(CommonAttributes.self).confirmationDialog,
               let isPresentedBinding = dialogConfig["isPresented"] as? String,
               let propName = DynamicEventHelper.extractPropertyName(from: isPresentedBinding),
               let binding = data[propName] as? SwiftUI.Binding<Bool> else {
