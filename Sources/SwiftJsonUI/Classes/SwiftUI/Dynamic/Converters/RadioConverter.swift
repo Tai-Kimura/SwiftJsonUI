@@ -155,9 +155,19 @@ public struct RadioConverter {
             return nil
         }()
 
-        // A literal checked: true seeds the selection when no group state
-        // exists (33 cross-effect: both mobiles ignored it).
-        let literalChecked = (component.rawAttribute("checked") as? Bool) == true
+        // `checked: true` seeds the selection when no group state exists
+        // (33 cross-effect: both mobiles ignored it).
+        //
+        // Read through the generated extraction, not `rawAttribute`: `checked`
+        // is boolean|binding, and the raw cast is nil for `@{expr}` — so a
+        // bound declaration seeded nothing. 49-B made the codegen expression
+        // structurally identical, which only lines up once this resolves the
+        // bound form too.
+        let literalChecked = DynamicHelpers.resolveBool(
+            component.typedAttributes(RadioAttributes.self).checked,
+            legacy: component.rawAttribute("checked") as? Bool,
+            data: data
+        ) == true
         let isGlyphSelected = groupSelectionBinding.wrappedValue == id ||
             (literalChecked && groupSelectionBinding.wrappedValue.isEmpty)
 

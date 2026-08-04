@@ -152,8 +152,12 @@ public struct TextFieldConverter {
     /// codegen still records them as a comment (`textfield_converter.rb`),
     /// which is what made 41 read the attribute as "emitted".
     ///
-    /// `hintAttributes` is deliberately not read here: the SSoT scopes it to
-    /// `mode: uikit`.
+    /// `hintAttributes` carries the same three spellings in a nested object.
+    /// The flat keys win and the nested ones fill in — matching
+    /// `textfield_converter.rb`, which merges with `||=`. (The SSoT scopes
+    /// `hintAttributes` to `mode: uikit`, but codegen reads it on the SwiftUI
+    /// path, so honouring it here is what keeps the two paths drawing the
+    /// same picture. Flagged to 49-B / 49-E.)
     ///
     /// The resolution itself lives in `TextFieldPlaceholderStyle` so the
     /// code `sjui_tools` generates reaches the same picture from the same
@@ -163,23 +167,26 @@ public struct TextFieldConverter {
         data: [String: Any]
     ) -> TextFieldPlaceholderStyle {
         let attrs = component.typedAttributes(TextFieldAttributes.self)
+        let nested = attrs.hintAttributes
 
         // `hintColor` is canonical and accepts the bound form.
         // `placeholderColor` is its declared alias, so the generated lookup
         // resolves that spelling into `hintColor` itself — there is no
         // separate field to fall back to (49-E folded the second declaration
         // into the alias, matching Radio.selectedIcon and Segment).
-        let hintColor: Color? = {
-            if let raw = attrs.hintColor?.rawRepresentation as? String {
-                return DynamicHelpers.getColor(raw, data: data)
-            }
-            return nil
-        }()
+        let hintColorRaw = (attrs.hintColor?.rawRepresentation as? String)
+            ?? (nested?["fontColor"] as? String)
+            ?? (nested?["color"] as? String)
+
+        let hintFont = attrs.hintFont ?? (nested?["font"] as? String)
+        let hintFontSize = attrs.hintFontSize
+            ?? (nested?["fontSize"] as? Double)
+            ?? (nested?["fontSize"] as? Int).map(Double.init)
 
         return TextFieldPlaceholderStyle(
-            hintColor: hintColor,
-            hintFont: attrs.hintFont,
-            hintFontSize: attrs.hintFontSize.map { CGFloat($0) },
+            hintColor: DynamicHelpers.getColor(hintColorRaw, data: data),
+            hintFont: hintFont,
+            hintFontSize: hintFontSize.map { CGFloat($0) },
             fontSize: component.fontSize
         )
     }
@@ -307,7 +314,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyShadow(result, component: component)
 
         // --- 24. clipped ---
-        result = DynamicModifierHelper.applyClipped(result, component: component)
+        result = DynamicModifierHelper.applyClipped(result, component: component, data: data)
 
         // --- 25. offset ---
         result = DynamicModifierHelper.applyOffset(result, component: component)
@@ -422,7 +429,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyShadow(result, component: component)
 
         // --- 24. clipped ---
-        result = DynamicModifierHelper.applyClipped(result, component: component)
+        result = DynamicModifierHelper.applyClipped(result, component: component, data: data)
 
         // --- 25. offset ---
         result = DynamicModifierHelper.applyOffset(result, component: component)
