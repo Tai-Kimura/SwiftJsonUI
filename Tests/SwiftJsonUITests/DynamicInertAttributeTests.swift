@@ -190,6 +190,36 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertTrue(TextFieldPlaceholderStyle().isEmpty)
     }
 
+    // MARK: - TextField.contentType (49-E enum migration)
+
+    /// The alias spellings canonicalise. `tel` and `phone` both mean
+    /// `.telephoneNumber` — before the enum landed the converter matched the
+    /// literal string "tel", so canonicalisation would have silently stopped
+    /// it working.
+    func testTextFieldContentTypeAliasesCanonicalise() throws {
+        for spelling in ["tel", "phone", "telephoneNumber"] {
+            let c = try component("""
+            { "type": "TextField", "hint": "Name", "contentType": "\(spelling)" }
+            """)
+            XCTAssertEqual(
+                c.typedAttributes(TextFieldAttributes.self).contentType?.value?.knownValue,
+                .telephoneNumber,
+                "contentType '\(spelling)' should canonicalise to .telephoneNumber"
+            )
+        }
+    }
+
+    /// An undeclared spelling passes through as `.unknown` rather than
+    /// crashing or guessing — and the converter then applies nothing.
+    func testTextFieldUnknownContentTypeStaysUnknown() throws {
+        let c = try component("""
+        { "type": "TextField", "hint": "Name", "contentType": "sample" }
+        """)
+        let value = c.typedAttributes(TextFieldAttributes.self).contentType?.value
+        XCTAssertNil(value?.knownValue)
+        XCTAssertNotNil(value?.unknownValue)
+    }
+
     // MARK: - SelectBox.font
 
     /// SelectBoxView hard-wired `.font(.system(size:))` *inside* itself, so an

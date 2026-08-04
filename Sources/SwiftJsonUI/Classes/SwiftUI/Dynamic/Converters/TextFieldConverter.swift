@@ -164,15 +164,16 @@ public struct TextFieldConverter {
     ) -> TextFieldPlaceholderStyle {
         let attrs = component.typedAttributes(TextFieldAttributes.self)
 
-        // `hintColor` is canonical and accepts the bound form;
-        // `placeholderColor` is the alias spelling, so it only fills in when
-        // the canonical one is absent.
+        // `hintColor` is canonical and accepts the bound form.
+        // `placeholderColor` is its declared alias, so the generated lookup
+        // resolves that spelling into `hintColor` itself — there is no
+        // separate field to fall back to (49-E folded the second declaration
+        // into the alias, matching Radio.selectedIcon and Segment).
         let hintColor: Color? = {
-            if let raw = attrs.hintColor?.rawRepresentation as? String,
-               let c = DynamicHelpers.getColor(raw, data: data) {
-                return c
+            if let raw = attrs.hintColor?.rawRepresentation as? String {
+                return DynamicHelpers.getColor(raw, data: data)
             }
-            return DynamicHelpers.getColor(attrs.placeholderColor, data: data)
+            return nil
         }()
 
         return TextFieldPlaceholderStyle(
@@ -355,7 +356,7 @@ public struct TextFieldConverter {
         }
 
         // --- 7. textContentType ---
-        if let contentType = attrs.contentType?.value {
+        if let contentType = attrs.contentType?.value?.knownValue {
             result = applyContentType(result, contentType: contentType)
         }
 
@@ -449,15 +450,35 @@ public struct TextFieldConverter {
         }
     }
 
-    private static func applyContentType(_ view: AnyView, contentType: String) -> AnyView {
+    /// Maps the declared `contentType` onto SwiftUI's `.textContentType`.
+    ///
+    /// Switching on the enum rather than a string is what keeps this honest.
+    /// 49-E made `contentType` an enum, and the generated parser
+    /// **canonicalises** the alias spellings — `tel` and `phone` both arrive
+    /// as `.telephoneNumber`, `emailAddress` as `.email`. A string switch on
+    /// the old spellings would silently stop matching `tel` the moment that
+    /// landed, and half the vocabulary (newPassword, oneTimeCode, givenName,
+    /// familyName, streetAddress, country, creditCardNumber, URL) had no
+    /// case at all. The compiler now requires every member to be handled.
+    private static func applyContentType(
+        _ view: AnyView,
+        contentType: TextFieldAttributes.ContentType
+    ) -> AnyView {
         switch contentType {
-        case "username": return AnyView(view.textContentType(.username))
-        case "password": return AnyView(view.textContentType(.password))
-        case "email": return AnyView(view.textContentType(.emailAddress))
-        case "name": return AnyView(view.textContentType(.name))
-        case "tel": return AnyView(view.textContentType(.telephoneNumber))
-        case "postalCode": return AnyView(view.textContentType(.postalCode))
-        default: return view
+        case .username: return AnyView(view.textContentType(.username))
+        case .password: return AnyView(view.textContentType(.password))
+        case .newPassword: return AnyView(view.textContentType(.newPassword))
+        case .oneTimeCode: return AnyView(view.textContentType(.oneTimeCode))
+        case .email: return AnyView(view.textContentType(.emailAddress))
+        case .name: return AnyView(view.textContentType(.name))
+        case .givenName: return AnyView(view.textContentType(.givenName))
+        case .familyName: return AnyView(view.textContentType(.familyName))
+        case .telephoneNumber: return AnyView(view.textContentType(.telephoneNumber))
+        case .streetAddress: return AnyView(view.textContentType(.streetAddressLine1))
+        case .postalCode: return AnyView(view.textContentType(.postalCode))
+        case .country: return AnyView(view.textContentType(.countryName))
+        case .creditCardNumber: return AnyView(view.textContentType(.creditCardNumber))
+        case .uRL: return AnyView(view.textContentType(.URL))
         }
     }
 

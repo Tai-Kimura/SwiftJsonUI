@@ -20,6 +20,28 @@ public struct TextViewAttributes {
         case decimal = "decimal"
     }
 
+    public enum KeyboardType: String {
+        case `default` = "default"
+        case asciiCapable = "asciiCapable"
+        case number = "number"
+        case decimal = "decimal"
+        case phone = "phone"
+        case email = "email"
+        case uRL = "URL"
+        case webSearch = "webSearch"
+        case namePhonePad = "namePhonePad"
+        case twitter = "twitter"
+    }
+
+    public enum LineBreakMode: String {
+        case char = "Char"
+        case clip = "Clip"
+        case word = "Word"
+        case head = "Head"
+        case middle = "Middle"
+        case tail = "Tail"
+    }
+
     public enum Resize: String {
         case none = "none"
         case both = "both"
@@ -119,8 +141,8 @@ public struct TextViewAttributes {
     /// Background color when disabled - hex string or color name from colors.json
     public let disabledBackground: String?
 
-    /// Deprecated on kotlin. [DEPRECATED: Compose Text has no edgeInset; use padding* instead.]
-    public let edgeInset: String?
+    /// The UIKit spelling of containerInset (content inset). Same accepted shapes: a single number, or an array of 1/2/4 numbers. Deprecated on kotlin. [accepts: number | array; DEPRECATED: Compose Text has no edgeInset; use padding* instead.]
+    public let edgeInset: Any?
 
     /// Enable/disable editing
     public let editable: Bool?
@@ -164,11 +186,11 @@ public struct TextViewAttributes {
     /// Input type (includes 'allphabet' typo for backward compatibility)
     public let input: AttrEnum<Input>?
 
-    /// Keyboard type
-    public let keyboardType: String?
+    /// Soft-keyboard type. The canonical token of each pair is the one all three converters accept: `number` rather than UIKit's numberPad (Compose only matches `number` and would fall back to a plain text keyboard), likewise decimal/phone/email. `namePhonePad` and `twitter` reach iOS only; the other platforms fall back to their default keyboard.
+    public let keyboardType: AttrEnum<KeyboardType>?
 
-    /// Line break mode
-    public let lineBreakMode: String?
+    /// Truncation mode. Same vocabulary as Label.lineBreakMode — the two were the same concept declared twice, once enumerated and once as a bare string.
+    public let lineBreakMode: AttrEnum<LineBreakMode>?
 
     /// Maximum input length
     public let maxLength: Double?
@@ -233,7 +255,7 @@ public struct TextViewAttributes {
         self.containerInset = AttrCoerce.any(AttrCoerce.lookup(json, "containerInset"))
         self.dataDetectorTypes = AttrCoerce.string(AttrCoerce.lookup(json, "dataDetectorTypes"))
         self.disabledBackground = AttrCoerce.string(AttrCoerce.lookup(json, "disabledBackground"))
-        self.edgeInset = AttrCoerce.string(AttrCoerce.lookup(json, "edgeInset"))
+        self.edgeInset = AttrCoerce.any(AttrCoerce.lookup(json, "edgeInset"))
         self.editable = AttrCoerce.boolean(AttrCoerce.lookup(json, "editable"))
         self.flexible = AttrCoerce.boolean(AttrCoerce.lookup(json, "flexible"))
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
@@ -248,8 +270,8 @@ public struct TextViewAttributes {
         self.hintFontSize = AttrCoerce.number(AttrCoerce.lookup(json, "hintFontSize"))
         self.hintLineHeightMultiple = AttrCoerce.number(AttrCoerce.lookup(json, "hintLineHeightMultiple"))
         self.input = Self.parseInput(AttrCoerce.lookup(json, "input"))
-        self.keyboardType = AttrCoerce.string(AttrCoerce.lookup(json, "keyboardType"))
-        self.lineBreakMode = AttrCoerce.string(AttrCoerce.lookup(json, "lineBreakMode"))
+        self.keyboardType = Self.parseKeyboardType(AttrCoerce.lookup(json, "keyboardType"))
+        self.lineBreakMode = Self.parseLineBreakMode(AttrCoerce.lookup(json, "lineBreakMode"))
         self.maxLength = AttrCoerce.number(AttrCoerce.lookup(json, "maxLength"))
         self.onBeginEditing = AttrCoerce.string(AttrCoerce.lookup(json, "onBeginEditing"))
         self.onChangeSelection = AttrCoerce.string(AttrCoerce.lookup(json, "onChangeSelection"))
@@ -287,6 +309,44 @@ public struct TextViewAttributes {
             }
         }
         AttrCodegenWarnings.emit("TextView.input: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseKeyboardType(_ raw: Any?) -> AttrEnum<KeyboardType>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "default", "text": return .known(KeyboardType.`default`)
+            case "asciicapable", "alphabet": return .known(KeyboardType.asciiCapable)
+            case "number", "numberpad", "numbersandpunctuation": return .known(KeyboardType.number)
+            case "decimal", "decimalpad": return .known(KeyboardType.decimal)
+            case "phone", "phonepad", "numeric": return .known(KeyboardType.phone)
+            case "email", "emailaddress": return .known(KeyboardType.email)
+            case "url", "weburl": return .known(KeyboardType.uRL)
+            case "websearch", "search": return .known(KeyboardType.webSearch)
+            case "namephonepad": return .known(KeyboardType.namePhonePad)
+            case "twitter": return .known(KeyboardType.twitter)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("TextView.keyboardType: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseLineBreakMode(_ raw: Any?) -> AttrEnum<LineBreakMode>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "char": return .known(LineBreakMode.char)
+            case "clip": return .known(LineBreakMode.clip)
+            case "word": return .known(LineBreakMode.word)
+            case "head": return .known(LineBreakMode.head)
+            case "middle": return .known(LineBreakMode.middle)
+            case "tail": return .known(LineBreakMode.tail)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("TextView.lineBreakMode: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

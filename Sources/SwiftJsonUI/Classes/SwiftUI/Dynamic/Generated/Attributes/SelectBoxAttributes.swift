@@ -67,7 +67,6 @@ public struct SelectBoxAttributes {
         "selectedItem",
         "selectedValue",
         "size",
-        "text",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -176,9 +175,6 @@ public struct SelectBoxAttributes {
     /// Number of visible options
     public let size: Double?
 
-    /// Display text (binding supported)
-    public let text: AttrValue<String>?
-
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
@@ -214,7 +210,6 @@ public struct SelectBoxAttributes {
         self.selectedItem = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedItem"), AttrCoerce.string)
         self.selectedValue = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedValue"), AttrCoerce.string)
         self.size = AttrCoerce.number(AttrCoerce.lookup(json, "size"))
-        self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
     }
 
     private static func parseColorScheme(_ raw: Any?) -> AttrEnum<ColorScheme>? {

@@ -42,8 +42,8 @@ public struct WebAttributes {
     /// HTML content
     public let html: String?
 
-    /// Iframe sandbox attribute
-    public let sandbox: String?
+    /// Iframe sandboxing kill-switch. `false` emits no sandbox attribute at all; otherwise the permission list is built from the other Web attributes (javaScriptEnabled, javaScriptCanOpenWindowsAutomatically, allowPopupsToEscapeSandbox, allowModals, ...) rather than from a value written here.
+    public let sandbox: Bool?
 
     /// Web page URL (can be data binding)
     public let url: AttrValue<String>?
@@ -56,7 +56,7 @@ public struct WebAttributes {
         self.allowsBackForwardNavigationGestures = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsBackForwardNavigationGestures"))
         self.allowsLinkPreview = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsLinkPreview"))
         self.html = AttrCoerce.string(AttrCoerce.lookup(json, "html"))
-        self.sandbox = AttrCoerce.string(AttrCoerce.lookup(json, "sandbox"))
+        self.sandbox = AttrCoerce.boolean(AttrCoerce.lookup(json, "sandbox"))
         self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url"), AttrCoerce.string)
     }
 }

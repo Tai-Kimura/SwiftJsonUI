@@ -22,7 +22,6 @@ public struct RadioAttributes {
         "onValueChange",
         "selectedIcon",
         "selectedValue",
-        "selected_icon",
         "spacing",
         "text",
         "uncheckedColor",
@@ -32,7 +31,9 @@ public struct RadioAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "selected_icon": "selectedIcon",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -81,9 +82,6 @@ public struct RadioAttributes {
     /// Selected value of the radio group (binding for two-way)
     public let selectedValue: AttrValue<String>?
 
-    /// Selected icon name (underscore alias)
-    public let selected_icon: String?
-
     /// Space between icon and text (binding supported)
     public let spacing: AttrValue<Double>?
 
@@ -113,7 +111,6 @@ public struct RadioAttributes {
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
         self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon", ["selected_icon"], canonicalOnly: canonicalOnly))
         self.selectedValue = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedValue"), AttrCoerce.string)
-        self.selected_icon = AttrCoerce.string(AttrCoerce.lookup(json, "selected_icon"))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.uncheckedColor = AttrCoerce.string(AttrCoerce.lookup(json, "uncheckedColor"))
