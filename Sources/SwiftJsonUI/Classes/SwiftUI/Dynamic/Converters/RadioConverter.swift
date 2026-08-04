@@ -23,7 +23,11 @@ public struct RadioConverter {
     ) -> AnyView {
         let id = component.id ?? "radio"
         let items = component.items ?? []
-        let text = component.text ?? ""
+        // `text` is string|binding, and the decode slot returns the layout
+        // spelling — so a bound label rendered the characters "@{boundText}"
+        // on screen. Every other text-bearing converter interpolates first;
+        // this one did not. (49-G fixed the same leak on Compose in 2cf42df.)
+        let text = DynamicHelpers.processText(component.text, data: data)
 
         var result: AnyView
 
