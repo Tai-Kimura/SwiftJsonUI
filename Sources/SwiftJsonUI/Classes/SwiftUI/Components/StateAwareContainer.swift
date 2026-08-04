@@ -60,10 +60,19 @@ public struct StateAwareContainer<Content: View>: View {
 #if DEBUG
 // MARK: - Extension for Dynamic mode
 extension StateAwareContainer {
-    public init(component: DynamicComponent, @ViewBuilder content: () -> Content) where Content: View {
+    /// `background` and `tapBackground` are both string|binding. Resolving
+    /// them without `data` read a bound spelling as a literal colour name,
+    /// which resolves to nothing — so a bound tapBackground painted no
+    /// pressed state at all. ButtonConverter has always passed `data:` here;
+    /// this is the container half of the same attribute.
+    public init(
+        component: DynamicComponent,
+        data: [String: Any] = [:],
+        @ViewBuilder content: () -> Content
+    ) where Content: View {
         self.init(
-            background: DynamicHelpers.getColor(component.background),
-            tapBackground: DynamicHelpers.getColor(component.tapBackground),
+            background: DynamicHelpers.getColor(component.background, data: data),
+            tapBackground: DynamicHelpers.getColor(component.tapBackground, data: data),
             content: content
         )
     }

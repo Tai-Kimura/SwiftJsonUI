@@ -21,7 +21,7 @@ public struct RelativePositionConverter {
 
         let id = component.id ?? "child_\(index)"
         let view = viewBuilder(component)
-        let constraints = buildConstraints(from: component)
+        let constraints = buildConstraints(from: component, data: data)
         let margins = buildMargins(from: component, data: data)
         let widthMode = buildSizeMode(from: component.widthRaw, numericValue: component.width)
         let heightMode = buildSizeMode(from: component.heightRaw, numericValue: component.height)
@@ -80,35 +80,46 @@ public struct RelativePositionConverter {
     }
     
     /// Build RelativePositionConstraints from DynamicComponent properties
-    private static func buildConstraints(from component: DynamicComponent) -> [RelativePositionConstraint] {
+    /// The seven parent-alignment flags are all `boolean|binding`. They used
+    /// to be read off the hand-decoded slots with `== true`, which is nil for
+    /// `@{expr}` — so a bound alignment placed nothing and the child stayed
+    /// at the container's default corner.
+    private static func buildConstraints(
+        from component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> [RelativePositionConstraint] {
         var constraints: [RelativePositionConstraint] = []
-        
+        let common = component.typedAttributes(CommonAttributes.self)
+        func flag(_ attr: AttrValue<Bool>?, _ legacy: Bool?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: legacy, data: data) == true
+        }
+
         // Parent alignment constraints (these have empty targetId)
-        if component.alignTop == true {
+        if flag(common.alignTop, component.alignTop) {
             constraints.append(RelativePositionConstraint(type: .parentTop, targetId: ""))
         }
         
-        if component.alignBottom == true {
+        if flag(common.alignBottom, component.alignBottom) {
             constraints.append(RelativePositionConstraint(type: .parentBottom, targetId: ""))
         }
         
-        if component.alignLeft == true {
+        if flag(common.alignLeft, component.alignLeft) {
             constraints.append(RelativePositionConstraint(type: .parentLeft, targetId: ""))
         }
         
-        if component.alignRight == true {
+        if flag(common.alignRight, component.alignRight) {
             constraints.append(RelativePositionConstraint(type: .parentRight, targetId: ""))
         }
         
-        if component.centerHorizontal == true {
+        if flag(common.centerHorizontal, component.centerHorizontal) {
             constraints.append(RelativePositionConstraint(type: .parentCenterHorizontal, targetId: ""))
         }
         
-        if component.centerVertical == true {
+        if flag(common.centerVertical, component.centerVertical) {
             constraints.append(RelativePositionConstraint(type: .parentCenterVertical, targetId: ""))
         }
         
-        if component.centerInParent == true {
+        if flag(common.centerInParent, component.centerInParent) {
             constraints.append(RelativePositionConstraint(type: .parentCenter, targetId: ""))
         }
         
@@ -178,13 +189,23 @@ public struct RelativePositionConverter {
     
     /// Check if a component needs relative positioning
     public static func needsRelativePositioning(_ component: DynamicComponent) -> Bool {
-        return component.alignTop == true ||
-               component.alignBottom == true ||
-               component.alignLeft == true ||
-               component.alignRight == true ||
-               component.centerInParent == true ||
-               component.centerHorizontal == true ||
-               component.centerVertical == true ||
+        // Routing happens before `data` exists, so a BOUND flag counts as
+        // declared regardless of its current value — otherwise the container
+        // would never route here and the resolved constraint would have
+        // nowhere to land. A literal `false` still does not route, which is
+        // what it did before.
+        let common = component.typedAttributes(CommonAttributes.self)
+        func declared(_ attr: AttrValue<Bool>?, _ legacy: Bool?) -> Bool {
+            if case .some(.binding) = attr { return true }
+            return (attr?.value ?? legacy) == true
+        }
+        return declared(common.alignTop, component.alignTop) ||
+               declared(common.alignBottom, component.alignBottom) ||
+               declared(common.alignLeft, component.alignLeft) ||
+               declared(common.alignRight, component.alignRight) ||
+               declared(common.centerInParent, component.centerInParent) ||
+               declared(common.centerHorizontal, component.centerHorizontal) ||
+               declared(common.centerVertical, component.centerVertical) ||
                component.alignLeftOfView != nil ||
                component.alignRightOfView != nil ||
                component.alignTopOfView != nil ||

@@ -52,7 +52,7 @@ public struct DynamicViewContainer: View {
 
         if component.tapBackground != nil {
             result = AnyView(
-                StateAwareContainer(component: component) {
+                StateAwareContainer(component: component, data: data) {
                     containerContent(children: children, orientation: orientation, needsRelativePositioning: needsRelativePositioning)
                 }
             )

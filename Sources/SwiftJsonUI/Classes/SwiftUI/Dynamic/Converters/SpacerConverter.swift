@@ -60,7 +60,7 @@ public struct SpacerConverter {
         }
 
         // --- 2. frame constraints ---
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
 
         // --- 3. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)

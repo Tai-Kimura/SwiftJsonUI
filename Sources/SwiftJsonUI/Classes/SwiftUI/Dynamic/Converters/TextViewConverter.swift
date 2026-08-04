@@ -231,7 +231,7 @@ public struct TextViewConverter {
         } else {
             // paddings is used as containerInset, so skip external padding
             // Normal frame application
-            result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+            result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
             result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
         }
 

@@ -565,6 +565,78 @@ final class DynamicInertAttributeTests: XCTestCase {
         )
     }
 
+    // MARK: - bound dimensions and flags the runtime was dropping
+
+    /// min/max are number|binding, and applyFrameConstraints took no `data`
+    /// at all — it could not have resolved a binding even in principle.
+    func testBoundFrameConstraintsResolve() throws {
+        let c = try component("""
+        { "type": "View", "id": "t", "minWidth": "@{w}", "minHeight": "@{h}", "maxWidth": "@{mw}" }
+        """)
+        let common = c.typedAttributes(CommonAttributes.self)
+        let data: [String: Any] = ["w": 50, "h": 60, "mw": 150]
+
+        XCTAssertNil(c.minWidth, "the hand-decoded slot is what used to drop it")
+        XCTAssertEqual(DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data), 50)
+        XCTAssertEqual(DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data), 60)
+        XCTAssertEqual(DynamicHelpers.resolveNumber(common.maxWidth, legacy: nil, data: data), 150)
+    }
+
+    /// The seven parent-alignment flags are boolean|binding too.
+    func testBoundAlignmentFlagsResolve() throws {
+        let c = try component("""
+        { "type": "View", "id": "t", "alignTop": "@{top}", "centerInParent": "@{mid}" }
+        """)
+        let common = c.typedAttributes(CommonAttributes.self)
+
+        XCTAssertNil(c.alignTop)
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(common.alignTop, legacy: nil, data: ["top": true]), true
+        )
+        XCTAssertEqual(
+            DynamicHelpers.resolveBool(common.centerInParent, legacy: nil, data: ["mid": false]), false
+        )
+    }
+
+    /// Routing runs before `data` exists, so a BOUND flag has to count as
+    /// declared — otherwise the container never routes to the relative
+    /// positioning path and the resolved constraint has nowhere to land.
+    /// A literal `false` must still not route, which is what it did before.
+    func testBoundAlignmentRoutesToRelativePositioning() throws {
+        let bound = try component("""
+        { "type": "View", "id": "t", "centerInParent": "@{mid}" }
+        """)
+        XCTAssertTrue(RelativePositionConverter.needsRelativePositioning(bound))
+
+        let literalTrue = try component("""
+        { "type": "View", "id": "t", "centerInParent": true }
+        """)
+        XCTAssertTrue(RelativePositionConverter.needsRelativePositioning(literalTrue))
+
+        let literalFalse = try component("""
+        { "type": "View", "id": "t", "centerInParent": false }
+        """)
+        XCTAssertFalse(RelativePositionConverter.needsRelativePositioning(literalFalse))
+
+        let undeclared = try component("""
+        { "type": "View", "id": "t" }
+        """)
+        XCTAssertFalse(RelativePositionConverter.needsRelativePositioning(undeclared))
+    }
+
+    /// `tapBackground` split by route: ButtonConverter always resolved it,
+    /// the container did not.
+    func testBoundTapBackgroundResolves() throws {
+        let c = try component("""
+        { "type": "View", "id": "t", "tapBackground": "@{pressed}" }
+        """)
+        XCTAssertEqual(
+            DynamicHelpers.getColor(c.tapBackground, data: ["pressed": "#FF0000"]),
+            DynamicHelpers.getColor("#FF0000")
+        )
+        XCTAssertNil(DynamicHelpers.getColor(c.tapBackground), "without data it cannot resolve")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the

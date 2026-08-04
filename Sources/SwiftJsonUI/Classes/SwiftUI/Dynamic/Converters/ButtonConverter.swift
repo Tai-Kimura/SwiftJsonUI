@@ -163,7 +163,7 @@ public struct ButtonConverter {
         )
 
         // --- 2. apply_frame_constraints ---
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
 
         // --- 3. apply_frame_size ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
