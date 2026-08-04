@@ -1166,64 +1166,19 @@
       "gate": "raw-read",
       "file": "DynamicModifierHelper.swift",
       "kind": "rawData",
-      "key": "alpha",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
-      "key": "confirmationDialog",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
-      "key": "disabledBackground",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
-      "key": "enabled",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
-      "key": "hidden",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
       "key": "indexAbove",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+      "owner": "—",
+      "plan": "—",
+      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる"
     },
     {
       "gate": "raw-read",
       "file": "DynamicModifierHelper.swift",
       "kind": "rawData",
       "key": "indexBelow",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+      "owner": "—",
+      "plan": "—",
+      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる"
     },
     {
       "gate": "raw-read",
@@ -1242,24 +1197,6 @@
       "owner": "—",
       "plan": "—",
       "reason": "SSoT 未宣言(どのコンポーネントにも無い)。typed アクセサが生成されないので raw 以外に読み方が無い"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
-      "key": "opacity",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicModifierHelper.swift",
-      "kind": "rawData",
-      "key": "touchDisabledState",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
     },
     {
       "gate": "raw-read",
