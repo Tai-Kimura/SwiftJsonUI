@@ -23,7 +23,9 @@ public struct SafeAreaViewAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "edges": "safeAreaInsetPositions",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -42,7 +44,7 @@ public struct SafeAreaViewAttributes {
     /// Stack orientation (default: zstack)
     public let orientation: AttrEnum<Orientation>?
 
-    /// Safe area edges
+    /// Safe area edges. `edges` is an accepted alias spelling: the Compose SafeAreaView builder reads it (kjui compose_builder.rb:722 `json_data['edges'] || json_data['safeAreaInsetPositions']`) while no declaration named it, so iOS and web silently ignored a layout that used it. Declaring the alias normalizes it to the canonical spelling and makes it reach all three platforms. [aliases: edges]
     public let safeAreaInsetPositions: [Any]?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
@@ -52,7 +54,7 @@ public struct SafeAreaViewAttributes {
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
-        self.safeAreaInsetPositions = AttrCoerce.array(AttrCoerce.lookup(json, "safeAreaInsetPositions"))
+        self.safeAreaInsetPositions = AttrCoerce.array(AttrCoerce.lookup(json, "safeAreaInsetPositions", ["edges"], canonicalOnly: canonicalOnly))
     }
 
     private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {

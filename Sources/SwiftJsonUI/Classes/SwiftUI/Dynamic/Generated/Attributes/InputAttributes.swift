@@ -9,11 +9,41 @@ import Foundation
 /// Shared attributes are available via `common`.
 /// Overrides the common definition of: `borderStyle`, `disabledBackground`, `tintColor` (use the property on this struct).
 public struct InputAttributes {
+    public enum AutocapitalizationType: String {
+        case none = "none"
+        case words = "words"
+        case sentences = "sentences"
+        case allCharacters = "allCharacters"
+    }
+
+    public enum AutocorrectionType: String {
+        case `default` = "default"
+        case yes = "yes"
+        case no = "no"
+    }
+
     public enum BorderStyle: String {
         case none = "none"
         case line = "line"
         case bezel = "bezel"
         case roundedRect = "roundedRect"
+    }
+
+    public enum ContentType: String {
+        case username = "username"
+        case password = "password"
+        case newPassword = "newPassword"
+        case oneTimeCode = "oneTimeCode"
+        case email = "email"
+        case name = "name"
+        case givenName = "givenName"
+        case familyName = "familyName"
+        case telephoneNumber = "telephoneNumber"
+        case streetAddress = "streetAddress"
+        case postalCode = "postalCode"
+        case country = "country"
+        case creditCardNumber = "creditCardNumber"
+        case uRL = "URL"
     }
 
     public enum Input: String {
@@ -26,6 +56,16 @@ public struct InputAttributes {
         case url = "url"
         case password = "password"
         case decimal = "decimal"
+    }
+
+    public enum InputType: String {
+        case text = "text"
+        case number = "number"
+        case numberDecimal = "numberDecimal"
+        case phone = "phone"
+        case email = "email"
+        case password = "password"
+        case multiline = "multiline"
     }
 
     public enum ReturnKeyType: String {
@@ -77,7 +117,6 @@ public struct InputAttributes {
         "hintFontSize",
         "input",
         "inputType",
-        "keyboardAppearance",
         "leftView",
         "leftViewMode",
         "maxLength",
@@ -97,7 +136,6 @@ public struct InputAttributes {
         "onTextChange",
         "pattern",
         "placeholder",
-        "placeholderColor",
         "required",
         "returnKeyType",
         "rightView",
@@ -115,7 +153,9 @@ public struct InputAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "placeholderColor": "hintColor",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -125,23 +165,23 @@ public struct InputAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Input accessory background - hex string or color name from colors.json
+    /// Input accessory toolbar background - hex string or color name from colors.json. UIKit only: read by SJUITextField's accessory toolbar; SwiftUI has no input-accessory surface.
     public let accessoryBackground: String?
 
     /// Accessory corner radius
     public let accessoryCornerRadius: Double?
 
-    /// Input accessory text color - hex string or color name from colors.json
+    /// Input accessory toolbar text color - hex string or color name from colors.json. UIKit only (see accessoryBackground).
     public let accessoryTextColor: String?
 
     /// Apply liquid glass effect
     public let applyLiquidGlass: Bool?
 
-    /// Auto-capitalization type
-    public let autocapitalizationType: String?
+    /// Auto-capitalization type. UIKit's vocabulary, honoured on every platform (.textInputAutocapitalization / KeyboardCapitalization / the HTML autocapitalize attribute). `characters` is an accepted alias spelling of allCharacters.
+    public let autocapitalizationType: AttrEnum<AutocapitalizationType>?
 
-    /// Auto-correction type
-    public let autocorrectionType: String?
+    /// Auto-correction type. UIKit's vocabulary; `on`/`true` and `off`/`false` are accepted alias spellings of yes/no. `default` means "leave it to the platform" — web deliberately emits nothing for it.
+    public let autocorrectionType: AttrEnum<AutocorrectionType>?
 
     /// Border style
     public let borderStyle: AttrEnum<BorderStyle>?
@@ -152,13 +192,13 @@ public struct InputAttributes {
     /// Clear button mode
     public let clearButtonMode: String?
 
-    /// Content type for autofill (binding supported)
-    public let contentType: AttrValue<String>?
+    /// Content type for autofill (binding supported). The enum is the set of tokens at least one platform actually maps: iOS to .textContentType, web to the autoComplete attribute, Android to the keyboard type. `email` (not emailAddress) and `telephoneNumber` (not tel) are the canonical spellings — the web converter only matches those two, so the alternates are normalized before conversion. Tokens no platform maps are deliberately absent: declaring UIKit's full UITextContentType list would enumerate values that cannot reach any output.
+    public let contentType: AttrValue<AttrEnum<ContentType>>?
 
     /// Background color when disabled - hex string or color name from colors.json
     public let disabledBackground: String?
 
-    /// Done button text
+    /// Text of the input accessory toolbar's Done button. UIKit only (see accessoryBackground).
     public let doneText: String?
 
     /// Field padding
@@ -191,23 +231,20 @@ public struct InputAttributes {
     /// Hint text attributes (font, color, etc.)
     public let hintAttributes: [String: Any]?
 
-    /// Placeholder color - hex string or color name from colors.json (binding supported) [DEPRECATED: SwiftUI TextField placeholder cannot be color-styled.]
+    /// Placeholder color - hex string or color name from colors.json (binding supported). `placeholderColor` is an accepted alias spelling. [aliases: placeholderColor]
     public let hintColor: AttrValue<String>?
 
-    /// Placeholder font [DEPRECATED: SwiftUI TextField placeholder cannot be custom-font-styled.]
+    /// Placeholder font
     public let hintFont: String?
 
-    /// Placeholder font size [DEPRECATED: SwiftUI TextField placeholder cannot be custom-size-styled.]
+    /// Placeholder font size
     public let hintFontSize: Double?
 
     /// Input type (includes 'allphabet' typo for backward compatibility)
     public let input: AttrEnum<Input>?
 
-    /// Input type for Android (Android-only; `input` is the cross-platform attribute)
-    public let inputType: String?
-
-    /// Keyboard appearance: dark, light [DEPRECATED: Compose keyboard appearance is system-controlled.]
-    public let keyboardAppearance: String?
+    /// Input type for Android (Android-only; `input` is the cross-platform attribute). Both the JsonUI spellings and the raw android:inputType names the frozen XML mapper passed through are accepted; the latter normalize to the former.
+    public let inputType: AttrEnum<InputType>?
 
     /// Left view configuration
     public let leftView: [String: Any]?
@@ -266,9 +303,6 @@ public struct InputAttributes {
     /// Placeholder text (alias for hint)
     public let placeholder: String?
 
-    /// Deprecated on swift. [DEPRECATED: SwiftUI TextField placeholder cannot be color-styled.]
-    public let placeholderColor: String?
-
     /// Required field validation
     public let required: Bool?
 
@@ -313,12 +347,12 @@ public struct InputAttributes {
         self.accessoryCornerRadius = AttrCoerce.number(AttrCoerce.lookup(json, "accessoryCornerRadius"))
         self.accessoryTextColor = AttrCoerce.string(AttrCoerce.lookup(json, "accessoryTextColor"))
         self.applyLiquidGlass = AttrCoerce.boolean(AttrCoerce.lookup(json, "applyLiquidGlass"))
-        self.autocapitalizationType = AttrCoerce.string(AttrCoerce.lookup(json, "autocapitalizationType"))
-        self.autocorrectionType = AttrCoerce.string(AttrCoerce.lookup(json, "autocorrectionType"))
+        self.autocapitalizationType = Self.parseAutocapitalizationType(AttrCoerce.lookup(json, "autocapitalizationType"))
+        self.autocorrectionType = Self.parseAutocorrectionType(AttrCoerce.lookup(json, "autocorrectionType"))
         self.borderStyle = Self.parseBorderStyle(AttrCoerce.lookup(json, "borderStyle"))
         self.caretAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "caretAttributes"))
         self.clearButtonMode = AttrCoerce.string(AttrCoerce.lookup(json, "clearButtonMode"))
-        self.contentType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentType"), AttrCoerce.string)
+        self.contentType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentType"), { Self.parseContentType($0) })
         self.disabledBackground = AttrCoerce.string(AttrCoerce.lookup(json, "disabledBackground"))
         self.doneText = AttrCoerce.string(AttrCoerce.lookup(json, "doneText"))
         self.fieldPadding = AttrCoerce.number(AttrCoerce.lookup(json, "fieldPadding"))
@@ -331,12 +365,11 @@ public struct InputAttributes {
         self.hideOnFocused = AttrCoerce.boolean(AttrCoerce.lookup(json, "hideOnFocused"))
         self.hint = AttrCoerce.string(AttrCoerce.lookup(json, "hint"))
         self.hintAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "hintAttributes"))
-        self.hintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "hintColor"), AttrCoerce.string)
+        self.hintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "hintColor", ["placeholderColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.hintFont = AttrCoerce.string(AttrCoerce.lookup(json, "hintFont"))
         self.hintFontSize = AttrCoerce.number(AttrCoerce.lookup(json, "hintFontSize"))
         self.input = Self.parseInput(AttrCoerce.lookup(json, "input"))
-        self.inputType = AttrCoerce.string(AttrCoerce.lookup(json, "inputType"))
-        self.keyboardAppearance = AttrCoerce.string(AttrCoerce.lookup(json, "keyboardAppearance"))
+        self.inputType = Self.parseInputType(AttrCoerce.lookup(json, "inputType"))
         self.leftView = AttrCoerce.object(AttrCoerce.lookup(json, "leftView"))
         self.leftViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "leftViewMode"))
         self.maxLength = AttrCoerce.number(AttrCoerce.lookup(json, "maxLength"))
@@ -356,7 +389,6 @@ public struct InputAttributes {
         self.onTextChange = AttrCoerce.string(AttrCoerce.lookup(json, "onTextChange"))
         self.pattern = AttrCoerce.string(AttrCoerce.lookup(json, "pattern"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))
-        self.placeholderColor = AttrCoerce.string(AttrCoerce.lookup(json, "placeholderColor"))
         self.required = AttrCoerce.boolean(AttrCoerce.lookup(json, "required"))
         self.returnKeyType = Self.parseReturnKeyType(AttrCoerce.lookup(json, "returnKeyType"))
         self.rightView = AttrCoerce.object(AttrCoerce.lookup(json, "rightView"))
@@ -371,6 +403,35 @@ public struct InputAttributes {
         self.tintColor = AttrCoerce.string(AttrCoerce.lookup(json, "tintColor"))
     }
 
+    private static func parseAutocapitalizationType(_ raw: Any?) -> AttrEnum<AutocapitalizationType>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "none": return .known(AutocapitalizationType.none)
+            case "words": return .known(AutocapitalizationType.words)
+            case "sentences": return .known(AutocapitalizationType.sentences)
+            case "allcharacters", "characters": return .known(AutocapitalizationType.allCharacters)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("Input.autocapitalizationType: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseAutocorrectionType(_ raw: Any?) -> AttrEnum<AutocorrectionType>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "default": return .known(AutocorrectionType.`default`)
+            case "yes", "on", "true": return .known(AutocorrectionType.yes)
+            case "no", "off", "false": return .known(AutocorrectionType.no)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("Input.autocorrectionType: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
     private static func parseBorderStyle(_ raw: Any?) -> AttrEnum<BorderStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
@@ -383,6 +444,31 @@ public struct InputAttributes {
             }
         }
         AttrCodegenWarnings.emit("Input.borderStyle: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseContentType(_ raw: Any?) -> AttrEnum<ContentType>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "username": return .known(ContentType.username)
+            case "password": return .known(ContentType.password)
+            case "newpassword": return .known(ContentType.newPassword)
+            case "onetimecode": return .known(ContentType.oneTimeCode)
+            case "email", "emailaddress": return .known(ContentType.email)
+            case "name": return .known(ContentType.name)
+            case "givenname": return .known(ContentType.givenName)
+            case "familyname": return .known(ContentType.familyName)
+            case "telephonenumber", "tel", "phone": return .known(ContentType.telephoneNumber)
+            case "streetaddress": return .known(ContentType.streetAddress)
+            case "postalcode": return .known(ContentType.postalCode)
+            case "country": return .known(ContentType.country)
+            case "creditcardnumber": return .known(ContentType.creditCardNumber)
+            case "url": return .known(ContentType.uRL)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("Input.contentType: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 
@@ -403,6 +489,24 @@ public struct InputAttributes {
             }
         }
         AttrCodegenWarnings.emit("Input.input: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseInputType(_ raw: Any?) -> AttrEnum<InputType>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "text": return .known(InputType.text)
+            case "number": return .known(InputType.number)
+            case "numberdecimal": return .known(InputType.numberDecimal)
+            case "phone": return .known(InputType.phone)
+            case "email", "textemailaddress": return .known(InputType.email)
+            case "password", "textpassword": return .known(InputType.password)
+            case "multiline": return .known(InputType.multiline)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("Input.inputType: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

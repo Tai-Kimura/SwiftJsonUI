@@ -99,7 +99,11 @@ final class TypedAttributeConverterTests: XCTestCase {
             "nextFocus": "field2"
         ])
         let attrs = c.typedAttributes(TextFieldAttributes.self)
-        XCTAssertEqual(attrs.contentType?.value, "emailAddress")
+        // `contentType` became an enum in 49-E. The generated parser
+        // canonicalises the alias spellings, so the declared `emailAddress`
+        // arrives as `.email` — that canonicalisation is the point, not a
+        // discrepancy.
+        XCTAssertEqual(attrs.contentType?.value?.knownValue, .email)
         XCTAssertEqual(attrs.textPaddingLeft, 12)
         XCTAssertEqual(attrs.caretAttributes?["fontColor"] as? String, "#00FF00")
         XCTAssertEqual(attrs.nextFocus, "field2")

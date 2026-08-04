@@ -117,7 +117,7 @@ public struct ViewAttributes {
     /// Stack orientation (default: zstack)
     public let orientation: AttrEnum<Orientation>?
 
-    /// Safe area inset positions (SafeAreaView only)
+    /// Which edges reserve the safe area. Declared here as well as on SafeAreaView on purpose: SafeAreaView is its own definition section and does not inherit View's, and every platform honours the attribute on a PLAIN view too (sjui base_view_converter.rb#apply_safe_area_insets_to_bag runs for every component; rjui view_converter.rb#safe_area_edges emits env(safe-area-inset-*) padding). The two declarations are the same concept reaching two routing paths, not a duplicate.
     public let safeAreaInsetPositions: [Any]?
 
     /// Space between children (binding supported)
