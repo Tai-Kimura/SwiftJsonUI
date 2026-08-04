@@ -66,6 +66,15 @@ public struct ProgressConverter {
             result = AnyView(result.background(color))
         }
 
+        // hidesWhenStopped — UIActivityIndicatorView's property. On a
+        // determinate ProgressView "stopped" is progress == 0, so this hides
+        // the bar until there is progress to show. Read by nobody here, which
+        // left a Progress declared with it visible at 0
+        // (progress_converter.rb:52-58 defines the same rule).
+        if attrs.hidesWhenStopped == true {
+            result = AnyView(result.opacity(progressValue > 0 ? 1 : 0))
+        }
+
         // Standard modifiers (padding -> frame -> background -> cornerRadius -> border -> margins -> ...)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
 

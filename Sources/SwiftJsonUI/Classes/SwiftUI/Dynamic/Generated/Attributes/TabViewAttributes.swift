@@ -10,7 +10,6 @@ import Foundation
 public struct TabViewAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
-        "onTabChange",
         "onValueChange",
         "selectedIndex",
         "showLabels",
@@ -24,7 +23,9 @@ public struct TabViewAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
         "onPageChanged": "onValueChange",
+        "onTabChange": "onValueChange",
         "selectedTabIndex": "selectedIndex",
     ]
 
@@ -35,9 +36,6 @@ public struct TabViewAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
-
-    /// Tab change handler - binding only (@{functionName})
-    public let onTabChange: AttrValue<Any>?
 
     /// Tab/page selection change handler. Canonical; prefer over onTabChange/onPageChanged. [aliases: onTabChange, onPageChanged; binding: one-way]
     public let onValueChange: AttrValue<String>?
@@ -64,7 +62,6 @@ public struct TabViewAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.onTabChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onTabChange"))
         self.onValueChange = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onValueChange", ["onTabChange", "onPageChanged"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.selectedIndex = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedIndex", ["selectedTabIndex"], canonicalOnly: canonicalOnly), AttrCoerce.number)
         self.showLabels = AttrCoerce.boolean(AttrCoerce.lookup(json, "showLabels"))

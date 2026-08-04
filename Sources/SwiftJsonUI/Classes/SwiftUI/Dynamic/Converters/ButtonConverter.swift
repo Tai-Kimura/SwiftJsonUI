@@ -78,8 +78,20 @@ public struct ButtonConverter {
         // Color properties
         let fontColor = DynamicHelpers.getColor(component.fontColor, data: data)
         let backgroundColor = DynamicHelpers.getColor(component.background, data: data)
-        let tapBackground = DynamicHelpers.getColor(component.tapBackground, data: data)
-        let highlightColor = DynamicHelpers.getColor(component.highlightColor, data: data)
+        // `highlightBackground` is the UIKit-era spelling of the pressed-state
+        // background; `tapBackground` wins when both are declared. Same rule
+        // as button_converter.rb:188-194 and rjui button_converter.rb:68.
+        let buttonAttrs = component.typedAttributes(ButtonAttributes.self)
+        let tapBackground = DynamicHelpers.getColor(
+            component.tapBackground ?? buttonAttrs.highlightBackground, data: data
+        )
+        // Read through the generated extraction so the `hilightColor` typo
+        // alias resolves — 49-E folded that second declaration into an alias,
+        // and the hand-decoded property never saw it.
+        let highlightColor = DynamicHelpers.getColor(
+            (buttonAttrs.highlightColor?.rawRepresentation as? String) ?? component.highlightColor,
+            data: data
+        )
         let disabledFontColor = DynamicHelpers.getColor(component.disabledFontColor, data: data)
         let disabledBackground = DynamicHelpers.getColor(component.disabledBackground, data: data)
 

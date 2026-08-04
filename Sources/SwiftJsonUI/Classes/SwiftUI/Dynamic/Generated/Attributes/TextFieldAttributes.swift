@@ -140,7 +140,6 @@ public struct TextFieldAttributes {
         "rightView",
         "rightViewMode",
         "secure",
-        "spellCheckingType",
         "text",
         "textAlign",
         "textPaddingLeft",
@@ -153,6 +152,7 @@ public struct TextFieldAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
         "placeholderColor": "hintColor",
     ]
 
@@ -185,7 +185,7 @@ public struct TextFieldAttributes {
     /// Border style
     public let borderStyle: AttrEnum<BorderStyle>?
 
-    /// Caret styling attributes (fontColor for cursor color) [DEPRECATED: SwiftUI cannot style the caret (iOS 17 has partial .tint API).]
+    /// Caret styling attributes (fontColor for cursor color)
     public let caretAttributes: [String: Any]?
 
     /// Clear button mode
@@ -317,9 +317,6 @@ public struct TextFieldAttributes {
     /// Secure text entry for passwords (can be data binding)
     public let secure: AttrValue<Bool>?
 
-    /// Spell checking type [DEPRECATED: Compose does not expose spell-checking control.]
-    public let spellCheckingType: String?
-
     /// Text content (binding for two-way) [binding: two-way]
     public let text: AttrValue<String>?
 
@@ -393,7 +390,6 @@ public struct TextFieldAttributes {
         self.rightView = AttrCoerce.object(AttrCoerce.lookup(json, "rightView"))
         self.rightViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "rightViewMode"))
         self.secure = AttrCoerce.attrValue(AttrCoerce.lookup(json, "secure"), AttrCoerce.boolean)
-        self.spellCheckingType = AttrCoerce.string(AttrCoerce.lookup(json, "spellCheckingType"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.textAlign = Self.parseTextAlign(AttrCoerce.lookup(json, "textAlign"))
         self.textPaddingLeft = AttrCoerce.number(AttrCoerce.lookup(json, "textPaddingLeft"))

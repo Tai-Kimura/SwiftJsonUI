@@ -249,10 +249,17 @@ public struct TextViewConverter {
         // --- 7. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
-        // --- 8. .disabled (enabled) ---
+        // --- 8. .disabled (editable / enabled) ---
         // TextField applies this as its final step; TextView never did, so a
         // declared `enabled` (literal or bound) gated nothing here while
         // codegen, Compose and web all gate input.
+        //
+        // `editable: false` is the second way to say read-only and was read by
+        // nobody here. textview_converter.rb#apply_editable_and_keyboard
+        // OR-combines the two into one `.disabled`, so either disables.
+        if component.typedAttributes(TextViewAttributes.self).editable == false {
+            result = AnyView(result.disabled(true))
+        }
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
 
         return result

@@ -25,6 +25,7 @@ public struct SegmentAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
         "normalColor": "fontColor",
         "selectedColor": "selectedFontColor",
     ]

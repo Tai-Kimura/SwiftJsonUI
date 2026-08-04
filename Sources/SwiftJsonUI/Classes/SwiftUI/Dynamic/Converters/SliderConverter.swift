@@ -48,7 +48,15 @@ public struct SliderConverter {
         )
 
         // Tint color (.accentColor to match Ruby converter)
-        if let tintColor = component.tintColor, let color = DynamicHelpers.getColor(tintColor) {
+        //
+        // `progressTintColor` is the specific spelling for the filled part of
+        // the track, which is exactly what `.tint()` colours on a SwiftUI
+        // Slider — so it wins over the generic `tintColor`, the same
+        // precedence progress_converter.rb:54 uses. The SSoT called it
+        // "deprecated on swift — SwiftUI Slider uses unified tint only";
+        // ProgressConverter had already disproved that, and 49-E retracted it.
+        let sliderTint = attrs.progressTintColor ?? component.tintColor
+        if let tintColor = sliderTint, let color = DynamicHelpers.getColor(tintColor) {
             // .tint is the modern accent path — .accentColor alone left the
             // conformance render untinted (33 cross-effect, ios inert).
             result = AnyView(result.tint(color).accentColor(color))

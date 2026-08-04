@@ -54,7 +54,6 @@ public struct CommonAttributes {
         "alignTopOfView",
         "alignTopView",
         "alignment",
-        "alpha",
         "aspectHeight",
         "aspectWidth",
         "background",
@@ -187,7 +186,9 @@ public struct CommonAttributes {
     /// Alias spelling → canonical attribute name. Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -239,9 +240,6 @@ public struct CommonAttributes {
     /// String alternative to numeric gravity. Resolves to SwiftUI Alignment / Compose Arrangement+Alignment.
     public let alignment: AttrEnum<Alignment>?
 
-    /// Opacity (0-1) - can be data binding
-    public let alpha: AttrValue<Double>?
-
     /// Aspect ratio height (binding supported)
     public let aspectHeight: AttrValue<Double>?
 
@@ -266,7 +264,7 @@ public struct CommonAttributes {
     /// Binding ID
     public let binding_id: String?
 
-    /// Border color - hex string or color name from colors.json (binding supported)
+    /// Border color - hex string or color name from colors.json (binding supported). There is deliberately NO default: a border is drawn only when borderWidth AND borderColor are both declared, and neither half summons one on its own (2026-08-03 user ruling, recorded in attribute_semantics.json#semantics.border and gated by `jui conformance gate --cross-effect` against the five `observable` entries there). Declaring a default here would make borderWidth alone draw, which is the direction d2c8628 took once and the ruling superseded.
     public let borderColor: AttrValue<String>?
 
     /// Border line style - solid (default), dashed, or dotted [default: solid]
@@ -509,7 +507,7 @@ public struct CommonAttributes {
     /// Click handler function name (selector-based, lowercase) - string only, no binding [accepts: string | array]
     public let onclick: Any?
 
-    /// Opacity (0-1), alias for alpha - can be data binding [aliases: alpha]
+    /// Opacity (0-1) - can be data binding. `alpha` is an accepted alias spelling. [aliases: alpha]
     public let opacity: AttrValue<Double>?
 
     /// Uniform padding value (binding supported)
@@ -641,7 +639,6 @@ public struct CommonAttributes {
         self.alignTopOfView = AttrCoerce.string(AttrCoerce.lookup(json, "alignTopOfView"))
         self.alignTopView = AttrCoerce.string(AttrCoerce.lookup(json, "alignTopView"))
         self.alignment = Self.parseAlignment(AttrCoerce.lookup(json, "alignment"))
-        self.alpha = AttrCoerce.attrValue(AttrCoerce.lookup(json, "alpha"), AttrCoerce.number)
         self.aspectHeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "aspectHeight"), AttrCoerce.number)
         self.aspectWidth = AttrCoerce.attrValue(AttrCoerce.lookup(json, "aspectWidth"), AttrCoerce.number)
         self.background = AttrCoerce.attrValue(AttrCoerce.lookup(json, "background"), AttrCoerce.string)

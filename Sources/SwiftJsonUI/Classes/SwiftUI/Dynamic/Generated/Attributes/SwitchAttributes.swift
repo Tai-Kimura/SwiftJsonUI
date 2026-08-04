@@ -22,7 +22,6 @@ public struct SwitchAttributes {
         "labelPosition",
         "offTintColor",
         "onTintColor",
-        "onToggle",
         "onValueChange",
         "thumbTintColor",
         "tint",
@@ -34,7 +33,10 @@ public struct SwitchAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+        "onToggle": "onValueChange",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -65,9 +67,6 @@ public struct SwitchAttributes {
     /// Track color when on - hex string or color name from colors.json
     public let onTintColor: String?
 
-    /// Toggle handler function - binding only (@{functionName}). Alias of onValueChange.
-    public let onToggle: AttrValue<Any>?
-
     /// Value change handler - binding only (@{functionName}) [aliases: onToggle]
     public let onValueChange: AttrValue<Any>?
 
@@ -80,7 +79,7 @@ public struct SwitchAttributes {
     /// Tint color - hex string or color name from colors.json (alias)
     public let tintColor: String?
 
-    /// Deprecated on swift. [DEPRECATED: SwiftUI Toggle uses unified tint only.]
+    /// Colour of the switch track - hex string or color name from colors.json. Deprecation retracted with the Slider pair; a SwiftUI Toggle is not limited to a unified tint any more than Progress is.
     public let trackTintColor: String?
 
     /// Switch state alias (binding for two-way) [binding: two-way]
@@ -97,7 +96,6 @@ public struct SwitchAttributes {
         self.labelPosition = Self.parseLabelPosition(AttrCoerce.lookup(json, "labelPosition"))
         self.offTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "offTintColor"), AttrCoerce.string)
         self.onTintColor = AttrCoerce.string(AttrCoerce.lookup(json, "onTintColor"))
-        self.onToggle = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onToggle"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange", ["onToggle"], canonicalOnly: canonicalOnly))
         self.thumbTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "thumbTintColor"), AttrCoerce.string)
         self.tint = AttrCoerce.attrValue(AttrCoerce.lookup(json, "tint"), AttrCoerce.string)

@@ -364,6 +364,105 @@ final class DynamicInertAttributeTests: XCTestCase {
         )
     }
 
+    // MARK: - 部分ゴーサイン: the SILENT group
+
+    /// `hint` is canonical, `placeholder` the alias — the converter read them
+    /// the other way round, so the canonical spelling was the one dropped.
+    func testNetworkImageHintWinsOverPlaceholderAlias() throws {
+        let c = try component("""
+        { "type": "NetworkImage", "hint": "from_hint", "placeholder": "from_alias" }
+        """)
+        XCTAssertEqual(c.typedAttributes(NetworkImageAttributes.self).hint, "from_hint")
+    }
+
+    /// `trackTintColor` is the third spelling of the ON-state track. The
+    /// converter's fallback chain knew only `onTintColor` / `tint`.
+    func testSwitchTrackTintColorIsDeclared() throws {
+        let c = try component("""
+        { "type": "Switch", "trackTintColor": "#FF0000" }
+        """)
+        XCTAssertEqual(c.typedAttributes(SwitchAttributes.self).trackTintColor, "#FF0000")
+    }
+
+    /// `progressTintColor` names the filled part of the track specifically, so
+    /// it beats the generic `tintColor` — progress_converter.rb's precedence.
+    func testSliderProgressTintColorWinsOverGenericTint() throws {
+        let c = try component("""
+        { "type": "Slider", "value": 0.5, "progressTintColor": "#FF0000", "tintColor": "#00FF00" }
+        """)
+        let attrs = c.typedAttributes(SliderAttributes.self)
+        XCTAssertEqual(attrs.progressTintColor, "#FF0000")
+        XCTAssertEqual(c.tintColor, "#00FF00", "the generic spelling is still there to fall back to")
+    }
+
+    /// `highlightBackground` is the UIKit-era spelling of the pressed-state
+    /// background; `tapBackground` wins when both are declared.
+    func testButtonTapBackgroundWinsOverHighlightBackground() throws {
+        let c = try component("""
+        { "type": "Button", "text": "x", "tapBackground": "#FF0000", "highlightBackground": "#00FF00" }
+        """)
+        XCTAssertEqual(c.tapBackground, "#FF0000")
+        XCTAssertEqual(
+            c.typedAttributes(ButtonAttributes.self).highlightBackground, "#00FF00",
+            "and highlightBackground is what fills in when tapBackground is absent"
+        )
+    }
+
+    /// `hilightColor` is a typo alias of `highlightColor`. It used to be
+    /// declared as its own attribute too, which cancelled the alias; 49-E
+    /// folded it, so the generated lookup now resolves the spelling.
+    func testButtonHilightColorTypoAliasResolves() throws {
+        let c = try component("""
+        { "type": "Button", "text": "x", "hilightColor": "#FF0000" }
+        """)
+        XCTAssertEqual(
+            c.typedAttributes(ButtonAttributes.self).highlightColor?.rawRepresentation as? String,
+            "#FF0000"
+        )
+    }
+
+    /// `highlighted` and `highlightBackground` are a pair: the flag with no
+    /// colour, or the colour with no flag, describes nothing to draw.
+    func testHighlightedPairIsRequiredTogether() throws {
+        let both = try component("""
+        { "type": "View", "id": "t", "highlighted": true, "highlightBackground": "#FF0000" }
+        """)
+        XCTAssertEqual(
+            both.typedAttributes(CommonAttributes.self).highlightBackground?.rawRepresentation as? String,
+            "#FF0000"
+        )
+        XCTAssertEqual(both.rawAttribute("highlighted") as? Bool, true)
+
+        // The flag also accepts the bound form, which is why it is read raw
+        // rather than through the hand-decoded Bool? slot.
+        let bound = try component("""
+        { "type": "View", "id": "t", "highlighted": "@{isOn}", "highlightBackground": "#FF0000" }
+        """)
+        XCTAssertNil(bound.highlighted, "the hand-decoded slot is nil for a binding")
+        XCTAssertTrue(
+            DynamicBindingHelper.resolveBool(
+                bound.rawAttribute("highlighted"), data: ["isOn": true], fallback: false
+            )
+        )
+    }
+
+    /// `editable: false` is the second way to say read-only; only `enabled`
+    /// was read here.
+    func testTextViewEditableIsDeclared() throws {
+        let c = try component("""
+        { "type": "TextView", "id": "t", "editable": false }
+        """)
+        XCTAssertEqual(c.typedAttributes(TextViewAttributes.self).editable, false)
+    }
+
+    /// On a determinate ProgressView "stopped" is progress == 0.
+    func testProgressHidesWhenStoppedIsDeclared() throws {
+        let c = try component("""
+        { "type": "Progress", "id": "t", "progress": 0, "hidesWhenStopped": true }
+        """)
+        XCTAssertEqual(c.typedAttributes(ProgressAttributes.self).hidesWhenStopped, true)
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
