@@ -116,7 +116,9 @@ public struct TextViewAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -141,7 +143,7 @@ public struct TextViewAttributes {
     /// Background color when disabled - hex string or color name from colors.json
     public let disabledBackground: String?
 
-    /// The UIKit spelling of containerInset (content inset). Same accepted shapes: a single number, or an array of 1/2/4 numbers. Deprecated on kotlin. [accepts: number | array; DEPRECATED: Compose Text has no edgeInset; use padding* instead.]
+    /// The UIKit spelling of containerInset (content inset). Same accepted shapes: a single number, or an array of 1/2/4 numbers. Was declared deprecated on kotlin ("Compose Text has no edgeInset"); retracted 2026-08-05 because Label.edgeInset maps to .padding() on Compose in both the codegen and the dynamic renderer. Unimplemented on the Compose TextView path, not impossible. [accepts: number | array]
     public let edgeInset: Any?
 
     /// Enable/disable editing

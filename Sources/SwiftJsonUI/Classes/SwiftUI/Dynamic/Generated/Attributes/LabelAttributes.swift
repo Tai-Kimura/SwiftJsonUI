@@ -64,7 +64,9 @@ public struct LabelAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -77,7 +79,7 @@ public struct LabelAttributes {
     /// Enable auto-shrink
     public let autoShrink: Bool?
 
-    /// Edge insets as array or pipe-separated string [accepts: array | string; DEPRECATED: Compose Text has no edgeInset; use padding* instead.]
+    /// Edge insets as array or pipe-separated string. Applied on every platform including Compose, where it maps to .padding() (kjui text_component.rb / DynamicTextComponent.kt) - the former "Compose Text has no edgeInset" deprecation was contradicted by that implementation and was retracted 2026-08-05. [accepts: array | string]
     public let edgeInset: Any?
 
     /// Font weight name (regular/medium/semibold/bold/...) or font name. Passed as the `weight` field of `FontSpec` to `Configuration.Font.fontProvider`. Can be a data binding.

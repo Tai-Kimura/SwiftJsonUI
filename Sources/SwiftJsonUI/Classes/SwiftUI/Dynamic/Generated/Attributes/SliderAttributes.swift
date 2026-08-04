@@ -10,10 +10,8 @@ import Foundation
 public struct SliderAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
-        "maxValue",
         "maximum",
         "maximumValueImage",
-        "minValue",
         "minimum",
         "minimumValueImage",
         "onValueChange",
@@ -28,7 +26,10 @@ public struct SliderAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+        "maxValue": "maximum",
         "maximumValue": "maximum",
+        "minValue": "minimum",
         "minimumValue": "minimum",
         "onValueChanged": "onValueChange",
     ]
@@ -41,19 +42,13 @@ public struct SliderAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Maximum value (binding supported)
-    public let maxValue: AttrValue<Double>?
-
-    /// Maximum value (alias for maxValue) (binding supported) [aliases: maximumValue, maxValue]
+    /// Maximum value (binding supported). `maxValue` / `maximumValue` are accepted alias spellings. [aliases: maximumValue, maxValue]
     public let maximum: AttrValue<Double>?
 
     /// Image at maximum end
     public let maximumValueImage: String?
 
-    /// Minimum value (binding supported)
-    public let minValue: AttrValue<Double>?
-
-    /// Minimum value (alias for minValue) (binding supported) [aliases: minimumValue, minValue]
+    /// Minimum value (binding supported). `minValue` / `minimumValue` are accepted alias spellings. [aliases: minimumValue, minValue]
     public let minimum: AttrValue<Double>?
 
     /// Image at minimum end
@@ -62,7 +57,7 @@ public struct SliderAttributes {
     /// Value change handler - binding only (@{functionName}) [aliases: onValueChanged]
     public let onValueChange: AttrValue<Any>?
 
-    /// Deprecated on swift. [DEPRECATED: SwiftUI Slider uses unified tint only.]
+    /// Colour of the filled portion of the track - hex string or color name from colors.json. Was declared deprecated on swift ("SwiftUI Slider uses unified tint only"); retracted 2026-08-05 because Progress, also SwiftUI, maps the same attribute to .tint(). Unimplemented on the Slider path, not impossible.
     public let progressTintColor: String?
 
     /// Step increment value
@@ -71,7 +66,7 @@ public struct SliderAttributes {
     /// Tint color - hex string or color name from colors.json
     public let tintColor: String?
 
-    /// Deprecated on swift. [DEPRECATED: SwiftUI Slider uses unified tint only.]
+    /// Colour of the unfilled track - hex string or color name from colors.json. Deprecation retracted with progressTintColor: SwiftUI Progress reaches the same result through .background().
     public let trackTintColor: String?
 
     /// Current value (binding for two-way) [binding: two-way]
@@ -81,10 +76,8 @@ public struct SliderAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.maxValue = AttrCoerce.attrValue(AttrCoerce.lookup(json, "maxValue"), AttrCoerce.number)
         self.maximum = AttrCoerce.attrValue(AttrCoerce.lookup(json, "maximum", ["maximumValue", "maxValue"], canonicalOnly: canonicalOnly), AttrCoerce.number)
         self.maximumValueImage = AttrCoerce.string(AttrCoerce.lookup(json, "maximumValueImage"))
-        self.minValue = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minValue"), AttrCoerce.number)
         self.minimum = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minimum", ["minimumValue", "minValue"], canonicalOnly: canonicalOnly), AttrCoerce.number)
         self.minimumValueImage = AttrCoerce.string(AttrCoerce.lookup(json, "minimumValueImage"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange", ["onValueChanged"], canonicalOnly: canonicalOnly))

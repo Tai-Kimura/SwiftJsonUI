@@ -31,7 +31,6 @@ public struct ButtonAttributes {
         "fontWeight",
         "highlightBackground",
         "highlightColor",
-        "hilightColor",
         "image",
         "tapBackground",
         "text",
@@ -41,7 +40,10 @@ public struct ButtonAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+        "hilightColor": "highlightColor",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -78,9 +80,6 @@ public struct ButtonAttributes {
     /// Highlight color - hex string or color name from colors.json (binding supported) [aliases: hilightColor]
     public let highlightColor: AttrValue<String>?
 
-    /// Highlight color - hex string or color name from colors.json (typo alias)
-    public let hilightColor: String?
-
     /// Button image - asset name (binding supported)
     public let image: AttrValue<String>?
 
@@ -106,7 +105,6 @@ public struct ButtonAttributes {
         self.fontWeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontWeight"), { $0 })
         self.highlightBackground = AttrCoerce.string(AttrCoerce.lookup(json, "highlightBackground"))
         self.highlightColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightColor", ["hilightColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
-        self.hilightColor = AttrCoerce.string(AttrCoerce.lookup(json, "hilightColor"))
         self.image = AttrCoerce.attrValue(AttrCoerce.lookup(json, "image"), AttrCoerce.string)
         self.tapBackground = AttrCoerce.string(AttrCoerce.lookup(json, "tapBackground"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)

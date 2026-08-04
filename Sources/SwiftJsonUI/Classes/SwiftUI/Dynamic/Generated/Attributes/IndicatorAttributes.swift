@@ -14,6 +14,7 @@ public struct IndicatorAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "animating",
         "color",
         "hidesWhenStopped",
         "indicatorStyle",
@@ -22,7 +23,9 @@ public struct IndicatorAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -31,6 +34,9 @@ public struct IndicatorAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
+
+    /// Whether the indicator is spinning. Defaults to true: an Indicator with nothing declared animates. `false` stops it, and hidesWhenStopped then decides whether the stopped indicator keeps its space or collapses out of the layout — which is why hidesWhenStopped is only ever read on this branch (sjui indicator_converter.rb:23, kjui indicator_component.rb:13). [default: True]
+    public let animating: AttrValue<Bool>?
 
     /// Indicator color - hex string or color name from colors.json (binding supported)
     public let color: AttrValue<String>?
@@ -45,6 +51,7 @@ public struct IndicatorAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.animating = AttrCoerce.attrValue(AttrCoerce.lookup(json, "animating"), AttrCoerce.boolean)
         self.color = AttrCoerce.attrValue(AttrCoerce.lookup(json, "color"), AttrCoerce.string)
         self.hidesWhenStopped = AttrCoerce.boolean(AttrCoerce.lookup(json, "hidesWhenStopped"))
         self.indicatorStyle = Self.parseIndicatorStyle(AttrCoerce.lookup(json, "indicatorStyle"))

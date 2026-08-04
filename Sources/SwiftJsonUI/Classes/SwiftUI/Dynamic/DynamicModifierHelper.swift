@@ -493,6 +493,37 @@ public struct DynamicModifierHelper {
         return AnyView(view.clipToBounds(enabled))
     }
 
+    // MARK: - 11b. highlighted / highlightBackground
+
+    /// The pressed-or-selected appearance, driven by the `highlighted` flag.
+    ///
+    /// UIKit swaps to `highlightBackgroundColor` when the flag is set
+    /// (`SJUIView:187`). SwiftUI has no such state, so codegen emits the same
+    /// swap conditionally (`base_view_converter.rb#apply_highlighted_to_bag`)
+    /// — but nothing on the dynamic side read either half of the pair, even
+    /// though `DynamicComponent` decodes both.
+    ///
+    /// Both halves are required: a `highlightBackground` with no `highlighted`
+    /// describes a state that is never entered, which is why codegen returns
+    /// early on either being absent.
+    public static func applyHighlighted(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        let common = component.typedAttributes(CommonAttributes.self)
+        guard let background = common.highlightBackground?.rawRepresentation as? String,
+              let color = DynamicHelpers.getColor(background, data: data) else { return view }
+        // `highlighted` is undeclared in the SSoT — codegen reads it anyway
+        // (`@component['highlighted']`), so it comes through the raw
+        // passthrough here. Flagged to 49-E; the declaration is the thing
+        // that is wrong, not the read.
+        guard DynamicBindingHelper.resolveBool(
+            component.rawAttribute("highlighted"), data: data, fallback: false
+        ) else { return view }
+        return AnyView(view.background(color))
+    }
+
     // MARK: - 12. Offset
 
     public static func applyOffset(_ view: AnyView, component: DynamicComponent) -> AnyView {
@@ -846,6 +877,9 @@ public struct DynamicModifierHelper {
         // an empty View renders Rectangle().fill, the codegen leaf contract)
         if !skipBackground {
             result = applyBackground(result, component: component, data: data)
+            // 5b. highlighted → highlightBackground, painted over the base
+            // background exactly as UIKit swaps SJUIView's backgroundColor.
+            result = applyHighlighted(result, component: component, data: data)
         }
         // 6. cornerRadius
         result = applyCornerRadius(result, component: component, data: data)

@@ -171,8 +171,14 @@ public struct ToggleConverter {
         // is the SwiftUI spelling; it only shows when the switch is on
         // (33 cross-effect: ios rendered the default green for a declared
         // onTintColor on an ON switch).
+        // `trackTintColor` is the third spelling of the same thing. The SSoT
+        // called it "deprecated on swift — SwiftUI Toggle uses unified tint
+        // only", but ProgressConverter has mapped the same name onto a real
+        // modifier all along; the limit was this converter's fallback chain,
+        // not the platform. 49-E retracted the deprecation.
         if let onTint = component.rawData["onTintColor"] as? String
-            ?? component.rawData["tint"] as? String,
+            ?? component.rawData["tint"] as? String
+            ?? component.typedAttributes(SwitchAttributes.self).trackTintColor,
            let trackColor = DynamicHelpers.getColor(onTint) {
             result = AnyView(result.tint(trackColor))
         }

@@ -32,6 +32,7 @@ public struct RadioAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "alpha": "opacity",
         "selected_icon": "selectedIcon",
     ]
 

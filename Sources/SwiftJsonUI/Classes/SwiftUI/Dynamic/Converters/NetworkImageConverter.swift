@@ -48,7 +48,14 @@ public struct NetworkImageConverter {
         let renderingMode = DynamicHelpers.getRenderingMode(from: component)
 
         // placeholder / defaultImage
-        let placeholder = component.placeholder ?? component.defaultImage
+        //
+        // `hint` is the canonical spelling and `placeholder` its alias — all
+        // three converters read hint first (sjui network_image_converter.rb:29,
+        // rjui :157, kjui likewise). This read them the other way round, so
+        // the canonical spelling was the one that got dropped.
+        let placeholder = component.typedAttributes(NetworkImageAttributes.self).hint
+            ?? component.placeholder
+            ?? component.defaultImage
 
         // headers
         let headers = component.headers ?? [:]
