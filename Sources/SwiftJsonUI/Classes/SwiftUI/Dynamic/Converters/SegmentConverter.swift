@@ -41,14 +41,14 @@ public struct SegmentConverter {
             component.rawAttribute("backgroundColor") as? String, data: data)
         // fontColor is the unselected label and selectedFontColor the selected
         // one, falling back to fontColor (contract: semantics.segmentLabelColors).
-        // normalColor is the swift-only legacy spelling of the first.
-        let normalColor = DynamicHelpers.getColor(
-            attrs.fontColor ?? attrs.normalColor?.rawString, data: data)
+        // normalColor / selectedColor are declared aliases — the generated
+        // extraction resolves them, so only the canonical names appear here.
+        let normalColor = DynamicHelpers.getColor(attrs.fontColor, data: data)
         let selectedFontColor = DynamicHelpers.getColor(
             attrs.selectedFontColor ?? attrs.fontColor, data: data)
+        // tintColor is the SELECTED segment's accent on every platform.
         let selectedColor = DynamicHelpers.getColor(
-            attrs.selectedColor?.rawString
-                ?? component.rawAttribute("selectedSegmentTintColor") as? String
+            component.rawAttribute("selectedSegmentTintColor") as? String
                 ?? component.tintColor,
             data: data
         )
