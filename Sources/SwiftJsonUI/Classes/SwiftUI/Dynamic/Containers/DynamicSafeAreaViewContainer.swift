@@ -144,22 +144,11 @@ public struct DynamicSafeAreaViewContainer: View {
         )
 
         // --- 3. Safe area insets ---
-        if let positions = component.rawData["safeAreaInsetPositions"] as? [String] {
-            var edges: Edge.Set = []
-            for pos in positions {
-                switch pos.lowercased() {
-                case "top": edges.insert(.top)
-                case "bottom": edges.insert(.bottom)
-                case "leading", "left": edges.insert(.leading)
-                case "trailing", "right": edges.insert(.trailing)
-                case "all": edges = .all
-                default: break
-                }
-            }
-            if !edges.isEmpty {
-                result = AnyView(result.ignoresSafeArea(edges: edges))
-            }
-        }
+        // Applied by the shared chain above (DynamicModifierHelper
+        // applySafeAreaInsets), because codegen applies it to every component
+        // rather than only to SafeAreaView. This block used to read
+        // `rawData[...]` directly AND used `.ignoresSafeArea`, which reserves
+        // nothing — the opposite of what the attribute means.
 
         return result
     }

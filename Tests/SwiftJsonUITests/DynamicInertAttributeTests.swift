@@ -517,6 +517,54 @@ final class DynamicInertAttributeTests: XCTestCase {
         )
     }
 
+    // MARK: - safeAreaInsetPositions (landed with 49-B)
+
+    /// The vocabulary matches base_view_converter.rb SAFE_AREA_EDGES,
+    /// including the left/right spellings it accepts beyond the enum.
+    func testSafeAreaEdgeSetVocabulary() {
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["top"]), .top)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["left"]), .leading)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["right"]), .trailing)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["vertical"]), .vertical)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["horizontal"]), .horizontal)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["all"]), .all)
+        XCTAssertEqual(
+            DynamicModifierHelper.safeAreaEdgeSet(["top", "bottom"]),
+            Edge.Set([.top, .bottom])
+        )
+    }
+
+    /// `all` anywhere in the list wins; `none` alone selects nothing; an
+    /// unrecognised list selects nothing rather than guessing.
+    func testSafeAreaEdgeSetDegenerateCases() {
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["top", "all"]), .all)
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["none"]))
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet([]))
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["sideways"]))
+    }
+
+    /// A PLAIN View carries the attribute too — the SSoT says so explicitly,
+    /// and codegen applies it to every component.
+    func testSafeAreaInsetPositionsIsReadOnAPlainView() throws {
+        let c = try component("""
+        { "type": "View", "id": "t", "safeAreaInsetPositions": ["top", "bottom"] }
+        """)
+        let positions = c.typedAttributes(ViewAttributes.self).safeAreaInsetPositions
+        XCTAssertEqual(positions?.compactMap { $0 as? String }, ["top", "bottom"])
+    }
+
+    /// SafeAreaView accepts `edges` as an alias for the same thing.
+    func testSafeAreaViewEdgesAliasResolves() throws {
+        let c = try component("""
+        { "type": "SafeAreaView", "id": "t", "edges": ["top"] }
+        """)
+        XCTAssertEqual(
+            c.typedAttributes(SafeAreaViewAttributes.self)
+                .safeAreaInsetPositions?.compactMap { $0 as? String },
+            ["top"]
+        )
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the

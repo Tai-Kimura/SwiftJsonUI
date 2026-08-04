@@ -493,6 +493,52 @@ public struct DynamicModifierHelper {
         return AnyView(view.clipToBounds(enabled))
     }
 
+    // MARK: - 11a. safeAreaInsetPositions
+
+    /// The edges that RESERVE the safe area.
+    ///
+    /// The name is the trap: `.ignoresSafeArea(edges:)` reads like the right
+    /// modifier and does the opposite — it lets content spill INTO the safe
+    /// area. `.safeAreaPadding` is the one that reserves it, which is what
+    /// the SSoT, the web converter's `env(safe-area-inset-*)` padding and
+    /// Compose's `windowInsetsPadding` all mean. 49-B moved
+    /// `base_view_converter.rb#apply_safe_area_insets_to_bag` onto
+    /// `.safeAreaPadding` for the same reason; this is the dynamic half,
+    /// landing together so the two paths never disagree.
+    ///
+    /// It sits in the shared chain, not in the SafeAreaView container, because
+    /// codegen applies it to EVERY component — the SSoT says so explicitly
+    /// ("every platform honours the attribute on a PLAIN view too").
+    public static func applySafeAreaInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let positions = component.typedAttributes(ViewAttributes.self).safeAreaInsetPositions
+                ?? component.typedAttributes(SafeAreaViewAttributes.self).safeAreaInsetPositions,
+              let edges = safeAreaEdgeSet(positions) else { return view }
+        return AnyView(view.safeAreaPadding(edges))
+    }
+
+    /// The `Edge.Set` a declared position list selects, or nil when it selects
+    /// none. Vocabulary matches `base_view_converter.rb` SAFE_AREA_EDGES,
+    /// including the `left`/`right` spellings it accepts beyond the enum.
+    static func safeAreaEdgeSet(_ positions: [Any]) -> Edge.Set? {
+        let list = positions.compactMap { $0 as? String }.map { $0.lowercased() }
+        if list.contains("all") { return .all }
+        if list == ["none"] { return nil }
+
+        var edges: Edge.Set = []
+        for position in list {
+            switch position {
+            case "top": edges.insert(.top)
+            case "bottom": edges.insert(.bottom)
+            case "leading", "left": edges.insert(.leading)
+            case "trailing", "right": edges.insert(.trailing)
+            case "vertical": edges.insert(.vertical)
+            case "horizontal": edges.insert(.horizontal)
+            default: break
+            }
+        }
+        return edges.isEmpty ? nil : edges
+    }
+
     // MARK: - 11b. highlighted / highlightBackground
 
     /// The pressed-or-selected appearance, driven by the `highlighted` flag.
@@ -890,6 +936,8 @@ public struct DynamicModifierHelper {
             // 5b. highlighted → highlightBackground, painted over the base
             // background exactly as UIKit swaps SJUIView's backgroundColor.
             result = applyHighlighted(result, component: component, data: data)
+            // 5c. safeAreaInsetPositions — reserves the named edges.
+            result = applySafeAreaInsets(result, component: component)
         }
         // 6. cornerRadius
         result = applyCornerRadius(result, component: component, data: data)
