@@ -1,0 +1,1274 @@
+{
+  "_comment": [
+    "scripts/check_attr_read_discipline.py の凍結宣言台帳。",
+    "",
+    "この配列は違反の『集合そのもの』であり、件数の pin ではない。",
+    "",
+    "  * ここに無い違反がある      -> fail(新規違反)",
+    "  * ここにあるが違反していない -> fail(直したので行を消すこと)",
+    "",
+    "owner が '—' の行は恒久的な正当例外。それ以外は owner の計画で解消し、",
+    "解消したら **この行を消す**(消し忘れは上の 2 つ目の規則で落ちる)。"
+  ],
+  "entries": [
+    {
+      "gate": "binding-slot",
+      "attribute": "alignBottom",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "alignLeft",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "alignRight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "alignTop",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "aspectHeight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "aspectWidth",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "background",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "borderColor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "borderWidth",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "bottomMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "canTap",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "centerHorizontal",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "centerInParent",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "centerVertical",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "checked",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "clipToBounds",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "color",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "columns",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "contentMode",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "cornerRadius",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "disabledBackground",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "disabledFontColor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "enabled",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "endMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "font",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "fontColor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "fontFamily",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "fontSize",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "fontWeight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "height",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "heightWeight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "hidden",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "highlightBackground",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "highlightColor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "highlightSrc",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "hintColor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "isOn",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "items",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "label",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "leftMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "lineHeightMultiple",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "lineSpacing",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "lines",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "linkable",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxBottomMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxHeight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxLeftMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxRightMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxTopMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxWidth",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maxZoom",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maximum",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "maximumDate",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minBottomMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minHeight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minLeftMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minRightMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minTopMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minWidth",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minZoom",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minimum",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minimumDate",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "minimumScaleFactor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "onClick",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "onLongPress",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "onPan",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "onPinch",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "onValueChange",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "opacity",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "paddingBottom",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "paddingEnd",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "paddingLeft",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "paddingRight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "paddingStart",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "paddingTop",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "progress",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "rightMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "scrollEnabled",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "scrollTo",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "secure",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "selectedDate",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "selectedIndex",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "selectedItem",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "spacing",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "src",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "srcName",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "startMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "tabBarBackground",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "tapBackground",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "text",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "textAlign",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "tint",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "tintColor",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "topMargin",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "userInteractionEnabled",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "value",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "visibility",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "weight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "width",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "binding-slot",
+      "attribute": "widthWeight",
+      "file": "DynamicComponent.swift",
+      "owner": "50",
+      "plan": "binding decode スロット撲滅(50 §4)",
+      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Containers/DynamicScrollViewContainer.swift",
+      "kind": "rawData",
+      "key": "horizontalScroll",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Containers/DynamicScrollViewContainer.swift",
+      "kind": "rawData",
+      "key": "keyboardAvoidance",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Containers/DynamicScrollViewContainer.swift",
+      "kind": "rawData",
+      "key": "keyboardDismissMode",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Containers/DynamicViewContainer.swift",
+      "kind": "rawData",
+      "key": "gradient",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ButtonConverter.swift",
+      "kind": "rawAttribute",
+      "key": "parent_orientation",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CheckboxConverter.swift",
+      "kind": "rawAttribute",
+      "key": "action",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CheckboxConverter.swift",
+      "kind": "rawAttribute",
+      "key": "fontStyle",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CheckboxConverter.swift",
+      "kind": "rawAttribute",
+      "key": "onValueChanged",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "cellHeight",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "cellWidth",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "defaultScrollAnchor",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "hideSeparator",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "lazy",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "onItemAppear",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/GradientViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "colors",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/GradientViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "endPoint",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/GradientViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "gradient",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/GradientViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "startPoint",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ImageViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "onSrc",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/IndicatorConverter.swift",
+      "kind": "rawAttribute",
+      "key": "animating",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/LabelConverter.swift",
+      "kind": "rawAttribute",
+      "key": "parent_orientation",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/PickerConverter.swift",
+      "kind": "rawAttribute",
+      "key": "selectedIndex",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ProgressConverter.swift",
+      "kind": "rawAttribute",
+      "key": "style",
+      "owner": "—",
+      "plan": "—",
+      "reason": "Progress/Indicator とも SSoT 未宣言(indicatorStyle の旧綴り)。ProgressAttributes に slot が無い"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/RadioConverter.swift",
+      "kind": "rawAttribute",
+      "key": "selectedValue",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ScrollViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "defaultScrollAnchor",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/SegmentConverter.swift",
+      "kind": "rawAttribute",
+      "key": "backgroundColor",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/SegmentConverter.swift",
+      "kind": "rawAttribute",
+      "key": "selectedSegmentTintColor",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/SegmentConverter.swift",
+      "kind": "rawAttribute",
+      "key": "selectedTabIndex",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/SelectBoxConverter.swift",
+      "kind": "rawAttribute",
+      "key": "onValueChanged",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/SliderConverter.swift",
+      "kind": "rawAttribute",
+      "key": "range",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/TableConverter.swift",
+      "kind": "rawAttribute",
+      "key": "hideSeparator",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/TableConverter.swift",
+      "kind": "rawAttribute",
+      "key": "listStyle",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ToggleConverter.swift",
+      "kind": "rawAttribute",
+      "key": "onValueChanged",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ToggleConverter.swift",
+      "kind": "rawAttribute",
+      "key": "toggleStyle",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "_originalType",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性ではないビルダ内部マーカー(SSoT に宣言が存在しない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "hidden",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicEventHelper.swift",
+      "kind": "rawAttribute",
+      "key": "onclick",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicHelpers.swift",
+      "kind": "rawData",
+      "key": "font",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawAttribute",
+      "key": "highlighted",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "alpha",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "confirmationDialog",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "disabledBackground",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "enabled",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "hidden",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "indexAbove",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "indexBelow",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "offsetX",
+      "owner": "—",
+      "plan": "—",
+      "reason": "SSoT 未宣言(どのコンポーネントにも無い)。typed アクセサが生成されないので raw 以外に読み方が無い"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "offsetY",
+      "owner": "—",
+      "plan": "—",
+      "reason": "SSoT 未宣言(どのコンポーネントにも無い)。typed アクセサが生成されないので raw 以外に読み方が無い"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "opacity",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "touchDisabledState",
+      "owner": "50",
+      "plan": "raw-read 撲滅(50 §4)",
+      "reason": "typed 抽出の手前で属性辞書を直読みしている"
+    },
+    {
+      "gate": "raw-read",
+      "file": "TypedAttributes.swift",
+      "kind": "rawData",
+      "key": "<key>",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "型付き抽出の実装本体(ここを禁止すると typed 抽出が書けない)"
+    }
+  ]
+}
