@@ -306,16 +306,59 @@ public struct DynamicModifierHelper {
                 result = AnyView(result.padding(margins))
             }
         } else {
-            // start/endMargin are not consumed by the offset; keep their
-            // padding (re-derived alone, without the left/right fallback
-            // getMargins would apply).
-            let leading = DynamicDecodingHelper.marginValueToCGFloat(component.startMargin, data: data)
-            let trailing = DynamicDecodingHelper.marginValueToCGFloat(component.endMargin, data: data)
-            if leading != 0 || trailing != 0 {
-                result = AnyView(result.padding(EdgeInsets(top: 0, leading: leading, bottom: 0, trailing: trailing)))
+            let insets = offsetOwnedMarginInsets(component: component, data: data)
+            if insets.top != 0 || insets.leading != 0 || insets.bottom != 0 || insets.trailing != 0 {
+                result = AnyView(result.padding(insets))
             }
         }
         return applyFlexibleMargins(result, component: component)
+    }
+
+    /// What a ZStack child still pads for itself once the parent's `.offset`
+    /// has taken the individual margins.
+    ///
+    /// The offset carries the DIFFERENCE of the two opposing margins and
+    /// nothing more, so that is all it can own: what the pair shares is a
+    /// plain inset and still belongs here. Suppressing this padding outright
+    /// annihilated symmetric margins — 10/10 offsets by zero, so the
+    /// declaration rendered as no margin at all.
+    ///
+    /// An axis the child centres is disabled by the same contract entry
+    /// (semantics.margins) and `zstackMarginOffset` zeroes it, so nothing is
+    /// lifted there. start/endMargin are not consumed by the offset on any
+    /// axis and keep their padding, re-derived alone — without the left/right
+    /// fallback `getMargins` would apply.
+    ///
+    /// Internal rather than private so the split has a unit test: the AnyView
+    /// it ends up on cannot be inspected.
+    static func offsetOwnedMarginInsets(component: DynamicComponent, data: [String: Any]) -> EdgeInsets {
+        let centersHorizontally = component.centerInParent == true || component.centerHorizontal == true
+        let centersVertically = component.centerInParent == true || component.centerVertical == true
+        let sharedHorizontal = centersHorizontally
+            ? 0 : sharedMargin(component.leftMargin, component.rightMargin, data: data)
+        let sharedVertical = centersVertically
+            ? 0 : sharedMargin(component.topMargin, component.bottomMargin, data: data)
+        let start = DynamicDecodingHelper.marginValueToCGFloat(component.startMargin, data: data)
+        let end = DynamicDecodingHelper.marginValueToCGFloat(component.endMargin, data: data)
+        return EdgeInsets(
+            top: sharedVertical,
+            leading: start != 0 ? start : sharedHorizontal,
+            bottom: sharedVertical,
+            trailing: end != 0 ? end : sharedHorizontal
+        )
+    }
+
+    /// The inset two opposing margins have in common — the part a
+    /// difference-carrying offset cannot express, and so the part that stays
+    /// with padding (`SpacingHelper#margin_padding` splits it the same way).
+    /// An undeclared opposite edge has nothing in common with anything, and
+    /// mixed signs share no inset: both keep the offset-owns-everything
+    /// behaviour by returning zero.
+    private static func sharedMargin(_ value: AnyCodable?, _ opposite: AnyCodable?, data: [String: Any]) -> CGFloat {
+        guard value != nil, opposite != nil else { return 0 }
+        let a = DynamicDecodingHelper.marginValueToCGFloat(value, data: data)
+        let b = DynamicDecodingHelper.marginValueToCGFloat(opposite, data: data)
+        return max(0, min(a, b))
     }
 
     /// min/max{Start,End}Margin — a bounded margin rather than a fixed inset.
