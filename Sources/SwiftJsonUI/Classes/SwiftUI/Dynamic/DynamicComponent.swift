@@ -494,16 +494,21 @@ public struct DynamicComponent: Decodable {
         contentInsets = try container.decodeIfPresent(AnyCodable.self, forKey: .contentInsets)
         tint = try container.decodeIfPresent(String.self, forKey: .tint)
         tintColor = try container.decodeIfPresent(String.self, forKey: .tintColor)
-        minimum = try container.decodeIfPresent(CGFloat.self, forKey: .minimum)
-        maximum = try container.decodeIfPresent(CGFloat.self, forKey: .maximum)
+        // `try?` on every bindable slot whose Swift type cannot hold a
+        // String: the bound spelling IS a String, a hard decode throws, and
+        // children go through FailableDecodable — so the throw deleted the
+        // component instead of surfacing. The typed extraction carries the
+        // bound form; these slots only have to stop killing the node.
+        minimum = try? container.decodeIfPresent(CGFloat.self, forKey: .minimum)
+        maximum = try? container.decodeIfPresent(CGFloat.self, forKey: .maximum)
         color = try container.decodeIfPresent(String.self, forKey: .color)
         hidesWhenStopped = try container.decodeIfPresent(Bool.self, forKey: .hidesWhenStopped)
         highlightSrc = try container.decodeIfPresent(String.self, forKey: .highlightSrc)
         defaultImage = try container.decodeIfPresent(String.self, forKey: .defaultImage)
         errorImage = try container.decodeIfPresent(String.self, forKey: .errorImage)
         loadingImage = try container.decodeIfPresent(String.self, forKey: .loadingImage)
-        maxZoom = try container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
-        minZoom = try container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
+        maxZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
+        minZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
         highlightBackground = try container.decodeIfPresent(String.self, forKey: .highlightBackground)
         highlighted = try? container.decodeIfPresent(Bool.self, forKey: .highlighted)
         canTap = (try? container.decodeIfPresent(Bool.self, forKey: .canTap)) ?? nil
@@ -640,7 +645,7 @@ public struct DynamicComponent: Decodable {
             containerInset = nil
         }
         hideOnFocused = try container.decodeIfPresent(Bool.self, forKey: .hideOnFocused)
-        secure = try container.decodeIfPresent(Bool.self, forKey: .secure)
+        secure = try? container.decodeIfPresent(Bool.self, forKey: .secure)
         returnKeyType = try container.decodeIfPresent(String.self, forKey: .returnKeyType)
         borderStyle = try container.decodeIfPresent(String.self, forKey: .borderStyle)
         input = try container.decodeIfPresent(String.self, forKey: .input)
