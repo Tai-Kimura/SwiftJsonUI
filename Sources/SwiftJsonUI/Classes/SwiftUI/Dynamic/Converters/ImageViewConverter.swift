@@ -89,6 +89,29 @@ public struct ImageViewConverter {
             result = AnyView(renderedImage.resizable().aspectRatio(contentMode: contentMode))
         }
 
+        // --- 3b. highlightSrc (pressed-state image) ---
+        // `DynamicComponent` has decoded this all along and nothing read it.
+        // The swap goes on before clipShape/frame so both images are cropped
+        // and sized identically — image_converter.rb emits it in the same slot.
+        if let highlightSrc = component.typedAttributes(ImageAttributes.self)
+            .highlightSrc?.rawRepresentation as? String {
+            let resolved = DynamicHelpers.processText(highlightSrc, data: data)
+            let highlightImage = component.systemIcon == true
+                ? Image(systemName: resolved)
+                : Image(resolved)
+            let base = result
+            result = AnyView(
+                HighlightableImage(
+                    base: { base },
+                    highlight: {
+                        highlightImage
+                            .resizable()
+                            .aspectRatio(contentMode: DynamicHelpers.getContentMode(from: component))
+                    }
+                )
+            )
+        }
+
         // --- 4. .clipShape(Circle()) for CircleImage ---
         if component.type?.lowercased() == "circleimage" {
             result = AnyView(result.clipShape(Circle()))
