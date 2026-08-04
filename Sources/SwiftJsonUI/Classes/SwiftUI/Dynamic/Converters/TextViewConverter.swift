@@ -139,8 +139,17 @@ public struct TextViewConverter {
         // cornerRadius
         let cornerRadius = component.cornerRadius ?? 0
 
-        // containerInset (paddings used as containerInset for TextView)
+        // containerInset (paddings used as containerInset for TextView).
+        // `edgeInset` is the UIKit spelling of the same content inset — the
+        // Text converter already reads it, so a TextView carrying it must not
+        // silently drop it (coverage: TextView.edgeInset was declared and read
+        // by nobody on ios/web).
         let containerInset: EdgeInsets = {
+            if let ei = component.edgeInset {
+                if let insets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(ei) {
+                    return insets
+                }
+            }
             if let ci = component.containerInset {
                 switch ci.count {
                 case 1:
