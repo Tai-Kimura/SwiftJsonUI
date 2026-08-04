@@ -14,9 +14,7 @@ public struct SegmentAttributes {
         "fontColor",
         "items",
         "momentary",
-        "normalColor",
         "onValueChange",
-        "selectedColor",
         "selectedFontColor",
         "selectedIndex",
         "tintColor",
@@ -26,7 +24,10 @@ public struct SegmentAttributes {
     /// Alias spelling → canonical attribute name (merged with common). Alias
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
-    public static let aliasMap: [String: String] = [:]
+    public static let aliasMap: [String: String] = [
+        "normalColor": "fontColor",
+        "selectedColor": "selectedFontColor",
+    ]
 
     /// True when `key` is a declared canonical name or alias spelling.
     public static func isDeclared(_ key: String) -> Bool {
@@ -39,7 +40,7 @@ public struct SegmentAttributes {
     /// Size segments by content
     public let apportionsSegmentWidthsByContent: Bool?
 
-    /// Label color of the UNSELECTED segments - hex string or color name from colors.json
+    /// Label color of the UNSELECTED segments - hex string or color name from colors.json [aliases: normalColor]
     public let fontColor: String?
 
     /// Segment items array [required]
@@ -48,22 +49,16 @@ public struct SegmentAttributes {
     /// Momentary selection mode
     public let momentary: Bool?
 
-    /// Normal state color - hex string or color name from colors.json (binding supported)
-    public let normalColor: AttrValue<String>?
-
     /// Value change handler - binding only (@{functionName})
     public let onValueChange: AttrValue<Any>?
 
-    /// Selected state color - hex string or color name from colors.json (binding supported)
-    public let selectedColor: AttrValue<String>?
-
-    /// Label color of the selected segment, falling back to fontColor - hex string or color name from colors.json
+    /// Label color of the selected segment, falling back to fontColor - hex string or color name from colors.json [aliases: selectedColor]
     public let selectedFontColor: String?
 
     /// Initially selected index (binding for two-way) [binding: two-way]
     public let selectedIndex: AttrValue<Double>?
 
-    /// Tint color of the selected segment's background - hex string or color name from colors.json
+    /// Accent color of the SELECTED segment - a background fill on ios/web, the indicator on Compose. Hex string or color name from colors.json
     public let tintColor: String?
 
     /// Value change event
@@ -74,13 +69,11 @@ public struct SegmentAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.apportionsSegmentWidthsByContent = AttrCoerce.boolean(AttrCoerce.lookup(json, "apportionsSegmentWidthsByContent"))
-        self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor"))
+        self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor", ["normalColor"], canonicalOnly: canonicalOnly))
         self.items = AttrCoerce.array(AttrCoerce.lookup(json, "items"))
         self.momentary = AttrCoerce.boolean(AttrCoerce.lookup(json, "momentary"))
-        self.normalColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "normalColor"), AttrCoerce.string)
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
-        self.selectedColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedColor"), AttrCoerce.string)
-        self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor"))
+        self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor", ["selectedColor"], canonicalOnly: canonicalOnly))
         self.selectedIndex = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedIndex"), AttrCoerce.number)
         self.tintColor = AttrCoerce.string(AttrCoerce.lookup(json, "tintColor"))
         self.valueChange = AttrCoerce.string(AttrCoerce.lookup(json, "valueChange"))
