@@ -66,7 +66,7 @@ public struct DividerConverter {
         // Height is already set as thickness, so applyFrameSize is skipped to avoid conflict
 
         // --- 5. frame_constraints ---
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
 
         // --- 6. cornerRadius ---
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)

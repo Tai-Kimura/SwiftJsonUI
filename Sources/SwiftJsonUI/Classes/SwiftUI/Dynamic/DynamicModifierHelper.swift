@@ -164,13 +164,28 @@ public struct DynamicModifierHelper {
 
     // MARK: - 3. Frame Constraints (min/max/ideal)
 
-    public static func applyFrameConstraints(_ view: AnyView, component: DynamicComponent) -> AnyView {
+    /// min/max/ideal frame bounds.
+    ///
+    /// min and max are `number|binding`. This used to take no `data` at all,
+    /// so it could not have resolved a binding even in principle — the
+    /// hand-decoded slots are nil for `@{expr}` and the bound form fell to
+    /// the platform default. Same shape as the Compose `parseOptionalDp`
+    /// guard 49-G found: nothing crashed, nothing was measured either.
+    ///
+    /// `idealWidth`/`idealHeight` stay on the plain slots: the SSoT declares
+    /// them `number` with no binding form.
+    public static func applyFrameConstraints(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
         var result = view
+        let common = component.typedAttributes(CommonAttributes.self)
 
-        if let mw = component.minWidth {
+        if let mw = DynamicHelpers.resolveNumber(common.minWidth, legacy: component.minWidth, data: data) {
             result = AnyView(result.frame(minWidth: mw))
         }
-        if let mh = component.minHeight {
+        if let mh = DynamicHelpers.resolveNumber(common.minHeight, legacy: component.minHeight, data: data) {
             result = AnyView(result.frame(minHeight: mh))
         }
         if let iw = component.idealWidth {
@@ -186,16 +201,18 @@ public struct DynamicModifierHelper {
         let isMatchParentWidth = (width == .infinity || width == -1)
         let isMatchParentHeight = (height == .infinity || height == -1)
 
-        if let mw = component.maxWidth, !isMatchParentWidth {
+        let resolvedMaxWidth = DynamicHelpers.resolveNumber(common.maxWidth, legacy: component.maxWidth, data: data)
+        let resolvedMaxHeight = DynamicHelpers.resolveNumber(common.maxHeight, legacy: component.maxHeight, data: data)
+        if let mw = resolvedMaxWidth, !isMatchParentWidth {
             result = AnyView(result.frame(maxWidth: mw))
         }
-        if let mh = component.maxHeight, !isMatchParentHeight {
+        if let mh = resolvedMaxHeight, !isMatchParentHeight {
             result = AnyView(result.frame(maxHeight: mh))
         }
 
         // fixedSize for wrapContent + maxWidth/maxHeight
-        let needsHFixed = (width == nil && component.maxWidth != nil && component.maxWidth != .infinity)
-        let needsVFixed = (height == nil && component.maxHeight != nil && component.maxHeight != .infinity)
+        let needsHFixed = (width == nil && resolvedMaxWidth != nil && resolvedMaxWidth != .infinity)
+        let needsVFixed = (height == nil && resolvedMaxHeight != nil && resolvedMaxHeight != .infinity)
         if needsHFixed || needsVFixed {
             result = AnyView(result.fixedSize(
                 horizontal: needsHFixed || (needsVFixed && width == nil),
@@ -926,7 +943,7 @@ public struct DynamicModifierHelper {
             result = applyPadding(result, component: component, data: data)
         }
         // 2. frame constraints
-        result = applyFrameConstraints(result, component: component)
+        result = applyFrameConstraints(result, component: component, data: data)
         // 3. frame size
         result = applyFrameSize(result, component: component, data: data)
         // 4. insets (skipped for Collection which handles insets with spacers)

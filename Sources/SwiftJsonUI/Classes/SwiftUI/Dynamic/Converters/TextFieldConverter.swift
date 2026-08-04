@@ -302,7 +302,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 16. frame_constraints ---
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
 
         // --- 17. frame_size ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
@@ -417,7 +417,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
         // --- 16. frame_constraints ---
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
 
         // --- 17. frame_size ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)

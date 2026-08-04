@@ -222,7 +222,7 @@ public struct SelectBoxConverter {
 
         // --- 3. apply_frame_constraints + apply_frame_size ---
         // SelectBoxView handles padding/background/cornerRadius internally
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
         // --- 4. .overlay (border) ---

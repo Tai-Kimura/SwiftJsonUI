@@ -129,7 +129,7 @@ public struct TextConverter {
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
         // --- 8. frame_constraints (minWidth / maxWidth / minHeight / maxHeight) ---
-        result = DynamicModifierHelper.applyFrameConstraints(result, component: component)
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
 
         // --- 9. background ---
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
