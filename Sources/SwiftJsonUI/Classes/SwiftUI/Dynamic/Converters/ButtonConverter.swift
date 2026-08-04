@@ -66,8 +66,17 @@ public struct ButtonConverter {
         // `font` doubles as a weight spelling ("bold" etc.) — the codegen
         // path resolves it through apply_font_modifiers; the explicit
         // fontWeight wins when both are declared.
+        // Button declares fontSize as `number` only — no binding form to resolve.
         let fontSize = component.fontSize
-        let fontWeight = component.fontWeight ?? {
+        // `fontWeight` is string|number|binding. The hand-decoded String?
+        // hands "@{expr}" straight to the weight vocabulary, which matches
+        // nothing — the same union the codegen halves read differently (49-B).
+        let resolvedFontWeight: String? = {
+            guard let raw = attrs.fontWeight?.rawRepresentation else { return component.fontWeight }
+            if let s = raw as? String { return DynamicHelpers.processText(s, data: data) }
+            return String(describing: raw)
+        }()
+        let fontWeight = resolvedFontWeight ?? {
             if let f = component.font,
                ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black"].contains(f.lowercased()) {
                 return f

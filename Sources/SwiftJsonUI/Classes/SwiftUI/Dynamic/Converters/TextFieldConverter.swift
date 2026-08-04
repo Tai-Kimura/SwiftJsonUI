@@ -199,7 +199,7 @@ public struct TextFieldConverter {
             hintColor: DynamicHelpers.getColor(hintColorRaw, data: data),
             hintFont: hintFont,
             hintFontSize: hintFontSize.map { CGFloat($0) },
-            fontSize: component.fontSize
+            fontSize: DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
         )
     }
 

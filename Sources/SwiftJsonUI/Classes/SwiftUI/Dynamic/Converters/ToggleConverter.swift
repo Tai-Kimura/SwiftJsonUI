@@ -62,6 +62,9 @@ public struct ToggleConverter {
         let labelFont: Font? = {
             if let labelAttrs = labelAttrsDict {
                 // labelAttributes override component-level font settings
+                // Switch/Toggle declares no fontSize of its own, so there is
+                // no typed slot to resolve — the component-level spelling is
+                // all there is here.
                 let fontSize = labelAttrs["fontSize"] as? CGFloat ?? component.fontSize
                 let fontName = labelAttrs["font"] as? String ?? component.font
                 let fontWeight = labelAttrs["fontWeight"] as? String ?? labelAttrs["fontStyle"] as? String ?? component.fontWeight

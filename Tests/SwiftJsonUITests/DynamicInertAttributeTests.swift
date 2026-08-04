@@ -637,6 +637,65 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertNil(DynamicHelpers.getColor(c.tapBackground), "without data it cannot resolve")
     }
 
+    // MARK: - bound fontSize and the vocabulary spellings
+
+    /// `fontSize` is number|binding on exactly the components whose SSoT says
+    /// so — CheckBox, Label, Radio, TextField, TextView. Button, IconLabel and
+    /// SelectBox declare it `number`, and have no bound form to resolve.
+    func testBoundFontSizeResolvesWhereDeclared() throws {
+        let label = try component("""
+        { "type": "Label", "text": "Sample", "fontSize": "@{size}" }
+        """)
+        XCTAssertNil(label.fontSize, "the hand-decoded slot is what used to drop it")
+        XCTAssertEqual(
+            DynamicHelpers.resolveNumber(
+                label.typedAttributes(LabelAttributes.self).fontSize, legacy: nil, data: ["size": 20]
+            ),
+            20
+        )
+    }
+
+    /// `CheckBox.spacing` fell to the default 8, which is the control's value
+    /// — so the bound face rendered exactly the control and looked "inert".
+    func testBoundCheckBoxSpacingResolves() throws {
+        let c = try component("""
+        { "type": "CheckBox", "text": "x", "spacing": "@{gap}" }
+        """)
+        XCTAssertNil(c.spacing)
+        XCTAssertEqual(
+            DynamicHelpers.resolveNumber(
+                c.typedAttributes(CheckBoxAttributes.self).spacing, legacy: nil, data: ["gap": 24]
+            ),
+            24
+        )
+    }
+
+    /// `font` and `fontWeight` are looked up in a weight vocabulary. The bound
+    /// spelling arrives as the literal "@{expr}", which matches no entry — so
+    /// it fell through as "no weight" instead of failing loudly.
+    func testBoundWeightSpellingsResolveBeforeVocabularyLookup() throws {
+        let cb = try component("""
+        { "type": "CheckBox", "text": "x", "font": "@{w}" }
+        """)
+        let raw = cb.typedAttributes(CheckBoxAttributes.self).font?.rawRepresentation as? String
+        XCTAssertEqual(raw, "@{w}")
+        XCTAssertEqual(DynamicHelpers.processText(raw, data: ["w": "bold"]), "bold")
+        XCTAssertEqual(DynamicHelpers.fontWeightFromString("bold"), .bold)
+        // The unresolved spelling matches no entry and falls to the default
+        // weight — silently "no weight declared", which is why it looked inert.
+        XCTAssertEqual(DynamicHelpers.fontWeightFromString("@{w}"), .regular)
+    }
+
+    /// `selectedValue` is declared "binding for two-way"; the converter used
+    /// to exclude the bound form outright.
+    func testBoundSelectBoxSelectedValueResolves() throws {
+        let c = try component("""
+        { "type": "SelectBox", "items": ["Alpha", "Beta"], "selectedValue": "@{pick}" }
+        """)
+        let raw = c.typedAttributes(SelectBoxAttributes.self).selectedValue?.rawRepresentation as? String
+        XCTAssertEqual(DynamicHelpers.processText(raw, data: ["pick": "Beta"]), "Beta")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the

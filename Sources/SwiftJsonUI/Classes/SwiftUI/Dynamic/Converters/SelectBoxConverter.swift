@@ -125,15 +125,20 @@ public struct SelectBoxConverter {
         let minuteInterval = component.minuteInterval ?? 1
 
         // selectedIndex (value for initial, binding for two-way sync)
-        // A literal selectedValue seeds the initial selection by resolving
-        // its index in items (33 cross-effect: ios ignored it while the
-        // selectedIndex spelling worked).
-        let literalValueIndex: Int? = {
-            guard let value = attrs.selectedValue?.value,
-                  attrs.selectedValue?.bindingExpression == nil else { return nil }
-            return items.firstIndex(of: value)
+        // `selectedValue` seeds the initial selection by resolving its index
+        // in items (33 cross-effect: ios ignored it while the selectedIndex
+        // spelling worked).
+        //
+        // The bound form used to be excluded outright, but the SSoT declares
+        // it `["string","binding"]` and says "binding for two-way" — the web
+        // converter and the Compose one both read it. Resolving it here is
+        // what the declaration asks for.
+        let selectedValueIndex: Int? = {
+            guard let raw = attrs.selectedValue?.rawRepresentation as? String else { return nil }
+            let resolved = DynamicHelpers.processText(raw, data: data)
+            return items.firstIndex(of: resolved)
         }()
-        let selectedIndex = component.selectedIndex ?? literalValueIndex
+        let selectedIndex = component.selectedIndex ?? selectedValueIndex
         let selectedIndexBinding: SwiftUI.Binding<Int>? = {
             if let si = attrs.selectedIndex?.bindingString {
                 let binding = DynamicBindingHelper.int(si, data: data, fallback: selectedIndex ?? 0)
