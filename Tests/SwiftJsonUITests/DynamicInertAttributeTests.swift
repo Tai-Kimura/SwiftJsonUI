@@ -271,18 +271,31 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
     }
 
-    /// The flat keys win; the nested ones only fill in. That is the `||=`
-    /// merge codegen performs.
-    func testTextFieldFlatHintKeysWinOverNested() throws {
+    /// The nested keys win. A bag scoped to one sub-element is the more
+    /// specific declaration, so it beats the flat spelling — the precedence
+    /// rjui, kjui and sjui's own Label/SelectBox converters all use.
+    func testTextFieldNestedHintAttributesWinOverFlatKeys() throws {
         let c = try component("""
-        { "type": "TextField", "hint": "Name", "hintFontSize": 20,
-          "hintAttributes": { "fontSize": 12 } }
+        { "type": "TextField", "hint": "Name", "hintFontSize": 20, "hintColor": "#0000FF",
+          "hintAttributes": { "fontSize": 12, "fontColor": "#FF0000" } }
         """)
 
-        XCTAssertEqual(
-            TextFieldConverter.placeholderStyle(component: c, data: [:]).font,
-            Font.system(size: 20)
-        )
+        let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
+        XCTAssertEqual(style.font, Font.system(size: 12))
+        XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
+    }
+
+    /// A nested bag that declares only one key leaves the others to the flat
+    /// spellings — winning is per-key, not all-or-nothing.
+    func testTextFieldNestedHintAttributesFallBackPerKey() throws {
+        let c = try component("""
+        { "type": "TextField", "hint": "Name", "hintFontSize": 20, "hintColor": "#0000FF",
+          "hintAttributes": { "fontColor": "#FF0000" } }
+        """)
+
+        let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
+        XCTAssertEqual(style.font, Font.system(size: 20), "no nested fontSize, so the flat one stands")
+        XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
     }
 
     // MARK: - 49-B handoff: bound forms the raw cast dropped

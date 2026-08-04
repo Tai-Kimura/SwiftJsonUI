@@ -152,12 +152,17 @@ public struct TextFieldConverter {
     /// codegen still records them as a comment (`textfield_converter.rb`),
     /// which is what made 41 read the attribute as "emitted".
     ///
-    /// `hintAttributes` carries the same three spellings in a nested object.
-    /// The flat keys win and the nested ones fill in — matching
-    /// `textfield_converter.rb`, which merges with `||=`. (The SSoT scopes
-    /// `hintAttributes` to `mode: uikit`, but codegen reads it on the SwiftUI
-    /// path, so honouring it here is what keeps the two paths drawing the
-    /// same picture. Flagged to 49-B / 49-E.)
+    /// `hintAttributes` carries the same three spellings in a nested object,
+    /// and **the nested keys win**: a bag scoped to one sub-element is a more
+    /// specific declaration than the flat spelling, so it beats it the way
+    /// any cascade does. rjui `label_converter.rb`, sjui `label_converter.rb`
+    /// and kjui `text_component.rb` all resolve it that way, as does
+    /// `selectbox_converter.rb` for `labelAttributes`.
+    ///
+    /// (`textfield_converter.rb` merges with `||=`, which is the opposite and
+    /// contradicts its own comment — 49-B is fixing that. The SSoT also
+    /// scopes `hintAttributes` to `mode: uikit` while codegen reads it on the
+    /// SwiftUI path; 49-E is adjudicating the declaration.)
     ///
     /// The resolution itself lives in `TextFieldPlaceholderStyle` so the
     /// code `sjui_tools` generates reaches the same picture from the same
@@ -174,14 +179,14 @@ public struct TextFieldConverter {
         // resolves that spelling into `hintColor` itself — there is no
         // separate field to fall back to (49-E folded the second declaration
         // into the alias, matching Radio.selectedIcon and Segment).
-        let hintColorRaw = (attrs.hintColor?.rawRepresentation as? String)
-            ?? (nested?["fontColor"] as? String)
+        let hintColorRaw = (nested?["fontColor"] as? String)
             ?? (nested?["color"] as? String)
+            ?? (attrs.hintColor?.rawRepresentation as? String)
 
-        let hintFont = attrs.hintFont ?? (nested?["font"] as? String)
-        let hintFontSize = attrs.hintFontSize
-            ?? (nested?["fontSize"] as? Double)
+        let hintFont = (nested?["font"] as? String) ?? attrs.hintFont
+        let hintFontSize = (nested?["fontSize"] as? Double)
             ?? (nested?["fontSize"] as? Int).map(Double.init)
+            ?? attrs.hintFontSize
 
         return TextFieldPlaceholderStyle(
             hintColor: DynamicHelpers.getColor(hintColorRaw, data: data),
