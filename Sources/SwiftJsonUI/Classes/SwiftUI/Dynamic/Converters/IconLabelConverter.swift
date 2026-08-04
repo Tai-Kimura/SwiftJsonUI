@@ -59,6 +59,8 @@ public struct IconLabelConverter {
             shadowColor = color
         }
 
+        let declaredSelected = resolveSelected(component: component, data: data)
+
         // Determine if it's a button (has onClick)
         let hasAction = component.onClick != nil
 
@@ -78,6 +80,7 @@ public struct IconLabelConverter {
                     fontColor: fontColor,
                     selectedFontColor: selectedFontColor,
                     fontName: fontName,
+                    isSelected: declaredSelected,
                     action: {
                         DynamicEventHelper.call(component.onClick, data: data)
                     }
@@ -85,7 +88,7 @@ public struct IconLabelConverter {
             )
         } else {
             // IconLabelView (no action)
-            let isSelected = component.isOn ?? false
+            let isSelected = declaredSelected ?? false
             result = AnyView(
                 IconLabelView(
                     text: text,
@@ -114,6 +117,31 @@ public struct IconLabelConverter {
     }
 
     // MARK: - Private
+
+    /// The `selected` state the layout declared, or `nil` when it declared
+    /// none.
+    ///
+    /// `selected` is the canonical spelling (SSoT). This converter used to
+    /// read `isOn`, which IconLabel never declares and `DynamicComponent`
+    /// only decodes for the selection controls — so a declared `selected`
+    /// never reached the view. With the state frozen at false,
+    /// `selectedFontColor` and `icon_on` were unreachable too, which is why
+    /// the two arrived paired in the 34 queue.
+    ///
+    /// The `nil` case is load-bearing: it is what lets `IconLabelButton`
+    /// keep its own toggle state instead of following a binding it was never
+    /// given.
+    static func resolveSelected(component: DynamicComponent, data: [String: Any]) -> Bool? {
+        switch component.typedAttributes(IconLabelAttributes.self).selected {
+        case .binding(let expr):
+            return DynamicBindingHelper.resolveBool("@{\(expr)}", data: data, fallback: false)
+        case .value(let v):
+            return v
+        case nil:
+            // Pre-SSoT layouts that spelled it `isOn` keep working.
+            return component.isOn
+        }
+    }
 
     private static func resolveIconPosition(_ position: String?) -> IconLabelView.IconPosition {
         guard let position = position else { return .left }

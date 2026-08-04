@@ -60,6 +60,16 @@ public struct TextFieldConverter {
         }()
         let id = component.id ?? "textField"
 
+        // Placeholder styling (hintColor / placeholderColor / hintFont /
+        // hintFontSize). Empty when the layout declared none, in which case
+        // the native placeholder is left exactly as it was.
+        let hintStyle = placeholderStyle(component: component, data: data)
+        // The native field must not draw a placeholder we are overlaying.
+        let nativePlaceholder = hintStyle.isEmpty ? placeholder : ""
+        let hintAlignment = textFieldPlaceholderAlignment(
+            for: DynamicHelpers.getTextAlignment(from: component)
+        )
+
         // --- 1. Get text binding ---
         let textBinding = DynamicBindingHelper.string(component.text, data: data, fallback: "")
 
@@ -75,7 +85,10 @@ public struct TextFieldConverter {
             // Use FocusableTextField when component has an id (for focus chain support)
             if let fieldId = component.id {
                 built = createFocusableTextField(
-                    placeholder: placeholder,
+                    placeholder: nativePlaceholder,
+                    styledPlaceholder: hintStyle.isEmpty ? nil : placeholder,
+                    hintStyle: hintStyle,
+                    hintAlignment: hintAlignment,
                     text: binding,
                     fieldId: fieldId,
                     isSecure: isSecure,
@@ -84,9 +97,19 @@ public struct TextFieldConverter {
                 )
             } else {
                 if isSecure {
-                    built = AnyView(SecureField(placeholder, text: binding))
+                    built = AnyView(SecureField(nativePlaceholder, text: binding))
                 } else {
-                    built = AnyView(TextField(placeholder, text: binding))
+                    built = AnyView(TextField(nativePlaceholder, text: binding))
+                }
+                if !hintStyle.isEmpty {
+                    built = AnyView(
+                        built.styledPlaceholder(
+                            placeholder,
+                            text: binding,
+                            style: hintStyle,
+                            alignment: hintAlignment
+                        )
+                    )
                 }
                 // clearButtonMode without an id: no focus state to read, so
                 // `whileEditing` / `unlessEditing` cannot be evaluated. Same
@@ -121,6 +144,45 @@ public struct TextFieldConverter {
         return AnyView(DynamicLocalState(initial: textBinding.wrappedValue, content: build))
     }
 
+    /// Placeholder styling declared by the layout.
+    ///
+    /// `hintFontSize` / `hintFont` set the placeholder font independently of
+    /// the field font; `placeholderColor` and `hintColor` are the two
+    /// spellings for its color. All four were dropped on the floor before —
+    /// codegen still records them as a comment (`textfield_converter.rb`),
+    /// which is what made 41 read the attribute as "emitted".
+    ///
+    /// `hintAttributes` is deliberately not read here: the SSoT scopes it to
+    /// `mode: uikit`.
+    ///
+    /// The resolution itself lives in `TextFieldPlaceholderStyle` so the
+    /// code `sjui_tools` generates reaches the same picture from the same
+    /// layout — this function only extracts the declared values.
+    static func placeholderStyle(
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> TextFieldPlaceholderStyle {
+        let attrs = component.typedAttributes(TextFieldAttributes.self)
+
+        // `hintColor` is canonical and accepts the bound form;
+        // `placeholderColor` is the alias spelling, so it only fills in when
+        // the canonical one is absent.
+        let hintColor: Color? = {
+            if let raw = attrs.hintColor?.rawRepresentation as? String,
+               let c = DynamicHelpers.getColor(raw, data: data) {
+                return c
+            }
+            return DynamicHelpers.getColor(attrs.placeholderColor, data: data)
+        }()
+
+        return TextFieldPlaceholderStyle(
+            hintColor: hintColor,
+            hintFont: attrs.hintFont,
+            hintFontSize: attrs.hintFontSize.map { CGFloat($0) },
+            fontSize: component.fontSize
+        )
+    }
+
     /// `clearButtonMode` — UIKit's `UITextField.ViewMode` spelling. An
     /// unrecognised value leaves the field alone rather than guessing a mode.
     private static func clearButtonMode(from attrs: TextFieldAttributes) -> TextFieldClearButtonMode? {
@@ -132,6 +194,9 @@ public struct TextFieldConverter {
 
     private static func createFocusableTextField(
         placeholder: String,
+        styledPlaceholder: String?,
+        hintStyle: TextFieldPlaceholderStyle,
+        hintAlignment: Alignment,
         text: SwiftUI.Binding<String>,
         fieldId: String,
         isSecure: Bool,
@@ -154,6 +219,19 @@ public struct TextFieldConverter {
                 clearButtonMode: clearButtonMode(from: attrs)
             )
         )
+
+        // Styled placeholder goes on before any padding/frame modifier so it
+        // lands on the field's own text area, not on the padded box.
+        if let hintText = styledPlaceholder {
+            result = AnyView(
+                result.styledPlaceholder(
+                    hintText,
+                    text: text,
+                    style: hintStyle,
+                    alignment: hintAlignment
+                )
+            )
+        }
 
         // Apply modifiers in textfield_converter.rb order
         // (FocusableTextField handles focused/onSubmit internally)
