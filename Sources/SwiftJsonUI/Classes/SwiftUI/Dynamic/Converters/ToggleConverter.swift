@@ -176,10 +176,11 @@ public struct ToggleConverter {
         // only", but ProgressConverter has mapped the same name onto a real
         // modifier all along; the limit was this converter's fallback chain,
         // not the platform. 49-E retracted the deprecation.
-        if let onTint = component.rawData["onTintColor"] as? String
-            ?? component.rawData["tint"] as? String
-            ?? component.typedAttributes(SwitchAttributes.self).trackTintColor,
-           let trackColor = DynamicHelpers.getColor(onTint) {
+        let switchAttrs = component.typedAttributes(SwitchAttributes.self)
+        if let onTint = switchAttrs.onTintColor
+            ?? (switchAttrs.tint?.rawRepresentation as? String)
+            ?? switchAttrs.trackTintColor,
+           let trackColor = DynamicHelpers.getColor(onTint, data: data) {
             result = AnyView(result.tint(trackColor))
         }
 
@@ -187,8 +188,8 @@ public struct ToggleConverter {
         // track and SwiftUI exposes nothing for the knob, so this goes
         // through UISwitch.appearance() at appear time — the same route the
         // codegen takes (toggle_converter.rb apply_thumb_tint_color).
-        if let thumb = component.rawData["thumbTintColor"] as? String,
-           let color = DynamicHelpers.getColor(thumb) {
+        if let thumb = switchAttrs.thumbTintColor?.rawRepresentation as? String,
+           let color = DynamicHelpers.getColor(thumb, data: data) {
             result = AnyView(result.onAppear {
                 UISwitch.appearance().thumbTintColor = UIColor(color)
             })

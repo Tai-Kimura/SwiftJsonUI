@@ -198,7 +198,7 @@ public struct LabelConverter {
         // color string, UIKit default 1pt blur). Mirrors label_converter.rb
         // apply_text_shadow; the dynamic path never read it (33 cross-effect:
         // ios rendered flat for a declared shadow).
-        if let shadow = component.rawAttribute("textShadow") {
+        if let shadow = attrs.textShadow {
             if let colorName = shadow as? String,
                let color = DynamicHelpers.getColor(colorName) {
                 result = AnyView(result.shadow(color: color, radius: 1, x: 0, y: 1))

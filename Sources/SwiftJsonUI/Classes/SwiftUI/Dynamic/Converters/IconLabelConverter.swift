@@ -44,7 +44,7 @@ public struct IconLabelConverter {
         var shadowColor: Color? = nil
         var shadowRadius: CGFloat = 1
         var shadowOffset = CGSize(width: 0, height: 1)
-        if let shadow = component.rawAttribute("textShadow") as? [String: Any] {
+        if let shadow = attrs.textShadow as? [String: Any] {
             shadowColor = (shadow["color"] as? String).flatMap { DynamicHelpers.getColor($0) }
                 ?? Color.black.opacity(0.3)
             if let blur = shadow["blur"] as? Double { shadowRadius = CGFloat(blur) }
@@ -54,7 +54,7 @@ public struct IconLabelConverter {
                 let y = (off[1] as? Double) ?? Double(off[1] as? Int ?? 1)
                 shadowOffset = CGSize(width: x, height: y)
             }
-        } else if let shadowName = component.rawAttribute("textShadow") as? String,
+        } else if let shadowName = attrs.textShadow as? String,
                   let color = DynamicHelpers.getColor(shadowName) {
             shadowColor = color
         }
