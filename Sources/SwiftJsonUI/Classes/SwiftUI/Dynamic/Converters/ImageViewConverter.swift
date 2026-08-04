@@ -126,7 +126,14 @@ public struct ImageViewConverter {
         }
 
         // --- 6. .onTapGesture (canTap + onClick) ---
-        if component.canTap == true, let onClick = component.onClick {
+        // `canTap` is boolean|binding — the hand-decoded slot is nil for a
+        // binding, so `canTap: "@{isTappable}"` made the image untappable.
+        let canTap = DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).canTap,
+            legacy: component.canTap,
+            data: data
+        ) ?? false
+        if canTap, let onClick = component.onClick {
             let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
             if let closure = data[propName] as? () -> Void {
                 result = AnyView(result.onTapGesture { closure() })

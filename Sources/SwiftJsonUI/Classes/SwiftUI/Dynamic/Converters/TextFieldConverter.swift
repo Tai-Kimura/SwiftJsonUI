@@ -75,7 +75,14 @@ public struct TextFieldConverter {
 
         // Check if it should be a SecureField
         let isSecure: Bool = {
-            if let secure = component.secure { return secure }
+            // `secure` is boolean|binding; the hand-decoded slot is nil for
+            // `@{expr}`, so a bound declaration silently left the field
+            // in the clear.
+            if let secure = DynamicHelpers.resolveBool(
+                component.typedAttributes(TextFieldAttributes.self).secure,
+                legacy: component.secure,
+                data: data
+            ) { return secure }
             return component.input?.lowercased() == "password"
         }()
 
