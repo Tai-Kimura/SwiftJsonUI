@@ -39,7 +39,13 @@ public struct SegmentConverter {
         // Resolve segment color attributes
         let bgColor = DynamicHelpers.getColor(
             component.rawAttribute("backgroundColor") as? String, data: data)
-        let normalColor = DynamicHelpers.getColor(attrs.normalColor?.rawString, data: data)
+        // fontColor is the unselected label and selectedFontColor the selected
+        // one, falling back to fontColor (contract: semantics.segmentLabelColors).
+        // normalColor is the swift-only legacy spelling of the first.
+        let normalColor = DynamicHelpers.getColor(
+            attrs.fontColor ?? attrs.normalColor?.rawString, data: data)
+        let selectedFontColor = DynamicHelpers.getColor(
+            attrs.selectedFontColor ?? attrs.fontColor, data: data)
         let selectedColor = DynamicHelpers.getColor(
             attrs.selectedColor?.rawString
                 ?? component.rawAttribute("selectedSegmentTintColor") as? String
@@ -59,6 +65,7 @@ public struct SegmentConverter {
                 configureSegmentAppearance(
                     backgroundColor: bgColor,
                     normalColor: normalColor,
+                    selectedFontColor: selectedFontColor,
                     selectedColor: selectedColor
                 )
             }
@@ -99,10 +106,12 @@ public struct SegmentConverter {
     /// This uses UIKit appearance proxy since SwiftUI Picker(.segmented) wraps UISegmentedControl.
     /// - backgroundColor: container background color
     /// - normalColor: text color for unselected segments (.normal state)
-    /// - selectedColor: tint color for selected segment background + selected text color
+    /// - selectedFontColor: text color for the selected segment (.selected state)
+    /// - selectedColor: tint color for the selected segment's background
     private static func configureSegmentAppearance(
         backgroundColor: Color?,
         normalColor: Color?,
+        selectedFontColor: Color?,
         selectedColor: Color?
     ) {
         let appearance = UISegmentedControl.appearance()
@@ -119,6 +128,13 @@ public struct SegmentConverter {
             appearance.setTitleTextAttributes(
                 [.foregroundColor: UIColor(normalColor)],
                 for: .normal
+            )
+        }
+
+        if let selectedFontColor = selectedFontColor {
+            appearance.setTitleTextAttributes(
+                [.foregroundColor: UIColor(selectedFontColor)],
+                for: .selected
             )
         }
     }

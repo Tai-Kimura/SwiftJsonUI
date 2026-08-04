@@ -11,11 +11,13 @@ public struct SegmentAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "apportionsSegmentWidthsByContent",
+        "fontColor",
         "items",
         "momentary",
         "normalColor",
         "onValueChange",
         "selectedColor",
+        "selectedFontColor",
         "selectedIndex",
         "tintColor",
         "valueChange",
@@ -37,6 +39,9 @@ public struct SegmentAttributes {
     /// Size segments by content
     public let apportionsSegmentWidthsByContent: Bool?
 
+    /// Label color of the UNSELECTED segments - hex string or color name from colors.json
+    public let fontColor: String?
+
     /// Segment items array [required]
     public let items: [Any]?
 
@@ -52,10 +57,13 @@ public struct SegmentAttributes {
     /// Selected state color - hex string or color name from colors.json (binding supported)
     public let selectedColor: AttrValue<String>?
 
+    /// Label color of the selected segment, falling back to fontColor - hex string or color name from colors.json
+    public let selectedFontColor: String?
+
     /// Initially selected index (binding for two-way) [binding: two-way]
     public let selectedIndex: AttrValue<Double>?
 
-    /// Tint color - hex string or color name from colors.json
+    /// Tint color of the selected segment's background - hex string or color name from colors.json
     public let tintColor: String?
 
     /// Value change event
@@ -66,11 +74,13 @@ public struct SegmentAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.apportionsSegmentWidthsByContent = AttrCoerce.boolean(AttrCoerce.lookup(json, "apportionsSegmentWidthsByContent"))
+        self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor"))
         self.items = AttrCoerce.array(AttrCoerce.lookup(json, "items"))
         self.momentary = AttrCoerce.boolean(AttrCoerce.lookup(json, "momentary"))
         self.normalColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "normalColor"), AttrCoerce.string)
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
         self.selectedColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedColor"), AttrCoerce.string)
+        self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor"))
         self.selectedIndex = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedIndex"), AttrCoerce.number)
         self.tintColor = AttrCoerce.string(AttrCoerce.lookup(json, "tintColor"))
         self.valueChange = AttrCoerce.string(AttrCoerce.lookup(json, "valueChange"))
