@@ -49,11 +49,12 @@ public struct CheckboxConverter {
         // Icon size
         let iconSize = component.iconSize ?? 24
 
-        // Spacing
-        let spacing = component.spacing ?? 8
+        // Spacing — number|binding; the hand-decoded slot is nil for
+        // `@{expr}`, so a bound spacing fell to the default 8.
+        let spacing = DynamicHelpers.resolveNumber(attrs.spacing, legacy: component.spacing, data: data) ?? 8
 
         // Font properties
-        let fontSize = component.fontSize
+        let fontSize = DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
         let fontWeight: Font.Weight? = {
             if let style = component.rawAttribute("fontStyle") as? String {
                 return DynamicHelpers.fontWeightFromString(style)
@@ -64,7 +65,11 @@ public struct CheckboxConverter {
             // 'font' carries the weight spelling on selection controls
             // (kjui reads it the same way — 33 cross-effect: ios rendered
             // the default weight for font: bold).
-            if let font = component.font {
+            // `font` is string|binding here: the bound spelling arrives as
+            // the literal "@{expr}", which matches no weight name and fell
+            // through as nil. Resolve it before the vocabulary lookup.
+            if let font = (attrs.font?.rawRepresentation as? String)
+                .map({ DynamicHelpers.processText($0, data: data) }) ?? component.font {
                 return DynamicHelpers.fontWeightFromString(font)
             }
             return nil

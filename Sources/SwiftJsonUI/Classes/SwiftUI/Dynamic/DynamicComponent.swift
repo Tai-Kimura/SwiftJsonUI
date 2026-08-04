@@ -405,7 +405,13 @@ public struct DynamicComponent: Decodable {
         // Basic properties
         id = try container.decodeIfPresent(String.self, forKey: .id)
         text = try container.decodeIfPresent(String.self, forKey: .text)
-        fontSize = try container.decodeIfPresent(CGFloat.self, forKey: .fontSize)
+        // `try?`, not `try`: fontSize is number|binding, and a bound
+        // spelling is a String. A hard decode throws, and children go through
+        // FailableDecodable — so the throw did not surface as an error, it
+        // DELETED the component from the tree. `Label { fontSize: "@{x}" }`
+        // rendered nothing at all. The typed extraction carries the bound
+        // form; this slot only has to stop killing the node.
+        fontSize = try? container.decodeIfPresent(CGFloat.self, forKey: .fontSize)
         fontColor = try container.decodeIfPresent(String.self, forKey: .fontColor)
         font = try container.decodeIfPresent(String.self, forKey: .font)
         fontWeight = try container.decodeIfPresent(String.self, forKey: .fontWeight)

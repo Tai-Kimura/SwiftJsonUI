@@ -42,7 +42,7 @@ public struct LabelConverter {
         let partialAttributes = buildPartialAttributes(component: component, data: data)
 
         // Font properties
-        let fontSize = component.fontSize
+        let fontSize = DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
         // Resolve font from binding if present (e.g., @{fontProp})
         let resolvedFont: String? = {
             if let expr = attrs.font?.bindingExpression {

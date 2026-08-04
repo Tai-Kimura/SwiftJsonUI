@@ -115,7 +115,10 @@ public struct TextViewConverter {
         let hideOnFocused = component.hideOnFocused ?? true
 
         // fontSize
-        let fontSize = component.fontSize ?? 16
+        let fontSize = DynamicHelpers.resolveNumber(
+            component.typedAttributes(TextViewAttributes.self).fontSize,
+            legacy: component.fontSize, data: data
+        ) ?? 16
 
         // fontColor
         let fontColor: Color = {
