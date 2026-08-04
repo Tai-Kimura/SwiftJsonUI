@@ -636,8 +636,18 @@ public struct DynamicModifierHelper {
 
     // MARK: - 16. Hit Testing
 
-    public static func applyHitTesting(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        if component.userInteractionEnabled == false {
+    public static func applyHitTesting(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        // boolean|binding — the hand-decoded slot is nil for `@{expr}`, so a
+        // bound `userInteractionEnabled: false` never disabled hit testing.
+        if DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).userInteractionEnabled,
+            legacy: component.userInteractionEnabled,
+            data: data
+        ) == false {
             return AnyView(view.allowsHitTesting(false))
         }
         if component.rawData["touchDisabledState"] != nil {
@@ -902,7 +912,7 @@ public struct DynamicModifierHelper {
         // 14. disabled
         result = applyDisabled(result, component: component, data: data)
         // 15. hitTesting
-        result = applyHitTesting(result, component: component)
+        result = applyHitTesting(result, component: component, data: data)
         // 16. tint
         result = applyTint(result, component: component, data: data)
         // 17. onClick + lifecycle events
