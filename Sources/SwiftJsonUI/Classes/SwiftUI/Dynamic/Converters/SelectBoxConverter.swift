@@ -63,7 +63,7 @@ public struct SelectBoxConverter {
         let fontName: String? = (labelAttributes?["font"] as? String) ?? component.font
 
         // backgroundColor
-        let backgroundColor: Color = DynamicHelpers.getColor(component.background, data: data) ?? Color(UIColor.systemGray6)
+        let backgroundColor: Color = DynamicHelpers.getColor(component.commonString(\.background), data: data) ?? Color(UIColor.systemGray6)
 
         // cornerRadius
         let cornerRadius = component.cornerRadius ?? 8

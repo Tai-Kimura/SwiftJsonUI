@@ -66,7 +66,7 @@ public struct DynamicViewContainer: View {
         // Empty view with background: emptyContent already painted it as
         // Rectangle().fill (the codegen leaf contract, no safe-area bleed) —
         // painting again via .background stacked a second opaque layer.
-        let backgroundPaintedByContent = children.isEmpty && component.background != nil
+        let backgroundPaintedByContent = children.isEmpty && component.commonString(\.background) != nil
         result = DynamicModifierHelper.applyStandardModifiers(
             result,
             component: component,
@@ -139,9 +139,9 @@ public struct DynamicViewContainer: View {
         // is skipped for this case (buildBody passes skipBackground) so the
         // colour is painted exactly once — the double opaque layer used to
         // cast the declared .shadow twice.
-        if component.background != nil {
+        if component.commonString(\.background) != nil {
             Rectangle()
-                .fill(DynamicHelpers.getColor(component.background) ?? Color.clear)
+                .fill(DynamicHelpers.getColor(component.commonString(\.background)) ?? Color.clear)
         } else if hasExplicitSize || hasWeight {
             Color.clear
         } else {

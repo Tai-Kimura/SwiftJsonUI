@@ -86,7 +86,7 @@ public struct ButtonConverter {
 
         // Color properties
         let fontColor = DynamicHelpers.getColor(component.fontColor, data: data)
-        let backgroundColor = DynamicHelpers.getColor(component.background, data: data)
+        let backgroundColor = DynamicHelpers.getColor(component.commonString(\.background), data: data)
         // `highlightBackground` is the UIKit-era spelling of the pressed-state
         // background; `tapBackground` wins when both are declared. Same rule
         // as button_converter.rb:188-194 and rjui button_converter.rb:68.
@@ -118,7 +118,7 @@ public struct ButtonConverter {
         // Corner radius, border - all applied inside StateAwareButtonView
         let cornerRadius = component.cornerRadius
         let borderWidth = component.borderWidth
-        let borderColor = DynamicHelpers.getColor(component.borderColor, data: data)
+        let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data)
 
         // Padding
         let padding = DynamicHelpers.getPadding(from: component)
