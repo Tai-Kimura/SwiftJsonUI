@@ -49,12 +49,12 @@ public struct DynamicModifierHelper {
         //    legacy typed slot nil during decode, so resolve it from the typed
         //    CommonAttributes against `data` (falling back to the legacy value).
         let common = component.typedAttributes(CommonAttributes.self)
-        let startPad = DynamicHelpers.resolveNumber(common.paddingStart, legacy: component.paddingStart, data: data)
-        let endPad = DynamicHelpers.resolveNumber(common.paddingEnd, legacy: component.paddingEnd, data: data)
-        let leftPad = DynamicHelpers.resolveNumber(common.paddingLeft ?? common.leftPadding, legacy: component.paddingLeft, data: data)
-        let rightPad = DynamicHelpers.resolveNumber(common.paddingRight ?? common.rightPadding, legacy: component.paddingRight, data: data)
-        let topPad = DynamicHelpers.resolveNumber(common.paddingTop ?? common.topPadding, legacy: component.paddingTop, data: data)
-        let bottomPad = DynamicHelpers.resolveNumber(common.paddingBottom ?? common.bottomPadding, legacy: component.paddingBottom, data: data)
+        let startPad = DynamicHelpers.resolveNumber(common.paddingStart, legacy: nil, data: data)
+        let endPad = DynamicHelpers.resolveNumber(common.paddingEnd, legacy: nil, data: data)
+        let leftPad = DynamicHelpers.resolveNumber(common.paddingLeft ?? common.leftPadding, legacy: nil, data: data)
+        let rightPad = DynamicHelpers.resolveNumber(common.paddingRight ?? common.rightPadding, legacy: nil, data: data)
+        let topPad = DynamicHelpers.resolveNumber(common.paddingTop ?? common.topPadding, legacy: nil, data: data)
+        let bottomPad = DynamicHelpers.resolveNumber(common.paddingBottom ?? common.bottomPadding, legacy: nil, data: data)
 
         if let v = startPad ?? leftPad, v != 0 {
             result = AnyView(result.padding(.leading, v))
@@ -140,8 +140,12 @@ public struct DynamicModifierHelper {
         // IS min(parent, 120) — so no modifier-order game can lose it.
         // (applyFrameConstraints deliberately skips max bounds on
         // matchParent axes for the same reason.)
-        let fillMaxWidth = component.maxWidth ?? .infinity
-        let fillMaxHeight = component.maxHeight ?? .infinity
+        let fillMaxWidth = DynamicHelpers.resolveNumber(
+            component.typedAttributes(CommonAttributes.self).maxWidth, legacy: nil, data: data
+        ) ?? .infinity
+        let fillMaxHeight = DynamicHelpers.resolveNumber(
+            component.typedAttributes(CommonAttributes.self).maxHeight, legacy: nil, data: data
+        ) ?? .infinity
 
         if isMatchParentWidth && isMatchParentHeight {
             if let alignment = frameAlignment(for: component, bothAxes: true) {
@@ -182,7 +186,7 @@ public struct DynamicModifierHelper {
         var result = view
         let common = component.typedAttributes(CommonAttributes.self)
 
-        if let mw = DynamicHelpers.resolveNumber(common.minWidth, legacy: component.minWidth, data: data) {
+        if let mw = DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data) {
             result = AnyView(result.frame(minWidth: mw))
         }
         if let mh = DynamicHelpers.resolveNumber(common.minHeight, legacy: component.minHeight, data: data) {
@@ -201,7 +205,7 @@ public struct DynamicModifierHelper {
         let isMatchParentWidth = (width == .infinity || width == -1)
         let isMatchParentHeight = (height == .infinity || height == -1)
 
-        let resolvedMaxWidth = DynamicHelpers.resolveNumber(common.maxWidth, legacy: component.maxWidth, data: data)
+        let resolvedMaxWidth = DynamicHelpers.resolveNumber(common.maxWidth, legacy: nil, data: data)
         let resolvedMaxHeight = DynamicHelpers.resolveNumber(common.maxHeight, legacy: component.maxHeight, data: data)
         if let mw = resolvedMaxWidth, !isMatchParentWidth {
             result = AnyView(result.frame(maxWidth: mw))
@@ -508,7 +512,7 @@ public struct DynamicModifierHelper {
     ) -> AnyView {
         let enabled = DynamicHelpers.resolveBool(
             component.typedAttributes(CommonAttributes.self).clipToBounds,
-            legacy: component.clipToBounds,
+            legacy: nil,
             data: data
         ) ?? false
         return AnyView(view.clipToBounds(enabled))
@@ -712,7 +716,7 @@ public struct DynamicModifierHelper {
         // bound `userInteractionEnabled: false` never disabled hit testing.
         if DynamicHelpers.resolveBool(
             component.typedAttributes(CommonAttributes.self).userInteractionEnabled,
-            legacy: component.userInteractionEnabled,
+            legacy: nil,
             data: data
         ) == false {
             return AnyView(view.allowsHitTesting(false))

@@ -66,13 +66,7 @@ public struct DynamicComponent: Decodable {
     let topMargin: AnyCodable?
     let bottomMargin: AnyCodable?
     // UIKitに合わせてpaddingTop形式に統一（leftPadding等は削除）
-    let paddingLeft: CGFloat?
-    let paddingRight: CGFloat?
-    let paddingTop: CGFloat?
-    let paddingBottom: CGFloat?
     // RTL-aware padding and margin
-    let paddingStart: CGFloat?
-    let paddingEnd: CGFloat?
     let startMargin: AnyCodable?
     let endMargin: AnyCodable?
     // Min/Max margin constraints
@@ -95,7 +89,6 @@ public struct DynamicComponent: Decodable {
     let maxZoom: CGFloat?
     let minZoom: CGFloat?
     let highlighted: Bool?
-    let canTap: Bool?
     let events: AnyCodable?
     let partialAttributes: AnyCodable?
     let highlightAttributes: AnyCodable?
@@ -157,14 +150,10 @@ public struct DynamicComponent: Decodable {
     let hidden: Bool?
     let visibility: String?
     let shadow: AnyCodable?
-    let clipToBounds: Bool?
-    let minWidth: CGFloat?
-    let maxWidth: CGFloat?
     let minHeight: CGFloat?
     let maxHeight: CGFloat?
     let idealWidth: CGFloat?
     let idealHeight: CGFloat?
-    let userInteractionEnabled: Bool?
     let centerInParent: Bool?
     let weight: CGFloat?
     let enabled: AnyCodable?  // For button enabled state with data binding support
@@ -236,9 +225,6 @@ public struct DynamicComponent: Decodable {
     
     // Event handlers
     let onClick: String?
-    let onLongPress: String?
-    let onPan: String?
-    let onPinch: String?
     let onAppear: String?
     let onDisappear: String?
     let onChange: String?
@@ -284,13 +270,12 @@ public struct DynamicComponent: Decodable {
         case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
         case leftMargin, rightMargin, topMargin, bottomMargin, startMargin, endMargin
-        case paddingLeft, paddingRight, paddingTop, paddingBottom, paddingStart, paddingEnd
         case leftPadding, rightPadding, topPadding, bottomPadding
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, itemSpacing, contentInsets
         case tint, tintColor, minimum, maximum, hidesWhenStopped
         case defaultImage, errorImage, loadingImage
         case maxZoom, minZoom
-        case highlighted, canTap, events
+        case highlighted, events
         case partialAttributes, highlightAttributes, hintAttributes
         case label, onSrc, checked, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
         case normalColor, selectedColor
@@ -304,10 +289,10 @@ public struct DynamicComponent: Decodable {
         case setTargetAsDelegate, setTargetAsDataSource
         case onValueChange
         case cornerRadius, borderWidth
-        case alpha, opacity, hidden, visibility, shadow, clipToBounds
-        case minWidth, maxWidth, minHeight, maxHeight
+        case alpha, opacity, hidden, visibility, shadow
+        case minHeight, maxHeight
         case idealWidth, idealHeight
-        case userInteractionEnabled, centerInParent, weight, enabled
+        case centerInParent, weight, enabled
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
@@ -326,7 +311,7 @@ public struct DynamicComponent: Decodable {
         case scrollAnchor, defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat
-        case onClick, onLongPress, onPan, onPinch, onAppear, onDisappear
+        case onClick, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
         case includeData  // Will be handled specially in decoder
@@ -427,21 +412,12 @@ public struct DynamicComponent: Decodable {
         rightMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .rightMargin)
         topMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .topMargin)
         bottomMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .bottomMargin)
-        // Individual padding overrides are declared `["number","binding"]`;
-        // a `@{binding}` spelling must not throw (see comment above). Binding
-        // resolution happens in DynamicModifierHelper.applyPadding via data.
-        paddingLeft = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingLeft)) ?? nil)
-            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .leftPadding)) ?? nil)
-        paddingRight = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingRight)) ?? nil)
-            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .rightPadding)) ?? nil)
-        paddingTop = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingTop)) ?? nil)
-            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .topPadding)) ?? nil)
-        paddingBottom = ((try? container.decodeIfPresent(CGFloat.self, forKey: .paddingBottom)) ?? nil)
-            ?? ((try? container.decodeIfPresent(CGFloat.self, forKey: .bottomPadding)) ?? nil)
-        
+        // Individual padding overrides (and their `topPadding` aliases) are
+        // read from the generated typed extraction — see
+        // DynamicHelpers.getPadding. No hand-decoded slot: the binding form
+        // has to survive, and a CGFloat slot cannot hold `@{expr}`.
+
         // RTL-aware padding/margin
-        paddingStart = (try? container.decodeIfPresent(CGFloat.self, forKey: .paddingStart)) ?? nil
-        paddingEnd = (try? container.decodeIfPresent(CGFloat.self, forKey: .paddingEnd)) ?? nil
         startMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .startMargin)
         endMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .endMargin)
         // Min/Max margin constraints
@@ -469,7 +445,6 @@ public struct DynamicComponent: Decodable {
         maxZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
         minZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
         highlighted = try? container.decodeIfPresent(Bool.self, forKey: .highlighted)
-        canTap = (try? container.decodeIfPresent(Bool.self, forKey: .canTap)) ?? nil
         events = try container.decodeIfPresent(AnyCodable.self, forKey: .events)
         partialAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .partialAttributes)
         highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
@@ -537,11 +512,8 @@ public struct DynamicComponent: Decodable {
         hidden = try? container.decodeIfPresent(Bool.self, forKey: .hidden)
         visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
         shadow = try container.decodeIfPresent(AnyCodable.self, forKey: .shadow)
-        clipToBounds = (try? container.decodeIfPresent(Bool.self, forKey: .clipToBounds)) ?? nil
         
         // Size constraints
-        minWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .minWidth)) ?? nil
-        maxWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxWidth)) ?? nil
         minHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .minHeight)) ?? nil
         maxHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxHeight)) ?? nil
         // idealWidth/idealHeight are plain `number` (no binding) — leave typed.
@@ -550,7 +522,6 @@ public struct DynamicComponent: Decodable {
         
         // Interaction (userInteractionEnabled/centerInParent are
         // boolean|binding, weight is number|binding — tolerate `@{binding}`).
-        userInteractionEnabled = (try? container.decodeIfPresent(Bool.self, forKey: .userInteractionEnabled)) ?? nil
         centerInParent = (try? container.decodeIfPresent(Bool.self, forKey: .centerInParent)) ?? nil
         weight = (try? container.decodeIfPresent(CGFloat.self, forKey: .weight)) ?? nil
         enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
@@ -653,9 +624,6 @@ public struct DynamicComponent: Decodable {
 
         // Event handlers
         onClick = try container.decodeIfPresent(String.self, forKey: .onClick)
-        onLongPress = try container.decodeIfPresent(String.self, forKey: .onLongPress)
-        onPan = try container.decodeIfPresent(String.self, forKey: .onPan)
-        onPinch = try container.decodeIfPresent(String.self, forKey: .onPinch)
         onAppear = try container.decodeIfPresent(String.self, forKey: .onAppear)
         onDisappear = try container.decodeIfPresent(String.self, forKey: .onDisappear)
         onChange = try container.decodeIfPresent(String.self, forKey: .onChange)
@@ -823,6 +791,20 @@ extension DynamicComponent {
     /// resolve a binding — this returns what the layout wrote, not what it
     /// means.
     func commonString(_ keyPath: KeyPath<CommonAttributes, AttrValue<String>?>) -> String? {
+        typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.rawRepresentation as? String
+    }
+
+    /// The STATIC value of a `common` number attribute, or nil when it is
+    /// bound. Callers that can resolve a binding should go through
+    /// `DynamicHelpers.resolveNumber` with the attribute itself instead —
+    /// this is for the paths that only ever had a literal.
+    func commonNumber(_ keyPath: KeyPath<CommonAttributes, AttrValue<Double>?>) -> CGFloat? {
+        typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.value.map { CGFloat($0) }
+    }
+
+    /// The layout spelling of a `common` untyped attribute (event handlers
+    /// carry `@{handlerName}` here).
+    func commonAny(_ keyPath: KeyPath<CommonAttributes, AttrValue<Any>?>) -> String? {
         typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.rawRepresentation as? String
     }
 }

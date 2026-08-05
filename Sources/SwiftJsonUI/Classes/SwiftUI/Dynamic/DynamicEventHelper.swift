@@ -118,7 +118,7 @@ public struct DynamicEventHelper {
         // Skip if component is disabled
         if component.enabled?.value as? Bool == false { return view }
 
-        guard let onLongPress = component.onLongPress else { return view }
+        guard let onLongPress = component.commonAny(\.onLongPress) else { return view }
 
         return AnyView(
             view
@@ -141,7 +141,7 @@ public struct DynamicEventHelper {
         // Skip if component is disabled
         if component.enabled?.value as? Bool == false { return view }
 
-        guard let onPan = component.onPan else { return view }
+        guard let onPan = component.commonAny(\.onPan) else { return view }
 
         return AnyView(
             view
@@ -162,7 +162,7 @@ public struct DynamicEventHelper {
         // Skip if component is disabled
         if component.enabled?.value as? Bool == false { return view }
 
-        guard let onPinch = component.onPinch else { return view }
+        guard let onPinch = component.commonAny(\.onPinch) else { return view }
 
         return AnyView(
             view

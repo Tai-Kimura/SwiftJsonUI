@@ -163,8 +163,8 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertNotNil(component.paddings)
-        XCTAssertEqual(component.paddingTop, 5)
-        XCTAssertEqual(component.paddingLeft, 15)
+        XCTAssertEqual(component.commonNumber(\.paddingTop), 5)
+        XCTAssertEqual(component.commonNumber(\.paddingLeft), 15)
     }
 
     func testDecodeMargins() throws {
@@ -245,7 +245,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.commonString(\.borderColor), "#CCCCCC")
         XCTAssertEqual(component.alpha, 0.8)
         XCTAssertEqual(component.hidden, false)
-        XCTAssertEqual(component.clipToBounds, true)
+        XCTAssertEqual(component.typedAttributes(CommonAttributes.self).clipToBounds?.value, true)
     }
 
     // MARK: - Event Handler Tests
@@ -264,7 +264,7 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.onClick, "handleTap")
-        XCTAssertEqual(component.onLongPress, "handleLongPress")
+        XCTAssertEqual(component.commonAny(\.onLongPress), "handleLongPress")
         XCTAssertEqual(component.onAppear, "onViewAppear")
         XCTAssertEqual(component.onDisappear, "onViewDisappear")
     }
@@ -529,8 +529,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.minWidth, 100)
-        XCTAssertEqual(component.maxWidth, 300)
+        XCTAssertEqual(component.commonNumber(\.minWidth), 100)
+        XCTAssertEqual(component.commonNumber(\.maxWidth), 300)
         XCTAssertEqual(component.minHeight, 50)
         XCTAssertEqual(component.maxHeight, 200)
         XCTAssertEqual(component.idealWidth, 200)
@@ -678,8 +678,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertNil(component.paddingTop)
-        XCTAssertNil(component.paddingLeft)
+        XCTAssertNil(component.commonNumber(\.paddingTop))
+        XCTAssertNil(component.commonNumber(\.paddingLeft))
         XCTAssertEqual(
             component.typedAttributes(CommonAttributes.self).paddingTop?.bindingExpression,
             "topPad"
@@ -696,7 +696,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertNil(component.canTap)
+        XCTAssertNil(component.typedAttributes(CommonAttributes.self).canTap?.value)
         XCTAssertEqual(
             component.typedAttributes(CommonAttributes.self).canTap?.bindingExpression,
             "isTappable"
@@ -760,10 +760,10 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.cornerRadius, 12)
         XCTAssertEqual(component.borderWidth, 2)
-        XCTAssertEqual(component.canTap, true)
+        XCTAssertEqual(component.typedAttributes(CommonAttributes.self).canTap?.value, true)
         XCTAssertEqual(component.weight, 3)
-        XCTAssertEqual(component.paddingTop, 8)
-        XCTAssertEqual(component.minWidth, 100)
+        XCTAssertEqual(component.commonNumber(\.paddingTop), 8)
+        XCTAssertEqual(component.commonNumber(\.minWidth), 100)
         // aspectWidth's hand-written slot is gone (50 §4) — the generated
         // table is the reader.
         XCTAssertEqual(
@@ -805,7 +805,7 @@ final class DynamicComponentTests: XCTestCase {
         // Int in data (layouts often store Ints) must resolve to CGFloat.
         let data: [String: Any] = ["topPad": 24]
 
-        let resolved = DynamicHelpers.resolveNumber(common.paddingTop, legacy: component.paddingTop, data: data)
+        let resolved = DynamicHelpers.resolveNumber(common.paddingTop, legacy: component.commonNumber(\.paddingTop), data: data)
         XCTAssertEqual(resolved, 24)
     }
 
@@ -836,11 +836,11 @@ final class DynamicComponentTests: XCTestCase {
         let common = component.typedAttributes(CommonAttributes.self)
 
         XCTAssertEqual(
-            DynamicHelpers.resolveBool(common.canTap, legacy: component.canTap, data: ["isTappable": true]),
+            DynamicHelpers.resolveBool(common.canTap, legacy: component.typedAttributes(CommonAttributes.self).canTap?.value, data: ["isTappable": true]),
             true
         )
         XCTAssertEqual(
-            DynamicHelpers.resolveBool(common.canTap, legacy: component.canTap, data: ["isTappable": false]),
+            DynamicHelpers.resolveBool(common.canTap, legacy: component.typedAttributes(CommonAttributes.self).canTap?.value, data: ["isTappable": false]),
             false
         )
     }

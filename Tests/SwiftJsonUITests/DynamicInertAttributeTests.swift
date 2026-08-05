@@ -341,7 +341,8 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
         let attrs = c.typedAttributes(CommonAttributes.self)
 
-        XCTAssertNil(c.clipToBounds, "the hand-decoded slot is what used to drop it")
+        // the hand-decoded `clipToBounds` slot is deleted (plan 50 §4); the typed
+        // extraction below is now the only read path.
         XCTAssertEqual(
             DynamicHelpers.resolveBool(attrs.clipToBounds, legacy: nil, data: ["shouldClip": true]),
             true
@@ -358,7 +359,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
         XCTAssertEqual(
             DynamicHelpers.resolveBool(
-                c.typedAttributes(CommonAttributes.self).clipToBounds, legacy: c.clipToBounds, data: [:]
+                c.typedAttributes(CommonAttributes.self).clipToBounds, legacy: nil, data: [:]
             ),
             true
         )
@@ -576,7 +577,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let common = c.typedAttributes(CommonAttributes.self)
         let data: [String: Any] = ["w": 50, "h": 60, "mw": 150]
 
-        XCTAssertNil(c.minWidth, "the hand-decoded slot is what used to drop it")
+        // the hand-decoded `minWidth`/`maxWidth` slots are deleted (plan 50 §4).
         XCTAssertEqual(DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data), 50)
         XCTAssertEqual(DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data), 60)
         XCTAssertEqual(DynamicHelpers.resolveNumber(common.maxWidth, legacy: nil, data: data), 150)
