@@ -764,7 +764,11 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.weight, 3)
         XCTAssertEqual(component.paddingTop, 8)
         XCTAssertEqual(component.minWidth, 100)
-        XCTAssertEqual(component.aspectWidth, 16)
+        // aspectWidth's hand-written slot is gone (50 §4) — the generated
+        // table is the reader.
+        XCTAssertEqual(
+            component.typedAttributes(CommonAttributes.self).aspectWidth?.value, 16
+        )
         XCTAssertEqual(component.widthWeight, 0.5)
         XCTAssertEqual(component.alignTop, true)
         XCTAssertEqual(component.centerInParent, false)

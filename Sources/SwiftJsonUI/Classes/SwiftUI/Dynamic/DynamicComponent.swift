@@ -76,14 +76,6 @@ public struct DynamicComponent: Decodable {
     let startMargin: AnyCodable?
     let endMargin: AnyCodable?
     // Min/Max margin constraints
-    let minTopMargin: CGFloat?
-    let maxTopMargin: CGFloat?
-    let minBottomMargin: CGFloat?
-    let maxBottomMargin: CGFloat?
-    let minLeftMargin: CGFloat?
-    let maxLeftMargin: CGFloat?
-    let minRightMargin: CGFloat?
-    let maxRightMargin: CGFloat?
     let insets: AnyCodable?
     let insetHorizontal: CGFloat?
     let insetVertical: CGFloat?
@@ -172,8 +164,6 @@ public struct DynamicComponent: Decodable {
     let maxHeight: CGFloat?
     let idealWidth: CGFloat?
     let idealHeight: CGFloat?
-    let aspectWidth: CGFloat?
-    let aspectHeight: CGFloat?
     let userInteractionEnabled: Bool?
     let centerInParent: Bool?
     let weight: CGFloat?
@@ -235,7 +225,6 @@ public struct DynamicComponent: Decodable {
     let paging: Bool?  // Enable paging
     let bounces: Bool?  // Enable bounce effect
     let scrollEnabled: Bool?  // Enable scrolling
-    let scrollTo: String?  // @{publisher} for programmatic scrolling
     let scrollAnchor: String?  // top, center, bottom
     let defaultScrollAnchor: String?  // top, center, bottom (iOS 17+)
 
@@ -295,8 +284,6 @@ public struct DynamicComponent: Decodable {
         case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
         case leftMargin, rightMargin, topMargin, bottomMargin, startMargin, endMargin
-        case minTopMargin, maxTopMargin, minBottomMargin, maxBottomMargin
-        case minLeftMargin, maxLeftMargin, minRightMargin, maxRightMargin
         case paddingLeft, paddingRight, paddingTop, paddingBottom, paddingStart, paddingEnd
         case leftPadding, rightPadding, topPadding, bottomPadding
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, itemSpacing, contentInsets
@@ -320,7 +307,6 @@ public struct DynamicComponent: Decodable {
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
         case idealWidth, idealHeight
-        case aspectWidth, aspectHeight
         case userInteractionEnabled, centerInParent, weight, enabled
         case indexBelow, indexAbove
         case child
@@ -337,7 +323,7 @@ public struct DynamicComponent: Decodable {
         case contentInsetAdjustmentBehavior
         case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
         case paging, bounces, scrollEnabled
-        case scrollTo, scrollAnchor, defaultScrollAnchor
+        case scrollAnchor, defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat
         case onClick, onLongPress, onPan, onPinch, onAppear, onDisappear
@@ -459,14 +445,6 @@ public struct DynamicComponent: Decodable {
         startMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .startMargin)
         endMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .endMargin)
         // Min/Max margin constraints
-        minTopMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minTopMargin)) ?? nil
-        maxTopMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxTopMargin)) ?? nil
-        minBottomMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minBottomMargin)) ?? nil
-        maxBottomMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxBottomMargin)) ?? nil
-        minLeftMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minLeftMargin)) ?? nil
-        maxLeftMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxLeftMargin)) ?? nil
-        minRightMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .minRightMargin)) ?? nil
-        maxRightMargin = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxRightMargin)) ?? nil
         insets = try container.decodeIfPresent(AnyCodable.self, forKey: .insets)
         insetHorizontal = try container.decodeIfPresent(CGFloat.self, forKey: .insetHorizontal)
         insetVertical = try container.decodeIfPresent(CGFloat.self, forKey: .insetVertical)
@@ -569,8 +547,6 @@ public struct DynamicComponent: Decodable {
         // idealWidth/idealHeight are plain `number` (no binding) — leave typed.
         idealWidth = try container.decodeIfPresent(CGFloat.self, forKey: .idealWidth)
         idealHeight = try container.decodeIfPresent(CGFloat.self, forKey: .idealHeight)
-        aspectWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .aspectWidth)) ?? nil
-        aspectHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .aspectHeight)) ?? nil
         
         // Interaction (userInteractionEnabled/centerInParent are
         // boolean|binding, weight is number|binding — tolerate `@{binding}`).
@@ -666,7 +642,6 @@ public struct DynamicComponent: Decodable {
         bounces = try container.decodeIfPresent(Bool.self, forKey: .bounces)
         // Use try? because scrollEnabled can be a binding string like "@{messageListScrollEnabled}"
         scrollEnabled = try? container.decodeIfPresent(Bool.self, forKey: .scrollEnabled)
-        scrollTo = try container.decodeIfPresent(String.self, forKey: .scrollTo)
         scrollAnchor = try container.decodeIfPresent(String.self, forKey: .scrollAnchor)
         defaultScrollAnchor = try container.decodeIfPresent(String.self, forKey: .defaultScrollAnchor)
 
