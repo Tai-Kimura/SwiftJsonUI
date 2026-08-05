@@ -15,12 +15,12 @@
 //
 //  Modifier order:
 //  1. Collection content (ScrollView/List/etc.)
-//  2. .onReceive(scrollTo) (if scrollTo binding present)
+//  2. .onChange(of: scrollTo) (if a scrollTo binding is present)
 //  3. applyStandardModifiers()
 //
 
 import SwiftUI
-import Combine
+// Combine is gone with the publisher: `scrollTo` is a plain value now.
 
 #if DEBUG
 
@@ -120,15 +120,36 @@ public struct CollectionConverter {
             onItemAppearCallback = data[propName] as? ((Int) -> Void)
         }
 
-        // Resolve scroll publisher
-        var scrollPublisher: AnyPublisher<Int, Never>? = nil
-        if let scrollToBinding = component.scrollTo,
-           let propName = DynamicBindingResolver.inner(of: scrollToBinding) {
-            // Reactive plumbing: subjects live under flat keys by design
-            if let subject = data[propName] as? PassthroughSubject<Int, Never> {
-                scrollPublisher = subject.eraseToAnyPublisher()
+        // Resolve the programmatic scroll request.
+        //
+        // `scrollTo` is declared as a PLAIN VALUE — `String` when
+        // `cellIdProperty` is set (scroll to that cell id), `Int` otherwise.
+        // This used to require a `PassthroughSubject<Int, Never>` in the data
+        // dictionary, which is the Combine transport 49-E withdrew from the
+        // declaration on 2026-08-05: naming a Swift type in a cross-platform
+        // declaration is what made kjui's map_to_kotlin_type pass it through
+        // verbatim and kill the Kotlin build. How the request travels is each
+        // platform's own business, and codegen moved to `.onChange(of:)`
+        // (collection_converter.rb:1165). This is the dynamic half.
+        //
+        // A value that changes has nothing to throttle, and re-sending the
+        // SAME value does not re-scroll — that is publisher behaviour a plain
+        // value cannot express, which is exactly what the declaration gave up.
+        let scrollTarget: CollectionScrollTarget? = {
+            guard let raw = component.typedAttributes(CollectionAttributes.self)
+                .scrollTo?.rawRepresentation as? String,
+                  let propName = DynamicBindingResolver.inner(of: raw) else { return nil }
+            let value = DynamicBindingResolver.lookupRaw(path: propName, in: data)
+            guard let value else { return nil }
+            // cellIdProperty decides which spelling the layout is sending.
+            if cellIdProperty?.isEmpty == false {
+                guard let id = DynamicBindingResolver.unwrap(value) as? String else { return nil }
+                return .cellId(id)
             }
-        }
+            guard let index = DynamicBindingResolver.unwrap(value) as? Int else { return nil }
+            return .index(index)
+        }()
+        let scrollAnimated = component.typedAttributes(CollectionAttributes.self).scrollAnimated ?? true
 
         let scrollAnchorPoint: UnitPoint = {
             switch component.scrollAnchor {
@@ -185,7 +206,8 @@ public struct CollectionConverter {
                 dataSource: dataSource,
                 sections: sections,
                 cellIdProperty: cellIdProperty,
-                scrollPublisher: scrollPublisher,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
@@ -200,7 +222,8 @@ public struct CollectionConverter {
                 dataSource: dataSource,
                 sections: sections,
                 cellIdProperty: cellIdProperty,
-                scrollPublisher: scrollPublisher,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
@@ -237,7 +260,8 @@ public struct CollectionConverter {
                 dataSource: dataSource,
                 sections: sections,
                 cellIdProperty: cellIdProperty,
-                scrollPublisher: scrollPublisher,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
@@ -252,7 +276,8 @@ public struct CollectionConverter {
                 sections: sections,
                 cellIdProperty: cellIdProperty,
                 globalColumns: globalColumns,
-                scrollPublisher: scrollPublisher,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
@@ -473,7 +498,8 @@ public struct CollectionConverter {
         dataSource: CollectionDataSource,
         sections: [[String: Any]],
         cellIdProperty: String?,
-        scrollPublisher: AnyPublisher<Int, Never>?,
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
@@ -541,10 +567,15 @@ public struct CollectionConverter {
                         }
                     }
                 }
-                .ifLet(scrollPublisher) { view, publisher in
-                    view.onReceive(publisher) { index in
-                        withAnimation {
-                            scrollProxy.scrollTo(index, anchor: scrollAnchorPoint)
+                .ifLet(scrollTarget) { view, target in
+                    // Keyed on the value: SwiftUI re-runs this when it
+                    // changes, the same shape as Compose's LaunchedEffect and
+                    // web's useEffect on the same property.
+                    view.onChange(of: target) { _, newTarget in
+                        if scrollAnimated {
+                            withAnimation { newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint) }
+                        } else {
+                            newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint)
                         }
                     }
                 }
@@ -655,7 +686,8 @@ public struct CollectionConverter {
         dataSource: CollectionDataSource,
         sections: [[String: Any]],
         cellIdProperty: String?,
-        scrollPublisher: AnyPublisher<Int, Never>?,
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
@@ -723,10 +755,15 @@ public struct CollectionConverter {
                         }
                     }
                 }
-                .ifLet(scrollPublisher) { view, publisher in
-                    view.onReceive(publisher) { index in
-                        withAnimation {
-                            scrollProxy.scrollTo(index, anchor: scrollAnchorPoint)
+                .ifLet(scrollTarget) { view, target in
+                    // Keyed on the value: SwiftUI re-runs this when it
+                    // changes, the same shape as Compose's LaunchedEffect and
+                    // web's useEffect on the same property.
+                    view.onChange(of: target) { _, newTarget in
+                        if scrollAnimated {
+                            withAnimation { newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint) }
+                        } else {
+                            newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint)
                         }
                     }
                 }
@@ -800,7 +837,8 @@ public struct CollectionConverter {
         sections: [[String: Any]],
         cellIdProperty: String?,
         globalColumns: Int,
-        scrollPublisher: AnyPublisher<Int, Never>?,
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
@@ -878,10 +916,15 @@ public struct CollectionConverter {
                         }
                     }
                 }
-                .ifLet(scrollPublisher) { view, publisher in
-                    view.onReceive(publisher) { index in
-                        withAnimation {
-                            scrollProxy.scrollTo(index, anchor: scrollAnchorPoint)
+                .ifLet(scrollTarget) { view, target in
+                    // Keyed on the value: SwiftUI re-runs this when it
+                    // changes, the same shape as Compose's LaunchedEffect and
+                    // web's useEffect on the same property.
+                    view.onChange(of: target) { _, newTarget in
+                        if scrollAnimated {
+                            withAnimation { newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint) }
+                        } else {
+                            newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint)
                         }
                     }
                 }
@@ -895,7 +938,8 @@ public struct CollectionConverter {
         dataSource: CollectionDataSource,
         sections: [[String: Any]],
         cellIdProperty: String?,
-        scrollPublisher: AnyPublisher<Int, Never>?,
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,

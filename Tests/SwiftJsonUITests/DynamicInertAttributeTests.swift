@@ -936,6 +936,48 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(child?.height, 200, "the child is fixed — reading it would give false")
     }
 
+    // MARK: - Collection.scrollTo (the withdrawn Combine transport)
+
+    /// `cellIdProperty` decides which spelling the layout sends: a String cell
+    /// id when it is declared, an Int index when it is not.
+    func testScrollToSpellingFollowsCellIdProperty() throws {
+        let withCellId = try component("""
+        { "type": "Collection", "id": "t", "cellIdProperty": "rowId", "scrollTo": "@{target}" }
+        """)
+        XCTAssertEqual(withCellId.typedAttributes(CollectionAttributes.self).cellIdProperty, "rowId")
+
+        let withoutCellId = try component("""
+        { "type": "Collection", "id": "t", "scrollTo": "@{target}" }
+        """)
+        XCTAssertNil(withoutCellId.typedAttributes(CollectionAttributes.self).cellIdProperty)
+    }
+
+    /// The declaration is a plain value — no PassthroughSubject required.
+    func testScrollToIsAPlainValue() throws {
+        let c = try component("""
+        { "type": "Collection", "id": "t", "scrollTo": "@{target}" }
+        """)
+        let raw = c.typedAttributes(CollectionAttributes.self).scrollTo?.rawRepresentation as? String
+        XCTAssertEqual(raw, "@{target}")
+        XCTAssertEqual(DynamicBindingResolver.inner(of: raw ?? ""), "target")
+        // A plain Int in the data dictionary is enough to address a row.
+        XCTAssertEqual(
+            DynamicBindingResolver.lookupRaw(path: "target", in: ["target": 7]) as? Int, 7
+        )
+    }
+
+    /// Equatable, because `.onChange(of:)` fires on a CHANGE — re-sending the
+    /// same value must not re-scroll. That is publisher behaviour the plain
+    /// value deliberately gave up.
+    func testScrollTargetEqualityIsWhatSuppressesARepeatScroll() {
+        XCTAssertEqual(CollectionScrollTarget.index(3), .index(3))
+        XCTAssertNotEqual(CollectionScrollTarget.index(3), .index(4))
+        XCTAssertEqual(CollectionScrollTarget.cellId("a"), .cellId("a"))
+        XCTAssertNotEqual(CollectionScrollTarget.cellId("a"), .cellId("b"))
+        // The two spellings are distinct even when they look alike.
+        XCTAssertNotEqual(CollectionScrollTarget.cellId("3"), .index(3))
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
