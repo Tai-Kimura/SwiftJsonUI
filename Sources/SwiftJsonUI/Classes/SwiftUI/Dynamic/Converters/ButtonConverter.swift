@@ -73,7 +73,7 @@ public struct ButtonConverter {
         // hands "@{expr}" straight to the weight vocabulary, which matches
         // nothing — the same union the codegen halves read differently (49-B).
         let resolvedFontWeight: String? = {
-            guard let raw = attrs.fontWeight?.rawRepresentation else { return component.fontWeight }
+            guard let raw = attrs.fontWeight?.rawRepresentation else { return component.fontWeightSpelling() }
             if let s = raw as? String { return DynamicHelpers.processText(s, data: data) }
             return String(describing: raw)
         }()

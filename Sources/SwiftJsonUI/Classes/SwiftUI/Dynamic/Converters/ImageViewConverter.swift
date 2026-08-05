@@ -143,7 +143,7 @@ public struct ImageViewConverter {
             legacy: nil,
             data: data
         ) ?? false
-        if canTap, let onClick = component.onClick {
+        if canTap, let onClick = component.commonAny(\.onClick) {
             let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
             if let closure = data[propName] as? () -> Void {
                 result = AnyView(result.onTapGesture { closure() })

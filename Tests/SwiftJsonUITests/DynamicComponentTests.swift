@@ -47,7 +47,7 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.type, "Button")
         XCTAssertEqual(component.text, "Click Me")
-        XCTAssertEqual(component.onClick, "handleClick")
+        XCTAssertEqual(component.commonAny(\.onClick), "handleClick")
         XCTAssertEqual(component.commonString(\.background), "#FF0000")
         XCTAssertEqual(component.commonNumber(\.cornerRadius), 8)
     }
@@ -265,7 +265,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.onClick, "handleTap")
+        XCTAssertEqual(component.commonAny(\.onClick), "handleTap")
         XCTAssertEqual(component.commonAny(\.onLongPress), "handleLongPress")
         XCTAssertEqual(component.onAppear, "onViewAppear")
         XCTAssertEqual(component.onDisappear, "onViewDisappear")
@@ -281,7 +281,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.onClick, "handleClick")
+        XCTAssertEqual(component.commonAny(\.onClick), "handleClick")
     }
 
     // MARK: - Gravity Tests
@@ -456,7 +456,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.int(CollectionAttributes.self, \.columns), 3)
         XCTAssertEqual(component.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) }, 8)
         XCTAssertEqual(component.layout, "grid")
-        XCTAssertEqual(component.items, ["Item1", "Item2", "Item3"])
+        XCTAssertEqual(component.stringList(SelectBoxAttributes.self, \.items), ["Item1", "Item2", "Item3"])
     }
 
     func testDecodeCollectionColumnsBindingDoesNotThrow() throws {
@@ -598,7 +598,7 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.font, "Helvetica")
-        XCTAssertEqual(component.fontWeight, "bold")
+        XCTAssertEqual(component.fontWeightSpelling(), "bold")
         XCTAssertEqual(component.underline, true)
         XCTAssertEqual(component.strikethrough, false)
         XCTAssertEqual(component.typedAttributes(LabelAttributes.self).lineHeightMultiple?.value.map { CGFloat($0) }, 1.5)

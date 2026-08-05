@@ -38,7 +38,6 @@ public struct DynamicComponent: Decodable {
     let text: String?
     let fontColor: String?
     let font: String?
-    let fontWeight: String?
     let fontFamily: String?  // Font family name (e.g., "Noto Sans JP")
     let disabledFontColor: String?  // Text color when disabled
     let edgeInset: AnyCodable?  // Text padding for Label (単一値または配列形式をサポート)
@@ -148,7 +147,6 @@ public struct DynamicComponent: Decodable {
     let placeholder: String?
     let renderingMode: String?
     let headers: [String: String]?
-    let items: [String]?
     let data: [AnyCodable]?  // For data elements with variable definitions
     let hint: String?
     // hintColor is already declared above with hintAttributes
@@ -190,7 +188,6 @@ public struct DynamicComponent: Decodable {
     let dateStringFormat: String?
     
     // Event handlers
-    let onClick: String?
     let onAppear: String?
     let onDisappear: String?
     let onChange: String?
@@ -222,7 +219,7 @@ public struct DynamicComponent: Decodable {
     
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
-        case type, id, text, fontColor, font, fontWeight, fontFamily
+        case type, id, text, fontColor, font, fontFamily
         case disabledFontColor, edgeInset
         case underline, strikethrough, autoShrink, lineBreakMode, textShadow
         case width, height, widthRaw, heightRaw, tapBackground
@@ -251,7 +248,7 @@ public struct DynamicComponent: Decodable {
         case child
         case children  // Alias for child (backward compatibility)
         case orientation, direction, distribution, src, systemIcon, placeholder, renderingMode
-        case headers, items, data
+        case headers, data
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
@@ -264,7 +261,7 @@ public struct DynamicComponent: Decodable {
         case scrollAnchor, defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat
-        case onClick, onAppear, onDisappear
+        case onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
         case includeData  // Will be handled specially in decoder
@@ -320,7 +317,6 @@ public struct DynamicComponent: Decodable {
         // nothing at all. The generated tables carry it now.
         fontColor = try container.decodeIfPresent(String.self, forKey: .fontColor)
         font = try container.decodeIfPresent(String.self, forKey: .font)
-        fontWeight = try container.decodeIfPresent(String.self, forKey: .fontWeight)
         fontFamily = try container.decodeIfPresent(String.self, forKey: .fontFamily)
         disabledFontColor = try container.decodeIfPresent(String.self, forKey: .disabledFontColor)
         edgeInset = try container.decodeIfPresent(AnyCodable.self, forKey: .edgeInset)
@@ -466,16 +462,6 @@ public struct DynamicComponent: Decodable {
         placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
         renderingMode = try container.decodeIfPresent(String.self, forKey: .renderingMode)
         headers = try container.decodeIfPresent([String: String].self, forKey: .headers)
-        // items can be either an array of strings or a binding string like "@{items1}"
-        if let itemsArray = try? container.decode([String].self, forKey: .items) {
-            items = itemsArray
-        } else if let itemsString = try? container.decode(String.self, forKey: .items) {
-            // Store the binding string in rawData for later processing
-            // items array stays nil for binding case
-            items = nil
-        } else {
-            items = nil
-        }
         hint = try container.decodeIfPresent(String.self, forKey: .hint)
         // hintColor is already decoded above with hintAttributes
         hintFont = try container.decodeIfPresent(String.self, forKey: .hintFont)
@@ -522,7 +508,6 @@ public struct DynamicComponent: Decodable {
         dateStringFormat = try container.decodeIfPresent(String.self, forKey: .dateStringFormat)
 
         // Event handlers
-        onClick = try container.decodeIfPresent(String.self, forKey: .onClick)
         onAppear = try container.decodeIfPresent(String.self, forKey: .onAppear)
         onDisappear = try container.decodeIfPresent(String.self, forKey: .onDisappear)
         onChange = try container.decodeIfPresent(String.self, forKey: .onChange)
@@ -806,6 +791,45 @@ extension DynamicComponent {
         case .value(let declared): return spelling(of: declared)
         case .binding(let expression): return "@{\(expression)}"
         }
+    }
+
+    /// A string-array attribute (`items`) off any generated table.
+    /// `AttrValue<[Any]>` on Collection / SelectBox, a bare `[Any]?` on
+    /// Segment — the element cast is the same either way.
+    func stringList<T: JsonUIGeneratedAttributes>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, AttrValue<[Any]>?>
+    ) -> [String]? {
+        typedAttributes(type)[keyPath: keyPath]?.value.map { Self.asStrings($0) }
+    }
+
+    func stringList<T: JsonUIGeneratedAttributes>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, [Any]?>
+    ) -> [String]? {
+        typedAttributes(type)[keyPath: keyPath].map { Self.asStrings($0) }
+    }
+
+    /// JSON arrays arrive as `[Any]`; the numeric spelling (`items: [1, 2]`)
+    /// is as declared as the string one, and the hand-decoded `[String]?`
+    /// slot dropped the whole array when a single element was not a string.
+    private static func asStrings(_ raw: [Any]) -> [String] {
+        raw.compactMap { element in
+            if let text = element as? String { return text }
+            if let number = element as? NSNumber { return number.stringValue }
+            return nil
+        }
+    }
+
+    /// `fontWeight` — declared `string|number|binding`, so the generated
+    /// table carries `AttrValue<Any>` (Button) or a bare `Any?` (Label).
+    /// Returns the layout spelling; the weight vocabulary downstream
+    /// lowercases it.
+    func fontWeightSpelling() -> String? {
+        if let wrapped = typedAttributes(ButtonAttributes.self).fontWeight {
+            return wrapped.rawRepresentation as? String
+        }
+        return typedAttributes(LabelAttributes.self).fontWeight as? String
     }
 
     /// The six per-side margins.

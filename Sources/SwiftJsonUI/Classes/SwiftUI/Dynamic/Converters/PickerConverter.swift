@@ -43,7 +43,7 @@ public struct PickerConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let items = component.items ?? []
+        let items = component.stringList(SelectBoxAttributes.self, \.items) ?? []
         let label = DynamicHelpers.processText(component.text, data: data)
 
         // Resolve selection binding from selectedIndex or selectedItem

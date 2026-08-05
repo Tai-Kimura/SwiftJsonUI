@@ -62,7 +62,7 @@ public struct IconLabelConverter {
         let declaredSelected = resolveSelected(component: component, data: data)
 
         // Determine if it's a button (has onClick)
-        let hasAction = component.onClick != nil
+        let hasAction = component.commonAny(\.onClick) != nil
 
         var result: AnyView
 
@@ -82,7 +82,7 @@ public struct IconLabelConverter {
                     fontName: fontName,
                     isSelected: declaredSelected,
                     action: {
-                        DynamicEventHelper.call(component.onClick, data: data)
+                        DynamicEventHelper.call(component.commonAny(\.onClick), data: data)
                     }
                 )
             )

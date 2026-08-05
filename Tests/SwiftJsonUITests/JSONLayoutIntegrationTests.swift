@@ -35,7 +35,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         XCTAssertEqual(component.typedAttributes(LabelAttributes.self).fontSize?.value.map { CGFloat($0) }, 18)
         XCTAssertEqual(component.fontColor, "#333333")
         XCTAssertEqual(component.font, "Helvetica")
-        XCTAssertEqual(component.fontWeight, "bold")
+        XCTAssertEqual(component.fontWeightSpelling(), "bold")
         // 宣言は "center"、返るのは canonical の "Center"。AttrEnum の照合は
         // 大小無視なので、綴りは 1 つに正規化される。下流の switch は
         // codegen (frame_helper.rb: text_align.to_s.downcase) と同じく
@@ -91,7 +91,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         let button = component.child?[1]
         XCTAssertEqual(button?.type, "Button")
         XCTAssertEqual(button?.id, "actionButton")
-        XCTAssertEqual(button?.onClick, "handleButtonClick")
+        XCTAssertEqual(button?.commonAny(\.onClick), "handleButtonClick")
     }
 
     // MARK: - Form Layout Tests
@@ -156,7 +156,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         let selectBox = component.child?[2]
         XCTAssertEqual(selectBox?.type, "SelectBox")
         XCTAssertEqual(selectBox?.prompt, "Select Country")
-        XCTAssertEqual(selectBox?.items?.count, 3)
+        XCTAssertEqual(selectBox?.stringList(SelectBoxAttributes.self, \.items)?.count, 3)
 
         // Switch
         let switchComponent = component.child?[3]
