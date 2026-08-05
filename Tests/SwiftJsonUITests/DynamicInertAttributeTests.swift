@@ -799,6 +799,54 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual((multiple! - 1) * (size ?? 17), 20)
     }
 
+    // MARK: - codegen-parity: Radio's label, Image's fallback chain
+
+    /// `label` is the Radio-specific spelling and wins over `text` — the same
+    /// order CheckBox uses. Nothing read it, so a Radio carrying only a label
+    /// rendered no text.
+    func testRadioLabelWinsOverText() throws {
+        let c = try component("""
+        { "type": "Radio", "id": "t", "label": "sample", "text": "generic" }
+        """)
+        XCTAssertEqual(
+            c.typedAttributes(RadioAttributes.self).label?.rawRepresentation as? String,
+            "sample"
+        )
+    }
+
+    /// …and the bound form interpolates rather than printing itself.
+    func testRadioLabelResolvesBinding() throws {
+        let c = try component("""
+        { "type": "Radio", "id": "t", "label": "@{boundLabel}" }
+        """)
+        let raw = c.typedAttributes(RadioAttributes.self).label?.rawRepresentation as? String
+        XCTAssertEqual(DynamicHelpers.processText(raw, data: ["boundLabel": "sample"]), "sample")
+    }
+
+    /// A static Image never loads over the network, so errorImage and
+    /// loadingImage cannot mean in-flight states — they join the fallback
+    /// chain behind defaultImage instead of leaving the photo glyph.
+    func testImageFallsBackThroughErrorAndLoadingImage() throws {
+        let error = try component("""
+        { "type": "Image", "id": "t", "errorImage": "conformance_sample" }
+        """)
+        XCTAssertNil(error.src)
+        XCTAssertNil(error.defaultImage)
+        XCTAssertEqual(error.errorImage, "conformance_sample")
+
+        let loading = try component("""
+        { "type": "Image", "id": "t", "loadingImage": "conformance_sample" }
+        """)
+        XCTAssertEqual(loading.loadingImage, "conformance_sample")
+
+        // defaultImage stays ahead of both.
+        let all = try component("""
+        { "type": "Image", "id": "t", "defaultImage": "d",
+          "errorImage": "e", "loadingImage": "l" }
+        """)
+        XCTAssertEqual(all.defaultImage ?? all.errorImage ?? all.loadingImage, "d")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the

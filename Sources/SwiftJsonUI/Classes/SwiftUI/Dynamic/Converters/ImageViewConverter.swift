@@ -48,8 +48,14 @@ public struct ImageViewConverter {
             } else {
                 image = Image(processedSrc)
             }
-        } else if let defaultImage = component.defaultImage {
-            image = Image(defaultImage)
+        } else if let fallback = component.defaultImage
+            ?? component.errorImage ?? component.loadingImage {
+            // Fallback imagery when no src resolves. A static Image never
+            // loads over the network, so errorImage/loadingImage cannot mean
+            // in-flight states here — they join the chain behind defaultImage
+            // (image_converter.rb:36-43 makes the same call). Better an
+            // intended asset than the photo glyph.
+            image = Image(fallback)
         } else {
             image = Image(systemName: "photo")
         }
