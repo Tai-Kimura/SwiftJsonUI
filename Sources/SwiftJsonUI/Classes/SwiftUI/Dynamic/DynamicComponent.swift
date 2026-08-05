@@ -814,9 +814,22 @@ extension DynamicComponent {
     /// lowercases it.
     func fontWeightSpelling() -> String? {
         if let wrapped = typedAttributes(ButtonAttributes.self).fontWeight {
-            return wrapped.rawRepresentation as? String
+            return Self.weightSpelling(wrapped.rawRepresentation)
         }
-        return typedAttributes(LabelAttributes.self).fontWeight as? String
+        return Self.weightSpelling(typedAttributes(LabelAttributes.self).fontWeight)
+    }
+
+    /// `fontWeight` is declared `string|number|binding`, so the NUMERIC
+    /// spelling (`fontWeight: 600`) is as declared as `"semibold"`. Casting
+    /// `rawRepresentation as? String` dropped it — the generated table
+    /// carries the Int the layout wrote, and the cast is nil for it.
+    /// `font_helper.rb#font_weight_to_swiftui` maps `600` through the shared
+    /// table, so dynamic dropping it split the two halves (run 4 parity,
+    /// Button/Label `fontWeight__600`).
+    private static func weightSpelling(_ raw: Any?) -> String? {
+        if let text = raw as? String { return text }
+        if let number = raw as? NSNumber { return number.stringValue }
+        return nil
     }
 
     /// `onValueChange` — declared on seven component tables, and in two

@@ -383,6 +383,19 @@ public struct DynamicDecodingHelper {
             case "heavy": return .heavy
             case "black": return .black
             case "regular", "normal": return .regular
+            // The NUMERIC spelling, from shared/core/font_weight_mapping.json
+            // (css → swift). `900` is heavy rather than black because the
+            // generator's numeric_weight_table keeps the FIRST entry for a
+            // duplicated css value and heavy comes first — the two halves have
+            // to pick the same one.
+            case "100": return .thin
+            case "200": return .ultraLight
+            case "300": return .light
+            case "400": return .regular
+            case "500": return .medium
+            case "600": return .semibold
+            case "700": return .bold
+            case "900": return .heavy
             default: return nil
             }
         }
