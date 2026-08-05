@@ -151,8 +151,17 @@ public struct SelectBoxConverter {
         // it `["string","binding"]` and says "binding for two-way" — the web
         // converter and the Compose one both read it. Resolving it here is
         // what the declaration asks for.
+        //
+        // `selectedItem` is the other spelling of the same seed and wins over
+        // `selectedValue` — kjui's SelectBox has taken that precedence since
+        // it was written, and the codegen took it after the same bug was
+        // found there (selectbox_converter.rb:300-308: reading only
+        // `selectedValue` opened the picker with nothing selected). This path
+        // still read one spelling.
         let selectedValueIndex: Int? = {
-            guard let raw = attrs.selectedValue?.rawRepresentation as? String else { return nil }
+            let declared = attrs.selectedItem?.rawRepresentation as? String
+                ?? attrs.selectedValue?.rawRepresentation as? String
+            guard let raw = declared else { return nil }
             let resolved = DynamicHelpers.processText(raw, data: data)
             return items.firstIndex(of: resolved)
         }()
