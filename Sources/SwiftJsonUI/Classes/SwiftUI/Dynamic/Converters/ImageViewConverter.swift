@@ -82,21 +82,22 @@ public struct ImageViewConverter {
         // `.aspectRatio` and so cannot be chosen by a ternary. That absence
         // is why this goes through Image.imageContentMode rather than
         // branching here (image_converter.rb names the same seam).
-        let contentModeSpelling = DynamicHelpers.processText(
-            component.typedAttributes(ImageAttributes.self)
-                .contentMode?.rawRepresentation as? String,
-            data: data
-        )
+        //
+        // Read through `enumString`, NOT `rawRepresentation as? String`:
+        // `contentMode` is `AttrValue<AttrEnum<ContentMode>>`, so the
+        // `.value` case carries an `AttrEnum`, not a String, and the cast
+        // returned nil for EVERY literal spelling while a binding — whose
+        // rawRepresentation IS the `"@{expr}"` string — kept working. That is
+        // the inverse of the usual failure and is why the bound fixture
+        // stayed active while all fifteen literal ones went inert (run 4).
+        let contentModeIntent = Self.contentModeIntent(for: component, data: data)
         let declaredSize: (width: CGFloat, height: CGFloat)? = {
             guard let w = component.declaredWidth, w.isFinite,
                   let h = component.declaredHeight, h.isFinite else { return nil }
             return (w, h)
         }()
         var result = AnyView(
-            renderedImage.imageContentMode(
-                ImageContentModeIntent.from(contentModeSpelling),
-                size: declaredSize
-            )
+            renderedImage.imageContentMode(contentModeIntent, size: declaredSize)
         )
 
         // --- 3b. highlightSrc (pressed-state image) ---
@@ -174,5 +175,30 @@ public struct ImageViewConverter {
 
         return result
     }
+
+    /// The resolved `contentMode`.
+    ///
+    /// Internal rather than inlined so the READ has a unit test: the AnyView
+    /// it lands on cannot be inspected, and the defect this replaces lived in
+    /// the read, not in the mapping. A test that exercises
+    /// `ImageContentModeIntent.from` directly stays green while the converter
+    /// feeds it nil — which is exactly what happened before run 4.
+    ///
+    /// `enumString`, NOT `rawRepresentation as? String`: `contentMode` is
+    /// `AttrValue<AttrEnum<ContentMode>>`, so `.value` carries an `AttrEnum`
+    /// and the String cast is nil for EVERY literal spelling, while a
+    /// binding — whose rawRepresentation IS `"@{expr}"` — keeps working.
+    /// All fifteen literal fixtures went inert on ios; the bound one did not.
+    static func contentModeIntent(
+        for component: DynamicComponent,
+        data: [String: Any]
+    ) -> ImageContentModeIntent {
+        let spelling = DynamicHelpers.processText(
+            component.enumString(ImageAttributes.self, \.contentMode, data: data),
+            data: data
+        )
+        return ImageContentModeIntent.from(spelling)
+    }
+
 }
 #endif // DEBUG
