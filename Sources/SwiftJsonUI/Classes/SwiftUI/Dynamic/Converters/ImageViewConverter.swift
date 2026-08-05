@@ -74,26 +74,29 @@ public struct ImageViewConverter {
         // shared/core/attribute_semantics.json): resizable WITHOUT an
         // aspectRatio modifier fills the frame on both axes — the same
         // branch image_converter.rb emits.
-        var result: AnyView
-        if DynamicDecodingHelper.isStretchContentMode(component.contentMode) {
-            result = AnyView(renderedImage.resizable())
-        } else if let alignment = DynamicDecodingHelper.positionalContentAlignment(component.contentMode) {
-            // Positional: unscaled image, aligned in the declared frame,
-            // cropped — mirrors image_converter.rb.
-            if let w = component.width, w.isFinite,
-               let h = component.height, h.isFinite {
-                result = AnyView(
-                    renderedImage
-                        .frame(width: w, height: h, alignment: alignment)
-                        .clipped()
-                )
-            } else {
-                result = AnyView(renderedImage)
-            }
-        } else {
-            let contentMode = DynamicHelpers.getContentMode(from: component)
-            result = AnyView(renderedImage.resizable().aspectRatio(contentMode: contentMode))
-        }
+        // contentMode is string|binding. The hand-decoded slot holds the
+        // layout spelling, so `@{mode}` matched no branch and fell through to
+        // the `.fit` default — the bound face could not select any mode at
+        // all, least of all the stretch, which is spelled as the ABSENCE of
+        // `.aspectRatio` and so cannot be chosen by a ternary. That absence
+        // is why this goes through Image.imageContentMode rather than
+        // branching here (image_converter.rb names the same seam).
+        let contentModeSpelling = DynamicHelpers.processText(
+            component.typedAttributes(ImageAttributes.self)
+                .contentMode?.rawRepresentation as? String,
+            data: data
+        )
+        let declaredSize: (width: CGFloat, height: CGFloat)? = {
+            guard let w = component.width, w.isFinite,
+                  let h = component.height, h.isFinite else { return nil }
+            return (w, h)
+        }()
+        var result = AnyView(
+            renderedImage.imageContentMode(
+                ImageContentModeIntent.from(contentModeSpelling),
+                size: declaredSize
+            )
+        )
 
         // --- 3b. highlightSrc (pressed-state image) ---
         // `DynamicComponent` has decoded this all along and nothing read it.
