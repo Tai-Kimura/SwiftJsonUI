@@ -847,6 +847,41 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(all.defaultImage ?? all.errorImage ?? all.loadingImage, "d")
     }
 
+    // MARK: - codegen-parity: the anchor's own position
+
+    /// A child that declares no positioning still has to honour its margins.
+    /// The container's default corner does not add them — only an explicit
+    /// parent constraint does — so a constraint-less sibling sat at the very
+    /// corner and everything anchored to it inherited the error.
+    func testConstraintlessChildGetsParentTopLeft() throws {
+        let c = try component("""
+        { "type": "View", "id": "anchor", "width": 50, "height": 50,
+          "topMargin": 60, "leftMargin": 60 }
+        """)
+        let config = RelativePositionConverter.convert(
+            component: c, index: 0, viewBuilder: { _ in AnyView(EmptyView()) }, data: [:]
+        )
+        XCTAssertEqual(config.constraints.count, 2)
+        XCTAssertTrue(config.constraints.contains { $0.type == .parentTop })
+        XCTAssertTrue(config.constraints.contains { $0.type == .parentLeft })
+        XCTAssertEqual(config.margins.top, 60)
+        XCTAssertEqual(config.margins.leading, 60)
+    }
+
+    /// A child that DOES declare positioning keeps exactly what it declared —
+    /// the synthesis must not stack on top of a real constraint.
+    func testDeclaredConstraintIsNotSupplemented() throws {
+        let c = try component("""
+        { "type": "View", "id": "t", "width": 40, "height": 40, "alignRightOfView": "anchor" }
+        """)
+        let config = RelativePositionConverter.convert(
+            component: c, index: 0, viewBuilder: { _ in AnyView(EmptyView()) }, data: [:]
+        )
+        XCTAssertEqual(config.constraints.count, 1)
+        XCTAssertEqual(config.constraints.first?.type, .rightOf)
+        XCTAssertEqual(config.constraints.first?.targetId, "anchor")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
