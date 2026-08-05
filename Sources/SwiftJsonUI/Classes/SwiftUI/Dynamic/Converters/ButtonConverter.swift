@@ -59,8 +59,8 @@ public struct ButtonConverter {
         // Action - onClick uses binding format @{functionName}; legacy
         // "onclick" selector format resolves to the same data-dict closure.
         let action: () -> Void = {
-            if let onClick = component.effectiveOnClick {
-                DynamicEventHelper.call(onClick, data: data)
+            for handler in component.effectiveOnClickHandlers {
+                DynamicEventHelper.call(handler, data: data)
             }
         }
 
