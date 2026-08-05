@@ -23,11 +23,18 @@ public struct RadioConverter {
     ) -> AnyView {
         let id = component.id ?? "radio"
         let items = component.items ?? []
-        // `text` is string|binding, and the decode slot returns the layout
-        // spelling — so a bound label rendered the characters "@{boundText}"
-        // on screen. Every other text-bearing converter interpolates first;
-        // this one did not. (49-G fixed the same leak on Compose in 2cf42df.)
-        let text = DynamicHelpers.processText(component.text, data: data)
+        // `label` is the Radio-specific spelling and wins over the generic
+        // `text` — the same order CheckboxConverter uses, and what
+        // radio_converter.rb emits. Nothing here read it, so a Radio carrying
+        // only a label rendered no text at all.
+        //
+        // Both are string|binding, and the decode slot returns the layout
+        // spelling — so a bound one rendered the characters "@{boundText}" on
+        // screen until processText was put in front. (49-G fixed the same
+        // leak on Compose in 2cf42df.)
+        let attrs = component.typedAttributes(RadioAttributes.self)
+        let rawText = (attrs.label?.rawRepresentation as? String) ?? component.text
+        let text = DynamicHelpers.processText(rawText, data: data)
 
         var result: AnyView
 
