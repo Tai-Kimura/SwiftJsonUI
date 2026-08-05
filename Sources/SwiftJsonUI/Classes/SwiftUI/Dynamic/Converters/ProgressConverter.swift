@@ -52,7 +52,11 @@ public struct ProgressConverter {
 
         // `style` keeps the shape reading: it is the separate spelling that
         // carries linear/circular, and is not the same attribute.
-        if let shape = component.rawAttribute("style") as? String {
+        // `style` IS declared on common with a generated `String?` field —
+        // the allowlist row that froze this read as "SSoT 未宣言" was
+        // wrong. It is a separate spelling from `indicatorStyle`
+        // (linear/circular vs the size vocabulary), not an undeclared key.
+        if let shape = component.typedAttributes(CommonAttributes.self).style {
             if shape.lowercased() == "linear" {
                 result = AnyView(result.progressViewStyle(LinearProgressViewStyle()))
             } else {

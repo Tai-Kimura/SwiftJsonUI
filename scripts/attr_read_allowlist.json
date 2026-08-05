@@ -16,18 +16,18 @@
       "file": "Containers/DynamicScrollViewContainer.swift",
       "kind": "rawData",
       "key": "horizontalScroll",
-      "owner": "—",
-      "plan": "—",
-      "reason": "ScrollView / common とも SSoT 未宣言。typed slot が生成されないので raw 以外に読み方が無い"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Containers/DynamicViewContainer.swift",
       "kind": "rawData",
       "key": "gradient",
-      "owner": "—",
-      "plan": "—",
-      "reason": "宣言は array だが tool は {colors, locations, startPoint, endPoint} のオブジェクト形も出す — 受理する値空間が宣言より広い族"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -43,18 +43,18 @@
       "file": "Converters/CheckboxConverter.swift",
       "kind": "rawAttribute",
       "key": "action",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/CheckboxConverter.swift",
       "kind": "rawAttribute",
       "key": "fontStyle",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -70,18 +70,18 @@
       "file": "Converters/CollectionConverter.swift",
       "kind": "rawAttribute",
       "key": "cellHeight",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/CollectionConverter.swift",
       "kind": "rawAttribute",
       "key": "cellWidth",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -97,9 +97,9 @@
       "file": "Converters/CollectionConverter.swift",
       "kind": "rawAttribute",
       "key": "hideSeparator",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -107,71 +107,71 @@
       "kind": "rawAttribute",
       "key": "lazy",
       "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "plan": "—",
+      "reason": "宣言も生成フィールド(AttrValue<AttrEnum<Lazy>>)もある。受理する値空間が宣言より広い族で、legacy な boolean 綴りも受けるため raw。旧理由『SSoT 未宣言』は誤り(2026-08-05 台帳監査で訂正)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/CollectionConverter.swift",
       "kind": "rawAttribute",
       "key": "onItemAppear",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/GradientViewConverter.swift",
       "kind": "rawAttribute",
       "key": "colors",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/GradientViewConverter.swift",
       "kind": "rawAttribute",
       "key": "endPoint",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/GradientViewConverter.swift",
       "kind": "rawAttribute",
       "key": "gradient",
-      "owner": "—",
-      "plan": "—",
-      "reason": "同上(オブジェクト形。TypedAttributes.swift の RAW_LOOKUP 根拠と同じ)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/GradientViewConverter.swift",
       "kind": "rawAttribute",
       "key": "startPoint",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/IconLabelConverter.swift",
       "kind": "rawData",
       "key": "isOn",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "IconLabel は selected のみ宣言。isOn は IconLabel では SSoT 未宣言(別名でもない)ため typed slot が生成されない — pre-SSoT 綴りの互換読みで raw 以外に読み方が無い"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/ImageViewConverter.swift",
       "kind": "rawAttribute",
       "key": "onSrc",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -202,15 +202,6 @@
     },
     {
       "gate": "raw-read",
-      "file": "Converters/ProgressConverter.swift",
-      "kind": "rawAttribute",
-      "key": "style",
-      "owner": "—",
-      "plan": "—",
-      "reason": "Progress/Indicator とも SSoT 未宣言(indicatorStyle の旧綴り)。ProgressAttributes に slot が無い"
-    },
-    {
-      "gate": "raw-read",
       "file": "Converters/RadioConverter.swift",
       "kind": "rawAttribute",
       "key": "selectedValue",
@@ -232,27 +223,27 @@
       "file": "Converters/SegmentConverter.swift",
       "kind": "rawAttribute",
       "key": "backgroundColor",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/SegmentConverter.swift",
       "kind": "rawAttribute",
       "key": "selectedSegmentTintColor",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/SegmentConverter.swift",
       "kind": "rawAttribute",
       "key": "selectedTabIndex",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -268,27 +259,27 @@
       "file": "Converters/SliderConverter.swift",
       "kind": "rawAttribute",
       "key": "range",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/TableConverter.swift",
       "kind": "rawAttribute",
       "key": "hideSeparator",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "Converters/TableConverter.swift",
       "kind": "rawAttribute",
       "key": "listStyle",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -304,9 +295,9 @@
       "file": "Converters/ToggleConverter.swift",
       "kind": "rawAttribute",
       "key": "toggleStyle",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -358,18 +349,18 @@
       "file": "DynamicModifierHelper.swift",
       "kind": "rawData",
       "key": "offsetX",
-      "owner": "—",
-      "plan": "—",
-      "reason": "SSoT 未宣言(どのコンポーネントにも無い)。typed アクセサが生成されないので raw 以外に読み方が無い"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
       "file": "DynamicModifierHelper.swift",
       "kind": "rawData",
       "key": "offsetY",
-      "owner": "—",
-      "plan": "—",
-      "reason": "SSoT 未宣言(どのコンポーネントにも無い)。typed アクセサが生成されないので raw 以外に読み方が無い"
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
     },
     {
       "gate": "raw-read",
@@ -384,9 +375,9 @@
       "gate": "raw-read",
       "key": "fontSize",
       "file": "Converters/ToggleConverter.swift",
-      "owner": "—",
-      "plan": "SSoT 宣言漏れ(E へ報告済み)",
-      "reason": "Switch/Toggle の表に fontSize が無いが、toggle_converter.rb は @component.merge(label_attrs) 経由で読む。宣言が入るまでは生読みで codegen と揃える",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)",
       "kind": "rawAttribute"
     },
     {
