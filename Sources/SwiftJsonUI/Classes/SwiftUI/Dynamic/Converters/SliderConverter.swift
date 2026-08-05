@@ -25,8 +25,17 @@ public struct SliderConverter {
         // minimumValue/minValue and maximumValue/maxValue alias
         // spellings are resolved inside the generated extraction
         // (raw L0 layouts only).
-        var minValue: Double = attrs.minimum?.value ?? 0
-        var maxValue: Double = attrs.maximum?.value ?? 1
+        //
+        // Read through `number(_:_:data:)`, NOT `?.value`: the latter answers
+        // only the `.value` case, so a bound bound resolved to the `?? 0` /
+        // `?? 1` default and the thumb sat at the wrong fraction of the
+        // track. `value` below has always taken this route.
+        var minValue: Double = component.number(
+            SliderAttributes.self, \.minimum, data: data
+        ).map { Double($0) } ?? 0
+        var maxValue: Double = component.number(
+            SliderAttributes.self, \.maximum, data: data
+        ).map { Double($0) } ?? 1
 
         // range property (array format: [min, max] — undeclared legacy key)
         if let range = component.rawAttribute("range") as? [Double], range.count == 2 {
