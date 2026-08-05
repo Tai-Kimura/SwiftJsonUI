@@ -92,8 +92,8 @@ public struct DynamicHelpers {
     /// If `font` is a binding expression like @{fontProp}, resolves the font name/weight from data.
     public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]) -> Font? {
         // Check if font attribute is a binding expression
-        if let fontRaw = component.rawData["font"] as? String,
-           let fontInner = DynamicBindingResolver.inner(of: fontRaw) {
+        if let fontInner = component.typedAttributes(LabelAttributes.self)
+            .font?.bindingExpression {
             // Canonical value-context resolution (flat / dot-path / default);
             // Binding<String> unwraps at the value layer.
             let resolvedFontName = DynamicBindingResolver.resolveString(

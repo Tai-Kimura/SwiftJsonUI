@@ -303,7 +303,11 @@ public struct CollectionConverter {
 
         // 2.5. .defaultScrollAnchor for iOS 17+
         var resolvedDefaultScrollAnchor = component.defaultScrollAnchor
-        if let binding = component.rawAttribute("defaultScrollAnchor") as? String,
+        // `defaultScrollAnchor` is declared `string` + enum with no binding
+        // form, but both halves accept one (scrollview_converter.rb:209).
+        // `AttrEnum` is an OPEN enum, so the bound spelling survives as
+        // `.unknown("@{x}")` — the raw read was never needed.
+        if let binding = component.enumString(CollectionAttributes.self, \.defaultScrollAnchor),
            let inner = DynamicBindingResolver.inner(of: binding) {
             // Canonical string value context (dot-path / `??` default)
             if let value = DynamicBindingResolver.resolveString(expression: inner, data: data) {

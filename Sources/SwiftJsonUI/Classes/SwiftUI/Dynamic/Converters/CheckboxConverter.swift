@@ -118,7 +118,7 @@ public struct CheckboxConverter {
             ?? (component.rawAttribute("action") as? String).flatMap { expr in
                 DynamicBindingResolver.isBindingExpression(expr) ? expr : nil
             }
-            ?? (component.rawAttribute("onValueChanged") as? String).flatMap { expr in
+            ?? component.onValueChangedSpelling().flatMap { expr in
                 DynamicBindingResolver.isBindingExpression(expr) ? expr : nil
             }
 

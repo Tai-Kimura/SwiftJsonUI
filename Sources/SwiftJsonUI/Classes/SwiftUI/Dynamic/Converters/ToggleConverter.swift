@@ -47,7 +47,7 @@ public struct ToggleConverter {
 
         // onValueChange handler (+ onValueChanged alias)
         let handlerExpr: String? = component.onValueChangeSpelling()
-            ?? (component.rawAttribute("onValueChanged") as? String)
+            ?? component.onValueChangedSpelling()
 
         // Label text
         let text = component.string(LabelAttributes.self, \.text)
