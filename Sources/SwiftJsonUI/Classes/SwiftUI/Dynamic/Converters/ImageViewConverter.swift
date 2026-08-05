@@ -140,7 +140,7 @@ public struct ImageViewConverter {
         // binding, so `canTap: "@{isTappable}"` made the image untappable.
         let canTap = DynamicHelpers.resolveBool(
             component.typedAttributes(CommonAttributes.self).canTap,
-            legacy: component.canTap,
+            legacy: nil,
             data: data
         ) ?? false
         if canTap, let onClick = component.onClick {
