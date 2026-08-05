@@ -167,7 +167,20 @@ public struct RelativePositionConverter {
         if let target = component.alignCenterHorizontalView {
             constraints.append(RelativePositionConstraint(type: .centerHorizontal, targetId: target))
         }
-        
+
+        // A child that declares no positioning at all still has to honour its
+        // margins, and the container's default corner does not add them —
+        // only an explicit parent constraint does. Without this, a sibling
+        // that declares `topMargin: 60, leftMargin: 60` and nothing else sat
+        // at the very corner, and every view anchored to it inherited the
+        // 60pt error. relative_positioning_helper.rb:408-413 synthesises the
+        // same pair for the same stated reason ("so that margins are properly
+        // applied"); 49-G traced the Compose half of this to the same place.
+        if constraints.isEmpty {
+            constraints.append(RelativePositionConstraint(type: .parentTop, targetId: ""))
+            constraints.append(RelativePositionConstraint(type: .parentLeft, targetId: ""))
+        }
+
         return constraints
     }
     
