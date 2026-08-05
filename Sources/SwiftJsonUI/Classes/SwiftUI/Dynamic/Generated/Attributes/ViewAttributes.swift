@@ -29,6 +29,14 @@ public struct ViewAttributes {
         case wrapReverse = "wrap-reverse"
     }
 
+    public enum GradientDirection: String {
+        case vertical = "Vertical"
+        case horizontal = "Horizontal"
+        case oblique = "Oblique"
+        case rightToLeft = "RightToLeft"
+        case bottomToTop = "BottomToTop"
+    }
+
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
@@ -92,8 +100,8 @@ public struct ViewAttributes {
     /// Gradient colors
     public let gradient: [Any]?
 
-    /// Gradient direction
-    public let gradientDirection: String?
+    /// Gradient direction. Canon copied from GradientView.gradientDirection, which declared the enum for the same concept while this spelling stayed a bare string. Vertical is the fallback on all three. CASE MATTERS on ios: sjui matches 'Horizontal'/'Oblique' literally (modifier_helper.rb:16) without downcasing, while Compose and web downcase — so the capitalised spellings are canonical and the aliases normalise to them before any converter sees the value. RightToLeft and BottomToTop are declared without an alias on purpose: they are reversed directions web implements (gradient_view_converter.rb:88,90) and the other two have no equivalent, so folding them into Horizontal/Vertical would silently reverse the gradient rather than preserve it. [default: Vertical]
+    public let gradientDirection: AttrEnum<GradientDirection>?
 
     /// View highlighted state
     public let highlighted: Bool?
@@ -136,7 +144,7 @@ public struct ViewAttributes {
         self.draggable = AttrCoerce.boolean(AttrCoerce.lookup(json, "draggable"))
         self.flexWrap = Self.parseFlexWrap(AttrCoerce.lookup(json, "flexWrap"))
         self.gradient = AttrCoerce.array(AttrCoerce.lookup(json, "gradient"))
-        self.gradientDirection = AttrCoerce.string(AttrCoerce.lookup(json, "gradientDirection"))
+        self.gradientDirection = Self.parseGradientDirection(AttrCoerce.lookup(json, "gradientDirection"))
         self.highlighted = AttrCoerce.boolean(AttrCoerce.lookup(json, "highlighted"))
         self.locations = AttrCoerce.array(AttrCoerce.lookup(json, "locations"))
         self.onDragEnter = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onDragEnter"))
@@ -191,6 +199,22 @@ public struct ViewAttributes {
             }
         }
         AttrCodegenWarnings.emit("View.flexWrap: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseGradientDirection(_ raw: Any?) -> AttrEnum<GradientDirection>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "vertical", "toptobottom": return .known(GradientDirection.vertical)
+            case "horizontal", "lefttoright": return .known(GradientDirection.horizontal)
+            case "oblique", "diagonal": return .known(GradientDirection.oblique)
+            case "righttoleft": return .known(GradientDirection.rightToLeft)
+            case "bottomtotop": return .known(GradientDirection.bottomToTop)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("View.gradientDirection: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

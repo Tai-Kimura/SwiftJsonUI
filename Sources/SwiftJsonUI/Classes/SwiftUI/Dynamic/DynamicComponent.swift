@@ -852,19 +852,24 @@ extension DynamicComponent {
         case .matchParent: return .infinity
         case .wrapContent: return nil
         case nil:
-            // `DimensionValue.parse` matches `"matchParent"` / `"wrapContent"`
-            // EXACTLY and coerces no numeric string. The layout vocabulary is
-            // wider on both counts and codegen honors the wider one —
+            // `DimensionValue.parse` still matches `"matchParent"` /
+            // `"wrapContent"` EXACTLY — no lowercasing, no snake_case. The
+            // layout vocabulary is wider and codegen honors the wider one:
             // frame_helper.rb:107 lowercases and accepts `wrap_content`,
             // relative_positioning_helper.rb:560 accepts `match_parent`. So
             // `height: "match_parent"` parses in the generator and NOT in the
-            // typed extraction. Reading the raw spelling for those keeps the
-            // two halves saying the same thing; reported to E with the margin
-            // numeric-string gap.
+            // typed extraction, and this branch is what keeps the two halves
+            // saying the same thing.
+            //
+            // The NUMERIC-STRING half of this gap is closed (49-E, jsonui-cli
+            // 957fa1c): `AttrCoerce.number` takes `"100"` now, and
+            // `DimensionValue.parse` asks it first — so `.number` above
+            // catches it and nothing falls through to here. The keyword
+            // spellings are the remainder, still with E.
             switch raw?.lowercased() {
             case "matchparent", "match_parent": return .infinity
             case "wrapcontent", "wrap_content": return nil
-            default: return raw.flatMap(Double.init).map { CGFloat($0) }
+            default: return nil
             }
         }
     }
@@ -882,16 +887,13 @@ extension DynamicComponent {
 
     /// The six per-side margins.
     ///
-    /// They need their own accessor because the margin spelling has THREE
-    /// forms, not two: the number, the `@{binding}` — and the numeric STRING
-    /// (`"topMargin": "12"`). `margin_expression_helper.rb` accepts all three
-    /// ("the numeric spelling and the numeric-string spelling both are"), and
-    /// `AttrCoerce.number` coerces only the first, so the generated
-    /// `AttrValue<Double>?` is nil for the third. Reading the raw spelling for
-    /// that one case is what keeps the two halves saying the same thing.
-    /// Reported to E as an attr-codegen coercion gap; when `AttrCoerce.number`
-    /// learns numeric strings, the raw branch and its allowlist rows go away
-    /// together.
+    /// They exist as one accessor because the margin spelling has three
+    /// forms — the number, the `@{binding}`, and the numeric STRING
+    /// (`"topMargin": "12"`) that `margin_expression_helper.rb` accepts.
+    /// The third used to need a raw read: `AttrCoerce.number` coerced only
+    /// the first two, so the generated `AttrValue<Double>?` was nil for it.
+    /// 49-E closed that (jsonui-cli 957fa1c — a numeric string IS a number),
+    /// so the raw branch and its six allowlist rows are gone.
     enum MarginEdge: String, CaseIterable {
         case topMargin, bottomMargin, leftMargin, rightMargin, startMargin, endMargin
 
@@ -910,29 +912,7 @@ extension DynamicComponent {
     /// A margin as CGFloat. Undeclared, or a binding that does not resolve,
     /// is 0 — the value `marginValueToCGFloat` returned.
     func margin(_ edge: MarginEdge, data: [String: Any] = [:]) -> CGFloat {
-        if let resolved = number(CommonAttributes.self, edge.keyPath, data: data) {
-            return resolved
-        }
-        if let spelling = rawMarginSpelling(edge) as? String,
-           let parsed = Double(spelling) {
-            return CGFloat(parsed)
-        }
-        return 0
-    }
-
-    /// The raw spelling, read with a LITERAL key per edge so
-    /// `check_attr_read_discipline.py` can see all six. A computed key would
-    /// slip the read past the gate, which is the opposite of what the gate
-    /// is for.
-    private func rawMarginSpelling(_ edge: MarginEdge) -> Any? {
-        switch edge {
-        case .topMargin: return rawAttribute("topMargin")
-        case .bottomMargin: return rawAttribute("bottomMargin")
-        case .leftMargin: return rawAttribute("leftMargin")
-        case .rightMargin: return rawAttribute("rightMargin")
-        case .startMargin: return rawAttribute("startMargin")
-        case .endMargin: return rawAttribute("endMargin")
-        }
+        number(CommonAttributes.self, edge.keyPath, data: data) ?? 0
     }
 
     /// Whether the layout DECLARED this margin, regardless of whether it
@@ -940,7 +920,6 @@ extension DynamicComponent {
     /// a fixed margin suppresses the min/max pair even when it is bound.
     func hasMargin(_ edge: MarginEdge) -> Bool {
         typedAttributes(CommonAttributes.self)[keyPath: edge.keyPath] != nil
-            || rawMarginSpelling(edge) != nil
     }
 
     /// The LITERAL value of a `common` boolean attribute — `nil` when the

@@ -108,11 +108,31 @@ public enum AttrCoerce {
         if let d = raw as? Double { return d }
         if let i = raw as? Int { return Double(i) }
         if let n = raw as? NSNumber { return n.doubleValue }
+        // A NUMERIC STRING is a number. Authors write `width: "40"`, and every
+        // runtime binding path already accepts it; returning nil here made the
+        // attribute read as UNDECLARED — silently, with no warning.
+        if let s = raw as? String { return Double(s.trimmingCharacters(in: .whitespaces)) }
         return nil
     }
 
     public static func boolean(_ raw: Any?) -> Bool? {
-        return raw as? Bool
+        if let b = raw as? Bool { return b }
+        // Canon: bool / integral number / "true"|"1"|"false"|"0", matching
+        // DataBindingContext.coerceToBoolean. `secure: "true"` reading as
+        // undeclared is how plaintext came back after the binding entrance was
+        // closed — one symptom, two entrances.
+        if let n = raw as? NSNumber {
+            let d = n.doubleValue
+            return d.isFinite && d == d.rounded(.down) ? d != 0 : nil
+        }
+        if let s = raw as? String {
+            switch s.trimmingCharacters(in: .whitespaces).lowercased() {
+            case "true", "1": return true
+            case "false", "0": return false
+            default: return nil
+            }
+        }
+        return nil
     }
 
     public static func object(_ raw: Any?) -> [String: Any]? {

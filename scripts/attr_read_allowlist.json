@@ -298,60 +298,6 @@
       "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
       "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)",
       "kind": "rawAttribute"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponent.swift",
-      "kind": "rawAttribute",
-      "key": "bottomMargin",
-      "owner": "E",
-      "plan": "coercion gap 群 2(本リリース)",
-      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponent.swift",
-      "kind": "rawAttribute",
-      "key": "endMargin",
-      "owner": "E",
-      "plan": "coercion gap 群 2(本リリース)",
-      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponent.swift",
-      "kind": "rawAttribute",
-      "key": "leftMargin",
-      "owner": "E",
-      "plan": "coercion gap 群 2(本リリース)",
-      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponent.swift",
-      "kind": "rawAttribute",
-      "key": "rightMargin",
-      "owner": "E",
-      "plan": "coercion gap 群 2(本リリース)",
-      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponent.swift",
-      "kind": "rawAttribute",
-      "key": "startMargin",
-      "owner": "E",
-      "plan": "coercion gap 群 2(本リリース)",
-      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
-    },
-    {
-      "gate": "raw-read",
-      "file": "DynamicComponent.swift",
-      "kind": "rawAttribute",
-      "key": "topMargin",
-      "owner": "E",
-      "plan": "coercion gap 群 2(本リリース)",
-      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     }
   ]
 }
