@@ -225,10 +225,20 @@ public struct DynamicHelpers {
         } else {
             // Fallback to individual padding properties (UIKitに合わせてpaddingTop形式に統一)
             // RTL-aware: paddingStart/paddingEnd take precedence over paddingLeft/paddingRight
-            let top = component.paddingTop ?? 0
-            let leading = component.paddingStart ?? component.paddingLeft ?? 0
-            let bottom = component.paddingBottom ?? 0
-            let trailing = component.paddingEnd ?? component.paddingRight ?? 0
+            // `topPadding` etc. are DECLARED aliases, carried as their own
+            // fields in the generated table rather than folded into the
+            // canonical name, so the fallback the hand-decode used to do
+            // has to survive here.
+            let top = component.commonNumber(\.paddingTop)
+                ?? component.commonNumber(\.topPadding) ?? 0
+            let leading = component.commonNumber(\.paddingStart)
+                ?? component.commonNumber(\.paddingLeft)
+                ?? component.commonNumber(\.leftPadding) ?? 0
+            let bottom = component.commonNumber(\.paddingBottom)
+                ?? component.commonNumber(\.bottomPadding) ?? 0
+            let trailing = component.commonNumber(\.paddingEnd)
+                ?? component.commonNumber(\.paddingRight)
+                ?? component.commonNumber(\.rightPadding) ?? 0
 
             resultPadding = EdgeInsets(
                 top: top,

@@ -25,8 +25,8 @@ final class RTLAttributesTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.type, "View")
-        XCTAssertEqual(component.paddingStart, 16)
-        XCTAssertEqual(component.paddingEnd, 24)
+        XCTAssertEqual(component.commonNumber(\.paddingStart), 16)
+        XCTAssertEqual(component.commonNumber(\.paddingEnd), 24)
     }
 
     func testDecodeStartEndMargin() throws {
@@ -64,10 +64,10 @@ final class RTLAttributesTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.paddingStart, 8)
-        XCTAssertEqual(component.paddingEnd, 12)
-        XCTAssertEqual(component.paddingTop, 4)
-        XCTAssertEqual(component.paddingBottom, 4)
+        XCTAssertEqual(component.commonNumber(\.paddingStart), 8)
+        XCTAssertEqual(component.commonNumber(\.paddingEnd), 12)
+        XCTAssertEqual(component.commonNumber(\.paddingTop), 4)
+        XCTAssertEqual(component.commonNumber(\.paddingBottom), 4)
         XCTAssertEqual(component.startMargin?.value as? Int, 16)
         XCTAssertEqual(component.endMargin?.value as? Int, 20)
         XCTAssertEqual(component.topMargin?.value as? Int, 8)
@@ -277,8 +277,8 @@ final class RTLAttributesTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         // Test parent
-        XCTAssertEqual(component.paddingStart, 20)
-        XCTAssertEqual(component.paddingEnd, 20)
+        XCTAssertEqual(component.commonNumber(\.paddingStart), 20)
+        XCTAssertEqual(component.commonNumber(\.paddingEnd), 20)
 
         // Test children
         XCTAssertEqual(component.child?.count, 2)
@@ -287,8 +287,8 @@ final class RTLAttributesTests: XCTestCase {
         XCTAssertEqual(label?.type, "Label")
         XCTAssertEqual(label?.startMargin?.value as? Int, 0)
         XCTAssertEqual(label?.endMargin?.value as? Int, 0)
-        XCTAssertEqual(label?.paddingStart, 8)
-        XCTAssertEqual(label?.paddingEnd, 8)
+        XCTAssertEqual(label?.commonNumber(\.paddingStart), 8)
+        XCTAssertEqual(label?.commonNumber(\.paddingEnd), 8)
 
         let button = component.child?[1]
         XCTAssertEqual(button?.type, "Button")
@@ -310,8 +310,8 @@ final class RTLAttributesTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.paddingStart, 0)
-        XCTAssertEqual(component.paddingEnd, 0)
+        XCTAssertEqual(component.commonNumber(\.paddingStart), 0)
+        XCTAssertEqual(component.commonNumber(\.paddingEnd), 0)
         XCTAssertEqual(component.startMargin?.value as? Int, 0)
         XCTAssertEqual(component.endMargin?.value as? Int, 0)
 
@@ -340,8 +340,8 @@ final class RTLAttributesTests: XCTestCase {
 
         // When paddings array is present, it takes precedence for the base values
         // But individual properties should still be available in the component
-        XCTAssertEqual(component.paddingStart, 20)
-        XCTAssertEqual(component.paddingEnd, 30)
+        XCTAssertEqual(component.commonNumber(\.paddingStart), 20)
+        XCTAssertEqual(component.commonNumber(\.paddingEnd), 30)
     }
 }
 #endif
