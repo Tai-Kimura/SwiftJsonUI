@@ -56,7 +56,7 @@ public struct WeightedStackContainer: View {
                 )
             )
             // weight==0 AND width is wrapContent → fixedSize to shrink to intrinsic width
-            let needsFixedSize = weight == 0 && child.width == nil
+            let needsFixedSize = weight == 0 && child.declaredWidth == nil
             let childView = needsFixedSize
                 ? AnyView(builtView.fixedSize(horizontal: true, vertical: false))
                 : builtView
@@ -88,7 +88,7 @@ public struct WeightedStackContainer: View {
                 )
             )
             // weight==0 AND height is wrapContent → fixedSize to shrink to intrinsic height
-            let needsFixedSize = weight == 0 && child.height == nil
+            let needsFixedSize = weight == 0 && child.declaredHeight == nil
             let childView = needsFixedSize
                 ? AnyView(builtView.fixedSize(horizontal: false, vertical: true))
                 : builtView
@@ -114,7 +114,7 @@ public struct WeightedStackContainer: View {
             // holding fixed-height children came out false and the stack
             // fixedSize'd itself to their natural height.
             let hasMatchParentHeight = component.heightRaw == "matchParent"
-                || component.height == .infinity || component.height == -1
+                || component.declaredHeight == .infinity || component.declaredHeight == -1
             WeightedHStack(
                 alignment: getVerticalAlignment(),
                 spacing: spacingValue,

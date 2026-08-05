@@ -138,14 +138,14 @@ public struct ButtonConverter {
         ) ?? true
 
         // Handle width/height - pass to StateAwareButtonView so background fills the frame
-        var buttonWidth = component.width
-        var buttonHeight = component.height
+        var buttonWidth = component.declaredWidth
+        var buttonHeight = component.declaredHeight
 
         // matchParent handling
-        if component.widthRaw == "matchParent" || component.width == -1 {
+        if component.widthRaw == "matchParent" || component.declaredWidth == -1 {
             buttonWidth = -1
         }
-        if component.heightRaw == "matchParent" || component.height == -1 {
+        if component.heightRaw == "matchParent" || component.declaredHeight == -1 {
             buttonHeight = -1
         }
 

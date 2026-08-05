@@ -41,8 +41,6 @@ public struct DynamicComponent: Decodable {
     let autoShrink: Bool?  // Auto shrink text to fit for Label
     let lineBreakMode: String?  // Truncation mode: head, middle, tail (UIKit compatibility)
     let textShadow: AnyCodable?  // Text shadow for Label
-    let width: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
-    let height: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let widthRaw: String?  // Store original string value if needed
     let heightRaw: String?  // Store original string value if needed
     // UIKitに合わせてpaddingsに統一（paddingは削除）
@@ -313,13 +311,12 @@ public struct DynamicComponent: Decodable {
         lineBreakMode = try container.decodeIfPresent(String.self, forKey: .lineBreakMode)
 
         // Size properties - use helper for decoding
-        let widthResult = DynamicDecodingHelper.decodeSizeValue(from: container, forKey: .width)
-        width = widthResult.value
-        widthRaw = widthResult.raw
+        // Only the RAW spelling is stored. The value goes through
+        // `declaredWidth`, which reads `AttrValue<DimensionValue>` — a
+        // `CGFloat?` slot cannot hold `width: "@{w}"`.
+        widthRaw = DynamicDecodingHelper.decodeSizeValue(from: container, forKey: .width).raw
         
-        let heightResult = DynamicDecodingHelper.decodeSizeValue(from: container, forKey: .height)
-        height = heightResult.value
-        heightRaw = heightResult.raw
+        heightRaw = DynamicDecodingHelper.decodeSizeValue(from: container, forKey: .height).raw
         
         
         // Padding/Margin（UIKitに合わせてpaddings/marginsに統一）
@@ -832,6 +829,44 @@ extension DynamicComponent {
             return any.rawRepresentation as? String
         }
         return typedAttributes(TabViewAttributes.self).onValueChange?.rawRepresentation as? String
+    }
+
+    /// The declared `width` / `height`, in the sentinel encoding every
+    /// caller already speaks: `.infinity` for `matchParent`, nil for
+    /// `wrapContent` or undeclared, the number otherwise.
+    ///
+    /// `DimensionValue` carries those three states as a type; this maps
+    /// them back rather than changing 35 call sites' vocabulary in the same
+    /// commit that retires the slot. A bound spelling (`width: "@{w}"`) is
+    /// nil here, exactly as the `CGFloat?` slot was — resolving it is a
+    /// separate change, and doing it silently here would move layout.
+    var declaredWidth: CGFloat? { dimension(\.width, raw: widthRaw) }
+    var declaredHeight: CGFloat? { dimension(\.height, raw: heightRaw) }
+
+    private func dimension(
+        _ keyPath: KeyPath<CommonAttributes, AttrValue<DimensionValue>?>,
+        raw: String?
+    ) -> CGFloat? {
+        switch typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.value {
+        case .number(let value): return CGFloat(value)
+        case .matchParent: return .infinity
+        case .wrapContent: return nil
+        case nil:
+            // `DimensionValue.parse` matches `"matchParent"` / `"wrapContent"`
+            // EXACTLY and coerces no numeric string. The layout vocabulary is
+            // wider on both counts and codegen honors the wider one —
+            // frame_helper.rb:107 lowercases and accepts `wrap_content`,
+            // relative_positioning_helper.rb:560 accepts `match_parent`. So
+            // `height: "match_parent"` parses in the generator and NOT in the
+            // typed extraction. Reading the raw spelling for those keeps the
+            // two halves saying the same thing; reported to E with the margin
+            // numeric-string gap.
+            switch raw?.lowercased() {
+            case "matchparent", "match_parent": return .infinity
+            case "wrapcontent", "wrap_content": return nil
+            default: return raw.flatMap(Double.init).map { CGFloat($0) }
+            }
+        }
     }
 
     /// The six per-side margins.

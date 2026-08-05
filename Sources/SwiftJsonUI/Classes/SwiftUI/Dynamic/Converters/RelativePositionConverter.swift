@@ -23,8 +23,8 @@ public struct RelativePositionConverter {
         let view = viewBuilder(component)
         let constraints = buildConstraints(from: component, data: data)
         let margins = buildMargins(from: component, data: data)
-        let widthMode = buildSizeMode(from: component.widthRaw, numericValue: component.width)
-        let heightMode = buildSizeMode(from: component.heightRaw, numericValue: component.height)
+        let widthMode = buildSizeMode(from: component.widthRaw, numericValue: component.declaredWidth)
+        let heightMode = buildSizeMode(from: component.heightRaw, numericValue: component.declaredHeight)
 
         return RelativeChildConfig(
             id: id,
@@ -44,8 +44,8 @@ public struct RelativePositionConverter {
     ) -> (width: RelativeSizeMode, height: RelativeSizeMode) {
         guard let parent else { return (.wrapContent, .wrapContent) }
         return (
-            buildSizeMode(from: parent.widthRaw, numericValue: parent.width),
-            buildSizeMode(from: parent.heightRaw, numericValue: parent.height)
+            buildSizeMode(from: parent.widthRaw, numericValue: parent.declaredWidth),
+            buildSizeMode(from: parent.heightRaw, numericValue: parent.declaredHeight)
         )
     }
 

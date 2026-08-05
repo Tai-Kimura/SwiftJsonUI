@@ -76,8 +76,8 @@ final class JSONLayoutIntegrationTests: XCTestCase {
 
         XCTAssertEqual(component.type, "View")
         XCTAssertEqual(component.id, "container")
-        XCTAssertEqual(component.width, .infinity)
-        XCTAssertNil(component.height) // wrapContent
+        XCTAssertEqual(component.declaredWidth, .infinity)
+        XCTAssertNil(component.declaredHeight) // wrapContent
         XCTAssertEqual(component.commonString(\.background), "#FFFFFF")
 
         // Check children
@@ -201,7 +201,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.height, 200)
+        XCTAssertEqual(component.declaredHeight, 200)
 
         let topLeft = component.child?[0]
         XCTAssertEqual(topLeft?.commonBool(\.alignTop), true)

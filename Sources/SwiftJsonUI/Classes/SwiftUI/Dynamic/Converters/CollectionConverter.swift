@@ -326,7 +326,7 @@ public struct CollectionConverter {
         // 3. applyStandardModifiers() — insets excluded: Collection insets
         // are content padding (see applyCollectionContentInsets), not the
         // container-growing pre-background padding the generic chain applies.
-        let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.width)) height=\(String(describing: component.height)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
+        let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.declaredWidth)) height=\(String(describing: component.declaredHeight)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
         result = applyCollectionContentInsets(result, component: component)
         result = applyContainerInset(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)

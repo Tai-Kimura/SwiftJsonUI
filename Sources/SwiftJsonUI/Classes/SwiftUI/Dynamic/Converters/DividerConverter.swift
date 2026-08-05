@@ -30,7 +30,7 @@ public struct DividerConverter {
         data: [String: Any]
     ) -> AnyView {
         let color = resolveColor(component, data: data)
-        let thickness = component.height ?? 1
+        let thickness = component.declaredHeight ?? 1
 
         // --- 1. Base view ---
         var result: AnyView
@@ -51,7 +51,7 @@ public struct DividerConverter {
         }
 
         // --- 2. matchParent width ---
-        let width = component.width
+        let width = component.declaredWidth
         if width == .infinity || width == -1 {
             result = AnyView(result.frame(maxWidth: .infinity))
         } else if let w = width, w > 0 && w.isFinite {
