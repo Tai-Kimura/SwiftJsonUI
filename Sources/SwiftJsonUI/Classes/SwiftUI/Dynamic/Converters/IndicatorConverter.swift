@@ -26,7 +26,8 @@ public struct IndicatorConverter {
         data: [String: Any]
     ) -> AnyView {
         // Check for animating property (undeclared legacy key)
-        let animatingRaw = component.rawAttribute("animating")
+        let animatingRaw = component.typedAttributes(IndicatorAttributes.self)
+            .animating?.rawRepresentation
 
         // Static false - don't show indicator
         if let boolVal = animatingRaw as? Bool, boolVal == false {

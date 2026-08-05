@@ -869,6 +869,17 @@ extension DynamicComponent {
         }
     }
 
+    /// `onValueChanged` — the declared ALIAS of `onValueChange`.
+    ///
+    /// The generated tables carry it as its own `AttrValue<Any>` field rather
+    /// than folding it into the canonical name, so the alias needs its own
+    /// read. Three converters were reaching for it through `rawAttribute`
+    /// although the receiver had been there all along (plan 50, owner-50 rows).
+    func onValueChangedSpelling() -> String? {
+        typedAttributes(SelectBoxAttributes.self).onValueChanged?
+            .rawRepresentation as? String
+    }
+
     /// The six per-side margins.
     ///
     /// They need their own accessor because the margin spelling has THREE

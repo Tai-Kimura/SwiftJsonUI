@@ -80,9 +80,9 @@ public struct RadioConverter {
     ) -> AnyView {
         // Get selection binding
         let selectionExpr: String? = {
-            if let expr = component.rawAttribute("selectedValue") as? String,
-               DynamicBindingResolver.isBindingExpression(expr) {
-                return expr
+            if let expr = component.typedAttributes(RadioAttributes.self)
+                .selectedValue?.bindingExpression {
+                return "@{\(expr)}"
             }
             return nil
         }()

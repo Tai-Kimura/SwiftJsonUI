@@ -166,7 +166,7 @@ public struct SelectBoxConverter {
 
         // onValueChange handler (+ onValueChanged alias)
         let handlerExpr: String? = component.onValueChangeSpelling()
-            ?? (component.rawAttribute("onValueChanged") as? String)
+            ?? component.onValueChangedSpelling()
 
         // Which bound var (if any) can be observed for changes
         let observedBindingProp: String? = attrs.selectedIndex?.bindingExpression

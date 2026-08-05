@@ -58,15 +58,6 @@
     },
     {
       "gate": "raw-read",
-      "file": "Converters/CheckboxConverter.swift",
-      "kind": "rawAttribute",
-      "key": "onValueChanged",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
-    },
-    {
-      "gate": "raw-read",
       "file": "Converters/CollectionConverter.swift",
       "kind": "rawAttribute",
       "key": "cellHeight",
@@ -82,15 +73,6 @@
       "owner": "E",
       "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
       "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Converters/CollectionConverter.swift",
-      "kind": "rawAttribute",
-      "key": "defaultScrollAnchor",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
     },
     {
       "gate": "raw-read",
@@ -175,48 +157,12 @@
     },
     {
       "gate": "raw-read",
-      "file": "Converters/IndicatorConverter.swift",
-      "kind": "rawAttribute",
-      "key": "animating",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
-    },
-    {
-      "gate": "raw-read",
       "file": "Converters/LabelConverter.swift",
       "kind": "rawAttribute",
       "key": "parent_orientation",
       "owner": "—",
       "plan": "恒久例外",
       "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Converters/PickerConverter.swift",
-      "kind": "rawAttribute",
-      "key": "selectedIndex",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Converters/RadioConverter.swift",
-      "kind": "rawAttribute",
-      "key": "selectedValue",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Converters/ScrollViewConverter.swift",
-      "kind": "rawAttribute",
-      "key": "defaultScrollAnchor",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
     },
     {
       "gate": "raw-read",
@@ -244,15 +190,6 @@
       "owner": "E",
       "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
       "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Converters/SelectBoxConverter.swift",
-      "kind": "rawAttribute",
-      "key": "onValueChanged",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
     },
     {
       "gate": "raw-read",
@@ -285,15 +222,6 @@
       "gate": "raw-read",
       "file": "Converters/ToggleConverter.swift",
       "kind": "rawAttribute",
-      "key": "onValueChanged",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
-    },
-    {
-      "gate": "raw-read",
-      "file": "Converters/ToggleConverter.swift",
-      "kind": "rawAttribute",
       "key": "toggleStyle",
       "owner": "E",
       "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
@@ -310,21 +238,12 @@
     },
     {
       "gate": "raw-read",
-      "file": "DynamicHelpers.swift",
-      "kind": "rawData",
-      "key": "font",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed 抽出の手前で属性辞書を直読みしている"
-    },
-    {
-      "gate": "raw-read",
       "file": "DynamicModifierHelper.swift",
       "kind": "rawAttribute",
       "key": "highlighted",
-      "owner": "50",
-      "plan": "raw-read 撲滅(50 §4)",
-      "reason": "typed アクセサが存在するのに raw 経路で読んでいる"
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "View.highlighted の宣言は boolean のみ。生成側は AttrCoerce.boolean を直に当てるため `highlighted: \"@{isOn}\"` は typed 抽出で nil になる(実測: typed=nil / raw=\"@{isOn}\")。base_view_converter.rb:737 は is_binding? でバインドを受けるので、typed へ移すと codegen が描く状態を dynamic だけが落とす。宣言 kind を [boolean, binding] にするのが筋で、AttrCoerce の拡張では直らない"
     },
     {
       "gate": "raw-read",
