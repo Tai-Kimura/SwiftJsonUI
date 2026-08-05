@@ -73,7 +73,7 @@ public struct ToggleConverter {
                     ?? (rawFontSize as? Int).map { CGFloat($0) }
                 let fontSize = labelAttrs["fontSize"] as? CGFloat ?? componentFontSize
                 let fontName = labelAttrs["font"] as? String ?? component.font
-                let fontWeight = labelAttrs["fontWeight"] as? String ?? labelAttrs["fontStyle"] as? String ?? component.fontWeight
+                let fontWeight = labelAttrs["fontWeight"] as? String ?? labelAttrs["fontStyle"] as? String ?? component.fontWeightSpelling()
                 guard fontSize != nil || fontName != nil || fontWeight != nil else { return nil }
                 if let name = fontName, let size = fontSize ?? 17 as CGFloat? {
                     return Font.custom(name, size: size)

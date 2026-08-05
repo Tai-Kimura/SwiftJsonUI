@@ -34,7 +34,7 @@ public struct SegmentConverter {
             fallback: component.int(SegmentAttributes.self, \.selectedIndex, data: data) ?? 0
         )
 
-        let items = component.items ?? []
+        let items = component.stringList(SegmentAttributes.self, \.items) ?? []
 
         // Resolve segment color attributes
         let bgColor = DynamicHelpers.getColor(

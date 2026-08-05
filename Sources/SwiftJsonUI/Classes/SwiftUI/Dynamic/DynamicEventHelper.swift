@@ -222,9 +222,9 @@ extension DynamicComponent {
     /// Click handler with both canonical spellings resolved:
     /// `onClick` (camelCase, binding format) falls back to the legacy
     /// `onclick` (lowercase, selector format) — attribute_definitions.json
-    /// declares both; only `onClick` is a typed DynamicComponent field.
+    /// declares both.
     var effectiveOnClick: String? {
-        if let onClick = onClick { return onClick }
+        if let onClick = commonAny(\.onClick) { return onClick }
         return typedAttributes(CommonAttributes.self).onclick as? String
     }
 }

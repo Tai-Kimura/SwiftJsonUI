@@ -78,7 +78,7 @@ public struct SelectBoxConverter {
 
         // items (for normal type) - with binding support
         let items: [String] = {
-            if let staticItems = component.items, !staticItems.isEmpty {
+            if let staticItems = component.stringList(SelectBoxAttributes.self, \.items), !staticItems.isEmpty {
                 return staticItems
             }
             // Binding items

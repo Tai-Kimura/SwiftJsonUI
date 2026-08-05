@@ -59,7 +59,7 @@ public struct CheckboxConverter {
             if let style = component.rawAttribute("fontStyle") as? String {
                 return DynamicHelpers.fontWeightFromString(style)
             }
-            if let weight = component.fontWeight {
+            if let weight = component.fontWeightSpelling() {
                 return DynamicHelpers.fontWeightFromString(weight)
             }
             // 'font' carries the weight spelling on selection controls

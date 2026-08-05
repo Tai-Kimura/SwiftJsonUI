@@ -22,7 +22,7 @@ public struct RadioConverter {
         data: [String: Any]
     ) -> AnyView {
         let id = component.id ?? "radio"
-        let items = component.items ?? []
+        let items = component.stringList(SelectBoxAttributes.self, \.items) ?? []
         // `label` is the Radio-specific spelling and wins over the generic
         // `text` — the same order CheckboxConverter uses, and what
         // radio_converter.rb emits. Nothing here read it, so a Radio carrying
@@ -195,7 +195,7 @@ public struct RadioConverter {
             .onTapGesture {
                 groupSelectionBinding.wrappedValue = id
                 // onClick handler
-                if let onClick = component.onClick {
+                if let onClick = component.commonAny(\.onClick) {
                     DynamicEventHelper.call(onClick, data: data)
                 }
             }

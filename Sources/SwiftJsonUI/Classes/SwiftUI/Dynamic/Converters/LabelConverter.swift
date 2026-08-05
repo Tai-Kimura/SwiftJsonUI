@@ -67,7 +67,7 @@ public struct LabelConverter {
             return component.font
         }()
         let fontWeight: String? = {
-            if let fw = component.fontWeight { return fw }
+            if let fw = component.fontWeightSpelling() { return fw }
             guard let font = resolvedFont?.lowercased() else { return nil }
             let weightNames = ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black", "normal", "regular"]
             return weightNames.contains(font) ? font : nil

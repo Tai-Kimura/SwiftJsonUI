@@ -57,7 +57,7 @@ public struct TableConverter {
         viewId: String?
     ) -> some View {
         let componentData = component.data ?? []
-        let items = component.items ?? []
+        let items = component.stringList(SelectBoxAttributes.self, \.items) ?? []
 
         if !componentData.isEmpty {
             // Data array -> TableRow for each item

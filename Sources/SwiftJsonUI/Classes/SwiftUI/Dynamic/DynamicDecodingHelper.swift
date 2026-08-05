@@ -352,7 +352,7 @@ public struct DynamicDecodingHelper {
         // replaces, and LabelConverter resolves it with data on its own path.
         let declaredFontSize = component.typedAttributes(LabelAttributes.self)
             .fontSize?.value.map { CGFloat($0) }
-        guard declaredFontSize != nil || component.font != nil || component.fontWeight != nil || component.fontFamily != nil else {
+        guard declaredFontSize != nil || component.font != nil || component.fontWeightSpelling() != nil || component.fontFamily != nil else {
             return nil
         }
 
@@ -366,7 +366,7 @@ public struct DynamicDecodingHelper {
         // weight keyword embedded in `font`. Returns nil when neither is
         // present so the FontSpec doesn't lie about an unrequested weight.
         let weightSource: String? = {
-            if let w = component.fontWeight?.lowercased() { return w }
+            if let w = component.fontWeightSpelling()?.lowercased() { return w }
             if let f = component.font?.lowercased(), weightNames.contains(f) { return f }
             return nil
         }()
