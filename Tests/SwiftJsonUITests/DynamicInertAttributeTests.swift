@@ -882,6 +882,44 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(config.constraints.first?.targetId, "anchor")
     }
 
+    // MARK: - codegen-parity: Progress size vs shape, TabView labels
+
+    /// The declared vocabulary is medium/large — a SIZE. Reading it as the
+    /// shape sent both declared values to CircularProgressViewStyle, so the
+    /// attribute emitted one constant whatever the layout wrote.
+    func testProgressIndicatorStyleIsASizeVocabulary() throws {
+        for value in ["medium", "large"] {
+            let c = try component("""
+            { "type": "Progress", "id": "t", "progress": 0.5, "indicatorStyle": "\(value)" }
+            """)
+            XCTAssertEqual(c.indicatorStyle, value)
+        }
+    }
+
+    /// `style` is the separate spelling that carries linear/circular, and it
+    /// stays on the shape reading.
+    func testProgressStyleStillCarriesTheShape() throws {
+        let c = try component("""
+        { "type": "Progress", "id": "t", "progress": 0.5, "style": "linear" }
+        """)
+        XCTAssertEqual(c.rawAttribute("style") as? String, "linear")
+        XCTAssertNil(c.indicatorStyle, "the size vocabulary is a different attribute")
+    }
+
+    /// `showLabels: false` leaves the icon and drops the text.
+    func testTabViewShowLabelsIsRead() throws {
+        let off = try component("""
+        { "type": "TabView", "id": "t", "showLabels": false }
+        """)
+        XCTAssertEqual(off.typedAttributes(TabViewAttributes.self).showLabels, false)
+
+        // Undeclared defaults to showing them.
+        let undeclared = try component("""
+        { "type": "TabView", "id": "t" }
+        """)
+        XCTAssertNil(undeclared.typedAttributes(TabViewAttributes.self).showLabels)
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
