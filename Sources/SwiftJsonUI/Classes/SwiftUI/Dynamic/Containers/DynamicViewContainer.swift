@@ -100,7 +100,9 @@ public struct DynamicViewContainer: View {
             )
         } else {
             let hasWeights = children.contains { child in
-                (child.weight ?? 0) > 0 || (child.widthWeight ?? 0) > 0 || (child.heightWeight ?? 0) > 0
+                (child.weight ?? 0) > 0
+                    || (child.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0
+                    || (child.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
             }
 
             if hasWeights && (orientation == "horizontal" || orientation == "vertical") {
@@ -128,8 +130,8 @@ public struct DynamicViewContainer: View {
         let hasExplicitSize = (component.width != nil && component.width != 0) ||
             (component.height != nil && component.height != 0)
         let hasWeight = (component.weight ?? 0) > 0 ||
-            (component.widthWeight ?? 0) > 0 ||
-            (component.heightWeight ?? 0) > 0
+            (component.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0 ||
+            (component.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
 
         // Rectangle().fill is the codegen leaf contract: opaque paint that
         // does NOT bleed into the safe area (unlike .background, whose

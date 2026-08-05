@@ -31,7 +31,7 @@ public struct SegmentConverter {
         let selectedBinding = DynamicBindingHelper.int(
             selectionExpr,
             data: data,
-            fallback: component.selectedIndex ?? 0
+            fallback: component.int(SegmentAttributes.self, \.selectedIndex, data: data) ?? 0
         )
 
         let items = component.items ?? []

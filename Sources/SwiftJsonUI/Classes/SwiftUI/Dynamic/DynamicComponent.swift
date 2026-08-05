@@ -45,7 +45,6 @@ public struct DynamicComponent: Decodable {
     let underline: Bool?  // Underline text for Label
     let strikethrough: Bool?  // Strikethrough text for Label
     let autoShrink: Bool?  // Auto shrink text to fit for Label
-    let lines: Int?  // Line limit for Label (UIKit compatibility)
     let lineBreakMode: String?  // Truncation mode: head, middle, tail (UIKit compatibility)
     let textShadow: AnyCodable?  // Text shadow for Label
     let linkable: Bool?  // Make URLs clickable for Label
@@ -177,15 +176,12 @@ public struct DynamicComponent: Decodable {
     let iconPosition: String?
     let textAlign: String?
     let isOn: Bool?
-    let progress: Double?
     let value: Double?
     let minValue: Double?
     let maxValue: Double?
     let indicatorStyle: String?
-    let selectedIndex: Int?
     let tabs: [[String: Any]]?  // TabView tabs array
     let onTabChange: String?  // TabView tab change callback
-    let columns: Int?  // For collection/grid layouts
     
     // ScrollView properties
     let contentInsetAdjustmentBehavior: String?  // never, always, automatic, scrollableAxes
@@ -221,8 +217,6 @@ public struct DynamicComponent: Decodable {
     // Layout properties
     let gravity: [String]?  // Raw gravity values from JSON
     let alignment: Alignment?  // Converted SwiftUI alignment
-    let widthWeight: Double?
-    let heightWeight: Double?
     
     // Relative positioning
     let alignTop: Bool?  // true = align to parent top
@@ -246,7 +240,7 @@ public struct DynamicComponent: Decodable {
     public enum CodingKeys: String, CodingKey {
         case type, id, text, fontColor, font, fontWeight, fontFamily
         case disabledFontColor, edgeInset
-        case underline, strikethrough, autoShrink, lines, lineBreakMode, textShadow, linkable
+        case underline, strikethrough, autoShrink, lineBreakMode, textShadow, linkable
         case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
         case leftPadding, rightPadding, topPadding, bottomPadding
@@ -277,10 +271,9 @@ public struct DynamicComponent: Decodable {
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case secure, returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
-        case textAlign, isOn, progress, value
-        case minValue, maxValue, indicatorStyle, selectedIndex
+        case textAlign, isOn, value
+        case minValue, maxValue, indicatorStyle
         case tabs, onTabChange
-        case columns
         case contentInsetAdjustmentBehavior
         case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
         case paging, bounces, scrollEnabled
@@ -292,7 +285,7 @@ public struct DynamicComponent: Decodable {
         case include, variables
         case includeData  // Will be handled specially in decoder
         case sharedData = "shared_data"  // Map JSON "shared_data" to sharedData
-        case gravity, alignment, widthWeight, heightWeight
+        case gravity, alignment
         case alignTop, alignBottom, alignLeft, alignRight
         case centerHorizontal, centerVertical
         case alignLeftOfView, alignRightOfView, alignTopOfView, alignBottomOfView
@@ -362,7 +355,6 @@ public struct DynamicComponent: Decodable {
         autoShrink = try container.decodeIfPresent(Bool.self, forKey: .autoShrink)
         textShadow = try container.decodeIfPresent(AnyCodable.self, forKey: .textShadow)
         linkable = (try? container.decodeIfPresent(Bool.self, forKey: .linkable)) ?? nil
-        lines = (try? container.decodeIfPresent(Int.self, forKey: .lines)) ?? nil
         lineBreakMode = try container.decodeIfPresent(String.self, forKey: .lineBreakMode)
 
         // Size properties - use helper for decoding
@@ -538,30 +530,13 @@ public struct DynamicComponent: Decodable {
         textAlign = try container.decodeIfPresent(String.self, forKey: .textAlign)
         // Use try? because these can be binding strings like "@{isOn}", "@{progress}", etc.
         isOn = try? container.decodeIfPresent(Bool.self, forKey: .isOn)
-        progress = try? container.decodeIfPresent(Double.self, forKey: .progress)
         value = try? container.decodeIfPresent(Double.self, forKey: .value)
         minValue = try? container.decodeIfPresent(Double.self, forKey: .minValue)
         maxValue = try? container.decodeIfPresent(Double.self, forKey: .maxValue)
         indicatorStyle = try container.decodeIfPresent(String.self, forKey: .indicatorStyle)
-        // selectedIndex can be Int or binding string - try Int first, fallback to nil (binding handled via rawData)
-        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .selectedIndex) {
-            selectedIndex = intValue
-        } else {
-            selectedIndex = nil  // Binding string will be read from rawData
-        }
         // TabView properties
         tabs = try container.decodeIfPresent(AnyCodable.self, forKey: .tabs)?.value as? [[String: Any]]
         onTabChange = try container.decodeIfPresent(String.self, forKey: .onTabChange)
-        // columns is declared `["number", "binding"]` in the shared catalog —
-        // a "@{binding}" string must not fail the whole component decode
-        // (a decode throw here used to silently drop the node from its
-        // parent's children). The binding spelling stays available via
-        // rawData / CollectionAttributes and is resolved at render time.
-        if let intValue = try? container.decodeIfPresent(Int.self, forKey: .columns) {
-            columns = intValue
-        } else {
-            columns = nil  // Binding string will be read from rawData
-        }
         contentInsetAdjustmentBehavior = try container.decodeIfPresent(String.self, forKey: .contentInsetAdjustmentBehavior)
         showsHorizontalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsHorizontalScrollIndicator)
         showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
@@ -607,8 +582,6 @@ public struct DynamicComponent: Decodable {
         // Layout properties
         gravity = DynamicDecodingHelper.decodeGravity(from: container)
         alignment = DynamicDecodingHelper.gravityToAlignment(gravity)
-        widthWeight = (try? container.decodeIfPresent(Double.self, forKey: .widthWeight)) ?? nil
-        heightWeight = (try? container.decodeIfPresent(Double.self, forKey: .heightWeight)) ?? nil
         
         // Relative positioning
         // Relative positioning booleans are all boolean|binding — tolerate.
@@ -779,6 +752,18 @@ extension DynamicComponent {
         DynamicHelpers.resolveNumber(
             typedAttributes(type)[keyPath: keyPath], legacy: nil, data: data
         )
+    }
+
+    /// A count attribute off any generated table. The tables carry `Double`
+    /// (JSON has one number type), so the rounding rule lives in one place:
+    /// `columns` / `lines` / `selectedIndex` are all counts, and a count
+    /// rounds to nearest — `2.6 columns` is 3, not 2.
+    func int<T: JsonUIGeneratedAttributes>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, AttrValue<Double>?>,
+        data: [String: Any] = [:]
+    ) -> Int? {
+        number(type, keyPath, data: data).map { Int($0.rounded()) }
     }
 
     /// The six per-side margins.

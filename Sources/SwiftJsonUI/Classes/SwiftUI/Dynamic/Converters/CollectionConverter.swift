@@ -79,7 +79,7 @@ public struct CollectionConverter {
         // column-count changes.
         let (globalColumns, columnsIsBinding) = resolveGlobalColumns(
             attrs.columns,
-            legacyColumns: component.columns,
+            legacyColumns: component.int(CollectionAttributes.self, \.columns, data: data),
             data: data
         )
         let cellIdProperty = attrs.cellIdProperty

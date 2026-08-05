@@ -62,7 +62,7 @@ public struct TextConverter {
         }
 
         // lineLimit
-        if let lines = component.lines {
+        if let lines = component.int(LabelAttributes.self, \.lines, data: data) {
             if lines == 0 {
                 result = AnyView(result.lineLimit(nil))
             } else {

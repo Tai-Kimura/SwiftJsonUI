@@ -447,7 +447,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.columns, 3)
+        XCTAssertEqual(component.int(CollectionAttributes.self, \.columns), 3)
         XCTAssertEqual(component.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) }, 8)
         XCTAssertEqual(component.layout, "grid")
         XCTAssertEqual(component.items, ["Item1", "Item2", "Item3"])
@@ -470,7 +470,7 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.type, "Collection")
         // The legacy Int slot stays nil for the binding spelling …
-        XCTAssertNil(component.columns)
+        XCTAssertNil(component.int(CollectionAttributes.self, \.columns))
         // … while the binding survives via rawData / typed attributes.
         XCTAssertEqual(component.rawData["columns"] as? String, "@{gridColumnCount}")
         XCTAssertEqual(
@@ -769,10 +769,10 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(
             component.typedAttributes(CommonAttributes.self).aspectWidth?.value, 16
         )
-        XCTAssertEqual(component.widthWeight, 0.5)
+        XCTAssertEqual(component.number(CommonAttributes.self, \.widthWeight), 0.5)
         XCTAssertEqual(component.alignTop, true)
         XCTAssertEqual(component.centerInParent, false)
-        XCTAssertEqual(component.lines, 2)
+        XCTAssertEqual(component.int(LabelAttributes.self, \.lines), 2)
         XCTAssertEqual(component.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) }, 4)
     }
 
