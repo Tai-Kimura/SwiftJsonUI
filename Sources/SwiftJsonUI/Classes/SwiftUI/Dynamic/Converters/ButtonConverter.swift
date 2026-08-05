@@ -102,7 +102,10 @@ public struct ButtonConverter {
             data: data
         )
         let disabledFontColor = DynamicHelpers.getColor(component.disabledFontColor, data: data)
-        let disabledBackground = DynamicHelpers.getColor(component.disabledBackground, data: data)
+        let disabledBackground = DynamicHelpers.getColor(
+            component.typedAttributes(CommonAttributes.self).disabledBackground?.rawRepresentation as? String,
+            data: data
+        )
 
         // Icon tint: only when the layout asked for one — a template
         // rendering mode would flatten a multi-colour asset to a single

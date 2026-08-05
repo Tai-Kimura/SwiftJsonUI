@@ -43,7 +43,6 @@ public struct DynamicComponent: Decodable {
     let fontFamily: String?  // Font family name (e.g., "Noto Sans JP")
     let highlightColor: String?  // Text color when highlighted
     let disabledFontColor: String?  // Text color when disabled
-    let disabledBackground: String?  // Background when disabled
     let edgeInset: AnyCodable?  // Text padding for Label (単一値または配列形式をサポート)
     let underline: Bool?  // Underline text for Label
     let strikethrough: Bool?  // Strikethrough text for Label
@@ -99,22 +98,18 @@ public struct DynamicComponent: Decodable {
     let tintColor: String?
     let minimum: CGFloat?
     let maximum: CGFloat?
-    let color: String?
     let hidesWhenStopped: Bool?
-    let highlightSrc: String?
     let defaultImage: String?
     let errorImage: String?
     let loadingImage: String?
     let maxZoom: CGFloat?
     let minZoom: CGFloat?
-    let highlightBackground: String?
     let highlighted: Bool?
     let canTap: Bool?
     let events: AnyCodable?
     let partialAttributes: AnyCodable?
     let highlightAttributes: AnyCodable?
     let hintAttributes: AnyCodable?
-    let hintColor: String?
     // Check/Radio attributes
     let label: String?
     let onSrc: String?
@@ -225,7 +220,6 @@ public struct DynamicComponent: Decodable {
     let iconColor: String?
     let iconPosition: String?
     let textAlign: String?
-    let selectedItem: String?
     let isOn: Bool?
     let progress: Double?
     let value: Double?
@@ -234,7 +228,6 @@ public struct DynamicComponent: Decodable {
     let indicatorStyle: String?
     let selectedIndex: Int?
     let tabs: [[String: Any]]?  // TabView tabs array
-    let tabBarBackground: String?  // TabView tab bar background color
     let onTabChange: String?  // TabView tab change callback
     let columns: Int?  // For collection/grid layouts
     let spacing: CGFloat?  // For stack/grid spacing
@@ -255,9 +248,6 @@ public struct DynamicComponent: Decodable {
     let datePickerMode: String?
     let datePickerStyle: String?
     let dateStringFormat: String?
-    let minimumDate: String?
-    let maximumDate: String?
-    let selectedDate: String?  // Initial selected date for date picker
     
     // Event handlers
     let onClick: String?
@@ -304,7 +294,7 @@ public struct DynamicComponent: Decodable {
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
         case type, id, text, fontSize, fontColor, font, fontWeight, fontFamily
-        case highlightColor, disabledFontColor, disabledBackground, edgeInset
+        case highlightColor, disabledFontColor, edgeInset
         case underline, strikethrough, lineHeightMultiple, autoShrink, minimumScaleFactor, lines, lineBreakMode, textShadow, linkable
         case width, height, widthRaw, heightRaw, background, tapBackground
         case padding, paddings, margins
@@ -314,11 +304,11 @@ public struct DynamicComponent: Decodable {
         case paddingLeft, paddingRight, paddingTop, paddingBottom, paddingStart, paddingEnd
         case leftPadding, rightPadding, topPadding, bottomPadding
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, itemSpacing, contentInsets
-        case tint, tintColor, minimum, maximum, color, hidesWhenStopped
-        case highlightSrc, defaultImage, errorImage, loadingImage
+        case tint, tintColor, minimum, maximum, hidesWhenStopped
+        case defaultImage, errorImage, loadingImage
         case maxZoom, minZoom
-        case highlightBackground, highlighted, canTap, events
-        case partialAttributes, highlightAttributes, hintAttributes, hintColor
+        case highlighted, canTap, events
+        case partialAttributes, highlightAttributes, hintAttributes
         case label, onSrc, checked, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
         case normalColor, selectedColor
         case onTextChange, accessoryBackground, accessoryTextColor, doneText
@@ -344,16 +334,16 @@ public struct DynamicComponent: Decodable {
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case secure, returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
-        case textAlign, selectedItem, isOn, progress, value
+        case textAlign, isOn, progress, value
         case minValue, maxValue, indicatorStyle, selectedIndex
-        case tabs, tabBarBackground, onTabChange
+        case tabs, onTabChange
         case columns, spacing
         case contentInsetAdjustmentBehavior
         case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
         case paging, bounces, scrollEnabled
         case scrollTo, scrollAnchor, defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
-        case dateStringFormat, minimumDate, maximumDate, selectedDate
+        case dateStringFormat
         case onClick, onLongPress, onPan, onPinch, onAppear, onDisappear
         case onChange, onSubmit, onToggle, onSelect
         case include, variables
@@ -418,7 +408,6 @@ public struct DynamicComponent: Decodable {
         fontFamily = try container.decodeIfPresent(String.self, forKey: .fontFamily)
         highlightColor = try container.decodeIfPresent(String.self, forKey: .highlightColor)
         disabledFontColor = try container.decodeIfPresent(String.self, forKey: .disabledFontColor)
-        disabledBackground = try container.decodeIfPresent(String.self, forKey: .disabledBackground)
         edgeInset = try container.decodeIfPresent(AnyCodable.self, forKey: .edgeInset)
         underline = try container.decodeIfPresent(Bool.self, forKey: .underline)
         strikethrough = try container.decodeIfPresent(Bool.self, forKey: .strikethrough)
@@ -501,22 +490,18 @@ public struct DynamicComponent: Decodable {
         // bound form; these slots only have to stop killing the node.
         minimum = try? container.decodeIfPresent(CGFloat.self, forKey: .minimum)
         maximum = try? container.decodeIfPresent(CGFloat.self, forKey: .maximum)
-        color = try container.decodeIfPresent(String.self, forKey: .color)
         hidesWhenStopped = try container.decodeIfPresent(Bool.self, forKey: .hidesWhenStopped)
-        highlightSrc = try container.decodeIfPresent(String.self, forKey: .highlightSrc)
         defaultImage = try container.decodeIfPresent(String.self, forKey: .defaultImage)
         errorImage = try container.decodeIfPresent(String.self, forKey: .errorImage)
         loadingImage = try container.decodeIfPresent(String.self, forKey: .loadingImage)
         maxZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
         minZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
-        highlightBackground = try container.decodeIfPresent(String.self, forKey: .highlightBackground)
         highlighted = try? container.decodeIfPresent(Bool.self, forKey: .highlighted)
         canTap = (try? container.decodeIfPresent(Bool.self, forKey: .canTap)) ?? nil
         events = try container.decodeIfPresent(AnyCodable.self, forKey: .events)
         partialAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .partialAttributes)
         highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
         hintAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .hintAttributes)
-        hintColor = try container.decodeIfPresent(String.self, forKey: .hintColor)
         // Check/Radio attributes
         label = try container.decodeIfPresent(String.self, forKey: .label)
         onSrc = try container.decodeIfPresent(String.self, forKey: .onSrc)
@@ -655,7 +640,6 @@ public struct DynamicComponent: Decodable {
         iconColor = try container.decodeIfPresent(String.self, forKey: .iconColor)
         iconPosition = try container.decodeIfPresent(String.self, forKey: .iconPosition)
         textAlign = try container.decodeIfPresent(String.self, forKey: .textAlign)
-        selectedItem = try container.decodeIfPresent(String.self, forKey: .selectedItem)
         // Use try? because these can be binding strings like "@{isOn}", "@{progress}", etc.
         isOn = try? container.decodeIfPresent(Bool.self, forKey: .isOn)
         progress = try? container.decodeIfPresent(Double.self, forKey: .progress)
@@ -671,7 +655,6 @@ public struct DynamicComponent: Decodable {
         }
         // TabView properties
         tabs = try container.decodeIfPresent(AnyCodable.self, forKey: .tabs)?.value as? [[String: Any]]
-        tabBarBackground = try container.decodeIfPresent(String.self, forKey: .tabBarBackground)
         onTabChange = try container.decodeIfPresent(String.self, forKey: .onTabChange)
         // columns is declared `["number", "binding"]` in the shared catalog —
         // a "@{binding}" string must not fail the whole component decode
@@ -700,9 +683,6 @@ public struct DynamicComponent: Decodable {
         datePickerMode = try container.decodeIfPresent(String.self, forKey: .datePickerMode)
         datePickerStyle = try container.decodeIfPresent(String.self, forKey: .datePickerStyle)
         dateStringFormat = try container.decodeIfPresent(String.self, forKey: .dateStringFormat)
-        minimumDate = try container.decodeIfPresent(String.self, forKey: .minimumDate)
-        maximumDate = try container.decodeIfPresent(String.self, forKey: .maximumDate)
-        selectedDate = try container.decodeIfPresent(String.self, forKey: .selectedDate)
 
         // Event handlers
         onClick = try container.decodeIfPresent(String.self, forKey: .onClick)

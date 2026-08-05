@@ -117,9 +117,15 @@ public struct SelectBoxConverter {
         // minimumDate / maximumDate / selectedDate
         let dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "yyyy-MM-dd"
-        let minimumDate = component.minimumDate.flatMap { dateFormatter.date(from: $0) }
-        let maximumDate = component.maximumDate.flatMap { dateFormatter.date(from: $0) }
-        let selectedDate = component.selectedDate.flatMap { dateFormatter.date(from: $0) }
+        // All three are string|binding: interpolate before parsing, or a
+        // bound date reaches DateFormatter as the literal "@{expr}".
+        func parseDate(_ attr: AttrValue<String>?) -> Date? {
+            guard let raw = attr?.rawRepresentation as? String else { return nil }
+            return dateFormatter.date(from: DynamicHelpers.processText(raw, data: data))
+        }
+        let minimumDate = parseDate(attrs.minimumDate)
+        let maximumDate = parseDate(attrs.maximumDate)
+        let selectedDate = parseDate(attrs.selectedDate)
 
         // minuteInterval
         let minuteInterval = component.minuteInterval ?? 1
