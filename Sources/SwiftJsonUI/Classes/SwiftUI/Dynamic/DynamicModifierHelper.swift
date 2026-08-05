@@ -684,7 +684,11 @@ public struct DynamicModifierHelper {
     // MARK: - 14. Tint
 
     public static func applyTint(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        guard let tintColor = component.tintColor ?? component.tint,
+        // `tintColor` is on CommonAttributes; `tint` is declared on
+        // Switch/Toggle only, and its table reads the spelling for any
+        // component (the extraction works off rawData).
+        guard let tintColor = component.commonString(\.tintColor)
+                ?? component.string(SwitchAttributes.self, \.tint),
               let color = DynamicHelpers.getColor(tintColor) else { return view }
         return AnyView(view.tint(color))
     }

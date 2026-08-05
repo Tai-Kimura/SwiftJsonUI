@@ -52,7 +52,8 @@ public struct SelectBoxConverter {
 
         // fontColor
         let fontColor: Color = DynamicHelpers.getColor(
-            (labelAttributes?["fontColor"] as? String) ?? component.fontColor, data: data
+            (labelAttributes?["fontColor"] as? String)
+                ?? component.typedAttributes(SelectBoxAttributes.self).fontColor, data: data
         ) ?? .primary
 
         // font — the label family (or "bold"). SelectBoxView hard-wired
@@ -60,7 +61,8 @@ public struct SelectBoxConverter {
         // nowhere to land; the view now takes the name.
         //
         // Same cascade as fontSize / fontColor above.
-        let fontName: String? = (labelAttributes?["font"] as? String) ?? component.font
+        let fontName: String? = (labelAttributes?["font"] as? String)
+            ?? component.typedAttributes(SelectBoxAttributes.self).font
 
         // backgroundColor
         let backgroundColor: Color = DynamicHelpers.getColor(component.commonString(\.background), data: data) ?? Color(UIColor.systemGray6)

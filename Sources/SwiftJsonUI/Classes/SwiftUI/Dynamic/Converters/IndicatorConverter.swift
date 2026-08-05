@@ -72,8 +72,8 @@ public struct IndicatorConverter {
 
         // 4. tint (color / tintColor / tint)
         let colorStr = component.typedAttributes(IndicatorAttributes.self).color?.rawRepresentation as? String
-            ?? component.tintColor
-            ?? component.tint
+            ?? component.commonString(\.tintColor)
+            ?? component.string(SwitchAttributes.self, \.tint)
         if let colorStr = colorStr, let color = DynamicHelpers.getColor(colorStr) {
             result = AnyView(result.tint(color))
         }

@@ -72,7 +72,7 @@ extension StateAwareContainer {
     ) where Content: View {
         self.init(
             background: DynamicHelpers.getColor(component.commonString(\.background), data: data),
-            tapBackground: DynamicHelpers.getColor(component.tapBackground, data: data),
+            tapBackground: DynamicHelpers.getColor(component.commonString(\.tapBackground), data: data),
             content: content
         )
     }

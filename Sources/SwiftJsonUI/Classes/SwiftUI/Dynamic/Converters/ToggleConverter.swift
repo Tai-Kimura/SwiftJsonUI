@@ -50,7 +50,8 @@ public struct ToggleConverter {
             ?? (component.rawAttribute("onValueChanged") as? String)
 
         // Label text
-        let text = component.text ?? component.label ?? ""
+        let text = component.string(LabelAttributes.self, \.text)
+            ?? component.string(CheckAttributes.self, \.label) ?? ""
 
         // Build Toggle with label
         var result: AnyView
@@ -72,7 +73,8 @@ public struct ToggleConverter {
                 let componentFontSize = (rawFontSize as? Double).map { CGFloat($0) }
                     ?? (rawFontSize as? Int).map { CGFloat($0) }
                 let fontSize = labelAttrs["fontSize"] as? CGFloat ?? componentFontSize
-                let fontName = labelAttrs["font"] as? String ?? component.font
+                let fontName = labelAttrs["font"] as? String
+                    ?? component.string(LabelAttributes.self, \.font)
                 let fontWeight = labelAttrs["fontWeight"] as? String ?? labelAttrs["fontStyle"] as? String ?? component.fontWeightSpelling()
                 guard fontSize != nil || fontName != nil || fontWeight != nil else { return nil }
                 if let name = fontName, let size = fontSize ?? 17 as CGFloat? {
@@ -95,7 +97,7 @@ public struct ToggleConverter {
                     return DynamicHelpers.getColor(colorStr)
                 }
             }
-            if let fontColor = component.fontColor {
+            if let fontColor = component.string(LabelAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fontColor)
             }
             return nil

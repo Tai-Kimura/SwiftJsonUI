@@ -50,7 +50,7 @@ public struct DynamicViewContainer: View {
         // --- 1. Build container content (use childData to avoid flag propagation) ---
         var result: AnyView
 
-        if component.tapBackground != nil {
+        if component.commonString(\.tapBackground) != nil {
             result = AnyView(
                 StateAwareContainer(component: component, data: data) {
                     containerContent(children: children, orientation: orientation, needsRelativePositioning: needsRelativePositioning)

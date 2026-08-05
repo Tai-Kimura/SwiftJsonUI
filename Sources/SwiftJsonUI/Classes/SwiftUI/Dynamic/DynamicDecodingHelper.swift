@@ -350,9 +350,11 @@ public struct DynamicDecodingHelper {
         // rawData, so it reads the spelling for any of them. This helper has
         // no `data`, so a bound size stays nil here — same as the slot it
         // replaces, and LabelConverter resolves it with data on its own path.
-        let declaredFontSize = component.typedAttributes(LabelAttributes.self)
-            .fontSize?.value.map { CGFloat($0) }
-        guard declaredFontSize != nil || component.font != nil || component.fontWeightSpelling() != nil || component.fontFamily != nil else {
+        let label = component.typedAttributes(LabelAttributes.self)
+        let declaredFontSize = label.fontSize?.value.map { CGFloat($0) }
+        let declaredFont = label.font?.rawRepresentation as? String
+        let declaredFontFamily = label.fontFamily?.rawRepresentation as? String
+        guard declaredFontSize != nil || declaredFont != nil || component.fontWeightSpelling() != nil || declaredFontFamily != nil else {
             return nil
         }
 
@@ -367,7 +369,7 @@ public struct DynamicDecodingHelper {
         // present so the FontSpec doesn't lie about an unrequested weight.
         let weightSource: String? = {
             if let w = component.fontWeightSpelling()?.lowercased() { return w }
-            if let f = component.font?.lowercased(), weightNames.contains(f) { return f }
+            if let f = declaredFont?.lowercased(), weightNames.contains(f) { return f }
             return nil
         }()
         let resolvedWeight: Font.Weight? = weightSource.flatMap { src in
@@ -388,13 +390,13 @@ public struct DynamicDecodingHelper {
         // fontFamily takes highest priority: route through the unified
         // FontSpec resolver so the app's `fontProvider` sees family + weight
         // + size together.
-        if let fontFamily = component.fontFamily {
+        if let fontFamily = declaredFontFamily {
             return config.resolveFont(
                 FontSpec(family: fontFamily, weight: resolvedWeight, size: size)
             )
         }
 
-        let fontName = component.font ?? config.font.name
+        let fontName = declaredFont ?? config.font.name
 
         // `font` carries either a family name or a weight keyword. When it's
         // a real family name, treat it as `fontFamily` for resolution.

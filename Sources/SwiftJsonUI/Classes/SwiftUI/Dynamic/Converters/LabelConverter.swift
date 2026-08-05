@@ -35,7 +35,9 @@ public struct LabelConverter {
     ) -> AnyView {
         let attrs = component.typedAttributes(LabelAttributes.self)
         // --- 1. Build PartialAttributedText ---
-        let processedText = DynamicHelpers.processText(component.text, data: data) ?? ""
+        let processedText = DynamicHelpers.processText(
+            attrs.text?.rawRepresentation as? String, data: data
+        ) ?? ""
 
         // hint / hintAttributes — the Label placeholder. UIKit's SJUILabel
         // swaps in the styled hint when the text is empty and requires BOTH
@@ -64,7 +66,7 @@ public struct LabelConverter {
                     return fontString
                 }
             }
-            return component.font
+            return attrs.font?.rawRepresentation as? String
         }()
         let fontWeight: String? = {
             if let fw = component.fontWeightSpelling() { return fw }
@@ -75,11 +77,12 @@ public struct LabelConverter {
 
         // fontColor with binding support
         let fontColor: Color? = {
-            if component.enabled?.value as? Bool == false, let disabledColor = component.disabledFontColor {
+            if component.enabled?.value as? Bool == false,
+               let disabledColor = component.string(ButtonAttributes.self, \.disabledFontColor) {
                 return DynamicHelpers.getColor(disabledColor, data: data)
             }
             if showsHint, let hintColor = hint?.color { return hintColor }
-            return DynamicHelpers.getColor(component.fontColor, data: data)
+            return DynamicHelpers.getColor(attrs.fontColor?.rawRepresentation as? String, data: data)
         }()
 
         // lineSpacing — UIKit's formula, `(multiple - 1) * fontSize`, with
@@ -133,7 +136,7 @@ public struct LabelConverter {
                 }
                 return nil
             }
-            return component.fontFamily
+            return attrs.fontFamily?.rawRepresentation as? String
         }()
 
         // highlightAttributes / highlightColor, driven by `selected`

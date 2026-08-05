@@ -47,7 +47,9 @@ public struct ButtonConverter {
         // `?? "Button"` never fired and a text-less button rendered blank
         // here while the generated code rendered "Button". Checking the
         // empty string restores that parity.
-        let rawText = DynamicHelpers.processText(component.text, data: data)
+        let rawText = DynamicHelpers.processText(
+            component.string(ButtonAttributes.self, \.text), data: data
+        )
         let processedText = (rawText.isEmpty && !hasImage) ? "Button" : rawText
         let text = processedText.dynamicLocalized()
 
@@ -78,7 +80,7 @@ public struct ButtonConverter {
             return String(describing: raw)
         }()
         let fontWeight = resolvedFontWeight ?? {
-            if let f = component.font,
+            if let f = component.typedAttributes(ButtonAttributes.self).font,
                ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black"].contains(f.lowercased()) {
                 return f
             }
@@ -86,14 +88,16 @@ public struct ButtonConverter {
         }()
 
         // Color properties
-        let fontColor = DynamicHelpers.getColor(component.fontColor, data: data)
+        let fontColor = DynamicHelpers.getColor(
+            component.string(ButtonAttributes.self, \.fontColor), data: data
+        )
         let backgroundColor = DynamicHelpers.getColor(component.commonString(\.background), data: data)
         // `highlightBackground` is the UIKit-era spelling of the pressed-state
         // background; `tapBackground` wins when both are declared. Same rule
         // as button_converter.rb:188-194 and rjui button_converter.rb:68.
         let buttonAttrs = component.typedAttributes(ButtonAttributes.self)
         let tapBackground = DynamicHelpers.getColor(
-            component.tapBackground ?? buttonAttrs.highlightBackground, data: data
+            buttonAttrs.tapBackground ?? buttonAttrs.highlightBackground, data: data
         )
         // Read through the generated extraction so the `hilightColor` typo
         // alias resolves — 49-E folded that second declaration into an alias,
@@ -102,7 +106,9 @@ public struct ButtonConverter {
             buttonAttrs.highlightColor?.rawRepresentation as? String,
             data: data
         )
-        let disabledFontColor = DynamicHelpers.getColor(component.disabledFontColor, data: data)
+        let disabledFontColor = DynamicHelpers.getColor(
+            component.string(ButtonAttributes.self, \.disabledFontColor), data: data
+        )
         let disabledBackground = DynamicHelpers.getColor(
             component.typedAttributes(CommonAttributes.self).disabledBackground?.rawRepresentation as? String,
             data: data
@@ -112,8 +118,10 @@ public struct ButtonConverter {
         // rendering mode would flatten a multi-colour asset to a single
         // colour. Same rule as the Compose and web converters.
         let imageTint = hasImage
-            ? DynamicHelpers.getColor(component.tintColor, data: data)
-                ?? DynamicHelpers.getColor(component.fontColor, data: data)
+            ? DynamicHelpers.getColor(component.commonString(\.tintColor), data: data)
+                ?? DynamicHelpers.getColor(
+                    component.string(ButtonAttributes.self, \.fontColor), data: data
+                )
             : nil
 
         // Corner radius, border - all applied inside StateAwareButtonView

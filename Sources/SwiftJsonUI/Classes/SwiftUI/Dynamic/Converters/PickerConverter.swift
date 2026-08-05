@@ -44,7 +44,9 @@ public struct PickerConverter {
         data: [String: Any]
     ) -> AnyView {
         let items = component.stringList(SelectBoxAttributes.self, \.items) ?? []
-        let label = DynamicHelpers.processText(component.text, data: data)
+        let label = DynamicHelpers.processText(
+            component.string(LabelAttributes.self, \.text), data: data
+        )
 
         // Resolve selection binding from selectedIndex or selectedItem
         // Try Int binding first (selectedIndex), then String binding
@@ -74,7 +76,9 @@ public struct PickerConverter {
         }
 
         // Apply foregroundColor
-        if let fontColor = DynamicHelpers.getColor(component.fontColor, data: data) {
+        if let fontColor = DynamicHelpers.getColor(
+            component.string(LabelAttributes.self, \.fontColor), data: data
+        ) {
             result = AnyView(result.foregroundColor(fontColor))
         }
 

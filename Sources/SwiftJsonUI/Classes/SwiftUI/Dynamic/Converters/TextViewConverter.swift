@@ -29,10 +29,11 @@ public struct TextViewConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let resolvedBinding = DynamicBindingHelper.string(component.text, data: data)
+        let declaredText = component.string(TextViewAttributes.self, \.text)
+        let resolvedBinding = DynamicBindingHelper.string(declaredText, data: data)
 
         // Bound (or data-resolved) @{var} text: use the resolved binding.
-        if DynamicEventHelper.extractPropertyName(from: component.text) != nil {
+        if DynamicEventHelper.extractPropertyName(from: declaredText) != nil {
             return convertBody(component: component, data: data, textBinding: resolvedBinding)
         }
 
@@ -122,14 +123,14 @@ public struct TextViewConverter {
 
         // fontColor
         let fontColor: Color = {
-            if let fc = component.fontColor {
+            if let fc = component.string(TextViewAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fc) ?? .primary
             }
             return .primary
         }()
 
         // font (fontName)
-        let fontName = component.font
+        let fontName = component.string(TextViewAttributes.self, \.font)
 
         // backgroundColor
         let backgroundColor: Color = {

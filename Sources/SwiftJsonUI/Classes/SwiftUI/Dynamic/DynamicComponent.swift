@@ -35,11 +35,6 @@ public struct DynamicComponent: Decodable {
     }
     
     let id: String?
-    let text: String?
-    let fontColor: String?
-    let font: String?
-    let fontFamily: String?  // Font family name (e.g., "Noto Sans JP")
-    let disabledFontColor: String?  // Text color when disabled
     let edgeInset: AnyCodable?  // Text padding for Label (単一値または配列形式をサポート)
     let underline: Bool?  // Underline text for Label
     let strikethrough: Bool?  // Strikethrough text for Label
@@ -50,7 +45,6 @@ public struct DynamicComponent: Decodable {
     let height: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let widthRaw: String?  // Store original string value if needed
     let heightRaw: String?  // Store original string value if needed
-    let tapBackground: String?  // Background color when tapped
     // UIKitに合わせてpaddingsに統一（paddingは削除）
     let paddings: AnyCodable?
     // UIKitに合わせてmarginsに統一（marginは削除）
@@ -65,8 +59,6 @@ public struct DynamicComponent: Decodable {
     let columnSpacing: CGFloat?
     let itemSpacing: CGFloat?
     let contentInsets: AnyCodable?
-    let tint: String?
-    let tintColor: String?
     let hidesWhenStopped: Bool?
     let defaultImage: String?
     let errorImage: String?
@@ -77,7 +69,6 @@ public struct DynamicComponent: Decodable {
     let highlightAttributes: AnyCodable?
     let hintAttributes: AnyCodable?
     // Check/Radio attributes
-    let label: String?
     let onSrc: String?
     let icon: String?
     let selectedIcon: String?
@@ -142,7 +133,6 @@ public struct DynamicComponent: Decodable {
     let orientation: String?
     let direction: String?  // Layout direction: topToBottom, bottomToTop, leftToRight, rightToLeft
     let distribution: String?  // Child distribution: fill, fillEqually, fillProportionally, equalSpacing, equalCentering
-    let src: String?  // Image source (local name or URL)
     let systemIcon: Bool?  // true to use SF Symbol, false for local asset (default: false)
     let placeholder: String?
     let renderingMode: String?
@@ -219,18 +209,18 @@ public struct DynamicComponent: Decodable {
     
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
-        case type, id, text, fontColor, font, fontFamily
-        case disabledFontColor, edgeInset
+        case type, id
+        case edgeInset
         case underline, strikethrough, autoShrink, lineBreakMode, textShadow
-        case width, height, widthRaw, heightRaw, tapBackground
+        case width, height, widthRaw, heightRaw
         case padding, paddings, margins
         case leftPadding, rightPadding, topPadding, bottomPadding
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, itemSpacing, contentInsets
-        case tint, tintColor, hidesWhenStopped
+        case hidesWhenStopped
         case defaultImage, errorImage, loadingImage
         case highlighted, events
         case partialAttributes, highlightAttributes, hintAttributes
-        case label, onSrc, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
+        case onSrc, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
         case normalColor, selectedColor
         case onTextChange, accessoryBackground, accessoryTextColor, doneText
         case caretAttributes, dividerAttributes, labelAttributes, canBack, prompt, includePromptWhenDataBinding, minuteInterval
@@ -247,7 +237,7 @@ public struct DynamicComponent: Decodable {
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
-        case orientation, direction, distribution, src, systemIcon, placeholder, renderingMode
+        case orientation, direction, distribution, systemIcon, placeholder, renderingMode
         case headers, data
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case returnKeyType, borderStyle, input
@@ -309,16 +299,11 @@ public struct DynamicComponent: Decodable {
         
         // Basic properties
         id = try container.decodeIfPresent(String.self, forKey: .id)
-        text = try container.decodeIfPresent(String.self, forKey: .text)
         // `fontSize` has no hand-decoded slot: it is number|binding, a hard
         // decode of the bound spelling threw, and children go through
         // FailableDecodable — so the throw DELETED the component from the
         // tree instead of surfacing. `Label { fontSize: "@{x}" }` rendered
         // nothing at all. The generated tables carry it now.
-        fontColor = try container.decodeIfPresent(String.self, forKey: .fontColor)
-        font = try container.decodeIfPresent(String.self, forKey: .font)
-        fontFamily = try container.decodeIfPresent(String.self, forKey: .fontFamily)
-        disabledFontColor = try container.decodeIfPresent(String.self, forKey: .disabledFontColor)
         edgeInset = try container.decodeIfPresent(AnyCodable.self, forKey: .edgeInset)
         underline = try container.decodeIfPresent(Bool.self, forKey: .underline)
         strikethrough = try container.decodeIfPresent(Bool.self, forKey: .strikethrough)
@@ -343,7 +328,6 @@ public struct DynamicComponent: Decodable {
         height = heightResult.value
         heightRaw = heightResult.raw
         
-        tapBackground = try container.decodeIfPresent(String.self, forKey: .tapBackground)
         
         // Padding/Margin（UIKitに合わせてpaddings/marginsに統一）
         paddings = try container.decodeIfPresent(AnyCodable.self, forKey: .paddings)
@@ -363,8 +347,6 @@ public struct DynamicComponent: Decodable {
         columnSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .columnSpacing)
         itemSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .itemSpacing)
         contentInsets = try container.decodeIfPresent(AnyCodable.self, forKey: .contentInsets)
-        tint = try container.decodeIfPresent(String.self, forKey: .tint)
-        tintColor = try container.decodeIfPresent(String.self, forKey: .tintColor)
         // `try?` on every bindable slot whose Swift type cannot hold a
         // String: the bound spelling IS a String, a hard decode throws, and
         // children go through FailableDecodable — so the throw deleted the
@@ -380,7 +362,6 @@ public struct DynamicComponent: Decodable {
         highlightAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .highlightAttributes)
         hintAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .hintAttributes)
         // Check/Radio attributes
-        label = try container.decodeIfPresent(String.self, forKey: .label)
         onSrc = try container.decodeIfPresent(String.self, forKey: .onSrc)
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
         selectedIcon = try container.decodeIfPresent(String.self, forKey: .selectedIcon)
@@ -457,7 +438,6 @@ public struct DynamicComponent: Decodable {
         orientation = try container.decodeIfPresent(String.self, forKey: .orientation)
         direction = try container.decodeIfPresent(String.self, forKey: .direction)
         distribution = try container.decodeIfPresent(String.self, forKey: .distribution)
-        src = try container.decodeIfPresent(String.self, forKey: .src)
         systemIcon = try container.decodeIfPresent(Bool.self, forKey: .systemIcon)
         placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
         renderingMode = try container.decodeIfPresent(String.self, forKey: .renderingMode)
@@ -698,6 +678,27 @@ extension DynamicComponent {
         DynamicHelpers.resolveNumber(
             typedAttributes(type)[keyPath: keyPath], legacy: nil, data: data
         )
+    }
+
+    /// The layout spelling of a string attribute off ANY generated table —
+    /// the static value, or `"@{expr}"` for a bound one.
+    ///
+    /// `commonString` only reaches `CommonAttributes`; the string slots being
+    /// retired here (`text`, `font`, `fontColor`, `src` …) live on component
+    /// tables. Same shape as `number(_:_:data:)` so the retirement does not
+    /// spawn a second vocabulary. Resolution (`getColor` / `processText`)
+    /// still happens at the call site — this returns what the layout wrote.
+    ///
+    /// A table can be passed for a component it does not belong to: the
+    /// extraction reads `rawData`, so the table only decides which spellings
+    /// are recognised. That is how a helper with no component type in hand
+    /// reads a spelling declared on eleven tables (the same reason
+    /// `fontFromComponent` reads `fontSize` off `LabelAttributes`).
+    func string<T: JsonUIGeneratedAttributes>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, AttrValue<String>?>
+    ) -> String? {
+        typedAttributes(type)[keyPath: keyPath]?.rawRepresentation as? String
     }
 
     /// A count attribute off any generated table. The tables carry `Double`

@@ -71,7 +71,8 @@ public struct TextFieldConverter {
         )
 
         // --- 1. Get text binding ---
-        let textBinding = DynamicBindingHelper.string(component.text, data: data, fallback: "")
+        let declaredText = component.string(TextFieldAttributes.self, \.text)
+        let textBinding = DynamicBindingHelper.string(declaredText, data: data, fallback: "")
 
         // Check if it should be a SecureField
         let isSecure: Bool = {
@@ -141,7 +142,7 @@ public struct TextFieldConverter {
         }
 
         // Bound (or data-resolved) @{var} text: use the resolved binding.
-        if DynamicEventHelper.extractPropertyName(from: component.text) != nil {
+        if DynamicEventHelper.extractPropertyName(from: declaredText) != nil {
             return build(textBinding)
         }
 
@@ -262,7 +263,7 @@ public struct TextFieldConverter {
         }
 
         // --- 4. foregroundColor ---
-        if let fontColor = component.fontColor {
+        if let fontColor = component.string(TextFieldAttributes.self, \.fontColor) {
             result = AnyView(result.foregroundColor(DynamicHelpers.getColor(fontColor) ?? .primary))
         }
 
@@ -276,7 +277,7 @@ public struct TextFieldConverter {
 
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
-            if let tintColor = component.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
+            if let tintColor = attrs.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
             if let caretAttrs = attrs.caretAttributes,
                let caretFontColor = caretAttrs["fontColor"] as? String,
                let c = DynamicHelpers.getColor(caretFontColor) { return c }
@@ -361,7 +362,7 @@ public struct TextFieldConverter {
         }
 
         // --- 4. foregroundColor ---
-        if let fontColor = component.fontColor {
+        if let fontColor = component.string(TextFieldAttributes.self, \.fontColor) {
             result = AnyView(result.foregroundColor(DynamicHelpers.getColor(fontColor) ?? .primary))
         }
 
@@ -391,7 +392,7 @@ public struct TextFieldConverter {
 
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
-            if let tintColor = component.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
+            if let tintColor = attrs.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
             if let caretAttrs = attrs.caretAttributes,
                let caretFontColor = caretAttrs["fontColor"] as? String,
                let c = DynamicHelpers.getColor(caretFontColor) { return c }

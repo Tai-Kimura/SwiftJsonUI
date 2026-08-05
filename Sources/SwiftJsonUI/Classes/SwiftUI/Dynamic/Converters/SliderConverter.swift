@@ -55,7 +55,7 @@ public struct SliderConverter {
         // precedence progress_converter.rb:54 uses. The SSoT called it
         // "deprecated on swift — SwiftUI Slider uses unified tint only";
         // ProgressConverter had already disproved that, and 49-E retracted it.
-        let sliderTint = attrs.progressTintColor ?? component.tintColor
+        let sliderTint = attrs.progressTintColor ?? attrs.tintColor
         if let tintColor = sliderTint, let color = DynamicHelpers.getColor(tintColor) {
             // .tint is the modern accent path — .accentColor alone left the
             // conformance render untinted (33 cross-effect, ios inert).

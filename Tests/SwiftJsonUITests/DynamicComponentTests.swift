@@ -26,9 +26,9 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.type, "Label")
-        XCTAssertEqual(component.text, "Hello World")
+        XCTAssertEqual(component.string(LabelAttributes.self, \.text), "Hello World")
         XCTAssertEqual(component.typedAttributes(LabelAttributes.self).fontSize?.value.map { CGFloat($0) }, 16)
-        XCTAssertEqual(component.fontColor, "#000000")
+        XCTAssertEqual(component.string(LabelAttributes.self, \.fontColor), "#000000")
         XCTAssertTrue(component.isValid)
     }
 
@@ -46,7 +46,7 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.type, "Button")
-        XCTAssertEqual(component.text, "Click Me")
+        XCTAssertEqual(component.string(ButtonAttributes.self, \.text), "Click Me")
         XCTAssertEqual(component.commonAny(\.onClick), "handleClick")
         XCTAssertEqual(component.commonString(\.background), "#FF0000")
         XCTAssertEqual(component.commonNumber(\.cornerRadius), 8)
@@ -93,7 +93,7 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.type, "Image")
-        XCTAssertEqual(component.src, "icon_home")
+        XCTAssertEqual(component.string(ImageAttributes.self, \.src), "icon_home")
         XCTAssertEqual(component.enumString(ImageAttributes.self, \.contentMode), "AspectFit")
         XCTAssertEqual(component.width, 100)
         XCTAssertEqual(component.height, 100)
@@ -204,8 +204,8 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertNotNil(component.child)
         XCTAssertEqual(component.child?.count, 2)
         XCTAssertEqual(component.childComponents?.count, 2)
-        XCTAssertEqual(component.child?[0].text, "First")
-        XCTAssertEqual(component.child?[1].text, "Second")
+        XCTAssertEqual(component.child?[0].string(LabelAttributes.self, \.text), "First")
+        XCTAssertEqual(component.child?[1].string(LabelAttributes.self, \.text), "Second")
     }
 
     func testDecodeChildrenAlias() throws {
@@ -597,7 +597,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.font, "Helvetica")
+        XCTAssertEqual(component.string(LabelAttributes.self, \.font), "Helvetica")
         XCTAssertEqual(component.fontWeightSpelling(), "bold")
         XCTAssertEqual(component.underline, true)
         XCTAssertEqual(component.strikethrough, false)
@@ -622,7 +622,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.src, "https://example.com/image.png")
+        XCTAssertEqual(component.string(NetworkImageAttributes.self, \.src), "https://example.com/image.png")
         XCTAssertEqual(component.defaultImage, "placeholder")
         XCTAssertEqual(component.errorImage, "error_icon")
         XCTAssertEqual(component.loadingImage, "loading")

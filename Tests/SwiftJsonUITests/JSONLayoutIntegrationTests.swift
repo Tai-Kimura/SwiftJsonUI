@@ -31,10 +31,10 @@ final class JSONLayoutIntegrationTests: XCTestCase {
 
         XCTAssertEqual(component.type, "Label")
         XCTAssertEqual(component.id, "titleLabel")
-        XCTAssertEqual(component.text, "Hello World")
+        XCTAssertEqual(component.string(LabelAttributes.self, \.text), "Hello World")
         XCTAssertEqual(component.typedAttributes(LabelAttributes.self).fontSize?.value.map { CGFloat($0) }, 18)
-        XCTAssertEqual(component.fontColor, "#333333")
-        XCTAssertEqual(component.font, "Helvetica")
+        XCTAssertEqual(component.string(LabelAttributes.self, \.fontColor), "#333333")
+        XCTAssertEqual(component.string(LabelAttributes.self, \.font), "Helvetica")
         XCTAssertEqual(component.fontWeightSpelling(), "bold")
         // 宣言は "center"、返るのは canonical の "Center"。AttrEnum の照合は
         // 大小無視なので、綴りは 1 つに正規化される。下流の switch は
@@ -86,7 +86,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         let header = component.child?[0]
         XCTAssertEqual(header?.type, "Label")
         XCTAssertEqual(header?.id, "header")
-        XCTAssertEqual(header?.text, "Header")
+        XCTAssertEqual(header?.string(LabelAttributes.self, \.text), "Header")
 
         let button = component.child?[1]
         XCTAssertEqual(button?.type, "Button")
@@ -317,12 +317,12 @@ final class JSONLayoutIntegrationTests: XCTestCase {
 
         let image = horizontalView?.child?[0]
         XCTAssertEqual(image?.type, "Image")
-        XCTAssertEqual(image?.src, "avatar")
+        XCTAssertEqual(image?.string(ImageAttributes.self, \.src), "avatar")
 
         let nestedView = horizontalView?.child?[1]
         let deepLabel = nestedView?.child?[0]
         XCTAssertEqual(deepLabel?.type, "Label")
-        XCTAssertEqual(deepLabel?.text, "Level 4")
+        XCTAssertEqual(deepLabel?.string(LabelAttributes.self, \.text), "Level 4")
     }
 
     // MARK: - EdgeInsets Parsing Tests
