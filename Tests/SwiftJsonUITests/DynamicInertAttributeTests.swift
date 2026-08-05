@@ -762,6 +762,43 @@ final class DynamicInertAttributeTests: XCTestCase {
         )
     }
 
+    // MARK: - codegen-parity: Label's bound line metrics
+
+    /// All five read hand-decoded slots that are nil for `@{expr}`.
+    func testBoundLabelLineMetricsResolve() throws {
+        let c = try component("""
+        { "type": "Label", "id": "t", "text": "x", "lines": "@{n}",
+          "lineSpacing": "@{gap}", "minimumScaleFactor": "@{f}", "linkable": "@{on}" }
+        """)
+        let attrs = c.typedAttributes(LabelAttributes.self)
+        let data: [String: Any] = ["n": 3, "gap": 8, "f": 0.5, "on": true]
+
+        XCTAssertNil(c.lines, "the hand-decoded slot is what used to drop it")
+        XCTAssertEqual(DynamicHelpers.resolveNumber(attrs.lines, legacy: nil, data: data), 3)
+        XCTAssertEqual(DynamicHelpers.resolveNumber(attrs.lineSpacing, legacy: nil, data: data), 8)
+        XCTAssertEqual(DynamicHelpers.resolveNumber(attrs.minimumScaleFactor, legacy: nil, data: data), 0.5)
+        XCTAssertEqual(DynamicHelpers.resolveBool(attrs.linkable, legacy: nil, data: data), true)
+    }
+
+    /// `lineSpacing = (lineHeightMultiple - 1) * fontSize`, and BOTH operands
+    /// can be bound. A bound fontSize used to fall back to 17 and skew the
+    /// arithmetic even when the multiple was a literal.
+    func testBoundLineHeightMultipleUsesTheResolvedFontSize() throws {
+        let c = try component("""
+        { "type": "Label", "id": "t", "text": "x",
+          "lineHeightMultiple": "@{m}", "fontSize": "@{size}" }
+        """)
+        let attrs = c.typedAttributes(LabelAttributes.self)
+        let data: [String: Any] = ["m": 2.0, "size": 20]
+
+        let multiple = DynamicHelpers.resolveNumber(attrs.lineHeightMultiple, legacy: nil, data: data)
+        let size = DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data)
+        XCTAssertEqual(multiple, 2.0)
+        XCTAssertEqual(size, 20)
+        // (2 - 1) * 20 = 20, not (2 - 1) * 17.
+        XCTAssertEqual((multiple! - 1) * (size ?? 17), 20)
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the

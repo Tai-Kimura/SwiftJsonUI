@@ -82,17 +82,29 @@ public struct LabelConverter {
             return DynamicHelpers.getColor(component.fontColor, data: data)
         }()
 
-        // lineSpacing
+        // lineSpacing — UIKit's formula, `(multiple - 1) * fontSize`, with
+        // either operand possibly bound (label_converter.rb
+        // #line_spacing_from_multiple resolves both). Every operand here read
+        // a hand-decoded slot, which is nil for `@{expr}`: a bound multiple
+        // produced no spacing at all, and a bound fontSize silently fell back
+        // to 17 and skewed the arithmetic for a static multiple.
         let lineSpacing: CGFloat? = {
-            if let lineHeightMultiple = component.lineHeightMultiple {
-                return (CGFloat(lineHeightMultiple) - 1) * CGFloat(component.fontSize ?? 17)
+            if let multiple = DynamicHelpers.resolveNumber(
+                attrs.lineHeightMultiple, legacy: component.lineHeightMultiple, data: data
+            ) {
+                return (multiple - 1) * (fontSize ?? 17)
             }
-            return component.lineSpacing
+            return DynamicHelpers.resolveNumber(
+                attrs.lineSpacing, legacy: component.lineSpacing, data: data
+            )
         }()
 
         // lineLimit
+        let resolvedLines = DynamicHelpers.resolveNumber(
+            attrs.lines, legacy: component.lines.map { CGFloat($0) }, data: data
+        ).map { Int($0) }
         let lineLimit: Int? = {
-            if let lines = component.lines {
+            if let lines = resolvedLines {
                 return lines == 0 ? nil : lines
             }
             if component.autoShrink == true {
@@ -100,13 +112,15 @@ public struct LabelConverter {
             }
             return nil  // nil means no lineLimit specified
         }()
-        let hasLineLimit = component.lines != nil || component.autoShrink == true
+        let hasLineLimit = resolvedLines != nil || component.autoShrink == true
 
         // textAlignment
         let textAlignment = DynamicHelpers.getTextAlignment(from: component)
 
         // linkable
-        let linkable = component.linkable == true
+        let linkable = DynamicHelpers.resolveBool(
+            attrs.linkable, legacy: component.linkable, data: data
+        ) == true
 
         let fontWeightValue: Font.Weight? = fontWeight.flatMap { Font.Weight.from(string: $0) }
 
@@ -161,11 +175,13 @@ public struct LabelConverter {
         }
 
         // --- 3. minimumScaleFactor (autoShrink) ---
+        let resolvedScaleFactor = DynamicHelpers.resolveNumber(
+            attrs.minimumScaleFactor, legacy: component.minimumScaleFactor, data: data
+        )
         if component.autoShrink == true {
-            let scaleFactor = component.minimumScaleFactor ?? 0.5
-            result = AnyView(result.minimumScaleFactor(CGFloat(scaleFactor)))
-        } else if let scaleFactor = component.minimumScaleFactor {
-            result = AnyView(result.minimumScaleFactor(CGFloat(scaleFactor)))
+            result = AnyView(result.minimumScaleFactor(resolvedScaleFactor ?? 0.5))
+        } else if let scaleFactor = resolvedScaleFactor {
+            result = AnyView(result.minimumScaleFactor(scaleFactor))
         }
 
         // --- 4. edgeInset (internal label padding) ---
