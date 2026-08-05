@@ -134,7 +134,12 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         let nameField = component.child?[0]
         XCTAssertEqual(nameField?.type, "TextField")
         XCTAssertEqual(nameField?.hint, "Enter your name")
-        XCTAssertEqual(nameField?.hintColor, "#999999")
+        // hintColor comes off the generated extraction now — the hand-written
+        // slot is gone (50 §4, group B).
+        XCTAssertEqual(
+            nameField?.typedAttributes(TextFieldAttributes.self).hintColor?.rawRepresentation as? String,
+            "#999999"
+        )
         XCTAssertEqual(nameField?.borderStyle, "roundedRect")
 
         // Secure TextField

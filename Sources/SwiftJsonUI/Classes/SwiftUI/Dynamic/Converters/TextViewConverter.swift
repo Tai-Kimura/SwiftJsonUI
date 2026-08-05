@@ -78,7 +78,7 @@ public struct TextViewConverter {
                     return DynamicHelpers.getColor(fc) ?? Color.gray.opacity(0.6)
                 }
             }
-            if let hc = component.hintColor {
+            if let hc = component.typedAttributes(TextViewAttributes.self).hintColor?.rawRepresentation as? String {
                 return DynamicHelpers.getColor(hc) ?? Color.gray.opacity(0.6)
             }
             return Color.gray.opacity(0.6)

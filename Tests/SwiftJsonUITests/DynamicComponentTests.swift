@@ -67,7 +67,12 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.type, "TextField")
         XCTAssertEqual(component.hint, "Enter text")
-        XCTAssertEqual(component.hintColor, "#888888")
+        // The hand-written slots for these are gone (50 §4, group B) — the
+        // generated extraction is the reader now.
+        XCTAssertEqual(
+            component.typedAttributes(TextFieldAttributes.self).hintColor?.rawRepresentation as? String,
+            "#888888"
+        )
         XCTAssertEqual(component.secure, true)
         XCTAssertEqual(component.returnKeyType, "done")
     }
@@ -421,9 +426,10 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.selectItemType, "date")
         XCTAssertEqual(component.datePickerMode, "date")
         XCTAssertEqual(component.dateStringFormat, "yyyy/MM/dd")
-        XCTAssertEqual(component.minimumDate, "2020/01/01")
-        XCTAssertEqual(component.maximumDate, "2030/12/31")
-        XCTAssertEqual(component.selectedDate, "2024/06/15")
+        let selectBoxAttrs = component.typedAttributes(SelectBoxAttributes.self)
+        XCTAssertEqual(selectBoxAttrs.minimumDate?.rawRepresentation as? String, "2020/01/01")
+        XCTAssertEqual(selectBoxAttrs.maximumDate?.rawRepresentation as? String, "2030/12/31")
+        XCTAssertEqual(selectBoxAttrs.selectedDate?.rawRepresentation as? String, "2024/06/15")
     }
 
     // MARK: - Collection Properties Tests

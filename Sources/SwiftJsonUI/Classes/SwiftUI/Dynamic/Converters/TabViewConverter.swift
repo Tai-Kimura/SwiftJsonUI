@@ -59,7 +59,9 @@ public struct TabViewConverter {
         }
 
         // Resolve tabBarBackground color
-        let tabBarBackground: Color? = DynamicHelpers.getColor(component.tabBarBackground, data: data)
+        let tabBarBackground: Color? = DynamicHelpers.getColor(
+            attrs.tabBarBackground?.rawRepresentation as? String, data: data
+        )
         // unselectedColor was parsed but never read (33 cross-effect: ios
         // rendered the default gray for a declared unselectedColor).
         let unselectedColor: Color? = attrs.unselectedColor?.value.flatMap { DynamicHelpers.getColor($0, data: data) }
