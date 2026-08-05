@@ -156,13 +156,18 @@ public struct DynamicViewContainer: View {
         let spacingValue = component.spacing ?? 0
         let distribution = component.distribution?.lowercased()
         let gravity = component.gravity
-        let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
-            component.width == .infinity || component.width == -1
+        // No width condition on the spacers below. view_converter.rb emits
+        // them from `gravity` / `distribution` alone, and the Compose runtime
+        // picks its Arrangement without looking at the container's size
+        // either. Requiring matchParent was an ios-dynamic-only rule with no
+        // backing in the declaration or in the other platforms: a fixed-width
+        // container distributed nothing, while the generated code for the
+        // same layout distributed normally.
 
         HStack(alignment: getVerticalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading spacer for right gravity or distribution
-            if widthExpands && (extractHorizontalFromGravity(gravity) == "right" ||
-                distribution == "equalspacing" || distribution == "equalcentering") {
+            if extractHorizontalFromGravity(gravity) == "right" ||
+                distribution == "equalspacing" || distribution == "equalcentering" {
                 Spacer(minLength: 0)
             }
 
@@ -175,7 +180,7 @@ public struct DynamicViewContainer: View {
                 )
 
                 // Distribution spacers between children
-                if widthExpands && index < children.count - 1 {
+                if index < children.count - 1 {
                     if distribution == "fillequally" || distribution == "equalspacing" || distribution == "equalcentering" {
                         Spacer(minLength: 0)
                     }
@@ -183,8 +188,8 @@ public struct DynamicViewContainer: View {
             }
 
             // Trailing spacer for left gravity or distribution
-            if widthExpands && (extractHorizontalFromGravity(gravity) == "left" ||
-                distribution == "equalspacing" || distribution == "equalcentering") {
+            if extractHorizontalFromGravity(gravity) == "left" ||
+                distribution == "equalspacing" || distribution == "equalcentering" {
                 Spacer(minLength: 0)
             }
         }
@@ -198,13 +203,12 @@ public struct DynamicViewContainer: View {
         let spacingValue = component.spacing ?? 0
         let distribution = component.distribution?.lowercased()
         let gravity = component.gravity
-        let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
-            component.height == .infinity || component.height == -1
+        // Same as hStackContent: no height condition on the spacers.
 
         VStack(alignment: getHorizontalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading spacer for bottom gravity or distribution
-            if heightExpands && (extractVerticalFromGravity(gravity) == "bottom" ||
-                distribution == "equalspacing" || distribution == "equalcentering") {
+            if extractVerticalFromGravity(gravity) == "bottom" ||
+                distribution == "equalspacing" || distribution == "equalcentering" {
                 Spacer(minLength: 0)
             }
 
@@ -217,7 +221,7 @@ public struct DynamicViewContainer: View {
                 )
 
                 // Distribution spacers between children
-                if heightExpands && index < children.count - 1 {
+                if index < children.count - 1 {
                     if distribution == "fillequally" || distribution == "equalspacing" || distribution == "equalcentering" {
                         Spacer(minLength: 0)
                     }
@@ -225,8 +229,8 @@ public struct DynamicViewContainer: View {
             }
 
             // Trailing spacer for top gravity or distribution
-            if heightExpands && (extractVerticalFromGravity(gravity) == "top" ||
-                distribution == "equalspacing" || distribution == "equalcentering") {
+            if extractVerticalFromGravity(gravity) == "top" ||
+                distribution == "equalspacing" || distribution == "equalcentering" {
                 Spacer(minLength: 0)
             }
         }

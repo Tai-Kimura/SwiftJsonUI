@@ -36,13 +36,26 @@ public struct LabelConverter {
         let attrs = component.typedAttributes(LabelAttributes.self)
         // --- 1. Build PartialAttributedText ---
         let processedText = DynamicHelpers.processText(component.text, data: data) ?? ""
-        let text = processedText.dynamicLocalized()
+
+        // hint / hintAttributes — the Label placeholder. UIKit's SJUILabel
+        // swaps in the styled hint when the text is empty and requires BOTH
+        // keys; `placeholder` is the declared alias of `hint`, and
+        // hintAttributes.fontColor wins over the flat hintColor. Nothing on
+        // this path read any of it, so a Label carrying only a hint rendered
+        // empty while the generated code rendered the hint
+        // (label_converter.rb#label_hint_config).
+        let hint = labelHint(component: component, attrs: attrs, data: data)
+        let showsHint = hint != nil && processedText.isEmpty
+        let text = (showsHint ? hint!.text : processedText).dynamicLocalized()
 
         // Build partialAttributes from component if present
         let partialAttributes = buildPartialAttributes(component: component, data: data)
 
-        // Font properties
-        let fontSize = DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
+        // Font properties. The hint carries its own size and colour while it
+        // is showing — that is the whole point of hintAttributes.
+        let fontSize = showsHint
+            ? (hint?.size ?? DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data))
+            : DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
         // Resolve font from binding if present (e.g., @{fontProp})
         let resolvedFont: String? = {
             if let expr = attrs.font?.bindingExpression {
@@ -65,6 +78,7 @@ public struct LabelConverter {
             if component.enabled?.value as? Bool == false, let disabledColor = component.disabledFontColor {
                 return DynamicHelpers.getColor(disabledColor, data: data)
             }
+            if showsHint, let hintColor = hint?.color { return hintColor }
             return DynamicHelpers.getColor(component.fontColor, data: data)
         }()
 
@@ -358,6 +372,34 @@ public struct LabelConverter {
     // MARK: - Edge Inset Parser
 
     /// Parse edgeInset from AnyCodable (single value, array [top,right,bottom,left], or pipe-separated string)
+    /// The Label placeholder: text, and the size/colour it carries.
+    ///
+    /// Both keys are required, matching `label_converter.rb#label_hint_config`
+    /// and UIKit's SJUILabel — a bare `hint` with no `hintAttributes` is not a
+    /// placeholder. `placeholder` is the declared alias of `hint`, and the
+    /// nested `hintAttributes.fontColor` wins over the flat `hintColor`, which
+    /// is the cascade adjudicated for TextField's hintAttributes.
+    static func labelHint(
+        component: DynamicComponent,
+        attrs: LabelAttributes,
+        data: [String: Any]
+    ) -> (text: String, color: Color?, size: CGFloat?)? {
+        guard let nested = attrs.hintAttributes,
+              let raw = attrs.hint ?? component.placeholder,
+              !raw.isEmpty else { return nil }
+
+        let colorSpelling = (nested["fontColor"] as? String)
+            ?? (attrs.hintColor?.rawRepresentation as? String)
+        let size = (nested["fontSize"] as? Double).map { CGFloat($0) }
+            ?? (nested["fontSize"] as? Int).map { CGFloat($0) }
+
+        return (
+            text: DynamicHelpers.processText(raw, data: data),
+            color: DynamicHelpers.getColor(colorSpelling, data: data),
+            size: size
+        )
+    }
+
     private static func parseEdgeInset(_ edgeInset: AnyCodable) -> EdgeInsets {
         let value = edgeInset.value
 
