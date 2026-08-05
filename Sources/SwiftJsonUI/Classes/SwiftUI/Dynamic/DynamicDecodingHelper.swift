@@ -171,46 +171,6 @@ public struct DynamicDecodingHelper {
         return nil
     }
 
-    /// Convert AnyCodable margin value to CGFloat (handles binding and direct values)
-    /// - Parameters:
-    ///   - value: AnyCodable value that can be CGFloat, Int, Double, String, or binding
-    ///   - data: Data dictionary for resolving bindings
-    /// - Returns: CGFloat value or 0 if not resolvable
-    public static func marginValueToCGFloat(_ value: AnyCodable?, data: [String: Any] = [:]) -> CGFloat {
-        guard let value = value else { return 0 }
-
-        // Handle direct numeric values
-        if let floatValue = value.value as? CGFloat {
-            return floatValue
-        }
-        if let doubleValue = value.value as? Double {
-            return CGFloat(doubleValue)
-        }
-        if let intValue = value.value as? Int {
-            return CGFloat(intValue)
-        }
-
-        // Handle string values (including bindings)
-        if let stringValue = value.value as? String {
-            // Binding pattern @{...}: canonical number value context
-            // (dot-path / bracket-index lookup, `??` default, numeric-string
-            // coercion). Unresolved → 0 (existing margin default).
-            if let inner = DynamicBindingResolver.inner(of: stringValue) {
-                if let resolved = DynamicBindingResolver.resolveDouble(expression: inner, data: data) {
-                    return CGFloat(resolved)
-                }
-                return 0 // Binding not resolved
-            }
-
-            // Try to parse as number
-            if let doubleValue = Double(stringValue) {
-                return CGFloat(doubleValue)
-            }
-        }
-
-        return 0
-    }
-
     // MARK: - Decode-Failure Containment
 
     /// Component type of the synthetic node a failed child decode degrades

@@ -187,10 +187,14 @@ public struct RelativePositionConverter {
     /// Build EdgeInsets from DynamicComponent margin properties
     /// Supports binding expressions like @{propertyName} which can be resolved via data dictionary
     private static func buildMargins(from component: DynamicComponent, data: [String: Any] = [:]) -> EdgeInsets {
-        let top = DynamicDecodingHelper.marginValueToCGFloat(component.topMargin, data: data)
-        let leading = DynamicDecodingHelper.marginValueToCGFloat(component.leftMargin ?? component.startMargin, data: data)
-        let bottom = DynamicDecodingHelper.marginValueToCGFloat(component.bottomMargin, data: data)
-        let trailing = DynamicDecodingHelper.marginValueToCGFloat(component.rightMargin ?? component.endMargin, data: data)
+        let top = component.margin(.topMargin, data: data)
+        let leading = component.hasMargin(.leftMargin)
+            ? component.margin(.leftMargin, data: data)
+            : component.margin(.startMargin, data: data)
+        let bottom = component.margin(.bottomMargin, data: data)
+        let trailing = component.hasMargin(.rightMargin)
+            ? component.margin(.rightMargin, data: data)
+            : component.margin(.endMargin, data: data)
 
         return EdgeInsets(
             top: top,

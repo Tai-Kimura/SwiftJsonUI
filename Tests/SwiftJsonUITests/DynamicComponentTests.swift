@@ -180,8 +180,8 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertNotNil(component.margins)
-        XCTAssertEqual(component.leftMargin?.value as? Int, 16)
-        XCTAssertEqual(component.rightMargin?.value as? Int, 16)
+        XCTAssertEqual(Int(component.margin(.leftMargin)), 16)
+        XCTAssertEqual(Int(component.margin(.rightMargin)), 16)
     }
 
     // MARK: - Child Components Tests

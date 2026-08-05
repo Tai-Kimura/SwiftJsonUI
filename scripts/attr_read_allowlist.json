@@ -45,14 +45,6 @@
     },
     {
       "gate": "binding-slot",
-      "attribute": "bottomMargin",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
       "attribute": "centerHorizontal",
       "file": "DynamicComponent.swift",
       "owner": "50",
@@ -110,14 +102,6 @@
     {
       "gate": "binding-slot",
       "attribute": "enabled",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "endMargin",
       "file": "DynamicComponent.swift",
       "owner": "50",
       "plan": "binding decode スロット撲滅(50 §4)",
@@ -205,14 +189,6 @@
     },
     {
       "gate": "binding-slot",
-      "attribute": "leftMargin",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
       "attribute": "lines",
       "file": "DynamicComponent.swift",
       "owner": "50",
@@ -253,14 +229,6 @@
     },
     {
       "gate": "binding-slot",
-      "attribute": "rightMargin",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
       "attribute": "scrollEnabled",
       "file": "DynamicComponent.swift",
       "owner": "50",
@@ -286,14 +254,6 @@
     {
       "gate": "binding-slot",
       "attribute": "src",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "startMargin",
       "file": "DynamicComponent.swift",
       "owner": "50",
       "plan": "binding decode スロット撲滅(50 §4)",
@@ -334,14 +294,6 @@
     {
       "gate": "binding-slot",
       "attribute": "tintColor",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "topMargin",
       "file": "DynamicComponent.swift",
       "owner": "50",
       "plan": "binding decode スロット撲滅(50 §4)",
@@ -755,6 +707,60 @@
       "plan": "SSoT 宣言漏れ(E へ報告済み)",
       "reason": "Switch/Toggle の表に fontSize が無いが、toggle_converter.rb は @component.merge(label_attrs) 経由で読む。宣言が入るまでは生読みで codegen と揃える",
       "kind": "rawAttribute"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponent.swift",
+      "kind": "rawAttribute",
+      "key": "bottomMargin",
+      "owner": "—",
+      "plan": "attr-codegen coercion gap(E へ報告)",
+      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponent.swift",
+      "kind": "rawAttribute",
+      "key": "endMargin",
+      "owner": "—",
+      "plan": "attr-codegen coercion gap(E へ報告)",
+      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponent.swift",
+      "kind": "rawAttribute",
+      "key": "leftMargin",
+      "owner": "—",
+      "plan": "attr-codegen coercion gap(E へ報告)",
+      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponent.swift",
+      "kind": "rawAttribute",
+      "key": "rightMargin",
+      "owner": "—",
+      "plan": "attr-codegen coercion gap(E へ報告)",
+      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponent.swift",
+      "kind": "rawAttribute",
+      "key": "startMargin",
+      "owner": "—",
+      "plan": "attr-codegen coercion gap(E へ報告)",
+      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponent.swift",
+      "kind": "rawAttribute",
+      "key": "topMargin",
+      "owner": "—",
+      "plan": "attr-codegen coercion gap(E へ報告)",
+      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
     }
   ]
 }

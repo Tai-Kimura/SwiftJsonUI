@@ -360,11 +360,11 @@ public struct DynamicModifierHelper {
         let centersHorizontally = component.centerInParent == true || component.centerHorizontal == true
         let centersVertically = component.centerInParent == true || component.centerVertical == true
         let sharedHorizontal = centersHorizontally
-            ? 0 : sharedMargin(component.leftMargin, component.rightMargin, data: data)
+            ? 0 : sharedMargin(component, .leftMargin, .rightMargin, data: data)
         let sharedVertical = centersVertically
-            ? 0 : sharedMargin(component.topMargin, component.bottomMargin, data: data)
-        let start = DynamicDecodingHelper.marginValueToCGFloat(component.startMargin, data: data)
-        let end = DynamicDecodingHelper.marginValueToCGFloat(component.endMargin, data: data)
+            ? 0 : sharedMargin(component, .topMargin, .bottomMargin, data: data)
+        let start = component.margin(.startMargin, data: data)
+        let end = component.margin(.endMargin, data: data)
         return EdgeInsets(
             top: sharedVertical,
             leading: start != 0 ? start : sharedHorizontal,
@@ -379,10 +379,15 @@ public struct DynamicModifierHelper {
     /// An undeclared opposite edge has nothing in common with anything, and
     /// mixed signs share no inset: both keep the offset-owns-everything
     /// behaviour by returning zero.
-    private static func sharedMargin(_ value: AnyCodable?, _ opposite: AnyCodable?, data: [String: Any]) -> CGFloat {
-        guard value != nil, opposite != nil else { return 0 }
-        let a = DynamicDecodingHelper.marginValueToCGFloat(value, data: data)
-        let b = DynamicDecodingHelper.marginValueToCGFloat(opposite, data: data)
+    private static func sharedMargin(
+        _ component: DynamicComponent,
+        _ edge: DynamicComponent.MarginEdge,
+        _ opposite: DynamicComponent.MarginEdge,
+        data: [String: Any]
+    ) -> CGFloat {
+        guard component.hasMargin(edge), component.hasMargin(opposite) else { return 0 }
+        let a = component.margin(edge, data: data)
+        let b = component.margin(opposite, data: data)
         return max(0, min(a, b))
     }
 
@@ -394,8 +399,8 @@ public struct DynamicModifierHelper {
         guard component.margins == nil else { return view }
         let common = component.typedAttributes(CommonAttributes.self)
 
-        let leadingFixed = component.startMargin != nil || component.leftMargin != nil
-        let trailingFixed = component.endMargin != nil || component.rightMargin != nil
+        let leadingFixed = component.hasMargin(.startMargin) || component.hasMargin(.leftMargin)
+        let trailingFixed = component.hasMargin(.endMargin) || component.hasMargin(.rightMargin)
 
         let minStart = leadingFixed ? nil : common.minStartMargin
         let maxStart = leadingFixed ? nil : common.maxStartMargin
