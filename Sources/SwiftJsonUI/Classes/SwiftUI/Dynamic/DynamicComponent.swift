@@ -41,7 +41,6 @@ public struct DynamicComponent: Decodable {
     let font: String?
     let fontWeight: String?
     let fontFamily: String?  // Font family name (e.g., "Noto Sans JP")
-    let highlightColor: String?  // Text color when highlighted
     let disabledFontColor: String?  // Text color when disabled
     let edgeInset: AnyCodable?  // Text padding for Label (単一値または配列形式をサポート)
     let underline: Bool?  // Underline text for Label
@@ -194,7 +193,6 @@ public struct DynamicComponent: Decodable {
     let distribution: String?  // Child distribution: fill, fillEqually, fillProportionally, equalSpacing, equalCentering
     let contentMode: String?
     let src: String?  // Image source (local name or URL)
-    let srcName: String?  // Image asset name (takes priority over src)
     let systemIcon: Bool?  // true to use SF Symbol, false for local asset (default: false)
     let placeholder: String?
     let renderingMode: String?
@@ -294,7 +292,7 @@ public struct DynamicComponent: Decodable {
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
         case type, id, text, fontSize, fontColor, font, fontWeight, fontFamily
-        case highlightColor, disabledFontColor, edgeInset
+        case disabledFontColor, edgeInset
         case underline, strikethrough, lineHeightMultiple, autoShrink, minimumScaleFactor, lines, lineBreakMode, textShadow, linkable
         case width, height, widthRaw, heightRaw, background, tapBackground
         case padding, paddings, margins
@@ -329,7 +327,7 @@ public struct DynamicComponent: Decodable {
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
-        case orientation, direction, distribution, contentMode, src, srcName, systemIcon, placeholder, renderingMode
+        case orientation, direction, distribution, contentMode, src, systemIcon, placeholder, renderingMode
         case headers, items, data
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case secure, returnKeyType, borderStyle, input
@@ -406,7 +404,6 @@ public struct DynamicComponent: Decodable {
         font = try container.decodeIfPresent(String.self, forKey: .font)
         fontWeight = try container.decodeIfPresent(String.self, forKey: .fontWeight)
         fontFamily = try container.decodeIfPresent(String.self, forKey: .fontFamily)
-        highlightColor = try container.decodeIfPresent(String.self, forKey: .highlightColor)
         disabledFontColor = try container.decodeIfPresent(String.self, forKey: .disabledFontColor)
         edgeInset = try container.decodeIfPresent(AnyCodable.self, forKey: .edgeInset)
         underline = try container.decodeIfPresent(Bool.self, forKey: .underline)
@@ -599,7 +596,6 @@ public struct DynamicComponent: Decodable {
         distribution = try container.decodeIfPresent(String.self, forKey: .distribution)
         contentMode = try container.decodeIfPresent(String.self, forKey: .contentMode)
         src = try container.decodeIfPresent(String.self, forKey: .src)
-        srcName = try container.decodeIfPresent(String.self, forKey: .srcName)
         systemIcon = try container.decodeIfPresent(Bool.self, forKey: .systemIcon)
         placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
         renderingMode = try container.decodeIfPresent(String.self, forKey: .renderingMode)

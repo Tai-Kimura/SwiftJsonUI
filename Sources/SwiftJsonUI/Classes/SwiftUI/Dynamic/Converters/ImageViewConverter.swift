@@ -36,7 +36,8 @@ public struct ImageViewConverter {
         // srcName takes priority (direct asset name)
         // --- 1 & 2. Image creation + .resizable() ---
         let image: Image
-        if let srcName = component.srcName {
+        if let srcName = component.typedAttributes(ImageAttributes.self)
+            .srcName?.rawRepresentation as? String {
             image = Image(srcName)
         } else if let src = component.src {
             let processedSrc = DynamicHelpers.processText(src, data: data)

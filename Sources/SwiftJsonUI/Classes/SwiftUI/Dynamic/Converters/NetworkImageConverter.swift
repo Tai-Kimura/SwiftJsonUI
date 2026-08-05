@@ -31,7 +31,11 @@ public struct NetworkImageConverter {
 
         // URL with binding support
         let urlString: String? = {
-            let src = component.src ?? component.srcName
+            // `srcName` is declared on Image, not on NetworkImage, and
+            // network_image_converter.rb does not read it either — this
+            // fallback was reaching for an attribute the component does not
+            // have.
+            let src = component.src
             guard let src = src else { return nil }
             if let inner = DynamicBindingResolver.inner(of: src) {
                 // Canonical string value context (Binding<String> unwraps

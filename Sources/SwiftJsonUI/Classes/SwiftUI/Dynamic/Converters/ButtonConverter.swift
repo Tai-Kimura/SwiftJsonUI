@@ -98,7 +98,7 @@ public struct ButtonConverter {
         // alias resolves — 49-E folded that second declaration into an alias,
         // and the hand-decoded property never saw it.
         let highlightColor = DynamicHelpers.getColor(
-            (buttonAttrs.highlightColor?.rawRepresentation as? String) ?? component.highlightColor,
+            buttonAttrs.highlightColor?.rawRepresentation as? String,
             data: data
         )
         let disabledFontColor = DynamicHelpers.getColor(component.disabledFontColor, data: data)
