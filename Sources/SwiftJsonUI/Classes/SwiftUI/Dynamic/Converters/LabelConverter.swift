@@ -316,7 +316,9 @@ public struct LabelConverter {
         if recognised {
             return highlight
         }
-        if let color = DynamicHelpers.getColor(component.highlightColor, data: data) {
+        if let color = DynamicHelpers.getColor(
+            attrs.highlightColor?.rawRepresentation as? String, data: data
+        ) {
             return TextHighlightAttributes(fontColor: color)
         }
         return nil
