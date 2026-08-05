@@ -295,7 +295,18 @@ public struct DynamicModifierHelper {
 
     // MARK: - 7. Border
 
-    public static func applyBorder(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+    /// - Parameter honorsBorderStyle: false for TextField, whose `borderStyle`
+    ///   is the UIKit chrome vocabulary (none / line / bezel / roundedRect),
+    ///   a DIFFERENT attribute from `common.borderStyle` (solid / dashed /
+    ///   dotted) handled by `applyTextFieldStyle`. Mirrors the generator's
+    ///   `style_source: nil` at textfield_converter.rb:338 — merging the two
+    ///   vocabularies is the mistake both halves are written to avoid.
+    public static func applyBorder(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:],
+        honorsBorderStyle: Bool = true
+    ) -> AnyView {
         // borderWidth and cornerRadius are both number|binding — resolve any
         // `@{binding}` spelling from data before drawing the stroke overlay.
         let common = component.typedAttributes(CommonAttributes.self)
@@ -308,10 +319,46 @@ public struct DynamicModifierHelper {
         guard component.commonString(\.borderColor) != nil else { return view }
         let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data) ?? .gray
         let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: nil, data: data) ?? 0
+        let style = honorsBorderStyle
+            ? strokeStyle(common.borderStyle, borderWidth: borderWidth)
+            : StrokeStyle(lineWidth: borderWidth)
         return AnyView(view.overlay(
             RoundedRectangle(cornerRadius: radius)
-                .stroke(borderColor, lineWidth: borderWidth)
+                .stroke(borderColor, style: style)
         ))
+    }
+
+    /// `common.borderStyle` as a `StrokeStyle`.
+    ///
+    /// The dash patterns are the generator's, which took them from Compose's
+    /// `DashedBorderModifier.kt` so one declared border is one border on
+    /// every platform: `[6, 3]` for dashed, `[width, width * 2]` with a round
+    /// cap for dotted (base_view_converter.rb#stroke_style_argument).
+    /// `solid`, undeclared, and an undeclared spelling are all a plain
+    /// stroke — `style` decorates a border the width/color pair requests, it
+    /// never summons one (shared/core/attribute_semantics.json → border).
+    ///
+    /// Switching on the enum rather than a string is deliberate: `AttrEnum`
+    /// canonicalises, so a string switch would stop matching the moment a
+    /// spelling gained an alias, and the compiler would not say so.
+    /// Internal rather than private so it has a unit test: the `AnyView`
+    /// the overlay lands on cannot be inspected.
+    static func strokeStyle(
+        _ declared: AttrEnum<CommonAttributes.BorderStyle>?,
+        borderWidth: CGFloat
+    ) -> StrokeStyle {
+        switch declared?.knownValue {
+        case .dashed:
+            return StrokeStyle(lineWidth: borderWidth, dash: [6, 3])
+        case .dotted:
+            return StrokeStyle(
+                lineWidth: borderWidth,
+                lineCap: .round,
+                dash: [borderWidth, borderWidth * 2]
+            )
+        case .solid, nil:
+            return StrokeStyle(lineWidth: borderWidth)
+        }
     }
 
     // MARK: - 8. Margins (external spacing)
