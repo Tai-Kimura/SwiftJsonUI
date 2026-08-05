@@ -58,14 +58,8 @@ public struct DynamicComponent: Decodable {
     let paddings: AnyCodable?
     // UIKitに合わせてmarginsに統一（marginは削除）
     let margins: AnyCodable?
-    let leftMargin: AnyCodable?
-    let rightMargin: AnyCodable?
-    let topMargin: AnyCodable?
-    let bottomMargin: AnyCodable?
     // UIKitに合わせてpaddingTop形式に統一（leftPadding等は削除）
     // RTL-aware padding and margin
-    let startMargin: AnyCodable?
-    let endMargin: AnyCodable?
     // Min/Max margin constraints
     let insets: AnyCodable?
     let insetHorizontal: CGFloat?
@@ -255,7 +249,6 @@ public struct DynamicComponent: Decodable {
         case underline, strikethrough, autoShrink, lines, lineBreakMode, textShadow, linkable
         case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
-        case leftMargin, rightMargin, topMargin, bottomMargin, startMargin, endMargin
         case leftPadding, rightPadding, topPadding, bottomPadding
         case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, itemSpacing, contentInsets
         case tint, tintColor, hidesWhenStopped
@@ -387,18 +380,12 @@ public struct DynamicComponent: Decodable {
         paddings = try container.decodeIfPresent(AnyCodable.self, forKey: .paddings)
             ?? (try container.decodeIfPresent(AnyCodable.self, forKey: .padding))
         margins = try container.decodeIfPresent(AnyCodable.self, forKey: .margins)
-        leftMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .leftMargin)
-        rightMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .rightMargin)
-        topMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .topMargin)
-        bottomMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .bottomMargin)
         // Individual padding overrides (and their `topPadding` aliases) are
         // read from the generated typed extraction — see
         // DynamicHelpers.getPadding. No hand-decoded slot: the binding form
         // has to survive, and a CGFloat slot cannot hold `@{expr}`.
 
         // RTL-aware padding/margin
-        startMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .startMargin)
-        endMargin = try container.decodeIfPresent(AnyCodable.self, forKey: .endMargin)
         // Min/Max margin constraints
         insets = try container.decodeIfPresent(AnyCodable.self, forKey: .insets)
         insetHorizontal = try container.decodeIfPresent(CGFloat.self, forKey: .insetHorizontal)
@@ -792,5 +779,68 @@ extension DynamicComponent {
         DynamicHelpers.resolveNumber(
             typedAttributes(type)[keyPath: keyPath], legacy: nil, data: data
         )
+    }
+
+    /// The six per-side margins.
+    ///
+    /// They need their own accessor because the margin spelling has THREE
+    /// forms, not two: the number, the `@{binding}` — and the numeric STRING
+    /// (`"topMargin": "12"`). `margin_expression_helper.rb` accepts all three
+    /// ("the numeric spelling and the numeric-string spelling both are"), and
+    /// `AttrCoerce.number` coerces only the first, so the generated
+    /// `AttrValue<Double>?` is nil for the third. Reading the raw spelling for
+    /// that one case is what keeps the two halves saying the same thing.
+    /// Reported to E as an attr-codegen coercion gap; when `AttrCoerce.number`
+    /// learns numeric strings, the raw branch and its allowlist rows go away
+    /// together.
+    enum MarginEdge: String, CaseIterable {
+        case topMargin, bottomMargin, leftMargin, rightMargin, startMargin, endMargin
+
+        var keyPath: KeyPath<CommonAttributes, AttrValue<Double>?> {
+            switch self {
+            case .topMargin: return \.topMargin
+            case .bottomMargin: return \.bottomMargin
+            case .leftMargin: return \.leftMargin
+            case .rightMargin: return \.rightMargin
+            case .startMargin: return \.startMargin
+            case .endMargin: return \.endMargin
+            }
+        }
+    }
+
+    /// A margin as CGFloat. Undeclared, or a binding that does not resolve,
+    /// is 0 — the value `marginValueToCGFloat` returned.
+    func margin(_ edge: MarginEdge, data: [String: Any] = [:]) -> CGFloat {
+        if let resolved = number(CommonAttributes.self, edge.keyPath, data: data) {
+            return resolved
+        }
+        if let spelling = rawMarginSpelling(edge) as? String,
+           let parsed = Double(spelling) {
+            return CGFloat(parsed)
+        }
+        return 0
+    }
+
+    /// The raw spelling, read with a LITERAL key per edge so
+    /// `check_attr_read_discipline.py` can see all six. A computed key would
+    /// slip the read past the gate, which is the opposite of what the gate
+    /// is for.
+    private func rawMarginSpelling(_ edge: MarginEdge) -> Any? {
+        switch edge {
+        case .topMargin: return rawAttribute("topMargin")
+        case .bottomMargin: return rawAttribute("bottomMargin")
+        case .leftMargin: return rawAttribute("leftMargin")
+        case .rightMargin: return rawAttribute("rightMargin")
+        case .startMargin: return rawAttribute("startMargin")
+        case .endMargin: return rawAttribute("endMargin")
+        }
+    }
+
+    /// Whether the layout DECLARED this margin, regardless of whether it
+    /// resolves. `applyFlexibleMargins` needs declared-ness, not the value:
+    /// a fixed margin suppresses the min/max pair even when it is bound.
+    func hasMargin(_ edge: MarginEdge) -> Bool {
+        typedAttributes(CommonAttributes.self)[keyPath: edge.keyPath] != nil
+            || rawMarginSpelling(edge) != nil
     }
 }

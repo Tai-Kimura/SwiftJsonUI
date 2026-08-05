@@ -280,10 +280,10 @@ public struct DynamicViewContainer: View {
 
     private func zstackMarginOffset(for child: DynamicComponent) -> CGSize {
         guard child.margins == nil else { return .zero }
-        let left = DynamicDecodingHelper.marginValueToCGFloat(child.leftMargin, data: childData)
-        let right = DynamicDecodingHelper.marginValueToCGFloat(child.rightMargin, data: childData)
-        let top = DynamicDecodingHelper.marginValueToCGFloat(child.topMargin, data: childData)
-        let bottom = DynamicDecodingHelper.marginValueToCGFloat(child.bottomMargin, data: childData)
+        let left = child.margin(.leftMargin, data: childData)
+        let right = child.margin(.rightMargin, data: childData)
+        let top = child.margin(.topMargin, data: childData)
+        let bottom = child.margin(.bottomMargin, data: childData)
         var x = left - right
         var y = top - bottom
         if child.centerInParent == true {

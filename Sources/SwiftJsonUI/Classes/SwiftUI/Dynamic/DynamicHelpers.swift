@@ -286,10 +286,14 @@ public struct DynamicHelpers {
 
         // Fallback to individual margin properties
         // RTL-aware: startMargin/endMargin take precedence over leftMargin/rightMargin
-        let top = DynamicDecodingHelper.marginValueToCGFloat(component.topMargin, data: data)
-        let leading = DynamicDecodingHelper.marginValueToCGFloat(component.startMargin ?? component.leftMargin, data: data)
-        let bottom = DynamicDecodingHelper.marginValueToCGFloat(component.bottomMargin, data: data)
-        let trailing = DynamicDecodingHelper.marginValueToCGFloat(component.endMargin ?? component.rightMargin, data: data)
+        let top = component.margin(.topMargin, data: data)
+        let leading = component.hasMargin(.startMargin)
+            ? component.margin(.startMargin, data: data)
+            : component.margin(.leftMargin, data: data)
+        let bottom = component.margin(.bottomMargin, data: data)
+        let trailing = component.hasMargin(.endMargin)
+            ? component.margin(.endMargin, data: data)
+            : component.margin(.rightMargin, data: data)
 
         return EdgeInsets(
             top: top,
