@@ -130,7 +130,15 @@ public struct TextViewConverter {
         }()
 
         // font (fontName)
+        //
+        // `string(_:_:)` returns the layout spelling, so a bound font arrives
+        // as the literal "@{expr}" and would be looked up as a family of that
+        // name. Resolve it first — the same step CheckboxConverter takes for
+        // its own `font`. `interpolate` leaves a static family untouched, and
+        // `.map` keeps nil nil (processText answers "" for nil, which would
+        // become an empty font name).
         let fontName = component.string(TextViewAttributes.self, \.font)
+            .map { DynamicHelpers.processText($0, data: data) }
 
         // backgroundColor
         let backgroundColor: Color = {
