@@ -696,6 +696,72 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(DynamicHelpers.processText(raw, data: ["pick": "Beta"]), "Beta")
     }
 
+    // MARK: - codegen-parity: Label's hint
+
+    /// Both keys are required. A bare `hint` with no `hintAttributes` is not
+    /// a placeholder — the rule label_converter.rb and UIKit's SJUILabel use.
+    func testLabelHintNeedsBothKeys() throws {
+        let bare = try component("""
+        { "type": "Label", "id": "t", "hint": "Conformance Hint" }
+        """)
+        XCTAssertNil(LabelConverter.labelHint(
+            component: bare, attrs: bare.typedAttributes(LabelAttributes.self), data: [:]
+        ))
+
+        let both = try component("""
+        { "type": "Label", "id": "t", "hint": "Conformance Hint",
+          "hintAttributes": { "fontSize": 12 } }
+        """)
+        let hint = LabelConverter.labelHint(
+            component: both, attrs: both.typedAttributes(LabelAttributes.self), data: [:]
+        )
+        XCTAssertEqual(hint?.text, "Conformance Hint")
+        XCTAssertEqual(hint?.size, 12)
+    }
+
+    /// `placeholder` is the declared alias of `hint`.
+    func testLabelPlaceholderIsTheHintAlias() throws {
+        let c = try component("""
+        { "type": "Label", "id": "t", "placeholder": "Conformance Hint",
+          "hintAttributes": { "fontSize": 12 } }
+        """)
+        XCTAssertEqual(
+            LabelConverter.labelHint(
+                component: c, attrs: c.typedAttributes(LabelAttributes.self), data: [:]
+            )?.text,
+            "Conformance Hint"
+        )
+    }
+
+    /// The nested colour wins over the flat spelling — the same cascade
+    /// adjudicated for TextField's hintAttributes.
+    func testLabelHintNestedColourWinsOverFlat() throws {
+        let c = try component("""
+        { "type": "Label", "id": "t", "hint": "x", "hintColor": "#0000FF",
+          "hintAttributes": { "fontSize": 12, "fontColor": "#FF0000" } }
+        """)
+        XCTAssertEqual(
+            LabelConverter.labelHint(
+                component: c, attrs: c.typedAttributes(LabelAttributes.self), data: [:]
+            )?.color,
+            DynamicHelpers.getColor("#FF0000")
+        )
+    }
+
+    /// The flat `hintColor` accepts the bound form.
+    func testLabelHintColorResolvesBinding() throws {
+        let c = try component("""
+        { "type": "Label", "id": "t", "hint": "x", "hintColor": "@{tint}",
+          "hintAttributes": { "fontSize": 12 } }
+        """)
+        XCTAssertEqual(
+            LabelConverter.labelHint(
+                component: c, attrs: c.typedAttributes(LabelAttributes.self), data: ["tint": "#00FF00"]
+            )?.color,
+            DynamicHelpers.getColor("#00FF00")
+        )
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
