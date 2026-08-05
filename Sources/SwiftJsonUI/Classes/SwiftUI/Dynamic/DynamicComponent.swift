@@ -115,13 +115,10 @@ public struct DynamicComponent: Decodable {
     let setTargetAsDelegate: Bool?
     let setTargetAsDataSource: Bool?
     // Switch/Toggle event
-    let onValueChange: String?
     let alpha: CGFloat?
     let shadow: AnyCodable?
     let idealWidth: CGFloat?
     let idealHeight: CGFloat?
-    let weight: CGFloat?
-    let enabled: AnyCodable?  // For button enabled state with data binding support
     
     // Z-order
     let indexBelow: String?  // Place below specified view ID
@@ -155,7 +152,6 @@ public struct DynamicComponent: Decodable {
     let iconOff: String?
     let iconColor: String?
     let iconPosition: String?
-    let value: Double?
     let minValue: Double?
     let maxValue: Double?
     let indicatorStyle: String?
@@ -230,10 +226,8 @@ public struct DynamicComponent: Decodable {
         case locations
         case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
         case setTargetAsDelegate, setTargetAsDataSource
-        case onValueChange
         case alpha, shadow
         case idealWidth, idealHeight
-        case weight, enabled
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
@@ -242,7 +236,6 @@ public struct DynamicComponent: Decodable {
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
-        case value
         case minValue, maxValue, indicatorStyle
         case tabs, onTabChange
         case contentInsetAdjustmentBehavior
@@ -408,7 +401,6 @@ public struct DynamicComponent: Decodable {
         setTargetAsDelegate = try container.decodeIfPresent(Bool.self, forKey: .setTargetAsDelegate)
         setTargetAsDataSource = try container.decodeIfPresent(Bool.self, forKey: .setTargetAsDataSource)
         // Switch/Toggle event
-        onValueChange = try container.decodeIfPresent(String.self, forKey: .onValueChange)
         
         // Style properties. `cornerRadius` / `borderWidth` / `opacity` have
         // no slot any more — they are number|binding and read off
@@ -424,8 +416,6 @@ public struct DynamicComponent: Decodable {
         idealHeight = try container.decodeIfPresent(CGFloat.self, forKey: .idealHeight)
         
         // Interaction (weight is number|binding — tolerate `@{binding}`).
-        weight = (try? container.decodeIfPresent(CGFloat.self, forKey: .weight)) ?? nil
-        enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
         // Z-order
         indexBelow = try container.decodeIfPresent(String.self, forKey: .indexBelow)
         indexAbove = try container.decodeIfPresent(String.self, forKey: .indexAbove)
@@ -466,7 +456,6 @@ public struct DynamicComponent: Decodable {
         iconOff = try container.decodeIfPresent(String.self, forKey: .iconOff)
         iconColor = try container.decodeIfPresent(String.self, forKey: .iconColor)
         iconPosition = try container.decodeIfPresent(String.self, forKey: .iconPosition)
-        value = try? container.decodeIfPresent(Double.self, forKey: .value)
         minValue = try? container.decodeIfPresent(Double.self, forKey: .minValue)
         maxValue = try? container.decodeIfPresent(Double.self, forKey: .maxValue)
         indicatorStyle = try container.decodeIfPresent(String.self, forKey: .indicatorStyle)
@@ -831,6 +820,18 @@ extension DynamicComponent {
             return wrapped.rawRepresentation as? String
         }
         return typedAttributes(LabelAttributes.self).fontWeight as? String
+    }
+
+    /// `onValueChange` — declared on seven component tables, and in two
+    /// value types: `AttrValue<Any>` on the value-carrying controls and
+    /// `AttrValue<String>` on Collection / TabView. Every reader wants the
+    /// same thing, the handler spelling, so the tables are consulted in turn
+    /// rather than dispatched on `type`.
+    func onValueChangeSpelling() -> String? {
+        if let any = typedAttributes(SwitchAttributes.self).onValueChange {
+            return any.rawRepresentation as? String
+        }
+        return typedAttributes(TabViewAttributes.self).onValueChange?.rawRepresentation as? String
     }
 
     /// The six per-side margins.

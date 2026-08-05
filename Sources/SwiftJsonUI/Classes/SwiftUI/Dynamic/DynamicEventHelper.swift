@@ -92,7 +92,7 @@ public struct DynamicEventHelper {
     /// Matches tool pattern: .onTapGesture { data.onClick?() }
     static func applyOnClick(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         // Skip if component is disabled
-        if component.enabled?.value as? Bool == false { return view }
+        if component.commonBool(\.enabled) == false { return view }
 
         guard let onClick = component.effectiveOnClick else { return view }
 
@@ -116,7 +116,7 @@ public struct DynamicEventHelper {
     /// onClick tap gestures instead of swallowing them.
     static func applyOnLongPress(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         // Skip if component is disabled
-        if component.enabled?.value as? Bool == false { return view }
+        if component.commonBool(\.enabled) == false { return view }
 
         guard let onLongPress = component.commonAny(\.onLongPress) else { return view }
 
@@ -139,7 +139,7 @@ public struct DynamicEventHelper {
     /// callWithValue's ladder lets () -> Void handlers ignore the payload.
     static func applyOnPan(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         // Skip if component is disabled
-        if component.enabled?.value as? Bool == false { return view }
+        if component.commonBool(\.enabled) == false { return view }
 
         guard let onPan = component.commonAny(\.onPan) else { return view }
 
@@ -160,7 +160,7 @@ public struct DynamicEventHelper {
     /// MagnificationGesture — the package floor is iOS 17.
     static func applyOnPinch(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         // Skip if component is disabled
-        if component.enabled?.value as? Bool == false { return view }
+        if component.commonBool(\.enabled) == false { return view }
 
         guard let onPinch = component.commonAny(\.onPinch) else { return view }
 

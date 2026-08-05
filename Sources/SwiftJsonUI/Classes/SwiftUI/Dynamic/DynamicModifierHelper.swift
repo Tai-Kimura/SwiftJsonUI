@@ -260,7 +260,7 @@ public struct DynamicModifierHelper {
         // enabled=false + disabledBackground
         // `disabledBackground` is string|binding: the raw String cast read a
         // bound spelling as a literal colour name, which resolves to nothing.
-        if component.enabled?.value as? Bool == false,
+        if component.commonBool(\.enabled) == false,
            let disabledBg = component.typedAttributes(CommonAttributes.self)
                .disabledBackground?.rawRepresentation as? String,
            let color = DynamicHelpers.getColor(disabledBg, data: data) {
@@ -696,7 +696,7 @@ public struct DynamicModifierHelper {
     // MARK: - 15. Disabled
 
     public static func applyDisabled(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        if component.enabled?.value as? Bool == false {
+        if component.commonBool(\.enabled) == false {
             return AnyView(view.disabled(true))
         }
         // Binding: @{!isEnabled} or @{isEnabled}

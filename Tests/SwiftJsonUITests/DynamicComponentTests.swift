@@ -515,7 +515,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(children.count, 3)
         XCTAssertEqual(children[1].type, "Collection")
         XCTAssertEqual(children[1].id, "grid_collection")
-        XCTAssertEqual(children[1].weight, 1)
+        XCTAssertEqual(DynamicHelpers.resolveWeight(from: children[1], data: [:]), 1)
     }
 
     // MARK: - Size Constraints Tests
@@ -669,7 +669,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertNil(component.weight)
+        XCTAssertNil(DynamicHelpers.resolveWeight(from: component, data: [:]))
         XCTAssertEqual(component.rawData["weight"] as? String, "@{rowWeight}")
     }
 
@@ -767,7 +767,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.commonNumber(\.cornerRadius), 12)
         XCTAssertEqual(component.commonNumber(\.borderWidth), 2)
         XCTAssertEqual(component.commonBool(\.canTap), true)
-        XCTAssertEqual(component.weight, 3)
+        XCTAssertEqual(DynamicHelpers.resolveWeight(from: component, data: [:]), 3)
         XCTAssertEqual(component.commonNumber(\.paddingTop), 8)
         XCTAssertEqual(component.commonNumber(\.minWidth), 100)
         // aspectWidth's hand-written slot is gone (50 §4) — the generated

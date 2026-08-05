@@ -121,10 +121,37 @@ def binding_attributes() -> set[str]:
     return names
 
 
+def _component_struct_body(source: str) -> str:
+    """Just the `struct DynamicComponent` body.
+
+    The file also holds `AnyCodable`, whose `public let value: Any` is a
+    property of a JSON box, not a decode slot for the `value` attribute.
+    Scanning the whole file reported it the moment the real `value` slot
+    was retired — a false positive that would have been "fixed" by
+    freezing a row that describes nothing.
+    """
+    start = source.find("public struct DynamicComponent")
+    if start < 0:
+        return source
+    opened = source.find("{", start)
+    if opened < 0:
+        return source
+    depth = 0
+    for index in range(opened, len(source)):
+        character = source[index]
+        if character == "{":
+            depth += 1
+        elif character == "}":
+            depth -= 1
+            if depth == 0:
+                return source[opened : index + 1]
+    return source[opened:]
+
+
 def find_binding_slots() -> list[dict]:
     """Hand-written decode slots for binding-capable attributes."""
     declared = binding_attributes()
-    slots = set(SLOT_DECL.findall(COMPONENT.read_text()))
+    slots = set(SLOT_DECL.findall(_component_struct_body(COMPONENT.read_text())))
     rel = COMPONENT.relative_to(DYNAMIC).as_posix()
     return [
         {"gate": "binding-slot", "file": rel, "attribute": name}

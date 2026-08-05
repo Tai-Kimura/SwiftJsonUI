@@ -430,14 +430,14 @@ public struct DynamicHelpers {
         switch weightAttr {
         case .some(.value(let raw)):
             if let number = unwrapDouble(raw) { return CGFloat(number) }
-            return component.weight
+            return nil
         case .some(.binding(let expression)):
             if let number = DynamicBindingResolver.resolveDouble(expression: expression, data: data) {
                 return CGFloat(number)
             }
-            return component.weight
+            return nil
         case nil:
-            return component.weight
+            return nil
         }
     }
 }
