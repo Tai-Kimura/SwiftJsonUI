@@ -52,10 +52,10 @@ public struct PickerConverter {
             // Check for selectedIndex binding in rawData
             if let selectedIndexExpr = component.rawAttribute("selectedIndex") as? String,
                DynamicBindingResolver.isBindingExpression(selectedIndexExpr) {
-                return DynamicBindingHelper.int(selectedIndexExpr, data: data, fallback: component.selectedIndex ?? 0)
+                return DynamicBindingHelper.int(selectedIndexExpr, data: data, fallback: component.int(SelectBoxAttributes.self, \.selectedIndex, data: data) ?? 0)
             }
             // Static selectedIndex
-            return .constant(component.selectedIndex ?? 0)
+            return .constant(component.int(SelectBoxAttributes.self, \.selectedIndex, data: data) ?? 0)
         }()
 
         // --- 1. Picker base ---

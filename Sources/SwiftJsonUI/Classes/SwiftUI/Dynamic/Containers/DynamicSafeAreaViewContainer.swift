@@ -60,7 +60,9 @@ public struct DynamicSafeAreaViewContainer: View {
             ))
         } else {
             let hasWeights = children.contains { child in
-                (child.weight ?? 0) > 0 || (child.widthWeight ?? 0) > 0 || (child.heightWeight ?? 0) > 0
+                (child.weight ?? 0) > 0
+                    || (child.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0
+                    || (child.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
             }
 
             if hasWeights && (orientation == "horizontal" || orientation == "vertical") {

@@ -41,7 +41,7 @@ public struct TabViewConverter {
             if let literal = attrs.selectedIndex?.value {
                 return .constant(Int(literal))
             }
-            return .constant(component.selectedIndex ?? 0)
+            return .constant(component.int(TabViewAttributes.self, \.selectedIndex, data: data) ?? 0)
         }()
 
         // Build tab item models

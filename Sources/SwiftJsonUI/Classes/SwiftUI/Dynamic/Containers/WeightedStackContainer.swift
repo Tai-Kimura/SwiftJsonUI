@@ -37,7 +37,7 @@ public struct WeightedStackContainer: View {
         children.map { child in
             // weight / widthWeight are number|binding — resolve `@{binding}` from data.
             let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
-            let widthWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).widthWeight, legacy: child.widthWeight.map { CGFloat($0) }, data: data) ?? 0
+            let widthWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).widthWeight, legacy: nil, data: data) ?? 0
             let weight = CGFloat(max(weightValue, widthWeightValue))
 
             var childData = data
@@ -69,7 +69,7 @@ public struct WeightedStackContainer: View {
         children.map { child in
             // weight / heightWeight are number|binding — resolve `@{binding}` from data.
             let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
-            let heightWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).heightWeight, legacy: child.heightWeight.map { CGFloat($0) }, data: data) ?? 0
+            let heightWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).heightWeight, legacy: nil, data: data) ?? 0
             let weight = CGFloat(max(weightValue, heightWeightValue))
 
             var childData = data

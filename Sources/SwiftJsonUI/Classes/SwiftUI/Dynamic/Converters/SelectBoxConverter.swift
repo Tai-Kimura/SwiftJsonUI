@@ -144,7 +144,7 @@ public struct SelectBoxConverter {
             let resolved = DynamicHelpers.processText(raw, data: data)
             return items.firstIndex(of: resolved)
         }()
-        let selectedIndex = component.selectedIndex ?? selectedValueIndex
+        let selectedIndex = component.int(SelectBoxAttributes.self, \.selectedIndex, data: data) ?? selectedValueIndex
         let selectedIndexBinding: SwiftUI.Binding<Int>? = {
             if let si = attrs.selectedIndex?.bindingString {
                 let binding = DynamicBindingHelper.int(si, data: data, fallback: selectedIndex ?? 0)

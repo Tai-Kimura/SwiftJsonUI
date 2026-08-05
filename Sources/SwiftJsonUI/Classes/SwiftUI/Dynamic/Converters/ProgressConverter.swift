@@ -29,7 +29,7 @@ public struct ProgressConverter {
             }
             // Static value from decoded property. Undeclared renders an EMPTY
             // bar (see shared/core/attribute_semantics.json → progressValue).
-            return component.progress ?? 0
+            return Double(component.number(ProgressAttributes.self, \.progress, data: data) ?? 0)
         }()
 
         // ProgressView

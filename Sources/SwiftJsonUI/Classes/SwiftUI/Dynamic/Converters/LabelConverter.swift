@@ -101,7 +101,7 @@ public struct LabelConverter {
 
         // lineLimit
         let resolvedLines = DynamicHelpers.resolveNumber(
-            attrs.lines, legacy: component.lines.map { CGFloat($0) }, data: data
+            attrs.lines, legacy: nil, data: data
         ).map { Int($0) }
         let lineLimit: Int? = {
             if let lines = resolvedLines {

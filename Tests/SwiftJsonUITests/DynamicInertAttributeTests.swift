@@ -775,7 +775,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let attrs = c.typedAttributes(LabelAttributes.self)
         let data: [String: Any] = ["n": 3, "gap": 8, "f": 0.5, "on": true]
 
-        XCTAssertNil(c.lines, "the hand-decoded slot is what used to drop it")
+        XCTAssertNil(c.int(LabelAttributes.self, \.lines), "the hand-decoded slot is what used to drop it")
         XCTAssertEqual(DynamicHelpers.resolveNumber(attrs.lines, legacy: nil, data: data), 3)
         XCTAssertEqual(DynamicHelpers.resolveNumber(attrs.lineSpacing, legacy: nil, data: data), 8)
         XCTAssertEqual(DynamicHelpers.resolveNumber(attrs.minimumScaleFactor, legacy: nil, data: data), 0.5)
