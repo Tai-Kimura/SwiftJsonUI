@@ -480,7 +480,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(nested?["fontColor"] as? String, "#FF0000")
         XCTAssertEqual(nested?["font"] as? String, "Helvetica")
         // …and the component-level ones remain as the per-key fallback.
-        XCTAssertEqual(c.fontSize, 20)
+        XCTAssertEqual(c.typedAttributes(LabelAttributes.self).fontSize?.value.map { CGFloat($0) }, 20)
     }
 
     /// `trackTintColor` is the unfilled part of the track. SwiftUI exposes no
@@ -647,7 +647,8 @@ final class DynamicInertAttributeTests: XCTestCase {
         let label = try component("""
         { "type": "Label", "text": "Sample", "fontSize": "@{size}" }
         """)
-        XCTAssertNil(label.fontSize, "the hand-decoded slot is what used to drop it")
+        // the hand-decoded `fontSize` slot is deleted (plan 50 §4) — it threw on
+        // the bound spelling and FailableDecodable turned that into a missing node.
         XCTAssertEqual(
             DynamicHelpers.resolveNumber(
                 label.typedAttributes(LabelAttributes.self).fontSize, legacy: nil, data: ["size": 20]
@@ -662,7 +663,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let c = try component("""
         { "type": "CheckBox", "text": "x", "spacing": "@{gap}" }
         """)
-        XCTAssertNil(c.spacing)
+        XCTAssertNil(c.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) })
         XCTAssertEqual(
             DynamicHelpers.resolveNumber(
                 c.typedAttributes(CheckBoxAttributes.self).spacing, legacy: nil, data: ["gap": 24]

@@ -47,7 +47,7 @@ public struct SelectBoxConverter {
         // fontSize
         let fontSize = (labelAttributes?["fontSize"] as? Double).map { CGFloat($0) }
             ?? (labelAttributes?["fontSize"] as? Int).map { CGFloat($0) }
-            ?? component.fontSize
+            ?? attrs.fontSize.map { CGFloat($0) }
             ?? 16
 
         // fontColor
@@ -66,7 +66,7 @@ public struct SelectBoxConverter {
         let backgroundColor: Color = DynamicHelpers.getColor(component.commonString(\.background), data: data) ?? Color(UIColor.systemGray6)
 
         // cornerRadius
-        let cornerRadius = component.cornerRadius ?? 8
+        let cornerRadius = component.number(CommonAttributes.self, \.cornerRadius, data: data) ?? 8
 
         // selectItemType
         let selectItemType: SelectBoxView.SelectItemType = {

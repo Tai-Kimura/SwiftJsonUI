@@ -63,9 +63,15 @@ public struct ToggleConverter {
             if let labelAttrs = labelAttrsDict {
                 // labelAttributes override component-level font settings
                 // Switch/Toggle declares no fontSize of its own, so there is
-                // no typed slot to resolve — the component-level spelling is
-                // all there is here.
-                let fontSize = labelAttrs["fontSize"] as? CGFloat ?? component.fontSize
+                // no typed slot to resolve. toggle_converter.rb DOES honor it
+                // (`@component.merge(label_attrs)` → apply_font_modifiers), so
+                // the read has to survive — through the sanctioned raw
+                // passthrough, not a hand-decoded slot. Reported to E as an
+                // SSoT declaration gap.
+                let rawFontSize = component.rawAttribute("fontSize")
+                let componentFontSize = (rawFontSize as? Double).map { CGFloat($0) }
+                    ?? (rawFontSize as? Int).map { CGFloat($0) }
+                let fontSize = labelAttrs["fontSize"] as? CGFloat ?? componentFontSize
                 let fontName = labelAttrs["font"] as? String ?? component.font
                 let fontWeight = labelAttrs["fontWeight"] as? String ?? labelAttrs["fontStyle"] as? String ?? component.fontWeight
                 guard fontSize != nil || fontName != nil || fontWeight != nil else { return nil }

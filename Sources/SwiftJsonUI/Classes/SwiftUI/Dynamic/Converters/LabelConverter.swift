@@ -54,8 +54,8 @@ public struct LabelConverter {
         // Font properties. The hint carries its own size and colour while it
         // is showing — that is the whole point of hintAttributes.
         let fontSize = showsHint
-            ? (hint?.size ?? DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data))
-            : DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
+            ? (hint?.size ?? DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data))
+            : DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data)
         // Resolve font from binding if present (e.g., @{fontProp})
         let resolvedFont: String? = {
             if let expr = attrs.font?.bindingExpression {
@@ -90,12 +90,12 @@ public struct LabelConverter {
         // to 17 and skewed the arithmetic for a static multiple.
         let lineSpacing: CGFloat? = {
             if let multiple = DynamicHelpers.resolveNumber(
-                attrs.lineHeightMultiple, legacy: component.lineHeightMultiple, data: data
+                attrs.lineHeightMultiple, legacy: nil, data: data
             ) {
                 return (multiple - 1) * (fontSize ?? 17)
             }
             return DynamicHelpers.resolveNumber(
-                attrs.lineSpacing, legacy: component.lineSpacing, data: data
+                attrs.lineSpacing, legacy: nil, data: data
             )
         }()
 
@@ -176,7 +176,7 @@ public struct LabelConverter {
 
         // --- 3. minimumScaleFactor (autoShrink) ---
         let resolvedScaleFactor = DynamicHelpers.resolveNumber(
-            attrs.minimumScaleFactor, legacy: component.minimumScaleFactor, data: data
+            attrs.minimumScaleFactor, legacy: nil, data: data
         )
         if component.autoShrink == true {
             result = AnyView(result.minimumScaleFactor(resolvedScaleFactor ?? 0.5))

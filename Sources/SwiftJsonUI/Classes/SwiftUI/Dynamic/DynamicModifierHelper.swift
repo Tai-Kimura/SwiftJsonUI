@@ -189,7 +189,7 @@ public struct DynamicModifierHelper {
         if let mw = DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data) {
             result = AnyView(result.frame(minWidth: mw))
         }
-        if let mh = DynamicHelpers.resolveNumber(common.minHeight, legacy: component.minHeight, data: data) {
+        if let mh = DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data) {
             result = AnyView(result.frame(minHeight: mh))
         }
         if let iw = component.idealWidth {
@@ -206,7 +206,7 @@ public struct DynamicModifierHelper {
         let isMatchParentHeight = (height == .infinity || height == -1)
 
         let resolvedMaxWidth = DynamicHelpers.resolveNumber(common.maxWidth, legacy: nil, data: data)
-        let resolvedMaxHeight = DynamicHelpers.resolveNumber(common.maxHeight, legacy: component.maxHeight, data: data)
+        let resolvedMaxHeight = DynamicHelpers.resolveNumber(common.maxHeight, legacy: nil, data: data)
         if let mw = resolvedMaxWidth, !isMatchParentWidth {
             result = AnyView(result.frame(maxWidth: mw))
         }
@@ -288,7 +288,7 @@ public struct DynamicModifierHelper {
         // cornerRadius is number|binding — resolve a `@{binding}` from data
         // (the legacy typed slot is nil for the binding spelling).
         let common = component.typedAttributes(CommonAttributes.self)
-        guard let cornerRadius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data),
+        guard let cornerRadius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: nil, data: data),
               cornerRadius > 0 else { return view }
         return AnyView(view.cornerRadius(cornerRadius))
     }
@@ -299,7 +299,7 @@ public struct DynamicModifierHelper {
         // borderWidth and cornerRadius are both number|binding — resolve any
         // `@{binding}` spelling from data before drawing the stroke overlay.
         let common = component.typedAttributes(CommonAttributes.self)
-        guard let borderWidth = DynamicHelpers.resolveNumber(common.borderWidth, legacy: component.borderWidth, data: data),
+        guard let borderWidth = DynamicHelpers.resolveNumber(common.borderWidth, legacy: nil, data: data),
               borderWidth > 0 else { return view }
         // Both attributes are required to draw: borderWidth alone means no
         // border (the canonical cross-platform semantics — android draws
@@ -307,7 +307,7 @@ public struct DynamicModifierHelper {
         // back to gray rather than silently dropping a declared border.
         guard component.commonString(\.borderColor) != nil else { return view }
         let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data) ?? .gray
-        let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data) ?? 0
+        let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: nil, data: data) ?? 0
         return AnyView(view.overlay(
             RoundedRectangle(cornerRadius: radius)
                 .stroke(borderColor, lineWidth: borderWidth)
@@ -435,7 +435,7 @@ public struct DynamicModifierHelper {
                 return AnyView(view.opacity(value))
             }
         }
-        if let opacity = component.opacity {
+        if let opacity = component.commonNumber(\.opacity) {
             return AnyView(view.opacity(Double(opacity)))
         }
         if let alpha = component.alpha, !component.isNormalized {

@@ -51,10 +51,10 @@ public struct CheckboxConverter {
 
         // Spacing — number|binding; the hand-decoded slot is nil for
         // `@{expr}`, so a bound spacing fell to the default 8.
-        let spacing = DynamicHelpers.resolveNumber(attrs.spacing, legacy: component.spacing, data: data) ?? 8
+        let spacing = DynamicHelpers.resolveNumber(attrs.spacing, legacy: nil, data: data) ?? 8
 
         // Font properties
-        let fontSize = DynamicHelpers.resolveNumber(attrs.fontSize, legacy: component.fontSize, data: data)
+        let fontSize = DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data)
         let fontWeight: Font.Weight? = {
             if let style = component.rawAttribute("fontStyle") as? String {
                 return DynamicHelpers.fontWeightFromString(style)

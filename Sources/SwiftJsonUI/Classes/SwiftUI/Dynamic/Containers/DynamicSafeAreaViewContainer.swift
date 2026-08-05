@@ -79,7 +79,7 @@ public struct DynamicSafeAreaViewContainer: View {
                 // expanding stack pins content to the leading/top edge with a
                 // trailing Spacer. Without them SwiftUI centered the stack —
                 // measured as SafeAreaView_orientation__* parity d=50/73.
-                let spacingValue = component.spacing ?? 0
+                let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
                 let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
                     component.width == .infinity || component.width == -1
                 let hGravity = Self.extractHorizontalFromGravity(component.gravity)
@@ -102,7 +102,7 @@ public struct DynamicSafeAreaViewContainer: View {
                     }
                 )
             } else if orientation == "vertical" {
-                let spacingValue = component.spacing ?? 0
+                let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
                 let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
                     component.height == .infinity || component.height == -1
                 let vGravity = Self.extractVerticalFromGravity(component.gravity)

@@ -101,7 +101,10 @@ public struct DynamicHelpers {
 
             if let fontName = resolvedFontName {
                 let config = SwiftJsonUIConfiguration.shared
-                let size = component.fontSize ?? config.font.size
+                let size = DynamicHelpers.resolveNumber(
+                    component.typedAttributes(LabelAttributes.self).fontSize,
+                    legacy: nil, data: data
+                ) ?? config.font.size
 
                 // Weight-only font names
                 let weightNames = ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black", "normal", "regular"]
@@ -303,7 +306,7 @@ public struct DynamicHelpers {
 
     // Get opacity from component
     public static func getOpacity(from component: DynamicComponent) -> Double {
-        if let opacity = component.opacity {
+        if let opacity = component.commonNumber(\.opacity) {
             return Double(opacity)
         }
         if let alpha = component.alpha {

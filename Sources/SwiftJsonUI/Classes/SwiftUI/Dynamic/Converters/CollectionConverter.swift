@@ -507,7 +507,7 @@ public struct CollectionConverter {
         mode: CollectionStackMode = .lazy
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
-        let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+        let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let vstackAlignment = getVStackAlignment(from: component)
 
         return AnyView(
@@ -695,7 +695,7 @@ public struct CollectionConverter {
         mode: CollectionStackMode = .lazy
     ) -> AnyView {
         let showsIndicators = component.showsHorizontalScrollIndicator ?? true
-        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.lineSpacing ?? component.spacing ?? 0
+        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? 0
         let insetHorizontal = component.insetHorizontal ?? 0
         let hstackAlignment = getHStackAlignment(from: component)
 
@@ -788,7 +788,7 @@ public struct CollectionConverter {
             dataSource: dataSource,
             cellIdProperty: cellIdProperty
         )
-        let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+        let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
 
         // Resolve currentPage binding
         let currentPageRaw = component.typedAttributes(CollectionAttributes.self)
@@ -849,8 +849,8 @@ public struct CollectionConverter {
         // (no Arrangement.spacedBy) and the static codegens. The old `?? 10`
         // was an iOS-only implicit default. Chain order mirrors kjui:
         // inter-column prefers columnSpacing, inter-row prefers lineSpacing.
-        let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
-        let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+        let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
+        let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         // `cellWidth` / `cellHeight` pin each cell to a fixed size inside the grid.
         // When absent the existing flexible sizing path is preserved.
         let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
@@ -946,8 +946,8 @@ public struct CollectionConverter {
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
-        let hSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 8
-        let vSpacing = component.lineSpacing ?? component.itemSpacing ?? 8
+        let hSpacing = component.columnSpacing ?? component.itemSpacing ?? 8
+        let vSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 8
 
         return AnyView(
             ScrollView(.vertical, showsIndicators: showsIndicators) {
@@ -1000,9 +1000,9 @@ public struct CollectionConverter {
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
-        let itemSpacing = component.itemSpacing ?? component.spacing ?? 0
-        let lineSpacing = component.lineSpacing ?? component.itemSpacing ?? component.spacing ?? 0
-        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.spacing ?? 0
+        let itemSpacing = component.itemSpacing ?? 0
+        let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
+        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
         let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
         let cellHeight = cgFloatFromRaw(component.rawAttribute("cellHeight"))
 

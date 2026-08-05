@@ -32,7 +32,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         XCTAssertEqual(component.type, "Label")
         XCTAssertEqual(component.id, "titleLabel")
         XCTAssertEqual(component.text, "Hello World")
-        XCTAssertEqual(component.fontSize, 18)
+        XCTAssertEqual(component.typedAttributes(LabelAttributes.self).fontSize?.value.map { CGFloat($0) }, 18)
         XCTAssertEqual(component.fontColor, "#333333")
         XCTAssertEqual(component.font, "Helvetica")
         XCTAssertEqual(component.fontWeight, "bold")
