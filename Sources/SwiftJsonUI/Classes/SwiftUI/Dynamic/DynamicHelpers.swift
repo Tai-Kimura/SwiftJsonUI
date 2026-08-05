@@ -288,7 +288,7 @@ public struct DynamicHelpers {
 
     // Get background color from component
     public static func getBackground(from component: DynamicComponent) -> Color {
-        return DynamicDecodingHelper.getColor(component.background) ?? .clear
+        return DynamicDecodingHelper.getColor(component.commonString(\.background)) ?? .clear
     }
 
     // Get opacity from component

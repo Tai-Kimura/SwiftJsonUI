@@ -133,7 +133,7 @@ public struct TextViewConverter {
 
         // backgroundColor
         let backgroundColor: Color = {
-            if let bg = component.background {
+            if let bg = component.commonString(\.background) {
                 return DynamicHelpers.getColor(bg) ?? Color(UIColor.systemBackground)
             }
             return Color(UIColor.systemBackground)

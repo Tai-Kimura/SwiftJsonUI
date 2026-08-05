@@ -48,7 +48,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.type, "Button")
         XCTAssertEqual(component.text, "Click Me")
         XCTAssertEqual(component.onClick, "handleClick")
-        XCTAssertEqual(component.background, "#FF0000")
+        XCTAssertEqual(component.commonString(\.background), "#FF0000")
         XCTAssertEqual(component.cornerRadius, 8)
     }
 
@@ -242,7 +242,7 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.cornerRadius, 12)
         XCTAssertEqual(component.borderWidth, 2)
-        XCTAssertEqual(component.borderColor, "#CCCCCC")
+        XCTAssertEqual(component.commonString(\.borderColor), "#CCCCCC")
         XCTAssertEqual(component.alpha, 0.8)
         XCTAssertEqual(component.hidden, false)
         XCTAssertEqual(component.clipToBounds, true)

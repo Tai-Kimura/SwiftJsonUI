@@ -74,7 +74,7 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         XCTAssertEqual(component.id, "container")
         XCTAssertEqual(component.width, .infinity)
         XCTAssertNil(component.height) // wrapContent
-        XCTAssertEqual(component.background, "#FFFFFF")
+        XCTAssertEqual(component.commonString(\.background), "#FFFFFF")
 
         // Check children
         XCTAssertEqual(component.child?.count, 2)

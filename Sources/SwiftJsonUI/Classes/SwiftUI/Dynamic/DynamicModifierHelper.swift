@@ -263,7 +263,7 @@ public struct DynamicModifierHelper {
             return AnyView(view.background(color))
         }
 
-        guard let background = component.background else { return view }
+        guard let background = component.commonString(\.background) else { return view }
 
         // Check binding — getColor already handles SwiftUI.Binding unwrapping
         if let color = DynamicHelpers.getColor(background, data: data) {
@@ -301,8 +301,8 @@ public struct DynamicModifierHelper {
         // border (the canonical cross-platform semantics — android draws
         // nothing either). A declared-but-unresolvable color still falls
         // back to gray rather than silently dropping a declared border.
-        guard component.borderColor != nil else { return view }
-        let borderColor = DynamicHelpers.getColor(component.borderColor, data: data) ?? .gray
+        guard component.commonString(\.borderColor) != nil else { return view }
+        let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data) ?? .gray
         let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data) ?? 0
         return AnyView(view.overlay(
             RoundedRectangle(cornerRadius: radius)

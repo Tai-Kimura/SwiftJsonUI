@@ -56,7 +56,6 @@ public struct DynamicComponent: Decodable {
     let height: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let widthRaw: String?  // Store original string value if needed
     let heightRaw: String?  // Store original string value if needed
-    let background: String?
     let tapBackground: String?  // Background color when tapped
     // UIKitに合わせてpaddingsに統一（paddingは削除）
     let paddings: AnyCodable?
@@ -161,7 +160,6 @@ public struct DynamicComponent: Decodable {
     let onValueChange: String?
     let cornerRadius: CGFloat?
     let borderWidth: CGFloat?
-    let borderColor: String?
     let alpha: CGFloat?
     let opacity: CGFloat?
     let hidden: Bool?
@@ -294,7 +292,7 @@ public struct DynamicComponent: Decodable {
         case type, id, text, fontSize, fontColor, font, fontWeight, fontFamily
         case disabledFontColor, edgeInset
         case underline, strikethrough, lineHeightMultiple, autoShrink, minimumScaleFactor, lines, lineBreakMode, textShadow, linkable
-        case width, height, widthRaw, heightRaw, background, tapBackground
+        case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
         case leftMargin, rightMargin, topMargin, bottomMargin, startMargin, endMargin
         case minTopMargin, maxTopMargin, minBottomMargin, maxBottomMargin
@@ -318,7 +316,7 @@ public struct DynamicComponent: Decodable {
         case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
         case setTargetAsDelegate, setTargetAsDataSource
         case onValueChange
-        case cornerRadius, borderWidth, borderColor
+        case cornerRadius, borderWidth
         case alpha, opacity, hidden, visibility, shadow, clipToBounds
         case minWidth, maxWidth, minHeight, maxHeight
         case idealWidth, idealHeight
@@ -433,7 +431,6 @@ public struct DynamicComponent: Decodable {
         height = heightResult.value
         heightRaw = heightResult.raw
         
-        background = try container.decodeIfPresent(String.self, forKey: .background)
         tapBackground = try container.decodeIfPresent(String.self, forKey: .tapBackground)
         
         // Padding/Margin（UIKitに合わせてpaddings/marginsに統一）
@@ -555,7 +552,6 @@ public struct DynamicComponent: Decodable {
         // tolerate a `@{binding}` string, resolved at render via data).
         cornerRadius = (try? container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)) ?? nil
         borderWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .borderWidth)) ?? nil
-        borderColor = try container.decodeIfPresent(String.self, forKey: .borderColor)
         // Use try? because these can be binding strings like "@{sendButtonOpacity}"
         // decodeIfPresent throws (not returns nil) when the key exists but has wrong type
         alpha = try? container.decodeIfPresent(CGFloat.self, forKey: .alpha)
@@ -836,3 +832,22 @@ public struct AnyCodable: Codable {
     }
 }
 #endif // DEBUG
+
+// MARK: - Reading shared attributes through the generated extraction
+
+extension DynamicComponent {
+    /// The layout spelling of a `common` string attribute — the static value,
+    /// or `"@{expr}"` for a bound one — read off the generated table.
+    ///
+    /// Exists because plan 50 deletes the hand-written decode slots: every
+    /// `component.background` style read has to move here, and spelling the
+    /// full `typedAttributes(CommonAttributes.self).x?.rawRepresentation as?
+    /// String` at ~90 call sites would bury the change it is making.
+    ///
+    /// The result still goes through `getColor(_:data:)` / `processText` to
+    /// resolve a binding — this returns what the layout wrote, not what it
+    /// means.
+    func commonString(_ keyPath: KeyPath<CommonAttributes, AttrValue<String>?>) -> String? {
+        typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.rawRepresentation as? String
+    }
+}

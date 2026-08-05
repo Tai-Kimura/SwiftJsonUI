@@ -94,10 +94,10 @@ public struct DividerConverter {
     /// Resolve divider color from background or borderColor attributes
     /// Returns nil if no custom color is specified (use system Divider)
     private static func resolveColor(_ component: DynamicComponent, data: [String: Any]) -> Color? {
-        if let bgColor = component.background {
+        if let bgColor = component.commonString(\.background) {
             return DynamicHelpers.getColor(bgColor, data: data)
         }
-        if let borderColor = component.borderColor {
+        if let borderColor = component.commonString(\.borderColor) {
             return DynamicHelpers.getColor(borderColor)
         }
         return nil
