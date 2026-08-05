@@ -94,7 +94,8 @@ public struct DynamicEventHelper {
         // Skip if component is disabled
         if component.commonBool(\.enabled) == false { return view }
 
-        guard let onClick = component.effectiveOnClick else { return view }
+        let handlers = component.effectiveOnClickHandlers
+        guard !handlers.isEmpty else { return view }
 
         // Note: canTap is a UIKit concept. In SwiftUI Dynamic mode,
         // if onClick is explicitly set in JSON, always apply the tap gesture.
@@ -103,7 +104,11 @@ public struct DynamicEventHelper {
             view
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    DynamicEventHelper.call(onClick, data: data)
+                    // All of them, in declaration order — the array spelling
+                    // names a sequence, and codegen emits one call per name.
+                    for handler in handlers {
+                        DynamicEventHelper.call(handler, data: data)
+                    }
                 }
         )
     }
@@ -223,9 +228,32 @@ extension DynamicComponent {
     /// `onClick` (camelCase, binding format) falls back to the legacy
     /// `onclick` (lowercase, selector format) — attribute_definitions.json
     /// declares both.
+    ///
+    /// First of `effectiveOnClickHandlers`, kept for the callers that only
+    /// ever need one name.
     var effectiveOnClick: String? {
-        if let onClick = commonAny(\.onClick) { return onClick }
-        return typedAttributes(CommonAttributes.self).onclick as? String
+        effectiveOnClickHandlers.first
+    }
+
+    /// EVERY handler the click should fire.
+    ///
+    /// `onclick` is declared `["string", "array"]`, and the array spelling
+    /// names several selectors: base_view_converter.rb:658 emits
+    /// `names = value.is_a?(Array) ? value : [value]` and calls all of them
+    /// in one `.onTapGesture`. Reading it as `as? String` returned nil for
+    /// the array, so dynamic fired NOTHING where codegen fired two handlers.
+    ///
+    /// `onClick` (camelCase) is binding-only — one `@{handler}` — so it
+    /// contributes at most one name and wins when both are declared, which
+    /// is the precedence the single-value accessor always had.
+    var effectiveOnClickHandlers: [String] {
+        if let onClick = commonAny(\.onClick) { return [onClick] }
+        let declared = typedAttributes(CommonAttributes.self).onclick
+        if let single = declared as? String { return [single] }
+        if let many = declared as? [Any] {
+            return many.compactMap { $0 as? String }
+        }
+        return []
     }
 }
 #endif // DEBUG
