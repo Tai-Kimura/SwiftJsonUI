@@ -56,6 +56,16 @@ public struct SelectBoxConverter {
                 ?? component.typedAttributes(SelectBoxAttributes.self).fontColor, data: data
         ) ?? .primary
 
+        // hintColor — the placeholder colour, shown while nothing is picked
+        // (SelectBoxView applies it at :201/:209 and defaults to .gray). The
+        // codegen has passed it since SelectBoxView 10.10.1; this path never
+        // named the parameter, so a declared hint colour did nothing here.
+        // Through `rawRepresentation` + `getColor(_:data:)` so the bound
+        // spelling resolves as well — the route thumbTintColor takes.
+        let hintColor: Color? = DynamicHelpers.getColor(
+            attrs.hintColor?.rawRepresentation as? String, data: data
+        )
+
         // font — the label family (or "bold"). SelectBoxView hard-wired
         // .font(.system(size:)) inside itself, so a declared font had
         // nowhere to land; the view now takes the name.
@@ -190,6 +200,7 @@ public struct SelectBoxConverter {
                 prompt: prompt,
                 fontSize: fontSize,
                 fontColor: fontColor,
+                hintColor: hintColor ?? .gray,
                 fontName: fontName,
                 backgroundColor: backgroundColor,
                 cornerRadius: cornerRadius,
