@@ -978,6 +978,29 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertNotEqual(CollectionScrollTarget.cellId("3"), .index(3))
     }
 
+    // MARK: - the spacer gating is asymmetric on purpose
+
+    /// The gravity extractors DEFAULT to left/top, so an undeclared gravity
+    /// reads as "left" and the trailing-spacer condition is true for every
+    /// plain horizontal stack. Only the size gate keeps that from firing
+    /// everywhere — which is why view_converter.rb gates the trailing spacer
+    /// and not the leading one, and why removing all three put
+    /// paddingRight/paddingEnd/rightPadding inert.
+    func testTrailingSpacerNeedsAnExpandingContainer() throws {
+        let wrapContent = try component("""
+        { "type": "View", "id": "t", "width": "wrapContent", "height": 200,
+          "orientation": "horizontal", "paddingRight": 8 }
+        """)
+        XCTAssertEqual(wrapContent.widthRaw, "wrapContent")
+        XCTAssertNil(wrapContent.gravity, "no gravity — yet the extractor answers \"left\"")
+
+        let matchParent = try component("""
+        { "type": "View", "id": "t", "width": "matchParent", "height": 200,
+          "orientation": "horizontal" }
+        """)
+        XCTAssertEqual(matchParent.widthRaw, "matchParent")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
