@@ -1001,6 +1001,59 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(matchParent.widthRaw, "matchParent")
     }
 
+    // MARK: - contentMode: the spelling that is an ABSENCE
+
+    /// All fifteen declared spellings, including the aliases. `fill` and
+    /// `scaleToFill` are the STRETCH — resizable with no aspectRatio — which
+    /// is why the intent has to be a value rather than a ternary.
+    func testContentModeVocabularyCoversEveryDeclaredSpelling() {
+        let expected: [String: ImageContentModeIntent] = [
+            "fill": .stretch, "ScaleToFill": .stretch, "scaleToFill": .stretch,
+            "fit": .fit, "AspectFit": .fit,
+            "AspectFill": .aspectFill,
+            "top": .positional(.top), "Top": .positional(.top),
+            "bottom": .positional(.bottom), "Bottom": .positional(.bottom),
+            "left": .positional(.leading), "Left": .positional(.leading),
+            "right": .positional(.trailing), "Right": .positional(.trailing),
+            "center": .positional(.center), "Center": .positional(.center),
+        ]
+        for (spelling, intent) in expected {
+            XCTAssertEqual(
+                ImageContentModeIntent.from(spelling), intent,
+                "contentMode '\(spelling)' resolved to the wrong intent"
+            )
+        }
+    }
+
+    /// Anything unrecognised falls back to `.fit`, which is what both render
+    /// paths already did — the seam must not change that.
+    func testUnknownContentModeFallsBackToFit() {
+        XCTAssertEqual(ImageContentModeIntent.from("sideways"), .fit)
+        XCTAssertEqual(ImageContentModeIntent.from(nil), .fit)
+        // An unresolved binding is exactly this case: it matched nothing
+        // before, and it still does — but now it CAN be resolved first.
+        XCTAssertEqual(ImageContentModeIntent.from("@{mode}"), .fit)
+    }
+
+    /// The bound spelling resolves through the data dictionary, so every
+    /// intent including `.stretch` is reachable at runtime.
+    func testBoundContentModeReachesTheStretch() throws {
+        let c = try component("""
+        { "type": "Image", "id": "t", "src": "x", "contentMode": "@{mode}" }
+        """)
+        let raw = c.typedAttributes(ImageAttributes.self)
+            .contentMode?.rawRepresentation as? String
+        XCTAssertEqual(raw, "@{mode}")
+        XCTAssertEqual(
+            ImageContentModeIntent.from(DynamicHelpers.processText(raw, data: ["mode": "fill"])),
+            .stretch
+        )
+        XCTAssertEqual(
+            ImageContentModeIntent.from(DynamicHelpers.processText(raw, data: ["mode": "AspectFill"])),
+            .aspectFill
+        )
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
