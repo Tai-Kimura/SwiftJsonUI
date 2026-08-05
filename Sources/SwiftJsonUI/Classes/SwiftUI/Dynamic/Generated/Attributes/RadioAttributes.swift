@@ -44,7 +44,7 @@ public struct RadioAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Initial checked state (can be binding)
+    /// Seeds the group's INITIAL selection — it is not the live state, and it is not two-way. The state a radio group carries is `selectedValue`; `checked` only says which option starts selected when nothing else has said. Precedence, and all three platforms implement it in this order: a BOUND `selectedValue` wins outright (the group's own two-way state), then a LITERAL `selectedValue` (a group-level statement naming the starting option), then this option's `checked`. So a radio group that binds selectedValue ignores `checked` entirely, which is what stops a seed from freezing a group that the user can no longer change. The bound form of `checked` seeds the glyph rather than the state, since a property initialiser cannot read the data map: it selects only while the group has made no choice yet (sjui radio_converter.rb:88-103, and the same rule in RadioConverter.swift). CONTRAST with CheckBox.checked and Switch.checked, which look identical and are not: those ARE the control's state and carry binding_direction two-way. A radio has no state of its own — the group does. Declared 2026-08-05 (plan 49-E) from the implementations; the previous description said only "Initial checked state", which was true and told nobody what happens when both are declared.
     public let checked: AttrValue<Bool>?
 
     /// Color when checked.

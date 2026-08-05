@@ -31,6 +31,18 @@ public struct CommonAttributes {
         case equalCentering = "equalCentering"
     }
 
+    public enum EffectStyle: String {
+        case light = "Light"
+        case dark = "Dark"
+        case extraLight = "ExtraLight"
+        case regular = "Regular"
+        case prominent = "Prominent"
+        case ultraThin = "UltraThin"
+        case thin = "Thin"
+        case thick = "Thick"
+        case chrome = "Chrome"
+    }
+
     public enum Visibility: String {
         case visible = "visible"
         case invisible = "invisible"
@@ -255,13 +267,13 @@ public struct CommonAttributes {
     /// Legacy UIKit KVC binding: names the data property a view is bound to (SJUIViewCreator sets view.binding / view.bindingSet, and UIKit's Binding class pushes values through it). The object form is also the pre-@{} Table data source ({"data": "@{items}"}). Superseded by '@{...}' in the attribute value itself — use `bind` or the component's own value attribute instead. [accepts: string | object]
     public let binding: Any?
 
-    /// Custom Swift binding code
+    /// Custom Swift binding code The SwiftUI codegen DOES read this (base_view_converter.rb), but only to echo it back as a `// bindingScript: ...` comment — nothing reaches the rendered view, so `mode: uikit` stands. Recorded because the 2026-08-05 mode audit flags the read and the next auditor would otherwise re-derive it: the read is real, the effect is not.
     public let bindingScript: String?
 
     /// Groups related bindings for batch updates (can be array for multiple groups) [accepts: string | array]
     public let binding_group: Any?
 
-    /// Binding ID
+    /// Binding ID The SwiftUI codegen DOES read this (base_view_converter.rb), but only to echo it back as a `// binding_id: ...` comment — nothing reaches the rendered view, so `mode: uikit` stands. Recorded because the 2026-08-05 mode audit flags the read and the next auditor would otherwise re-derive it: the read is real, the effect is not.
     public let binding_id: String?
 
     /// Border color - hex string or color name from colors.json (binding supported). There is deliberately NO default: a border is drawn only when borderWidth AND borderColor are both declared, and neither half summons one on its own (2026-08-03 user ruling, recorded in attribute_semantics.json#semantics.border and gated by `jui conformance gate --cross-effect` against the five `observable` entries there). Declaring a default here would make borderWidth alone draw, which is the direction d2c8628 took once and the ruling superseded.
@@ -321,8 +333,8 @@ public struct CommonAttributes {
     /// Child distribution for orientation-bearing containers. SwiftUI: Spacer/weight synthesis; Compose: Arrangement.
     public let distribution: AttrEnum<Distribution>?
 
-    /// Visual effect style
-    public let effectStyle: String?
+    /// Visual effect (blur) style. Measured across the three converters 2026-08-05: the UIKit trio Light/Dark/ExtraLight is what all three map (sjui blur_converter.rb:71, kjui blurview_component.rb:38, rjui blur_converter.rb:98), and web additionally maps the SwiftUI material names. Every converter downcases before matching, so the casing here is presentational. `Regular` is the fallback all three already use for an unrecognised or absent value, hence the declared default. Enumerated because it was declared as a bare string while Blur.effectStyle — the same concept on the component that owns it — carried the enum: the split let the common spelling reach the render stage unvalidated, which is what the codegen-effect gate reported once the mode audit put these fixtures back in scope. [default: Regular]
+    public let effectStyle: AttrEnum<EffectStyle>?
 
     /// Whether component is enabled (can be data binding)
     public let enabled: AttrValue<Bool>?
@@ -600,7 +612,7 @@ public struct CommonAttributes {
     /// Enable user interaction (binding supported)
     public let userInteractionEnabled: AttrValue<Bool>?
 
-    /// Variables for include
+    /// Variables for include The SwiftUI codegen DOES read this (base_view_converter.rb), but only to echo it back as a `// variables: ...` comment — nothing reaches the rendered view, so `mode: uikit` stands. Recorded because the 2026-08-05 mode audit flags the read and the next auditor would otherwise re-derive it: the read is real, the effect is not.
     public let variables: [String: Any]?
 
     /// View visibility state (can be data binding)
@@ -666,7 +678,7 @@ public struct CommonAttributes {
         self.defaultBackground = AttrCoerce.attrValue(AttrCoerce.lookup(json, "defaultBackground"), AttrCoerce.string)
         self.disabledBackground = AttrCoerce.attrValue(AttrCoerce.lookup(json, "disabledBackground"), AttrCoerce.string)
         self.distribution = Self.parseDistribution(AttrCoerce.lookup(json, "distribution"))
-        self.effectStyle = AttrCoerce.string(AttrCoerce.lookup(json, "effectStyle"))
+        self.effectStyle = Self.parseEffectStyle(AttrCoerce.lookup(json, "effectStyle"))
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
         self.endMargin = AttrCoerce.attrValue(AttrCoerce.lookup(json, "endMargin"), AttrCoerce.number)
         self.events = AttrCoerce.object(AttrCoerce.lookup(json, "events"))
@@ -814,6 +826,26 @@ public struct CommonAttributes {
             }
         }
         AttrCodegenWarnings.emit("common.distribution: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseEffectStyle(_ raw: Any?) -> AttrEnum<EffectStyle>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "light": return .known(EffectStyle.light)
+            case "dark": return .known(EffectStyle.dark)
+            case "extralight": return .known(EffectStyle.extraLight)
+            case "regular", "systemmaterial": return .known(EffectStyle.regular)
+            case "prominent": return .known(EffectStyle.prominent)
+            case "ultrathin", "systemultrathinmaterial": return .known(EffectStyle.ultraThin)
+            case "thin", "systemthinmaterial": return .known(EffectStyle.thin)
+            case "thick", "systemthickmaterial": return .known(EffectStyle.thick)
+            case "chrome", "systemchromematerial": return .known(EffectStyle.chrome)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("common.effectStyle: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 
