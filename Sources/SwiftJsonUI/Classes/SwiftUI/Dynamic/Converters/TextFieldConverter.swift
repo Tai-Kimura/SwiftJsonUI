@@ -315,7 +315,9 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 20. border ---
-        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
+        result = DynamicModifierHelper.applyBorder(
+            result, component: component, data: data, honorsBorderStyle: false
+        )
 
         // --- 21. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
@@ -430,7 +432,9 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- 20. border ---
-        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
+        result = DynamicModifierHelper.applyBorder(
+            result, component: component, data: data, honorsBorderStyle: false
+        )
 
         // --- 21. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
