@@ -357,8 +357,13 @@ public struct DynamicModifierHelper {
     /// Internal rather than private so the split has a unit test: the AnyView
     /// it ends up on cannot be inspected.
     static func offsetOwnedMarginInsets(component: DynamicComponent, data: [String: Any]) -> EdgeInsets {
-        let centersHorizontally = component.centerInParent == true || component.centerHorizontal == true
-        let centersVertically = component.centerInParent == true || component.centerVertical == true
+        let common = component.typedAttributes(CommonAttributes.self)
+        func centres(_ attr: AttrValue<Bool>?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: nil, data: data) == true
+        }
+        let centresInParent = centres(common.centerInParent)
+        let centersHorizontally = centresInParent || centres(common.centerHorizontal)
+        let centersVertically = centresInParent || centres(common.centerVertical)
         let sharedHorizontal = centersHorizontally
             ? 0 : sharedMargin(component, .leftMargin, .rightMargin, data: data)
         let sharedVertical = centersVertically
@@ -643,7 +648,7 @@ public struct DynamicModifierHelper {
         // space, draw nothing, leave the accessibility tree. Collapsing is
         // "gone" only. This fallback is only reached off the builder path
         // (DynamicComponentBuilder wraps hidden in VisibilityWrapper).
-        if component.hidden == true {
+        if component.commonBool(\.hidden) == true {
             return invisible(view)
         }
 

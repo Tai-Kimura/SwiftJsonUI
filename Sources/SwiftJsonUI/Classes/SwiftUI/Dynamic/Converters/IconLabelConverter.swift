@@ -138,8 +138,13 @@ public struct IconLabelConverter {
         case .value(let v):
             return v
         case nil:
-            // Pre-SSoT layouts that spelled it `isOn` keep working.
-            return component.isOn
+            // Pre-SSoT layouts that spelled it `isOn` keep working. `isOn` is
+            // declared on Check/CheckBox/Switch/Toggle but NOT on IconLabel,
+            // so no typed slot is generated for it here — rawData is the only
+            // way to read it, the same shape as the other undeclared-spelling
+            // rows in the raw-read allowlist. (The hand-written `isOn` slot it
+            // used to ride on is gone: 50 §4, group C.)
+            return component.rawData["isOn"] as? Bool
         }
     }
 

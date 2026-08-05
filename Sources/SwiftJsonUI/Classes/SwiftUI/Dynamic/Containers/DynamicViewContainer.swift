@@ -288,11 +288,15 @@ public struct DynamicViewContainer: View {
         let bottom = child.margin(.bottomMargin, data: childData)
         var x = left - right
         var y = top - bottom
-        if child.centerInParent == true {
+        let common = child.typedAttributes(CommonAttributes.self)
+        func centres(_ attr: AttrValue<Bool>?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: nil, data: childData) == true
+        }
+        if centres(common.centerInParent) {
             return .zero
         }
-        if child.centerHorizontal == true { x = 0 }
-        if child.centerVertical == true { y = 0 }
+        if centres(common.centerHorizontal) { x = 0 }
+        if centres(common.centerVertical) { y = 0 }
         return CGSize(width: x, height: y)
     }
 

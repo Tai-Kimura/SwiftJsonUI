@@ -80,7 +80,7 @@ public struct TextFieldConverter {
             // in the clear.
             if let secure = DynamicHelpers.resolveBool(
                 component.typedAttributes(TextFieldAttributes.self).secure,
-                legacy: component.secure,
+                legacy: nil,
                 data: data
             ) { return secure }
             return component.input?.lowercased() == "password"

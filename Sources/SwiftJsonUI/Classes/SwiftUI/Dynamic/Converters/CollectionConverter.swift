@@ -290,7 +290,8 @@ public struct CollectionConverter {
         // is not killed when the binding flips to false, and so the modifier
         // chain shape stays the same regardless of value (preserves
         // ScrollViewReader / view identity across toggles).
-        var scrollEnabled: Bool = component.scrollEnabled ?? true
+        var scrollEnabled: Bool = component.typedAttributes(CollectionAttributes.self)
+            .scrollEnabled?.value ?? true
         if let expr = component.typedAttributes(CollectionAttributes.self)
             .scrollEnabled?.bindingExpression {
             // Canonical bool value context (coercion table / dot-path / default)

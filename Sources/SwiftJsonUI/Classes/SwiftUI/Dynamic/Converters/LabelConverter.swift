@@ -119,7 +119,7 @@ public struct LabelConverter {
 
         // linkable
         let linkable = DynamicHelpers.resolveBool(
-            attrs.linkable, legacy: component.linkable, data: data
+            attrs.linkable, legacy: nil, data: data
         ) == true
 
         let fontWeightValue: Font.Weight? = fontWeight.flatMap { Font.Weight.from(string: $0) }

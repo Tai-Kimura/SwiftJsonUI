@@ -320,8 +320,11 @@ public struct DynamicHelpers {
     }
 
     // Check if component should be hidden
-    public static func isHidden(_ component: DynamicComponent) -> Bool {
-        return component.hidden == true || component.visibility == "gone"
+    public static func isHidden(_ component: DynamicComponent, data: [String: Any] = [:]) -> Bool {
+        let hidden = resolveBool(
+            component.typedAttributes(CommonAttributes.self).hidden, legacy: nil, data: data
+        )
+        return hidden == true || component.visibility == "gone"
     }
 
     // Convert font weight string to Font.Weight

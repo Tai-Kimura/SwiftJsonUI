@@ -31,7 +31,7 @@ public struct CheckboxConverter {
         let isOnBinding = DynamicBindingHelper.bool(
             isOnExpr,
             data: data,
-            fallback: component.isOn ?? component.checked ?? false
+            fallback: attrs.isOn?.value ?? attrs.checked?.value ?? false
         )
 
         // Label text (supports binding)

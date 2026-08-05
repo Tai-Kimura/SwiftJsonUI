@@ -144,7 +144,9 @@ final class JSONLayoutIntegrationTests: XCTestCase {
 
         // Secure TextField
         let passwordField = component.child?[1]
-        XCTAssertEqual(passwordField?.secure, true)
+        XCTAssertEqual(
+            passwordField?.typedAttributes(TextFieldAttributes.self).secure?.value, true
+        )
 
         // SelectBox
         let selectBox = component.child?[2]
@@ -155,7 +157,9 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         // Switch
         let switchComponent = component.child?[3]
         XCTAssertEqual(switchComponent?.type, "Switch")
-        XCTAssertEqual(switchComponent?.isOn, false)
+        XCTAssertEqual(
+            switchComponent?.typedAttributes(SwitchAttributes.self).isOn?.value, false
+        )
     }
 
     // MARK: - Relative Positioning Tests
@@ -196,12 +200,12 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         XCTAssertEqual(component.height, 200)
 
         let topLeft = component.child?[0]
-        XCTAssertEqual(topLeft?.alignTop, true)
-        XCTAssertEqual(topLeft?.alignLeft, true)
+        XCTAssertEqual(topLeft?.commonBool(\.alignTop), true)
+        XCTAssertEqual(topLeft?.commonBool(\.alignLeft), true)
 
         let center = component.child?[1]
-        XCTAssertEqual(center?.centerHorizontal, true)
-        XCTAssertEqual(center?.centerVertical, true)
+        XCTAssertEqual(center?.commonBool(\.centerHorizontal), true)
+        XCTAssertEqual(center?.commonBool(\.centerVertical), true)
 
         let below = component.child?[2]
         XCTAssertEqual(below?.alignBottomOfView, "centerLabel")

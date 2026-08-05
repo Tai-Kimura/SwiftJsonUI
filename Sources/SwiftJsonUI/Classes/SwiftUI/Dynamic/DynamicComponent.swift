@@ -47,7 +47,6 @@ public struct DynamicComponent: Decodable {
     let autoShrink: Bool?  // Auto shrink text to fit for Label
     let lineBreakMode: String?  // Truncation mode: head, middle, tail (UIKit compatibility)
     let textShadow: AnyCodable?  // Text shadow for Label
-    let linkable: Bool?  // Make URLs clickable for Label
     let width: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let height: CGFloat?  // .infinity for matchParent, nil for wrapContent, or specific value
     let widthRaw: String?  // Store original string value if needed
@@ -81,7 +80,6 @@ public struct DynamicComponent: Decodable {
     // Check/Radio attributes
     let label: String?
     let onSrc: String?
-    let checked: Bool?
     let icon: String?
     let selectedIcon: String?
     let iconSize: CGFloat?
@@ -129,12 +127,10 @@ public struct DynamicComponent: Decodable {
     // Switch/Toggle event
     let onValueChange: String?
     let alpha: CGFloat?
-    let hidden: Bool?
     let visibility: String?
     let shadow: AnyCodable?
     let idealWidth: CGFloat?
     let idealHeight: CGFloat?
-    let centerInParent: Bool?
     let weight: CGFloat?
     let enabled: AnyCodable?  // For button enabled state with data binding support
     
@@ -165,7 +161,6 @@ public struct DynamicComponent: Decodable {
     let flexible: Bool?
     let containerInset: [CGFloat]?
     let hideOnFocused: Bool?
-    let secure: Bool?  // Secure text entry for TextField
     let returnKeyType: String?  // Return key type for TextField
     let borderStyle: String?  // Border style for TextField
     let input: String?  // Keyboard type for TextField
@@ -175,7 +170,6 @@ public struct DynamicComponent: Decodable {
     let iconColor: String?
     let iconPosition: String?
     let textAlign: String?
-    let isOn: Bool?
     let value: Double?
     let minValue: Double?
     let maxValue: Double?
@@ -189,7 +183,6 @@ public struct DynamicComponent: Decodable {
     let showsVerticalScrollIndicator: Bool?  // Show vertical scroll indicator
     let paging: Bool?  // Enable paging
     let bounces: Bool?  // Enable bounce effect
-    let scrollEnabled: Bool?  // Enable scrolling
     let scrollAnchor: String?  // top, center, bottom
     let defaultScrollAnchor: String?  // top, center, bottom (iOS 17+)
 
@@ -219,12 +212,6 @@ public struct DynamicComponent: Decodable {
     let alignment: Alignment?  // Converted SwiftUI alignment
     
     // Relative positioning
-    let alignTop: Bool?  // true = align to parent top
-    let alignBottom: Bool?  // true = align to parent bottom
-    let alignLeft: Bool?  // true = align to parent left
-    let alignRight: Bool?  // true = align to parent right
-    let centerHorizontal: Bool?
-    let centerVertical: Bool?
     let alignLeftOfView: String?  // JSON: alignLeftOfView -> constraint: leftOf
     let alignRightOfView: String?  // JSON: alignRightOfView -> constraint: rightOf
     let alignTopOfView: String?  // JSON: alignTopOfView -> constraint: above
@@ -240,7 +227,7 @@ public struct DynamicComponent: Decodable {
     public enum CodingKeys: String, CodingKey {
         case type, id, text, fontColor, font, fontWeight, fontFamily
         case disabledFontColor, edgeInset
-        case underline, strikethrough, autoShrink, lineBreakMode, textShadow, linkable
+        case underline, strikethrough, autoShrink, lineBreakMode, textShadow
         case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
         case leftPadding, rightPadding, topPadding, bottomPadding
@@ -249,7 +236,7 @@ public struct DynamicComponent: Decodable {
         case defaultImage, errorImage, loadingImage
         case highlighted, events
         case partialAttributes, highlightAttributes, hintAttributes
-        case label, onSrc, checked, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
+        case label, onSrc, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
         case normalColor, selectedColor
         case onTextChange, accessoryBackground, accessoryTextColor, doneText
         case caretAttributes, dividerAttributes, labelAttributes, canBack, prompt, includePromptWhenDataBinding, minuteInterval
@@ -260,23 +247,23 @@ public struct DynamicComponent: Decodable {
         case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
         case setTargetAsDelegate, setTargetAsDataSource
         case onValueChange
-        case alpha, hidden, visibility, shadow
+        case alpha, visibility, shadow
         case idealWidth, idealHeight
-        case centerInParent, weight, enabled
+        case weight, enabled
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
         case orientation, direction, distribution, contentMode, src, systemIcon, placeholder, renderingMode
         case headers, items, data
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
-        case secure, returnKeyType, borderStyle, input
+        case returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
-        case textAlign, isOn, value
+        case textAlign, value
         case minValue, maxValue, indicatorStyle
         case tabs, onTabChange
         case contentInsetAdjustmentBehavior
         case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
-        case paging, bounces, scrollEnabled
+        case paging, bounces
         case scrollAnchor, defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat
@@ -286,8 +273,6 @@ public struct DynamicComponent: Decodable {
         case includeData  // Will be handled specially in decoder
         case sharedData = "shared_data"  // Map JSON "shared_data" to sharedData
         case gravity, alignment
-        case alignTop, alignBottom, alignLeft, alignRight
-        case centerHorizontal, centerVertical
         case alignLeftOfView, alignRightOfView, alignTopOfView, alignBottomOfView
         case alignTopView, alignBottomView, alignLeftView, alignRightView
         case alignCenterVerticalView, alignCenterHorizontalView
@@ -354,7 +339,6 @@ public struct DynamicComponent: Decodable {
         // byte-unchanged.
         autoShrink = try container.decodeIfPresent(Bool.self, forKey: .autoShrink)
         textShadow = try container.decodeIfPresent(AnyCodable.self, forKey: .textShadow)
-        linkable = (try? container.decodeIfPresent(Bool.self, forKey: .linkable)) ?? nil
         lineBreakMode = try container.decodeIfPresent(String.self, forKey: .lineBreakMode)
 
         // Size properties - use helper for decoding
@@ -405,8 +389,6 @@ public struct DynamicComponent: Decodable {
         // Check/Radio attributes
         label = try container.decodeIfPresent(String.self, forKey: .label)
         onSrc = try container.decodeIfPresent(String.self, forKey: .onSrc)
-        // Use try? because checked can be binding string like "@{isChecked}"
-        checked = try? container.decodeIfPresent(Bool.self, forKey: .checked)
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
         selectedIcon = try container.decodeIfPresent(String.self, forKey: .selectedIcon)
         iconSize = try container.decodeIfPresent(CGFloat.self, forKey: .iconSize)
@@ -460,7 +442,6 @@ public struct DynamicComponent: Decodable {
         // Use try? because these can be binding strings like "@{sendButtonOpacity}"
         // decodeIfPresent throws (not returns nil) when the key exists but has wrong type
         alpha = try? container.decodeIfPresent(CGFloat.self, forKey: .alpha)
-        hidden = try? container.decodeIfPresent(Bool.self, forKey: .hidden)
         visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
         shadow = try container.decodeIfPresent(AnyCodable.self, forKey: .shadow)
         
@@ -469,9 +450,7 @@ public struct DynamicComponent: Decodable {
         idealWidth = try container.decodeIfPresent(CGFloat.self, forKey: .idealWidth)
         idealHeight = try container.decodeIfPresent(CGFloat.self, forKey: .idealHeight)
         
-        // Interaction (userInteractionEnabled/centerInParent are
-        // boolean|binding, weight is number|binding — tolerate `@{binding}`).
-        centerInParent = (try? container.decodeIfPresent(Bool.self, forKey: .centerInParent)) ?? nil
+        // Interaction (weight is number|binding — tolerate `@{binding}`).
         weight = (try? container.decodeIfPresent(CGFloat.self, forKey: .weight)) ?? nil
         enabled = try container.decodeIfPresent(AnyCodable.self, forKey: .enabled)
         // Z-order
@@ -518,7 +497,6 @@ public struct DynamicComponent: Decodable {
             containerInset = nil
         }
         hideOnFocused = try container.decodeIfPresent(Bool.self, forKey: .hideOnFocused)
-        secure = try? container.decodeIfPresent(Bool.self, forKey: .secure)
         returnKeyType = try container.decodeIfPresent(String.self, forKey: .returnKeyType)
         borderStyle = try container.decodeIfPresent(String.self, forKey: .borderStyle)
         input = try container.decodeIfPresent(String.self, forKey: .input)
@@ -528,8 +506,6 @@ public struct DynamicComponent: Decodable {
         iconColor = try container.decodeIfPresent(String.self, forKey: .iconColor)
         iconPosition = try container.decodeIfPresent(String.self, forKey: .iconPosition)
         textAlign = try container.decodeIfPresent(String.self, forKey: .textAlign)
-        // Use try? because these can be binding strings like "@{isOn}", "@{progress}", etc.
-        isOn = try? container.decodeIfPresent(Bool.self, forKey: .isOn)
         value = try? container.decodeIfPresent(Double.self, forKey: .value)
         minValue = try? container.decodeIfPresent(Double.self, forKey: .minValue)
         maxValue = try? container.decodeIfPresent(Double.self, forKey: .maxValue)
@@ -542,8 +518,6 @@ public struct DynamicComponent: Decodable {
         showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
         paging = try container.decodeIfPresent(Bool.self, forKey: .paging)
         bounces = try container.decodeIfPresent(Bool.self, forKey: .bounces)
-        // Use try? because scrollEnabled can be a binding string like "@{messageListScrollEnabled}"
-        scrollEnabled = try? container.decodeIfPresent(Bool.self, forKey: .scrollEnabled)
         scrollAnchor = try container.decodeIfPresent(String.self, forKey: .scrollAnchor)
         defaultScrollAnchor = try container.decodeIfPresent(String.self, forKey: .defaultScrollAnchor)
 
@@ -584,13 +558,6 @@ public struct DynamicComponent: Decodable {
         alignment = DynamicDecodingHelper.gravityToAlignment(gravity)
         
         // Relative positioning
-        // Relative positioning booleans are all boolean|binding — tolerate.
-        alignTop = (try? container.decodeIfPresent(Bool.self, forKey: .alignTop)) ?? nil
-        alignBottom = (try? container.decodeIfPresent(Bool.self, forKey: .alignBottom)) ?? nil
-        alignLeft = (try? container.decodeIfPresent(Bool.self, forKey: .alignLeft)) ?? nil
-        alignRight = (try? container.decodeIfPresent(Bool.self, forKey: .alignRight)) ?? nil
-        centerHorizontal = (try? container.decodeIfPresent(Bool.self, forKey: .centerHorizontal)) ?? nil
-        centerVertical = (try? container.decodeIfPresent(Bool.self, forKey: .centerVertical)) ?? nil
         alignLeftOfView = try container.decodeIfPresent(String.self, forKey: .alignLeftOfView)
         alignRightOfView = try container.decodeIfPresent(String.self, forKey: .alignRightOfView)
         alignTopOfView = try container.decodeIfPresent(String.self, forKey: .alignTopOfView)
@@ -827,5 +794,17 @@ extension DynamicComponent {
     func hasMargin(_ edge: MarginEdge) -> Bool {
         typedAttributes(CommonAttributes.self)[keyPath: edge.keyPath] != nil
             || rawMarginSpelling(edge) != nil
+    }
+
+    /// The LITERAL value of a `common` boolean attribute — `nil` when the
+    /// layout wrote `@{expr}`, which the call site resolves itself (either
+    /// with `DynamicHelpers.resolveBool(_:legacy:data:)`, or with its own
+    /// reactive path where one exists, as `hidden` has).
+    ///
+    /// Same reason as `commonString`: the hand-written `Bool?` slots are
+    /// gone, and a `@{expr}` decoded to `nil` in them — so `component.x ==
+    /// true` silently dropped every bound boolean (plan 50 §4, group C).
+    func commonBool(_ keyPath: KeyPath<CommonAttributes, AttrValue<Bool>?>) -> Bool? {
+        typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.value
     }
 }
