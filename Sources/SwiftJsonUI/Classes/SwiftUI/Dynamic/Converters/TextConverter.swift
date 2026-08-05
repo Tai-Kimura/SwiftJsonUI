@@ -107,9 +107,13 @@ public struct TextConverter {
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
                 let frameAlignment: Alignment = {
-                    switch component.textAlign {
+                    // canonical spelling は "Center" / "Right"。codegen
+                    // (frame_helper.rb: text_align.to_s.downcase)と同じく
+                    // 大小を潰してから見る。以前は完全一致だったので
+                    // `textAlign: "Center"` が leading に落ちていた。
+                    switch component.textAlignSpelling(data: data)?.lowercased() {
                     case "center": return .center
-                    case "right": return .trailing
+                    case "right", "trailing": return .trailing
                     default: return .leading
                     }
                 }()

@@ -356,8 +356,8 @@ public struct TextFieldConverter {
         }
 
         // --- 3. multilineTextAlignment ---
-        if component.textAlign != nil {
-            result = AnyView(result.multilineTextAlignment(DynamicHelpers.getTextAlignment(from: component)))
+        if component.textAlignSpelling(data: data) != nil {
+            result = AnyView(result.multilineTextAlignment(DynamicHelpers.getTextAlignment(from: component, data: data)))
         }
 
         // --- 4. foregroundColor ---

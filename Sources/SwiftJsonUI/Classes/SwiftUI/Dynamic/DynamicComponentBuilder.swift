@@ -39,7 +39,7 @@ public struct DynamicComponentBuilder: View {
         // view KEEPS its layout space, is not drawn, and is removed from the
         // accessibility tree. It must NOT collapse — collapsing is
         // visibility:"gone" only.
-        let needsVisibilityWrapper = component.visibility != nil || component.commonBool(\.hidden) == true
+        let needsVisibilityWrapper = component.visibilitySpelling() != nil || component.commonBool(\.hidden) == true
             || bindingHiddenExpression != nil
 
         if needsVisibilityWrapper {
@@ -86,7 +86,7 @@ public struct DynamicComponentBuilder: View {
                     buildComponentWithModifiers()
                 }
             }
-        } else if let visibilityValue = component.visibility {
+        } else if let visibilityValue = component.visibilitySpelling() {
             if let inner = DynamicBindingResolver.inner(of: visibilityValue) {
                 let expression = DynamicBindingResolver.parse(inner)
                 let rawValue = expression.negated

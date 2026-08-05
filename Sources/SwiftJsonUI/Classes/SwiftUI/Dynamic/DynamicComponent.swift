@@ -127,7 +127,6 @@ public struct DynamicComponent: Decodable {
     // Switch/Toggle event
     let onValueChange: String?
     let alpha: CGFloat?
-    let visibility: String?
     let shadow: AnyCodable?
     let idealWidth: CGFloat?
     let idealHeight: CGFloat?
@@ -144,7 +143,6 @@ public struct DynamicComponent: Decodable {
     let orientation: String?
     let direction: String?  // Layout direction: topToBottom, bottomToTop, leftToRight, rightToLeft
     let distribution: String?  // Child distribution: fill, fillEqually, fillProportionally, equalSpacing, equalCentering
-    let contentMode: String?
     let src: String?  // Image source (local name or URL)
     let systemIcon: Bool?  // true to use SF Symbol, false for local asset (default: false)
     let placeholder: String?
@@ -169,7 +167,6 @@ public struct DynamicComponent: Decodable {
     let iconOff: String?
     let iconColor: String?
     let iconPosition: String?
-    let textAlign: String?
     let value: Double?
     let minValue: Double?
     let maxValue: Double?
@@ -247,18 +244,18 @@ public struct DynamicComponent: Decodable {
         case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
         case setTargetAsDelegate, setTargetAsDataSource
         case onValueChange
-        case alpha, visibility, shadow
+        case alpha, shadow
         case idealWidth, idealHeight
         case weight, enabled
         case indexBelow, indexAbove
         case child
         case children  // Alias for child (backward compatibility)
-        case orientation, direction, distribution, contentMode, src, systemIcon, placeholder, renderingMode
+        case orientation, direction, distribution, src, systemIcon, placeholder, renderingMode
         case headers, items, data
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
         case returnKeyType, borderStyle, input
         case action, iconOn, iconOff, iconColor, iconPosition
-        case textAlign, value
+        case value
         case minValue, maxValue, indicatorStyle
         case tabs, onTabChange
         case contentInsetAdjustmentBehavior
@@ -442,7 +439,6 @@ public struct DynamicComponent: Decodable {
         // Use try? because these can be binding strings like "@{sendButtonOpacity}"
         // decodeIfPresent throws (not returns nil) when the key exists but has wrong type
         alpha = try? container.decodeIfPresent(CGFloat.self, forKey: .alpha)
-        visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
         shadow = try container.decodeIfPresent(AnyCodable.self, forKey: .shadow)
         
         // Size constraints
@@ -465,7 +461,6 @@ public struct DynamicComponent: Decodable {
         orientation = try container.decodeIfPresent(String.self, forKey: .orientation)
         direction = try container.decodeIfPresent(String.self, forKey: .direction)
         distribution = try container.decodeIfPresent(String.self, forKey: .distribution)
-        contentMode = try container.decodeIfPresent(String.self, forKey: .contentMode)
         src = try container.decodeIfPresent(String.self, forKey: .src)
         systemIcon = try container.decodeIfPresent(Bool.self, forKey: .systemIcon)
         placeholder = try container.decodeIfPresent(String.self, forKey: .placeholder)
@@ -505,7 +500,6 @@ public struct DynamicComponent: Decodable {
         iconOff = try container.decodeIfPresent(String.self, forKey: .iconOff)
         iconColor = try container.decodeIfPresent(String.self, forKey: .iconColor)
         iconPosition = try container.decodeIfPresent(String.self, forKey: .iconPosition)
-        textAlign = try container.decodeIfPresent(String.self, forKey: .textAlign)
         value = try? container.decodeIfPresent(Double.self, forKey: .value)
         minValue = try? container.decodeIfPresent(Double.self, forKey: .minValue)
         maxValue = try? container.decodeIfPresent(Double.self, forKey: .maxValue)
@@ -731,6 +725,87 @@ extension DynamicComponent {
         data: [String: Any] = [:]
     ) -> Int? {
         number(type, keyPath, data: data).map { Int($0.rounded()) }
+    }
+
+    /// A declared-enum attribute as its string spelling.
+    ///
+    /// Two shapes exist and both are declared: `AttrValue<AttrEnum<E>>?`
+    /// where the attribute also accepts a binding, and a bare `AttrEnum<E>?`
+    /// where it does not. `textAlign` is BOTH — `AttrValue`-wrapped on Label,
+    /// bare on Button / TextField / TextView / EditText / Input — so a single
+    /// call shape needs the two overloads rather than one guess.
+    ///
+    /// `.known` returns the CANONICAL spelling, not what the author typed:
+    /// matching is case-insensitive, so `"left"` and `"Left"` both arrive as
+    /// `.left` and leave as `"Left"`. Every string switch downstream already
+    /// accepts both, but a new one must switch on the canonical value —
+    /// the `contentType`/`tel` regression was exactly this.
+    /// `.unknown` passes the author's value through untouched (open enum).
+    func enumString<T: JsonUIGeneratedAttributes, E: RawRepresentable>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, AttrValue<AttrEnum<E>>?>,
+        data: [String: Any] = [:]
+    ) -> String? where E.RawValue == String {
+        switch typedAttributes(type)[keyPath: keyPath] {
+        case .some(.value(let declared)):
+            return Self.spelling(of: declared)
+        case .some(.binding(let expression)):
+            return DynamicBindingResolver.resolveString(expression: expression, data: data)
+        case nil:
+            return nil
+        }
+    }
+
+    func enumString<T: JsonUIGeneratedAttributes, E: RawRepresentable>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, AttrEnum<E>?>
+    ) -> String? where E.RawValue == String {
+        typedAttributes(type)[keyPath: keyPath].map(Self.spelling(of:))
+    }
+
+    private static func spelling<E: RawRepresentable>(
+        of declared: AttrEnum<E>
+    ) -> String where E.RawValue == String {
+        switch declared {
+        case .known(let value): return value.rawValue
+        case .unknown(let raw): return raw as? String ?? String(describing: raw)
+        }
+    }
+
+    /// `visibility` — declared `AttrValue<AttrEnum<Visibility>>?` on common.
+    ///
+    /// Returns the LAYOUT spelling, `"@{expr}"` included, because that is
+    /// what the hand-decoded slot returned and several call sites lean on
+    /// it: `needsVisibilityWrapper` asks "was it declared", the container's
+    /// visible-child count treats a bound visibility as not-definitely-
+    /// visible, and `VisibilityWrapper` re-parses the binding itself.
+    /// Resolving here would quietly turn all three into "visible".
+    func visibilitySpelling() -> String? {
+        typedAttributes(CommonAttributes.self).visibility.map(Self.enumRawSpelling(of:))
+    }
+
+    /// `textAlign` — the one attribute declared in BOTH enum shapes.
+    /// Label wraps it in `AttrValue` (it accepts a binding); Button,
+    /// TextField, TextView, EditText and Input declare the bare `AttrEnum`.
+    /// Reading the wrapped shape first covers every component, because the
+    /// extraction only coerces `rawData` — but the bare tables are what a
+    /// TextField actually declares, so both are consulted rather than
+    /// guessing from `type`.
+    func textAlignSpelling(data: [String: Any] = [:]) -> String? {
+        typedAttributes(LabelAttributes.self).textAlign.map(Self.enumRawSpelling(of:))
+            ?? enumString(TextFieldAttributes.self, \.textAlign)
+    }
+
+    /// The layout spelling of a wrapped enum: canonical for a declared
+    /// value, the author's text for an undeclared one, `"@{expr}"` for a
+    /// binding — i.e. exactly what a hand-decoded `String?` slot held.
+    private static func enumRawSpelling<E: RawRepresentable>(
+        of attr: AttrValue<AttrEnum<E>>
+    ) -> String where E.RawValue == String {
+        switch attr {
+        case .value(let declared): return spelling(of: declared)
+        case .binding(let expression): return "@{\(expression)}"
+        }
     }
 
     /// The six per-side margins.

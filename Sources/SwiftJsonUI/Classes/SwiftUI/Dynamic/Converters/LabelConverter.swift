@@ -197,9 +197,9 @@ public struct LabelConverter {
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
                 let frameAlignment: Alignment = {
-                    switch component.textAlign {
+                    switch component.textAlignSpelling(data: data)?.lowercased() {
                     case "center": return .center
-                    case "right": return .trailing
+                    case "right", "trailing": return .trailing
                     default: return .leading
                     }
                 }()

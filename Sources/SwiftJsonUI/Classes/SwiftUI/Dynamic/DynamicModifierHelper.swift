@@ -107,7 +107,7 @@ public struct DynamicModifierHelper {
             let typeStr = component.type?.lowercased() ?? ""
             let isTextComponent = ["label", "text"].contains(typeStr)
             let hasDeclaredTextFrameAlign = isTextComponent &&
-                (component.textAlign != nil || component.gravity != nil)
+                (component.textAlignSpelling() != nil || component.gravity != nil)
             if fixedWidth != nil && fixedHeight != nil,
                let alignment = frameAlignment(for: component, bothAxes: true) {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
@@ -451,7 +451,7 @@ public struct DynamicModifierHelper {
         if let alpha = component.alpha, !component.isNormalized {
             return AnyView(view.opacity(Double(alpha)))
         }
-        if component.visibility == "invisible" {
+        if component.visibilitySpelling() == "invisible" {
             // Full invisible mechanism, mirroring VisibilityWrapper /
             // applyHidden: a bare .opacity(0) keeps the view findable by
             // VoiceOver and UI tests. Normally the builder wraps first and
@@ -641,7 +641,7 @@ public struct DynamicModifierHelper {
     // MARK: - 13. Hidden
 
     public static func applyHidden(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
-        if component.visibility == "gone" {
+        if component.visibilitySpelling() == "gone" {
             return AnyView(view.hidden())
         }
         // hidden == visibility:"invisible" (canonical spec): keep the layout
@@ -804,7 +804,7 @@ public struct DynamicModifierHelper {
 
     private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {
         if child.include != nil { return 0 } // unknown subtree
-        if let visibility = child.visibility, visibility != "visible" { return 0 }
+        if let visibility = child.visibilitySpelling(), visibility != "visible" { return 0 }
         let typeName = child.type?.lowercased() ?? ""
         if accessibilityContainerTypes.contains(typeName) {
             // id-bearing container: becomes an explicit accessibility
@@ -825,7 +825,7 @@ public struct DynamicModifierHelper {
         // ancestor's .accessibilityHidden(true), so creating one here would
         // leave an invisible view findable by VoiceOver / UI tests.
         // (VisibilityWrapper hides the rest of the subtree.)
-        if component.visibility == "invisible" {
+        if component.visibilitySpelling() == "invisible" {
             return view
         }
         if accessibilityContainerTypes.contains(typeName) {
@@ -1030,7 +1030,7 @@ public struct DynamicModifierHelper {
 
         if isTextComponent {
             // Match frame_helper.rb: Label/Text use textAlign for frame alignment
-            switch component.textAlign?.lowercased() {
+            switch component.textAlignSpelling()?.lowercased() {
             case "center":
                 return bothAxes ? .center : .center
             case "right", "trailing":

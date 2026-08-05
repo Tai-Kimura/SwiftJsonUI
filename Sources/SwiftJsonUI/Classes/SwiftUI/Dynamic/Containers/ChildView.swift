@@ -36,7 +36,7 @@ public struct ChildView: View {
             ) == true {
                 return "gone"
             }
-            return component.visibility
+            return component.visibilitySpelling()
         }()
 
         VisibilityWrapper(visibility) {

@@ -94,7 +94,7 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.type, "Image")
         XCTAssertEqual(component.src, "icon_home")
-        XCTAssertEqual(component.contentMode, "AspectFit")
+        XCTAssertEqual(component.enumString(ImageAttributes.self, \.contentMode), "AspectFit")
         XCTAssertEqual(component.width, 100)
         XCTAssertEqual(component.height, 100)
     }

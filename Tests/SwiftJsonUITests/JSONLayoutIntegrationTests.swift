@@ -36,7 +36,11 @@ final class JSONLayoutIntegrationTests: XCTestCase {
         XCTAssertEqual(component.fontColor, "#333333")
         XCTAssertEqual(component.font, "Helvetica")
         XCTAssertEqual(component.fontWeight, "bold")
-        XCTAssertEqual(component.textAlign, "center")
+        // 宣言は "center"、返るのは canonical の "Center"。AttrEnum の照合は
+        // 大小無視なので、綴りは 1 つに正規化される。下流の switch は
+        // codegen (frame_helper.rb: text_align.to_s.downcase) と同じく
+        // 大小を潰してから見る。
+        XCTAssertEqual(component.textAlignSpelling(), "Center")
     }
 
     // MARK: - Nested View Layout Tests
