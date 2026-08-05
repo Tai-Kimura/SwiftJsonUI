@@ -107,7 +107,14 @@ public struct WeightedStackContainer: View {
         // the tool-generated code fixes this by delegating to the same wrapper.
         if orientation == "horizontal" {
             let builtChildren = buildHorizontalChildren()
-            let hasMatchParentHeight = children.contains { $0.height == .infinity || $0.height == -1 }
+            // The flag is about THIS container's cross axis, not its
+            // children's: view_converter.rb sets it from
+            // `@component['height'] == 'matchParent'`. Reading the children
+            // instead answered a different question — a matchParent stack
+            // holding fixed-height children came out false and the stack
+            // fixedSize'd itself to their natural height.
+            let hasMatchParentHeight = component.heightRaw == "matchParent"
+                || component.height == .infinity || component.height == -1
             WeightedHStack(
                 alignment: getVerticalAlignment(),
                 spacing: spacingValue,

@@ -920,6 +920,22 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertNil(undeclared.typedAttributes(TabViewAttributes.self).showLabels)
     }
 
+    /// `hasMatchParentCrossAxis` is about the CONTAINER's cross axis, not its
+    /// children's. view_converter.rb sets it from the container's own height;
+    /// reading the children answered a different question, so a matchParent
+    /// stack holding fixed-height children came out false.
+    func testWeightedStackCrossAxisReadsTheContainer() throws {
+        let container = try component("""
+        { "type": "View", "id": "root", "width": "matchParent", "height": "matchParent",
+          "orientation": "horizontal",
+          "child": [{ "type": "View", "id": "t", "width": 200, "height": 200, "weight": 1 }] }
+        """)
+        XCTAssertEqual(container.heightRaw, "matchParent")
+
+        let child = container.childComponents?.first
+        XCTAssertEqual(child?.height, 200, "the child is fixed — reading it would give false")
+    }
+
     // MARK: - Overlay alignment
 
     /// The overlay has to follow `textAlign`, or the placeholder and the
