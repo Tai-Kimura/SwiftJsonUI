@@ -25,6 +25,43 @@ final class DynamicZStackMarginTests: XCTestCase {
         DynamicModifierHelper.offsetOwnedMarginInsets(component: try component(json), data: data)
     }
 
+    // MARK: - Bound centring (50 §4, group C)
+
+    /// A centred axis has its offset zeroed, and `centerInParent` /
+    /// `centerHorizontal` / `centerVertical` are all `boolean|binding`. The
+    /// hand-decoded slot was nil for `@{expr}`, so a BOUND centring left the
+    /// margin offset in place and the child sat off-centre by its own margin.
+    func testBoundCentringZeroesTheOffset() throws {
+        // Opposing pairs, because the inset this returns is the SHARED part
+        // of two margins — a lone leftMargin shares nothing and is 0 either way.
+        let json = """
+        { "type": "View", "leftMargin": 20, "rightMargin": 20,
+          "topMargin": 10, "bottomMargin": 10,
+          "centerInParent": "@{isCentred}" }
+        """
+
+        let centred = try insets(json, data: ["isCentred": true])
+        XCTAssertEqual(centred.leading, 0)
+        XCTAssertEqual(centred.top, 0)
+
+        let notCentred = try insets(json, data: ["isCentred": false])
+        XCTAssertEqual(notCentred.leading, 20)
+        XCTAssertEqual(notCentred.top, 10)
+    }
+
+    /// One axis at a time: a bound `centerHorizontal` must not zero the
+    /// vertical margin.
+    func testBoundHorizontalCentringLeavesTheVerticalMargin() throws {
+        let result = try insets("""
+        { "type": "View", "leftMargin": 20, "rightMargin": 20,
+          "topMargin": 10, "bottomMargin": 10,
+          "centerHorizontal": "@{h}" }
+        """, data: ["h": true])
+
+        XCTAssertEqual(result.leading, 0)
+        XCTAssertEqual(result.top, 10)
+    }
+
     // MARK: - The regression
 
     func testSymmetricVerticalMarginKeepsItsSharedInset() throws {

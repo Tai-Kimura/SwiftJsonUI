@@ -341,8 +341,11 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
         let attrs = c.typedAttributes(CommonAttributes.self)
 
-        // the hand-decoded `clipToBounds` slot is deleted (plan 50 §4); the typed
-        // extraction below is now the only read path.
+        // The hand-decoded slot is deleted (50 §4). `commonBool` is the
+        // literal reader that replaced it and is nil for a binding by
+        // construction — which is why the call site has to resolve rather
+        // than compare.
+        XCTAssertNil(c.commonBool(\.clipToBounds))
         XCTAssertEqual(
             DynamicHelpers.resolveBool(attrs.clipToBounds, legacy: nil, data: ["shouldClip": true]),
             true
@@ -590,7 +593,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
         let common = c.typedAttributes(CommonAttributes.self)
 
-        XCTAssertNil(c.alignTop)
+        XCTAssertNil(c.commonBool(\.alignTop))
         XCTAssertEqual(
             DynamicHelpers.resolveBool(common.alignTop, legacy: nil, data: ["top": true]), true
         )
@@ -623,6 +626,63 @@ final class DynamicInertAttributeTests: XCTestCase {
         { "type": "View", "id": "t" }
         """)
         XCTAssertFalse(RelativePositionConverter.needsRelativePositioning(undeclared))
+    }
+
+    /// `hidden` is `boolean|binding` too, and `resolveVisibility` compared the
+    /// hand-decoded slot with `== true` — nil for `@{expr}`, so a bound
+    /// `hidden` resolved to "visible" whatever the data said.
+    func testBoundHiddenResolvesThroughVisibility() throws {
+        let c = try component("""
+        { "type": "View", "id": "t", "hidden": "@{isGone}" }
+        """)
+
+        XCTAssertEqual(
+            DynamicDecodingHelper.resolveVisibility(component: c, data: ["isGone": true]), "gone"
+        )
+        XCTAssertEqual(
+            DynamicDecodingHelper.resolveVisibility(component: c, data: ["isGone": false]), "visible"
+        )
+
+        // The literal form keeps its answer.
+        let literal = try component("""
+        { "type": "View", "id": "t", "hidden": true }
+        """)
+        XCTAssertEqual(DynamicDecodingHelper.resolveVisibility(component: literal), "gone")
+    }
+
+    /// Conflict detection runs on the same pre-`data` footing as routing: a
+    /// bound flag counts as declared, a literal `false` does not. Reading the
+    /// slots with `== true` made two bound-but-conflicting children look like
+    /// no conflict at all, so the parent laid them out as a plain stack.
+    func testBoundAlignmentsCountAsConflicting() throws {
+        let boundPair = [
+            try component("""
+                { "type": "View", "alignTop": "@{a}" }
+            """),
+            try component("""
+                { "type": "View", "alignBottom": "@{b}" }
+            """)
+        ]
+        XCTAssertTrue(
+            RelativePositionConverter.childrenHaveConflictingAlignments(
+                boundPair, parentOrientation: "vertical"
+            )
+        )
+
+        // Perpendicular to the orientation is still not a conflict.
+        let perpendicular = [
+            try component("""
+                { "type": "View", "alignLeft": "@{a}" }
+            """),
+            try component("""
+                { "type": "View", "alignRight": "@{b}" }
+            """)
+        ]
+        XCTAssertFalse(
+            RelativePositionConverter.childrenHaveConflictingAlignments(
+                perpendicular, parentOrientation: "vertical"
+            )
+        )
     }
 
     /// `tapBackground` split by route: ButtonConverter always resolved it,

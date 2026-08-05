@@ -39,7 +39,7 @@ public struct DynamicComponentBuilder: View {
         // view KEEPS its layout space, is not drawn, and is removed from the
         // accessibility tree. It must NOT collapse — collapsing is
         // visibility:"gone" only.
-        let needsVisibilityWrapper = component.visibility != nil || component.hidden == true
+        let needsVisibilityWrapper = component.visibility != nil || component.commonBool(\.hidden) == true
             || bindingHiddenExpression != nil
 
         if needsVisibilityWrapper {
@@ -63,7 +63,7 @@ public struct DynamicComponentBuilder: View {
 
     @ViewBuilder
     private func buildWithVisibility() -> some View {
-        if component.hidden == true {
+        if component.commonBool(\.hidden) == true {
             // hidden: true == visibility:"invisible" (space kept, not drawn,
             // accessibility-hidden) — NOT "gone".
             VisibilityWrapper("invisible") {
@@ -185,54 +185,63 @@ public struct DynamicComponentBuilder: View {
         }
 
         var info = AlignmentInfo()
+        // Read through the generated table, not the hand-written decode slot:
+        // the slot is `Bool?` and a `@{expr}` decodes to nil there, so a bound
+        // alignment placed nothing and the child stayed at the container's
+        // default corner. Same `flag` shape RelativePositionConverter already
+        // uses for the same eight attributes (plan 50 §4, group C).
+        let common = component.typedAttributes(CommonAttributes.self)
+        func flag(_ attr: AttrValue<Bool>?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: nil, data: data) == true
+        }
 
         if parentOrientation == "horizontal" {
-            if component.alignTop == true {
+            if flag(common.alignTop) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .top
-            } else if component.alignBottom == true {
+            } else if flag(common.alignBottom) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .bottom
-            } else if component.centerVertical == true {
+            } else if flag(common.centerVertical) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .center
             }
 
-            if component.alignRight == true {
+            if flag(common.alignRight) {
                 info.needsSpacerBefore = true
-            } else if component.alignLeft == true {
+            } else if flag(common.alignLeft) {
                 info.needsSpacerAfter = true
-            } else if component.centerHorizontal == true || component.centerInParent == true {
+            } else if flag(common.centerHorizontal) || flag(common.centerInParent) {
                 info.needsSpacerBefore = true
                 info.needsSpacerAfter = true
             }
 
-            if component.centerInParent == true {
+            if flag(common.centerInParent) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .center
             }
         } else if parentOrientation == "vertical" {
-            if component.alignLeft == true {
+            if flag(common.alignLeft) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .leading
-            } else if component.alignRight == true {
+            } else if flag(common.alignRight) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .trailing
-            } else if component.centerHorizontal == true {
+            } else if flag(common.centerHorizontal) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .center
             }
 
-            if component.alignBottom == true {
+            if flag(common.alignBottom) {
                 info.needsSpacerBefore = true
-            } else if component.alignTop == true {
+            } else if flag(common.alignTop) {
                 info.needsSpacerAfter = true
-            } else if component.centerVertical == true || component.centerInParent == true {
+            } else if flag(common.centerVertical) || flag(common.centerInParent) {
                 info.needsSpacerBefore = true
                 info.needsSpacerAfter = true
             }
 
-            if component.centerInParent == true {
+            if flag(common.centerInParent) {
                 info.needsWrapper = true
                 info.wrapperAlignment = .center
             }

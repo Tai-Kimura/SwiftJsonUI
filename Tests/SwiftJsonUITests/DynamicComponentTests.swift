@@ -73,7 +73,9 @@ final class DynamicComponentTests: XCTestCase {
             component.typedAttributes(TextFieldAttributes.self).hintColor?.rawRepresentation as? String,
             "#888888"
         )
-        XCTAssertEqual(component.secure, true)
+        XCTAssertEqual(
+            component.typedAttributes(TextFieldAttributes.self).secure?.value, true
+        )
         XCTAssertEqual(component.returnKeyType, "done")
     }
 
@@ -244,8 +246,8 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.commonNumber(\.borderWidth), 2)
         XCTAssertEqual(component.commonString(\.borderColor), "#CCCCCC")
         XCTAssertEqual(component.alpha, 0.8)
-        XCTAssertEqual(component.hidden, false)
-        XCTAssertEqual(component.typedAttributes(CommonAttributes.self).clipToBounds?.value, true)
+        XCTAssertEqual(component.commonBool(\.hidden), false)
+        XCTAssertEqual(component.commonBool(\.clipToBounds), true)
     }
 
     // MARK: - Event Handler Tests
@@ -375,9 +377,11 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.alignTop, true)
-        XCTAssertEqual(component.alignLeft, true)
-        XCTAssertEqual(component.centerHorizontal, false)
+        // The relative-positioning flags' hand-written slots are gone
+        // (50 §4, group C) — the generated table is the reader.
+        XCTAssertEqual(component.commonBool(\.alignTop), true)
+        XCTAssertEqual(component.commonBool(\.alignLeft), true)
+        XCTAssertEqual(component.commonBool(\.centerHorizontal), false)
         XCTAssertEqual(component.alignBottomOfView, "targetView")
     }
 
@@ -401,7 +405,9 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.horizontalScroll, true)
         XCTAssertEqual(component.paging, true)
         XCTAssertEqual(component.bounces, false)
-        XCTAssertEqual(component.scrollEnabled, true)
+        XCTAssertEqual(
+            component.typedAttributes(ScrollViewAttributes.self).scrollEnabled?.value, true
+        )
         XCTAssertEqual(component.showsHorizontalScrollIndicator, false)
         XCTAssertEqual(component.showsVerticalScrollIndicator, true)
     }
@@ -696,7 +702,7 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertNil(component.typedAttributes(CommonAttributes.self).canTap?.value)
+        XCTAssertNil(component.commonBool(\.canTap))
         XCTAssertEqual(
             component.typedAttributes(CommonAttributes.self).canTap?.bindingExpression,
             "isTappable"
@@ -760,7 +766,7 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.commonNumber(\.cornerRadius), 12)
         XCTAssertEqual(component.commonNumber(\.borderWidth), 2)
-        XCTAssertEqual(component.typedAttributes(CommonAttributes.self).canTap?.value, true)
+        XCTAssertEqual(component.commonBool(\.canTap), true)
         XCTAssertEqual(component.weight, 3)
         XCTAssertEqual(component.commonNumber(\.paddingTop), 8)
         XCTAssertEqual(component.commonNumber(\.minWidth), 100)
@@ -770,8 +776,8 @@ final class DynamicComponentTests: XCTestCase {
             component.typedAttributes(CommonAttributes.self).aspectWidth?.value, 16
         )
         XCTAssertEqual(component.number(CommonAttributes.self, \.widthWeight), 0.5)
-        XCTAssertEqual(component.alignTop, true)
-        XCTAssertEqual(component.centerInParent, false)
+        XCTAssertEqual(component.commonBool(\.alignTop), true)
+        XCTAssertEqual(component.commonBool(\.centerInParent), false)
         XCTAssertEqual(component.int(LabelAttributes.self, \.lines), 2)
         XCTAssertEqual(component.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) }, 4)
     }
@@ -836,11 +842,11 @@ final class DynamicComponentTests: XCTestCase {
         let common = component.typedAttributes(CommonAttributes.self)
 
         XCTAssertEqual(
-            DynamicHelpers.resolveBool(common.canTap, legacy: component.typedAttributes(CommonAttributes.self).canTap?.value, data: ["isTappable": true]),
+            DynamicHelpers.resolveBool(common.canTap, legacy: nil, data: ["isTappable": true]),
             true
         )
         XCTAssertEqual(
-            DynamicHelpers.resolveBool(common.canTap, legacy: component.typedAttributes(CommonAttributes.self).canTap?.value, data: ["isTappable": false]),
+            DynamicHelpers.resolveBool(common.canTap, legacy: nil, data: ["isTappable": false]),
             false
         )
     }

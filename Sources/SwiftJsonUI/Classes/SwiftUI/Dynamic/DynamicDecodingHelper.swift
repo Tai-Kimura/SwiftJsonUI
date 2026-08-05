@@ -60,7 +60,9 @@ public struct DynamicDecodingHelper {
         component: DynamicComponent,
         data: [String: Any] = [:]
     ) -> String {
-        if component.hidden == true {
+        if DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).hidden, legacy: nil, data: data
+        ) == true {
             return "gone"
         }
         switch component.visibility {

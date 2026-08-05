@@ -31,7 +31,9 @@ public struct ChildView: View {
 
     public var body: some View {
         let visibility: String? = {
-            if component.hidden == true {
+            if DynamicHelpers.resolveBool(
+                component.typedAttributes(CommonAttributes.self).hidden, legacy: nil, data: data
+            ) == true {
                 return "gone"
             }
             return component.visibility

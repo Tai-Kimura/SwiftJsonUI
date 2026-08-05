@@ -88,7 +88,10 @@ public struct DynamicScrollViewContainer: View {
         }
 
         // --- 2. .disabled (scrollEnabled) ---
-        if component.scrollEnabled == false {
+        if DynamicHelpers.resolveBool(
+            component.typedAttributes(ScrollViewAttributes.self).scrollEnabled,
+            legacy: nil, data: data
+        ) == false {
             result = AnyView(result.disabled(true))
         }
 

@@ -90,36 +90,36 @@ public struct RelativePositionConverter {
     ) -> [RelativePositionConstraint] {
         var constraints: [RelativePositionConstraint] = []
         let common = component.typedAttributes(CommonAttributes.self)
-        func flag(_ attr: AttrValue<Bool>?, _ legacy: Bool?) -> Bool {
-            DynamicHelpers.resolveBool(attr, legacy: legacy, data: data) == true
+        func flag(_ attr: AttrValue<Bool>?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: nil, data: data) == true
         }
 
         // Parent alignment constraints (these have empty targetId)
-        if flag(common.alignTop, component.alignTop) {
+        if flag(common.alignTop) {
             constraints.append(RelativePositionConstraint(type: .parentTop, targetId: ""))
         }
         
-        if flag(common.alignBottom, component.alignBottom) {
+        if flag(common.alignBottom) {
             constraints.append(RelativePositionConstraint(type: .parentBottom, targetId: ""))
         }
         
-        if flag(common.alignLeft, component.alignLeft) {
+        if flag(common.alignLeft) {
             constraints.append(RelativePositionConstraint(type: .parentLeft, targetId: ""))
         }
         
-        if flag(common.alignRight, component.alignRight) {
+        if flag(common.alignRight) {
             constraints.append(RelativePositionConstraint(type: .parentRight, targetId: ""))
         }
         
-        if flag(common.centerHorizontal, component.centerHorizontal) {
+        if flag(common.centerHorizontal) {
             constraints.append(RelativePositionConstraint(type: .parentCenterHorizontal, targetId: ""))
         }
         
-        if flag(common.centerVertical, component.centerVertical) {
+        if flag(common.centerVertical) {
             constraints.append(RelativePositionConstraint(type: .parentCenterVertical, targetId: ""))
         }
         
-        if flag(common.centerInParent, component.centerInParent) {
+        if flag(common.centerInParent) {
             constraints.append(RelativePositionConstraint(type: .parentCenter, targetId: ""))
         }
         
@@ -204,6 +204,21 @@ public struct RelativePositionConverter {
         )
     }
     
+    /// A parent-alignment flag counts as DECLARED when the layout wrote it at
+    /// all. Routing and conflict detection both run before `data` exists, so a
+    /// bound flag has to count — otherwise the container never routes to
+    /// relative positioning and the value resolved later in `buildConstraints`
+    /// has nowhere to land. A literal `false` still does not count, which is
+    /// what the `component.x == true` reads these replace did.
+    private static func declaredFlag(
+        _ component: DynamicComponent,
+        _ keyPath: KeyPath<CommonAttributes, AttrValue<Bool>?>
+    ) -> Bool {
+        let attr = component.typedAttributes(CommonAttributes.self)[keyPath: keyPath]
+        if case .some(.binding) = attr { return true }
+        return attr?.value == true
+    }
+
     /// Check if a component needs relative positioning
     public static func needsRelativePositioning(_ component: DynamicComponent) -> Bool {
         // Routing happens before `data` exists, so a BOUND flag counts as
@@ -211,18 +226,14 @@ public struct RelativePositionConverter {
         // would never route here and the resolved constraint would have
         // nowhere to land. A literal `false` still does not route, which is
         // what it did before.
-        let common = component.typedAttributes(CommonAttributes.self)
-        func declared(_ attr: AttrValue<Bool>?, _ legacy: Bool?) -> Bool {
-            if case .some(.binding) = attr { return true }
-            return (attr?.value ?? legacy) == true
-        }
-        return declared(common.alignTop, component.alignTop) ||
-               declared(common.alignBottom, component.alignBottom) ||
-               declared(common.alignLeft, component.alignLeft) ||
-               declared(common.alignRight, component.alignRight) ||
-               declared(common.centerInParent, component.centerInParent) ||
-               declared(common.centerHorizontal, component.centerHorizontal) ||
-               declared(common.centerVertical, component.centerVertical) ||
+        let declared = { declaredFlag(component, $0) }
+        return declared(\.alignTop) ||
+               declared(\.alignBottom) ||
+               declared(\.alignLeft) ||
+               declared(\.alignRight) ||
+               declared(\.centerInParent) ||
+               declared(\.centerHorizontal) ||
+               declared(\.centerVertical) ||
                component.alignLeftOfView != nil ||
                component.alignRightOfView != nil ||
                component.alignTopOfView != nil ||
@@ -278,9 +289,9 @@ public struct RelativePositionConverter {
         if parentOrientation == "horizontal" {
             // In HStack, vertical alignments (top/bottom/centerVertical) are OK - they align within the row
             // But horizontal alignments (left/right/centerHorizontal) would conflict
-            let hasLeft = alignedChildren.contains { $0.alignLeft == true }
-            let hasRight = alignedChildren.contains { $0.alignRight == true }
-            let hasCenterHorizontal = alignedChildren.contains { $0.centerHorizontal == true || $0.centerInParent == true }
+            let hasLeft = alignedChildren.contains { declaredFlag($0, \.alignLeft) }
+            let hasRight = alignedChildren.contains { declaredFlag($0, \.alignRight) }
+            let hasCenterHorizontal = alignedChildren.contains { declaredFlag($0, \.centerHorizontal) || declaredFlag($0, \.centerInParent) }
             
             // Conflict if multiple horizontal alignments in horizontal layout
             let horizontalConflicts = [hasLeft, hasRight, hasCenterHorizontal].filter { $0 }.count > 1
@@ -289,9 +300,9 @@ public struct RelativePositionConverter {
         } else if parentOrientation == "vertical" {
             // In VStack, horizontal alignments (left/right/centerHorizontal) are OK - they align within the column
             // But vertical alignments (top/bottom/centerVertical) would conflict
-            let hasTop = alignedChildren.contains { $0.alignTop == true }
-            let hasBottom = alignedChildren.contains { $0.alignBottom == true }
-            let hasCenterVertical = alignedChildren.contains { $0.centerVertical == true || $0.centerInParent == true }
+            let hasTop = alignedChildren.contains { declaredFlag($0, \.alignTop) }
+            let hasBottom = alignedChildren.contains { declaredFlag($0, \.alignBottom) }
+            let hasCenterVertical = alignedChildren.contains { declaredFlag($0, \.centerVertical) || declaredFlag($0, \.centerInParent) }
             
             // Conflict if multiple vertical alignments in vertical layout
             let verticalConflicts = [hasTop, hasBottom, hasCenterVertical].filter { $0 }.count > 1
@@ -299,13 +310,13 @@ public struct RelativePositionConverter {
             
         } else {
             // No orientation specified - check for any conflicting alignments
-            let hasTop = alignedChildren.contains { $0.alignTop == true }
-            let hasBottom = alignedChildren.contains { $0.alignBottom == true }
-            let hasCenterVertical = alignedChildren.contains { $0.centerVertical == true || $0.centerInParent == true }
+            let hasTop = alignedChildren.contains { declaredFlag($0, \.alignTop) }
+            let hasBottom = alignedChildren.contains { declaredFlag($0, \.alignBottom) }
+            let hasCenterVertical = alignedChildren.contains { declaredFlag($0, \.centerVertical) || declaredFlag($0, \.centerInParent) }
             
-            let hasLeft = alignedChildren.contains { $0.alignLeft == true }
-            let hasRight = alignedChildren.contains { $0.alignRight == true }
-            let hasCenterHorizontal = alignedChildren.contains { $0.centerHorizontal == true || $0.centerInParent == true }
+            let hasLeft = alignedChildren.contains { declaredFlag($0, \.alignLeft) }
+            let hasRight = alignedChildren.contains { declaredFlag($0, \.alignRight) }
+            let hasCenterHorizontal = alignedChildren.contains { declaredFlag($0, \.centerHorizontal) || declaredFlag($0, \.centerInParent) }
             
             let verticalConflicts = [hasTop, hasBottom, hasCenterVertical].filter { $0 }.count > 1
             let horizontalConflicts = [hasLeft, hasRight, hasCenterHorizontal].filter { $0 }.count > 1

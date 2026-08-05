@@ -96,7 +96,8 @@ public struct ScrollViewConverter {
         // is not killed when the binding flips to false, and so the modifier
         // chain shape stays the same regardless of value (preserves view identity
         // across toggles).
-        var scrollEnabled: Bool = component.scrollEnabled ?? true
+        var scrollEnabled: Bool = component.typedAttributes(ScrollViewAttributes.self)
+            .scrollEnabled?.value ?? true
         if let expr = component.typedAttributes(ScrollViewAttributes.self).scrollEnabled?.bindingExpression {
             // Canonical bool value context (coercion table / dot-path / default)
             if let value = DynamicBindingResolver.resolveBool(expression: expr, data: data) {
