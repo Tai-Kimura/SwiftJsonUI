@@ -25,8 +25,8 @@ public struct SpacerConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let width = component.width
-        let height = component.height
+        let width = component.declaredWidth
+        let height = component.declaredHeight
 
         // --- 1. Spacer base ---
         var result: AnyView

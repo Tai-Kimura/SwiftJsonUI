@@ -83,7 +83,7 @@ public struct DynamicSafeAreaViewContainer: View {
                 // measured as SafeAreaView_orientation__* parity d=50/73.
                 let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
                 let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
-                    component.width == .infinity || component.width == -1
+                    component.declaredWidth == .infinity || component.declaredWidth == -1
                 let hGravity = Self.extractHorizontalFromGravity(component.gravity)
                 result = AnyView(
                     HStack(alignment: getVerticalAlignment(), spacing: spacingValue) {
@@ -106,7 +106,7 @@ public struct DynamicSafeAreaViewContainer: View {
             } else if orientation == "vertical" {
                 let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
                 let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
-                    component.height == .infinity || component.height == -1
+                    component.declaredHeight == .infinity || component.declaredHeight == -1
                 let vGravity = Self.extractVerticalFromGravity(component.gravity)
                 result = AnyView(
                     VStack(alignment: getHorizontalAlignment(), spacing: spacingValue) {

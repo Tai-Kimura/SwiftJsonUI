@@ -95,8 +95,8 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.type, "Image")
         XCTAssertEqual(component.string(ImageAttributes.self, \.src), "icon_home")
         XCTAssertEqual(component.enumString(ImageAttributes.self, \.contentMode), "AspectFit")
-        XCTAssertEqual(component.width, 100)
-        XCTAssertEqual(component.height, 100)
+        XCTAssertEqual(component.declaredWidth, 100)
+        XCTAssertEqual(component.declaredHeight, 100)
     }
 
     // MARK: - Size Value Tests
@@ -112,8 +112,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.width, .infinity)
-        XCTAssertEqual(component.height, .infinity)
+        XCTAssertEqual(component.declaredWidth, .infinity)
+        XCTAssertEqual(component.declaredHeight, .infinity)
         XCTAssertEqual(component.widthRaw, "matchParent")
         XCTAssertEqual(component.heightRaw, "match_parent")
     }
@@ -129,8 +129,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertNil(component.width)
-        XCTAssertNil(component.height)
+        XCTAssertNil(component.declaredWidth)
+        XCTAssertNil(component.declaredHeight)
         XCTAssertEqual(component.widthRaw, "wrapContent")
         XCTAssertEqual(component.heightRaw, "wrap_content")
     }
@@ -146,8 +146,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.width, 200)
-        XCTAssertEqual(component.height, 150.5)
+        XCTAssertEqual(component.declaredWidth, 200)
+        XCTAssertEqual(component.declaredHeight, 150.5)
     }
 
     // MARK: - Padding and Margin Tests

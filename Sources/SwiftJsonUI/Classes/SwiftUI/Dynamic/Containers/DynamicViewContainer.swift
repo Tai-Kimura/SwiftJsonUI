@@ -127,8 +127,8 @@ public struct DynamicViewContainer: View {
 
     @ViewBuilder
     private func emptyContent() -> some View {
-        let hasExplicitSize = (component.width != nil && component.width != 0) ||
-            (component.height != nil && component.height != 0)
+        let hasExplicitSize = (component.declaredWidth != nil && component.declaredWidth != 0) ||
+            (component.declaredHeight != nil && component.declaredHeight != 0)
         let hasWeight = (DynamicHelpers.resolveWeight(from: component, data: data) ?? 0) > 0 ||
             (component.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0 ||
             (component.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
@@ -171,7 +171,7 @@ public struct DynamicViewContainer: View {
         // the trailing condition is true for every plain horizontal stack.
         // Only the size gate keeps that from firing everywhere.
         let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
-            component.width == .infinity || component.width == -1
+            component.declaredWidth == .infinity || component.declaredWidth == -1
 
         HStack(alignment: getVerticalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading spacer for right gravity or distribution
@@ -215,7 +215,7 @@ public struct DynamicViewContainer: View {
         // Same asymmetry as hStackContent: leading and between-children have
         // no size condition, the trailing one keeps it (view_converter.rb:385).
         let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
-            component.height == .infinity || component.height == -1
+            component.declaredHeight == .infinity || component.declaredHeight == -1
 
         VStack(alignment: getHorizontalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading spacer for bottom gravity or distribution

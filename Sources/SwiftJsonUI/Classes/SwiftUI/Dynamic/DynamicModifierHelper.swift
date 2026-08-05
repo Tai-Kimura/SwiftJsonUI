@@ -77,8 +77,8 @@ public struct DynamicModifierHelper {
     public static func applyFrameSize(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
         var result = view
 
-        var width = component.width
-        var height = component.height
+        var width = component.declaredWidth
+        var height = component.declaredHeight
 
         // WeightedStack: tool sets child's main-axis to matchParent before conversion.
         // Replicate by forcing matchParent here (inside the modifier chain, before background).
@@ -200,8 +200,8 @@ public struct DynamicModifierHelper {
         }
 
         // maxWidth/maxHeight (only if not already handled by applyFrameSize for matchParent)
-        let width = component.width
-        let height = component.height
+        let width = component.declaredWidth
+        let height = component.declaredHeight
         let isMatchParentWidth = (width == .infinity || width == -1)
         let isMatchParentHeight = (height == .infinity || height == -1)
 

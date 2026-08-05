@@ -88,8 +88,8 @@ public struct ImageViewConverter {
             data: data
         )
         let declaredSize: (width: CGFloat, height: CGFloat)? = {
-            guard let w = component.width, w.isFinite,
-                  let h = component.height, h.isFinite else { return nil }
+            guard let w = component.declaredWidth, w.isFinite,
+                  let h = component.declaredHeight, h.isFinite else { return nil }
             return (w, h)
         }()
         var result = AnyView(

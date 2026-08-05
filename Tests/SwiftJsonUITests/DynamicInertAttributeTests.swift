@@ -1065,7 +1065,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(container.heightRaw, "matchParent")
 
         let child = container.childComponents?.first
-        XCTAssertEqual(child?.height, 200, "the child is fixed — reading it would give false")
+        XCTAssertEqual(child?.declaredHeight, 200, "the child is fixed — reading it would give false")
     }
 
     // MARK: - Collection.scrollTo (the withdrawn Combine transport)

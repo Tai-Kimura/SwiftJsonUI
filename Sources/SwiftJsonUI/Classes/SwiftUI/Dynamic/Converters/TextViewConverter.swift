@@ -183,7 +183,7 @@ public struct TextViewConverter {
         // grows past it and never shrinks below it (android is the
         // reference; matchParent/.infinity and wrapContent/nil don't
         // participate).
-        let declaredHeight = component.height.flatMap { $0.isFinite ? $0 : nil }
+        let declaredHeight = component.declaredHeight.flatMap { $0.isFinite ? $0 : nil }
         let resolvedMinHeight = component.number(CommonAttributes.self, \.minHeight, data: data)
         let minHeight = flexible
             ? (resolvedMinHeight ?? declaredHeight)
