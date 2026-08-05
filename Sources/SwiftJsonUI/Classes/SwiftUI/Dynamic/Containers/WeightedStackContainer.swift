@@ -97,7 +97,7 @@ public struct WeightedStackContainer: View {
     }
 
     public var body: some View {
-        let spacingValue = component.spacing ?? 0
+        let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
 
         // Route through the public WeightedHStack/WeightedVStack so the simple
         // HStack/VStack path (used when weights are uniform) can give Text the

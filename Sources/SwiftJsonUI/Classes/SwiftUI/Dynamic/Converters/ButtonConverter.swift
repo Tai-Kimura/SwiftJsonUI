@@ -66,8 +66,9 @@ public struct ButtonConverter {
         // `font` doubles as a weight spelling ("bold" etc.) — the codegen
         // path resolves it through apply_font_modifiers; the explicit
         // fontWeight wins when both are declared.
-        // Button declares fontSize as `number` only — no binding form to resolve.
-        let fontSize = component.fontSize
+        // Button declares fontSize as `number` only — the generated table
+        // carries a plain `Double?`, so there is no binding form to resolve.
+        let fontSize = attrs.fontSize.map { CGFloat($0) }
         // `fontWeight` is string|number|binding. The hand-decoded String?
         // hands "@{expr}" straight to the weight vocabulary, which matches
         // nothing — the same union the codegen halves read differently (49-B).
@@ -116,8 +117,8 @@ public struct ButtonConverter {
             : nil
 
         // Corner radius, border - all applied inside StateAwareButtonView
-        let cornerRadius = component.cornerRadius
-        let borderWidth = component.borderWidth
+        let cornerRadius = component.number(CommonAttributes.self, \.cornerRadius, data: data)
+        let borderWidth = component.number(CommonAttributes.self, \.borderWidth, data: data)
         let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data)
 
         // Padding

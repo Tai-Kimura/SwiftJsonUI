@@ -27,7 +27,7 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.type, "Label")
         XCTAssertEqual(component.text, "Hello World")
-        XCTAssertEqual(component.fontSize, 16)
+        XCTAssertEqual(component.typedAttributes(LabelAttributes.self).fontSize?.value.map { CGFloat($0) }, 16)
         XCTAssertEqual(component.fontColor, "#000000")
         XCTAssertTrue(component.isValid)
     }
@@ -49,7 +49,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.text, "Click Me")
         XCTAssertEqual(component.onClick, "handleClick")
         XCTAssertEqual(component.commonString(\.background), "#FF0000")
-        XCTAssertEqual(component.cornerRadius, 8)
+        XCTAssertEqual(component.commonNumber(\.cornerRadius), 8)
     }
 
     func testDecodeTextField() throws {
@@ -240,8 +240,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.cornerRadius, 12)
-        XCTAssertEqual(component.borderWidth, 2)
+        XCTAssertEqual(component.commonNumber(\.cornerRadius), 12)
+        XCTAssertEqual(component.commonNumber(\.borderWidth), 2)
         XCTAssertEqual(component.commonString(\.borderColor), "#CCCCCC")
         XCTAssertEqual(component.alpha, 0.8)
         XCTAssertEqual(component.hidden, false)
@@ -448,7 +448,7 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         XCTAssertEqual(component.columns, 3)
-        XCTAssertEqual(component.spacing, 8)
+        XCTAssertEqual(component.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) }, 8)
         XCTAssertEqual(component.layout, "grid")
         XCTAssertEqual(component.items, ["Item1", "Item2", "Item3"])
     }
@@ -531,8 +531,8 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.commonNumber(\.minWidth), 100)
         XCTAssertEqual(component.commonNumber(\.maxWidth), 300)
-        XCTAssertEqual(component.minHeight, 50)
-        XCTAssertEqual(component.maxHeight, 200)
+        XCTAssertEqual(component.commonNumber(\.minHeight), 50)
+        XCTAssertEqual(component.commonNumber(\.maxHeight), 200)
         XCTAssertEqual(component.idealWidth, 200)
         XCTAssertEqual(component.idealHeight, 100)
     }
@@ -595,7 +595,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.fontWeight, "bold")
         XCTAssertEqual(component.underline, true)
         XCTAssertEqual(component.strikethrough, false)
-        XCTAssertEqual(component.lineHeightMultiple, 1.5)
+        XCTAssertEqual(component.typedAttributes(LabelAttributes.self).lineHeightMultiple?.value.map { CGFloat($0) }, 1.5)
     }
 
     // MARK: - Image Properties Tests
@@ -643,7 +643,7 @@ final class DynamicComponentTests: XCTestCase {
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
         // Legacy typed slot stays nil for a binding spelling …
-        XCTAssertNil(component.cornerRadius)
+        XCTAssertNil(component.commonNumber(\.cornerRadius))
         // … but the binding survives raw and via typed CommonAttributes.
         XCTAssertEqual(component.rawData["cornerRadius"] as? String, "@{cardRadius}")
         XCTAssertEqual(
@@ -758,8 +758,8 @@ final class DynamicComponentTests: XCTestCase {
 
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
 
-        XCTAssertEqual(component.cornerRadius, 12)
-        XCTAssertEqual(component.borderWidth, 2)
+        XCTAssertEqual(component.commonNumber(\.cornerRadius), 12)
+        XCTAssertEqual(component.commonNumber(\.borderWidth), 2)
         XCTAssertEqual(component.typedAttributes(CommonAttributes.self).canTap?.value, true)
         XCTAssertEqual(component.weight, 3)
         XCTAssertEqual(component.commonNumber(\.paddingTop), 8)
@@ -773,7 +773,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(component.alignTop, true)
         XCTAssertEqual(component.centerInParent, false)
         XCTAssertEqual(component.lines, 2)
-        XCTAssertEqual(component.spacing, 4)
+        XCTAssertEqual(component.typedAttributes(ViewAttributes.self).spacing?.value.map { CGFloat($0) }, 4)
     }
 
     // MARK: - Binding-capable Common Attribute Resolution (Part 2)
@@ -791,7 +791,7 @@ final class DynamicComponentTests: XCTestCase {
         let common = component.typedAttributes(CommonAttributes.self)
         let data: [String: Any] = ["cardRadius": 16.0]
 
-        let resolved = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.cornerRadius, data: data)
+        let resolved = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: component.commonNumber(\.cornerRadius), data: data)
         XCTAssertEqual(resolved, 16)
     }
 
@@ -816,7 +816,7 @@ final class DynamicComponentTests: XCTestCase {
         """.data(using: .utf8)!
         let lit = try JSONDecoder().decode(DynamicComponent.self, from: litJson)
         let litCommon = lit.typedAttributes(CommonAttributes.self)
-        XCTAssertEqual(DynamicHelpers.resolveNumber(litCommon.cornerRadius, legacy: lit.cornerRadius, data: [:]), 10)
+        XCTAssertEqual(DynamicHelpers.resolveNumber(litCommon.cornerRadius, legacy: nil, data: [:]), 10)
 
         // Binding but unresolved (key absent) → legacy (nil here).
         let bindJson = """
@@ -824,7 +824,7 @@ final class DynamicComponentTests: XCTestCase {
         """.data(using: .utf8)!
         let bind = try JSONDecoder().decode(DynamicComponent.self, from: bindJson)
         let bindCommon = bind.typedAttributes(CommonAttributes.self)
-        XCTAssertNil(DynamicHelpers.resolveNumber(bindCommon.cornerRadius, legacy: bind.cornerRadius, data: [:]))
+        XCTAssertNil(DynamicHelpers.resolveNumber(bindCommon.cornerRadius, legacy: nil, data: [:]))
     }
 
     func testResolveBoolResolvesCanTapBindingFromData() throws {

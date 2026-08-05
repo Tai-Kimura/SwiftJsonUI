@@ -112,9 +112,11 @@ public struct DynamicScrollViewContainer: View {
         }
 
         // --- 5. zoom gesture ---
-        if component.maxZoom != nil || component.minZoom != nil {
-            let minZoom = component.minZoom ?? 1.0
-            let maxZoom = component.maxZoom ?? 1.0
+        let declaredMinZoom = component.number(ScrollViewAttributes.self, \.minZoom, data: data)
+        let declaredMaxZoom = component.number(ScrollViewAttributes.self, \.maxZoom, data: data)
+        if declaredMinZoom != nil || declaredMaxZoom != nil {
+            let minZoom = declaredMinZoom ?? 1.0
+            let maxZoom = declaredMaxZoom ?? 1.0
             result = AnyView(
                 result
                     .scaleEffect(zoomScale)

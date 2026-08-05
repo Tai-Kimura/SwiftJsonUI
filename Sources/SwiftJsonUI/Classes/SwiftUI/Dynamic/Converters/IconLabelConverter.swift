@@ -34,7 +34,7 @@ public struct IconLabelConverter {
         // Optional parameters from JSON
         let iconSize = component.iconSize ?? 24
         let iconMargin = component.iconMargin ?? 5
-        let fontSize = component.fontSize ?? 16
+        let fontSize = component.typedAttributes(IconLabelAttributes.self).fontSize.map { CGFloat($0) } ?? 16
         let fontColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
         let selectedFontColor = DynamicHelpers.getColor(component.selectedFontColor) ?? .accentColor
         let fontName = (component.font != nil && component.font != "bold") ? component.font : nil

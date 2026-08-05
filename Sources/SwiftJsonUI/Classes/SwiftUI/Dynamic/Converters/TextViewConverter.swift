@@ -117,7 +117,7 @@ public struct TextViewConverter {
         // fontSize
         let fontSize = DynamicHelpers.resolveNumber(
             component.typedAttributes(TextViewAttributes.self).fontSize,
-            legacy: component.fontSize, data: data
+            legacy: nil, data: data
         ) ?? 16
 
         // fontColor
@@ -140,7 +140,7 @@ public struct TextViewConverter {
         }()
 
         // cornerRadius
-        let cornerRadius = component.cornerRadius ?? 0
+        let cornerRadius = component.number(CommonAttributes.self, \.cornerRadius, data: data) ?? 0
 
         // containerInset (paddings used as containerInset for TextView).
         // `edgeInset` is the UIKit spelling of the same content inset — the
@@ -183,10 +183,11 @@ public struct TextViewConverter {
         // reference; matchParent/.infinity and wrapContent/nil don't
         // participate).
         let declaredHeight = component.height.flatMap { $0.isFinite ? $0 : nil }
+        let resolvedMinHeight = component.number(CommonAttributes.self, \.minHeight, data: data)
         let minHeight = flexible
-            ? (component.minHeight ?? declaredHeight)
-            : component.minHeight
-        let maxHeight = component.maxHeight
+            ? (resolvedMinHeight ?? declaredHeight)
+            : resolvedMinHeight
+        let maxHeight = component.number(CommonAttributes.self, \.maxHeight, data: data)
 
         var result = AnyView(
             TextViewWithPlaceholder(

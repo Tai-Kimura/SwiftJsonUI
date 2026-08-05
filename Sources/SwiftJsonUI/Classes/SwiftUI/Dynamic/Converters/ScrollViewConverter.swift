@@ -148,8 +148,8 @@ public struct ScrollViewConverter {
         }
 
         // --- 5. .scaleEffect / .gesture(MagnificationGesture) for zoom ---
-        if let maxZoom = component.maxZoom {
-            let minZoom = component.minZoom ?? 1.0
+        if let maxZoom = component.number(ScrollViewAttributes.self, \.maxZoom, data: data) {
+            let minZoom = component.number(ScrollViewAttributes.self, \.minZoom, data: data) ?? 1.0
             result = AnyView(
                 ZoomableWrapper(content: result, minZoom: minZoom, maxZoom: maxZoom)
             )

@@ -383,12 +383,19 @@ public struct DynamicDecodingHelper {
     /// Convert component properties to Font
     public static func fontFromComponent(_ component: DynamicComponent) -> Font? {
         // Return nil if no font attributes are specified
-        guard component.fontSize != nil || component.font != nil || component.fontWeight != nil || component.fontFamily != nil else {
+        // `fontSize` is declared on eleven tables; the widest declared form
+        // is Label's `AttrValue<Double>?`, and the extraction only coerces
+        // rawData, so it reads the spelling for any of them. This helper has
+        // no `data`, so a bound size stays nil here — same as the slot it
+        // replaces, and LabelConverter resolves it with data on its own path.
+        let declaredFontSize = component.typedAttributes(LabelAttributes.self)
+            .fontSize?.value.map { CGFloat($0) }
+        guard declaredFontSize != nil || component.font != nil || component.fontWeight != nil || component.fontFamily != nil else {
             return nil
         }
 
         let config = SwiftJsonUIConfiguration.shared
-        let size = component.fontSize ?? config.font.size
+        let size = declaredFontSize ?? config.font.size
 
         // Weight-only font names that should resolve to system font weight
         let weightNames = ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black"]

@@ -88,11 +88,11 @@ public struct TextConverter {
         }
 
         // --- 3. minimumScaleFactor (autoShrink) ---
+        let declaredScaleFactor = component.number(LabelAttributes.self, \.minimumScaleFactor, data: data)
         if component.autoShrink == true {
-            let scaleFactor = component.minimumScaleFactor ?? 0.5
-            result = AnyView(result.minimumScaleFactor(CGFloat(scaleFactor)))
-        } else if let scaleFactor = component.minimumScaleFactor {
-            result = AnyView(result.minimumScaleFactor(CGFloat(scaleFactor)))
+            result = AnyView(result.minimumScaleFactor(declaredScaleFactor ?? 0.5))
+        } else if let scaleFactor = declaredScaleFactor {
+            result = AnyView(result.minimumScaleFactor(scaleFactor))
         }
 
         // --- 4. edgeInset (internal text padding) ---

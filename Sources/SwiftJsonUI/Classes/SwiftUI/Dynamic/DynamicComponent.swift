@@ -36,7 +36,6 @@ public struct DynamicComponent: Decodable {
     
     let id: String?
     let text: String?
-    let fontSize: CGFloat?
     let fontColor: String?
     let font: String?
     let fontWeight: String?
@@ -45,9 +44,7 @@ public struct DynamicComponent: Decodable {
     let edgeInset: AnyCodable?  // Text padding for Label (単一値または配列形式をサポート)
     let underline: Bool?  // Underline text for Label
     let strikethrough: Bool?  // Strikethrough text for Label
-    let lineHeightMultiple: CGFloat?  // Line height multiplier for Label
     let autoShrink: Bool?  // Auto shrink text to fit for Label
-    let minimumScaleFactor: CGFloat?  // Minimum scale factor for auto shrink
     let lines: Int?  // Line limit for Label (UIKit compatibility)
     let lineBreakMode: String?  // Truncation mode: head, middle, tail (UIKit compatibility)
     let textShadow: AnyCodable?  // Text shadow for Label
@@ -75,19 +72,14 @@ public struct DynamicComponent: Decodable {
     let insetVertical: CGFloat?
     let horizontalScroll: Bool?
     let columnSpacing: CGFloat?
-    let lineSpacing: CGFloat?
     let itemSpacing: CGFloat?
     let contentInsets: AnyCodable?
     let tint: String?
     let tintColor: String?
-    let minimum: CGFloat?
-    let maximum: CGFloat?
     let hidesWhenStopped: Bool?
     let defaultImage: String?
     let errorImage: String?
     let loadingImage: String?
-    let maxZoom: CGFloat?
-    let minZoom: CGFloat?
     let highlighted: Bool?
     let events: AnyCodable?
     let partialAttributes: AnyCodable?
@@ -143,15 +135,10 @@ public struct DynamicComponent: Decodable {
     let setTargetAsDataSource: Bool?
     // Switch/Toggle event
     let onValueChange: String?
-    let cornerRadius: CGFloat?
-    let borderWidth: CGFloat?
     let alpha: CGFloat?
-    let opacity: CGFloat?
     let hidden: Bool?
     let visibility: String?
     let shadow: AnyCodable?
-    let minHeight: CGFloat?
-    let maxHeight: CGFloat?
     let idealWidth: CGFloat?
     let idealHeight: CGFloat?
     let centerInParent: Bool?
@@ -205,7 +192,6 @@ public struct DynamicComponent: Decodable {
     let tabs: [[String: Any]]?  // TabView tabs array
     let onTabChange: String?  // TabView tab change callback
     let columns: Int?  // For collection/grid layouts
-    let spacing: CGFloat?  // For stack/grid spacing
     
     // ScrollView properties
     let contentInsetAdjustmentBehavior: String?  // never, always, automatic, scrollableAxes
@@ -264,17 +250,16 @@ public struct DynamicComponent: Decodable {
     
     // CodingKeys
     public enum CodingKeys: String, CodingKey {
-        case type, id, text, fontSize, fontColor, font, fontWeight, fontFamily
+        case type, id, text, fontColor, font, fontWeight, fontFamily
         case disabledFontColor, edgeInset
-        case underline, strikethrough, lineHeightMultiple, autoShrink, minimumScaleFactor, lines, lineBreakMode, textShadow, linkable
+        case underline, strikethrough, autoShrink, lines, lineBreakMode, textShadow, linkable
         case width, height, widthRaw, heightRaw, tapBackground
         case padding, paddings, margins
         case leftMargin, rightMargin, topMargin, bottomMargin, startMargin, endMargin
         case leftPadding, rightPadding, topPadding, bottomPadding
-        case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, lineSpacing, itemSpacing, contentInsets
-        case tint, tintColor, minimum, maximum, hidesWhenStopped
+        case insets, insetHorizontal, insetVertical, horizontalScroll, columnSpacing, itemSpacing, contentInsets
+        case tint, tintColor, hidesWhenStopped
         case defaultImage, errorImage, loadingImage
-        case maxZoom, minZoom
         case highlighted, events
         case partialAttributes, highlightAttributes, hintAttributes
         case label, onSrc, checked, icon, selectedIcon, iconSize, checkedColor, uncheckedColor, group
@@ -288,9 +273,7 @@ public struct DynamicComponent: Decodable {
         case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
         case setTargetAsDelegate, setTargetAsDataSource
         case onValueChange
-        case cornerRadius, borderWidth
-        case alpha, opacity, hidden, visibility, shadow
-        case minHeight, maxHeight
+        case alpha, hidden, visibility, shadow
         case idealWidth, idealHeight
         case centerInParent, weight, enabled
         case indexBelow, indexAbove
@@ -304,7 +287,7 @@ public struct DynamicComponent: Decodable {
         case textAlign, isOn, progress, value
         case minValue, maxValue, indicatorStyle, selectedIndex
         case tabs, onTabChange
-        case columns, spacing
+        case columns
         case contentInsetAdjustmentBehavior
         case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
         case paging, bounces, scrollEnabled
@@ -362,13 +345,11 @@ public struct DynamicComponent: Decodable {
         // Basic properties
         id = try container.decodeIfPresent(String.self, forKey: .id)
         text = try container.decodeIfPresent(String.self, forKey: .text)
-        // `try?`, not `try`: fontSize is number|binding, and a bound
-        // spelling is a String. A hard decode throws, and children go through
-        // FailableDecodable — so the throw did not surface as an error, it
-        // DELETED the component from the tree. `Label { fontSize: "@{x}" }`
-        // rendered nothing at all. The typed extraction carries the bound
-        // form; this slot only has to stop killing the node.
-        fontSize = try? container.decodeIfPresent(CGFloat.self, forKey: .fontSize)
+        // `fontSize` has no hand-decoded slot: it is number|binding, a hard
+        // decode of the bound spelling threw, and children go through
+        // FailableDecodable — so the throw DELETED the component from the
+        // tree instead of surfacing. `Label { fontSize: "@{x}" }` rendered
+        // nothing at all. The generated tables carry it now.
         fontColor = try container.decodeIfPresent(String.self, forKey: .fontColor)
         font = try container.decodeIfPresent(String.self, forKey: .font)
         fontWeight = try container.decodeIfPresent(String.self, forKey: .fontWeight)
@@ -385,9 +366,7 @@ public struct DynamicComponent: Decodable {
         // via rawData / typedAttributes and is resolved at render time. A
         // literal still decodes identically, so non-binding layouts are
         // byte-unchanged.
-        lineHeightMultiple = (try? container.decodeIfPresent(CGFloat.self, forKey: .lineHeightMultiple)) ?? nil
         autoShrink = try container.decodeIfPresent(Bool.self, forKey: .autoShrink)
-        minimumScaleFactor = (try? container.decodeIfPresent(CGFloat.self, forKey: .minimumScaleFactor)) ?? nil
         textShadow = try container.decodeIfPresent(AnyCodable.self, forKey: .textShadow)
         linkable = (try? container.decodeIfPresent(Bool.self, forKey: .linkable)) ?? nil
         lines = (try? container.decodeIfPresent(Int.self, forKey: .lines)) ?? nil
@@ -426,7 +405,6 @@ public struct DynamicComponent: Decodable {
         insetVertical = try container.decodeIfPresent(CGFloat.self, forKey: .insetVertical)
         horizontalScroll = try container.decodeIfPresent(Bool.self, forKey: .horizontalScroll)
         columnSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .columnSpacing)
-        lineSpacing = (try? container.decodeIfPresent(CGFloat.self, forKey: .lineSpacing)) ?? nil
         itemSpacing = try container.decodeIfPresent(CGFloat.self, forKey: .itemSpacing)
         contentInsets = try container.decodeIfPresent(AnyCodable.self, forKey: .contentInsets)
         tint = try container.decodeIfPresent(String.self, forKey: .tint)
@@ -436,14 +414,10 @@ public struct DynamicComponent: Decodable {
         // children go through FailableDecodable — so the throw deleted the
         // component instead of surfacing. The typed extraction carries the
         // bound form; these slots only have to stop killing the node.
-        minimum = try? container.decodeIfPresent(CGFloat.self, forKey: .minimum)
-        maximum = try? container.decodeIfPresent(CGFloat.self, forKey: .maximum)
         hidesWhenStopped = try container.decodeIfPresent(Bool.self, forKey: .hidesWhenStopped)
         defaultImage = try container.decodeIfPresent(String.self, forKey: .defaultImage)
         errorImage = try container.decodeIfPresent(String.self, forKey: .errorImage)
         loadingImage = try container.decodeIfPresent(String.self, forKey: .loadingImage)
-        maxZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .maxZoom)
-        minZoom = try? container.decodeIfPresent(CGFloat.self, forKey: .minZoom)
         highlighted = try? container.decodeIfPresent(Bool.self, forKey: .highlighted)
         events = try container.decodeIfPresent(AnyCodable.self, forKey: .events)
         partialAttributes = try container.decodeIfPresent(AnyCodable.self, forKey: .partialAttributes)
@@ -501,21 +475,17 @@ public struct DynamicComponent: Decodable {
         // Switch/Toggle event
         onValueChange = try container.decodeIfPresent(String.self, forKey: .onValueChange)
         
-        // Style properties (cornerRadius/borderWidth are number|binding —
-        // tolerate a `@{binding}` string, resolved at render via data).
-        cornerRadius = (try? container.decodeIfPresent(CGFloat.self, forKey: .cornerRadius)) ?? nil
-        borderWidth = (try? container.decodeIfPresent(CGFloat.self, forKey: .borderWidth)) ?? nil
+        // Style properties. `cornerRadius` / `borderWidth` / `opacity` have
+        // no slot any more — they are number|binding and read off
+        // CommonAttributes. `alpha` still decodes here.
         // Use try? because these can be binding strings like "@{sendButtonOpacity}"
         // decodeIfPresent throws (not returns nil) when the key exists but has wrong type
         alpha = try? container.decodeIfPresent(CGFloat.self, forKey: .alpha)
-        opacity = try? container.decodeIfPresent(CGFloat.self, forKey: .opacity)
         hidden = try? container.decodeIfPresent(Bool.self, forKey: .hidden)
         visibility = try container.decodeIfPresent(String.self, forKey: .visibility)
         shadow = try container.decodeIfPresent(AnyCodable.self, forKey: .shadow)
         
         // Size constraints
-        minHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .minHeight)) ?? nil
-        maxHeight = (try? container.decodeIfPresent(CGFloat.self, forKey: .maxHeight)) ?? nil
         // idealWidth/idealHeight are plain `number` (no binding) — leave typed.
         idealWidth = try container.decodeIfPresent(CGFloat.self, forKey: .idealWidth)
         idealHeight = try container.decodeIfPresent(CGFloat.self, forKey: .idealHeight)
@@ -605,7 +575,6 @@ public struct DynamicComponent: Decodable {
         } else {
             columns = nil  // Binding string will be read from rawData
         }
-        spacing = (try? container.decodeIfPresent(CGFloat.self, forKey: .spacing)) ?? nil
         contentInsetAdjustmentBehavior = try container.decodeIfPresent(String.self, forKey: .contentInsetAdjustmentBehavior)
         showsHorizontalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsHorizontalScrollIndicator)
         showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
@@ -806,5 +775,22 @@ extension DynamicComponent {
     /// carry `@{handlerName}` here).
     func commonAny(_ keyPath: KeyPath<CommonAttributes, AttrValue<Any>?>) -> String? {
         typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.rawRepresentation as? String
+    }
+
+    /// A number attribute off ANY generated table, binding resolved.
+    ///
+    /// `commonNumber` only reaches `CommonAttributes` and only returns the
+    /// static value; most of the numeric slots being retired live on
+    /// component tables (`LabelAttributes.fontSize`, `SliderAttributes.maximum`
+    /// …) and their call sites do have `data` in hand. One shape for all of
+    /// them, so the retirement does not spawn a second vocabulary.
+    func number<T: JsonUIGeneratedAttributes>(
+        _ type: T.Type,
+        _ keyPath: KeyPath<T, AttrValue<Double>?>,
+        data: [String: Any] = [:]
+    ) -> CGFloat? {
+        DynamicHelpers.resolveNumber(
+            typedAttributes(type)[keyPath: keyPath], legacy: nil, data: data
+        )
     }
 }

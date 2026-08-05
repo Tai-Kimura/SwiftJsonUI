@@ -153,7 +153,7 @@ public struct DynamicViewContainer: View {
 
     @ViewBuilder
     private func hStackContent(children: [DynamicComponent]) -> some View {
-        let spacingValue = component.spacing ?? 0
+        let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
         let distribution = component.distribution?.lowercased()
         let gravity = component.gravity
         // Spacer gating follows view_converter.rb exactly, and it is NOT
@@ -207,7 +207,7 @@ public struct DynamicViewContainer: View {
 
     @ViewBuilder
     private func vStackContent(children: [DynamicComponent]) -> some View {
-        let spacingValue = component.spacing ?? 0
+        let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
         let distribution = component.distribution?.lowercased()
         let gravity = component.gravity
         // Same asymmetry as hStackContent: leading and between-children have
