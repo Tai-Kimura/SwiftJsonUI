@@ -106,9 +106,9 @@
       "file": "Converters/CollectionConverter.swift",
       "kind": "rawAttribute",
       "key": "lazy",
-      "owner": "—",
-      "plan": "—",
-      "reason": "宣言も生成フィールド(AttrValue<AttrEnum<Lazy>>)もある。受理する値空間が宣言より広い族で、legacy な boolean 綴りも受けるため raw。旧理由『SSoT 未宣言』は誤り(2026-08-05 台帳監査で訂正)"
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "宣言も生成フィールド(AttrValue<AttrEnum<Lazy>>)もある。受理する値空間が宣言より広い族で、legacy な boolean 綴りも受けるため raw。旧理由『SSoT 未宣言』は誤り(2026-08-05 台帳監査で訂正) / 宣言された kind が、両面が実際に受ける値空間より狭い族。AttrCoerce を広げても直らない(直すには SSoT の kind 宣言を union に変える)ので 群 2 ではなく群 1 と同じ扱い — 生成テーブルが動くためリリース後"
     },
     {
       "gate": "raw-read",
@@ -331,18 +331,18 @@
       "file": "DynamicModifierHelper.swift",
       "kind": "rawData",
       "key": "indexAbove",
-      "owner": "—",
-      "plan": "—",
-      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる"
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる / 宣言された kind が、両面が実際に受ける値空間より狭い族。AttrCoerce を広げても直らない(直すには SSoT の kind 宣言を union に変える)ので 群 2 ではなく群 1 と同じ扱い — 生成テーブルが動くためリリース後"
     },
     {
       "gate": "raw-read",
       "file": "DynamicModifierHelper.swift",
       "kind": "rawData",
       "key": "indexBelow",
-      "owner": "—",
-      "plan": "—",
-      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる"
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる / 宣言された kind が、両面が実際に受ける値空間より狭い族。AttrCoerce を広げても直らない(直すには SSoT の kind 宣言を union に変える)ので 群 2 ではなく群 1 と同じ扱い — 生成テーブルが動くためリリース後"
     },
     {
       "gate": "raw-read",
@@ -385,54 +385,54 @@
       "file": "DynamicComponent.swift",
       "kind": "rawAttribute",
       "key": "bottomMargin",
-      "owner": "—",
-      "plan": "attr-codegen coercion gap(E へ報告)",
-      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+      "owner": "E",
+      "plan": "coercion gap 群 2(本リリース)",
+      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     },
     {
       "gate": "raw-read",
       "file": "DynamicComponent.swift",
       "kind": "rawAttribute",
       "key": "endMargin",
-      "owner": "—",
-      "plan": "attr-codegen coercion gap(E へ報告)",
-      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+      "owner": "E",
+      "plan": "coercion gap 群 2(本リリース)",
+      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     },
     {
       "gate": "raw-read",
       "file": "DynamicComponent.swift",
       "kind": "rawAttribute",
       "key": "leftMargin",
-      "owner": "—",
-      "plan": "attr-codegen coercion gap(E へ報告)",
-      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+      "owner": "E",
+      "plan": "coercion gap 群 2(本リリース)",
+      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     },
     {
       "gate": "raw-read",
       "file": "DynamicComponent.swift",
       "kind": "rawAttribute",
       "key": "rightMargin",
-      "owner": "—",
-      "plan": "attr-codegen coercion gap(E へ報告)",
-      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+      "owner": "E",
+      "plan": "coercion gap 群 2(本リリース)",
+      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     },
     {
       "gate": "raw-read",
       "file": "DynamicComponent.swift",
       "kind": "rawAttribute",
       "key": "startMargin",
-      "owner": "—",
-      "plan": "attr-codegen coercion gap(E へ報告)",
-      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+      "owner": "E",
+      "plan": "coercion gap 群 2(本リリース)",
+      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     },
     {
       "gate": "raw-read",
       "file": "DynamicComponent.swift",
       "kind": "rawAttribute",
       "key": "topMargin",
-      "owner": "—",
-      "plan": "attr-codegen coercion gap(E へ報告)",
-      "reason": "数値文字列の綴り(\"topMargin\": \"12\")を AttrCoerce.number が拾わない。margin_expression_helper.rb は受けるので、生読みで codegen と揃える。coercion が直れば raw 分岐ごと消える"
+      "owner": "E",
+      "plan": "coercion gap 群 2(本リリース)",
+      "reason": "AttrCoerce.number が数値文字列を拾わないため、margin_expression_helper.rb:31 が受ける \"12\" の綴りを typed 抽出だけが落とす。生成側で coercion を広げればこの分岐ごと 6 行とも消える — 2026-08-05 裁定で本リリース対象"
     }
   ]
 }
