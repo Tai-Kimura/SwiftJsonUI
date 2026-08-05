@@ -156,13 +156,20 @@ public struct DynamicViewContainer: View {
         let spacingValue = component.spacing ?? 0
         let distribution = component.distribution?.lowercased()
         let gravity = component.gravity
-        // No width condition on the spacers below. view_converter.rb emits
-        // them from `gravity` / `distribution` alone, and the Compose runtime
-        // picks its Arrangement without looking at the container's size
-        // either. Requiring matchParent was an ios-dynamic-only rule with no
-        // backing in the declaration or in the other platforms: a fixed-width
-        // container distributed nothing, while the generated code for the
-        // same layout distributed normally.
+        // Spacer gating follows view_converter.rb exactly, and it is NOT
+        // uniform: the leading spacer (:217) and the between-children ones
+        // (:367) have no size condition, while the TRAILING one (:383) keeps
+        // `width_expands`. Removing all three was wrong — a trailing spacer
+        // in a wrapContent container expands it and swallows the right
+        // padding, which is how paddingRight/paddingEnd/rightPadding went
+        // inert in the 3rd measurement round.
+        //
+        // The asymmetry is load-bearing because the gravity extractor
+        // DEFAULTS to "left"/"top": an undeclared gravity reads as left, so
+        // the trailing condition is true for every plain horizontal stack.
+        // Only the size gate keeps that from firing everywhere.
+        let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
+            component.width == .infinity || component.width == -1
 
         HStack(alignment: getVerticalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading spacer for right gravity or distribution
@@ -188,8 +195,8 @@ public struct DynamicViewContainer: View {
             }
 
             // Trailing spacer for left gravity or distribution
-            if extractHorizontalFromGravity(gravity) == "left" ||
-                distribution == "equalspacing" || distribution == "equalcentering" {
+            if widthExpands && (extractHorizontalFromGravity(gravity) == "left" ||
+                distribution == "equalspacing" || distribution == "equalcentering") {
                 Spacer(minLength: 0)
             }
         }
@@ -203,7 +210,10 @@ public struct DynamicViewContainer: View {
         let spacingValue = component.spacing ?? 0
         let distribution = component.distribution?.lowercased()
         let gravity = component.gravity
-        // Same as hStackContent: no height condition on the spacers.
+        // Same asymmetry as hStackContent: leading and between-children have
+        // no size condition, the trailing one keeps it (view_converter.rb:385).
+        let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
+            component.height == .infinity || component.height == -1
 
         VStack(alignment: getHorizontalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading spacer for bottom gravity or distribution
@@ -229,8 +239,8 @@ public struct DynamicViewContainer: View {
             }
 
             // Trailing spacer for top gravity or distribution
-            if extractVerticalFromGravity(gravity) == "top" ||
-                distribution == "equalspacing" || distribution == "equalcentering" {
+            if heightExpands && (extractVerticalFromGravity(gravity) == "top" ||
+                distribution == "equalspacing" || distribution == "equalcentering") {
                 Spacer(minLength: 0)
             }
         }
