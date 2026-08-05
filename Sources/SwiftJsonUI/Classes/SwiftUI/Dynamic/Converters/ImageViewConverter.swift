@@ -39,7 +39,7 @@ public struct ImageViewConverter {
         if let srcName = component.typedAttributes(ImageAttributes.self)
             .srcName?.rawRepresentation as? String {
             image = Image(srcName)
-        } else if let src = component.src {
+        } else if let src = component.string(ImageAttributes.self, \.src) {
             let processedSrc = DynamicHelpers.processText(src, data: data)
             // systemIcon reinterprets `src` as an SF Symbol name rather than
             // an asset name — a different Image initializer, decided here

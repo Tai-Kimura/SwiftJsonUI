@@ -254,7 +254,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let attrs = c.typedAttributes(SelectBoxAttributes.self)
 
         XCTAssertEqual(attrs.labelAttributes?["font"] as? String, "Courier")
-        XCTAssertEqual(c.font, "Helvetica")
+        XCTAssertEqual(attrs.font, "Helvetica")
     }
 
     /// `hintAttributes` is the nested spelling of the same three keys.
@@ -396,7 +396,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
         let attrs = c.typedAttributes(SliderAttributes.self)
         XCTAssertEqual(attrs.progressTintColor, "#FF0000")
-        XCTAssertEqual(c.tintColor, "#00FF00", "the generic spelling is still there to fall back to")
+        XCTAssertEqual(attrs.tintColor, "#00FF00", "the generic spelling is still there to fall back to")
     }
 
     /// `highlightBackground` is the UIKit-era spelling of the pressed-state
@@ -405,7 +405,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let c = try component("""
         { "type": "Button", "text": "x", "tapBackground": "#FF0000", "highlightBackground": "#00FF00" }
         """)
-        XCTAssertEqual(c.tapBackground, "#FF0000")
+        XCTAssertEqual(c.typedAttributes(ButtonAttributes.self).tapBackground, "#FF0000")
         XCTAssertEqual(
             c.typedAttributes(ButtonAttributes.self).highlightBackground, "#00FF00",
             "and highlightBackground is what fills in when tapBackground is absent"
@@ -685,6 +685,76 @@ final class DynamicInertAttributeTests: XCTestCase {
         )
     }
 
+    // MARK: - 50 §4 group B: the ten string slots
+
+    /// The ten string slots (`text` `font` `fontColor` `fontFamily` `label`
+    /// `src` `tapBackground` `tint` `tintColor` `disabledFontColor`) are gone.
+    ///
+    /// Unlike the boolean group, these did NOT drop bindings: a `String?`
+    /// slot holds `"@{expr}"` verbatim, so the spelling always reached the
+    /// converter. The retirement is a read-discipline change, and what has to
+    /// be pinned is exactly that: **both forms still come through, byte for
+    /// byte, off the generated table.** If they did not, every screen would
+    /// change at once.
+    func testGroupBSpellingsSurviveTheRetirement() throws {
+        let literal = try component("""
+        { "type": "Label", "text": "Hi", "font": "Helvetica",
+          "fontColor": "#111111", "fontFamily": "Noto Sans JP" }
+        """)
+        XCTAssertEqual(literal.string(LabelAttributes.self, \.text), "Hi")
+        XCTAssertEqual(literal.string(LabelAttributes.self, \.font), "Helvetica")
+        XCTAssertEqual(literal.string(LabelAttributes.self, \.fontColor), "#111111")
+        XCTAssertEqual(literal.string(LabelAttributes.self, \.fontFamily), "Noto Sans JP")
+
+        let bound = try component("""
+        { "type": "Label", "text": "@{title}", "fontColor": "@{titleColor}" }
+        """)
+        XCTAssertEqual(bound.string(LabelAttributes.self, \.text), "@{title}")
+        XCTAssertEqual(bound.string(LabelAttributes.self, \.fontColor), "@{titleColor}")
+        XCTAssertEqual(
+            DynamicHelpers.processText(
+                bound.string(LabelAttributes.self, \.text), data: ["title": "Resolved"]
+            ),
+            "Resolved"
+        )
+
+        // The other six, on the components that declare them.
+        let check = try component("""
+        { "type": "CheckBox", "label": "Agree", "src": "box" }
+        """)
+        XCTAssertEqual(check.string(CheckBoxAttributes.self, \.label), "Agree")
+        XCTAssertEqual(check.typedAttributes(CheckBoxAttributes.self).src, "box")
+
+        let button = try component("""
+        { "type": "Button", "text": "Go", "tapBackground": "@{pressed}",
+          "disabledFontColor": "#999999" }
+        """)
+        let buttonAttrs = button.typedAttributes(ButtonAttributes.self)
+        XCTAssertEqual(button.string(ButtonAttributes.self, \.text), "Go")
+        XCTAssertEqual(buttonAttrs.tapBackground, "@{pressed}")
+        XCTAssertEqual(
+            button.string(ButtonAttributes.self, \.disabledFontColor), "#999999"
+        )
+
+        let toggle = try component("""
+        { "type": "Switch", "tint": "#00FF00", "tintColor": "#0000FF" }
+        """)
+        XCTAssertEqual(toggle.string(SwitchAttributes.self, \.tint), "#00FF00")
+        XCTAssertEqual(toggle.commonString(\.tintColor), "#0000FF")
+    }
+
+    /// One thing the retirement DOES widen: the generated extraction reaches
+    /// declared aliases, and the hand-decoded slot only ever read the
+    /// canonical key. `Segment.fontColor` is the single alias among the ten
+    /// (`normalColor`), so it is the whole of the widening — recorded here so
+    /// the claim is a measurement rather than an assumption.
+    func testGroupBAliasReachIsExactlyOneSpelling() throws {
+        let c = try component("""
+        { "type": "Segment", "normalColor": "#123456" }
+        """)
+        XCTAssertEqual(c.typedAttributes(SegmentAttributes.self).fontColor, "#123456")
+    }
+
     /// `tapBackground` split by route: ButtonConverter always resolved it,
     /// the container did not.
     func testBoundTapBackgroundResolves() throws {
@@ -692,10 +762,10 @@ final class DynamicInertAttributeTests: XCTestCase {
         { "type": "View", "id": "t", "tapBackground": "@{pressed}" }
         """)
         XCTAssertEqual(
-            DynamicHelpers.getColor(c.tapBackground, data: ["pressed": "#FF0000"]),
+            DynamicHelpers.getColor(c.commonString(\.tapBackground), data: ["pressed": "#FF0000"]),
             DynamicHelpers.getColor("#FF0000")
         )
-        XCTAssertNil(DynamicHelpers.getColor(c.tapBackground), "without data it cannot resolve")
+        XCTAssertNil(DynamicHelpers.getColor(c.commonString(\.tapBackground)), "without data it cannot resolve")
     }
 
     // MARK: - bound fontSize and the vocabulary spellings
@@ -892,7 +962,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let error = try component("""
         { "type": "Image", "id": "t", "errorImage": "conformance_sample" }
         """)
-        XCTAssertNil(error.src)
+        XCTAssertNil(error.string(ImageAttributes.self, \.src))
         XCTAssertNil(error.defaultImage)
         XCTAssertEqual(error.errorImage, "conformance_sample")
 

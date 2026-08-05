@@ -22,7 +22,10 @@ public struct IconLabelConverter {
         data: [String: Any],
         viewId: String? = nil
     ) -> AnyView {
-        let text = DynamicHelpers.processText(component.text, data: data).dynamicLocalized()
+        let iconLabel = component.typedAttributes(IconLabelAttributes.self)
+        let text = DynamicHelpers.processText(
+            component.string(IconLabelAttributes.self, \.text), data: data
+        ).dynamicLocalized()
         // The canonical keys are snake_case (`icon_on` / `icon_off`, the
         // SSoT/UIKit spelling) — the legacy camelCase decode slots never
         // matched them, so declared icons silently dropped.
@@ -35,12 +38,12 @@ public struct IconLabelConverter {
         let iconSize = component.iconSize ?? 24
         let iconMargin = component.iconMargin ?? 5
         let fontSize = component.typedAttributes(IconLabelAttributes.self).fontSize.map { CGFloat($0) } ?? 16
-        let fontColor = DynamicHelpers.getColor(component.fontColor) ?? .primary
+        let fontColor = DynamicHelpers.getColor(iconLabel.fontColor) ?? .primary
         let selectedFontColor = DynamicHelpers.getColor(component.selectedFontColor) ?? .accentColor
-        let fontName = (component.font != nil && component.font != "bold") ? component.font : nil
+        let fontName = (iconLabel.font != nil && iconLabel.font != "bold") ? iconLabel.font : nil
         // 'font: bold' is the weight spelling; textShadow the shadow object
         // (33 cross-effect: ios rendered default weight and no shadow).
-        let fontWeight: Font.Weight? = component.font == "bold" ? .bold : nil
+        let fontWeight: Font.Weight? = iconLabel.font == "bold" ? .bold : nil
         var shadowColor: Color? = nil
         var shadowRadius: CGFloat = 1
         var shadowOffset = CGSize(width: 0, height: 1)

@@ -99,7 +99,7 @@ final class JsonUINormalizationTests: XCTestCase {
         let component = try XCTUnwrap(JSONLayoutLoader.decodeComponent(from: layout))
         let child = try XCTUnwrap(component.childComponents?.first)
         XCTAssertNil(child.rawData["$jui"])
-        XCTAssertEqual(child.text, "Included")
+        XCTAssertEqual(child.string(LabelAttributes.self, \.text), "Included")
     }
 }
 #endif

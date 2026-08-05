@@ -70,7 +70,7 @@ public struct TableConverter {
                 HStack {
                     {
                         var text = Text(items[index].dynamicLocalized())
-                            .foregroundColor(DynamicHelpers.getColor(component.fontColor) ?? .primary)
+                            .foregroundColor(DynamicHelpers.getColor(component.string(LabelAttributes.self, \.fontColor)) ?? .primary)
                         if let font = DynamicHelpers.fontFromComponent(component) {
                             text = text.font(font)
                         }

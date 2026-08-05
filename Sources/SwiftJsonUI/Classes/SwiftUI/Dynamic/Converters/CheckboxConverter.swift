@@ -38,12 +38,13 @@ public struct CheckboxConverter {
         let labelText: String = {
             // 'label' is the CheckBox-specific spelling and wins over the
             // generic text (kjui order — 33 adjudication).
-            let raw = component.label ?? component.text ?? ""
+            let raw = component.string(CheckBoxAttributes.self, \.label)
+                ?? component.string(CheckBoxAttributes.self, \.text) ?? ""
             return DynamicHelpers.processText(raw, data: data).dynamicLocalized()
         }()
 
         // Icon names
-        let icon = component.icon ?? component.src
+        let icon = component.icon ?? attrs.src
         let selectedIcon = component.selectedIcon ?? component.onSrc
 
         // Icon size
@@ -69,7 +70,7 @@ public struct CheckboxConverter {
             // the literal "@{expr}", which matches no weight name and fell
             // through as nil. Resolve it before the vocabulary lookup.
             if let font = (attrs.font?.rawRepresentation as? String)
-                .map({ DynamicHelpers.processText($0, data: data) }) ?? component.font {
+                .map({ DynamicHelpers.processText($0, data: data) }) ?? component.string(CheckBoxAttributes.self, \.font) {
                 return DynamicHelpers.fontWeightFromString(font)
             }
             return nil
@@ -77,7 +78,7 @@ public struct CheckboxConverter {
 
         // Font color
         let fontColor: Color? = {
-            if let fc = component.fontColor {
+            if let fc = component.string(CheckBoxAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fc)
             }
             return nil

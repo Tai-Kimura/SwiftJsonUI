@@ -49,7 +49,7 @@ public struct SegmentConverter {
         // tintColor is the SELECTED segment's accent on every platform.
         let selectedColor = DynamicHelpers.getColor(
             component.rawAttribute("selectedSegmentTintColor") as? String
-                ?? component.tintColor,
+                ?? component.typedAttributes(SegmentAttributes.self).tintColor,
             data: data
         )
 

@@ -246,8 +246,8 @@ final class DynamicDecodingHelperTests: XCTestCase {
         let children = try XCTUnwrap(component.childComponents)
 
         XCTAssertEqual(children.count, 3, "a failing child must not collapse its siblings")
-        XCTAssertEqual(children[0].text, "header")
-        XCTAssertEqual(children[2].text, "footer")
+        XCTAssertEqual(children[0].string(LabelAttributes.self, \.text), "header")
+        XCTAssertEqual(children[2].string(LabelAttributes.self, \.text), "footer")
 
         let placeholder = children[1]
         XCTAssertEqual(placeholder.type, DynamicDecodingHelper.decodeErrorType)

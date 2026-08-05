@@ -65,7 +65,7 @@ public struct ProgressConverter {
         // wins (mirrors progress_converter.rb).
         let tintSpelling = attrs.progressTintColor?.value
             ?? attrs.color
-            ?? component.tintColor
+            ?? component.typedAttributes(ProgressAttributes.self).tintColor
         if let progressTintColor = tintSpelling,
            let color = DynamicHelpers.getColor(progressTintColor) {
             result = AnyView(result.tint(color))

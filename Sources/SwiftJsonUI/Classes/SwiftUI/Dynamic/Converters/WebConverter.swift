@@ -23,7 +23,10 @@ public struct WebConverter {
         let attrs = component.typedAttributes(WebAttributes.self)
         // Resolve URL - supports both static string and @{binding} expression
         let urlString: String? = {
-            if let src = component.src {
+            // `src` is not declared on Web (the SSoT spelling is `url`, read
+            // just below); Image carries the widest declared form and the
+            // extraction reads the spelling for any component.
+            if let src = component.string(ImageAttributes.self, \.src) {
                 return resolveUrlString(src, data: data)
             }
             // Fallback: 'url' attribute (Ruby converter spelling)

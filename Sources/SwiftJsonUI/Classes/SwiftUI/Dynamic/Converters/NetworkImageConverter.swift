@@ -35,7 +35,7 @@ public struct NetworkImageConverter {
             // network_image_converter.rb does not read it either — this
             // fallback was reaching for an attribute the component does not
             // have.
-            let src = component.src
+            let src = component.string(NetworkImageAttributes.self, \.src)
             guard let src = src else { return nil }
             if let inner = DynamicBindingResolver.inner(of: src) {
                 // Canonical string value context (Binding<String> unwraps

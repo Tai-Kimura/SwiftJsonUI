@@ -13,39 +13,7 @@
   "entries": [
     {
       "gate": "binding-slot",
-      "attribute": "disabledFontColor",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
       "attribute": "enabled",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "font",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "fontColor",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "fontFamily",
       "file": "DynamicComponent.swift",
       "owner": "50",
       "plan": "binding decode スロット撲滅(50 §4)",
@@ -61,55 +29,7 @@
     },
     {
       "gate": "binding-slot",
-      "attribute": "label",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
       "attribute": "onValueChange",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "src",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "tapBackground",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "text",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "tint",
-      "file": "DynamicComponent.swift",
-      "owner": "50",
-      "plan": "binding decode スロット撲滅(50 §4)",
-      "reason": "手書き decode スロットが生成 AttrValue<T> の手前にあり、バインド形が落ちる"
-    },
-    {
-      "gate": "binding-slot",
-      "attribute": "tintColor",
       "file": "DynamicComponent.swift",
       "owner": "50",
       "plan": "binding decode スロット撲滅(50 §4)",

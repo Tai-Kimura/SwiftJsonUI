@@ -33,7 +33,8 @@ public struct RadioConverter {
         // screen until processText was put in front. (49-G fixed the same
         // leak on Compose in 2cf42df.)
         let attrs = component.typedAttributes(RadioAttributes.self)
-        let rawText = (attrs.label?.rawRepresentation as? String) ?? component.text
+        let rawText = (attrs.label?.rawRepresentation as? String)
+            ?? (attrs.text?.rawRepresentation as? String)
         let text = DynamicHelpers.processText(rawText, data: data)
 
         var result: AnyView
@@ -95,7 +96,7 @@ public struct RadioConverter {
         // Font and color for group title
         let titleFont = DynamicHelpers.fontFromComponent(component)
         let titleColor: Color? = {
-            if let fc = component.fontColor {
+            if let fc = component.string(RadioAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fc)
             }
             return nil
@@ -160,7 +161,7 @@ public struct RadioConverter {
         // Font and color
         let labelFont = DynamicHelpers.fontFromComponent(component)
         let labelColor: Color? = {
-            if let fc = component.fontColor {
+            if let fc = component.string(RadioAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fc)
             }
             return nil

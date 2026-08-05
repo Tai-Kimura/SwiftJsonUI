@@ -39,9 +39,13 @@ public struct TextConverter {
         data: [String: Any],
         parentOrientation: String? = nil
     ) -> AnyView {
-        let processedText = DynamicHelpers.processText(component.text, data: data)
+        let processedText = DynamicHelpers.processText(
+            component.string(LabelAttributes.self, \.text), data: data
+        )
         let text = processedText.dynamicLocalized()
-        let textColor = DynamicHelpers.getColor(component.fontColor, data: data) ?? .primary
+        let textColor = DynamicHelpers.getColor(
+            component.string(LabelAttributes.self, \.fontColor), data: data
+        ) ?? .primary
         let alignment = DynamicHelpers.getTextAlignment(from: component)
 
         // --- 1. Text view with font, color, alignment ---
