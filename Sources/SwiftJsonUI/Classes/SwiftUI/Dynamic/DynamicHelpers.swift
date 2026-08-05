@@ -171,12 +171,16 @@ public struct DynamicHelpers {
         return DynamicDecodingHelper.getColor(identifier)
     }
 
-    public static func getContentMode(from component: DynamicComponent) -> ContentMode {
-        return DynamicDecodingHelper.toContentMode(component.contentMode)
+    public static func getContentMode(from component: DynamicComponent, data: [String: Any] = [:]) -> ContentMode {
+        return DynamicDecodingHelper.toContentMode(
+            component.enumString(ImageAttributes.self, \.contentMode, data: data)
+        )
     }
 
-    public static func getNetworkImageContentMode(from component: DynamicComponent) -> NetworkImage.ContentMode {
-        return DynamicDecodingHelper.toNetworkImageContentMode(component.contentMode)
+    public static func getNetworkImageContentMode(from component: DynamicComponent, data: [String: Any] = [:]) -> NetworkImage.ContentMode {
+        return DynamicDecodingHelper.toNetworkImageContentMode(
+            component.enumString(NetworkImageAttributes.self, \.contentMode, data: data)
+        )
     }
 
     public static func getRenderingMode(from component: DynamicComponent) -> Image.TemplateRenderingMode? {
@@ -187,8 +191,8 @@ public struct DynamicHelpers {
         return DynamicDecodingHelper.toIconPosition(component.iconPosition)
     }
 
-    public static func getTextAlignment(from component: DynamicComponent) -> TextAlignment {
-        return DynamicDecodingHelper.toTextAlignment(component.textAlign)
+    public static func getTextAlignment(from component: DynamicComponent, data: [String: Any] = [:]) -> TextAlignment {
+        return DynamicDecodingHelper.toTextAlignment(component.textAlignSpelling(data: data))
     }
 
     // Keep old methods for backward compatibility (deprecated)
@@ -324,7 +328,7 @@ public struct DynamicHelpers {
         let hidden = resolveBool(
             component.typedAttributes(CommonAttributes.self).hidden, legacy: nil, data: data
         )
-        return hidden == true || component.visibility == "gone"
+        return hidden == true || component.visibilitySpelling() == "gone"
     }
 
     // Convert font weight string to Font.Weight

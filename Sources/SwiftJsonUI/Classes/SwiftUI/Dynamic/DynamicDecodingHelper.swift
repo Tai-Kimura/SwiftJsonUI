@@ -65,9 +65,9 @@ public struct DynamicDecodingHelper {
         ) == true {
             return "gone"
         }
-        switch component.visibility {
+        switch component.visibilitySpelling() {
         case "gone", "invisible", "visible":
-            return component.visibility ?? "visible"
+            return component.visibilitySpelling() ?? "visible"
         default:
             return "visible"
         }
