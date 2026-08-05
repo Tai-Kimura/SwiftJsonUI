@@ -133,7 +133,9 @@ public struct ButtonConverter {
         let padding = DynamicHelpers.getPadding(from: component)
 
         // Enabled state (with binding support)
-        let isEnabled = DynamicBindingHelper.resolveBool(component.enabled, data: data, fallback: true)
+        let isEnabled = DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).enabled, legacy: nil, data: data
+        ) ?? true
 
         // Handle width/height - pass to StateAwareButtonView so background fills the frame
         var buttonWidth = component.width

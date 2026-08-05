@@ -72,7 +72,7 @@ public struct SegmentConverter {
         )
 
         // onValueChange handler - called when selection changes
-        if let onValueChange = component.onValueChange,
+        if let onValueChange = component.onValueChangeSpelling(),
            let handlerName = DynamicEventHelper.extractPropertyName(from: onValueChange) {
             // Determine the binding property to observe
             let observeProperty: String? = attrs.selectedIndex?.bindingExpression

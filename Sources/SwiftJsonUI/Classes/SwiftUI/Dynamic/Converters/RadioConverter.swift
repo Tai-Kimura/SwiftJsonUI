@@ -59,7 +59,7 @@ public struct RadioConverter {
         }
 
         // Disabled state + opacity (before standard modifiers, matching Ruby order)
-        if component.enabled?.value as? Bool == false {
+        if component.commonBool(\.enabled) == false {
             result = AnyView(result.disabled(true).opacity(0.6))
         }
 
@@ -116,7 +116,7 @@ public struct RadioConverter {
                             .onTapGesture {
                                 selectionBinding.wrappedValue = item
                                 // onValueChange handler
-                                if let onValueChange = component.onValueChange {
+                                if let onValueChange = component.onValueChangeSpelling() {
                                     DynamicEventHelper.callWithValue(
                                         onValueChange,
                                         id: id,

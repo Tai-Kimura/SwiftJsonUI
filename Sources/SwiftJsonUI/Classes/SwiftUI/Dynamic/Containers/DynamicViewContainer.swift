@@ -100,7 +100,7 @@ public struct DynamicViewContainer: View {
             )
         } else {
             let hasWeights = children.contains { child in
-                (child.weight ?? 0) > 0
+                (DynamicHelpers.resolveWeight(from: child, data: data) ?? 0) > 0
                     || (child.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0
                     || (child.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
             }
@@ -129,7 +129,7 @@ public struct DynamicViewContainer: View {
     private func emptyContent() -> some View {
         let hasExplicitSize = (component.width != nil && component.width != 0) ||
             (component.height != nil && component.height != 0)
-        let hasWeight = (component.weight ?? 0) > 0 ||
+        let hasWeight = (DynamicHelpers.resolveWeight(from: component, data: data) ?? 0) > 0 ||
             (component.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0 ||
             (component.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
 

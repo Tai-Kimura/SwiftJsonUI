@@ -39,7 +39,7 @@ public struct SliderConverter {
         let valueBinding = DynamicBindingHelper.double(
             valueExpr,
             data: data,
-            fallback: component.value ?? minValue
+            fallback: component.number(SliderAttributes.self, \.value, data: data).map { Double($0) } ?? minValue
         )
 
         // Slider
@@ -77,7 +77,7 @@ public struct SliderConverter {
         }
 
         // Disabled state
-        if component.enabled?.value as? Bool == false {
+        if component.commonBool(\.enabled) == false {
             result = AnyView(result.disabled(true))
         }
 

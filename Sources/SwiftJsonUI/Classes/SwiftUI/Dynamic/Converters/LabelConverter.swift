@@ -77,7 +77,7 @@ public struct LabelConverter {
 
         // fontColor with binding support
         let fontColor: Color? = {
-            if component.enabled?.value as? Bool == false,
+            if component.commonBool(\.enabled) == false,
                let disabledColor = component.string(ButtonAttributes.self, \.disabledFontColor) {
                 return DynamicHelpers.getColor(disabledColor, data: data)
             }

@@ -60,7 +60,7 @@ public struct DynamicSafeAreaViewContainer: View {
             ))
         } else {
             let hasWeights = children.contains { child in
-                (child.weight ?? 0) > 0
+                (DynamicHelpers.resolveWeight(from: child, data: data) ?? 0) > 0
                     || (child.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0
                     || (child.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
             }
