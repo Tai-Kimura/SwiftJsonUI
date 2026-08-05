@@ -175,11 +175,23 @@ private struct TabViewWrapperView: View {
 
     @ViewBuilder
     private func tabItemLabel(for item: TabItemModel) -> some View {
+        // `showLabels: false` drops the text and leaves the icon alone —
+        // tab_view_converter.rb emits a bare Image in the tabItem for it.
+        // Nothing read the attribute here, so the label always showed.
+        // Declared `boolean` with default true — no binding form.
+        let showLabels = component.typedAttributes(TabViewAttributes.self).showLabels ?? true
         let isSelected = selectedTab == item.id
         let currentIcon = isSelected ? (item.selectedIcon ?? item.icon) : item.icon
         let hasDifferentIcons = item.selectedIcon != nil && item.selectedIcon != item.icon
 
-        if item.iconType == "resource" {
+        if !showLabels {
+            // Icon only.
+            if item.iconType == "resource" {
+                Image(currentIcon).renderingMode(.template)
+            } else {
+                Image(systemName: currentIcon)
+            }
+        } else if item.iconType == "resource" {
             // Resource image from asset catalog
             if hasDifferentIcons {
                 Label {

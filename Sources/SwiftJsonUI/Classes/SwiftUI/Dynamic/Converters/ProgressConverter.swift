@@ -37,12 +37,23 @@ public struct ProgressConverter {
             ProgressView(value: progressValue)
         )
 
-        // indicatorStyle — same vocabulary as Indicator (linear/circular); a
-        // determinate bar defaults to linear, so only apply when declared
-        // (mirrors progress_converter.rb).
-        let indicatorStyle = component.indicatorStyle ?? component.rawAttribute("style") as? String
-        if let style = indicatorStyle {
-            if style.lowercased() == "linear" {
+        // indicatorStyle — the declared vocabulary is `medium` / `large`
+        // ("ActivityIndicator size style"), NOT linear/circular. Reading it as
+        // the shape mapped BOTH declared values onto
+        // CircularProgressViewStyle(), so the attribute emitted one constant
+        // whatever the layout wrote. `controlSize` is the size knob a
+        // ProgressView actually has (progress_converter.rb:30-43 — 49-B fixed
+        // the codegen half of this).
+        switch component.indicatorStyle?.lowercased() {
+        case "large": result = AnyView(result.controlSize(.large))
+        case "medium": result = AnyView(result.controlSize(.regular))
+        default: break
+        }
+
+        // `style` keeps the shape reading: it is the separate spelling that
+        // carries linear/circular, and is not the same attribute.
+        if let shape = component.rawAttribute("style") as? String {
+            if shape.lowercased() == "linear" {
                 result = AnyView(result.progressViewStyle(LinearProgressViewStyle()))
             } else {
                 result = AnyView(result.progressViewStyle(CircularProgressViewStyle()))
