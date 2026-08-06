@@ -36,8 +36,6 @@ public struct DynamicComponent: Decodable {
     
     let id: String?
     let edgeInset: AnyCodable?  // Text padding for Label (単一値または配列形式をサポート)
-    let underline: Bool?  // Underline text for Label
-    let strikethrough: Bool?  // Strikethrough text for Label
     let autoShrink: Bool?  // Auto shrink text to fit for Label
     let lineBreakMode: String?  // Truncation mode: head, middle, tail (UIKit compatibility)
     let textShadow: AnyCodable?  // Text shadow for Label
@@ -205,7 +203,7 @@ public struct DynamicComponent: Decodable {
     public enum CodingKeys: String, CodingKey {
         case type, id
         case edgeInset
-        case underline, strikethrough, autoShrink, lineBreakMode, textShadow
+        case autoShrink, lineBreakMode, textShadow
         case width, height, widthRaw, heightRaw
         case padding, paddings, margins
         case leftPadding, rightPadding, topPadding, bottomPadding
@@ -296,8 +294,6 @@ public struct DynamicComponent: Decodable {
         // tree instead of surfacing. `Label { fontSize: "@{x}" }` rendered
         // nothing at all. The generated tables carry it now.
         edgeInset = try container.decodeIfPresent(AnyCodable.self, forKey: .edgeInset)
-        underline = try container.decodeIfPresent(Bool.self, forKey: .underline)
-        strikethrough = try container.decodeIfPresent(Bool.self, forKey: .strikethrough)
         // These binding-capable attrs are declared `["number","binding"]` /
         // `["boolean","binding"]` in the shared catalog (see generated
         // LabelAttributes etc.). A `"@{binding}"` string makes a typed
@@ -896,6 +892,25 @@ extension DynamicComponent {
     func onValueChangedSpelling() -> String? {
         typedAttributes(SelectBoxAttributes.self).onValueChanged?
             .rawRepresentation as? String
+    }
+
+    /// `underline` / `strikethrough` — declared `boolean|object|array`, where
+    /// the object form carries `lineStyle` / `color` styling.
+    ///
+    /// The hand-decoded `Bool?` slot THREW on the object form, and children
+    /// go through FailableDecodable, so `underline: {"lineStyle": "Single"}`
+    /// replaced the whole Label with an error placeholder — the same
+    /// node-deletion mechanism `fontSize: "@{x}"` had. codegen never threw:
+    /// label_converter.rb tests Ruby truthiness, so an object means
+    /// `underline: true` (the styling is not rendered, but the line is).
+    /// This mirrors that: Bool reads as itself, any other declared value
+    /// means the decoration is on.
+    func decorationFlag(_ keyPath: KeyPath<LabelAttributes, Any?>) -> Bool {
+        guard let raw = typedAttributes(LabelAttributes.self)[keyPath: keyPath] else {
+            return false
+        }
+        if let flag = raw as? Bool { return flag }
+        return true
     }
 
     /// The six per-side margins.

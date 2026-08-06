@@ -599,8 +599,8 @@ final class DynamicComponentTests: XCTestCase {
 
         XCTAssertEqual(component.string(LabelAttributes.self, \.font), "Helvetica")
         XCTAssertEqual(component.fontWeightSpelling(), "bold")
-        XCTAssertEqual(component.underline, true)
-        XCTAssertEqual(component.strikethrough, false)
+        XCTAssertEqual(component.decorationFlag(\.underline), true)
+        XCTAssertEqual(component.decorationFlag(\.strikethrough), false)
         XCTAssertEqual(component.typedAttributes(LabelAttributes.self).lineHeightMultiple?.value.map { CGFloat($0) }, 1.5)
     }
 
