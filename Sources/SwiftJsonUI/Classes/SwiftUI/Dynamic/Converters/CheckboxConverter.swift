@@ -85,9 +85,17 @@ public struct CheckboxConverter {
         }()
 
         // Checked/unchecked colors
+        // The checked accent reads the same fallback chain the codegen does
+        // (checkbox_converter.rb: checkedColor || checkColor || tintColor ||
+        // onTintColor) — dynamic read only `checkedColor`, so a layout
+        // declaring `tintColor` kept the .blue default.
         let checkedColor: Color = {
-            if let cc = component.checkedColor {
-                return DynamicHelpers.getColor(cc) ?? .blue
+            let spelling = component.checkedColor
+                ?? component.rawAttribute("checkColor") as? String
+                ?? component.rawAttribute("tintColor") as? String
+                ?? component.rawAttribute("onTintColor") as? String
+            if let spelling {
+                return DynamicHelpers.getColor(spelling) ?? .blue
             }
             return .blue
         }()
