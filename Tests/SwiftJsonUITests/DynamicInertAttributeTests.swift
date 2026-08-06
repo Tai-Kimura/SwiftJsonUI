@@ -768,6 +768,28 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertNil(DynamicHelpers.getColor(c.commonString(\.tapBackground)), "without data it cannot resolve")
     }
 
+    // MARK: - NetworkImage.ContentMode.from (the codegen-reachable seam)
+
+    /// The spelling map has ONE owner: the non-DEBUG seam. The generated
+    /// production code resolves a BOUND contentMode through it (the
+    /// compile-time map froze `@{x}` to .fit — C1/bound-frozen), and the
+    /// DEBUG helper delegates to it.
+    func testNetworkImageContentModeFromResolvesTheWholeVocabulary() {
+        XCTAssertEqual(NetworkImage.ContentMode.from("fill"), .stretch)
+        XCTAssertEqual(NetworkImage.ContentMode.from("ScaleToFill"), .stretch)
+        XCTAssertEqual(NetworkImage.ContentMode.from("AspectFill"), .fill)
+        XCTAssertEqual(NetworkImage.ContentMode.from("AspectFit"), .fit)
+        XCTAssertEqual(NetworkImage.ContentMode.from("center"), .center)
+        XCTAssertEqual(NetworkImage.ContentMode.from("top"), .top)
+        XCTAssertEqual(NetworkImage.ContentMode.from("bottom"), .bottom)
+        XCTAssertEqual(NetworkImage.ContentMode.from("left"), .left)
+        XCTAssertEqual(NetworkImage.ContentMode.from("right"), .right)
+        XCTAssertEqual(NetworkImage.ContentMode.from(nil), .fit)
+        XCTAssertEqual(NetworkImage.ContentMode.from("nonsense"), .fit)
+        // the DEBUG helper is the same table, not a second copy
+        XCTAssertEqual(DynamicDecodingHelper.toNetworkImageContentMode("fill"), .stretch)
+    }
+
     // MARK: - bound fontSize and the vocabulary spellings
 
     /// `fontSize` is number|binding on exactly the components whose SSoT says

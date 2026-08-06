@@ -48,6 +48,34 @@ public enum ImageContentModeIntent: Equatable {
     }
 }
 
+public extension NetworkImage.ContentMode {
+    /// Resolves a declared spelling at run time — the seam sjui codegen
+    /// emits for a BOUND `NetworkImage.contentMode`, and the single table
+    /// `DynamicDecodingHelper.toNetworkImageContentMode` delegates to.
+    ///
+    /// Exists because the compile-time map cannot see a `@{...}` value:
+    /// the converter's `map_content_mode_enum` fell through to `.fit`,
+    /// freezing the binding to a constant (C1/bound-frozen,
+    /// NetworkImage.contentMode [ios]). `.fit` for anything unrecognised —
+    /// the same default both render paths already used.
+    static func from(_ spelling: String?) -> NetworkImage.ContentMode {
+        switch spelling ?? "" {
+        case "AspectFill", "aspectFill": return .fill
+        case "AspectFit", "aspectFit": return .fit
+        case "center", "Center": return .center
+        case "top", "Top": return .top
+        case "bottom", "Bottom": return .bottom
+        case "left", "Left": return .left
+        case "right", "Right": return .right
+        case "fill", "Fill", "scaleToFill", "ScaleToFill", "scaletofill":
+            // fill = stretch (canonical image.fill = stretch,
+            // shared/core/attribute_semantics.json).
+            return .stretch
+        default: return .fit
+        }
+    }
+}
+
 public extension Image {
     /// Applies a content mode, including the stretch that is spelled as no
     /// modifier at all.
