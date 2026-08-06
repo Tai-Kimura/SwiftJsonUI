@@ -18,7 +18,6 @@ public struct ImageAttributes {
         case right = "right"
         case aspectFill = "AspectFill"
         case aspectFit = "AspectFit"
-        case scaleToFill = "ScaleToFill"
     }
 
     public enum Loading: String {
@@ -70,7 +69,7 @@ public struct ImageAttributes {
     /// Enable tap gesture independent of onClick.
     public let canTap: Bool?
 
-    /// Content mode (binding supported)
+    /// Content mode (binding supported). ScaleToFill is a declared synonym of fill (the stretch — see attribute_semantics.json#semantics.image); the normalizer folds it, fixtures are generated for the canonical spelling only.
     public let contentMode: AttrValue<AttrEnum<ContentMode>>?
 
     /// Fallback image on load error.
@@ -131,7 +130,7 @@ public struct ImageAttributes {
         if let s = raw as? String {
             switch s.lowercased() {
             case "fit": return .known(ContentMode.fit)
-            case "fill": return .known(ContentMode.fill)
+            case "fill", "scaletofill": return .known(ContentMode.fill)
             case "center": return .known(ContentMode.center)
             case "top": return .known(ContentMode.top)
             case "bottom": return .known(ContentMode.bottom)
@@ -139,7 +138,6 @@ public struct ImageAttributes {
             case "right": return .known(ContentMode.right)
             case "aspectfill": return .known(ContentMode.aspectFill)
             case "aspectfit": return .known(ContentMode.aspectFit)
-            case "scaletofill": return .known(ContentMode.scaleToFill)
             default: break
             }
         }
