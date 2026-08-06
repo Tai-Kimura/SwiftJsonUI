@@ -416,6 +416,11 @@ public struct DynamicHelpers {
         if let n = value as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() {
             return n.doubleValue
         }
+        // `weight` is declared `number|string|binding` — the STRING spelling
+        // ("weight": "1") is as declared as the number. codegen reads it with
+        // `.to_f > 0` (label_converter.rb:329), so a numeric string weighs;
+        // returning nil here made dynamic drop it (run-4 type sweep).
+        if let s = value as? String { return Double(s.trimmingCharacters(in: .whitespaces)) }
         return nil
     }
 
