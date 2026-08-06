@@ -38,7 +38,11 @@ public struct ImageViewConverter {
         let image: Image
         if let srcName = component.typedAttributes(ImageAttributes.self)
             .srcName?.rawRepresentation as? String {
-            image = Image(srcName)
+            // srcName is string|binding: the raw representation of a bound
+            // spelling IS the literal "@{expr}", which matches no asset and
+            // rendered nothing. Resolve it the same way `src` and
+            // `highlightSrc` already do.
+            image = Image(DynamicHelpers.processText(srcName, data: data))
         } else if let src = component.string(ImageAttributes.self, \.src) {
             let processedSrc = DynamicHelpers.processText(src, data: data)
             // systemIcon reinterprets `src` as an SF Symbol name rather than
