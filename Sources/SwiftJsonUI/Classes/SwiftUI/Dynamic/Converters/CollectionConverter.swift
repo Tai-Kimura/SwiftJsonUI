@@ -195,6 +195,7 @@ public struct CollectionConverter {
             // GROWS the container instead (measured: d=134 on
             // Collection/contentInsets__static) — hence skipInsets.
             result = applyCollectionContentInsets(result, component: component)
+            result = applyItemWeight(result, component: component)
             result = applyContainerInset(result, component: component)
             result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
             return result
@@ -332,10 +333,32 @@ public struct CollectionConverter {
         // container-growing pre-background padding the generic chain applies.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.declaredWidth)) height=\(String(describing: component.declaredHeight)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
         result = applyCollectionContentInsets(result, component: component)
+        result = applyItemWeight(result, component: component)
         result = applyContainerInset(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
         return result
+    }
+
+    /// `itemWeight` — the fraction of the container width one item takes.
+    /// Declared `number` (no binding form), and the codegen reads `.to_f` —
+    /// so this is a literal-only read on purpose. Mirrors
+    /// collection_converter.rb apply_item_weight: 0 < w <= 1 becomes a
+    /// containerRelativeFrame with count = round(1/w), applied in the same
+    /// chain position (right after the content insets). Nothing on the
+    /// dynamic side read the attribute before.
+    static func itemWeightCount(_ component: DynamicComponent) -> Int? {
+        guard let weight = component.itemWeight.map(Double.init),
+              weight > 0, weight <= 1.0 else { return nil }
+        return Int((1.0 / weight).rounded())
+    }
+
+    private static func applyItemWeight(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let count = itemWeightCount(component) else { return view }
+        if #available(iOS 17.0, *) {
+            return AnyView(view.containerRelativeFrame(.horizontal, count: count, span: 1, spacing: 0))
+        }
+        return view
     }
 
     /// insets / contentInsets / insetHorizontal / insetVertical as CONTENT
