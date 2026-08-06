@@ -67,17 +67,20 @@ public struct ProgressConverter {
         // progressTintColor -> .tint() — `color` / `tintColor` are the
         // Indicator/UIKit spellings of the same accent; the specific name
         // wins (mirrors progress_converter.rb).
-        let tintSpelling = attrs.progressTintColor?.value
-            ?? attrs.color
-            ?? component.typedAttributes(ProgressAttributes.self).tintColor
-        if let progressTintColor = tintSpelling,
-           let color = DynamicHelpers.getColor(progressTintColor) {
+        // rawRepresentation, not .value — the attribute is string|binding and
+        // `.value` reads only the literal half, so a bound tint silently
+        // rendered the default (run-4 ?.value sweep). getColor resolves the
+        // `@{...}` spelling from data, same as every other colour read.
+        let tint = DynamicHelpers.resolveColor(attrs.progressTintColor, data: data)
+            ?? (attrs.color
+                    ?? component.typedAttributes(ProgressAttributes.self).tintColor)
+                .flatMap { DynamicHelpers.getColor($0, data: data) }
+        if let color = tint {
             result = AnyView(result.tint(color))
         }
 
         // trackTintColor -> .background()
-        if let trackTintColor = attrs.trackTintColor?.value,
-           let color = DynamicHelpers.getColor(trackTintColor) {
+        if let color = DynamicHelpers.resolveColor(attrs.trackTintColor, data: data) {
             result = AnyView(result.background(color))
         }
 

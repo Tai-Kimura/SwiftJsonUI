@@ -53,8 +53,9 @@ public struct WebConverter {
 
         // Resolve background color
         let bgColor: UIColor? = {
-            if let bg = attrs.common.background?.value,
-               let color = SwiftJsonUIConfiguration.shared.getColor(for: bg) {
+            // The bound spelling resolves through the same colour path every
+            // other background uses; `.value` alone dropped it (run-4 sweep).
+            if let color = DynamicHelpers.resolveColor(attrs.common.background, data: data) {
                 return UIColor(color)
             }
             return nil

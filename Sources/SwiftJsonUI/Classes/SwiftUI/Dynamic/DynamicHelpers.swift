@@ -171,6 +171,20 @@ public struct DynamicHelpers {
         return DynamicDecodingHelper.getColor(identifier)
     }
 
+    /// A declared colour off a generated table, bound spelling included.
+    ///
+    /// The one-line idiom for `AttrValue<String>` colours. `.value` reads
+    /// only the literal half — four converters used it and every bound
+    /// colour silently rendered the default (run-4 `?.value` sweep:
+    /// Progress tint/track, TabView unselectedColor, Web background).
+    /// `rawRepresentation` carries the `"@{expr}"` spelling and getColor
+    /// resolves it from data, same as every other colour read.
+    public static func resolveColor(
+        _ attr: AttrValue<String>?, data: [String: Any]
+    ) -> Color? {
+        (attr?.rawRepresentation as? String).flatMap { getColor($0, data: data) }
+    }
+
     public static func getContentMode(from component: DynamicComponent, data: [String: Any] = [:]) -> ContentMode {
         return DynamicDecodingHelper.toContentMode(
             component.enumString(ImageAttributes.self, \.contentMode, data: data)
