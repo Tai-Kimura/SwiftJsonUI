@@ -378,7 +378,7 @@ public struct TextFieldConverter {
         }
 
         // --- 7. textContentType ---
-        if let contentType = attrs.contentType?.value?.knownValue {
+        if let contentType = Self.declaredContentType(attrs.contentType, data: data) {
             result = applyContentType(result, contentType: contentType)
         }
 
@@ -535,6 +535,30 @@ public struct TextFieldConverter {
         default: return .done
         }
     }
+
+    /// The resolved `contentType`, bound spelling included.
+    ///
+    /// Internal so the READ has a unit test — the defect lived in the read
+    /// (`?.value?.knownValue` was nil for every bound spelling, run-4
+    /// `?.value` sweep), and a test that skips the read stays green while
+    /// the converter feeds it nil. An unresolved binding or an unknown
+    /// member applies nothing, exactly as before.
+    static func declaredContentType(
+        _ attr: AttrValue<AttrEnum<TextFieldAttributes.ContentType>>?,
+        data: [String: Any]
+    ) -> TextFieldAttributes.ContentType? {
+        switch attr {
+        case .some(.value(let declared)):
+            return declared.knownValue
+        case .some(.binding(let expression)):
+            guard let resolved = DynamicBindingResolver.resolveString(
+                expression: expression, data: data) else { return nil }
+            return TextFieldAttributes.ContentType(rawValue: resolved)
+        case nil:
+            return nil
+        }
+    }
+
 }
 
 /// Coerce a JSON-parsed numeric value to `CGFloat?` across Int / Double /

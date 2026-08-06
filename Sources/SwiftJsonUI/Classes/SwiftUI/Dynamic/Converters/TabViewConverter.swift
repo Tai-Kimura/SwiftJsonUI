@@ -64,7 +64,10 @@ public struct TabViewConverter {
         )
         // unselectedColor was parsed but never read (33 cross-effect: ios
         // rendered the default gray for a declared unselectedColor).
-        let unselectedColor: Color? = attrs.unselectedColor?.value.flatMap { DynamicHelpers.getColor($0, data: data) }
+        // rawRepresentation, not .value: data was already being passed to
+        // getColor, but `.value` returned nil for a bound spelling before the
+        // resolver ever saw it. tabBarBackground two lines up had it right.
+        let unselectedColor: Color? = DynamicHelpers.resolveColor(attrs.unselectedColor, data: data)
 
         // Resolve tab-change callback. onValueChange is the canonical
         // name; onTabChange / onPageChanged are the definitions aliases
