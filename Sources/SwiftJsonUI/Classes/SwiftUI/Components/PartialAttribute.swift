@@ -150,7 +150,35 @@ public struct PartialAttribute {
 
 // MARK: - Font.Weight Extension
 extension Font.Weight {
+    /// The numeric weight spellings, from shared/core/font_weight_mapping.json
+    /// (css → swift; the generator's numeric_weight_table synthesizes 400/700
+    /// from the "normal"/"bold" css words and keeps the FIRST entry for a
+    /// duplicated css value, which is why 900 is heavy rather than black).
+    ///
+    /// This is the ONE numeric table. Round 5 caught the alternative: 0995c12
+    /// taught `fontFromComponent`'s switch the numerics, but Button reads
+    /// `DynamicHelpers.fontWeightFromString` and Label reads `from(string:)`
+    /// — neither knew "600", so the fixture stayed red under a green
+    /// regression test. Every weight vocabulary consults this before its own
+    /// keyword cases.
+    static func numeric(_ spelling: String) -> Font.Weight? {
+        switch spelling {
+        case "100": return .thin
+        case "200": return .ultraLight
+        case "300": return .light
+        case "400": return .regular
+        case "500": return .medium
+        case "600": return .semibold
+        case "700": return .bold
+        case "900": return .heavy
+        default: return nil
+        }
+    }
+
     static func from(string: String) -> Font.Weight {
+        if let numeric = numeric(string) {
+            return numeric
+        }
         switch string.lowercased() {
         case "ultralight":
             return .ultraLight

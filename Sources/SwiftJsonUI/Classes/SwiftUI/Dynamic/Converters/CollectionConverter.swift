@@ -195,7 +195,6 @@ public struct CollectionConverter {
             // GROWS the container instead (measured: d=134 on
             // Collection/contentInsets__static) — hence skipInsets.
             result = applyCollectionContentInsets(result, component: component)
-            result = applyItemWeight(result, component: component)
             result = applyContainerInset(result, component: component)
             result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
             return result
@@ -333,32 +332,37 @@ public struct CollectionConverter {
         // container-growing pre-background padding the generic chain applies.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.declaredWidth)) height=\(String(describing: component.declaredHeight)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
         result = applyCollectionContentInsets(result, component: component)
-        result = applyItemWeight(result, component: component)
         result = applyContainerInset(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
         return result
     }
 
-    /// `itemWeight` — the fraction of the container width one item takes.
-    /// Declared `number` (no binding form), and the codegen reads `.to_f` —
-    /// so this is a literal-only read on purpose. Mirrors
-    /// collection_converter.rb apply_item_weight: 0 < w <= 1 becomes a
-    /// containerRelativeFrame with count = round(1/w), applied in the same
-    /// chain position (right after the content insets). Nothing on the
-    /// dynamic side read the attribute before.
+    /// `itemWeight` — the fraction of the container width one item takes
+    /// (canonical UIKit semantics: `itemSize.width = containerWidth * weight`,
+    /// SJUICollectionView.getCollectionViewLayout). Declared `number` with no
+    /// binding form, and the codegen reads `.to_f` — literal-only on purpose.
+    /// 0 < w <= 1; anything else is inert, same as apply_item_weight.
     static func itemWeightCount(_ component: DynamicComponent) -> Int? {
         guard let weight = component.itemWeight.map(Double.init),
               weight > 0, weight <= 1.0 else { return nil }
         return Int((1.0 / weight).rounded())
     }
 
-    private static func applyItemWeight(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        guard let count = itemWeightCount(component) else { return view }
-        if #available(iOS 17.0, *) {
-            return AnyView(view.containerRelativeFrame(.horizontal, count: count, span: 1, spacing: 0))
-        }
-        return view
+    /// The grid's column count once `itemWeight` has its say. A weight is a
+    /// per-ITEM width, and in a spacing-0 grid "each item is W×w wide" IS
+    /// "round(1/w) flexible columns" — so the weight wins over a conflicting
+    /// `columns` declaration, the same way the UIKit layout never consults
+    /// `columns` for item sizing.
+    ///
+    /// Round 5 measured the alternative reading (mirror the codegen emit,
+    /// a containerRelativeFrame on the whole content): the codegen face
+    /// renders ZERO cells with its own modifier (0 cell px vs 43k on
+    /// neighbouring Collection fixtures) and the mirrored dynamic squeezed
+    /// its grid into the halved content. The emit's comment declares the
+    /// per-item intent; its placement is the codegen-side bug.
+    static func effectiveGridColumns(_ component: DynamicComponent, declared: Int) -> Int {
+        itemWeightCount(component) ?? declared
     }
 
     /// insets / contentInsets / insetHorizontal / insetVertical as CONTENT
@@ -893,7 +897,10 @@ public struct CollectionConverter {
                     ) { sectionIndex in
                         let sectionConfig = sections[sectionIndex]
                         let sectionData = dataSource.sections[sectionIndex]
-                        let sectionColumns = sectionConfig["columns"] as? Int ?? globalColumns
+                        let sectionColumns = effectiveGridColumns(
+                            component,
+                            declared: sectionConfig["columns"] as? Int ?? globalColumns
+                        )
 
                         // Header
                         if let headerName = sectionConfig["header"] as? String,
@@ -1072,7 +1079,10 @@ public struct CollectionConverter {
                                 }
                             }
                         } else if !isHorizontal && globalColumns > 1 {
-                            let sectionColumns = sectionConfig["columns"] as? Int ?? globalColumns
+                            let sectionColumns = effectiveGridColumns(
+                                component,
+                                declared: sectionConfig["columns"] as? Int ?? globalColumns
+                            )
                             let gridItemSize: GridItem.Size = cellWidth.map { .fixed($0) } ?? .flexible()
                             let gridColumns = Array(
                                 repeating: GridItem(gridItemSize, spacing: itemSpacing),

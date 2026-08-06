@@ -349,6 +349,12 @@ public struct DynamicHelpers {
 
     // Convert font weight string to Font.Weight
     public static func fontWeightFromString(_ weight: String?) -> Font.Weight {
+        // The numeric spellings live in ONE table (`Font.Weight.numeric`,
+        // release-compiled) — round 5 caught "600" fixed in one weight
+        // vocabulary while the fixtures' converters read the other two.
+        if let weight, let numeric = Font.Weight.numeric(weight) {
+            return numeric
+        }
         switch weight?.lowercased() {
         case "bold":
             return .bold
