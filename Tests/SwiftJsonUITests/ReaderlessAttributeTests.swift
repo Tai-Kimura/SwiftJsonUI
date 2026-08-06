@@ -180,5 +180,15 @@ final class ReaderlessAttributeTests: XCTestCase {
         let absent = try component(#"{ "type": "Collection" }"#)
         XCTAssertNil(CollectionConverter.itemWeightCount(absent))
     }
+
+    func testItemWeightDrivesTheGridColumns() throws {
+        // Per-item width is the canonical semantics (UIKit:
+        // itemSize.width = W * weight) — in a grid that IS the column count,
+        // and the weight wins over a conflicting `columns`.
+        let weighted = try component(#"{ "type": "Collection", "itemWeight": 0.5, "columns": 3 }"#)
+        XCTAssertEqual(CollectionConverter.effectiveGridColumns(weighted, declared: 3), 2)
+        let plain = try component(#"{ "type": "Collection", "columns": 3 }"#)
+        XCTAssertEqual(CollectionConverter.effectiveGridColumns(plain, declared: 3), 3)
+    }
 }
 #endif // DEBUG

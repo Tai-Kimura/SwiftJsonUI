@@ -72,5 +72,29 @@ final class NumericFontWeightTests: XCTestCase {
             "…but 550 has no entry, so the configured default stands"
         )
     }
+
+    // MARK: - The OTHER two weight vocabularies (round 5)
+    //
+    // Round 4's fix taught the numerics to `fontFromComponent`'s switch and
+    // its reversion test went red as required — but the fixtures' converters
+    // never call that switch: Button funnels its resolved spelling through
+    // `DynamicHelpers.fontWeightFromString`, Label through
+    // `Font.Weight.from(string:)`. Both dropped "600" to .regular and the
+    // fixtures stayed at d=11 under a green test. These pin the reads the
+    // fixtures actually take; all three vocabularies now consult the one
+    // numeric table (`Font.Weight.numeric`).
+
+    func testButtonVocabularyKnowsTheNumericSpelling() {
+        XCTAssertEqual(DynamicHelpers.fontWeightFromString("600"), .semibold)
+        XCTAssertEqual(DynamicHelpers.fontWeightFromString("900"), .heavy,
+                       "900 is heavy, not black — first-entry rule of the shared table")
+    }
+
+    func testLabelVocabularyKnowsTheNumericSpelling() {
+        XCTAssertEqual(Font.Weight.from(string: "600"), .semibold)
+        XCTAssertEqual(Font.Weight.from(string: "300"), .light)
+        XCTAssertEqual(Font.Weight.from(string: "550"), .regular,
+                       "no entry falls to the vocabulary's own default")
+    }
 }
 #endif
