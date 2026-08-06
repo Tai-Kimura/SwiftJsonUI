@@ -114,6 +114,50 @@ cell_companions.each do |companion|
 end
 puts "[codegen-host] staged #{entries.size} visual fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
 
+# ------------------------------------------------------- L1 canonicalization
+# Production codegen never sees L0: `jui build` distributes layouts
+# L1-canonicalized (alias → canonical rewrite + $jui marker; build_cmd.py
+# _distribute_layouts, default ON since SSoT phase 14). This staging fed the
+# RAW fixture files straight to sjui build, so a declared attribute ALIAS
+# reached the converters unresolved — the dynamic host tolerates L0 (the
+# typed extraction carries alias fallbacks), codegen by contract does not.
+# Measured: SafeAreaView_safeAreaInsetPositions__alias_edges emitted no
+# .safeAreaPadding at all on this path (ios parity, run 4, distance 10)
+# while the __static spelling emitted it — a parity red that was really the
+# harness feeding codegen input outside its contract.
+#
+# Same normalizer, same tables: jui_tools is checked out next to the
+# conformance dir in every environment that runs this script.
+jui_tools = ENV['JUI_TOOLS_PATH'] || File.expand_path('../jui_tools', conformance_dir)
+if File.directory?(jui_tools)
+  norm = system('python3', '-c', <<~PY)
+    import glob, json, sys
+    sys.path.insert(0, #{jui_tools.inspect})
+    from jui_cli.core.normalizer import Canonicalizer
+    from jui_cli.core.normalizer.alias_table import AliasTable
+    table = AliasTable.from_file()
+    if table.is_empty():
+        # Marker-only stamping corrupts canonical-only consumers (same
+        # refusal as build_cmd.py) — leave the staging L0 and say so.
+        sys.exit('attribute_definitions.json not found near jui_tools')
+    canonicalizer = Canonicalizer(table)
+    for path in sorted(glob.glob(#{File.join(layouts_dir, '*.json').inspect})):
+        with open(path) as f:
+            tree = json.load(f)
+        tree, warnings = canonicalizer.canonicalize(tree, source=path)
+        for warning in warnings:
+            print(f"  WARNING [normalize]: {warning}")
+        with open(path, 'w') as f:
+            json.dump(tree, f, ensure_ascii=False, indent=2)
+            f.write('\\n')
+    print(f"[codegen-host] L1-canonicalized {len(glob.glob(#{File.join(layouts_dir, '*.json').inspect}))} staged layout(s)")
+  PY
+  abort 'error: L1 canonicalization of staged layouts failed' unless norm
+else
+  abort "error: jui_tools not found: #{jui_tools} (set JUI_TOOLS_PATH) — " \
+        'staging must be L1-canonicalized before sjui build'
+end
+
 # ---------------------------------------------------------------- sjui build
 File.write(File.join(build_dir, 'sjui.config.json'), JSON.pretty_generate(
   'mode' => 'swiftui',
