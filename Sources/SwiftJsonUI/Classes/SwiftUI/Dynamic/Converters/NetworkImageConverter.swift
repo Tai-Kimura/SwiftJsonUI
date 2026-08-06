@@ -21,6 +21,32 @@ import SwiftUI
 
 public struct NetworkImageConverter {
 
+    /// The image URL, canonical spelling first. `url` is the DECLARED alias
+    /// of `src` (attribute_definitions.json), and the layer contract keeps
+    /// alias fallbacks in consumers for L0 (raw) layouts — L1 normalization
+    /// rewrites them upstream (JsonUINormalization). Nothing here read the
+    /// alias, so a raw layout that wrote `url:` handed the view NO url at
+    /// all: the loader never started, and the idle branch drew `Color.clear`
+    /// — 49-B measured both NetworkImage fixtures as 100% blank on the
+    /// dynamic face while codegen (which reads url || source || src) drew
+    /// the declared images.
+    ///
+    /// `srcName` stays out: it is declared on Image, not NetworkImage, and
+    /// network_image_converter.rb does not read it either.
+    ///
+    /// Internal so the test pins the read itself.
+    static func declaredURL(_ component: DynamicComponent, data: [String: Any]) -> String? {
+        let src = component.string(NetworkImageAttributes.self, \.src)
+            ?? component.string(NetworkImageAttributes.self, \.url)
+        guard let src = src else { return nil }
+        if let inner = DynamicBindingResolver.inner(of: src) {
+            // Canonical string value context (Binding<String> unwraps
+            // at the value layer; dot-path / `??` default resolve)
+            return DynamicBindingResolver.resolveString(expression: inner, data: data)
+        }
+        return src
+    }
+
     /// Convert DynamicComponent to SwiftUI NetworkImage
     /// Matches network_image_converter.rb convert method exactly
     public static func convert(
@@ -30,20 +56,7 @@ public struct NetworkImageConverter {
         // --- 1. Build NetworkImage ---
 
         // URL with binding support
-        let urlString: String? = {
-            // `srcName` is declared on Image, not on NetworkImage, and
-            // network_image_converter.rb does not read it either — this
-            // fallback was reaching for an attribute the component does not
-            // have.
-            let src = component.string(NetworkImageAttributes.self, \.src)
-            guard let src = src else { return nil }
-            if let inner = DynamicBindingResolver.inner(of: src) {
-                // Canonical string value context (Binding<String> unwraps
-                // at the value layer; dot-path / `??` default resolve)
-                return DynamicBindingResolver.resolveString(expression: inner, data: data)
-            }
-            return src
-        }()
+        let urlString = declaredURL(component, data: data)
 
         // contentMode
         let contentMode = DynamicHelpers.getNetworkImageContentMode(from: component)
