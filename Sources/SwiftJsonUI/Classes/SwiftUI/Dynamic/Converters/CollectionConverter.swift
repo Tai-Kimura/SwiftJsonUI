@@ -174,6 +174,13 @@ public struct CollectionConverter {
 
         // 1. Build collection content based on layout type
         var result: AnyView
+        // The horizontal CollectionStackView carries `insetHorizontal` on its
+        // insetLeading/insetTrailing params (buildHorizontalLayout), so the
+        // content-padding channel must exclude it there — the codegen makes
+        // the same split (collection_content_insets_swift_expr
+        // include_horizontal: axis == :vertical). Both channels applying it
+        // is what doubled the leading gap on horizontal collections.
+        var horizontalStackCarriesInsetH = false
 
         if collectionMode == .none && !(isHorizontal && component.paging == true) {
             result = buildNonLazyLayout(
@@ -255,6 +262,7 @@ public struct CollectionConverter {
         } else if isHorizontal {
             // Horizontal: CollectionStackView(axis: .horizontal) selects between
             // LazyHStack / HStack / no-scroll based on `lazy`.
+            horizontalStackCarriesInsetH = true
             result = buildHorizontalLayout(
                 component: component,
                 dataSource: dataSource,
@@ -331,7 +339,10 @@ public struct CollectionConverter {
         // are content padding (see applyCollectionContentInsets), not the
         // container-growing pre-background padding the generic chain applies.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.declaredWidth)) height=\(String(describing: component.declaredHeight)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
-        result = applyCollectionContentInsets(result, component: component)
+        result = applyCollectionContentInsets(
+            result, component: component,
+            includeInsetHorizontal: !horizontalStackCarriesInsetH
+        )
         result = applyContainerInset(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
@@ -371,7 +382,15 @@ public struct CollectionConverter {
     /// codegen (`apply_grid_padding`: `insets` wins over the declared
     /// `contentInsets` alias, matching the UIKit runtime's order; the
     /// scalar pair adds on top).
-    private static func applyCollectionContentInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
+    /// `includeInsetHorizontal: false` when the layout path already carries
+    /// `insetHorizontal` on the CollectionStackView's insetLeading/Trailing
+    /// params (the horizontal stack), mirroring the codegen's
+    /// `include_horizontal: axis == :vertical` split.
+    private static func applyCollectionContentInsets(
+        _ view: AnyView,
+        component: DynamicComponent,
+        includeInsetHorizontal: Bool = true
+    ) -> AnyView {
         var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
         if let edges = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
             ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) {
@@ -380,7 +399,7 @@ public struct CollectionConverter {
             bottom += edges.bottom
             trailing += edges.trailing
         }
-        if let h = component.insetHorizontal {
+        if includeInsetHorizontal, let h = component.insetHorizontal {
             leading += h
             trailing += h
         }
