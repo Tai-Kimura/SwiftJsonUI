@@ -180,10 +180,27 @@ public struct DynamicViewContainer: View {
         let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
             component.declaredWidth == .infinity || component.declaredWidth == -1
 
+        // Gap semantics (E's construction table, canon in
+        // attribute_semantics.json): spacer counts make the ratios, all
+        // Spacer(minLength: 0).
+        //   equalSpacing   = between-children only — first/last child flush
+        //   equalCentering = 1 at each edge, 2 between — edge:gap = 1:2,
+        //                    so child CENTERS are equally spaced
+        // The two used to share one structure (edge 1 / between 1), which is
+        // exactly the ios collapsedPair. A declared gap distribution owns the
+        // free space, so the gravity packing spacers stand down for it.
+        let distributesGaps = distribution == "equalspacing" || distribution == "equalcentering"
+        // The trailing-edge spacer only stays out of a wrapContent axis
+        // (where it would expand the container and swallow the trailing
+        // padding — the measured round-3 bug). A FIXED width has free space
+        // for the ratio and cannot be expanded, so the widthExpands gate is
+        // too narrow for it.
+        let widthIsWrapContent = component.declaredWidth == nil
+
         HStack(alignment: getVerticalAlignmentFromGravity(), spacing: spacingValue) {
-            // Leading spacer for right gravity or distribution
-            if extractHorizontalFromGravity(gravity) == "right" ||
-                distribution == "equalspacing" || distribution == "equalcentering" {
+            // Leading edge spacer: equalCentering's half-gap, or right-gravity packing
+            if distribution == "equalcentering" ||
+                (!distributesGaps && extractHorizontalFromGravity(gravity) == "right") {
                 Spacer(minLength: 0)
             }
 
@@ -197,15 +214,22 @@ public struct DynamicViewContainer: View {
 
                 // Distribution spacers between children
                 if index < children.count - 1 {
-                    if distribution == "fillequally" || distribution == "equalspacing" || distribution == "equalcentering" {
+                    if distribution == "fillequally" || distribution == "equalspacing" {
+                        Spacer(minLength: 0)
+                    } else if distribution == "equalcentering" {
+                        Spacer(minLength: 0)
                         Spacer(minLength: 0)
                     }
                 }
             }
 
-            // Trailing spacer for left gravity or distribution
-            if widthExpands && (extractHorizontalFromGravity(gravity) == "left" ||
-                distribution == "equalspacing" || distribution == "equalcentering") {
+            // Trailing edge spacer: equalCentering's half-gap, or left-gravity packing
+            if distribution == "equalcentering" {
+                if !widthIsWrapContent {
+                    Spacer(minLength: 0)
+                }
+            } else if widthExpands && !distributesGaps &&
+                extractHorizontalFromGravity(gravity) == "left" {
                 Spacer(minLength: 0)
             }
         }
@@ -224,10 +248,14 @@ public struct DynamicViewContainer: View {
         let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
             component.declaredHeight == .infinity || component.declaredHeight == -1
 
+        // Same gap construction as hStackContent — see the table there.
+        let distributesGaps = distribution == "equalspacing" || distribution == "equalcentering"
+        let heightIsWrapContent = component.declaredHeight == nil
+
         VStack(alignment: getHorizontalAlignmentFromGravity(), spacing: spacingValue) {
-            // Leading spacer for bottom gravity or distribution
-            if extractVerticalFromGravity(gravity) == "bottom" ||
-                distribution == "equalspacing" || distribution == "equalcentering" {
+            // Leading edge spacer: equalCentering's half-gap, or bottom-gravity packing
+            if distribution == "equalcentering" ||
+                (!distributesGaps && extractVerticalFromGravity(gravity) == "bottom") {
                 Spacer(minLength: 0)
             }
 
@@ -241,15 +269,22 @@ public struct DynamicViewContainer: View {
 
                 // Distribution spacers between children
                 if index < children.count - 1 {
-                    if distribution == "fillequally" || distribution == "equalspacing" || distribution == "equalcentering" {
+                    if distribution == "fillequally" || distribution == "equalspacing" {
+                        Spacer(minLength: 0)
+                    } else if distribution == "equalcentering" {
+                        Spacer(minLength: 0)
                         Spacer(minLength: 0)
                     }
                 }
             }
 
-            // Trailing spacer for top gravity or distribution
-            if heightExpands && (extractVerticalFromGravity(gravity) == "top" ||
-                distribution == "equalspacing" || distribution == "equalcentering") {
+            // Trailing edge spacer: equalCentering's half-gap, or top-gravity packing
+            if distribution == "equalcentering" {
+                if !heightIsWrapContent {
+                    Spacer(minLength: 0)
+                }
+            } else if heightExpands && !distributesGaps &&
+                extractVerticalFromGravity(gravity) == "top" {
                 Spacer(minLength: 0)
             }
         }
