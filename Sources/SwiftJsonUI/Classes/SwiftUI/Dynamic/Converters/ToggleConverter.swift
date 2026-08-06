@@ -18,6 +18,14 @@ import SwiftUI
 
 public struct ToggleConverter {
 
+    /// Label/content font through the data overload — the data-less read
+    /// dropped a bound `font` / `fontSize` to the configured defaults (same
+    /// family as Radio, 49-B (2); ruled 2026-08-06). Internal so the test
+    /// pins this converter's own read.
+    static func declaredFont(_ component: DynamicComponent, data: [String: Any]) -> Font? {
+        DynamicHelpers.fontFromComponent(component, data: data)
+    }
+
     public static func convert(
         component: DynamicComponent,
         data: [String: Any]
@@ -86,7 +94,7 @@ public struct ToggleConverter {
                 }
                 return nil
             } else {
-                return DynamicHelpers.fontFromComponent(component)
+                return declaredFont(component, data: data)
             }
         }()
 

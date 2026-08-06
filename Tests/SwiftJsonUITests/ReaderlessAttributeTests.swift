@@ -114,6 +114,52 @@ final class ReaderlessAttributeTests: XCTestCase {
         )
     }
 
+    // MARK: - NetworkImage url (declared alias of src; L0 keeps the fallback)
+
+    func testUrlSpellingReachesTheLoader() throws {
+        let c = try component(#"{ "type": "NetworkImage", "url": "https://example.com/a.png" }"#)
+        XCTAssertEqual(
+            NetworkImageConverter.declaredURL(c, data: [:]),
+            "https://example.com/a.png",
+            "a raw layout writing the declared `url` alias must still load — " +
+            "dropping it hands the view no url and the idle branch draws Color.clear"
+        )
+    }
+
+    func testBoundUrlSpellingResolves() throws {
+        let c = try component(#"{ "type": "NetworkImage", "url": "@{imageUrl}" }"#)
+        XCTAssertEqual(
+            NetworkImageConverter.declaredURL(c, data: ["imageUrl": "https://example.com/b.png"]),
+            "https://example.com/b.png"
+        )
+    }
+
+    func testCanonicalSrcStillWinsAndResolves() throws {
+        let c = try component(#"{ "type": "NetworkImage", "src": "https://example.com/c.png", "url": "https://example.com/ignored.png" }"#)
+        XCTAssertEqual(
+            NetworkImageConverter.declaredURL(c, data: [:]),
+            "https://example.com/c.png",
+            "canonical spelling first — the alias is the fallback"
+        )
+    }
+
+    // MARK: - Same-family converters (Table / Toggle / Picker / TextField)
+
+    func testBoundFontSizeReachesEachConverterFont() throws {
+        let expected = SwiftJsonUIConfiguration.shared.resolveFont(
+            FontSpec(family: nil, weight: SwiftJsonUIConfiguration.shared.font.weight, size: 21)
+        )
+        let data: [String: Any] = ["s": 21]
+        let table = try component(#"{ "type": "Table", "fontSize": "@{s}" }"#)
+        XCTAssertEqual(TableConverter.declaredFont(table, data: data), expected)
+        let toggle = try component(#"{ "type": "Switch", "fontSize": "@{s}" }"#)
+        XCTAssertEqual(ToggleConverter.declaredFont(toggle, data: data), expected)
+        let picker = try component(#"{ "type": "SelectBox", "fontSize": "@{s}" }"#)
+        XCTAssertEqual(PickerConverter.declaredFont(picker, data: data), expected)
+        let field = try component(#"{ "type": "TextField", "fontSize": "@{s}" }"#)
+        XCTAssertEqual(TextFieldConverter.declaredFont(field, data: data), expected)
+    }
+
     // MARK: - Collection.itemWeight (through the count read the modifier uses)
 
     func testItemWeightHalfIsTwoColumns() throws {

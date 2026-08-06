@@ -22,6 +22,14 @@ import SwiftUI
 
 public struct TableConverter {
 
+    /// Label/content font through the data overload — the data-less read
+    /// dropped a bound `font` / `fontSize` to the configured defaults (same
+    /// family as Radio, 49-B (2); ruled 2026-08-06). Internal so the test
+    /// pins this converter's own read.
+    static func declaredFont(_ component: DynamicComponent, data: [String: Any]) -> Font? {
+        DynamicHelpers.fontFromComponent(component, data: data)
+    }
+
     public static func convert(
         component: DynamicComponent,
         data: [String: Any],
@@ -71,7 +79,7 @@ public struct TableConverter {
                     {
                         var text = Text(items[index].dynamicLocalized())
                             .foregroundColor(DynamicHelpers.getColor(component.string(LabelAttributes.self, \.fontColor)) ?? .primary)
-                        if let font = DynamicHelpers.fontFromComponent(component) {
+                        if let font = declaredFont(component, data: data) {
                             text = text.font(font)
                         }
                         return text

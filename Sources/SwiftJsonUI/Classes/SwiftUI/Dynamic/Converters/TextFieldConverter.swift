@@ -40,6 +40,14 @@ import SwiftUI
 
 public struct TextFieldConverter {
 
+    /// Label/content font through the data overload — the data-less read
+    /// dropped a bound `font` / `fontSize` to the configured defaults (same
+    /// family as Radio, 49-B (2); ruled 2026-08-06). Internal so the test
+    /// pins this converter's own read.
+    static func declaredFont(_ component: DynamicComponent, data: [String: Any]) -> Font? {
+        DynamicHelpers.fontFromComponent(component, data: data)
+    }
+
     /// Convert DynamicComponent to SwiftUI TextField/SecureField
     /// Matches textfield_converter.rb convert method exactly
     public static func convert(
@@ -258,7 +266,7 @@ public struct TextFieldConverter {
         // (FocusableTextField handles focused/onSubmit internally)
 
         // --- 2. font ---
-        if let font = DynamicHelpers.fontFromComponent(component) {
+        if let font = declaredFont(component, data: data) {
             result = AnyView(result.font(font))
         }
 
@@ -354,7 +362,7 @@ public struct TextFieldConverter {
         var result = view
 
         // --- 2. font ---
-        if let font = DynamicHelpers.fontFromComponent(component) {
+        if let font = declaredFont(component, data: data) {
             result = AnyView(result.font(font))
         }
 
