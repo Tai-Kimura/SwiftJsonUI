@@ -471,27 +471,11 @@ public struct DynamicDecodingHelper {
 
     /// Convert content mode string to NetworkImage.ContentMode
     public static func toNetworkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
-        switch mode {
-        case "AspectFill", "aspectFill":
-            return .fill
-        case "AspectFit", "aspectFit":
-            return .fit
-        case "center", "Center":
-            return .center
-        case "top", "Top":
-            return .top
-        case "bottom", "Bottom":
-            return .bottom
-        case "left", "Left":
-            return .left
-        case "right", "Right":
-            return .right
-        case "fill", "Fill", "scaleToFill", "ScaleToFill", "scaletofill":
-            // fill = stretch (canonical image.fill = stretch).
-            return .stretch
-        default:
-            return .fit
-        }
+        // One table: the non-DEBUG seam (ImageContentModeSeam) owns the
+        // spelling map, because the sjui-generated production code has to
+        // reach it too and this helper is #if DEBUG. A second copy here is
+        // exactly the two-implementations shape that froze the bound form.
+        return NetworkImage.ContentMode.from(mode)
     }
 
     /// Convert rendering mode string to Image.TemplateRenderingMode
