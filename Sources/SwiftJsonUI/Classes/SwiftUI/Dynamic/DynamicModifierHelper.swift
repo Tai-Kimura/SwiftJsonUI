@@ -214,13 +214,24 @@ public struct DynamicModifierHelper {
             result = AnyView(result.frame(maxHeight: mh))
         }
 
-        // fixedSize for wrapContent + maxWidth/maxHeight
-        let needsHFixed = (width == nil && resolvedMaxWidth != nil && resolvedMaxWidth != .infinity)
-        let needsVFixed = (height == nil && resolvedMaxHeight != nil && resolvedMaxHeight != .infinity)
+        // fixedSize mirrors the codegen (frame_helper.rb apply_frame_constraints):
+        // only a component that declares a min/max constraint gets one, and an
+        // axis is fixed only when it is wrapContent WITHOUT its own max bound —
+        // the max already constrains that axis, and fixing it on top lays text
+        // out at its single-line ideal width so it overflows its background
+        // (`needs_h_fixed = width_is_wrap && !max_width`). The previous
+        // condition was the inverse (fixed only WITH maxWidth), which is how
+        // wrapContent+maxWidth text clipped in dynamic while codegen wrapped.
+        let resolvedMinWidth = DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data)
+        let resolvedMinHeight = DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data)
+        let hasMinMaxConstraint = resolvedMinWidth != nil || resolvedMaxWidth != nil
+            || resolvedMinHeight != nil || resolvedMaxHeight != nil
+        let needsHFixed = hasMinMaxConstraint && width == nil && resolvedMaxWidth == nil
+        let needsVFixed = hasMinMaxConstraint && height == nil && resolvedMaxHeight == nil
         if needsHFixed || needsVFixed {
             result = AnyView(result.fixedSize(
-                horizontal: needsHFixed || (needsVFixed && width == nil),
-                vertical: needsVFixed || (needsHFixed && height == nil)
+                horizontal: needsHFixed,
+                vertical: needsVFixed
             ))
         }
 
@@ -941,12 +952,18 @@ public struct DynamicModifierHelper {
             return view
         }
 
+        // Title/message run through the string table after resolution — the
+        // codegen path localizes the literal spelling via StringManager
+        // (base_view_converter.rb get_text_with_string_manager); dynamic
+        // returned the raw key, so `title: "bottler_title"` surfaced as the
+        // key itself. Same shape as LabelConverter: resolve, then
+        // dynamicLocalized (a non-key string passes through unchanged).
         let title: String = {
             if let titleValue = dialogConfig["title"] as? String {
                 if let resolved: String = DynamicBindingHelper.resolveValue(titleValue, data: data) {
-                    return resolved
+                    return resolved.dynamicLocalized()
                 }
-                return titleValue
+                return titleValue.dynamicLocalized()
             }
             return ""
         }()
@@ -962,9 +979,9 @@ public struct DynamicModifierHelper {
         let message: String? = {
             if let msgValue = dialogConfig["message"] as? String {
                 if let resolved: String = DynamicBindingHelper.resolveValue(msgValue, data: data) {
-                    return resolved
+                    return resolved.dynamicLocalized()
                 }
-                return msgValue
+                return msgValue.dynamicLocalized()
             }
             return nil
         }()
