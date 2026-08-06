@@ -38,6 +38,13 @@ public struct DynamicViewContainer: View {
         var d = data
         d.removeValue(forKey: "__isWeightedChild")
         d.removeValue(forKey: "__weightedParentOrientation")
+        // Margin-ownership flags address THIS view's margin pass (its parent
+        // container took them as offset / slot position); the children get
+        // their own flag only from the container that owns their margins —
+        // zstackChildData re-adds it for direct ZStack children. Forwarding
+        // an inherited flag suppressed grandchild margins nothing had taken.
+        d.removeValue(forKey: "__zstackMarginChild")
+        d.removeValue(forKey: "__relativeMarginChild")
         return d
     }
 

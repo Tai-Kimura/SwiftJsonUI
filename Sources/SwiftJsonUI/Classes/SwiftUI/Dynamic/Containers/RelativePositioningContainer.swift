@@ -28,11 +28,24 @@ public struct RelativePositioningContainer: View {
         self.viewId = viewId
     }
 
-    /// Data with weighted child flags stripped (for building children only)
+    /// Data with weighted child flags stripped (for building children only).
+    ///
+    /// `__relativeMarginChild`: this container consumes each child's FULL
+    /// individual margins when it computes the slot (RelativePositionConverter
+    /// buildMargins → RelativePositionContainer), so the builder's own margin
+    /// pass must not pad them again — inside the fixed, centre-anchored slot
+    /// that padding shifted the content by half the asymmetric remainder
+    /// (49-B: an anchor declared at (120,120) drew at (180,180)). Same
+    /// ownership contract as `__zstackMarginChild`, full-ownership variant.
+    /// A margin flag inherited from an outer container is for THIS view,
+    /// not for the children — stripped, as `zstackChildData` construction
+    /// assumes.
     private var childData: [String: Any] {
         var d = data
         d.removeValue(forKey: "__isWeightedChild")
         d.removeValue(forKey: "__weightedParentOrientation")
+        d.removeValue(forKey: "__zstackMarginChild")
+        d["__relativeMarginChild"] = true
         return d
     }
 

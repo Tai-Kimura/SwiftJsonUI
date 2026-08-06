@@ -372,7 +372,20 @@ public struct DynamicModifierHelper {
         // offset computation and keeps its padding on every path.
         let offsetOwnsIndividuals = data["__zstackMarginChild"] as? Bool == true
             && component.margins == nil
-        if !offsetOwnsIndividuals {
+        // Relative-position children: the container consumed the FULL
+        // individual margins when it placed the slot (buildMargins reads the
+        // same edges, start/end fallback included), so unlike the ZStack
+        // offset there is no shared remainder for padding to own — padding
+        // anything here re-applies it, and the centre-anchored slot turns
+        // the asymmetric part into a half-margin drift of the content
+        // (49-B: (+60,+60) on margins (120,0)). The `margins` array is not
+        // part of the slot computation and keeps its padding, same as the
+        // ZStack carve-out.
+        let slotOwnsAll = data["__relativeMarginChild"] as? Bool == true
+            && component.margins == nil
+        if slotOwnsAll {
+            // nothing to pad — the slot position IS the margin
+        } else if !offsetOwnsIndividuals {
             let margins = DynamicHelpers.getMargins(from: component, data: data)
             if margins.top != 0 || margins.leading != 0 || margins.bottom != 0 || margins.trailing != 0 {
                 result = AnyView(result.padding(margins))
