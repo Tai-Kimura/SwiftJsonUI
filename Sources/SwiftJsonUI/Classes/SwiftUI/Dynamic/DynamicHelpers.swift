@@ -132,7 +132,9 @@ public struct DynamicHelpers {
         }
 
         // No binding or binding not resolved, fall back to standard resolution
-        return DynamicDecodingHelper.fontFromComponent(component)
+        // — with data, so a bound `fontSize` on an otherwise-static font
+        // still resolves (the font-binding branch above never runs for it).
+        return DynamicDecodingHelper.fontFromComponent(component, data: data)
     }
 
     public static func getColor(_ identifier: String?) -> Color? {

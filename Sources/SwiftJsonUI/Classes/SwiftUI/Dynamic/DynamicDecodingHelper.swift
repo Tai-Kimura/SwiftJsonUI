@@ -343,15 +343,24 @@ public struct DynamicDecodingHelper {
     }
 
     /// Convert component properties to Font
-    public static func fontFromComponent(_ component: DynamicComponent) -> Font? {
+    public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]? = nil) -> Font? {
         // Return nil if no font attributes are specified
         // `fontSize` is declared on eleven tables; the widest declared form
         // is Label's `AttrValue<Double>?`, and the extraction only coerces
-        // rawData, so it reads the spelling for any of them. This helper has
-        // no `data`, so a bound size stays nil here — same as the slot it
-        // replaces, and LabelConverter resolves it with data on its own path.
+        // rawData, so it reads the spelling for any of them. Without `data`
+        // a bound size stays nil here — same as the slot it replaces, and
+        // LabelConverter resolves it with data on its own path. With `data`
+        // the bound size resolves — the data-less read dropped a declared
+        // `fontSize: "@{x}"` to the configured default while the codegen
+        // resolved it (Radio_fontSize__binding).
         let label = component.typedAttributes(LabelAttributes.self)
-        let declaredFontSize = label.fontSize?.value.map { CGFloat($0) }
+        let declaredFontSize: CGFloat? = {
+            if let data,
+               let resolved = DynamicHelpers.resolveNumber(label.fontSize, legacy: nil, data: data) {
+                return resolved
+            }
+            return label.fontSize?.value.map { CGFloat($0) }
+        }()
         let declaredFont = label.font?.rawRepresentation as? String
         let declaredFontFamily = label.fontFamily?.rawRepresentation as? String
         guard declaredFontSize != nil || declaredFont != nil || component.fontWeightSpelling() != nil || declaredFontFamily != nil else {
@@ -419,9 +428,15 @@ public struct DynamicDecodingHelper {
             )
         }
 
-        // Pure weight (or nothing) — system font with whatever weight we
-        // extracted, falling back to the configured default weight.
-        return .system(size: size, weight: resolvedWeight ?? config.font.weight)
+        // Pure weight (or nothing) — still routed through the FontSpec
+        // resolver so a configured `fontProvider` sees every font the dynamic
+        // half draws. apply_font_modifiers (codegen) always goes through
+        // `resolveFont`; without a provider `defaultFont(family: nil)` is the
+        // same `.system(size:weight:)` this branch used to build directly,
+        // because size and weight are passed explicitly.
+        return config.resolveFont(
+            FontSpec(family: nil, weight: resolvedWeight ?? config.font.weight, size: size)
+        )
     }
 
     /// Convert content mode string to ContentMode

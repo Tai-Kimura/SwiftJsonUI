@@ -94,7 +94,7 @@ public struct RadioConverter {
         )
 
         // Font and color for group title
-        let titleFont = DynamicHelpers.fontFromComponent(component)
+        let titleFont = radioFont(component, data: data)
         let titleColor: Color? = {
             if let fc = component.string(RadioAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fc)
@@ -111,7 +111,7 @@ public struct RadioConverter {
 
                 // Radio items
                 ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    HStack {
+                    HStack(spacing: iconTextSpacing(component, data: data)) {
                         radioGlyph(component: component, selected: selectionBinding.wrappedValue == item)
                             .onTapGesture {
                                 selectionBinding.wrappedValue = item
@@ -159,7 +159,7 @@ public struct RadioConverter {
         }()
 
         // Font and color
-        let labelFont = DynamicHelpers.fontFromComponent(component)
+        let labelFont = radioFont(component, data: data)
         let labelColor: Color? = {
             if let fc = component.string(RadioAttributes.self, \.fontColor) {
                 return DynamicHelpers.getColor(fc)
@@ -184,7 +184,7 @@ public struct RadioConverter {
             (literalChecked && groupSelectionBinding.wrappedValue.isEmpty)
 
         return AnyView(
-            HStack {
+            HStack(spacing: iconTextSpacing(component, data: data)) {
                 radioGlyph(component: component, selected: isGlyphSelected)
 
                 if !text.isEmpty {
@@ -207,6 +207,25 @@ public struct RadioConverter {
             .accessibilityLabel(text.dynamicLocalized())
             .accessibilityAddTraits(.isButton)
         )
+    }
+
+    // MARK: - Shared reads (internal: the tests go through these)
+
+    /// The `spacing:` of the row that holds the glyph and the label —
+    /// radio_converter.rb icon_text_spacing. Declared number|binding;
+    /// absent means SwiftUI's default spacing (the codegen opens a bare
+    /// `HStack {` for the same reason: the default is not a number it can
+    /// spell). Both radio shapes read it; nothing here read it before, so
+    /// a declared `spacing: 16` moved neither face apart — only the rows.
+    static func iconTextSpacing(_ component: DynamicComponent, data: [String: Any]) -> CGFloat? {
+        component.number(RadioAttributes.self, \.spacing, data: data)
+    }
+
+    /// Title/label font. The data overload resolves a bound `font` and a
+    /// bound `fontSize`; the data-less read dropped both to the configured
+    /// defaults (Radio_{font,fontSize}__binding).
+    static func radioFont(_ component: DynamicComponent, data: [String: Any]) -> Font? {
+        DynamicHelpers.fontFromComponent(component, data: data)
     }
 
     // MARK: - Private helpers
