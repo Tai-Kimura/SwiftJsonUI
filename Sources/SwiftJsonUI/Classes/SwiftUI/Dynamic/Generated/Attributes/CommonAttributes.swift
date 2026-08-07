@@ -148,6 +148,8 @@ public struct CommonAttributes {
         "minTopPadding",
         "minWidth",
         "minWidthWeight",
+        "offsetX",
+        "offsetY",
         "onAppear",
         "onClick",
         "onDisappear",
@@ -348,7 +350,7 @@ public struct CommonAttributes {
     /// Frame configuration with width/height
     public let frame: [String: Any]?
 
-    /// Content gravity/alignment [accepts: string | array]
+    /// Content gravity/alignment. A single value names ONE axis; the axis it does not name falls to the container default (top vertically, start horizontally), so in LTR `left` and `top` both resolve to (start, top) and render identically. Use the array form to name both axes. Full ruling in attribute_semantics.json -> gravityDefaults; do not restate it in toolchain comments. [accepts: string | array]
     public let gravity: Any?
 
     /// Height (number, 'matchParent', 'wrapContent') - binding supported. Not required if weight is specified. [required]
@@ -497,6 +499,12 @@ public struct CommonAttributes {
 
     /// Minimum width weight (binding supported)
     public let minWidthWeight: AttrValue<Double>?
+
+    /// Horizontal offset applied after layout, in pt / dp / px. Moves the view without changing the space it occupies or the position of its siblings — the layout is computed first and the offset is a paint-time translation. Pairs with offsetY; either one alone implies 0 for the other. Declared from the implementation, which already read it: sjui base_view_converter.rb:498-501, which reads it on every component (plan 51-E).
+    public let offsetX: AttrValue<Double>?
+
+    /// Vertical offset applied after layout, in pt / dp / px. Moves the view without changing the space it occupies or the position of its siblings — the layout is computed first and the offset is a paint-time translation. Pairs with offsetX; either one alone implies 0 for the other. Declared from the implementation, which already read it: sjui base_view_converter.rb:498-501, which reads it on every component (plan 51-E).
+    public let offsetY: AttrValue<Double>?
 
     /// Lifecycle callback when view appears (SwiftUI/Compose only)
     public let onAppear: String?
@@ -733,6 +741,8 @@ public struct CommonAttributes {
         self.minTopPadding = AttrCoerce.number(AttrCoerce.lookup(json, "minTopPadding"))
         self.minWidth = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minWidth"), AttrCoerce.number)
         self.minWidthWeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minWidthWeight"), AttrCoerce.number)
+        self.offsetX = AttrCoerce.attrValue(AttrCoerce.lookup(json, "offsetX"), AttrCoerce.number)
+        self.offsetY = AttrCoerce.attrValue(AttrCoerce.lookup(json, "offsetY"), AttrCoerce.number)
         self.onAppear = AttrCoerce.string(AttrCoerce.lookup(json, "onAppear"))
         self.onClick = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onClick"))
         self.onDisappear = AttrCoerce.string(AttrCoerce.lookup(json, "onDisappear"))

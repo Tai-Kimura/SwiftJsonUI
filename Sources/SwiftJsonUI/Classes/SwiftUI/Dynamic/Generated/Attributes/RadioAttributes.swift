@@ -18,6 +18,7 @@ public struct RadioAttributes {
         "icon",
         "iconColor",
         "iconSize",
+        "items",
         "label",
         "onValueChange",
         "selectedIcon",
@@ -33,6 +34,7 @@ public struct RadioAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "isOn": "checked",
         "selected_icon": "selectedIcon",
     ]
 
@@ -44,7 +46,7 @@ public struct RadioAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Seeds the group's INITIAL selection — it is not the live state, and it is not two-way. The state a radio group carries is `selectedValue`; `checked` only says which option starts selected when nothing else has said. Precedence, and all three platforms implement it in this order: a BOUND `selectedValue` wins outright (the group's own two-way state), then a LITERAL `selectedValue` (a group-level statement naming the starting option), then this option's `checked`. So a radio group that binds selectedValue ignores `checked` entirely, which is what stops a seed from freezing a group that the user can no longer change. The bound form of `checked` seeds the glyph rather than the state, since a property initialiser cannot read the data map: it selects only while the group has made no choice yet (sjui radio_converter.rb:88-103, and the same rule in RadioConverter.swift). CONTRAST with CheckBox.checked and Switch.checked, which look identical and are not: those ARE the control's state and carry binding_direction two-way. A radio has no state of its own — the group does. Declared 2026-08-05 (plan 49-E) from the implementations; the previous description said only "Initial checked state", which was true and told nobody what happens when both are declared.
+    /// Seeds the group's INITIAL selection — it is not the live state, and it is not two-way. The state a radio group carries is `selectedValue`; `checked` only says which option starts selected when nothing else has said. Precedence, and all three platforms implement it in this order: a BOUND `selectedValue` wins outright (the group's own two-way state), then a LITERAL `selectedValue` (a group-level statement naming the starting option), then this option's `checked`. So a radio group that binds selectedValue ignores `checked` entirely, which is what stops a seed from freezing a group that the user can no longer change. The bound form of `checked` seeds the glyph rather than the state, since a property initialiser cannot read the data map: it selects only while the group has made no choice yet (sjui radio_converter.rb:88-103, and the same rule in RadioConverter.swift). CONTRAST with CheckBox.checked and Switch.checked, which look identical and are not: those ARE the control's state and carry binding_direction two-way. A radio has no state of its own — the group does. Declared 2026-08-05 (plan 49-E) from the implementations; the previous description said only "Initial checked state", which was true and told nobody what happens when both are declared. `isOn` folds here (sjui radio_converter.rb:88,102 read both the literal and the bound form as `checked || isOn`). [aliases: isOn]
     public let checked: AttrValue<Bool>?
 
     /// Color when checked.
@@ -70,6 +72,9 @@ public struct RadioAttributes {
 
     /// Icon size (pt / dp).
     public let iconSize: Double?
+
+    /// List of items for normal picker (can be template variable). Declared from the implementation, which already read it: sjui radio_converter.rb:13 — the option list a radio GROUP renders; with it the converter emits a group, without it a single radio (plan 51-E).
+    public let items: AttrValue<[Any]>?
 
     /// Radio label (can be data binding)
     public let label: AttrValue<String>?
@@ -99,7 +104,7 @@ public struct RadioAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
+        self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked", ["isOn"], canonicalOnly: canonicalOnly), AttrCoerce.boolean)
         self.checkedColor = AttrCoerce.string(AttrCoerce.lookup(json, "checkedColor"))
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
@@ -108,6 +113,7 @@ public struct RadioAttributes {
         self.icon = AttrCoerce.string(AttrCoerce.lookup(json, "icon"))
         self.iconColor = AttrCoerce.string(AttrCoerce.lookup(json, "iconColor"))
         self.iconSize = AttrCoerce.number(AttrCoerce.lookup(json, "iconSize"))
+        self.items = AttrCoerce.attrValue(AttrCoerce.lookup(json, "items"), AttrCoerce.array)
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label"), AttrCoerce.string)
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
         self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon", ["selected_icon"], canonicalOnly: canonicalOnly))

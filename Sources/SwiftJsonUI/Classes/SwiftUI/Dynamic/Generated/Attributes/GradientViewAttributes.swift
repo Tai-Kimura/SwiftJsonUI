@@ -15,9 +15,13 @@ public struct GradientViewAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "child",
+        "children",
+        "endPoint",
         "gradient",
         "gradientDirection",
         "locations",
+        "startPoint",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -25,6 +29,7 @@ public struct GradientViewAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "colors": "gradient",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -35,7 +40,16 @@ public struct GradientViewAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Gradient colors
+    /// Child component(s). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (plan 51-E).
+    public let child: [Any]?
+
+    /// Child components (alias for child). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (child || children) (plan 51-E).
+    public let children: [Any]?
+
+    /// Unit coordinates in the view's own box for where the gradient ends: [x, y] or {"x": x, "y": y}, with 0 = leading/top, 0.5 = centre/middle, 1 = trailing/bottom. THREE faces read this key three incompatible ways today: sjui gradient_view_converter.rb:107-109 wants an OBJECT ({x, y}), rjui gradient_view_converter.rb:72-73 destructures an ARRAY ([x, y]), and kjui gradientview_component.rb:58-59 expects a STRING edge name ('top'). The two coordinate forms are declared because both are real coordinate spellings of the same thing; the android string form is NOT declared - it is `gradientDirection` semantics written under the wrong key, and is filed as a defect rather than blessed here. Declaring BOTH startPoint and endPoint replaces gradientDirection entirely; declaring only one is ignored and gradientDirection still decides (plan 51-E). [accepts: array | object]
+    public let endPoint: Any?
+
+    /// Gradient colors. `colors` folds here (sjui gradient_view_converter.rb:52,66 read `colors || gradient`). [aliases: colors]
     public let gradient: [Any]?
 
     /// Gradient direction
@@ -44,13 +58,20 @@ public struct GradientViewAttributes {
     /// Color stop locations (0.0-1.0)
     public let locations: [Any]?
 
+    /// Unit coordinates in the view's own box for where the gradient starts: [x, y] or {"x": x, "y": y}, with 0 = leading/top, 0.5 = centre/middle, 1 = trailing/bottom. THREE faces read this key three incompatible ways today: sjui gradient_view_converter.rb:107-109 wants an OBJECT ({x, y}), rjui gradient_view_converter.rb:72-73 destructures an ARRAY ([x, y]), and kjui gradientview_component.rb:58-59 expects a STRING edge name ('top'). The two coordinate forms are declared because both are real coordinate spellings of the same thing; the android string form is NOT declared - it is `gradientDirection` semantics written under the wrong key, and is filed as a defect rather than blessed here. Declaring BOTH startPoint and endPoint replaces gradientDirection entirely; declaring only one is ignored and gradientDirection still decides (plan 51-E). [accepts: array | object]
+    public let startPoint: Any?
+
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.gradient = AttrCoerce.array(AttrCoerce.lookup(json, "gradient"))
+        self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
+        self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
+        self.endPoint = AttrCoerce.any(AttrCoerce.lookup(json, "endPoint"))
+        self.gradient = AttrCoerce.array(AttrCoerce.lookup(json, "gradient", ["colors"], canonicalOnly: canonicalOnly))
         self.gradientDirection = Self.parseGradientDirection(AttrCoerce.lookup(json, "gradientDirection"))
         self.locations = AttrCoerce.array(AttrCoerce.lookup(json, "locations"))
+        self.startPoint = AttrCoerce.any(AttrCoerce.lookup(json, "startPoint"))
     }
 
     private static func parseGradientDirection(_ raw: Any?) -> AttrEnum<GradientDirection>? {

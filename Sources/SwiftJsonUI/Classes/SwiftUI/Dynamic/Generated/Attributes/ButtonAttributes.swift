@@ -27,11 +27,13 @@ public struct ButtonAttributes {
         "disabledFontColor",
         "font",
         "fontColor",
+        "fontFamily",
         "fontSize",
         "fontWeight",
         "highlightBackground",
         "highlightColor",
         "image",
+        "partialAttributes",
         "tapBackground",
         "text",
         "textAlign",
@@ -68,6 +70,9 @@ public struct ButtonAttributes {
     /// Font color - hex string or color name from colors.json (binding supported)
     public let fontColor: AttrValue<String>?
 
+    /// Font family name (e.g., 'Noto Sans JP'). Passed as the `family` field of `FontSpec` to `Configuration.Font.fontProvider`. Coexists with `font` (weight) and `fontSize` which are passed in the same FontSpec. Declared from the implementation, which already read it: sjui button_converter.rb:173-178 (plan 51-E).
+    public let fontFamily: AttrValue<String>?
+
     /// Font size
     public let fontSize: Double?
 
@@ -82,6 +87,9 @@ public struct ButtonAttributes {
 
     /// Button image - asset name (binding supported)
     public let image: AttrValue<String>?
+
+    /// Partial text styling: apply font/size/color/underline/shadow to a substring selected by 'range' (a [start, end] pair, a text pattern, or a binding), and optionally make it tappable with 'onclick'. This is the supported way to get emphasis or a link inside a Label, since 'text' is plain text and markdown is not interpreted, and it is the portable way to express a cross-reference: the handler navigates (and scrolls to the target) in host code, so the same layout works everywhere, where a URL-based link would only work on web. All three platforms resolve partials at RUNTIME against the resolved string, so a pattern range and a localized or bound 'text' both work. Semantics, identical across platforms and verified against each runtime: an array range is [start, end) with the end exclusive; a string range is the FIRST occurrence and the partial is skipped (not an error) when the pattern is absent; a range that is out of bounds or inverted is skipped; partials apply in declaration order and MERGE where they overlap, later declarations winning per property. Declared from the implementation, which already read it: sjui button_converter.rb:68-129 (plan 51-E).
+    public let partialAttributes: [Any]?
 
     /// Background when tapped - hex string or color name from colors.json
     public let tapBackground: String?
@@ -101,11 +109,13 @@ public struct ButtonAttributes {
         self.disabledFontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "disabledFontColor"), AttrCoerce.string)
         self.font = AttrCoerce.string(AttrCoerce.lookup(json, "font"))
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
+        self.fontFamily = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontFamily"), AttrCoerce.string)
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
         self.fontWeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontWeight"), { $0 })
         self.highlightBackground = AttrCoerce.string(AttrCoerce.lookup(json, "highlightBackground"))
         self.highlightColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightColor", ["hilightColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.image = AttrCoerce.attrValue(AttrCoerce.lookup(json, "image"), AttrCoerce.string)
+        self.partialAttributes = AttrCoerce.array(AttrCoerce.lookup(json, "partialAttributes"))
         self.tapBackground = AttrCoerce.string(AttrCoerce.lookup(json, "tapBackground"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.textAlign = Self.parseTextAlign(AttrCoerce.lookup(json, "textAlign"))

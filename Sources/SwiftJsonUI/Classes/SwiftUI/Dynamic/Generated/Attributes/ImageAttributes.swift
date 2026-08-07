@@ -35,6 +35,7 @@ public struct ImageAttributes {
         "alt",
         "canTap",
         "contentMode",
+        "defaultImage",
         "errorImage",
         "highlightSrc",
         "highlightSrcName",
@@ -71,6 +72,9 @@ public struct ImageAttributes {
 
     /// Content mode (binding supported). ScaleToFill is a declared synonym of fill (the stretch — see attribute_semantics.json#semantics.image); the normalizer folds it, fixtures are generated for the canonical spelling only.
     public let contentMode: AttrValue<AttrEnum<ContentMode>>?
+
+    /// Default image name. Declared from the implementation, which already read it: sjui image_converter.rb:36,42 (defaultImage || errorImage || loadingImage) (plan 51-E).
+    public let defaultImage: String?
 
     /// Fallback image on load error.
     public let errorImage: String?
@@ -112,6 +116,7 @@ public struct ImageAttributes {
         self.alt = AttrCoerce.string(AttrCoerce.lookup(json, "alt"))
         self.canTap = AttrCoerce.boolean(AttrCoerce.lookup(json, "canTap"))
         self.contentMode = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentMode"), { Self.parseContentMode($0) })
+        self.defaultImage = AttrCoerce.string(AttrCoerce.lookup(json, "defaultImage"))
         self.errorImage = AttrCoerce.string(AttrCoerce.lookup(json, "errorImage"))
         self.highlightSrc = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightSrc"), AttrCoerce.string)
         self.highlightSrcName = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightSrcName"), AttrCoerce.string)

@@ -17,6 +17,8 @@ public struct BlurAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "blurRadius",
+        "child",
+        "children",
         "effectStyle",
     ])
 
@@ -38,6 +40,12 @@ public struct BlurAttributes {
     /// Blur radius in px/dp. Android and Web only: both blur by radius, while UIKit/SwiftUI express the appearance as effectStyle (UIVisualEffectView has styles, not radii). Overrides the radius effectStyle resolves to.
     public let blurRadius: Double?
 
+    /// Child component(s). Declared from the implementation, which already read it: sjui blur_converter.rb:16 (plan 51-E).
+    public let child: [Any]?
+
+    /// Child components (alias for child). Declared from the implementation, which already read it: sjui blur_converter.rb:16 (child || children) (plan 51-E).
+    public let children: [Any]?
+
     /// Blur effect style
     public let effectStyle: AttrEnum<EffectStyle>?
 
@@ -46,6 +54,8 @@ public struct BlurAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.blurRadius = AttrCoerce.number(AttrCoerce.lookup(json, "blurRadius"))
+        self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
+        self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.effectStyle = Self.parseEffectStyle(AttrCoerce.lookup(json, "effectStyle"))
     }
 

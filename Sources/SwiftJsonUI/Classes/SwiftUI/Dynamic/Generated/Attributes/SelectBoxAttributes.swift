@@ -73,6 +73,7 @@ public struct SelectBoxAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "dateFormat": "dateStringFormat",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -98,7 +99,7 @@ public struct SelectBoxAttributes {
     /// Date picker style
     public let datePickerStyle: AttrEnum<DatePickerStyle>?
 
-    /// Date string format
+    /// Date string format. `dateFormat` folds here (sjui selectbox_converter.rb:132 reads `dateFormat || dateStringFormat`). [aliases: dateFormat]
     public let dateStringFormat: String?
 
     /// Divider styling attributes
@@ -185,7 +186,7 @@ public struct SelectBoxAttributes {
         self.colorScheme = Self.parseColorScheme(AttrCoerce.lookup(json, "colorScheme"))
         self.datePickerMode = Self.parseDatePickerMode(AttrCoerce.lookup(json, "datePickerMode"))
         self.datePickerStyle = Self.parseDatePickerStyle(AttrCoerce.lookup(json, "datePickerStyle"))
-        self.dateStringFormat = AttrCoerce.string(AttrCoerce.lookup(json, "dateStringFormat"))
+        self.dateStringFormat = AttrCoerce.string(AttrCoerce.lookup(json, "dateStringFormat", ["dateFormat"], canonicalOnly: canonicalOnly))
         self.dividerAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "dividerAttributes"))
         self.font = AttrCoerce.string(AttrCoerce.lookup(json, "font"))
         self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor"))

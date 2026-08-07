@@ -21,6 +21,7 @@ public struct IconLabelAttributes {
         "fontSize",
         "iconMargin",
         "iconPosition",
+        "iconSize",
         "icon_off",
         "icon_on",
         "selected",
@@ -59,6 +60,9 @@ public struct IconLabelAttributes {
     /// Icon position relative to text
     public let iconPosition: AttrEnum<IconPosition>?
 
+    /// Icon size. A number sizes both edges; a two-element [width, height] sizes them separately (rjui icon_label_converter.rb:130-138 reads both, and its spec covers both). NOT the same shape as CheckBox.iconSize, which is a square glyph and takes a number only. sjui icon_label_converter.rb:50-51 interpolates the value straight into `iconSize:`, so the array form is web-only today — declared here because the attribute's value space is a property of the attribute, not of whichever face lags (plan 51-E). [accepts: number | array]
+    public let iconSize: Any?
+
     /// Normal icon
     public let icon_off: String?
 
@@ -86,6 +90,7 @@ public struct IconLabelAttributes {
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
         self.iconMargin = AttrCoerce.number(AttrCoerce.lookup(json, "iconMargin"))
         self.iconPosition = Self.parseIconPosition(AttrCoerce.lookup(json, "iconPosition"))
+        self.iconSize = AttrCoerce.any(AttrCoerce.lookup(json, "iconSize"))
         self.icon_off = AttrCoerce.string(AttrCoerce.lookup(json, "icon_off"))
         self.icon_on = AttrCoerce.string(AttrCoerce.lookup(json, "icon_on"))
         self.selected = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selected"), AttrCoerce.boolean)
