@@ -347,48 +347,94 @@ public struct LabelConverter {
                 onClickClosure = data[propName] as? () -> Void
             }
 
-            // Parse fontSize from CGFloat or Int
+            // EVERY value slot resolves `@{...}` first: the partial map is raw
+            // JSON, and `as? String` handed the SPELLING to the pattern match
+            // and the colour parser — a bound `range` never matched (the
+            // partial silently vanished) and a bound fontColor styled nothing,
+            // while the codegen path interpolates `\(data.x)` at render time
+            // (whisky bar_detail/business_hour_row, 2026-08-08).
+
+            // Parse fontSize from CGFloat, Int, or a bound number
             var fontSize: CGFloat? = nil
             if let fs = dict["fontSize"] as? CGFloat {
                 fontSize = fs
             } else if let fs = dict["fontSize"] as? Int {
                 fontSize = CGFloat(fs)
+            } else if let bound = resolvePartialString(dict["fontSize"], data: data),
+                      let n = Double(bound) {
+                fontSize = CGFloat(n)
             }
 
-            // Parse fontWeight
+            // Parse fontWeight (static spelling or bound)
             var fontWeight: Font.Weight? = nil
-            if let fw = dict["fontWeight"] as? String {
+            if let fw = resolvePartialString(dict["fontWeight"], data: data)
+                ?? resolvePartialString(dict["font"], data: data) {
                 fontWeight = Font.Weight.from(string: fw)
             }
+
+            let fontColor = resolvePartialString(dict["fontColor"], data: data)
+                .flatMap { DynamicHelpers.getColor($0, data: data) }
+            let background = resolvePartialString(dict["background"], data: data)
+                .flatMap { DynamicHelpers.getColor($0, data: data) }
 
             // Use range-based or textPattern-based init
             if let rangeArray = dict["range"] as? [Int], rangeArray.count == 2, rangeArray[0] < rangeArray[1] {
                 return PartialAttribute(
                     range: rangeArray[0]..<rangeArray[1],
-                    fontColor: (dict["fontColor"] as? String).flatMap { DynamicHelpers.getColor($0) },
+                    fontColor: fontColor,
                     fontSize: fontSize,
                     fontWeight: fontWeight,
-                    underline: dict["underline"] as? Bool ?? false,
-                    strikethrough: dict["strikethrough"] as? Bool ?? false,
-                    backgroundColor: (dict["background"] as? String).flatMap { DynamicHelpers.getColor($0) },
+                    underline: drawsLine(dict["underline"]),
+                    strikethrough: drawsLine(dict["strikethrough"]),
+                    backgroundColor: background,
                     onClick: onClickClosure,
                     onClickActionName: dict["onclick"] as? String ?? dict["onClick"] as? String
                 )
-            } else if let pattern = dict["range"] as? String {
+            } else if let rawPattern = dict["range"] as? String,
+                      let pattern = resolvePartialString(rawPattern, data: data),
+                      !pattern.isEmpty {
+                // An empty resolved pattern (the VM's "no highlight" value)
+                // builds no partial rather than a zero-width one.
                 return PartialAttribute(
                     textPattern: pattern.dynamicLocalized(),
-                    fontColor: (dict["fontColor"] as? String).flatMap { DynamicHelpers.getColor($0) },
+                    fontColor: fontColor,
                     fontSize: fontSize,
                     fontWeight: fontWeight,
-                    underline: dict["underline"] as? Bool ?? false,
-                    strikethrough: dict["strikethrough"] as? Bool ?? false,
-                    backgroundColor: (dict["background"] as? String).flatMap { DynamicHelpers.getColor($0) },
+                    underline: drawsLine(dict["underline"]),
+                    strikethrough: drawsLine(dict["strikethrough"]),
+                    backgroundColor: background,
                     onClick: onClickClosure,
                     onClickActionName: dict["onclick"] as? String ?? dict["onClick"] as? String
                 )
             } else {
                 return nil
             }
+        }
+    }
+
+    /// A partial-map value slot: `@{expr}` resolves against the data map
+    /// through the same canonical resolver every Label-level binding uses;
+    /// a plain string passes through; an unresolvable binding yields nil
+    /// (slot absent), never the spelling.
+    static func resolvePartialString(_ raw: Any?, data: [String: Any]) -> String? {
+        guard let s = raw as? String else { return nil }
+        guard let inner = DynamicBindingResolver.inner(of: s) else { return s }
+        return DynamicBindingResolver.resolveString(expression: inner, data: data)
+    }
+
+    /// Whether a declared partial `underline` / `strikethrough` draws a line.
+    /// Same `textDecoration` contract as the Label body: the boolean face is
+    /// itself, the OBJECT face draws unless `lineStyle: "None"`, a non-empty
+    /// array is a presence statement. `as? Bool` alone forced every styled
+    /// object to false (the android mirror fixed the same read in 4a4a810).
+    static func drawsLine(_ declared: Any?) -> Bool {
+        switch declared {
+        case nil: return false
+        case let b as Bool: return b
+        case let m as [String: Any]:
+            return !((m["lineStyle"] as? String)?.caseInsensitiveCompare("none") == .orderedSame)
+        case let a as [Any]: return !a.isEmpty
+        default: return false
         }
     }
 
