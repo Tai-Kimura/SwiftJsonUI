@@ -199,7 +199,7 @@ public struct TextViewConverter {
                 }
             }
             // Fallback: use paddings as containerInset
-            let padding = DynamicHelpers.getPadding(from: component)
+            let padding = DynamicHelpers.getPadding(from: component, data: data)
             if padding.top != 0 || padding.leading != 0 || padding.bottom != 0 || padding.trailing != 0 {
                 return padding
             }

@@ -176,7 +176,7 @@ public struct SelectBoxConverter {
 
         // padding (internal padding for SelectBoxView)
         let padding: EdgeInsets? = {
-            let p = DynamicHelpers.getPadding(from: component)
+            let p = DynamicHelpers.getPadding(from: component, data: data)
             if p.top != 0 || p.leading != 0 || p.bottom != 0 || p.trailing != 0 {
                 return p
             }

@@ -87,7 +87,7 @@ public struct RelativePositioningContainer: View {
 
     private func extractParentPadding() -> EdgeInsets {
         guard let parent = parentComponent else { return .init() }
-        return DynamicHelpers.getPadding(from: parent)
+        return DynamicHelpers.getPadding(from: parent, data: data)
     }
 }
 // MARK: - Force re-evaluation when data dictionary changes
