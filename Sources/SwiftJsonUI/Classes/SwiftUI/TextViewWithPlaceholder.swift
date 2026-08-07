@@ -84,27 +84,32 @@ public struct TextViewWithPlaceholder: View {
             self.hintLineSpacing = 0
         }
 
-        // hintFontの設定
-        if let hintFont = hintFont {
-            if hintFont == "bold" {
-                self.hintFont = .system(size: effectiveHintFontSize, weight: .bold)
-            } else {
-                self.hintFont = .custom(hintFont, size: effectiveHintFontSize)
+        // Font construction goes through the configuration's `FontSpec`
+        // resolver, the same entry point Label's path uses.
+        //
+        // `fontFamily` is declared as "passed as the `family` field of
+        // `FontSpec` to `Configuration.Font.fontProvider`"
+        // (shared/core/attribute_definitions.json), and building
+        // `.custom(name, size:)` here bypassed the provider entirely: an app
+        // shipping a family through `fontProvider` had it honoured on a Label
+        // and ignored on a TextView. Without a provider `defaultFont(for:)`
+        // builds exactly the `.custom` / `.system` this used to, so the
+        // no-provider rendering is unchanged.
+        //
+        // Only `"bold"` is treated as a weight keyword, which is narrower than
+        // the vocabulary DynamicDecodingHelper accepts for Label
+        // (semibold/medium/light/…). That divergence is untouched here and
+        // reported separately — it is not the family gap this fixes.
+        func resolveFont(_ name: String?, size: CGFloat) -> Font {
+            let config = SwiftJsonUIConfiguration.shared
+            if name == "bold" {
+                return config.resolveFont(FontSpec(family: nil, weight: .bold, size: size))
             }
-        } else {
-            self.hintFont = .system(size: effectiveHintFontSize)
+            return config.resolveFont(FontSpec(family: name, weight: nil, size: size))
         }
 
-        // メインフォントの設定
-        if let fontName = fontName {
-            if fontName == "bold" {
-                self.font = .system(size: fontSize, weight: .bold)
-            } else {
-                self.font = .custom(fontName, size: fontSize)
-            }
-        } else {
-            self.font = .system(size: fontSize)
-        }
+        self.hintFont = resolveFont(hintFont, size: effectiveHintFontSize)
+        self.font = resolveFont(fontName, size: fontSize)
     }
     
     public var body: some View {
