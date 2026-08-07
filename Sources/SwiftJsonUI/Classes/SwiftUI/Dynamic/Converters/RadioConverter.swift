@@ -79,18 +79,26 @@ public struct RadioConverter {
         data: [String: Any]
     ) -> AnyView {
         // Get selection binding
-        let selectionExpr: String? = {
-            if let expr = component.typedAttributes(RadioAttributes.self)
-                .selectedValue?.bindingExpression {
-                return "@{\(expr)}"
-            }
-            return nil
-        }()
+        let radioAttrs = component.typedAttributes(RadioAttributes.self)
+        let selectionExpr: String? = radioAttrs.selectedValue?.bindingExpression
+            .map { "@{\($0)}" }
 
+        // A LITERAL `selectedValue` names the group's starting option, and it
+        // was read by nothing here — only the bound spelling was. The
+        // precedence is written into `Radio.checked`'s declaration ("a BOUND
+        // selectedValue wins outright, then a LITERAL selectedValue, then this
+        // option's checked"), and the codegen implements all three
+        // (radio_converter.rb's `static_selection`). With the literal dropped,
+        // the group seeded empty and no option was drawn selected —
+        // `Radio/selectedValue__gamma`, inert on this path.
+        //
+        // Seeding it also makes `checked` stand down correctly: the glyph's
+        // `literalChecked && selection.isEmpty` guard is exactly the third
+        // rung of that precedence.
         let selectionBinding = DynamicBindingHelper.string(
             selectionExpr,
             data: data,
-            fallback: ""
+            fallback: radioAttrs.selectedValue?.value ?? ""
         )
 
         // Font and color for group title
