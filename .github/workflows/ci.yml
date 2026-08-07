@@ -154,3 +154,25 @@ jobs:
             -scheme "$SCHEME" \
             -destination "platform=iOS Simulator,id=$DEST_ID" \
             | tail -100
+
+      - name: Release-configuration build
+        run: |
+          set -o pipefail
+          # The Dynamic implementation is #if DEBUG: a declaration that
+          # drifts outside the guard compiles everywhere above (tests and
+          # conformance run Debug) and fails ONLY here — a consumer's
+          # archive/distribution build is the first thing that breaks
+          # (10.14.1 shipped exactly that: the typed-attr extension landed
+          # after the #endif and every Release archive died).
+          SCHEME=$(xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' \
+            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs || true)
+          if [ -z "$SCHEME" ]; then
+            echo "No usable scheme found" >&2
+            exit 1
+          fi
+          # generic destination: no device resolution needed for build-only
+          xcodebuild build \
+            -scheme "$SCHEME" \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            | tail -40
