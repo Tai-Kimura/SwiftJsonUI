@@ -959,6 +959,35 @@ public struct DynamicModifierHelper {
 
     // MARK: - 18. ConfirmationDialog
 
+    /// A confirmationDialog `title` / `message`: resolved, then localized.
+    ///
+    /// The codegen path localizes the literal spelling through StringManager
+    /// (base_view_converter.rb#get_text_with_string_manager); this path
+    /// returned the raw key, so `title: "bottler_title"` surfaced as the key
+    /// itself (10.14.2, f8fc559). Extracted from the dialog builder because it
+    /// is the ONLY regression device this behaviour can have: the conformance
+    /// generator gives the attribute a behavioural skip (a dialog is not on
+    /// the render surface), so no fixture can reach it — D measured that and
+    /// routed the cover here.
+    ///
+    /// A bound spelling resolves first and the resolved value is localized in
+    /// turn; a non-key string passes through `dynamicLocalized` unchanged.
+    static func confirmationDialogText(_ declared: Any?, data: [String: Any]) -> String? {
+        guard let value = declared as? String else { return nil }
+        if let resolved: String = DynamicBindingHelper.resolveValue(value, data: data) {
+            return resolved.dynamicLocalized()
+        }
+        // An UNRESOLVED binding must not surface as the expression itself.
+        // The codegen cannot produce this failure at all — it emits a typed
+        // `data.dialogTitle`, so a missing property is a compile error rather
+        // than "@{dialogTitle}" printed in the dialog. Answering nil gives the
+        // title an empty string and drops the message overload entirely, which
+        // is the same shape every other bound read takes when it cannot
+        // resolve: the default, never the spelling.
+        if DynamicBindingResolver.isBindingExpression(value) { return nil }
+        return value.dynamicLocalized()
+    }
+
     @available(iOS 15.0, *)
     public static func applyConfirmationDialog(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         guard let dialogConfig = component.typedAttributes(CommonAttributes.self).confirmationDialog,
@@ -974,15 +1003,7 @@ public struct DynamicModifierHelper {
         // returned the raw key, so `title: "bottler_title"` surfaced as the
         // key itself. Same shape as LabelConverter: resolve, then
         // dynamicLocalized (a non-key string passes through unchanged).
-        let title: String = {
-            if let titleValue = dialogConfig["title"] as? String {
-                if let resolved: String = DynamicBindingHelper.resolveValue(titleValue, data: data) {
-                    return resolved.dynamicLocalized()
-                }
-                return titleValue.dynamicLocalized()
-            }
-            return ""
-        }()
+        let title = confirmationDialogText(dialogConfig["title"], data: data) ?? ""
 
         let titleVisibility: SwiftUI.Visibility = {
             switch dialogConfig["titleVisibility"] as? String {
@@ -992,15 +1013,7 @@ public struct DynamicModifierHelper {
             }
         }()
 
-        let message: String? = {
-            if let msgValue = dialogConfig["message"] as? String {
-                if let resolved: String = DynamicBindingHelper.resolveValue(msgValue, data: data) {
-                    return resolved.dynamicLocalized()
-                }
-                return msgValue.dynamicLocalized()
-            }
-            return nil
-        }()
+        let message = confirmationDialogText(dialogConfig["message"], data: data)
 
         // Build actions content
         let actionsContent: AnyView? = {
