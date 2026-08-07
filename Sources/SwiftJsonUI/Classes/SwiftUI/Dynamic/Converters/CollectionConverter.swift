@@ -115,7 +115,7 @@ public struct CollectionConverter {
 
         // Resolve onItemAppear callback
         var onItemAppearCallback: ((Int) -> Void)? = nil
-        if let onItemAppearRaw = component.rawAttribute("onItemAppear") as? String,
+        if let onItemAppearRaw = component.string(CollectionAttributes.self, \.onItemAppear),
            let propName = DynamicEventHelper.extractPropertyName(from: onItemAppearRaw) {
             onItemAppearCallback = data[propName] as? ((Int) -> Void)
         }
@@ -904,8 +904,9 @@ public struct CollectionConverter {
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         // `cellWidth` / `cellHeight` pin each cell to a fixed size inside the grid.
         // When absent the existing flexible sizing path is preserved.
-        let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
-        let cellHeight = cgFloatFromRaw(component.rawAttribute("cellHeight"))
+        let cellAttrs = component.typedAttributes(CollectionAttributes.self)
+        let cellWidth = cellAttrs.cellWidth.map { CGFloat($0) }
+        let cellHeight = cellAttrs.cellHeight.map { CGFloat($0) }
 
         return AnyView(
             ScrollViewReader { scrollProxy in
@@ -1057,8 +1058,9 @@ public struct CollectionConverter {
         let itemSpacing = component.itemSpacing ?? 0
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
-        let cellWidth = cgFloatFromRaw(component.rawAttribute("cellWidth"))
-        let cellHeight = cgFloatFromRaw(component.rawAttribute("cellHeight"))
+        let cellAttrs = component.typedAttributes(CollectionAttributes.self)
+        let cellWidth = cellAttrs.cellWidth.map { CGFloat($0) }
+        let cellHeight = cellAttrs.cellHeight.map { CGFloat($0) }
 
         let sectionBodies: (Int) -> AnyView = { sectionIndex in
             let sectionConfig = sections[sectionIndex]

@@ -181,7 +181,9 @@ public struct DynamicScrollViewContainer: View {
 
     /// Resolve scroll direction from component attributes
     private func resolveIsHorizontal(children: [DynamicComponent]) -> Bool {
-        if component.rawData["horizontalScroll"] as? Bool == true { return true }
+        if component.typedAttributes(ScrollViewAttributes.self).horizontalScroll == true {
+            return true
+        }
         if component.orientation == "horizontal" { return true }
         if children.count == 1,
            let firstChild = children.first,

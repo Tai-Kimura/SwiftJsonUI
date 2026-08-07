@@ -21,12 +21,10 @@ public struct SegmentConverter {
     ) -> AnyView {
         let attrs = component.typedAttributes(SegmentAttributes.self)
 
-        // Selection binding: selectedIndex first, then the undeclared
-        // legacy selectedTabIndex spelling
+        // Selection binding. `selectedTabIndex` is a declared alias of
+        // `selectedIndex` (plan 51-E, 57a527a — the same alias TabView already
+        // had), so the generated extraction folds it.
         let selectionExpr: String? = attrs.selectedIndex?.bindingString
-            ?? (component.rawAttribute("selectedTabIndex") as? String).flatMap {
-                DynamicBindingResolver.isBindingExpression($0) ? $0 : nil
-            }
 
         let selectedBinding = DynamicBindingHelper.int(
             selectionExpr,
@@ -47,11 +45,9 @@ public struct SegmentConverter {
         let selectedFontColor = DynamicHelpers.getColor(
             attrs.selectedFontColor ?? attrs.fontColor, data: data)
         // tintColor is the SELECTED segment's accent on every platform.
-        let selectedColor = DynamicHelpers.getColor(
-            component.rawAttribute("selectedSegmentTintColor") as? String
-                ?? component.typedAttributes(SegmentAttributes.self).tintColor,
-            data: data
-        )
+        // `selectedSegmentTintColor` is a declared alias of it (plan 51-E,
+        // 57a527a), folded by the generated extraction.
+        let selectedColor = DynamicHelpers.getColor(attrs.tintColor, data: data)
 
         // Picker with .segmented style
         var result = AnyView(
@@ -75,9 +71,9 @@ public struct SegmentConverter {
         if let onValueChange = component.onValueChangeSpelling(),
            let handlerName = DynamicEventHelper.extractPropertyName(from: onValueChange) {
             // Determine the binding property to observe
+            // `selectedTabIndex` folds into `selectedIndex` in the generated
+            // extraction (declared alias, plan 51-E), so one read covers both.
             let observeProperty: String? = attrs.selectedIndex?.bindingExpression
-                ?? DynamicEventHelper.extractPropertyName(
-                    from: component.rawAttribute("selectedTabIndex") as? String)
 
             if let propName = observeProperty,
                let binding = data[propName] as? SwiftUI.Binding<Int> {

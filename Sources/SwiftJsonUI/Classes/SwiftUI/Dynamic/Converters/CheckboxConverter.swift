@@ -85,17 +85,20 @@ public struct CheckboxConverter {
         }()
 
         // Checked/unchecked colors
-        // The checked accent reads the same fallback chain the codegen does
-        // (checkbox_converter.rb: checkedColor || checkColor || tintColor ||
-        // onTintColor) — dynamic read only `checkedColor`, so a layout
-        // declaring `tintColor` kept the .blue default.
+        //
+        // The codegen chain is `checkedColor || checkColor || tintColor ||
+        // onTintColor` (checkbox_converter.rb:98). Two of those are now
+        // DECLARED aliases of `checkedColor` (plan 51-E, 57a527a), so the
+        // generated extraction folds them and the hand-written raw reads are
+        // gone. `tintColor` is deliberately not an alias — it is declared on
+        // `common`, and on a CheckBox the common tint IS the checked colour —
+        // so it stays a separate, typed read.
         let checkedColor: Color = {
-            let spelling = component.checkedColor
-                ?? component.rawAttribute("checkColor") as? String
-                ?? component.rawAttribute("tintColor") as? String
-                ?? component.rawAttribute("onTintColor") as? String
-            if let spelling {
-                return DynamicHelpers.getColor(spelling) ?? .blue
+            if let spelling = attrs.checkedColor {
+                return DynamicHelpers.getColor(spelling, data: data) ?? .blue
+            }
+            if let tint = DynamicHelpers.resolveColor(attrs.common.tintColor, data: data) {
+                return tint
             }
             return .blue
         }()
@@ -120,15 +123,13 @@ public struct CheckboxConverter {
         }()
 
         // onValueChange callback
-        // Support: onValueChange, onClick, action, onValueChanged (backward compat)
+        //
+        // `action` and `onValueChanged` are now declared aliases of
+        // `onValueChange` (plan 51-E, 57a527a), so the generated extraction
+        // resolves all three spellings and only `onClick` — which stays a
+        // `common` attribute of its own — needs a second read.
         let handlerExpr: String? = attrs.onValueChange?.bindingString
             ?? attrs.common.onClick?.bindingString
-            ?? (component.rawAttribute("action") as? String).flatMap { expr in
-                DynamicBindingResolver.isBindingExpression(expr) ? expr : nil
-            }
-            ?? component.onValueChangedSpelling().flatMap { expr in
-                DynamicBindingResolver.isBindingExpression(expr) ? expr : nil
-            }
 
         let onValueChanged: ((Bool) -> Void)? = {
             guard let expr = handlerExpr else { return nil }

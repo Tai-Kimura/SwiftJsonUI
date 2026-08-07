@@ -37,10 +37,14 @@ public struct SliderConverter {
             SliderAttributes.self, \.maximum, data: data
         ).map { Double($0) } ?? 1
 
-        // range property (array format: [min, max] — undeclared legacy key)
-        if let range = component.rawAttribute("range") as? [Double], range.count == 2 {
-            minValue = range[0]
-            maxValue = range[1]
+        // range property (array format: [min, max]). Declared and generated
+        // since plan 51-E, so the typed field carries it; the elements arrive
+        // as `Any` because JSON has one number type.
+        if let range = attrs.range, range.count == 2,
+           let lo = DynamicBindingResolver.coerceDouble(range[0]),
+           let hi = DynamicBindingResolver.coerceDouble(range[1]) {
+            minValue = lo
+            maxValue = hi
         }
 
         // Value binding expression ("@{prop}")
