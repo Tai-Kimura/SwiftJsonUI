@@ -93,13 +93,25 @@ public struct DynamicViewContainer: View {
         // Empty view with background: emptyContent already painted it as
         // Rectangle().fill (the codegen leaf contract, no safe-area bleed) —
         // painting again via .background stacked a second opaque layer.
-        let backgroundPaintedByContent = children.isEmpty && component.commonString(\.background) != nil
+        // `gradient` beats `background` on the same face (canon:
+        // attribute_semantics.json backgroundFill — "one fill per face, the
+        // more specific declaration wins"). Both ios paths painted the
+        // background FIRST and put the gradient behind it, so a View
+        // declaring both drew no gradient at all: the standard chain's
+        // `.background(colour)` sits in front of the `.background(gradient)`
+        // added afterwards, and a childless View paints the colour as opaque
+        // CONTENT. E named the pair as one defect on both render paths;
+        // skipping the colour fill is what makes the gradient the fill.
+        let paintsGradient = gradientColors(component) != nil
+        let backgroundPaintedByContent = children.isEmpty
+            && component.commonString(\.background) != nil
+            && !paintsGradient
         result = DynamicModifierHelper.applyStandardModifiers(
             result,
             component: component,
             data: data,
             skipPadding: needsRelativePositioning,
-            skipBackground: backgroundPaintedByContent
+            skipBackground: backgroundPaintedByContent || paintsGradient
         )
 
         // --- 3. gradient ---
@@ -174,10 +186,10 @@ public struct DynamicViewContainer: View {
         // is skipped for this case (buildBody passes skipBackground) so the
         // colour is painted exactly once — the double opaque layer used to
         // cast the declared .shadow twice.
-        if component.commonString(\.background) != nil {
+        if component.commonString(\.background) != nil, gradientColors(component) == nil {
             Rectangle()
                 .fill(DynamicHelpers.getColor(component.commonString(\.background)) ?? Color.clear)
-        } else if hasExplicitSize || hasWeight {
+        } else if hasExplicitSize || hasWeight || gradientColors(component) != nil {
             Color.clear
         } else {
             EmptyView()
@@ -370,16 +382,25 @@ public struct DynamicViewContainer: View {
 
     // MARK: - Gradient
 
-    private func applyGradient(_ view: AnyView, component: DynamicComponent) -> AnyView {
+    /// The gradient's colours, or nil when this view has no drawable gradient.
+    ///
+    /// One function so the fill-precedence decision below and the paint here
+    /// cannot disagree: the background is skipped in exactly the cases a
+    /// gradient is actually drawn.
+    private func gradientColors(_ component: DynamicComponent) -> [Color]? {
         let attrs = component.typedAttributes(ViewAttributes.self)
         let gradientDict = component.rawData["gradient"] as? [String: Any]
-
         // Canonical array first, legacy dictionary second.
         let colorsRaw = attrs.gradient?.compactMap { $0 as? String }
             ?? (gradientDict?["colors"] as? [String])
-        guard let colorsRaw, !colorsRaw.isEmpty else { return view }
+        guard let colorsRaw, !colorsRaw.isEmpty else { return nil }
         let colors = colorsRaw.compactMap { DynamicHelpers.getColor($0) }
-        guard !colors.isEmpty else { return view }
+        return colors.isEmpty ? nil : colors
+    }
+
+    private func applyGradient(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        let gradientDict = component.rawData["gradient"] as? [String: Any]
+        guard let colors = gradientColors(component) else { return view }
 
         // An explicit start/end pair in the dictionary form outranks the
         // direction enum — it is the more specific statement about the same
