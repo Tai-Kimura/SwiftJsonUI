@@ -153,6 +153,8 @@ public struct LabelConverter {
                 fontColor: fontColor,
                 underline: component.decorationFlag(\.underline),
                 strikethrough: component.decorationFlag(\.strikethrough),
+                underlineDecoration: component.decorationStyle(\.underline, data: data),
+                strikethroughDecoration: component.decorationStyle(\.strikethrough, data: data),
                 lineSpacing: lineSpacing,
                 lineLimit: hasLineLimit ? lineLimit : nil,
                 textAlignment: textAlignment,
