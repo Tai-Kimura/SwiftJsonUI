@@ -10,15 +10,14 @@
 //    2. .resizable()
 //    3. .aspectRatio(contentMode:)
 //    4. .clipShape(Circle()) for CircleImage
-//    5. .onAppear (onSrc callback)
-//    6. .onTapGesture (canTap + onClick)
-//    7. apply_frame_size
-//    8. apply_padding
-//    9. .background
-//   10. .cornerRadius
-//   11. apply_margins
-//   12. .opacity / .hidden
-//   13. accessibilityIdentifier
+//    5. .onTapGesture (canTap + onClick)
+//    6. apply_frame_size
+//    7. apply_padding
+//    8. .background
+//    9. .cornerRadius
+//   10. apply_margins
+//   11. .opacity / .hidden
+//   12. accessibilityIdentifier
 //
 
 import SwiftUI
@@ -132,15 +131,7 @@ public struct ImageViewConverter {
             result = AnyView(result.clipShape(Circle()))
         }
 
-        // --- 5. .onAppear (onSrc callback) ---
-        if let onSrc = component.rawAttribute("onSrc") as? String {
-            let propName = DynamicEventHelper.extractPropertyName(from: onSrc) ?? onSrc
-            if let closure = data[propName] as? () -> Void {
-                result = AnyView(result.onAppear { closure() })
-            }
-        }
-
-        // --- 6. .onTapGesture (canTap + onClick) ---
+        // --- 5. .onTapGesture (canTap + onClick) ---
         // `canTap` is boolean|binding — the hand-decoded slot is nil for a
         // binding, so `canTap: "@{isTappable}"` made the image untappable.
         let canTap = DynamicHelpers.resolveBool(
@@ -155,26 +146,26 @@ public struct ImageViewConverter {
             }
         }
 
-        // --- 7. apply_frame_size ---
+        // --- 6. apply_frame_size ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
-        // --- 8. apply_padding ---
+        // --- 7. apply_padding ---
         result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
-        // --- 9. background ---
+        // --- 8. background ---
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
-        // --- 10. cornerRadius ---
+        // --- 9. cornerRadius ---
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
-        // --- 11. margins ---
+        // --- 10. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
-        // --- 12. opacity / hidden ---
+        // --- 11. opacity / hidden ---
         result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
 
-        // --- 13. accessibilityIdentifier ---
+        // --- 12. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
         return result
