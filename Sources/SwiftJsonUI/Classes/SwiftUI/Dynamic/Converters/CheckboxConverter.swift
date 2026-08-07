@@ -151,6 +151,14 @@ public struct CheckboxConverter {
                 icon: icon,
                 selectedIcon: selectedIcon,
                 iconSize: iconSize,
+                // Icon tint. Declared, generated, and taken by CheckBoxView
+                // since it was written (CheckBoxView.swift:141 already reads
+                // `iconColor ?? …` for the system glyph) — the converter was
+                // simply not passing it, so `CheckBox/iconColor__static`
+                // measured inert on ios while the codegen honoured it
+                // (checkbox_converter.rb:58). Emitted here in the same
+                // position the codegen emits it.
+                iconColor: DynamicHelpers.getColor(attrs.iconColor, data: data),
                 spacing: spacing,
                 fontSize: fontSize,
                 fontWeight: fontWeight,
