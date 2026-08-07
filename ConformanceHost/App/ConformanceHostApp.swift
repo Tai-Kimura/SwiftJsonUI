@@ -39,9 +39,37 @@ enum ConformanceHostMode {
         ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
 }
 
+/// `pending.invalid` never completes and never fails
+/// (INTERACTIVE_HOST_CONTRACT.md §5): the request is held open forever so the
+/// LOADING face becomes the resting state of the run instead of racing the
+/// shutter. Every other `.invalid` name fails synchronously — RFC 2606 says
+/// it can never resolve, and waiting on a real resolver's NXDOMAIN makes the
+/// error face timing-dependent. Registered for the shared session in the App
+/// init, matched before any catch-all (§5.2).
+final class ConformanceInvalidHostProtocol: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool {
+        guard let host = request.url?.host else { return false }
+        return host == "pending.invalid" || host.hasSuffix(".invalid")
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        if request.url?.host == "pending.invalid" {
+            // Hold forever: no callback, no failure. stopLoading() is the
+            // only exit, and it arrives when the fixture is torn down.
+            return
+        }
+        client?.urlProtocol(self, didFailWithError: URLError(.cannotFindHost))
+    }
+
+    override func stopLoading() {}
+}
+
 @main
 struct ConformanceHostApp: App {
     init() {
+        URLProtocol.registerClass(ConformanceInvalidHostProtocol.self)
         if ConformanceHostMode.isCodegen {
             // Generated views check ViewSwitcher.isDynamicMode inside their
             // body (DEBUG builds render DynamicView while it is true). Flip
