@@ -14,6 +14,12 @@ public struct ScrollViewAttributes {
         case scrollableAxes = "scrollableAxes"
     }
 
+    public enum DefaultScrollAnchor: String {
+        case top = "top"
+        case center = "center"
+        case bottom = "bottom"
+    }
+
     public enum KeyboardDismissMode: String {
         case none = "none"
         case onDrag = "onDrag"
@@ -44,6 +50,8 @@ public struct ScrollViewAttributes {
         "contentOffset",
         "contentSize",
         "decelerationRate",
+        "defaultScrollAnchor",
+        "horizontalScroll",
         "indicatorStyle",
         "keyboardAvoidance",
         "keyboardDismissMode",
@@ -95,6 +103,12 @@ public struct ScrollViewAttributes {
     /// Deceleration rate
     public let decelerationRate: String?
 
+    /// Initial scroll position anchor (iOS 17+). Sets where the scroll view starts. Declared from the implementation, which already read it: sjui scrollview_converter.rb:207-215 (plan 51-E).
+    public let defaultScrollAnchor: AttrEnum<DefaultScrollAnchor>?
+
+    /// Enable horizontal scroll. Declared from the implementation, which already read it: sjui scrollview_converter.rb:39 (plan 51-E).
+    public let horizontalScroll: Bool?
+
     /// Scroll indicator style
     public let indicatorStyle: String?
 
@@ -145,6 +159,8 @@ public struct ScrollViewAttributes {
         self.contentOffset = AttrCoerce.array(AttrCoerce.lookup(json, "contentOffset"))
         self.contentSize = AttrCoerce.array(AttrCoerce.lookup(json, "contentSize"))
         self.decelerationRate = AttrCoerce.string(AttrCoerce.lookup(json, "decelerationRate"))
+        self.defaultScrollAnchor = Self.parseDefaultScrollAnchor(AttrCoerce.lookup(json, "defaultScrollAnchor"))
+        self.horizontalScroll = AttrCoerce.boolean(AttrCoerce.lookup(json, "horizontalScroll"))
         self.indicatorStyle = AttrCoerce.string(AttrCoerce.lookup(json, "indicatorStyle"))
         self.keyboardAvoidance = AttrCoerce.boolean(AttrCoerce.lookup(json, "keyboardAvoidance"))
         self.keyboardDismissMode = Self.parseKeyboardDismissMode(AttrCoerce.lookup(json, "keyboardDismissMode"))
@@ -172,6 +188,20 @@ public struct ScrollViewAttributes {
             }
         }
         AttrCodegenWarnings.emit("ScrollView.contentInsetAdjustmentBehavior: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseDefaultScrollAnchor(_ raw: Any?) -> AttrEnum<DefaultScrollAnchor>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "top": return .known(DefaultScrollAnchor.top)
+            case "center": return .known(DefaultScrollAnchor.center)
+            case "bottom": return .known(DefaultScrollAnchor.bottom)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("ScrollView.defaultScrollAnchor: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

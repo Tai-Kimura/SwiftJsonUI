@@ -115,6 +115,7 @@ public struct InputAttributes {
         "hintColor",
         "hintFont",
         "hintFontSize",
+        "hintLineHeightMultiple",
         "input",
         "inputType",
         "leftView",
@@ -155,6 +156,7 @@ public struct InputAttributes {
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
         "placeholderColor": "hintColor",
+        "value": "text",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -240,6 +242,9 @@ public struct InputAttributes {
     /// Placeholder font size
     public let hintFontSize: Double?
 
+    /// Placeholder line height multiplier. Declared from the implementation, which already read it: sjui textfield_converter.rb:153 and textview_converter.rb:93,117 (EditText/Input follow via _alias_of) (plan 51-E).
+    public let hintLineHeightMultiple: Double?
+
     /// Input type (includes 'allphabet' typo for backward compatibility)
     public let input: AttrEnum<Input>?
 
@@ -318,7 +323,7 @@ public struct InputAttributes {
     /// Secure text entry for passwords (can be data binding)
     public let secure: AttrValue<Bool>?
 
-    /// Text content (binding for two-way) [binding: two-way]
+    /// Text content (binding for two-way). `value` folds here (sjui textfield_converter.rb:527 reads `text || value || bind`). [aliases: value; binding: two-way]
     public let text: AttrValue<String>?
 
     /// Text alignment
@@ -365,6 +370,7 @@ public struct InputAttributes {
         self.hintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "hintColor", ["placeholderColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.hintFont = AttrCoerce.string(AttrCoerce.lookup(json, "hintFont"))
         self.hintFontSize = AttrCoerce.number(AttrCoerce.lookup(json, "hintFontSize"))
+        self.hintLineHeightMultiple = AttrCoerce.number(AttrCoerce.lookup(json, "hintLineHeightMultiple"))
         self.input = Self.parseInput(AttrCoerce.lookup(json, "input"))
         self.inputType = Self.parseInputType(AttrCoerce.lookup(json, "inputType"))
         self.leftView = AttrCoerce.object(AttrCoerce.lookup(json, "leftView"))
@@ -391,7 +397,7 @@ public struct InputAttributes {
         self.rightView = AttrCoerce.object(AttrCoerce.lookup(json, "rightView"))
         self.rightViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "rightViewMode"))
         self.secure = AttrCoerce.attrValue(AttrCoerce.lookup(json, "secure"), AttrCoerce.boolean)
-        self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
+        self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text", ["value"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.textAlign = Self.parseTextAlign(AttrCoerce.lookup(json, "textAlign"))
         self.textPaddingLeft = AttrCoerce.number(AttrCoerce.lookup(json, "textPaddingLeft"))
         self.textPaddingRight = AttrCoerce.number(AttrCoerce.lookup(json, "textPaddingRight"))

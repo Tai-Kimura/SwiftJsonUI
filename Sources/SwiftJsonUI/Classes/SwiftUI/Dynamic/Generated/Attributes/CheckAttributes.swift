@@ -17,6 +17,7 @@ public struct CheckAttributes {
         "font",
         "fontColor",
         "fontSize",
+        "fontWeight",
         "icon",
         "iconColor",
         "iconSize",
@@ -35,8 +36,13 @@ public struct CheckAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "action": "onValueChange",
         "alpha": "opacity",
+        "checkColor": "checkedColor",
+        "fontStyle": "fontWeight",
         "onSrc": "selectedIcon",
+        "onTintColor": "checkedColor",
+        "onValueChanged": "onValueChange",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -50,7 +56,7 @@ public struct CheckAttributes {
     /// Checked state alias (binding for two-way) [binding: two-way]
     public let checked: AttrValue<Bool>?
 
-    /// Color when checked.
+    /// Color when checked. Legacy accent spellings fold here (sjui checkbox_converter.rb:98 and kjui checkbox_component.rb:211 both read the same four spellings for this one colour). `tintColor` is deliberately NOT in the alias list: it is already declared on `common`, and an alias that is also a declared row is a silent no-op (test_no_alias_is_cancelled_by_a_declaration_of_its_own_name). On a CheckBox the common tint IS the checked colour - that is what both converters implement - so it needs no alias row. Declaring the other two also settles a live divergence: ios reads `checkedColor` first, android reads `checkColor` first, so a layout setting both drew two different colours until the normalizer began folding them (plan 51-E). [aliases: checkColor, onTintColor]
     public let checkedColor: String?
 
     /// Whether enabled (can be data binding)
@@ -64,6 +70,9 @@ public struct CheckAttributes {
 
     /// Font size (binding supported)
     public let fontSize: AttrValue<Double>?
+
+    /// Font weight (e.g., 'bold', 'semibold', '500', 600). Canonical name matches Label and Button; the legacy `fontStyle` spelling folds here. Declared from the implementation, which already read it: sjui checkbox_converter.rb:74-76, which reads `fontStyle` and emits `fontWeight:` (plan 51-E). [aliases: fontStyle; accepts: string | number]
+    public let fontWeight: Any?
 
     /// Icon name for unchecked state
     public let icon: String?
@@ -80,7 +89,7 @@ public struct CheckAttributes {
     /// Checkbox label (can be data binding)
     public let label: AttrValue<String>?
 
-    /// Value change handler - binding only (@{functionName})
+    /// Value change handler - binding only (@{functionName}). Legacy handler spellings fold here (sjui checkbox_converter.rb:122 reads `onValueChange || onClick || action || onValueChanged`; `onClick` stays common). [aliases: action, onValueChanged]
     public let onValueChange: AttrValue<Any>?
 
     /// Selected icon name [aliases: onSrc]
@@ -106,17 +115,18 @@ public struct CheckAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
-        self.checkedColor = AttrCoerce.string(AttrCoerce.lookup(json, "checkedColor"))
+        self.checkedColor = AttrCoerce.string(AttrCoerce.lookup(json, "checkedColor", ["checkColor", "onTintColor"], canonicalOnly: canonicalOnly))
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
         self.fontSize = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontSize"), AttrCoerce.number)
+        self.fontWeight = AttrCoerce.any(AttrCoerce.lookup(json, "fontWeight", ["fontStyle"], canonicalOnly: canonicalOnly))
         self.icon = AttrCoerce.string(AttrCoerce.lookup(json, "icon"))
         self.iconColor = AttrCoerce.string(AttrCoerce.lookup(json, "iconColor"))
         self.iconSize = AttrCoerce.number(AttrCoerce.lookup(json, "iconSize"))
         self.isOn = AttrCoerce.attrValue(AttrCoerce.lookup(json, "isOn"), AttrCoerce.boolean)
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label"), AttrCoerce.string)
-        self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
+        self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange", ["action", "onValueChanged"], canonicalOnly: canonicalOnly))
         self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon", ["onSrc"], canonicalOnly: canonicalOnly))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
         self.src = AttrCoerce.string(AttrCoerce.lookup(json, "src"))

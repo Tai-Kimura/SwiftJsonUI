@@ -40,7 +40,9 @@ public struct CollectionAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "autoChangeTrackingId",
         "cellClasses",
+        "cellHeight",
         "cellIdProperty",
+        "cellWidth",
         "columnCount",
         "columnSpacing",
         "columns",
@@ -85,6 +87,7 @@ public struct CollectionAttributes {
         "alpha": "opacity",
         "onPageChanged": "onValueChange",
         "onValueChanged": "onValueChange",
+        "sectionSpacing": "lineSpacing",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -101,8 +104,14 @@ public struct CollectionAttributes {
     /// Cell class definitions
     public let cellClasses: [Any]?
 
+    /// Fixed height for every cell, in pt / dp / px. Applied to the cell view AFTER it is built, so it overrides whatever height the cell layout asked for; leave it out to let each cell size itself. Declared from the implementation, which already read it: sjui collection_converter.rb:260,286,318,402 (plan 51-E).
+    public let cellHeight: Double?
+
     /// Cell data property key to use as unique ID for ForEach identity. When set, scrollTo uses String type instead of Int.
     public let cellIdProperty: String?
+
+    /// Fixed width for every cell, in pt / dp / px. Applied to the cell view AFTER it is built, so it overrides whatever width the cell layout asked for; leave it out to let each cell size itself. Declared from the implementation, which already read it: sjui collection_converter.rb:256,282,315,650 (plan 51-E).
+    public let cellWidth: Double?
 
     /// Number of columns for CSS grid
     public let columnCount: Double?
@@ -164,7 +173,7 @@ public struct CollectionAttributes {
     /// Outer container shape for the Collection (single-column section path uses CollectionStackView/CollectionStack). Accepts: 'lazy' (default) -> ScrollView+LazyVStack/LazyHStack on iOS, LazyColumn/LazyRow on Android, with virtualized cell rendering. 'eager' -> ScrollView+VStack/HStack on iOS, Column(verticalScroll)/Row(horizontalScroll) on Android — no virtualization, smooth scrolling for heavy cells (markdown / images / attributed text) that suffer from LazyVStack re-evaluation. 'none' -> VStack/HStack only, no scroll container, parent must already be scrollable. Bindings (@{prop}) are resolved at runtime via the wrapper's mode parameter so toggles preserve view identity. Sticky headers and paging require 'lazy'. [default: lazy]
     public let `lazy`: AttrValue<AttrEnum<Lazy>>?
 
-    /// Spacing between rows
+    /// Spacing between rows. `sectionSpacing` folds here (sjui collection_converter.rb:799,960 read `sectionSpacing || lineSpacing || 8`). [aliases: sectionSpacing]
     public let lineSpacing: Double?
 
     /// Called with the cell index (Int) when a cell appears on screen. Use for pagination by checking index against total count in ViewModel. Declared `binding` because that is what a layout actually carries: the author writes `@{handlerName}`, a STRING, and every reader matches it as one (kjui collection_component.rb:364 `json_data['onItemAppear'].match(/@\{([^}]+)\}/)`, and the binding validators infer `((Int) -> Unit)?` from that spelling). It was `type: "callback"` — the only callback-typed attribute in the whole SSoT — and attr-codegen skips that type as "function-valued, not extractable from JSON". True of a function; not true of the `@{...}` string a JSON layout can hold, so the attribute had no row in any generated table and no platform could read it typed (2026-08-05, plan 49-E, raised by A).
@@ -215,7 +224,9 @@ public struct CollectionAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.autoChangeTrackingId = AttrCoerce.boolean(AttrCoerce.lookup(json, "autoChangeTrackingId"))
         self.cellClasses = AttrCoerce.array(AttrCoerce.lookup(json, "cellClasses"))
+        self.cellHeight = AttrCoerce.number(AttrCoerce.lookup(json, "cellHeight"))
         self.cellIdProperty = AttrCoerce.string(AttrCoerce.lookup(json, "cellIdProperty"))
+        self.cellWidth = AttrCoerce.number(AttrCoerce.lookup(json, "cellWidth"))
         self.columnCount = AttrCoerce.number(AttrCoerce.lookup(json, "columnCount"))
         self.columnSpacing = AttrCoerce.number(AttrCoerce.lookup(json, "columnSpacing"))
         self.columns = AttrCoerce.attrValue(AttrCoerce.lookup(json, "columns"), AttrCoerce.number)
@@ -236,7 +247,7 @@ public struct CollectionAttributes {
         self.keyboardAvoidance = AttrCoerce.boolean(AttrCoerce.lookup(json, "keyboardAvoidance"))
         self.layout = Self.parseLayout(AttrCoerce.lookup(json, "layout"))
         self.`lazy` = AttrCoerce.attrValue(AttrCoerce.lookup(json, "lazy"), { Self.parseLazy($0) })
-        self.lineSpacing = AttrCoerce.number(AttrCoerce.lookup(json, "lineSpacing"))
+        self.lineSpacing = AttrCoerce.number(AttrCoerce.lookup(json, "lineSpacing", ["sectionSpacing"], canonicalOnly: canonicalOnly))
         self.onItemAppear = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onItemAppear"), AttrCoerce.string)
         self.onValueChange = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onValueChange", ["onValueChanged", "onPageChanged"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))

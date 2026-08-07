@@ -14,11 +14,20 @@ public struct ToggleAttributes {
         case trailing = "trailing"
     }
 
+    public enum ToggleStyle: String {
+        case `switch` = "switch"
+        case button = "button"
+        case checkbox = "checkbox"
+        case `default` = "default"
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "checked",
         "enabled",
+        "fontColor",
         "isOn",
+        "label",
         "labelAttributes",
         "labelPosition",
         "offTintColor",
@@ -27,6 +36,7 @@ public struct ToggleAttributes {
         "thumbTintColor",
         "tint",
         "tintColor",
+        "toggleStyle",
         "trackTintColor",
         "value",
     ])
@@ -37,6 +47,7 @@ public struct ToggleAttributes {
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
         "onToggle": "onValueChange",
+        "text": "label",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -53,8 +64,14 @@ public struct ToggleAttributes {
     /// Whether enabled (can be data binding)
     public let enabled: AttrValue<Bool>?
 
+    /// Text color - hex string or color name from colors.json (binding supported). Declared from the implementation, which already read it: sjui toggle_converter.rb:62-63,71-72 (plan 51-E).
+    public let fontColor: AttrValue<String>?
+
     /// Switch state (binding for two-way) [binding: two-way]
     public let isOn: AttrValue<Bool>?
+
+    /// Switch label (can be data binding). Same shape CheckBox and Radio already declare: `label` is the canonical row and `text` folds into it. Declared from the implementation, which already read it: sjui toggle_converter.rb:21 (text || label) (plan 51-E). [aliases: text]
+    public let label: AttrValue<String>?
 
     /// Label styling for Toggle
     public let labelAttributes: [String: Any]?
@@ -80,6 +97,9 @@ public struct ToggleAttributes {
     /// Tint color - hex string or color name from colors.json (alias)
     public let tintColor: String?
 
+    /// Which control shape the Switch is drawn as. A SwiftUI-only concept (the ToggleStyle protocol); an unrecognised value falls back to the platform default rather than erroring. Declared from the implementation, which already read it: sjui toggle_converter.rb:92-104 (plan 51-E).
+    public let toggleStyle: AttrEnum<ToggleStyle>?
+
     /// Colour of the switch track - hex string or color name from colors.json. Deprecation retracted with the Slider pair; a SwiftUI Toggle is not limited to a unified tint any more than Progress is.
     public let trackTintColor: String?
 
@@ -92,7 +112,9 @@ public struct ToggleAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
+        self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
         self.isOn = AttrCoerce.attrValue(AttrCoerce.lookup(json, "isOn"), AttrCoerce.boolean)
+        self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label", ["text"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.labelAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "labelAttributes"))
         self.labelPosition = Self.parseLabelPosition(AttrCoerce.lookup(json, "labelPosition"))
         self.offTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "offTintColor"), AttrCoerce.string)
@@ -101,6 +123,7 @@ public struct ToggleAttributes {
         self.thumbTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "thumbTintColor"), AttrCoerce.string)
         self.tint = AttrCoerce.attrValue(AttrCoerce.lookup(json, "tint"), AttrCoerce.string)
         self.tintColor = AttrCoerce.string(AttrCoerce.lookup(json, "tintColor"))
+        self.toggleStyle = Self.parseToggleStyle(AttrCoerce.lookup(json, "toggleStyle"))
         self.trackTintColor = AttrCoerce.string(AttrCoerce.lookup(json, "trackTintColor"))
         self.value = AttrCoerce.attrValue(AttrCoerce.lookup(json, "value"), AttrCoerce.boolean)
     }
@@ -115,6 +138,21 @@ public struct ToggleAttributes {
             }
         }
         AttrCodegenWarnings.emit("Toggle.labelPosition: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseToggleStyle(_ raw: Any?) -> AttrEnum<ToggleStyle>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "switch": return .known(ToggleStyle.`switch`)
+            case "button": return .known(ToggleStyle.button)
+            case "checkbox": return .known(ToggleStyle.checkbox)
+            case "default": return .known(ToggleStyle.`default`)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("Toggle.toggleStyle: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 }

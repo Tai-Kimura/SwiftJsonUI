@@ -32,6 +32,7 @@ public struct LabelAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "autoShrink",
+        "disabledFontColor",
         "edgeInset",
         "font",
         "fontColor",
@@ -78,6 +79,9 @@ public struct LabelAttributes {
 
     /// Enable auto-shrink
     public let autoShrink: Bool?
+
+    /// Font color when disabled - hex string or color name from colors.json (binding supported). Declared from the implementation, which already read it: sjui label_converter.rb:179-180 (plan 51-E).
+    public let disabledFontColor: AttrValue<String>?
 
     /// Edge insets as array or pipe-separated string. Applied on every platform including Compose, where it maps to .padding() (kjui text_component.rb / DynamicTextComponent.kt) - the former "Compose Text has no edgeInset" deprecation was contradicted by that implementation and was retracted 2026-08-05. [accepts: array | string]
     public let edgeInset: Any?
@@ -142,7 +146,7 @@ public struct LabelAttributes {
     /// Selected state (binding supported). Decides which attribute set is in force: while true the label renders with 'highlightAttributes' (or 'highlightColor'), otherwise with its base font and colour.
     public let selected: AttrValue<Bool>?
 
-    /// Strikethrough styling (boolean for simple, object for styled) [accepts: boolean | object]
+    /// Strikethrough styling: boolean for a plain line, object to style it. Same contract as Label.underline, minus lineOffset, which strikethrough does not declare and must not invent. `lineStyle: "None"` draws nothing, exactly like `false`. Full ruling in attribute_semantics.json -> textDecoration; do not restate it in toolchain comments. [accepts: boolean | object]
     public let strikethrough: Any?
 
     /// Text content (can be data binding, supports interpolation). PLAIN TEXT: markdown is not interpreted, so "[label](/path)", "**bold**" and backticks render literally, brackets and all. To emphasise or link part of the string, use partialAttributes ('range' plus font/color/underline, and 'onclick' for a tappable span). Rendering real markdown is out of scope for Label — write a custom component.
@@ -157,7 +161,7 @@ public struct LabelAttributes {
     /// Text transformation
     public let textTransform: AttrEnum<TextTransform>?
 
-    /// Underline styling (boolean for simple, object for styled) [accepts: boolean | object | array]
+    /// Underline styling: boolean for a plain line, object to style it. The object face must never draw LESS than `true` does — a platform that cannot honour lineStyle or color still draws the plain Single line in the text colour. `lineStyle: "None"` is the one object value that draws nothing, exactly like `false`. Full ruling in attribute_semantics.json -> textDecoration; do not restate it in toolchain comments. [accepts: boolean | object | array]
     public let underline: Any?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
@@ -165,6 +169,7 @@ public struct LabelAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.autoShrink = AttrCoerce.boolean(AttrCoerce.lookup(json, "autoShrink"))
+        self.disabledFontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "disabledFontColor"), AttrCoerce.string)
         self.edgeInset = AttrCoerce.any(AttrCoerce.lookup(json, "edgeInset"))
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)

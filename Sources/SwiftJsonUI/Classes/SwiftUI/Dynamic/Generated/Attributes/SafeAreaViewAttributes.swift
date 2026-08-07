@@ -7,6 +7,14 @@ import Foundation
 /// Typed attribute extraction for the `SafeAreaView` component.
 /// Shared attributes are available via `common`.
 public struct SafeAreaViewAttributes {
+    public enum Direction: String {
+        case topToBottom = "topToBottom"
+        case bottomToTop = "bottomToTop"
+        case leftToRight = "leftToRight"
+        case rightToLeft = "rightToLeft"
+        case none = "none"
+    }
+
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
@@ -16,8 +24,11 @@ public struct SafeAreaViewAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "child",
         "children",
+        "direction",
+        "gradient",
         "orientation",
         "safeAreaInsetPositions",
+        "spacing",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -42,11 +53,20 @@ public struct SafeAreaViewAttributes {
     /// Child components (alias for child)
     public let children: [Any]?
 
+    /// Layout direction. Declared from the implementation, which already read it: sjui view_converter.rb:140 (SafeAreaView routes through the View converter) (plan 51-E).
+    public let direction: AttrEnum<Direction>?
+
+    /// Gradient colors. Declared from the implementation, which already read it: sjui view_converter.rb:456 (plan 51-E).
+    public let gradient: [Any]?
+
     /// Stack orientation (default: zstack)
     public let orientation: AttrEnum<Orientation>?
 
     /// Safe area edges. `edges` is an accepted alias spelling: the Compose SafeAreaView builder reads it (kjui compose_builder.rb:722 `json_data['edges'] || json_data['safeAreaInsetPositions']`) while no declaration named it, so iOS and web silently ignored a layout that used it. Declaring the alias normalizes it to the canonical spelling and makes it reach all three platforms. [aliases: edges]
     public let safeAreaInsetPositions: [Any]?
+
+    /// Space between children (binding supported). Declared from the implementation, which already read it: sjui view_converter.rb:181 (plan 51-E).
+    public let spacing: AttrValue<Double>?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
@@ -54,8 +74,27 @@ public struct SafeAreaViewAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
+        self.direction = Self.parseDirection(AttrCoerce.lookup(json, "direction"))
+        self.gradient = AttrCoerce.array(AttrCoerce.lookup(json, "gradient"))
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
         self.safeAreaInsetPositions = AttrCoerce.array(AttrCoerce.lookup(json, "safeAreaInsetPositions", ["edges"], canonicalOnly: canonicalOnly))
+        self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
+    }
+
+    private static func parseDirection(_ raw: Any?) -> AttrEnum<Direction>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "toptobottom": return .known(Direction.topToBottom)
+            case "bottomtotop": return .known(Direction.bottomToTop)
+            case "lefttoright": return .known(Direction.leftToRight)
+            case "righttoleft": return .known(Direction.rightToLeft)
+            case "none": return .known(Direction.none)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("SafeAreaView.direction: unknown enum value '\(raw)'")
+        return .unknown(raw)
     }
 
     private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {

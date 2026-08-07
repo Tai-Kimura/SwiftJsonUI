@@ -24,6 +24,11 @@ public struct NetworkImageAttributes {
         case eager = "eager"
     }
 
+    public enum RenderingMode: String {
+        case original = "original"
+        case template = "template"
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "alt",
@@ -36,6 +41,7 @@ public struct NetworkImageAttributes {
         "loading",
         "loadingImage",
         "placeholder",
+        "renderingMode",
         "src",
         "timeout",
         "url",
@@ -46,6 +52,7 @@ public struct NetworkImageAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "source": "url",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -86,13 +93,16 @@ public struct NetworkImageAttributes {
     /// Placeholder image name (alias for hint)
     public let placeholder: String?
 
+    /// Rendering mode. Declared from the implementation, which already read it: sjui network_image_converter.rb:67-68 (plan 51-E).
+    public let renderingMode: AttrEnum<RenderingMode>?
+
     /// Image URL (can be data binding)
     public let src: AttrValue<String>?
 
     /// Download timeout in seconds
     public let timeout: Double?
 
-    /// Image URL (alias, can be data binding)
+    /// Image URL (alias, can be data binding). `source` folds here (sjui network_image_converter.rb:14 reads `url || source || src`). [aliases: source]
     public let url: AttrValue<String>?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
@@ -109,9 +119,10 @@ public struct NetworkImageAttributes {
         self.loading = Self.parseLoading(AttrCoerce.lookup(json, "loading"))
         self.loadingImage = AttrCoerce.string(AttrCoerce.lookup(json, "loadingImage"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))
+        self.renderingMode = Self.parseRenderingMode(AttrCoerce.lookup(json, "renderingMode"))
         self.src = AttrCoerce.attrValue(AttrCoerce.lookup(json, "src"), AttrCoerce.string)
         self.timeout = AttrCoerce.number(AttrCoerce.lookup(json, "timeout"))
-        self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url"), AttrCoerce.string)
+        self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url", ["source"], canonicalOnly: canonicalOnly), AttrCoerce.string)
     }
 
     private static func parseContentMode(_ raw: Any?) -> AttrEnum<ContentMode>? {
@@ -144,6 +155,19 @@ public struct NetworkImageAttributes {
             }
         }
         AttrCodegenWarnings.emit("NetworkImage.loading: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseRenderingMode(_ raw: Any?) -> AttrEnum<RenderingMode>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "original": return .known(RenderingMode.original)
+            case "template": return .known(RenderingMode.template)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("NetworkImage.renderingMode: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 }
