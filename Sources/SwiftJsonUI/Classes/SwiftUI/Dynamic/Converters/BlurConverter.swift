@@ -52,28 +52,23 @@ public struct BlurConverter {
             )
         }
 
-        // --- 2. .background(.ultraThinMaterial) ---
-        result = AnyView(result.background(.ultraThinMaterial))
-
-        // --- 3. .preferredColorScheme() based on effectStyle ---
-        // `effectStyle` is the declared attribute (Light / Dark / ExtraLight),
-        // matched case-insensitively.
+        // --- 2/3. Visual effect (material + tint + colour scheme) ---
+        //
+        // `effectStyle` is the declared attribute, matched case-insensitively.
         //
         // `common.style` used to be consulted first. That is the STYLE FILE
         // name, not an appearance, so a Blur inside a styled screen had its
         // style-file reference matched against blur appearances — and because
         // it came first, it also masked a correctly written `effectStyle`.
         // The codegens had the same misread and have been fixed to match.
+        //
+        // The MATERIAL used to be `.ultraThinMaterial` for every declared
+        // value, so only `dark` (which also flips the colour scheme) changed
+        // the picture at all — the eight ios-inert `common/effectStyle__*`
+        // rows. `VisualEffectStyle` is the one table both ios paths read.
         let attrs = component.typedAttributes(BlurAttributes.self)
-        let styleRaw = attrs.effectStyle?.rawStringValue ?? "regular"
-        switch styleRaw.lowercased() {
-        case "dark":
-            result = AnyView(result.preferredColorScheme(.dark))
-        case "light", "extralight":
-            result = AnyView(result.preferredColorScheme(.light))
-        default:
-            break // "regular" or other: no color scheme override
-        }
+        let styleRaw = attrs.effectStyle?.rawStringValue
+        result = AnyView(result.jsonUIVisualEffect(styleRaw))
 
         // --- 4. applyStandardModifiers() ---
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
