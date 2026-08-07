@@ -689,9 +689,14 @@ public struct DynamicModifierHelper {
 
     // MARK: - 12. Offset
 
-    public static func applyOffset(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        let x = component.rawData["offsetX"] as? CGFloat ?? 0
-        let y = component.rawData["offsetY"] as? CGFloat ?? 0
+    public static func applyOffset(
+        _ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]
+    ) -> AnyView {
+        // Declared on `common` since plan 51-E; the raw read also missed every
+        // Double/Int spelling, since only an exact CGFloat cast succeeded.
+        let common = component.typedAttributes(CommonAttributes.self)
+        let x = DynamicHelpers.resolveNumber(common.offsetX, legacy: nil, data: data) ?? 0
+        let y = DynamicHelpers.resolveNumber(common.offsetY, legacy: nil, data: data) ?? 0
         if x != 0 || y != 0 {
             return AnyView(view.offset(x: x, y: y))
         }
@@ -1079,7 +1084,7 @@ public struct DynamicModifierHelper {
         // 11. clipped
         result = applyClipped(result, component: component, data: data)
         // 12. offset
-        result = applyOffset(result, component: component)
+        result = applyOffset(result, component: component, data: data)
         // 12b. zIndex (indexBelow / indexAbove)
         result = applyZIndex(result, component: component)
         // 13. hidden

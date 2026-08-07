@@ -340,7 +340,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyClipped(result, component: component, data: data)
 
         // --- 25. offset ---
-        result = DynamicModifierHelper.applyOffset(result, component: component)
+        result = DynamicModifierHelper.applyOffset(result, component: component, data: data)
 
         // --- 26. hidden ---
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
@@ -457,7 +457,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyClipped(result, component: component, data: data)
 
         // --- 25. offset ---
-        result = DynamicModifierHelper.applyOffset(result, component: component)
+        result = DynamicModifierHelper.applyOffset(result, component: component, data: data)
 
         // --- 26. hidden ---
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)

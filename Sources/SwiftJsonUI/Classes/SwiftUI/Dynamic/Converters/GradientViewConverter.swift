@@ -58,9 +58,12 @@ public struct GradientViewConverter {
         // the declared kind, so the object form goes through the raw
         // passthrough (see TypedAttributes RAW_LOOKUP rationale).
         let gradientObject = component.rawAttribute("gradient") as? [String: Any]
+        // `colors` is a declared alias of `gradient` (plan 51-E, 57a527a), so
+        // the ARRAY form of either spelling arrives through `attrs.gradient`.
+        // The object form still needs the raw passthrough above.
         let colorArray = (gradientObject?["colors"] as? [String])
-            ?? (component.rawAttribute("colors") as? [String])
             ?? (attrs.gradient as? [String])
+            ?? attrs.gradient?.compactMap { $0 as? String }
         let locations = (gradientObject?["locations"] as? [Any])
             ?? attrs.locations
         if let colorArray = colorArray, !colorArray.isEmpty {
@@ -133,8 +136,13 @@ public struct GradientViewConverter {
         component: DynamicComponent,
         gradientObject: [String: Any]?
     ) -> (UnitPoint, UnitPoint) {
-        if let startDict = component.rawAttribute("startPoint") as? [String: Any],
-           let endDict = component.rawAttribute("endPoint") as? [String: Any] {
+        // `startPoint` / `endPoint` are declared and generated since plan 51-E.
+        // The declared kind is wide (`Any`) precisely because both an `{x, y}`
+        // dict and a named string are accepted, so the typed field carries
+        // either without a raw read.
+        let gvAttrs = component.typedAttributes(GradientViewAttributes.self)
+        if let startDict = gvAttrs.startPoint as? [String: Any],
+           let endDict = gvAttrs.endPoint as? [String: Any] {
             return (gradientUnitPoint(from: startDict), gradientUnitPoint(from: endDict))
         }
         if let startDict = gradientObject?["startPoint"] as? [String: Any],
@@ -142,9 +150,9 @@ public struct GradientViewConverter {
             return (gradientUnitPoint(from: startDict), gradientUnitPoint(from: endDict))
         }
         let startName = (gradientObject?["startPoint"] as? String)
-            ?? (component.rawAttribute("startPoint") as? String)
+            ?? (gvAttrs.startPoint as? String)
         let endName = (gradientObject?["endPoint"] as? String)
-            ?? (component.rawAttribute("endPoint") as? String)
+            ?? (gvAttrs.endPoint as? String)
         if let startName = startName, let endName = endName {
             return (namedUnitPoint(startName), namedUnitPoint(endName))
         }

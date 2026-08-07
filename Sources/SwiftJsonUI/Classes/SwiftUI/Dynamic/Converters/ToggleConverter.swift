@@ -119,8 +119,9 @@ public struct ToggleConverter {
                 }
             )
 
-            // toggleStyle (undeclared legacy key — see check_converter_raw_reads.sh)
-            if let toggleStyle = component.rawAttribute("toggleStyle") as? String {
+            // toggleStyle — declared and generated since plan 51-E, so the
+            // enum extraction carries it (unknown spellings included).
+            if let toggleStyle = component.enumString(ToggleAttributes.self, \.toggleStyle) {
                 switch toggleStyle {
                 case "switch":
                     built = AnyView(AnyViewWrapper(view: built).toggleStyle(SwitchToggleStyle()))
