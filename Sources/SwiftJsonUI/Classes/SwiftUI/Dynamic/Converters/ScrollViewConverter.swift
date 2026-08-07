@@ -269,10 +269,12 @@ public struct ScrollViewConverter {
 
     /// Extract horizontal alignment from gravity array/string
     /// Matches Ruby: extract_horizontal_from_gravity
+    /// This copy had gone stale: it never learned `centerHorizontal`, the
+    /// single-axis spelling, so a `gravity: ["centerHorizontal"]` inside a
+    /// ScrollView fell to `left` while the same declaration centred in every
+    /// other container. One policy, in GravityAxes.
     private static func extractHorizontalFromGravity(_ gravity: [String]?) -> String {
-        guard let gravity = gravity else { return "left" }
-        let horizontalValues = ["left", "center", "right"]
-        return gravity.first(where: { horizontalValues.contains($0) }) ?? "left"
+        GravityAxes.horizontal(gravity)
     }
 }
 

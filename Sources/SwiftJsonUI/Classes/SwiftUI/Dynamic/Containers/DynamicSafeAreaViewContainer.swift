@@ -179,20 +179,12 @@ public struct DynamicSafeAreaViewContainer: View {
 
     /// Matches Ruby extract_horizontal_from_gravity (default left).
     static func extractHorizontalFromGravity(_ gravity: [String]?) -> String {
-        guard let parts = gravity, !parts.isEmpty else { return "left" }
-        if let h = parts.first(where: { ["left", "center", "right", "centerHorizontal"].contains($0) }) {
-            return h == "centerHorizontal" ? "center" : h
-        }
-        return "left"
+        GravityAxes.horizontal(gravity)
     }
 
     /// Matches Ruby extract_vertical_from_gravity (default top).
     static func extractVerticalFromGravity(_ gravity: [String]?) -> String {
-        guard let parts = gravity, !parts.isEmpty else { return "top" }
-        if let v = parts.first(where: { ["top", "center", "bottom", "centerVertical"].contains($0) }) {
-            return v == "centerVertical" ? "center" : v
-        }
-        return "top"
+        GravityAxes.vertical(gravity)
     }
 }
 // MARK: - Force re-evaluation when data dictionary changes
