@@ -33,6 +33,7 @@ public struct BlurConverter {
         var cData = data
         cData.removeValue(forKey: "__isWeightedChild")
         cData.removeValue(forKey: "__weightedParentOrientation")
+        cData.removeValue(forKey: "__distributionFillOrientation")
 
         if children.isEmpty {
             result = AnyView(Color.clear)

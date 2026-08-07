@@ -92,6 +92,21 @@ public struct DynamicModifierHelper {
             }
         }
 
+        // `distribution: fill` on the parent — the SIZE half is carried to the
+        // child (canon: ".frame(maxWidth/maxHeight: .infinity) on each
+        // child"). Unlike the weighted main axis above, an EXPLICIT child size
+        // wins: `explicitChildSizeWins` puts distribution's size half at the
+        // bottom of the size topic's explicit > bounds > fill order, so only
+        // an undeclared axis (nil, i.e. wrapContent) grows.
+        switch data["__distributionFillOrientation"] as? String {
+        case "horizontal":
+            if width == nil { width = .infinity }
+        case "vertical":
+            if height == nil { height = .infinity }
+        default:
+            break
+        }
+
         // Apply fixed frame (finite positive values only)
         let fixedWidth = (width != nil && width != .infinity && width! > 0 && width!.isFinite) ? width : nil
         let fixedHeight = (height != nil && height != .infinity && height! > 0 && height!.isFinite) ? height : nil

@@ -33,6 +33,7 @@ public struct DynamicSafeAreaViewContainer: View {
         var d = data
         d.removeValue(forKey: "__isWeightedChild")
         d.removeValue(forKey: "__weightedParentOrientation")
+        d.removeValue(forKey: "__distributionFillOrientation")
         return d
     }
 

@@ -44,6 +44,7 @@ public struct RelativePositioningContainer: View {
         var d = data
         d.removeValue(forKey: "__isWeightedChild")
         d.removeValue(forKey: "__weightedParentOrientation")
+        d.removeValue(forKey: "__distributionFillOrientation")
         d.removeValue(forKey: "__zstackMarginChild")
         d["__relativeMarginChild"] = true
         return d
