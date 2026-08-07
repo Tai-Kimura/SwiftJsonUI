@@ -25,6 +25,7 @@ public struct SwitchAttributes {
         "checked",
         "enabled",
         "fontColor",
+        "fontSize",
         "isOn",
         "label",
         "labelAttributes",
@@ -65,6 +66,9 @@ public struct SwitchAttributes {
 
     /// Text color - hex string or color name from colors.json (binding supported). Declared from the implementation, which already read it: sjui toggle_converter.rb:62-63,71-72 (plan 51-E).
     public let fontColor: AttrValue<String>?
+
+    /// Font size (binding supported). Declared from the implementation, which already read it: sjui toggle_converter.rb hands the whole component to the shared apply_font_modifiers helper, so the size was honoured with no declaration behind it (plan 51-E).
+    public let fontSize: AttrValue<Double>?
 
     /// Switch state (binding for two-way) [binding: two-way]
     public let isOn: AttrValue<Bool>?
@@ -112,6 +116,7 @@ public struct SwitchAttributes {
         self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
+        self.fontSize = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontSize"), AttrCoerce.number)
         self.isOn = AttrCoerce.attrValue(AttrCoerce.lookup(json, "isOn"), AttrCoerce.boolean)
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label", ["text"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.labelAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "labelAttributes"))

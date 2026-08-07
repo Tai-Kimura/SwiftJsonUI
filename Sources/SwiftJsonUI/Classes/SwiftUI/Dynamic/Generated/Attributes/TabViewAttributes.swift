@@ -43,7 +43,7 @@ public struct TabViewAttributes {
     /// Currently selected tab index (binding for two-way) [aliases: selectedTabIndex; binding: two-way]
     public let selectedIndex: AttrValue<Double>?
 
-    /// Whether to show tab labels (default: true) [default: True]
+    /// Whether to show tab labels (default: true) [default: true]
     public let showLabels: Bool?
 
     /// Tab bar background color - hex string or color name from colors.json (binding supported)

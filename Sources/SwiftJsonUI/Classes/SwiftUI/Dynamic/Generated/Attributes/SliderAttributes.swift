@@ -43,13 +43,13 @@ public struct SliderAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Maximum value (binding supported). `maxValue` / `maximumValue` are accepted alias spellings. [aliases: maximumValue, maxValue]
+    /// Maximum value (binding supported). `maxValue` / `maximumValue` are accepted alias spellings. Defaults to 1: with no bounds declared the range is 0 .. 1, this SSoT's convention for a unitless value on a track (compare Progress.progress and opacity, both declared min 0 / max 1). Full ruling in attribute_semantics.json -> sliderRange. [default: 1; aliases: maximumValue, maxValue]
     public let maximum: AttrValue<Double>?
 
     /// Image at maximum end
     public let maximumValueImage: String?
 
-    /// Minimum value (binding supported). `minValue` / `minimumValue` are accepted alias spellings. [aliases: minimumValue, minValue]
+    /// Minimum value (binding supported). `minValue` / `minimumValue` are accepted alias spellings. Defaults to 0: with no bounds declared the range is 0 .. 1, this SSoT's convention for a unitless value on a track (compare Progress.progress and opacity, both declared min 0 / max 1). Full ruling in attribute_semantics.json -> sliderRange. [default: 0; aliases: minimumValue, minValue]
     public let minimum: AttrValue<Double>?
 
     /// Image at minimum end

@@ -164,7 +164,7 @@ public struct TextViewAttributes {
     /// Font size (binding supported)
     public let fontSize: AttrValue<Double>?
 
-    /// Hide placeholder when focused [default: True]
+    /// Hide placeholder when focused [default: true]
     public let hideOnFocused: Bool?
 
     /// Placeholder text (primary)

@@ -162,7 +162,7 @@ public struct SelectBoxAttributes {
     /// Select item type
     public let selectItemType: AttrEnum<SelectItemType>?
 
-    /// Initial selected date (yyyy-MM-dd format, two-way binding)
+    /// Initial selected date (yyyy-MM-dd format, two-way binding). No `default`: when it is absent no initial selection has been stated, and the closed face shows the prompt / hint / placeholder rather than today's date. Full ruling in attribute_semantics.json -> selectBoxDate.
     public let selectedDate: AttrValue<String>?
 
     /// Initial selected index for normal picker (two-way binding) [binding: two-way]
