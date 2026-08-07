@@ -103,9 +103,15 @@ public struct DynamicViewContainer: View {
         )
 
         // --- 3. gradient ---
-        if let gradientDict = component.rawData["gradient"] as? [String: Any] {
-            result = applyGradient(result, gradientDict: gradientDict)
-        }
+        //
+        // `View.gradient` is DECLARED as an array of colours. This read only
+        // ever accepted a dictionary, so the declared spelling
+        // (`gradient: ["#FF0000", "#0000FF"]`) cast to nil and no gradient was
+        // drawn at all — `View/gradient__static` and every
+        // `gradientDirection__*` row measured inert on ios for that one reason.
+        // The dictionary form is a wider legacy shape the tool also emits, so
+        // both are read; the array is canonical and wins.
+        result = applyGradient(result, component: component)
 
         return result
     }
@@ -364,27 +370,54 @@ public struct DynamicViewContainer: View {
 
     // MARK: - Gradient
 
-    private func applyGradient(_ view: AnyView, gradientDict: [String: Any]) -> AnyView {
-        guard let colorsRaw = gradientDict["colors"] as? [String] else { return view }
+    private func applyGradient(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        let attrs = component.typedAttributes(ViewAttributes.self)
+        let gradientDict = component.rawData["gradient"] as? [String: Any]
+
+        // Canonical array first, legacy dictionary second.
+        let colorsRaw = attrs.gradient?.compactMap { $0 as? String }
+            ?? (gradientDict?["colors"] as? [String])
+        guard let colorsRaw, !colorsRaw.isEmpty else { return view }
         let colors = colorsRaw.compactMap { DynamicHelpers.getColor($0) }
         guard !colors.isEmpty else { return view }
 
-        let startPoint: UnitPoint = {
-            if let sp = gradientDict["startPoint"] as? String {
-                return unitPointFromString(sp)
-            }
-            return .top
-        }()
-        let endPoint: UnitPoint = {
-            if let ep = gradientDict["endPoint"] as? String {
-                return unitPointFromString(ep)
-            }
-            return .bottom
-        }()
+        // An explicit start/end pair in the dictionary form outranks the
+        // direction enum — it is the more specific statement about the same
+        // axis, the precedence the size topic already fixes for this shape.
+        if let sp = gradientDict?["startPoint"] as? String,
+           let ep = gradientDict?["endPoint"] as? String {
+            return AnyView(view.background(LinearGradient(
+                colors: colors,
+                startPoint: unitPointFromString(sp),
+                endPoint: unitPointFromString(ep)
+            )))
+        }
 
+        // `gradientDirection` was read by nothing here. Its declared default
+        // is Vertical, and the three folding spellings (TopToBottom,
+        // LeftToRight, Diagonal) are handled by the generated enum extraction.
+        let (start, end) = gradientEndpoints(
+            component.enumString(ViewAttributes.self, \.gradientDirection)
+        )
         return AnyView(view.background(
-            LinearGradient(colors: colors, startPoint: startPoint, endPoint: endPoint)
+            LinearGradient(colors: colors, startPoint: start, endPoint: end)
         ))
+    }
+
+    /// The declared `gradientDirection` vocabulary, in full.
+    ///
+    /// `RightToLeft` and `BottomToTop` are canonical values, NOT aliases, and
+    /// they are the two the codegen has no case arm for
+    /// (modifier_helper.rb:16-23 falls them through to Vertical) — reported to
+    /// B so the two ios paths agree rather than mirroring the gap here.
+    private func gradientEndpoints(_ declared: String?) -> (UnitPoint, UnitPoint) {
+        switch declared?.lowercased() {
+        case "horizontal", "lefttoright": return (.leading, .trailing)
+        case "oblique", "diagonal": return (.topLeading, .bottomTrailing)
+        case "righttoleft": return (.trailing, .leading)
+        case "bottomtotop": return (.bottom, .top)
+        default: return (.top, .bottom)  // Vertical / TopToBottom, the default
+        }
     }
 
     private func unitPointFromString(_ str: String) -> UnitPoint {
