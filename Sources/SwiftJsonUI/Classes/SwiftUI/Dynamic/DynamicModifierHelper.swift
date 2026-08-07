@@ -119,7 +119,15 @@ public struct DynamicModifierHelper {
             let isTextComponent = ["label", "text"].contains(typeStr)
             let hasDeclaredTextFrameAlign = isTextComponent &&
                 (component.textAlignSpelling() != nil || component.gravity != nil)
+            // Text with NEITHER textAlign NOR gravity declared drops the
+            // alignment argument on a fully fixed frame: the codegen emits
+            // this frame through gravity_to_frame_alignment (not the label
+            // path), whose leaf scope yields nil — SwiftUI then centers the
+            // content, which is where the android face draws a shrunken line
+            // in the same box (Label/minimumScaleFactor, autoShrink control).
+            // Declared spellings keep the text mapping below.
             if fixedWidth != nil && fixedHeight != nil,
+               !isTextComponent || hasDeclaredTextFrameAlign,
                let alignment = frameAlignment(for: component, bothAxes: true) {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
             } else if fixedWidth != nil, fixedHeight == nil, hasDeclaredTextFrameAlign,
