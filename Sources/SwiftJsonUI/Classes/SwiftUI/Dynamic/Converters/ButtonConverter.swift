@@ -87,6 +87,22 @@ public struct ButtonConverter {
             return nil
         }()
 
+        // fontFamily with binding support — same resolution as
+        // LabelConverter. StateAwareButtonView hands it to
+        // PartialAttributedText, whose FontSpec path routes family + weight +
+        // size through SwiftJsonUIConfiguration.fontProvider (the declared
+        // Button.fontFamily semantics).
+        let fontFamily: String? = {
+            if let expr = attrs.fontFamily?.bindingExpression {
+                // Canonical string value context (Binding<String> unwraps)
+                if let family = DynamicBindingResolver.resolveString(expression: expr, data: data) {
+                    return family
+                }
+                return nil
+            }
+            return attrs.fontFamily?.rawRepresentation as? String
+        }()
+
         // Color properties
         let fontColor = DynamicHelpers.getColor(
             component.string(ButtonAttributes.self, \.fontColor), data: data
@@ -167,6 +183,7 @@ public struct ButtonConverter {
                 action: action,
                 fontSize: fontSize,
                 fontWeight: fontWeight != nil ? DynamicHelpers.fontWeightFromString(fontWeight) : nil,
+                fontFamily: fontFamily,
                 fontColor: fontColor,
                 backgroundColor: backgroundColor,
                 tapBackground: tapBackground,
