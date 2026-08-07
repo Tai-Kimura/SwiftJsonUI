@@ -32,6 +32,11 @@ public struct StateAwareButtonView: View {
     let action: () -> Void
     let fontSize: CGFloat?
     let fontWeight: Font.Weight?
+    /// Font family name (`fontFamily`). Routed into the label's
+    /// `PartialAttributedText`, whose FontSpec path hands family + weight +
+    /// size to `SwiftJsonUIConfiguration.fontProvider` — the same seam the
+    /// Label face uses.
+    let fontFamily: String?
     let fontColor: Color?
     let backgroundColor: Color?
     let tapBackground: Color?
@@ -65,6 +70,7 @@ public struct StateAwareButtonView: View {
         action: @escaping () -> Void,
         fontSize: CGFloat? = nil,
         fontWeight: Font.Weight? = nil,
+        fontFamily: String? = nil,
         fontColor: Color? = nil,
         backgroundColor: Color? = nil,
         tapBackground: Color? = nil,
@@ -86,6 +92,7 @@ public struct StateAwareButtonView: View {
         self.action = action
         self.fontSize = fontSize
         self.fontWeight = fontWeight
+        self.fontFamily = fontFamily
         self.fontColor = fontColor
         self.backgroundColor = backgroundColor
         self.tapBackground = tapBackground
@@ -110,6 +117,7 @@ public struct StateAwareButtonView: View {
         action: @escaping () -> Void,
         fontSize: CGFloat? = nil,
         fontWeight: String,
+        fontFamily: String? = nil,
         fontColor: Color? = nil,
         backgroundColor: Color? = nil,
         tapBackground: Color? = nil,
@@ -132,6 +140,7 @@ public struct StateAwareButtonView: View {
             action: action,
             fontSize: fontSize,
             fontWeight: Font.Weight.from(string: fontWeight),
+            fontFamily: fontFamily,
             fontColor: fontColor,
             backgroundColor: backgroundColor,
             tapBackground: tapBackground,
@@ -215,6 +224,7 @@ public struct StateAwareButtonView: View {
             partialAttributes: partialAttributes ?? [],
             fontSize: fontSize,
             fontWeight: fontWeight,
+            fontFamily: fontFamily,
             fontColor: textColor
         )
     }
