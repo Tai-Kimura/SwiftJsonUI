@@ -16,6 +16,15 @@
 //    equalSpacing:   red 0-40,   blue 260-300  (one 220pt gap)
 //    equalCentering: 4 spacers × 55 → red 55-95, blue 205-245
 //
+//  The samples sit at `rowY`, inside the 40pt row, NOT at the vertical middle
+//  of the 200pt container. They used to sit at y=100 because an omitted
+//  gravity dropped the frame's alignment argument and SwiftUI centred the row
+//  — which is precisely the deviation `gravityDefaults` names ("a platform
+//  centering by default is the deviant"). With the omitted case resolving to
+//  top | start the row sits at the top, so the sample row moves with it. This
+//  file is about the HORIZONTAL gap construction; the y coordinate was never
+//  its subject.
+//
 
 import XCTest
 import SwiftUI
@@ -23,6 +32,9 @@ import SwiftUI
 
 #if DEBUG
 final class DistributionGapTests: XCTestCase {
+
+    /// Inside the 40pt row, which an omitted gravity now pins to the top.
+    private let rowY = 20
 
     @MainActor
     private func render(_ distribution: String) throws -> (CGImage, Int, Int) {
@@ -72,32 +84,32 @@ final class DistributionGapTests: XCTestCase {
     @MainActor
     func testEqualSpacingIsFlushAtTheEdges() throws {
         let (image, _, _) = try render("equalSpacing")
-        XCTAssertTrue(isRed(color(image, 5, 100)),
+        XCTAssertTrue(isRed(color(image, 5, rowY)),
                       "equalSpacing pins the first child to the leading edge")
-        XCTAssertTrue(isBlue(color(image, 295, 100)),
+        XCTAssertTrue(isBlue(color(image, 295, rowY)),
                       "…and the last child to the trailing edge")
-        XCTAssertTrue(isBackground(color(image, 150, 100)),
+        XCTAssertTrue(isBackground(color(image, 150, rowY)),
                       "the single gap sits between them")
     }
 
     @MainActor
     func testEqualCenteringGivesTheEdgesHalfAGap() throws {
         let (image, _, _) = try render("equalCentering")
-        XCTAssertTrue(isBackground(color(image, 5, 100)),
+        XCTAssertTrue(isBackground(color(image, 5, rowY)),
                       "equalCentering leaves a half-gap at the leading edge")
         // The 1:2 ratio puts the first child at exactly 55-95 — a uniform
         // 3-spacer structure (edge 1 / between 1 / edge 1, the shape a
         // partial reversion produces) lands it at 73-113 instead, so pin
         // BOTH sides of the 55 boundary, not just a point inside the box.
-        XCTAssertTrue(isBackground(color(image, 50, 100)),
+        XCTAssertTrue(isBackground(color(image, 50, rowY)),
                       "background up to the 55pt edge spacer")
-        XCTAssertTrue(isRed(color(image, 60, 100)),
+        XCTAssertTrue(isRed(color(image, 60, rowY)),
                       "first child starts at 55: edge gets ONE spacer of the four")
-        XCTAssertTrue(isBlue(color(image, 240, 100)),
+        XCTAssertTrue(isBlue(color(image, 240, rowY)),
                       "second child ends at 245, mirroring")
-        XCTAssertTrue(isBackground(color(image, 250, 100)),
+        XCTAssertTrue(isBackground(color(image, 250, rowY)),
                       "background after 245")
-        XCTAssertTrue(isBackground(color(image, 295, 100)),
+        XCTAssertTrue(isBackground(color(image, 295, rowY)),
                       "…and a half-gap at the trailing edge")
     }
 }
