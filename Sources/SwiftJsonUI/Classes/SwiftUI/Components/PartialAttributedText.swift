@@ -237,6 +237,22 @@ public struct PartialAttributedText: View {
                     }
                     return .systemAction
                 })
+        } else if needsUIKitLineStyle {
+            // Double/Thick come from NSUnderlineStyle and SwiftUI's Text
+            // cannot draw them (Text.LineStyle has solid/dot/dash patterns
+            // only) — the body face bridges to the UILabel the vocabulary
+            // was defined for. Partial/linkable bodies keep the SwiftUI
+            // path: their Double/Thick stays single-weight there, the
+            // remaining honest degradation.
+            StyledLineText(
+                text: text,
+                font: uiKitFont,
+                textColor: UIColor(effectiveFontColor ?? .primary),
+                underline: (underline || underlineDecoration != nil) ? (underlineDecoration ?? TextDecoration()) : nil,
+                strikethrough: (strikethrough || strikethroughDecoration != nil) ? (strikethroughDecoration ?? TextDecoration()) : nil,
+                textAlignment: uiKitAlignment,
+                numberOfLines: lineLimit ?? 0
+            )
         } else {
             Text(text)
                 .applyBaseFont(
@@ -254,6 +270,41 @@ public struct PartialAttributedText: View {
                     lineLimit: lineLimit,
                     textAlignment: effectiveTextAlignment
                 )
+        }
+    }
+
+    /// Whether a declared decoration needs the UIKit bridge (Double/Thick).
+    private var needsUIKitLineStyle: Bool {
+        underlineDecoration?.lineStyle == .double || underlineDecoration?.lineStyle == .thick ||
+        strikethroughDecoration?.lineStyle == .double || strikethroughDecoration?.lineStyle == .thick
+    }
+
+    private var uiKitFont: UIFont {
+        let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
+        if let family = effectiveFontFamily, let named = UIFont(name: family, size: size) {
+            return named
+        }
+        let weight: UIFont.Weight = {
+            switch effectiveFontWeight {
+            case .bold: return .bold
+            case .semibold: return .semibold
+            case .medium: return .medium
+            case .light: return .light
+            case .thin: return .thin
+            case .heavy: return .heavy
+            case .black: return .black
+            case .ultraLight: return .ultraLight
+            default: return .regular
+            }
+        }()
+        return .systemFont(ofSize: size, weight: weight)
+    }
+
+    private var uiKitAlignment: NSTextAlignment {
+        switch effectiveTextAlignment {
+        case .center: return .center
+        case .trailing: return .right
+        default: return .natural
         }
     }
 
