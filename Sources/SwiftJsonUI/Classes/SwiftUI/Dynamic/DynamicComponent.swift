@@ -905,11 +905,7 @@ extension DynamicComponent {
     /// This mirrors that: Bool reads as itself, any other declared value
     /// means the decoration is on.
     func decorationFlag(_ keyPath: KeyPath<LabelAttributes, Any?>) -> Bool {
-        guard let raw = typedAttributes(LabelAttributes.self)[keyPath: keyPath] else {
-            return false
-        }
-        if let flag = raw as? Bool { return flag }
-        return true
+        TextDecoration.draws(typedAttributes(LabelAttributes.self)[keyPath: keyPath])
     }
 
     /// The CONTENTS of the same object face — `lineStyle` / `color` /
@@ -928,6 +924,12 @@ extension DynamicComponent {
                 as? [String: Any] else {
             return nil
         }
+        // `lineStyle: None` asks for no line, so there is no style to carry —
+        // `decorationFlag` above answers false for it through the same rule.
+        let lineStyle = TextDecoration.LineStyle.from(dict["lineStyle"] as? String)
+        guard lineStyle != TextDecoration.LineStyle.none else { return nil }
+        // Data-aware, unlike the dictionary initializer: a colours.json name
+        // and a bound spelling both resolve here.
         let color = (dict["color"] as? String)
             .flatMap { DynamicHelpers.getColor($0, data: data) }
         let offset: CGFloat? = {
@@ -935,11 +937,7 @@ extension DynamicComponent {
             if let s = dict["lineOffset"] as? String { return Double(s).map { CGFloat($0) } }
             return nil
         }()
-        return TextDecoration(
-            lineStyle: TextDecoration.LineStyle.from(dict["lineStyle"] as? String),
-            color: color,
-            lineOffset: offset
-        )
+        return TextDecoration(lineStyle: lineStyle, color: color, lineOffset: offset)
     }
 
     /// The six per-side margins.
