@@ -13,6 +13,10 @@ public struct IconLabelView: View {
     let iconOff: String?
     let iconPosition: IconPosition
     let iconSize: CGFloat
+    // The ARRAY face of `iconSize` ([width, height], declared 51-E) sizes
+    // the axes separately; nil falls back to the square `iconSize`.
+    let iconWidth: CGFloat?
+    let iconHeight: CGFloat?
     let iconMargin: CGFloat
     let fontSize: CGFloat
     // 'font: bold' carries the weight; textShadow the {color,blur,offset}
@@ -39,6 +43,8 @@ public struct IconLabelView: View {
         iconOff: String? = nil,
         iconPosition: IconPosition = .left,
         iconSize: CGFloat = 24,
+        iconWidth: CGFloat? = nil,
+        iconHeight: CGFloat? = nil,
         iconMargin: CGFloat = 5,
         fontSize: CGFloat = 16,
         fontColor: Color = .primary,
@@ -55,6 +61,8 @@ public struct IconLabelView: View {
         self.iconOff = iconOff
         self.iconPosition = iconPosition
         self.iconSize = iconSize
+        self.iconWidth = iconWidth
+        self.iconHeight = iconHeight
         self.iconMargin = iconMargin
         self.fontSize = fontSize
         self.fontColor = fontColor
@@ -102,14 +110,14 @@ public struct IconLabelView: View {
                 Image(systemName: String(iconName.dropFirst(7)))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
+                    .frame(width: iconWidth ?? iconSize, height: iconHeight ?? iconSize)
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             } else {
                 // Custom image
                 Image(iconName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: iconSize, height: iconSize)
+                    .frame(width: iconWidth ?? iconSize, height: iconHeight ?? iconSize)
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             }
         }
@@ -153,6 +161,8 @@ public struct IconLabelButton: View {
     let iconOff: String?
     let iconPosition: IconLabelView.IconPosition
     let iconSize: CGFloat
+    let iconWidth: CGFloat?
+    let iconHeight: CGFloat?
     let iconMargin: CGFloat
     let fontSize: CGFloat
     // 'font: bold' carries the weight; textShadow the {color,blur,offset}
@@ -181,6 +191,8 @@ public struct IconLabelButton: View {
         iconOff: String? = nil,
         iconPosition: IconLabelView.IconPosition = .left,
         iconSize: CGFloat = 24,
+        iconWidth: CGFloat? = nil,
+        iconHeight: CGFloat? = nil,
         iconMargin: CGFloat = 5,
         fontSize: CGFloat = 16,
         fontColor: Color = .primary,
@@ -194,6 +206,8 @@ public struct IconLabelButton: View {
         self.iconOff = iconOff
         self.iconPosition = iconPosition
         self.iconSize = iconSize
+        self.iconWidth = iconWidth
+        self.iconHeight = iconHeight
         self.iconMargin = iconMargin
         self.fontSize = fontSize
         self.fontColor = fontColor
@@ -216,6 +230,8 @@ public struct IconLabelButton: View {
                 iconOff: iconOff,
                 iconPosition: iconPosition,
                 iconSize: iconSize,
+                iconWidth: iconWidth,
+                iconHeight: iconHeight,
                 iconMargin: iconMargin,
                 fontSize: fontSize,
                 fontColor: fontColor,

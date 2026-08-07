@@ -34,8 +34,24 @@ public struct IconLabelConverter {
         let iconOff = attrs.icon_off ?? component.iconOff
         let iconPosition = resolveIconPosition(component.iconPosition)
 
-        // Optional parameters from JSON
-        let iconSize = component.iconSize ?? 24
+        // Optional parameters from JSON. `iconSize` is declared
+        // number|array: a number sizes both edges, [width, height] sizes
+        // them separately — the array face was web-only until now.
+        let declaredIconSize = component.typedAttributes(IconLabelAttributes.self).iconSize
+        var iconSize: CGFloat = component.iconSize ?? 24
+        var iconWidth: CGFloat? = nil
+        var iconHeight: CGFloat? = nil
+        switch declaredIconSize {
+        case let n as NSNumber:
+            iconSize = CGFloat(truncating: n)
+        case let arr as [Any]:
+            let w = (arr.first as? NSNumber).map { CGFloat(truncating: $0) }
+            let h = (arr.count > 1 ? arr[1] as? NSNumber : nil).map { CGFloat(truncating: $0) } ?? w
+            iconWidth = w
+            iconHeight = h
+        default:
+            break
+        }
         let iconMargin = component.iconMargin ?? 5
         let fontSize = component.typedAttributes(IconLabelAttributes.self).fontSize.map { CGFloat($0) } ?? 16
         let fontColor = DynamicHelpers.getColor(iconLabel.fontColor) ?? .primary
@@ -78,6 +94,8 @@ public struct IconLabelConverter {
                     iconOff: iconOff,
                     iconPosition: iconPosition,
                     iconSize: iconSize,
+                    iconWidth: iconWidth,
+                    iconHeight: iconHeight,
                     iconMargin: iconMargin,
                     fontSize: fontSize,
                     fontColor: fontColor,
@@ -99,6 +117,8 @@ public struct IconLabelConverter {
                     iconOff: iconOff,
                     iconPosition: iconPosition,
                     iconSize: iconSize,
+                    iconWidth: iconWidth,
+                    iconHeight: iconHeight,
                     iconMargin: iconMargin,
                     fontSize: fontSize,
                     fontColor: fontColor,
