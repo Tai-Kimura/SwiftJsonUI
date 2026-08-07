@@ -611,7 +611,6 @@ public struct AnyCodable: Codable {
         return value as? [DynamicComponent]
     }
 }
-#endif // DEBUG
 
 // MARK: - Reading shared attributes through the generated extraction
 
@@ -962,3 +961,9 @@ extension DynamicComponent {
         typedAttributes(CommonAttributes.self)[keyPath: keyPath]?.value
     }
 }
+// The DEBUG guard closes at end-of-file so every DynamicComponent extension
+// stays inside it — the typed-attr helpers landed AFTER the old `#endif` and
+// Release builds (where DynamicComponent does not exist) failed to compile
+// the extension. Debug-only verification (unit + conformance) cannot see
+// this class of break; the CI Release lane exists for it.
+#endif // DEBUG
