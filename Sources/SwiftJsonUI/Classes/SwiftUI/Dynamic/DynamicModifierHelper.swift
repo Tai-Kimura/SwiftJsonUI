@@ -1153,6 +1153,18 @@ public struct DynamicModifierHelper {
         // Non-text components: use gravity. An omitted gravity resolves to the
         // container default (top | start) rather than dropping the argument —
         // see gravityToFrameAlignment.
+        //
+        // SCOPE (mirrors frame_helper.rb#container_content_node?): the
+        // gravityDefaults canon says "on every CONTAINER". A leaf's own-frame
+        // content — a fit image's bitmap, a custom component's internals — is
+        // a different channel whose platform truth is Center (Compose's
+        // Image/extension alignment default, which kjui never overrides).
+        // Injecting the container default on leaves pinned every fit photo to
+        // the top-left on ios only. A DECLARED gravity still applies anywhere.
+        if component.gravity?.isEmpty != false {
+            let hasChildren = !(component.childComponents?.isEmpty ?? true)
+            guard hasChildren else { return nil }
+        }
         return gravityToFrameAlignment(component.gravity, bothAxes: bothAxes)
     }
 
