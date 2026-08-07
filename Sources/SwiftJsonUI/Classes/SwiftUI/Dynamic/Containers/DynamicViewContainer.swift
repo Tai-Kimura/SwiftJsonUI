@@ -45,6 +45,26 @@ public struct DynamicViewContainer: View {
         // an inherited flag suppressed grandchild margins nothing had taken.
         d.removeValue(forKey: "__zstackMarginChild")
         d.removeValue(forKey: "__relativeMarginChild")
+        d.removeValue(forKey: "__distributionFillOrientation")
+        return d
+    }
+
+    /// `distribution: fill` — canon (`attribute_semantics.json`
+    /// semantics.distribution.perValueMapping.fill.swiftui) is
+    /// ".frame(maxWidth/maxHeight: .infinity) on each child": the SIZE half of
+    /// distribution is carried to the CHILDREN, not spelled as a container
+    /// arrangement. ios emitted nothing at all for it, which the ruling
+    /// records as "`fill` stays inert on ios […] and ios does not".
+    ///
+    /// Passed the way the weighted-stack main axis already is, so the fill
+    /// lands INSIDE the child's own modifier chain (before its background)
+    /// rather than as an outer wrapper the child floats in.
+    /// `explicitChildSizeWins` is enforced at the read site: only an
+    /// undeclared axis fills.
+    private func distributionFillData(_ orientation: String) -> [String: Any] {
+        guard component.distribution?.lowercased() == "fill" else { return childData }
+        var d = childData
+        d["__distributionFillOrientation"] = orientation
         return d
     }
 
@@ -207,7 +227,7 @@ public struct DynamicViewContainer: View {
             ForEach(Array(children.enumerated()), id: \.offset) { index, child in
                 DynamicComponentBuilder(
                     component: child,
-                    data: childData,
+                    data: distributionFillData("horizontal"),
                     viewId: viewId,
                     parentOrientation: "horizontal"
                 )
@@ -262,7 +282,7 @@ public struct DynamicViewContainer: View {
             ForEach(Array(children.enumerated()), id: \.offset) { index, child in
                 DynamicComponentBuilder(
                     component: child,
-                    data: childData,
+                    data: distributionFillData("vertical"),
                     viewId: viewId,
                     parentOrientation: "vertical"
                 )

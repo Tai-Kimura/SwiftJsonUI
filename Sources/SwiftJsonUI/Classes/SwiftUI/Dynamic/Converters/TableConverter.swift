@@ -94,6 +94,7 @@ public struct TableConverter {
                 var d = data
                 d.removeValue(forKey: "__isWeightedChild")
                 d.removeValue(forKey: "__weightedParentOrientation")
+                d.removeValue(forKey: "__distributionFillOrientation")
                 return d
             }()
             ForEach(Array(children.enumerated()), id: \.offset) { _, child in
