@@ -1150,14 +1150,26 @@ public struct DynamicModifierHelper {
             }
         }
 
-        // Non-text components: use gravity (nil gravity = nil = SwiftUI default .center)
+        // Non-text components: use gravity. An omitted gravity resolves to the
+        // container default (top | start) rather than dropping the argument —
+        // see gravityToFrameAlignment.
         return gravityToFrameAlignment(component.gravity, bothAxes: bothAxes)
     }
 
     /// Convert gravity array to SwiftUI Alignment (matches frame_helper.rb gravity_to_frame_alignment)
-    /// Returns nil when gravity is not set, matching tool behavior (no alignment arg = SwiftUI default .center)
+    ///
+    /// An OMITTED gravity is not "no alignment". `gravityDefaults` (ruled
+    /// 2026-08-07) puts the container default at top | start, and
+    /// `omittedEntirely` states this case outright: if a partial gravity fills
+    /// its unnamed axis with the default, an absent one fills both. Returning
+    /// nil dropped the argument and left SwiftUI's own `.center` — the
+    /// deviation the 2026-08-03 ruling named ("a platform centering by default
+    /// is the deviant"). The axis defaults below were already right; the early
+    /// return was what stopped them being reached. Same shape as B's codegen
+    /// half (frame_helper.rb, ba5e6d1), landed in the same train so the two
+    /// ios paths cannot answer differently.
     private static func gravityToFrameAlignment(_ gravity: [String]?, bothAxes: Bool) -> Alignment? {
-        guard let parts = gravity, !parts.isEmpty else { return nil }
+        let parts = gravity ?? []
 
         var h: String? = nil
         var v: String? = nil
