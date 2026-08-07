@@ -22,6 +22,11 @@ public struct PartialAttribute {
     
     /// Whether to strikethrough this range
     public let strikethrough: Bool
+
+    /// The OBJECT face of the same two attributes, per span. Nil for the
+    /// boolean face, which keeps its plain line.
+    public let underlineDecoration: TextDecoration?
+    public let strikethroughDecoration: TextDecoration?
     
     /// Optional background color for this range
     public let backgroundColor: Color?
@@ -56,6 +61,8 @@ public struct PartialAttribute {
         fontWeight: Font.Weight? = nil,
         underline: Bool = false,
         strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
         backgroundColor: Color? = nil,
         onClick: (() -> Void)? = nil,
         onClickActionName: String? = nil
@@ -67,6 +74,8 @@ public struct PartialAttribute {
         self.fontWeight = fontWeight
         self.underline = underline
         self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
         self.backgroundColor = backgroundColor
         self.onClick = onClick
         self.onClickActionName = onClickActionName
@@ -80,6 +89,8 @@ public struct PartialAttribute {
         fontWeight: Font.Weight? = nil,
         underline: Bool = false,
         strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
         backgroundColor: Color? = nil,
         onClick: (() -> Void)? = nil,
         onClickActionName: String? = nil
@@ -91,6 +102,8 @@ public struct PartialAttribute {
         self.fontWeight = fontWeight
         self.underline = underline
         self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
         self.backgroundColor = backgroundColor
         self.onClick = onClick
         self.onClickActionName = onClickActionName
@@ -129,11 +142,18 @@ public struct PartialAttribute {
             self.fontWeight = nil
         }
         
-        // Parse underline
-        self.underline = dictionary["underline"] as? Bool ?? false
-        
-        // Parse strikethrough
-        self.strikethrough = dictionary["strikethrough"] as? Bool ?? false
+        // Parse underline / strikethrough. Both are declared `boolean|object`:
+        // the object face carries lineStyle / color (/ lineOffset for
+        // underline), and a declared `None` asks for no line at all — the
+        // convention the ios codegen settled on (51-B), so the two ios paths
+        // answer the same. Any other object means the decoration is on, which
+        // is what the boolean face has always meant.
+        let underlineDeclared = dictionary["underline"]
+        let strikethroughDeclared = dictionary["strikethrough"]
+        self.underlineDecoration = TextDecoration(from: underlineDeclared)
+        self.strikethroughDecoration = TextDecoration(from: strikethroughDeclared)
+        self.underline = TextDecoration.draws(underlineDeclared)
+        self.strikethrough = TextDecoration.draws(strikethroughDeclared)
         
         // Parse backgroundColor
         if let bgHex = dictionary["background"] as? String {
