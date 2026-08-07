@@ -25,13 +25,34 @@ public struct IndicatorConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        // Check for animating property (undeclared legacy key)
-        let animatingRaw = component.typedAttributes(IndicatorAttributes.self)
-            .animating?.rawRepresentation
+        let attrs = component.typedAttributes(IndicatorAttributes.self)
+        let animatingRaw = attrs.animating?.rawRepresentation
+
+        // `hidesWhenStopped` decides what a STOPPED indicator does, and it is
+        // only ever read on that branch — the canon is written into
+        // `Indicator.animating`'s own declaration: "`false` stops it, and
+        // hidesWhenStopped then decides whether the stopped indicator keeps
+        // its space or collapses out of the layout". This path collapsed to
+        // EmptyView unconditionally, so a declared `hidesWhenStopped: false`
+        // changed nothing here while the codegen kept a stopped spinner at
+        // `.opacity(0)` (indicator_converter.rb:23-30) — the two ios paths
+        // implemented different rules, which is what
+        // `Indicator/hidesWhenStopped__false` measured.
+        //
+        // Absent means true, mirroring the codegen's nil-coalescing. The SSoT
+        // declares no `default` for the attribute; reported to E.
+        let hidesWhenStopped = attrs.hidesWhenStopped ?? true
+
+        // A stopped indicator: gone, or present but invisible.
+        func stopped() -> AnyView {
+            hidesWhenStopped
+                ? AnyView(EmptyView())
+                : AnyView(buildProgressView(component: component, data: data).opacity(0))
+        }
 
         // Static false - don't show indicator
         if let boolVal = animatingRaw as? Bool, boolVal == false {
-            return AnyView(EmptyView())
+            return stopped()
         }
 
         // Binding expression - wrap in conditional visibility
@@ -40,7 +61,7 @@ public struct IndicatorConverter {
             // Canonical bool value context via the central resolver
             let isAnimating = DynamicBindingHelper.resolveBool(stringVal, data: data, fallback: false)
             if !isAnimating {
-                return AnyView(EmptyView())
+                return stopped()
             }
             return buildProgressView(component: component, data: data)
         }
