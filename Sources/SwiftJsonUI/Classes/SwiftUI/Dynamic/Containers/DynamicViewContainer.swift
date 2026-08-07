@@ -150,13 +150,21 @@ public struct DynamicViewContainer: View {
                     || (child.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
             }
 
-            if hasWeights && (orientation == "horizontal" || orientation == "vertical") {
+            // `fillEqually` is the SIZE half of distribution, and it means
+            // equal frames regardless of content — equal weights. It was
+            // being spelled as a between-children Spacer alongside
+            // `equalSpacing`, which is the GAP half: both values produced one
+            // separator and neither produced equal sizes. Routing it here
+            // keeps one sizing implementation instead of two.
+            let fillsEqually = component.distribution?.lowercased() == "fillequally"
+            if (hasWeights || fillsEqually) && (orientation == "horizontal" || orientation == "vertical") {
                 WeightedStackContainer(
                     orientation: orientation!,
                     children: children,
                     component: component,
                     data: childData,
-                    viewId: viewId
+                    viewId: viewId,
+                    implicitWeight: fillsEqually ? 1 : 0
                 )
             } else if orientation == "horizontal" {
                 hStackContent(children: children)
@@ -252,7 +260,10 @@ public struct DynamicViewContainer: View {
 
                 // Distribution spacers between children
                 if index < children.count - 1 {
-                    if distribution == "fillequally" || distribution == "equalspacing" {
+                    // `fillequally` is no longer here: it is a SIZE value and
+                    // routes to the weighted path above. Emitting a separator
+                    // for it made it indistinguishable from `equalSpacing`.
+                    if distribution == "equalspacing" {
                         Spacer(minLength: 0)
                     } else if distribution == "equalcentering" {
                         Spacer(minLength: 0)
@@ -307,7 +318,10 @@ public struct DynamicViewContainer: View {
 
                 // Distribution spacers between children
                 if index < children.count - 1 {
-                    if distribution == "fillequally" || distribution == "equalspacing" {
+                    // `fillequally` is no longer here: it is a SIZE value and
+                    // routes to the weighted path above. Emitting a separator
+                    // for it made it indistinguishable from `equalSpacing`.
+                    if distribution == "equalspacing" {
                         Spacer(minLength: 0)
                     } else if distribution == "equalcentering" {
                         Spacer(minLength: 0)

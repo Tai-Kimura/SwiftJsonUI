@@ -17,19 +17,37 @@ public struct WeightedStackContainer: View {
     let component: DynamicComponent
     let data: [String: Any]
     let viewId: String?
+    /// Weight given to a child that declares none. `distribution: fillEqually`
+    /// is exactly "every child the same size regardless of content" (canon:
+    /// attribute_semantics.json semantics.distribution.perValueMapping —
+    /// "equal frames on each child" on swiftui), which is equal weights, so
+    /// the size half routes through this container rather than growing a
+    /// second sizing implementation. Zero for every other caller.
+    let implicitWeight: CGFloat
 
     public init(
         orientation: String,
         children: [DynamicComponent],
         component: DynamicComponent,
         data: [String: Any],
-        viewId: String? = nil
+        viewId: String? = nil,
+        implicitWeight: CGFloat = 0
     ) {
         self.orientation = orientation
         self.children = children
         self.component = component
         self.data = data
         self.viewId = viewId
+        self.implicitWeight = implicitWeight
+    }
+
+    /// `explicitChildSizeWins`: an explicit main-axis size beats distribution's
+    /// size half (the size topic's explicit > bounds > fill order), so a child
+    /// that declares one keeps it and does not take the implicit weight.
+    private func implicitWeight(for child: DynamicComponent, horizontal: Bool) -> CGFloat {
+        guard implicitWeight > 0 else { return 0 }
+        let declared = horizontal ? child.declaredWidth : child.declaredHeight
+        return declared == nil ? implicitWeight : 0
     }
 
     // Build children array with weights for horizontal orientation
@@ -38,7 +56,8 @@ public struct WeightedStackContainer: View {
             // weight / widthWeight are number|binding — resolve `@{binding}` from data.
             let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
             let widthWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).widthWeight, legacy: nil, data: data) ?? 0
-            let weight = CGFloat(max(weightValue, widthWeightValue))
+            let weight = max(CGFloat(max(weightValue, widthWeightValue)),
+                             implicitWeight(for: child, horizontal: true))
 
             var childData = data
             if weight > 0 {
@@ -70,7 +89,8 @@ public struct WeightedStackContainer: View {
             // weight / heightWeight are number|binding — resolve `@{binding}` from data.
             let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
             let heightWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).heightWeight, legacy: nil, data: data) ?? 0
-            let weight = CGFloat(max(weightValue, heightWeightValue))
+            let weight = max(CGFloat(max(weightValue, heightWeightValue)),
+                             implicitWeight(for: child, horizontal: false))
 
             var childData = data
             if weight > 0 {
