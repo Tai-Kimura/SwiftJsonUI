@@ -237,14 +237,53 @@ public struct DynamicHelpers {
         return DynamicDecodingHelper.toTextAlignment(alignment)
     }
 
+    /// `padding` / `paddings` declared as a binding, resolved to edge values.
+    ///
+    /// Both spellings are declared `number|binding` (`padding`) and
+    /// `array|binding` (`paddings`), but they are carried as `AnyCodable`, so
+    /// a bound declaration arrives as the STRING `"@{expr}"`.
+    /// `anyCodableToFloatArray` answers nil for a string, which is how a bound
+    /// padding inset nothing at all on this path while the codegen resolved it
+    /// (`spacing_helper.rb#padding_value`, plan 49: "`.to_i` on a binding is 0,
+    /// which is how every bound padding froze to `.padding(.top, 0)`").
+    public static func resolveEdgeValues(
+        _ value: AnyCodable?, data: [String: Any]
+    ) -> [CGFloat]? {
+        if let literal = DynamicDecodingHelper.anyCodableToFloatArray(value) {
+            return literal
+        }
+        guard let expression = value?.value as? String,
+              let inner = DynamicBindingResolver.inner(of: expression) else {
+            return nil
+        }
+        // A bound uniform padding is the common shape; a bound array is
+        // declared too (`paddings`), so both are accepted from the resolved
+        // value rather than only the number.
+        if let number = DynamicBindingResolver.resolveDouble(expression: inner, data: data) {
+            return [CGFloat(number)]
+        }
+        if let raw = DynamicBindingResolver.unwrap(
+            DynamicBindingResolver.lookupRaw(
+                path: DynamicBindingResolver.parse(inner).path, in: data
+            )
+        ) {
+            return DynamicDecodingHelper.anyCodableToFloatArray(AnyCodable(raw))
+        }
+        return nil
+    }
+
     // Unified method to get padding EdgeInsets from component
     // skipInsetPadding: When true, insetHorizontal/insetVertical are not added to padding (for Collection which handles them separately)
-    public static func getPadding(from component: DynamicComponent, skipInsetPadding: Bool = false) -> EdgeInsets {
+    public static func getPadding(
+        from component: DynamicComponent,
+        skipInsetPadding: Bool = false,
+        data: [String: Any] = [:]
+    ) -> EdgeInsets {
         var resultPadding = EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
 
         // Check for paddings array or value（UIKitに合わせてpaddingsに統一）
-        if let paddingInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.paddings) {
-            resultPadding = paddingInsets
+        if let edges = resolveEdgeValues(component.paddings, data: data) {
+            resultPadding = DynamicDecodingHelper.edgeInsetsFromArray(edges)
         } else {
             // Fallback to individual padding properties (UIKitに合わせてpaddingTop形式に統一)
             // RTL-aware: paddingStart/paddingEnd take precedence over paddingLeft/paddingRight
@@ -252,16 +291,20 @@ public struct DynamicHelpers {
             // fields in the generated table rather than folded into the
             // canonical name, so the fallback the hand-decode used to do
             // has to survive here.
-            let top = component.commonNumber(\.paddingTop)
-                ?? component.commonNumber(\.topPadding) ?? 0
-            let leading = component.commonNumber(\.paddingStart)
-                ?? component.commonNumber(\.paddingLeft)
-                ?? component.commonNumber(\.leftPadding) ?? 0
-            let bottom = component.commonNumber(\.paddingBottom)
-                ?? component.commonNumber(\.bottomPadding) ?? 0
-            let trailing = component.commonNumber(\.paddingEnd)
-                ?? component.commonNumber(\.paddingRight)
-                ?? component.commonNumber(\.rightPadding) ?? 0
+            // `number(_:_:data:)`, not `commonNumber`: the latter reads the
+            // literal half only, so a bound per-edge padding fell to 0 the
+            // same way the uniform spelling did.
+            func edge(_ keyPath: KeyPath<CommonAttributes, AttrValue<Double>?>) -> CGFloat? {
+                component.number(CommonAttributes.self, keyPath, data: data)
+            }
+            let top = edge(\.paddingTop) ?? edge(\.topPadding) ?? 0
+            let leading = edge(\.paddingStart)
+                ?? edge(\.paddingLeft)
+                ?? edge(\.leftPadding) ?? 0
+            let bottom = edge(\.paddingBottom) ?? edge(\.bottomPadding) ?? 0
+            let trailing = edge(\.paddingEnd)
+                ?? edge(\.paddingRight)
+                ?? edge(\.rightPadding) ?? 0
 
             resultPadding = EdgeInsets(
                 top: top,

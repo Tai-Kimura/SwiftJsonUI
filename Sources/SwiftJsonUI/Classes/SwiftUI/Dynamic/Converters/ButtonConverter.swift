@@ -130,7 +130,7 @@ public struct ButtonConverter {
         let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data)
 
         // Padding
-        let padding = DynamicHelpers.getPadding(from: component)
+        let padding = DynamicHelpers.getPadding(from: component, data: data)
 
         // Enabled state (with binding support)
         let isEnabled = DynamicHelpers.resolveBool(

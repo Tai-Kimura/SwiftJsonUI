@@ -18,28 +18,24 @@ public struct DynamicModifierHelper {
 
         // 1. Base padding (paddings array or scalar "padding"/"paddings")
         //    Tool: .padding(N) or .padding(.top, T).padding(.trailing, R)...
-        if let paddingInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.paddings) {
-            if let scalar = component.paddings?.value as? Int {
-                result = AnyView(result.padding(CGFloat(scalar)))
-            } else if let scalar = component.paddings?.value as? Double {
-                result = AnyView(result.padding(CGFloat(scalar)))
-            } else if let arr = component.paddings?.value as? [Any] {
-                switch arr.count {
-                case 1:
-                    let v = CGFloat(truncating: (arr[0] as? NSNumber) ?? 0)
-                    result = AnyView(result.padding(v))
-                case 2:
-                    let vertical = CGFloat(truncating: (arr[0] as? NSNumber) ?? 0)
-                    let horizontal = CGFloat(truncating: (arr[1] as? NSNumber) ?? 0)
-                    result = AnyView(result.padding(.horizontal, horizontal).padding(.vertical, vertical))
-                case 4:
-                    // top, right, bottom, left
-                    result = AnyView(result.padding(paddingInsets))
-                default:
-                    result = AnyView(result.padding(paddingInsets))
-                }
-            } else {
-                result = AnyView(result.padding(paddingInsets))
+        //
+        //    Read through `resolveEdgeValues`, which accepts the bound
+        //    spelling: `padding: "@{expr}"` arrives as an AnyCodable STRING
+        //    and the literal-only decode answered nil for it, so the
+        //    declaration inset nothing. The per-edge overrides below already
+        //    resolved bindings — only the base spelling did not, which is why
+        //    `common/padding__binding` measured inert here while the codegen
+        //    (spacing_helper.rb#padding_value) emits the resolved value.
+        if let edges = DynamicHelpers.resolveEdgeValues(component.paddings, data: data) {
+            switch edges.count {
+            case 1:
+                result = AnyView(result.padding(edges[0]))
+            case 2:
+                result = AnyView(
+                    result.padding(.horizontal, edges[1]).padding(.vertical, edges[0])
+                )
+            default:
+                result = AnyView(result.padding(DynamicDecodingHelper.edgeInsetsFromArray(edges)))
             }
         }
 
