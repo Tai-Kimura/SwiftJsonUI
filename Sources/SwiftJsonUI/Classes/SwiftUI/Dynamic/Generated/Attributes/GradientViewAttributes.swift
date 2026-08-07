@@ -49,7 +49,7 @@ public struct GradientViewAttributes {
     /// Unit coordinates in the view's own box for where the gradient ends: [x, y] or {"x": x, "y": y}, with 0 = leading/top, 0.5 = centre/middle, 1 = trailing/bottom. THREE faces read this key three incompatible ways today: sjui gradient_view_converter.rb:107-109 wants an OBJECT ({x, y}), rjui gradient_view_converter.rb:72-73 destructures an ARRAY ([x, y]), and kjui gradientview_component.rb:58-59 expects a STRING edge name ('top'). The two coordinate forms are declared because both are real coordinate spellings of the same thing; the android string form is NOT declared - it is `gradientDirection` semantics written under the wrong key, and is filed as a defect rather than blessed here. Declaring BOTH startPoint and endPoint replaces gradientDirection entirely; declaring only one is ignored and gradientDirection still decides (plan 51-E). [accepts: array | object]
     public let endPoint: Any?
 
-    /// Gradient colors. `colors` folds here (sjui gradient_view_converter.rb:52,66 read `colors || gradient`). [aliases: colors]
+    /// Gradient colors. `colors` folds here (sjui gradient_view_converter.rb:52,66 read `colors || gradient`). On GradientView the gradient is the component's own fill, so the backgroundFill precedence question does not arise. [aliases: colors]
     public let gradient: [Any]?
 
     /// Gradient direction

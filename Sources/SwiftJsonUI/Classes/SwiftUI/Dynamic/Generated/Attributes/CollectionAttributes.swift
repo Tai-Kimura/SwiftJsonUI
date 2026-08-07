@@ -25,6 +25,13 @@ public struct CollectionAttributes {
         case none = "none"
     }
 
+    public enum ListStyle: String {
+        case plain = "plain"
+        case grouped = "grouped"
+        case insetGrouped = "insetGrouped"
+        case sidebar = "sidebar"
+    }
+
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
@@ -53,6 +60,7 @@ public struct CollectionAttributes {
         "defaultScrollAnchor",
         "footerClasses",
         "headerClasses",
+        "hideSeparator",
         "horizontalScroll",
         "insetHorizontal",
         "insetVertical",
@@ -64,6 +72,7 @@ public struct CollectionAttributes {
         "layout",
         "lazy",
         "lineSpacing",
+        "listStyle",
         "onItemAppear",
         "onValueChange",
         "orientation",
@@ -143,6 +152,9 @@ public struct CollectionAttributes {
     /// Header class definitions
     public let headerClasses: [Any]?
 
+    /// Hide the row separators a list draws between cells. A NO-OP where the container draws no separators (a grid-shaped Collection has none) — that is the contract, not an unimplemented gap, and it does not license switching the container to a List. No CODEGEN face reads it, so the coverage row is runtime-only. Full ruling in attribute_semantics.json -> collectionSeparators.
+    public let hideSeparator: Bool?
+
     /// Enable horizontal scroll
     public let horizontalScroll: Bool?
 
@@ -175,6 +187,9 @@ public struct CollectionAttributes {
 
     /// Spacing between rows. `sectionSpacing` folds here (sjui collection_converter.rb:799,960 read `sectionSpacing || lineSpacing || 8`). [aliases: sectionSpacing]
     public let lineSpacing: Double?
+
+    /// Which list chrome the collection is drawn with. Enumerated from the only implementation that reads it (SwiftJsonUI TableConverter.applyListStyle); an unrecognised value falls back to plain. ORTHOGONAL to hideSeparator — that one hides the separators, this one picks the chrome, and neither overrides the other. No CODEGEN face reads it, so the coverage row is runtime-only: sjui collection_converter.rb:213 hardcodes PlainListStyle instead. Full ruling in attribute_semantics.json -> collectionSeparators. [default: plain]
+    public let listStyle: AttrEnum<ListStyle>?
 
     /// Called with the cell index (Int) when a cell appears on screen. Use for pagination by checking index against total count in ViewModel. Declared `binding` because that is what a layout actually carries: the author writes `@{handlerName}`, a STRING, and every reader matches it as one (kjui collection_component.rb:364 `json_data['onItemAppear'].match(/@\{([^}]+)\}/)`, and the binding validators infer `((Int) -> Unit)?` from that spelling). It was `type: "callback"` — the only callback-typed attribute in the whole SSoT — and attr-codegen skips that type as "function-valued, not extractable from JSON". True of a function; not true of the `@{...}` string a JSON layout can hold, so the attribute had no row in any generated table and no platform could read it typed (2026-08-05, plan 49-E, raised by A).
     public let onItemAppear: AttrValue<String>?
@@ -237,6 +252,7 @@ public struct CollectionAttributes {
         self.defaultScrollAnchor = Self.parseDefaultScrollAnchor(AttrCoerce.lookup(json, "defaultScrollAnchor"))
         self.footerClasses = AttrCoerce.array(AttrCoerce.lookup(json, "footerClasses"))
         self.headerClasses = AttrCoerce.array(AttrCoerce.lookup(json, "headerClasses"))
+        self.hideSeparator = AttrCoerce.boolean(AttrCoerce.lookup(json, "hideSeparator"))
         self.horizontalScroll = AttrCoerce.boolean(AttrCoerce.lookup(json, "horizontalScroll"))
         self.insetHorizontal = AttrCoerce.number(AttrCoerce.lookup(json, "insetHorizontal"))
         self.insetVertical = AttrCoerce.number(AttrCoerce.lookup(json, "insetVertical"))
@@ -248,6 +264,7 @@ public struct CollectionAttributes {
         self.layout = Self.parseLayout(AttrCoerce.lookup(json, "layout"))
         self.`lazy` = AttrCoerce.attrValue(AttrCoerce.lookup(json, "lazy"), { Self.parseLazy($0) })
         self.lineSpacing = AttrCoerce.number(AttrCoerce.lookup(json, "lineSpacing", ["sectionSpacing"], canonicalOnly: canonicalOnly))
+        self.listStyle = Self.parseListStyle(AttrCoerce.lookup(json, "listStyle"))
         self.onItemAppear = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onItemAppear"), AttrCoerce.string)
         self.onValueChange = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onValueChange", ["onValueChanged", "onPageChanged"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
@@ -303,6 +320,21 @@ public struct CollectionAttributes {
             }
         }
         AttrCodegenWarnings.emit("Collection.lazy: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseListStyle(_ raw: Any?) -> AttrEnum<ListStyle>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "plain": return .known(ListStyle.plain)
+            case "grouped": return .known(ListStyle.grouped)
+            case "insetgrouped": return .known(ListStyle.insetGrouped)
+            case "sidebar": return .known(ListStyle.sidebar)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("Collection.listStyle: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

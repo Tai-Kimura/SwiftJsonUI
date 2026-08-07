@@ -97,7 +97,7 @@ public struct ViewAttributes {
     /// Flex wrap behavior
     public let flexWrap: AttrEnum<FlexWrap>?
 
-    /// Gradient colors
+    /// Gradient colors Wins over `background` when both are declared on the same view; see attribute_semantics.json -> backgroundFill.
     public let gradient: [Any]?
 
     /// Gradient direction. Canon copied from GradientView.gradientDirection, which declared the enum for the same concept while this spelling stayed a bare string. Vertical is the fallback on all three. CASE MATTERS on ios: sjui matches 'Horizontal'/'Oblique' literally (modifier_helper.rb:16) without downcasing, while Compose and web downcase — so the capitalised spellings are canonical and the aliases normalise to them before any converter sees the value. RightToLeft and BottomToTop are declared without an alias on purpose: they are reversed directions web implements (gradient_view_converter.rb:88,90) and the other two have no equivalent, so folding them into Horizontal/Vertical would silently reverse the gradient rather than preserve it. [default: Vertical]

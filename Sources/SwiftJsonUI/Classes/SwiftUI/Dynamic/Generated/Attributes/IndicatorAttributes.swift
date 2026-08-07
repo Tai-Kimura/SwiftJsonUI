@@ -36,13 +36,13 @@ public struct IndicatorAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Whether the indicator is spinning. Defaults to true: an Indicator with nothing declared animates. `false` stops it, and hidesWhenStopped then decides whether the stopped indicator keeps its space or collapses out of the layout — which is why hidesWhenStopped is only ever read on this branch (sjui indicator_converter.rb:23, kjui indicator_component.rb:13). [default: True]
+    /// Whether the indicator is spinning. Defaults to true: an Indicator with nothing declared animates. `false` stops it, and hidesWhenStopped then decides whether the stopped indicator keeps its space or collapses out of the layout — which is why hidesWhenStopped is only ever read on this branch (sjui indicator_converter.rb:23, kjui indicator_component.rb:13). [default: true]
     public let animating: AttrValue<Bool>?
 
     /// Indicator color - hex string or color name from colors.json (binding supported). `tint` folds here (sjui indicator_converter.rb:77 reads `color || tintColor || tint`). [aliases: tint]
     public let color: AttrValue<String>?
 
-    /// Hide when stopped
+    /// Hide when stopped. Decides SPACE: `true` collapses the stopped indicator out of the layout, `false` keeps it drawn AND laid out. Full ruling in attribute_semantics.json -> indicatorStopped.
     public let hidesWhenStopped: Bool?
 
     /// Indicator style

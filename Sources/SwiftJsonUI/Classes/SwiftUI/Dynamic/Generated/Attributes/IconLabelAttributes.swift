@@ -35,6 +35,7 @@ public struct IconLabelAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "isOn": "selected",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -69,7 +70,7 @@ public struct IconLabelAttributes {
     /// Selected icon
     public let icon_on: String?
 
-    /// Selected state (binding supported). Chooses icon_on over icon_off and selectedFontColor over fontColor, so every platform declaring those needs this too.
+    /// Selected state (binding supported). Chooses icon_on over icon_off and selectedFontColor over fontColor, so every platform declaring those needs this too. `isOn` folds here — the legacy spelling for the same state. IconLabelConverter.swift:145-151 says so in as many words ("Pre-SSoT layouts that spelled it `isOn` keep working") and reads it out of rawData because no typed slot existed; sjui icon_label_converter.rb:130 reads the canonical `selected` (plan 51-E). [aliases: isOn]
     public let selected: AttrValue<Bool>?
 
     /// Selected text color - hex string or color name from colors.json
@@ -93,7 +94,7 @@ public struct IconLabelAttributes {
         self.iconSize = AttrCoerce.any(AttrCoerce.lookup(json, "iconSize"))
         self.icon_off = AttrCoerce.string(AttrCoerce.lookup(json, "icon_off"))
         self.icon_on = AttrCoerce.string(AttrCoerce.lookup(json, "icon_on"))
-        self.selected = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selected"), AttrCoerce.boolean)
+        self.selected = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selected", ["isOn"], canonicalOnly: canonicalOnly), AttrCoerce.boolean)
         self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.textShadow = AttrCoerce.any(AttrCoerce.lookup(json, "textShadow"))

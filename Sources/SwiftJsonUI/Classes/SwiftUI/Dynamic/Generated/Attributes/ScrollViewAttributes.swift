@@ -103,7 +103,7 @@ public struct ScrollViewAttributes {
     /// Deceleration rate
     public let decelerationRate: String?
 
-    /// Initial scroll position anchor (iOS 17+). Sets where the scroll view starts. Declared from the implementation, which already read it: sjui scrollview_converter.rb:207-215 (plan 51-E).
+    /// Initial scroll position anchor. Sets where the scroll view starts. Declared from the implementation, which already read it: sjui scrollview_converter.rb:207-215. Scope is deliberately all three platforms: the anchor is a portable concept and the declaration says an attribute EXISTS, not which face has caught up — the coverage ledger carries the android and web gaps. The "(iOS 17+)" note this description was copied with belonged to Collection's ios implementation, not to the contract, and has been dropped here (plan 51-E, raised by C).
     public let defaultScrollAnchor: AttrEnum<DefaultScrollAnchor>?
 
     /// Enable horizontal scroll. Declared from the implementation, which already read it: sjui scrollview_converter.rb:39 (plan 51-E).
