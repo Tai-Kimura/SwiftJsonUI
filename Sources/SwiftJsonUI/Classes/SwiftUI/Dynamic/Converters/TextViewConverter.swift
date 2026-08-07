@@ -72,15 +72,24 @@ public struct TextViewConverter {
             return nil
         }()
 
-        // hintColor - from hintAttributes or individual property
+        // hintColor - from hintAttributes or individual property.
+        //
+        // `hintColor` is declared `string|binding`, so the read has to go
+        // through `resolveColor` — the run-4 `?.value` sweep's idiom. Handing
+        // `rawRepresentation` to the data-less `getColor` asks for a colour
+        // literally named "@{boundHintColor}", which fails and falls through
+        // to the grey default: the bound face rendered the same picture as
+        // no declaration at all while the static face worked
+        // (TextView/hintColor__binding, ios inert / android + web active).
         let hintColor: Color = {
             if let hintAttrs = component.hintAttributes?.value as? [String: Any] {
                 if let fc = hintAttrs["fontColor"] as? String ?? hintAttrs["color"] as? String {
-                    return DynamicHelpers.getColor(fc) ?? Color.gray.opacity(0.6)
+                    return DynamicHelpers.getColor(fc, data: data) ?? Color.gray.opacity(0.6)
                 }
             }
-            if let hc = component.typedAttributes(TextViewAttributes.self).hintColor?.rawRepresentation as? String {
-                return DynamicHelpers.getColor(hc) ?? Color.gray.opacity(0.6)
+            let attrs = component.typedAttributes(TextViewAttributes.self)
+            if let hc = DynamicHelpers.resolveColor(attrs.hintColor, data: data) {
+                return hc
             }
             return Color.gray.opacity(0.6)
         }()
@@ -121,15 +130,26 @@ public struct TextViewConverter {
             legacy: nil, data: data
         ) ?? 16
 
-        // fontColor
+        // fontColor — same `string|binding` declaration, same resolution.
+        // No fixture covers TextView/fontColor__binding today (reported to D),
+        // so this half was carrying the identical defect unmeasured.
         let fontColor: Color = {
-            if let fc = component.string(TextViewAttributes.self, \.fontColor) {
-                return DynamicHelpers.getColor(fc) ?? .primary
+            if let fc = DynamicHelpers.resolveColor(
+                component.typedAttributes(TextViewAttributes.self).fontColor, data: data
+            ) {
+                return fc
             }
             return .primary
         }()
 
-        // font (fontName)
+        // font / fontFamily (fontName)
+        //
+        // `fontFamily` is the SPECIFIC spelling for a family and wins over
+        // `font`, which carries either a family or a weight keyword — exactly
+        // the precedence textview_converter.rb:146 emits
+        // (`@component['fontFamily'] || @component['font']`). Dynamic read
+        // only `font`, so a declared family was inert on this path while
+        // codegen honoured it (TextView/fontFamily__{static,binding}).
         //
         // `string(_:_:)` returns the layout spelling, so a bound font arrives
         // as the literal "@{expr}" and would be looked up as a family of that
@@ -137,13 +157,17 @@ public struct TextViewConverter {
         // its own `font`. `interpolate` leaves a static family untouched, and
         // `.map` keeps nil nil (processText answers "" for nil, which would
         // become an empty font name).
-        let fontName = component.string(TextViewAttributes.self, \.font)
+        let fontName = (component.string(TextViewAttributes.self, \.fontFamily)
+            ?? component.string(TextViewAttributes.self, \.font))
             .map { DynamicHelpers.processText($0, data: data) }
 
-        // backgroundColor
+        // backgroundColor — third colour on this converter reading the raw
+        // spelling; same `string|binding` declaration, same resolution.
         let backgroundColor: Color = {
-            if let bg = component.commonString(\.background) {
-                return DynamicHelpers.getColor(bg) ?? Color(UIColor.systemBackground)
+            if let bg = DynamicHelpers.resolveColor(
+                component.typedAttributes(CommonAttributes.self).background, data: data
+            ) {
+                return bg
             }
             return Color(UIColor.systemBackground)
         }()
