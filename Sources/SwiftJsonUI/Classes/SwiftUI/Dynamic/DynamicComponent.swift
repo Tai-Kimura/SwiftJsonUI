@@ -912,6 +912,36 @@ extension DynamicComponent {
         return true
     }
 
+    /// The CONTENTS of the same object face — `lineStyle` / `color` /
+    /// `lineOffset`.
+    ///
+    /// `decorationFlag` above answers whether to draw a line at all, which is
+    /// all any platform read: the object's fields were unread everywhere, so a
+    /// styled declaration and a bare `true` drew the same picture by
+    /// construction (codegen_effect.json's `presence-only` class). Returns nil
+    /// for the boolean face so that path keeps its plain-line rendering.
+    func decorationStyle(
+        _ keyPath: KeyPath<LabelAttributes, Any?>,
+        data: [String: Any] = [:]
+    ) -> TextDecoration? {
+        guard let dict = typedAttributes(LabelAttributes.self)[keyPath: keyPath]
+                as? [String: Any] else {
+            return nil
+        }
+        let color = (dict["color"] as? String)
+            .flatMap { DynamicHelpers.getColor($0, data: data) }
+        let offset: CGFloat? = {
+            if let n = dict["lineOffset"] as? NSNumber { return CGFloat(truncating: n) }
+            if let s = dict["lineOffset"] as? String { return Double(s).map { CGFloat($0) } }
+            return nil
+        }()
+        return TextDecoration(
+            lineStyle: TextDecoration.LineStyle.from(dict["lineStyle"] as? String),
+            color: color,
+            lineOffset: offset
+        )
+    }
+
     /// The six per-side margins.
     ///
     /// They exist as one accessor because the margin spelling has three

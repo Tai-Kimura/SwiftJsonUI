@@ -49,6 +49,10 @@ public struct PartialAttributedText: View {
     let fontColor: Color?
     let underline: Bool
     let strikethrough: Bool
+    /// The object face's contents. Nil for the boolean face, which keeps the
+    /// plain-line rendering it always had.
+    let underlineDecoration: TextDecoration?
+    let strikethroughDecoration: TextDecoration?
     let lineSpacing: CGFloat?
     let lineLimit: Int?
     let textAlignment: TextAlignment
@@ -65,6 +69,8 @@ public struct PartialAttributedText: View {
         fontColor: Color? = nil,
         underline: Bool = false,
         strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
@@ -80,6 +86,8 @@ public struct PartialAttributedText: View {
         self.fontColor = fontColor
         self.underline = underline
         self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
@@ -97,6 +105,8 @@ public struct PartialAttributedText: View {
         fontColor: Color? = nil,
         underline: Bool = false,
         strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
@@ -112,6 +122,8 @@ public struct PartialAttributedText: View {
         self.fontColor = fontColor
         self.underline = underline
         self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
@@ -130,6 +142,8 @@ public struct PartialAttributedText: View {
         fontColor: Color? = nil,
         underline: Bool = false,
         strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
@@ -147,6 +161,8 @@ public struct PartialAttributedText: View {
         self.fontColor = fontColor
         self.underline = underline
         self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
         self.lineSpacing = lineSpacing
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
@@ -203,6 +219,8 @@ public struct PartialAttributedText: View {
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
+                    underlineDecoration: underlineDecoration,
+                    strikethroughDecoration: strikethroughDecoration,
                     lineSpacing: effectiveLineSpacing,
                     lineLimit: lineLimit,
                     textAlignment: effectiveTextAlignment
@@ -230,6 +248,8 @@ public struct PartialAttributedText: View {
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
+                    underlineDecoration: underlineDecoration,
+                    strikethroughDecoration: strikethroughDecoration,
                     lineSpacing: effectiveLineSpacing,
                     lineLimit: lineLimit,
                     textAlignment: effectiveTextAlignment
@@ -398,13 +418,21 @@ extension View {
     func applyTextModifiers(
         underline: Bool,
         strikethrough: Bool,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat?,
         lineLimit: Int?,
         textAlignment: TextAlignment
     ) -> some View {
+        // The declared colour reaches the rule through the text-styling
+        // modifiers themselves; `nil` is SwiftUI's "inherit the foreground",
+        // which is exactly the plain-line rendering the boolean face had.
+        // `lineOffset` is UIKit's `baselineOffset` — it shifts the text
+        // relative to its line box (SJUILabel.swift:452), not the rule.
         self
-            .underline(underline)
-            .strikethrough(strikethrough)
+            .underline(underline, color: underlineDecoration?.color)
+            .strikethrough(strikethrough, color: strikethroughDecoration?.color)
+            .baselineOffset(underlineDecoration?.lineOffset ?? 0)
             .lineSpacing(lineSpacing ?? 0)
             .lineLimit(lineLimit)
             .multilineTextAlignment(textAlignment)
