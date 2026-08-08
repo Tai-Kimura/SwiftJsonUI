@@ -220,6 +220,23 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
             )
+        } else if globalColumns == 1 && !isHorizontal && !columnsIsBinding && hasSections &&
+                  component.enumString(CollectionAttributes.self, \.listStyle) != nil {
+            // Sectioned vertical WITH list chrome: `listStyle` is what opts a
+            // collection into list-ness (the same gate the codegen face and
+            // web use). The CollectionStackView route below has no List, so
+            // a declared chrome drew nothing here while codegen drew a real
+            // List (Collection_hideSeparator/listStyle families, d≈94, runs
+            // 31202080745 → 31234163967 unchanged).
+            result = buildSectionedListLayout(
+                component: component,
+                dataSource: dataSource,
+                sections: sections,
+                cellIdProperty: cellIdProperty,
+                data: data,
+                viewId: viewId,
+                onItemAppear: onItemAppearCallback
+            )
         } else if globalColumns == 1 && !isHorizontal && !columnsIsBinding && hasSections {
             // Section-based vertical: CollectionStackView delegates the
             // outer container choice (lazy/eager/none) so the JSON `lazy`
@@ -635,6 +652,79 @@ public struct CollectionConverter {
                 }
             }
         )
+    }
+
+    /// Sectioned vertical collection WITH list chrome — the dynamic half of
+    /// codegen's sectioned List branch (`List { Group { sections } }` with
+    /// `.listRowSeparator` on the Group and the declared listStyle on the
+    /// List). SwiftUI's List holds Sections natively; a chrome-less sectioned
+    /// collection stays on the CollectionStackView route.
+    private static func buildSectionedListLayout(
+        component: DynamicComponent,
+        dataSource: CollectionDataSource,
+        sections: [[String: Any]],
+        cellIdProperty: String?,
+        data: [String: Any],
+        viewId: String?,
+        onItemAppear: ((Int) -> Void)? = nil
+    ) -> AnyView {
+        let listStyle = component.enumString(CollectionAttributes.self, \.listStyle) ?? "plain"
+        let hideSeparator = component.typedAttributes(CollectionAttributes.self).hideSeparator ?? false
+
+        return applyListStyle(AnyView(
+            List {
+                Group {
+                    ForEach(
+                        0..<min(sections.count, dataSource.sections.count),
+                        id: \.self
+                    ) { sectionIndex in
+                        let sectionConfig = sections[sectionIndex]
+                        let sectionData = dataSource.sections[sectionIndex]
+
+                        if let headerName = sectionConfig["header"] as? String,
+                           let headerData = sectionData.header {
+                            buildHeaderView(
+                                headerClassName: headerName,
+                                headerData: headerData.data,
+                                data: data,
+                                viewId: viewId
+                            )
+                        }
+
+                        if let cellName = sectionConfig["cell"] as? String,
+                           let cellsData = sectionData.cells {
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            ForEach(items) { cell in
+                                applyDeclaredCellFrame(
+                                    AnyView(buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )),
+                                    component: component
+                                )
+                                .id(cell.id)
+                            }
+                        }
+
+                        if let footerName = sectionConfig["footer"] as? String,
+                           let footerData = sectionData.footer {
+                            buildFooterView(
+                                footerClassName: footerName,
+                                footerData: footerData.data,
+                                data: data,
+                                viewId: viewId
+                            )
+                        }
+                    }
+                }
+                .listRowSeparator(hideSeparator ? .hidden : .automatic)
+            }
+        ), style: listStyle)
     }
 
     /// Codegen's apply_cell_frame, non-grid dialect: a declared cellWidth /
