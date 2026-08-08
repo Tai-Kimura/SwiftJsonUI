@@ -682,17 +682,36 @@ public struct DynamicModifierHelper {
         component: DynamicComponent,
         data: [String: Any] = [:]
     ) -> AnyView {
+        guard let color = highlightedBackgroundColor(component: component, data: data) else {
+            return view
+        }
+        return AnyView(view.background(color))
+    }
+
+    /// The active highlight colour, or nil when the view is not highlighted.
+    ///
+    /// Both halves are required: a `highlightBackground` with no `highlighted`
+    /// describes a state that is never entered. The caller must use this to
+    /// SKIP the base background — `.background` layers BEHIND the view, so a
+    /// highlight applied after an opaque base background was invisible
+    /// (View_highlighted__true parity, run 31202080745). UIKit swaps
+    /// SJUIView's backgroundColor; the swap here is "highlight replaces
+    /// base", not "highlight behind base".
+    public static func highlightedBackgroundColor(
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> Color? {
         let common = component.typedAttributes(CommonAttributes.self)
         guard let background = common.highlightBackground?.rawRepresentation as? String,
-              let color = DynamicHelpers.getColor(background, data: data) else { return view }
+              let color = DynamicHelpers.getColor(background, data: data) else { return nil }
         // `highlighted` is undeclared in the SSoT — codegen reads it anyway
         // (`@component['highlighted']`), so it comes through the raw
         // passthrough here. Flagged to 49-E; the declaration is the thing
         // that is wrong, not the read.
         guard DynamicBindingHelper.resolveBool(
             component.rawAttribute("highlighted"), data: data, fallback: false
-        ) else { return view }
-        return AnyView(view.background(color))
+        ) else { return nil }
+        return color
     }
 
     // MARK: - 12. Offset
@@ -1085,10 +1104,15 @@ public struct DynamicModifierHelper {
         // 5. background (skipped when the caller already painted it —
         // an empty View renders Rectangle().fill, the codegen leaf contract)
         if !skipBackground {
-            result = applyBackground(result, component: component, data: data)
-            // 5b. highlighted → highlightBackground, painted over the base
-            // background exactly as UIKit swaps SJUIView's backgroundColor.
-            result = applyHighlighted(result, component: component, data: data)
+            // 5b. highlighted → highlightBackground REPLACES the base
+            // background, exactly as UIKit swaps SJUIView's backgroundColor.
+            // `.background` layers behind the view, so painting the highlight
+            // after the opaque base hid it entirely.
+            if let highlight = highlightedBackgroundColor(component: component, data: data) {
+                result = AnyView(result.background(highlight))
+            } else {
+                result = applyBackground(result, component: component, data: data)
+            }
             // 5c. safeAreaInsetPositions — reserves the named edges.
             result = applySafeAreaInsets(result, component: component)
         }

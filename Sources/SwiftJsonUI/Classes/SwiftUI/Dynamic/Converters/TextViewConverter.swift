@@ -243,6 +243,20 @@ public struct TextViewConverter {
             )
         )
 
+        // --- 1.5 .truncationMode (lineBreakMode) ---
+        // Same truncation vocabulary as Label; the codegen face attaches
+        // `.truncationMode(...)` to the closed call and the environment
+        // reaches the placeholder Text. Nothing here read it, so a Head/
+        // Middle mode truncated at the tail on the dynamic path only
+        // (TextView_lineBreakMode__head/middle parity d=23/12, run
+        // 31202080745). Clip folds to .tail, matching the codegen arm.
+        switch component.enumString(TextViewAttributes.self, \.lineBreakMode) {
+        case "Head": result = AnyView(result.truncationMode(.head))
+        case "Middle": result = AnyView(result.truncationMode(.middle))
+        case "Tail", "Clip": result = AnyView(result.truncationMode(.tail))
+        default: break
+        }
+
         // --- 2. .onChange (onTextChange) ---
         // Fires for bound AND local-state text (the handler does not require
         // the text itself to be @{bound}).

@@ -115,6 +115,21 @@ public struct DynamicScrollViewContainer: View {
             }
         }
 
+        // --- 4.5 defaultScrollAnchor (iOS 17+) ---
+        // The codegen face emits `.defaultScrollAnchor(...)` for the same
+        // declared enum; nothing here read it, so an anchored ScrollView
+        // opened at the top on the dynamic path only
+        // (ScrollView_defaultScrollAnchor__bottom/center parity d=82/96,
+        // run 31202080745).
+        if #available(iOS 17.0, *) {
+            switch component.enumString(ScrollViewAttributes.self, \.defaultScrollAnchor)?.lowercased() {
+            case "bottom": result = AnyView(result.defaultScrollAnchor(.bottom))
+            case "center": result = AnyView(result.defaultScrollAnchor(.center))
+            case "top": result = AnyView(result.defaultScrollAnchor(.top))
+            default: break
+            }
+        }
+
         // --- 5. zoom gesture ---
         let declaredMinZoom = component.number(ScrollViewAttributes.self, \.minZoom, data: data)
         let declaredMaxZoom = component.number(ScrollViewAttributes.self, \.maxZoom, data: data)

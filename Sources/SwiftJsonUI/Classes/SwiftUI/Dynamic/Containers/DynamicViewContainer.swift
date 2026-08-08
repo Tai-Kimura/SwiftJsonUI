@@ -400,74 +400,22 @@ public struct DynamicViewContainer: View {
     ///
     /// One function so the fill-precedence decision below and the paint here
     /// cannot disagree: the background is skipped in exactly the cases a
-    /// gradient is actually drawn.
+    /// gradient is actually drawn. The machinery itself is shared with
+    /// every container that declares `gradient` (DynamicGradientPainter).
     private func gradientColors(_ component: DynamicComponent) -> [Color]? {
-        let attrs = component.typedAttributes(ViewAttributes.self)
-        let gradientDict = component.rawData["gradient"] as? [String: Any]
-        // Canonical array first, legacy dictionary second.
-        let colorsRaw = attrs.gradient?.compactMap { $0 as? String }
-            ?? (gradientDict?["colors"] as? [String])
-        guard let colorsRaw, !colorsRaw.isEmpty else { return nil }
-        let colors = colorsRaw.compactMap { DynamicHelpers.getColor($0) }
-        return colors.isEmpty ? nil : colors
+        DynamicGradientPainter.gradientColors(
+            component,
+            colorsRaw: component.typedAttributes(ViewAttributes.self).gradient
+        )
     }
 
     private func applyGradient(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        let gradientDict = component.rawData["gradient"] as? [String: Any]
-        guard let colors = gradientColors(component) else { return view }
-
-        // An explicit start/end pair in the dictionary form outranks the
-        // direction enum — it is the more specific statement about the same
-        // axis, the precedence the size topic already fixes for this shape.
-        if let sp = gradientDict?["startPoint"] as? String,
-           let ep = gradientDict?["endPoint"] as? String {
-            return AnyView(view.background(LinearGradient(
-                colors: colors,
-                startPoint: unitPointFromString(sp),
-                endPoint: unitPointFromString(ep)
-            )))
-        }
-
-        // `gradientDirection` was read by nothing here. Its declared default
-        // is Vertical, and the three folding spellings (TopToBottom,
-        // LeftToRight, Diagonal) are handled by the generated enum extraction.
-        let (start, end) = gradientEndpoints(
-            component.enumString(ViewAttributes.self, \.gradientDirection)
+        DynamicGradientPainter.apply(
+            view,
+            component: component,
+            colorsRaw: component.typedAttributes(ViewAttributes.self).gradient,
+            direction: component.enumString(ViewAttributes.self, \.gradientDirection)
         )
-        return AnyView(view.background(
-            LinearGradient(colors: colors, startPoint: start, endPoint: end)
-        ))
-    }
-
-    /// The declared `gradientDirection` vocabulary, in full.
-    ///
-    /// `RightToLeft` and `BottomToTop` are canonical values, NOT aliases, and
-    /// they are the two the codegen has no case arm for
-    /// (modifier_helper.rb:16-23 falls them through to Vertical) — reported to
-    /// B so the two ios paths agree rather than mirroring the gap here.
-    private func gradientEndpoints(_ declared: String?) -> (UnitPoint, UnitPoint) {
-        switch declared?.lowercased() {
-        case "horizontal", "lefttoright": return (.leading, .trailing)
-        case "oblique", "diagonal": return (.topLeading, .bottomTrailing)
-        case "righttoleft": return (.trailing, .leading)
-        case "bottomtotop": return (.bottom, .top)
-        default: return (.top, .bottom)  // Vertical / TopToBottom, the default
-        }
-    }
-
-    private func unitPointFromString(_ str: String) -> UnitPoint {
-        switch str.lowercased() {
-        case "top": return .top
-        case "bottom": return .bottom
-        case "leading", "left": return .leading
-        case "trailing", "right": return .trailing
-        case "topleft", "topleading": return .topLeading
-        case "topright", "toptrailing": return .topTrailing
-        case "bottomleft", "bottomleading": return .bottomLeading
-        case "bottomright", "bottomtrailing": return .bottomTrailing
-        case "center": return .center
-        default: return .top
-        }
     }
 
     // MARK: - Helpers
