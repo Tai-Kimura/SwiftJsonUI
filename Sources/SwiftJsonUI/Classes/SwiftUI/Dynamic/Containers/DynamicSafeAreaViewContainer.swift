@@ -176,7 +176,21 @@ public struct DynamicSafeAreaViewContainer: View {
 
     private func getChildren() -> [DynamicComponent] {
         guard let children = component.childComponents else { return [] }
-        return children.filter { $0.isValid || $0.include != nil }
+        let filtered = children.filter { $0.isValid || $0.include != nil }
+        // `direction` reverses the children along the orientation axis —
+        // bottomToTop on a vertical stack, rightToLeft on a horizontal one,
+        // natural order otherwise (the axis gate every other reader applies:
+        // kotlin DynamicSafeAreaViewComponent, view_converter.rb). Nothing
+        // here read it, so the declaration was inert on this face
+        // (SafeAreaView/direction__bottomtotop, run 31243724782
+        // cross-effect: android and web active, ios inert).
+        let direction = component.direction?.lowercased()
+        let orientation = component.orientation
+        if (direction == "bottomtotop" && orientation == "vertical") ||
+           (direction == "righttoleft" && orientation == "horizontal") {
+            return filtered.reversed()
+        }
+        return filtered
     }
 
     private func getVerticalAlignment() -> VerticalAlignment {

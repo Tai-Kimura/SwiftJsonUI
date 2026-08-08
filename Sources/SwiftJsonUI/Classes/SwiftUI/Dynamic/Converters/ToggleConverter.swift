@@ -111,7 +111,9 @@ public struct ToggleConverter {
                 }
             }
             if let fontColor = component.string(LabelAttributes.self, \.fontColor) {
-                return DynamicHelpers.getColor(fontColor)
+                // data-aware: string|binding — the binding face was inert
+                // here (fontColor__binding, run 31243724782 cross-effect).
+                return DynamicHelpers.getColor(fontColor, data: data)
             }
             return nil
         }()
