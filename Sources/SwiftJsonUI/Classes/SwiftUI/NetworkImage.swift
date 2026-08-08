@@ -165,6 +165,15 @@ private final class NetworkImageLoader: ObservableObject {
             } catch {
                 if Task.isCancelled { return }
                 Logger.debug("[NetworkImage] error ...\(shortUrl): \(error.localizedDescription)")
+                // A permanent failure cannot be retried into success — an
+                // unresolvable host (NXDOMAIN) or malformed URL stays that
+                // way, and the 2s+4s backoff only delayed the error face
+                // past any observer (the errorImage fixture captured the
+                // loading blank instead of the error render).
+                if let urlError = error as? URLError,
+                   [.cannotFindHost, .unsupportedURL, .badURL].contains(urlError.code) {
+                    break
+                }
             }
         }
 
