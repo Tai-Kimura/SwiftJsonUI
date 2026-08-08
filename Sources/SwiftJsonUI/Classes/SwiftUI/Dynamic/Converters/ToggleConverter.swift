@@ -57,9 +57,14 @@ public struct ToggleConverter {
         let handlerExpr: String? = component.onValueChangeSpelling()
             ?? component.onValueChangedSpelling()
 
-        // Label text
-        let text = component.string(LabelAttributes.self, \.text)
+        // Label text. Both spellings are string|binding and the decode slot
+        // returns the layout spelling, so a bound label rendered the
+        // characters "@{boundLabel}" until processText was put in front —
+        // the same leak RadioConverter and Compose already fixed
+        // (Switch_label__binding parity d=53, run 31202080745).
+        let rawText = component.string(LabelAttributes.self, \.text)
             ?? component.string(CheckAttributes.self, \.label) ?? ""
+        let text = DynamicHelpers.processText(rawText, data: data)
 
         // Build Toggle with label
         var result: AnyView

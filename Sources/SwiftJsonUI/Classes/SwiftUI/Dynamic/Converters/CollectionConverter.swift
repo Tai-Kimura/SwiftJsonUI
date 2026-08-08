@@ -593,14 +593,17 @@ public struct CollectionConverter {
                            let cellsData = sectionData.cells {
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
                             ForEach(items) { cell in
-                                buildCellView(
-                                    cellClassName: cellName,
-                                    cellData: cell.data,
-                                    cellIndex: cell.index,
-                                    component: component,
-                                    data: data,
-                                    viewId: viewId,
-                                    onItemAppear: onItemAppear
+                                applyDeclaredCellFrame(
+                                    AnyView(buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )),
+                                    component: component
                                 )
                                 .id(cell.id)
                             }
@@ -634,6 +637,32 @@ public struct CollectionConverter {
         )
     }
 
+    /// Codegen's apply_cell_frame, non-grid dialect: a declared cellWidth /
+    /// cellHeight pins the cell's frame anchored at .topLeading and clips
+    /// the overflow — a declared size can UNDER-fit the cell's content, and
+    /// the default .center frame let it spill half out of its lane
+    /// (Collection_cellWidth/cellHeight__static parity d=50/41, run
+    /// 31202080745; web anchors at the leading edge and hides the overflow).
+    /// The grid path sizes its cells through GridItem and its own frame and
+    /// does not use this.
+    private static func applyDeclaredCellFrame(
+        _ view: AnyView,
+        component: DynamicComponent
+    ) -> AnyView {
+        let attrs = component.typedAttributes(CollectionAttributes.self)
+        let cellWidth = attrs.cellWidth.map { CGFloat($0) }
+        let cellHeight = attrs.cellHeight.map { CGFloat($0) }
+        guard cellWidth != nil || cellHeight != nil else { return view }
+        var result = view
+        if let cellWidth {
+            result = AnyView(result.frame(width: cellWidth, alignment: .topLeading))
+        }
+        if let cellHeight {
+            result = AnyView(result.frame(height: cellHeight, alignment: .topLeading))
+        }
+        return AnyView(result.clipped())
+    }
+
     /// Legacy single column List
     private static func buildListLayout(
         component: DynamicComponent,
@@ -645,26 +674,39 @@ public struct CollectionConverter {
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
         // For legacy List, use first section's cells
+        // `listStyle` picks the chrome; the generated code reads the same
+        // attribute onto SwiftUI's concrete styles, so the hardcoded
+        // PlainListStyle here was a parity drift the moment codegen stopped
+        // hardcoding its own.
+        let listStyle = component.enumString(CollectionAttributes.self, \.listStyle) ?? "plain"
+
         guard let firstSection = dataSource.sections.first,
               let cellsData = firstSection.cells,
               let sectionConfig = sections.first,
               let cellName = sectionConfig["cell"] as? String else {
-            return AnyView(
-                List {
-                    Text("No data")
-                }
-                .listStyle(PlainListStyle())
+            return applyListStyle(
+                AnyView(
+                    List {
+                        Text("No data")
+                    }
+                ),
+                style: listStyle
             )
         }
 
         let hasHeader = sectionConfig["header"] != nil && firstSection.header != nil
         let hasFooter = sectionConfig["footer"] != nil && firstSection.footer != nil
-        let hideSeparator = component.rawAttribute("hideSeparator") as? Bool ?? false
+        let hideSeparator = component.typedAttributes(CollectionAttributes.self).hideSeparator ?? false
 
         let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
 
-        return AnyView(
+        // The Group is how the generated code forwards `.listRowSeparator` to
+        // every row — the modifier styles ROWS, not the List, so applying it
+        // to the List itself (the old ListSeparatorModifier) never hid
+        // anything.
+        return applyListStyle(AnyView(
             List {
+                Group {
                 if hasHeader,
                    let headerName = sectionConfig["header"] as? String,
                    let headerData = firstSection.header {
@@ -725,10 +767,26 @@ public struct CollectionConverter {
                         )
                     }
                 }
+                }
+                .listRowSeparator(hideSeparator ? .hidden : .automatic)
             }
-            .listStyle(PlainListStyle())
-            .modifier(ListSeparatorModifier(hide: hideSeparator))
-        )
+        ), style: listStyle)
+    }
+
+    /// Declared `listStyle` -> SwiftUI list chrome, the same mapping the
+    /// generated code and TableConverter use; an unrecognised value falls
+    /// back to plain, which is also the declared default.
+    private static func applyListStyle(_ view: AnyView, style: String) -> AnyView {
+        switch style {
+        case "grouped":
+            return AnyView(view.listStyle(.grouped))
+        case "insetGrouped":
+            return AnyView(view.listStyle(.insetGrouped))
+        case "sidebar":
+            return AnyView(view.listStyle(.sidebar))
+        default:
+            return AnyView(view.listStyle(.plain))
+        }
     }
 
     /// Horizontal: CollectionStackView(axis: .horizontal) wraps the cell ForEach.
@@ -782,14 +840,17 @@ public struct CollectionConverter {
                            let cellsData = sectionData.cells {
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
                             ForEach(items) { cell in
-                                buildCellView(
-                                    cellClassName: cellName,
-                                    cellData: cell.data,
-                                    cellIndex: cell.index,
-                                    component: component,
-                                    data: data,
-                                    viewId: viewId,
-                                    onItemAppear: onItemAppear
+                                applyDeclaredCellFrame(
+                                    AnyView(buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )),
+                                    component: component
                                 )
                                 .id(cell.id)
                             }
@@ -1342,21 +1403,6 @@ fileprivate func cgFloatFromRaw(_ value: Any?) -> CGFloat? {
     if let v = value as? Int { return CGFloat(v) }
     if let v = value as? NSNumber { return CGFloat(truncating: v) }
     return nil
-}
-
-/// Apply `.listRowSeparator(.hidden)` across all rows when `hideSeparator: true`.
-/// Used by the Collection legacy single-column List path to honor the tool's
-/// `hideSeparator` attribute.
-private struct ListSeparatorModifier: ViewModifier {
-    let hide: Bool
-
-    func body(content: Content) -> some View {
-        if hide {
-            content.listRowSeparator(.hidden)
-        } else {
-            content
-        }
-    }
 }
 
 #endif // DEBUG

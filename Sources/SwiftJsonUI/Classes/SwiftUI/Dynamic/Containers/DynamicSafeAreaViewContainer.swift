@@ -139,12 +139,30 @@ public struct DynamicSafeAreaViewContainer: View {
         }
 
         // --- 2. applyStandardModifiers ---
+        // `gradient` beats `background` on the same face (canon:
+        // attribute_semantics.json backgroundFill): skip the colour fill
+        // exactly when a gradient is drawable, same as DynamicViewContainer.
+        // SafeAreaView declares `gradient` but no `gradientDirection`, so the
+        // direction is the declared Vertical default.
+        let gradientRaw = component.typedAttributes(SafeAreaViewAttributes.self).gradient
+        let paintsGradient = DynamicGradientPainter.gradientColors(component, colorsRaw: gradientRaw) != nil
         result = DynamicModifierHelper.applyStandardModifiers(
             result,
             component: component,
             data: data,
-            skipPadding: needsRelativePositioning
+            skipPadding: needsRelativePositioning,
+            skipBackground: paintsGradient
         )
+
+        // --- 2.5 gradient ---
+        if paintsGradient {
+            result = DynamicGradientPainter.apply(
+                result,
+                component: component,
+                colorsRaw: gradientRaw,
+                direction: nil
+            )
+        }
 
         // --- 3. Safe area insets ---
         // Applied by the shared chain above (DynamicModifierHelper
