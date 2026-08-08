@@ -60,7 +60,16 @@ final class ConformanceInvalidHostProtocol: URLProtocol {
             // only exit, and it arrives when the fixture is torn down.
             return
         }
-        client?.urlProtocol(self, didFailWithError: URLError(.cannotFindHost))
+        // Deliver the failure ASYNCHRONOUSLY: completing the client from
+        // inside startLoading races the loading system's state machine and
+        // the task can hang instead of failing — measured as the errorImage
+        // fixture stuck on a blank loading face (NetworkImage/
+        // errorImage__static ios inert, local-env after 0a03e6c; the
+        // contract expects uniformly-active).
+        let client = self.client
+        DispatchQueue.global().async {
+            client?.urlProtocol(self, didFailWithError: URLError(.cannotFindHost))
+        }
     }
 
     override func stopLoading() {}
