@@ -272,7 +272,9 @@ public struct TextFieldConverter {
 
         // --- 4. foregroundColor ---
         if let fontColor = component.string(TextFieldAttributes.self, \.fontColor) {
-            result = AnyView(result.foregroundColor(DynamicHelpers.getColor(fontColor) ?? .primary))
+            // data-aware: string|binding — the binding face was inert here
+            // (fontColor__binding, run 31243724782 cross-effect).
+            result = AnyView(result.foregroundColor(DynamicHelpers.getColor(fontColor, data: data) ?? .primary))
         }
 
         // --- 5. textFieldStyle ---
@@ -373,7 +375,9 @@ public struct TextFieldConverter {
 
         // --- 4. foregroundColor ---
         if let fontColor = component.string(TextFieldAttributes.self, \.fontColor) {
-            result = AnyView(result.foregroundColor(DynamicHelpers.getColor(fontColor) ?? .primary))
+            // data-aware: string|binding — the binding face was inert here
+            // (fontColor__binding, run 31243724782 cross-effect).
+            result = AnyView(result.foregroundColor(DynamicHelpers.getColor(fontColor, data: data) ?? .primary))
         }
 
         // --- 5. textFieldStyle ---

@@ -108,6 +108,19 @@ public struct CollectionConverter {
             // The old early return skipped it, so the whole container
             // vanished (and the still-older "No collection data" debug text
             // was undeclared behavior).
+            //
+            // A declared listStyle still draws its chrome: the chrome belongs
+            // to the CONTAINER (web's list_style_classes, android's
+            // container-level chrome), so the section-less shape renders a
+            // chromed EMPTY List — no invented rows — instead of nothing
+            // (Collection/listStyle__* were inert on this face while the
+            // codegen face drew the chrome, run 31243724782).
+            if let declaredStyle = component.enumString(CollectionAttributes.self, \.listStyle) {
+                return DynamicModifierHelper.applyStandardModifiers(
+                    applyListStyle(AnyView(List {}), style: declaredStyle),
+                    component: component, data: data
+                )
+            }
             return DynamicModifierHelper.applyStandardModifiers(
                 AnyView(Color.clear), component: component, data: data
             )

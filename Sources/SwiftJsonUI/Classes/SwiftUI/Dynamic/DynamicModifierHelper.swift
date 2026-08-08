@@ -803,7 +803,9 @@ public struct DynamicModifierHelper {
         // component (the extraction works off rawData).
         guard let tintColor = component.commonString(\.tintColor)
                 ?? component.string(SwitchAttributes.self, \.tint),
-              let color = DynamicHelpers.getColor(tintColor) else { return view }
+              // data-aware: string|binding — the binding face was inert here
+              // (TabView/tintColor__binding, run 31243724782 cross-effect).
+              let color = DynamicHelpers.getColor(tintColor, data: data) else { return view }
         return AnyView(view.tint(color))
     }
 

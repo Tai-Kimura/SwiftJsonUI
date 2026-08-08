@@ -79,7 +79,10 @@ public struct CheckboxConverter {
         // Font color
         let fontColor: Color? = {
             if let fc = component.string(CheckBoxAttributes.self, \.fontColor) {
-                return DynamicHelpers.getColor(fc)
+                // data-aware: the declared kind is string|binding, and the
+                // binding face was inert here (fontColor__binding, run
+                // 31243724782 cross-effect).
+                return DynamicHelpers.getColor(fc, data: data)
             }
             return nil
         }()

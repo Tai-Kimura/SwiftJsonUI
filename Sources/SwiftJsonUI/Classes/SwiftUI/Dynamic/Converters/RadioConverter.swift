@@ -105,7 +105,9 @@ public struct RadioConverter {
         let titleFont = radioFont(component, data: data)
         let titleColor: Color? = {
             if let fc = component.string(RadioAttributes.self, \.fontColor) {
-                return DynamicHelpers.getColor(fc)
+                // data-aware: string|binding — the binding face was inert
+                // here (fontColor__binding, run 31243724782 cross-effect).
+                return DynamicHelpers.getColor(fc, data: data)
             }
             return nil
         }()
@@ -170,7 +172,9 @@ public struct RadioConverter {
         let labelFont = radioFont(component, data: data)
         let labelColor: Color? = {
             if let fc = component.string(RadioAttributes.self, \.fontColor) {
-                return DynamicHelpers.getColor(fc)
+                // data-aware: string|binding — the binding face was inert
+                // here (fontColor__binding, run 31243724782 cross-effect).
+                return DynamicHelpers.getColor(fc, data: data)
             }
             return nil
         }()
