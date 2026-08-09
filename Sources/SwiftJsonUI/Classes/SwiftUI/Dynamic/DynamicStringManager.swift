@@ -43,7 +43,7 @@ public class DynamicStringManager {
         parseStringsJSON(json)
     }
 
-    private func parseStringsJSON(_ json: [String: Any]) {
+    internal func parseStringsJSON(_ json: [String: Any]) {
         // Preferred language for resolving `{en, ja, ...}` language-map entries
         // inside strings.json. Falls back to "en" so value→key lookups still
         // work when the device language isn't represented.
@@ -94,21 +94,32 @@ public class DynamicStringManager {
         guard !text.isEmpty else { return text }
         loadIfNeeded()
 
-        // 1. Try lookup by value (e.g., "Email address" → "login_email_address")
+        // 1. A text that IS a declared strings.json key resolves as that key,
+        //    before the value reverse-lookup or any spelling heuristic:
+        //    membership in the SSoT is what makes something a key, not how it
+        //    is spelled. The extractor truncates long ASCII text to 31 chars,
+        //    which can leave a trailing underscore
+        //    ("dont_have_an_account_apply_for_") — a spelling the snake_case
+        //    gate below rejects, and the value lookup can be poisoned by a
+        //    legacy entry whose VALUE is that raw key, so this label rendered
+        //    its key on the dynamic face while codegen resolved it
+        //    (a downstream login screen, 2026-08-09). KJUI's ResourceCache.resolveString
+        //    has always been key-first; this aligns the faces.
+        if let key = textToKey[text] {
+            return key.localized()
+        }
+
+        // 2. Try lookup by value (e.g., "Email address" → "login_email_address")
         if let key = valueToKey[text] {
             return key.localized()
         }
 
-        // 2. If snake_case, try lookup by key
+        // 3. Undeclared snake_case-shaped text falls back to NSLocalizedString
         if isSnakeCase(text) {
-            if let key = textToKey[text] {
-                return key.localized()
-            }
-            // Fallback: try .localized() directly on the text
             return text.localized()
         }
 
-        // 3. Non-snake_case, not found in strings.json → return as-is
+        // 4. Non-snake_case, not found in strings.json → return as-is
         return text
     }
 
@@ -120,8 +131,19 @@ public class DynamicStringManager {
         textToKey.removeAll()
     }
 
+    /// Test seam: replace the loaded table wholesale, bypassing file I/O.
+    internal func loadStrings(fromParsed json: [String: Any]) {
+        reload()
+        isLoaded = true
+        parseStringsJSON(json)
+    }
+
     private func isSnakeCase(_ text: String) -> Bool {
-        let pattern = "^[a-z]+(_[a-z0-9]+)*$"
+        // Same spelling the extractor's should_extract_string? skips
+        // (string_manager_core.rb), trailing underscore included — the
+        // extractor emits truncation keys like "…_apply_for_" and every
+        // resolver must accept what the extractor produces.
+        let pattern = "^[a-z][a-z0-9]*(_[a-z0-9]+)*_?$"
         return text.range(of: pattern, options: .regularExpression) != nil
     }
 }
