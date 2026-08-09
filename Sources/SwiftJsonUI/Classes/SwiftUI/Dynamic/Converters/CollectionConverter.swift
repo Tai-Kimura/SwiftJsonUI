@@ -194,6 +194,9 @@ public struct CollectionConverter {
         // include_horizontal: axis == :vertical). Both channels applying it
         // is what doubled the leading gap on horizontal collections.
         var horizontalStackCarriesInsetH = false
+        // True on the grid route: buildGridLayout applies the collection
+        // insets to the scroll CONTENT itself.
+        var gridCarriesContentInsets = false
 
         if collectionMode == .none && !(isHorizontal && component.paging == true) {
             result = buildNonLazyLayout(
@@ -307,7 +310,11 @@ public struct CollectionConverter {
                 mode: collectionMode
             )
         } else {
-            // Multiple columns: ScrollView + LazyVGrid
+            // Multiple columns: ScrollView + LazyVGrid. The grid pads its
+            // CONTENT with the collection insets (inside the full-bleed
+            // scroll, like the codegen face) — the shared tail below must
+            // not pad the ScrollView a second time.
+            gridCarriesContentInsets = true
             result = buildGridLayout(
                 component: component,
                 dataSource: dataSource,
@@ -369,10 +376,12 @@ public struct CollectionConverter {
         // are content padding (see applyCollectionContentInsets), not the
         // container-growing pre-background padding the generic chain applies.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.declaredWidth)) height=\(String(describing: component.declaredHeight)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
-        result = applyCollectionContentInsets(
-            result, component: component,
-            includeInsetHorizontal: !horizontalStackCarriesInsetH
-        )
+        if !gridCarriesContentInsets {
+            result = applyCollectionContentInsets(
+                result, component: component,
+                includeInsetHorizontal: !horizontalStackCarriesInsetH
+            )
+        }
         result = applyContainerInset(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
@@ -421,6 +430,23 @@ public struct CollectionConverter {
         component: DynamicComponent,
         includeInsetHorizontal: Bool = true
     ) -> AnyView {
+        guard let edges = collectionContentEdgeInsets(
+            component: component, includeInsetHorizontal: includeInsetHorizontal
+        ) else { return view }
+        return AnyView(view.padding(edges))
+    }
+
+    /// The combined insets/contentInsets/insetHorizontal/insetVertical
+    /// value, or nil when everything is zero. Split out so scroll-bearing
+    /// layouts can pad their CONTENT with it: padding the ScrollView itself
+    /// shrinks the viewport — a visible band on every inset edge and no
+    /// native under-safe-area scroll — while the codegen face pads the
+    /// LazyVGrid inside the full-bleed scroll (a downstream home screen, the
+    /// dynamic-only bottom band, 2026-08-10).
+    private static func collectionContentEdgeInsets(
+        component: DynamicComponent,
+        includeInsetHorizontal: Bool = true
+    ) -> EdgeInsets? {
         var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
         if let edges = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
             ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) {
@@ -437,8 +463,8 @@ public struct CollectionConverter {
             top += v
             bottom += v
         }
-        guard top != 0 || leading != 0 || bottom != 0 || trailing != 0 else { return view }
-        return AnyView(view.padding(EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)))
+        guard top != 0 || leading != 0 || bottom != 0 || trailing != 0 else { return nil }
+        return EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)
     }
 
     /// `containerInset` — container-level insets on the scroll content
@@ -1072,9 +1098,18 @@ public struct CollectionConverter {
         let cellWidth = cellAttrs.cellWidth.map { CGFloat($0) }
         let cellHeight = cellAttrs.cellHeight.map { CGFloat($0) }
 
+        // Content insets pad the grid INSIDE the full-bleed scroll (the
+        // codegen face's `.padding` on the LazyVGrid). The caller must NOT
+        // also pad the ScrollView — see collectionContentEdgeInsets.
+        let contentEdges = collectionContentEdgeInsets(component: component)
+
         return AnyView(
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: showsIndicators) {
+                    // spacing nil = the same context default the bare
+                    // builder content had; single-section grids (the common
+                    // shape) are unaffected either way.
+                    VStack(spacing: nil) {
                     ForEach(
                         0..<min(sections.count, dataSource.sections.count),
                         id: \.self
@@ -1134,6 +1169,8 @@ public struct CollectionConverter {
                             )
                         }
                     }
+                    }
+                    .padding(contentEdges ?? EdgeInsets())
                 }
                 .ifLet(scrollTarget) { view, target in
                     // Keyed on the value: SwiftUI re-runs this when it

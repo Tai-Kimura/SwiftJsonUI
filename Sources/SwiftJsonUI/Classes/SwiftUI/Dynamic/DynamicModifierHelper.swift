@@ -107,9 +107,15 @@ public struct DynamicModifierHelper {
             break
         }
 
-        // Apply fixed frame (finite positive values only)
-        let fixedWidth = (width != nil && width != .infinity && width! > 0 && width!.isFinite) ? width : nil
-        let fixedHeight = (height != nil && height != .infinity && height! > 0 && height!.isFinite) ? height : nil
+        // Apply fixed frame (finite non-negative values). ZERO is a declared
+        // size, not an absent one: the codegen face emits .frame(height: 0)
+        // for a `height: 0` spacer, while the old `> 0` guard dropped the
+        // frame entirely and the unsized empty view swallowed 740pt of a
+        // weighted stack — the a downstream registration screen screen rendered a black
+        // page with its content pushed one viewport down, dynamic face only
+        // (2026-08-10).
+        let fixedWidth = (width != nil && width != .infinity && width! >= 0 && width!.isFinite) ? width : nil
+        let fixedHeight = (height != nil && height != .infinity && height! >= 0 && height!.isFinite) ? height : nil
 
         if fixedWidth != nil || fixedHeight != nil {
             // When both dimensions are fixed, apply gravity-based alignment so a

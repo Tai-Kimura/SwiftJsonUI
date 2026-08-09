@@ -78,5 +78,39 @@ final class DynamicStringManagerTests: XCTestCase {
     func testNonKeyTextPassesThrough() {
         XCTAssertEqual("Hello World".dynamicLocalized(), "Hello World")
     }
+
+    // A bare key declared in several sections resolves through the section
+    // the RENDERING layout owns — flat iteration order picked one by chance
+    // (a downstream app: home.open=営業中 vs store_info.open=開店, the home tab
+    // rendered 開店 on the dynamic face, 2026-08-10).
+    func testOwnSectionWinsForCollidingBareKey() {
+        DynamicStringManager.shared.loadStrings(fromParsed: [
+            "home": ["open": ["en": "Open", "ja": "営業中"]],
+            "store_info": ["open": ["en": "Open", "ja": "開店"]]
+        ])
+        DynamicStringManager.shared.beginLayout("home")
+        XCTAssertEqual("open".dynamicLocalized(), "home_open")
+        DynamicStringManager.shared.beginLayout("store_info")
+        XCTAssertEqual("open".dynamicLocalized(), "store_info_open")
+    }
+
+    func testFlatFallbackStillResolvesForeignKeys() {
+        DynamicStringManager.shared.loadStrings(fromParsed: [
+            "home": ["open": ["en": "Open", "ja": "営業中"]],
+            "settings": ["logout": ["en": "Log out", "ja": "ログアウト"]]
+        ])
+        // home renders a key it does not own — the flat map still answers.
+        DynamicStringManager.shared.beginLayout("home")
+        XCTAssertEqual("logout".dynamicLocalized(), "settings_logout")
+    }
+
+    func testOwnSectionValueLookupWins() {
+        DynamicStringManager.shared.loadStrings(fromParsed: [
+            "home": ["open": "Open"],
+            "store_info": ["open_hours": "Open"]
+        ])
+        DynamicStringManager.shared.beginLayout("home")
+        XCTAssertEqual("Open".dynamicLocalized(), "home_open")
+    }
 }
 #endif

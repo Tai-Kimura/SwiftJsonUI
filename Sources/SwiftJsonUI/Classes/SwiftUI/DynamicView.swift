@@ -72,6 +72,10 @@ public struct DynamicView: View {
     @ViewBuilder
     public var body: some View {
         let _ = Logger.debug("[DynamicView] body called for: \(jsonName ?? "unknown")")
+        // Strings resolve while the converters below build this layout's
+        // subtree; announce whose sections own bare keys first (the codegen
+        // face's current_namespaces, the UIKit face's currentFilePrefix).
+        let _ = jsonName.map { DynamicStringManager.shared.beginLayout($0) }
         if let component = rootComponent {
             let mergedData = DynamicView.mergeDataDefaults(component: component, externalData: data)
             DynamicComponentBuilder(

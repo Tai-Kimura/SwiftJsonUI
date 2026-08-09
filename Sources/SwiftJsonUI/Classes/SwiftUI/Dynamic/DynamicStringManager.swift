@@ -20,7 +20,36 @@ public class DynamicStringManager {
     private var textToKey: [String: String] = [:]
     private var isLoaded = false
 
+    /// strings.json sections owned by the layout currently rendering, most
+    /// specific first. A bare key like "open" exists in as many sections as
+    /// declare it ({home: 営業中, store_info: 開店} in a downstream app), and the
+    /// flat maps above resolve it by dictionary iteration order — i.e. by
+    /// chance. The codegen face resolves through the layout's OWN section
+    /// (StringManagerHelper.current_namespaces), and the UIKit face through
+    /// SJUIViewCreator.currentFilePrefix; this is the SwiftUI-dynamic
+    /// equivalent, set by DynamicView as each layout's body renders
+    /// (a downstream home screen tab rendered 開店 for home's 営業中, 2026-08-10).
+    private var currentNamespaces: [String] = []
+
     private init() {}
+
+    /// Announce the layout about to render. Accepts the layout name as the
+    /// loader spells it; both the path-flattened and basename spellings are
+    /// candidates, matching StringManagerCore.namespace_candidates.
+    public func beginLayout(_ name: String) {
+        func sanitized(_ s: String) -> String {
+            return s.lowercased().replacingOccurrences(
+                of: "[^a-z0-9]", with: "_", options: .regularExpression
+            )
+        }
+        var candidates: [String] = []
+        let base = (name as NSString).lastPathComponent
+        if base != name {
+            candidates.append(sanitized(base))
+        }
+        candidates.append(sanitized(name))
+        currentNamespaces = candidates
+    }
 
     /// Load strings.json from Layouts/Resources directory
     public func loadIfNeeded() {
@@ -94,6 +123,19 @@ public class DynamicStringManager {
         guard !text.isEmpty else { return text }
         loadIfNeeded()
 
+        // 0. The rendering layout's own sections win, key or value — the
+        //    same ownership order the codegen face applies. Only then do the
+        //    flat (iteration-order) maps get a say.
+        for ns in currentNamespaces {
+            guard let section = stringsData[ns] else { continue }
+            if section[text] != nil {
+                return "\(ns)_\(text)".localized()
+            }
+            if let key = section.first(where: { $0.value == text })?.key {
+                return "\(ns)_\(key)".localized()
+            }
+        }
+
         // 1. A text that IS a declared strings.json key resolves as that key,
         //    before the value reverse-lookup or any spelling heuristic:
         //    membership in the SSoT is what makes something a key, not how it
@@ -129,6 +171,7 @@ public class DynamicStringManager {
         stringsData.removeAll()
         valueToKey.removeAll()
         textToKey.removeAll()
+        currentNamespaces.removeAll()
     }
 
     /// Test seam: replace the loaded table wholesale, bypassing file I/O.
