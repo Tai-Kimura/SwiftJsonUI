@@ -8,7 +8,7 @@
 //  underscore ("dont_have_an_account_apply_for_") — a spelling the old
 //  snake_case gate rejected, while a legacy poison entry whose VALUE is that
 //  raw key hijacked the value lookup, so the dynamic face rendered the key
-//  itself (a downstream login screen, 2026-08-09).
+//  itself (downstream login screen, 2026-08-09).
 //
 //  In the test host there is no Localizable.strings, so `.localized()`
 //  passes the key through — asserting the PREFIXED key spelling proves
@@ -81,7 +81,7 @@ final class DynamicStringManagerTests: XCTestCase {
 
     // A bare key declared in several sections resolves through the section
     // the RENDERING layout owns — flat iteration order picked one by chance
-    // (a downstream app: home.open=営業中 vs store_info.open=開店, the home tab
+    // (downstream bar: home.open=営業中 vs store_info.open=開店, the home tab
     // rendered 開店 on the dynamic face, 2026-08-10).
     func testOwnSectionWinsForCollidingBareKey() {
         DynamicStringManager.shared.loadStrings(fromParsed: [

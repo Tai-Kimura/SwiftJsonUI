@@ -111,7 +111,7 @@ public struct DynamicModifierHelper {
         // size, not an absent one: the codegen face emits .frame(height: 0)
         // for a `height: 0` spacer, while the old `> 0` guard dropped the
         // frame entirely and the unsized empty view swallowed 740pt of a
-        // weighted stack — the a downstream registration screen screen rendered a black
+        // weighted stack — a downstream registration screen rendered a black
         // page with its content pushed one viewport down, dynamic face only
         // (2026-08-10).
         let fixedWidth = (width != nil && width != .infinity && width! >= 0 && width!.isFinite) ? width : nil

@@ -8,7 +8,7 @@ import SwiftUI
 /// parser untouched, which made a bound `range` never match (the partial
 /// silently vanished) and a bound fontColor style nothing, while the
 /// codegen path interpolates at render time
-/// (downstream a-downstream-hour-row-cell, 2026-08-08).
+/// (a downstream hour-row cell, 2026-08-08).
 final class LabelPartialBindingTests: XCTestCase {
     private let data: [String: Any] = [
         "overrideBoldRange": "(本日)",

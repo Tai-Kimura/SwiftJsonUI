@@ -22,13 +22,13 @@ public class DynamicStringManager {
 
     /// strings.json sections owned by the layout currently rendering, most
     /// specific first. A bare key like "open" exists in as many sections as
-    /// declare it ({home: 営業中, store_info: 開店} in a downstream app), and the
+    /// declare it ({home: 営業中, store_info: 開店} in downstream bar), and the
     /// flat maps above resolve it by dictionary iteration order — i.e. by
     /// chance. The codegen face resolves through the layout's OWN section
     /// (StringManagerHelper.current_namespaces), and the UIKit face through
     /// SJUIViewCreator.currentFilePrefix; this is the SwiftUI-dynamic
     /// equivalent, set by DynamicView as each layout's body renders
-    /// (a downstream home screen tab rendered 開店 for home's 営業中, 2026-08-10).
+    /// (a downstream home tab rendered the wrong section's translation, 2026-08-10).
     private var currentNamespaces: [String] = []
 
     private init() {}
@@ -145,7 +145,7 @@ public class DynamicStringManager {
         //    gate below rejects, and the value lookup can be poisoned by a
         //    legacy entry whose VALUE is that raw key, so this label rendered
         //    its key on the dynamic face while codegen resolved it
-        //    (a downstream login screen, 2026-08-09). KJUI's ResourceCache.resolveString
+        //    (downstream login screen, 2026-08-09). KJUI's ResourceCache.resolveString
         //    has always been key-first; this aligns the faces.
         if let key = textToKey[text] {
             return key.localized()

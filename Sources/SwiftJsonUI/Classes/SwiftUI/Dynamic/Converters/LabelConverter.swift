@@ -352,7 +352,7 @@ public struct LabelConverter {
             // and the colour parser — a bound `range` never matched (the
             // partial silently vanished) and a bound fontColor styled nothing,
             // while the codegen path interpolates `\(data.x)` at render time
-            // (downstream a-downstream-hour-row-cell, 2026-08-08).
+            // (a downstream hour-row cell, 2026-08-08).
 
             // Parse fontSize from CGFloat, Int, or a bound number
             var fontSize: CGFloat? = nil
