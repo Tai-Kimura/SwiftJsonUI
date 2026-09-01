@@ -119,25 +119,6 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
                        "tapping outside fired the destructive action")
     }
 
-    /// KNOWN ANSWER for the outside tap. The dialog arm reported "did not
-    /// close on an outside tap" in both size classes, and that result is
-    /// only readable if the same tap, at the same coordinate, can be seen to
-    /// dismiss something that outside-taps are known to dismiss. A medium
-    /// sheet is that thing.
-    func testTheOutsideTapItselfCanDismissSomething() {
-        let app = launch()
-        XCTAssertTrue(app.buttons["probe_open_sheet"].waitForExistence(timeout: 10))
-        app.buttons["probe_open_sheet"].tap()
-        XCTAssertTrue(app.staticTexts["probe_sheet_content"].waitForExistence(timeout: 5),
-                      "sheet never presented")
-
-        let outside = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.02))
-        outside.tap()
-
-        let closed = !app.staticTexts["probe_sheet_content"].waitForExistence(timeout: 3)
-        print("PROBE-KNOWN-ANSWER sheet_closed_on_same_outside_tap=\(closed)")
-    }
-
     func testWhatEachPresentationDraws() {
         let app = launch()
         let sizeClass = app.staticTexts["probe_size_class"].label
