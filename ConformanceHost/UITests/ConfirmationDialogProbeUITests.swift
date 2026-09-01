@@ -43,6 +43,69 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         return (destructive.exists, cancel.exists)
     }
 
+    /// Is the missing cancel a dead end, or only a missing label?
+    ///
+    /// A popover is supposed to be dismissable by tapping outside it, and if
+    /// that works the user is not trapped — the defect is "the only visible
+    /// choice is the destructive one", not "there is no way out". Those are
+    /// different severities and a consumer deciding how long it can wait for
+    /// a fix needs the difference measured, not assumed.
+    ///
+    /// The destructive tap counter is what separates "closed" from "closed
+    /// after doing the thing".
+    func testWhetherTappingOutsideEscapesWithoutFiring() {
+        let app = launch()
+        let sizeClass = app.staticTexts["probe_size_class"].label
+
+        XCTAssertTrue(app.buttons["probe_open_dialog"].waitForExistence(timeout: 10))
+        app.buttons["probe_open_dialog"].tap()
+        XCTAssertTrue(app.buttons["probe_destructive"].waitForExistence(timeout: 5),
+                      "nothing was presented")
+
+        // Top-left of the window: outside any popover anchored to a centred
+        // button, and outside a sheet's action list on compact.
+        let outside = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.02))
+        outside.tap()
+
+        // `waitForExistence` returns immediately when the element is already
+        // there, so this is "still present after the tap", not a 3s wait.
+        let closed = !app.buttons["probe_destructive"]
+            .waitForExistence(timeout: 3)
+        let firedAfterOutsideTap =
+            app.staticTexts["probe_destructive_fired"].label
+
+        // POSITIVE CONTROL, IN THE SAME RUN. "did not close" and "this test
+        // cannot see a close" produce the same false, so something that must
+        // close it is tried next. Without this the first measurement is
+        // unreadable — and it came back false on BOTH size classes, including
+        // the one where a cancel button is drawn and the sheet is expected to
+        // dismiss, which is exactly the shape of an instrument that never
+        // detects a dismissal at all.
+        var controlClosed = true
+        if !closed {
+            app.buttons["probe_destructive"].tap()
+            controlClosed = !app.buttons["probe_destructive"]
+                .waitForExistence(timeout: 3)
+        }
+
+        print("PROBE-ESCAPE size_class=\(sizeClass) "
+              + "closed_on_outside_tap=\(closed) "
+              + "destructive_fired=\(firedAfterOutsideTap) "
+              + "CONTROL_closed_on_button_tap=\(controlClosed)")
+
+        XCTAssertTrue(controlClosed,
+                      "control failed: the dialog did not close even when a "
+                      + "button in it was tapped, so this test cannot "
+                      + "distinguish 'does not dismiss' from 'cannot see a "
+                      + "dismissal' — the outside-tap result means nothing")
+
+        // Asserted, because a dismissal that ran the destructive action would
+        // be a far worse finding than the one being investigated, and must
+        // not be reported as a print line someone may skim past.
+        XCTAssertEqual(firedAfterOutsideTap, "0",
+                       "tapping outside fired the destructive action")
+    }
+
     func testWhatEachPresentationDraws() {
         let app = launch()
         let sizeClass = app.staticTexts["probe_size_class"].label

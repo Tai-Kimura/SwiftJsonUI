@@ -43,6 +43,11 @@ struct ConfirmationDialogProbeView: View {
     @State private var dialogShown = false
     @State private var alertShown = false
 
+    /// Counts destructive taps. A dismissal that fires the destructive action
+    /// is a different defect from one that fires nothing, and "the dialog
+    /// closed" alone cannot tell them apart.
+    @State private var destructiveFired = 0
+
     private var sizeClassName: String {
         switch horizontalSizeClass {
         case .regular: return "regular"
@@ -59,6 +64,9 @@ struct ConfirmationDialogProbeView: View {
             Text(sizeClassName)
                 .accessibilityIdentifier("probe_size_class")
 
+            Text("\(destructiveFired)")
+                .accessibilityIdentifier("probe_destructive_fired")
+
             Button("open dialog") { dialogShown = true }
                 .accessibilityIdentifier("probe_open_dialog")
 
@@ -69,7 +77,9 @@ struct ConfirmationDialogProbeView: View {
         .confirmationDialog("Delete this?",
                             isPresented: $dialogShown,
                             titleVisibility: .visible) {
-            Button("probe_destructive", role: .destructive) { }
+            Button("probe_destructive", role: .destructive) {
+                destructiveFired += 1
+            }
             Button("probe_cancel", role: .cancel) { }
         }
         .alert("Delete this?", isPresented: $alertShown) {
