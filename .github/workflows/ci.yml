@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v1.5.0 # jsonui-cli release tag (manifest byte-identical to the bd5f464 pin it replaces)
+      JSONUI_CLI_MANIFEST_REF: v1.7.53 # jsonui-cli release tag; bumped with the alert re-vendor (guard text says: together)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
