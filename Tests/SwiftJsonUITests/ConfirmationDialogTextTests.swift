@@ -32,16 +32,16 @@ final class ConfirmationDialogTextTests: XCTestCase {
     // expression instead of the value.
     func testBoundSpellingResolvesFromData() {
         XCTAssertEqual(
-            Sut.confirmationDialogText("@{dialogTitle}", data: ["dialogTitle": "Remove bottle?"]),
-            "Remove bottle?"
+            Sut.confirmationDialogText("@{dialogTitle}", data: ["dialogTitle": "Remove item?"]),
+            "Remove item?"
         )
     }
 
     func testBoundSpellingResolvesThroughASwiftUIBinding() {
-        let binding = SwiftUI.Binding<String>.constant("Remove bottle?")
+        let binding = SwiftUI.Binding<String>.constant("Remove item?")
         XCTAssertEqual(
             Sut.confirmationDialogText("@{dialogTitle}", data: ["dialogTitle": binding]),
-            "Remove bottle?"
+            "Remove item?"
         )
     }
 
@@ -50,8 +50,8 @@ final class ConfirmationDialogTextTests: XCTestCase {
     // pins the ROUTE, not a translation.
     func testKeySpellingReachesTheStringTable() {
         XCTAssertEqual(
-            Sut.confirmationDialogText("bottler_title", data: [:]),
-            "bottler_title".dynamicLocalized()
+            Sut.confirmationDialogText("dialog_title", data: [:]),
+            "dialog_title".dynamicLocalized()
         )
     }
 
