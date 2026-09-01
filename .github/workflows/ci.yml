@@ -61,6 +61,19 @@ jobs:
               if name.startswith("swift/")
               and not name.endswith("skipped_attributes.json")
           }
+          # An empty expected set satisfies all three checks below, so the
+          # guard would print "match (0 files)" and pass having compared
+          # NOTHING. Reachable on a day the pin moves far: if the manifest
+          # ever renames the `swift/` prefix or reshapes `files`, this
+          # selection quietly yields nothing, and a same-day empty vendored
+          # dir would then be certified rather than caught. Either side
+          # empty ALONE still fails (every file reads as stray or missing);
+          # it is the pair that is silent.
+          assert expected, (
+              f"manifest at {ref} has no swift/ entries — there was nothing "
+              "to certify, so this guard compared nothing (this is NOT "
+              "'compared and agreed')"
+          )
           actual = {
               entry: hashlib.sha256(
                   open(os.path.join(vendored, entry), "rb").read()
