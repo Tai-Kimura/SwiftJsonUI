@@ -165,6 +165,8 @@ struct ConformanceRootView: View {
                 ScreenMarkerOverlayProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-offsetProbe") {
                 OffsetHitTargetProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-confirmationDialogProbe") {
+                ConfirmationDialogProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
