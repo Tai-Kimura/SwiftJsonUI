@@ -138,22 +138,6 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         print("PROBE-KNOWN-ANSWER sheet_closed_on_same_outside_tap=\(closed)")
     }
 
-    /// One-shot instrument debug: what does the hierarchy hold while the
-    /// dialog is up? The outside tap is not reaching a dismissable region in
-    /// ANY arm — including a medium sheet, which outside-taps are documented
-    /// to dismiss — so the tap target has to be found, not guessed again.
-    func testDumpHierarchyWhileDialogIsUp() {
-        let app = launch()
-        XCTAssertTrue(app.buttons["probe_open_dialog"].waitForExistence(timeout: 10))
-        app.buttons["probe_open_dialog"].tap()
-        XCTAssertTrue(app.buttons["probe_destructive"].waitForExistence(timeout: 5))
-        print("PROBE-TREE-BEGIN")
-        print(app.debugDescription)
-        print("PROBE-TREE-END")
-        let dismissRegion = app.otherElements["PopoverDismissRegion"]
-        print("PROBE-DISMISS-REGION exists=\(dismissRegion.exists)")
-    }
-
     func testWhatEachPresentationDraws() {
         let app = launch()
         let sizeClass = app.staticTexts["probe_size_class"].label
