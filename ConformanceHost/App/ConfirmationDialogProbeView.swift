@@ -43,6 +43,11 @@ struct ConfirmationDialogProbeView: View {
     @State private var dialogShown = false
     @State private var alertShown = false
 
+    /// Known-answer arm: a `.sheet` is dismissable by tapping outside /
+    /// swiping in both idioms, so the same outside-tap the dialog arm uses
+    /// can be proven to land somewhere that dismisses.
+    @State private var sheetShown = false
+
     /// Counts destructive taps. A dismissal that fires the destructive action
     /// is a different defect from one that fires nothing, and "the dialog
     /// closed" alone cannot tell them apart.
@@ -72,6 +77,9 @@ struct ConfirmationDialogProbeView: View {
 
             Button("open alert") { alertShown = true }
                 .accessibilityIdentifier("probe_open_alert")
+
+            Button("open sheet") { sheetShown = true }
+                .accessibilityIdentifier("probe_open_sheet")
         }
         .padding()
         .confirmationDialog("Delete this?",
@@ -81,6 +89,11 @@ struct ConfirmationDialogProbeView: View {
                 destructiveFired += 1
             }
             Button("probe_cancel", role: .cancel) { }
+        }
+        .sheet(isPresented: $sheetShown) {
+            Text("probe_sheet_content")
+                .accessibilityIdentifier("probe_sheet_content")
+                .presentationDetents([.medium])
         }
         .alert("Delete this?", isPresented: $alertShown) {
             Button("probe_destructive", role: .destructive) { }

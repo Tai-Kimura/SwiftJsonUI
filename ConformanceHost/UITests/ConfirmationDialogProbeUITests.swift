@@ -62,10 +62,22 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         XCTAssertTrue(app.buttons["probe_destructive"].waitForExistence(timeout: 5),
                       "nothing was presented")
 
-        // Top-left of the window: outside any popover anchored to a centred
-        // button, and outside a sheet's action list on compact.
-        let outside = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.02))
-        outside.tap()
+        // THE COORDINATE TAP WAS THE INSTRUMENT'S DEFECT. A raw
+        // app.coordinate tap dismissed nothing in any arm — not even a
+        // medium sheet, which outside-taps are documented to dismiss — so
+        // "did not close" was unreadable. The hierarchy names the real
+        // target: presentation puts a full-screen Other element labelled
+        // 'dismiss popup' (identifier PopoverDismissRegion) behind the
+        // popover, and that ELEMENT is what an outside tap means. Falling
+        // back to the coordinate keeps the compact arm honest, where the
+        // region may not exist.
+        let dismissRegion = app.otherElements["PopoverDismissRegion"]
+        let usedRegion = dismissRegion.exists
+        if usedRegion {
+            dismissRegion.tap()
+        } else {
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.02)).tap()
+        }
 
         // `waitForExistence` returns immediately when the element is already
         // there, so this is "still present after the tap", not a 3s wait.
@@ -89,6 +101,7 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         }
 
         print("PROBE-ESCAPE size_class=\(sizeClass) "
+              + "via_dismiss_region=\(usedRegion) "
               + "closed_on_outside_tap=\(closed) "
               + "destructive_fired=\(firedAfterOutsideTap) "
               + "CONTROL_closed_on_button_tap=\(controlClosed)")
@@ -104,6 +117,41 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         // not be reported as a print line someone may skim past.
         XCTAssertEqual(firedAfterOutsideTap, "0",
                        "tapping outside fired the destructive action")
+    }
+
+    /// KNOWN ANSWER for the outside tap. The dialog arm reported "did not
+    /// close on an outside tap" in both size classes, and that result is
+    /// only readable if the same tap, at the same coordinate, can be seen to
+    /// dismiss something that outside-taps are known to dismiss. A medium
+    /// sheet is that thing.
+    func testTheOutsideTapItselfCanDismissSomething() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["probe_open_sheet"].waitForExistence(timeout: 10))
+        app.buttons["probe_open_sheet"].tap()
+        XCTAssertTrue(app.staticTexts["probe_sheet_content"].waitForExistence(timeout: 5),
+                      "sheet never presented")
+
+        let outside = app.coordinate(withNormalizedOffset: CGVector(dx: 0.02, dy: 0.02))
+        outside.tap()
+
+        let closed = !app.staticTexts["probe_sheet_content"].waitForExistence(timeout: 3)
+        print("PROBE-KNOWN-ANSWER sheet_closed_on_same_outside_tap=\(closed)")
+    }
+
+    /// One-shot instrument debug: what does the hierarchy hold while the
+    /// dialog is up? The outside tap is not reaching a dismissable region in
+    /// ANY arm — including a medium sheet, which outside-taps are documented
+    /// to dismiss — so the tap target has to be found, not guessed again.
+    func testDumpHierarchyWhileDialogIsUp() {
+        let app = launch()
+        XCTAssertTrue(app.buttons["probe_open_dialog"].waitForExistence(timeout: 10))
+        app.buttons["probe_open_dialog"].tap()
+        XCTAssertTrue(app.buttons["probe_destructive"].waitForExistence(timeout: 5))
+        print("PROBE-TREE-BEGIN")
+        print(app.debugDescription)
+        print("PROBE-TREE-END")
+        let dismissRegion = app.otherElements["PopoverDismissRegion"]
+        print("PROBE-DISMISS-REGION exists=\(dismissRegion.exists)")
     }
 
     func testWhatEachPresentationDraws() {
