@@ -1025,7 +1025,34 @@ public struct DynamicModifierHelper {
 
     @available(iOS 15.0, *)
     public static func applyConfirmationDialog(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
-        guard let dialogConfig = component.typedAttributes(CommonAttributes.self).confirmationDialog,
+        applyPresentedDialog(view, component: component, data: data, style: .confirmationDialog)
+    }
+
+    /// `alert` is a separate attribute rather than a style on
+    /// `confirmationDialog`, because the two APIs do not render the same:
+    /// in a regular size class `.confirmationDialog` draws no cancel button
+    /// while `.alert` draws it in both classes (measured on iPhone 16 Pro /
+    /// iPad A16 / iPad Pro M4 with the same button set). The attribute is
+    /// spelled like the modifier it emits — a name that emits a different
+    /// API is a name that lies.
+    @available(iOS 15.0, *)
+    public static func applyAlert(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        applyPresentedDialog(view, component: component, data: data, style: .alert)
+    }
+
+    /// Which of the two presentation APIs a config drives. `.alert` takes no
+    /// titleVisibility — it always shows its title — which is why the SSoT
+    /// declares that property for `confirmationDialog` alone.
+    public enum PresentedDialogStyle {
+        case confirmationDialog
+        case alert
+    }
+
+    @available(iOS 15.0, *)
+    static func applyPresentedDialog(_ view: AnyView, component: DynamicComponent, data: [String: Any], style: PresentedDialogStyle) -> AnyView {
+        let attrs = component.typedAttributes(CommonAttributes.self)
+        let config: [String: Any]? = style == .alert ? attrs.alert : attrs.confirmationDialog
+        guard let dialogConfig = config,
               let isPresentedBinding = dialogConfig["isPresented"] as? String,
               let propName = DynamicEventHelper.extractPropertyName(from: isPresentedBinding),
               let binding = data[propName] as? SwiftUI.Binding<Bool> else {
@@ -1070,15 +1097,32 @@ public struct DynamicModifierHelper {
 
         guard let actions = actionsContent else { return view }
 
-        if let msg = message {
+        switch style {
+        case .alert:
+            if let msg = message {
+                return AnyView(
+                    view.alert(Text(title), isPresented: binding) {
+                        actions
+                    } message: {
+                        Text(msg)
+                    }
+                )
+            }
             return AnyView(
-                view.confirmationDialog(Text(title), isPresented: binding, titleVisibility: titleVisibility) {
+                view.alert(Text(title), isPresented: binding) {
                     actions
-                } message: {
-                    Text(msg)
                 }
             )
-        } else {
+        case .confirmationDialog:
+            if let msg = message {
+                return AnyView(
+                    view.confirmationDialog(Text(title), isPresented: binding, titleVisibility: titleVisibility) {
+                        actions
+                    } message: {
+                        Text(msg)
+                    }
+                )
+            }
             return AnyView(
                 view.confirmationDialog(Text(title), isPresented: binding, titleVisibility: titleVisibility) {
                     actions
@@ -1150,9 +1194,10 @@ public struct DynamicModifierHelper {
         result = applyTint(result, component: component, data: data)
         // 17. onClick + lifecycle events
         result = DynamicEventHelper.applyEvents(result, component: component, data: data)
-        // 18. confirmationDialog
+        // 18. confirmationDialog / alert
         if #available(iOS 15.0, *) {
             result = applyConfirmationDialog(result, component: component, data: data)
+            result = applyAlert(result, component: component, data: data)
         }
         // 19. accessibilityId
         result = applyAccessibilityId(result, component: component)

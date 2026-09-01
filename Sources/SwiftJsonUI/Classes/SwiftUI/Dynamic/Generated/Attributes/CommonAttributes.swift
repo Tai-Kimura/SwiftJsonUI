@@ -51,6 +51,7 @@ public struct CommonAttributes {
 
     /// Canonical attribute names declared for this component (public metadata contract).
     public static let declaredAttributes: Set<String> = [
+        "alert",
         "alignBottom",
         "alignBottomOfView",
         "alignBottomView",
@@ -208,6 +209,9 @@ public struct CommonAttributes {
     public static func isDeclared(_ key: String) -> Bool {
         return declaredAttributes.contains(key) || aliasMap[key] != nil
     }
+
+    /// Alert configuration (iOS 15+). Same shape as confirmationDialog minus titleVisibility: .alert always shows its title, and unlike .confirmationDialog it draws the cancel role in a regular size class
+    public let alert: [String: Any]?
 
     /// Align to parent bottom (binding supported)
     public let alignBottom: AttrValue<Bool>?
@@ -644,6 +648,7 @@ public struct CommonAttributes {
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
+        self.alert = AttrCoerce.object(AttrCoerce.lookup(json, "alert"))
         self.alignBottom = AttrCoerce.attrValue(AttrCoerce.lookup(json, "alignBottom"), AttrCoerce.boolean)
         self.alignBottomOfView = AttrCoerce.string(AttrCoerce.lookup(json, "alignBottomOfView"))
         self.alignBottomView = AttrCoerce.string(AttrCoerce.lookup(json, "alignBottomView"))

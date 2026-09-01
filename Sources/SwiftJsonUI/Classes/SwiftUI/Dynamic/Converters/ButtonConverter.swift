@@ -223,12 +223,13 @@ public struct ButtonConverter {
             }
         }
 
-        // --- 4.6. confirmationDialog (iOS 15+, common attribute) ---
+        // --- 4.6. confirmationDialog / alert (iOS 15+, common attributes) ---
         // Mirrored from DynamicModifierHelper.applyStandardModifiers so that
         // Button — which runs its own modifier bag without applyStandardModifiers —
-        // still honors the shared `confirmationDialog` attribute.
+        // still honors the shared `confirmationDialog` / `alert` attributes.
         if #available(iOS 15.0, *) {
             result = DynamicModifierHelper.applyConfirmationDialog(result, component: component, data: data)
+            result = DynamicModifierHelper.applyAlert(result, component: component, data: data)
         }
 
         // --- 4.7. onLongPress (common attribute) ---
