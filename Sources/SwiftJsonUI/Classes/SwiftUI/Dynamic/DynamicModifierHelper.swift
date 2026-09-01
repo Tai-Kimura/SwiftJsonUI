@@ -1138,80 +1138,120 @@ public struct DynamicModifierHelper {
     // → safeAreaInsets → disabled → tag → hitTesting → tintColor
     // → onClick → lifecycle → confirmationDialog → accessibilityId
 
-    public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false, skipBackground: Bool = false) -> AnyView {
-        var result = view
 
+    /// One stage of the standard modifier chain: a name and what it does.
+    ///
+    /// The chain is DRIVEN by `standardOrder` rather than being a hand-written
+    /// sequence of calls, so the declaration and the application are the same
+    /// object. A stage that leaves the list stops being applied, and a stage in
+    /// the list is always applied — which is what makes the wiring assertable
+    /// in one test instead of one per stage. Removing any of these calls from
+    /// the old hand-written chain left all 1338 tests green (23-stage sweep,
+    /// 2026-09-01: 21 of 23 undetected; the 2 that were caught are incidental
+    /// pixel coverage from fixtures written for another purpose).
+    public struct Stage {
+        public let name: String
+        /// Whether this stage is part of the chain for these opt-outs. A
+        /// skipped stage is ABSENT from the applied sequence rather than
+        /// present-and-inert — the shape the hand-written `if` had, and the
+        /// difference the stage-A equivalence capture caught when the first
+        /// draft folded the skip into the body instead.
+        let appliesWhen: (Skips) -> Bool
+        let apply: (AnyView, DynamicComponent, [String: Any]) -> AnyView
+
+        init(_ name: String,
+             when appliesWhen: @escaping (Skips) -> Bool = { _ in true },
+             _ apply: @escaping (AnyView, DynamicComponent, [String: Any]) -> AnyView) {
+            self.name = name
+            self.appliesWhen = appliesWhen
+            self.apply = apply
+        }
+    }
+
+    /// The caller-supplied opt-outs. Each stage decides for itself whether a
+    /// skip applies to it, so the list stays a flat sequence.
+    public struct Skips {
+        let padding: Bool
+        let insets: Bool
+        let background: Bool
+    }
+
+    /// The standard chain, in application order. ORDER IS LOAD-BEARING —
+    /// see the per-stage notes; `disabled` genuinely appears twice.
+    public static let standardOrder: [Stage] = [
         // 1. padding (skipped for relative positioning containers)
-        if !skipPadding {
-            result = applyPadding(result, component: component, data: data)
-        }
-        // 2. frame constraints
-        result = applyFrameConstraints(result, component: component, data: data)
-        // 3. frame size
-        result = applyFrameSize(result, component: component, data: data)
+        Stage("padding", when: { !$0.padding }) { v, c, d in
+            applyPadding(v, component: c, data: d)
+        },
+        Stage("frameConstraints") { v, c, d in
+            applyFrameConstraints(v, component: c, data: d)
+        },
+        Stage("frameSize") { v, c, d in applyFrameSize(v, component: c, data: d) },
         // 4. insets (skipped for Collection which handles insets with spacers)
-        if !skipInsets {
-            result = applyInsets(result, component: component)
-        }
-        // 5. background (skipped when the caller already painted it —
-        // an empty View renders Rectangle().fill, the codegen leaf contract)
-        if !skipBackground {
-            // 5b. highlighted → highlightBackground REPLACES the base
-            // background, exactly as UIKit swaps SJUIView's backgroundColor.
-            // `.background` layers behind the view, so painting the highlight
-            // after the opaque base hid it entirely.
-            if let highlight = highlightedBackgroundColor(component: component, data: data) {
-                result = AnyView(result.background(highlight))
-            } else {
-                result = applyBackground(result, component: component, data: data)
+        Stage("insets", when: { !$0.insets }) { v, c, _ in
+            applyInsets(v, component: c)
+        },
+        // 5. background (skipped when the caller already painted it — an empty
+        // View renders Rectangle().fill, the codegen leaf contract).
+        // highlighted → highlightBackground REPLACES the base background,
+        // exactly as UIKit swaps SJUIView's backgroundColor. `.background`
+        // layers behind the view, so painting the highlight after the opaque
+        // base hid it entirely.
+        Stage("background", when: { !$0.background }) { v, c, d in
+            if let highlight = highlightedBackgroundColor(component: c, data: d) {
+                return AnyView(v.background(highlight))
             }
-            // 5c. safeAreaInsetPositions — reserves the named edges.
-            result = applySafeAreaInsets(result, component: component)
-        }
-        // 6. cornerRadius
-        result = applyCornerRadius(result, component: component, data: data)
-        // 7. border
-        result = applyBorder(result, component: component, data: data)
-        // 8. margins
-        result = applyMargins(result, component: component, data: data)
-        // 9. opacity
-        result = applyOpacity(result, component: component, data: data)
-        // 10. shadow
-        result = applyShadow(result, component: component)
-        // 11. clipped
-        result = applyClipped(result, component: component, data: data)
-        // 12. offset
-        result = applyOffset(result, component: component, data: data)
+            return applyBackground(v, component: c, data: d)
+        },
+        // 5c. safeAreaInsetPositions — reserves the named edges. Inside the
+        // background opt-out, as it always has been.
+        Stage("safeAreaInsets", when: { !$0.background }) { v, c, _ in
+            applySafeAreaInsets(v, component: c)
+        },
+        Stage("cornerRadius") { v, c, d in applyCornerRadius(v, component: c, data: d) },
+        Stage("border") { v, c, d in applyBorder(v, component: c, data: d) },
+        Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
+        Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
+        Stage("shadow") { v, c, _ in applyShadow(v, component: c) },
+        Stage("clipped") { v, c, d in applyClipped(v, component: c, data: d) },
+        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
         // 12b. zIndex (indexBelow / indexAbove)
-        result = applyZIndex(result, component: component)
-        // 13. hidden
-        result = applyHidden(result, component: component, data: data)
-        // 14. disabled
-        result = applyDisabled(result, component: component, data: data)
-        // 15. hitTesting
-        result = applyHitTesting(result, component: component, data: data)
-        // 16. tint
-        result = applyTint(result, component: component, data: data)
+        Stage("zIndex") { v, c, _ in applyZIndex(v, component: c) },
+        Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },
+        Stage("disabled") { v, c, d in applyDisabled(v, component: c, data: d) },
+        Stage("hitTesting") { v, c, d in applyHitTesting(v, component: c, data: d) },
+        Stage("tint") { v, c, d in applyTint(v, component: c, data: d) },
         // 17. onClick + lifecycle events
-        result = DynamicEventHelper.applyEvents(result, component: component, data: data)
-        // 18. confirmationDialog / alert
-        if #available(iOS 15.0, *) {
-            result = applyConfirmationDialog(result, component: component, data: data)
-            result = applyAlert(result, component: component, data: data)
-        }
-        // 19. accessibilityId
-        result = applyAccessibilityId(result, component: component)
-        // 20. disabled again, OUTSIDE the accessibility element. Step 14 put
-        // .disabled inside the chain, but applyAccessibilityId creates the
+        Stage("events") { v, c, d in
+            DynamicEventHelper.applyEvents(v, component: c, data: d)
+        },
+        Stage("confirmationDialog") { v, c, d in
+            guard #available(iOS 15.0, *) else { return v }
+            return applyConfirmationDialog(v, component: c, data: d)
+        },
+        Stage("alert") { v, c, d in
+            guard #available(iOS 15.0, *) else { return v }
+            return applyAlert(v, component: c, data: d)
+        },
+        Stage("accessibilityId") { v, c, _ in applyAccessibilityId(v, component: c) },
+        // 20. disabled again, OUTSIDE the accessibility element. The earlier
+        // `disabled` puts it inside the chain, but accessibilityId creates the
         // container's a11y element on top of it — an element outside the
-        // disabled environment never gets the notEnabled trait, so
-        // XCUITest read the target as enabled (measured: the View-hosted
-        // enabled__false conformance fixture). Re-applying outermost puts
-        // the element inside the disabled environment. Double-application
-        // is harmless.
-        result = applyDisabled(result, component: component, data: data)
+        // disabled environment never gets the notEnabled trait, so XCUITest
+        // read the target as enabled (measured: the View-hosted
+        // enabled__false conformance fixture). Re-applying outermost puts the
+        // element inside the disabled environment. Double-application is
+        // harmless, and this entry is NOT a duplicate to be tidied away.
+        Stage("disabledOuter") { v, c, d in applyDisabled(v, component: c, data: d) },
+    ]
 
-        return result
+    public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false, skipBackground: Bool = false) -> AnyView {
+        let skips = Skips(padding: skipPadding, insets: skipInsets, background: skipBackground)
+        return standardOrder
+            .filter { $0.appliesWhen(skips) }
+            .reduce(view) { partial, stage in
+                stage.apply(partial, component, data)
+            }
     }
 
     // MARK: - Frame Alignment Helper (matches frame_helper.rb)
