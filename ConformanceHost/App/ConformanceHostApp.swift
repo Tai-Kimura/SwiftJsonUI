@@ -167,6 +167,8 @@ struct ConformanceRootView: View {
                 OffsetHitTargetProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-confirmationDialogProbe") {
                 ConfirmationDialogProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-duplicateIdentifierProbe") {
+                DuplicateIdentifierProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
