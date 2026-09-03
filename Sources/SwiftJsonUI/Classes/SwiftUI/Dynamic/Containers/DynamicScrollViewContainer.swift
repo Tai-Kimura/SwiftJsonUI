@@ -188,9 +188,10 @@ public struct DynamicScrollViewContainer: View {
             // Everything inside a ScrollView sits under a scrolling ancestor
             // — the fact a wrapping flow Collection below needs to hand its
             // scrolling up (ScrollingAncestorContext). Either axis, as the
-            // static codegen marks it (sjui 912739e2). This container, not
-            // ScrollViewConverter, is what the builder dispatches "ScrollView"
-            // to.
+            // static codegen marks it (sjui 912739e2). This container is what
+            // the builder dispatches "ScrollView" to — a converter of the same
+            // name used to exist beside the others and was reached by nothing;
+            // it is gone so the next change lands here.
             .environment(\.jsonuiScrollingAncestor, true)
         }
     }

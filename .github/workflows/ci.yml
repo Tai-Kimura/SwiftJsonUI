@@ -169,10 +169,31 @@ jobs:
             exit 1
           fi
           echo "Using destination id=$DEST_ID"
+          # The full log is kept for the diagnostics gate below; the tail is
+          # what the job page shows.
           xcodebuild test \
             -scheme "$SCHEME" \
             -destination "platform=iOS Simulator,id=$DEST_ID" \
-            | tail -100
+            2>&1 | tee xcodebuild-test.log | tail -100
+
+      - name: Swift diagnostics gate (Optional.none)
+        # A bare `.none` against an `Optional<Enum>` parameter is
+        # `Optional.none` — nil — and the compiler only WARNS ("assuming you
+        # mean 'Optional<...>.none'"). One such warning made a dynamic
+        # Collection render the same shape on both arms of a switch (10.20.0,
+        # flow-under-scrolling-ancestor): unit tests green, device pictures
+        # byte-identical, found only by logging the branch that should have
+        # run. Deliberately narrow: the warning denominator is unmeasured
+        # (3 lines on 2026-09-03 — 2 compiler sites + 1 tool line), so only
+        # this one spelling fails the job; the total is printed for the day
+        # that decision is made.
+        run: |
+          echo "warning lines in xcodebuild-test.log: $(grep -c 'warning:' xcodebuild-test.log || true)"
+          if grep -n "assuming you mean" xcodebuild-test.log; then
+            echo "::error::a bare .none resolved to Optional.none — spell the enum case out (see the lines above)"
+            exit 1
+          fi
+          echo "Optional.none gate: OK"
 
       - name: Release-configuration build
         run: |

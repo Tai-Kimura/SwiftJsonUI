@@ -10,8 +10,8 @@
 //  Collection cell is a separate layout file rendered through DynamicView;
 //  the environment crosses that boundary, a tree walk cannot — which is the
 //  static codegen's known limit (sjui 912739e2: a layout used as a cell has
-//  no ancestor in its own file). Set by ScrollViewConverter on its content
-//  and by CollectionConverter on the cells, headers and footers of a
+//  no ancestor in its own file). Set by DynamicScrollViewContainer on its
+//  content and by CollectionConverter on the cells, headers and footers of a
 //  vertically scrolling Collection. A mark only ever adds: nothing clears it,
 //  so a non-scrolling Collection inside a ScrollView keeps the ScrollView's
 //  mark on its cells.

@@ -5,7 +5,8 @@
 //  `gravity` resolved per axis, in ONE place.
 //
 //  The policy had four private copies of the horizontal extractor and three of
-//  the vertical one, and they had drifted: ScrollViewConverter's copy never
+//  the vertical one, and they had drifted: the dynamic ScrollView converter's
+//  copy (a file deleted in 10.20.0 — the builder never dispatched to it) never
 //  learned `centerHorizontal`, so a `gravity: ["centerHorizontal"]` inside a
 //  ScrollView fell to `left` while the same declaration centred everywhere
 //  else. A copied helper going stale is the shape G measured on android
