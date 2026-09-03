@@ -100,4 +100,111 @@ final class SameTypeDuplicateProbeUITests: XCTestCase {
             + "If versions disagree here, 1.9.6's single-query rewrite is NOT equivalent to 1.9.5 "
             + "for same-typed duplicates, and 1.9.7 does not fix it either")
     }
+
+    /// The flat test above varies only SIBLING order. If the two
+    /// enumerations can diverge at all it is where document order and tree
+    /// depth disagree, so this arm puts the three matches at depths 2, 0
+    /// and 1 in that document order.
+    ///
+    /// It also compares the enumerations DIRECTLY rather than only through
+    /// the driver: 1.9.5 asks `descendants(matching: .button)`, 1.9.6+ asks
+    /// `descendants(matching: .any)` and picks the first winner. Those two
+    /// queries are run here side by side, which measures the open question
+    /// without depending on which driver is vendored.
+    func testEnumerationsAgreeWhenTheDuplicatesSitAtDifferentDepths() throws {
+        guard ProcessInfo.processInfo.environment["SAME_TYPE_PROBE"] == "1" else {
+            throw XCTSkip("same-type duplicate probe: run with the guard lifted, as the other probes are")
+        }
+        let identifier = "nested_type_target"
+        let app = XCUIApplication()
+        app.launchArguments = ["-sameTypeDuplicateProbe"]
+        app.launch()
+        XCTAssertTrue(
+            app.staticTexts["same_type_probe_result"].waitForExistence(timeout: 10),
+            "probe did not start")
+
+        let anyMatches = app.descendants(matching: .any).matching(identifier: identifier)
+        let total = anyMatches.count
+        XCTAssertEqual(total, 3, "FIXTURE: expected 3 nested matches, found \(total)")
+
+        var types: [UInt] = []
+        var frames: [CGRect] = []
+        for index in 0..<total {
+            let element = anyMatches.element(boundBy: index)
+            types.append(element.elementType.rawValue)
+            frames.append(element.frame)
+        }
+        print("DUP2_NESTED_TYPES total=\(total) types=\(types)")
+        print("DUP2_NESTED_FRAMES \(frames)")
+        XCTAssertTrue(
+            types.allSatisfy { $0 == XCUIElement.ElementType.button.rawValue },
+            "FIXTURE: expected every nested match to be .button; got \(types)")
+        XCTAssertEqual(
+            Set(frames.map { "\($0)" }).count, total,
+            "FIXTURE: nested matches do not occupy distinct frames, so identity is unobservable")
+
+        // Does the tree actually HAVE differing depths here? SwiftUI is free
+        // to flatten wrapper stacks that carry no accessibility role, and if
+        // it does, this arm is the flat arm again under another name. Depth
+        // is read from the snapshot's indentation, which is the only place
+        // XCUITest exposes it.
+        let depths = app.debugDescription
+            .split(separator: "\n")
+            .filter { $0.contains("identifier: '\(identifier)'") }
+            .map { $0.prefix { $0 == " " }.count }
+        print("DUP2_NESTED_DEPTHS \(depths)")
+        XCTAssertEqual(
+            depths.count, total,
+            "FIXTURE: found \(depths.count) snapshot lines for '\(identifier)' but \(total) matches; "
+            + "the depth reading is not describing the same elements")
+        XCTAssertGreaterThan(
+            Set(depths).count, 1,
+            "FIXTURE: all \(total) matches sit at the same tree depth \(depths) — SwiftUI flattened "
+            + "the wrapper stacks, so this arm is the flat sibling case again and says nothing new "
+            + "about depth")
+
+        // The two enumerations, side by side. This is the property that
+        // source reading could not settle.
+        let firstOfAny = anyMatches.element(boundBy: 0).frame
+        let firstOfTyped = app.descendants(matching: .button).matching(identifier: identifier).firstMatch.frame
+        print("DUP2_NESTED_ENUMERATIONS any[0]=\(firstOfAny) buttons.firstMatch=\(firstOfTyped)")
+        XCTAssertEqual(
+            firstOfAny, firstOfTyped,
+            "ENUMERATION: `.any` and `.button` disagree on which match comes first when the "
+            + "duplicates sit at different depths. 1.9.5 resolves via the typed query and 1.9.6+ "
+            + "via the unfiltered one, so they would tap DIFFERENT elements here")
+
+        // End to end: the vendored driver resolves the same one.
+        app.buttons["same_type_probe_reset"].tap()
+        XCTAssertEqual(result(app), "tapped: none", "reset did not take")
+
+        let executor = XCUITestActionExecutor(platform: "ios")
+        try executor.execute(step: TestStep(action: "tap", id: identifier), in: app)
+
+        let fired = result(app)
+        print("DUP2_NESTED_RESULT \(fired)")
+
+        // ⚠️ NOT asserted against a hardcoded index. Once real containers
+        // exist, XCUITest does not enumerate in document order: measured
+        // depths [16, 14, 16] with the FLAT sibling (y=340) enumerated
+        // before the deeper one drawn above it (y=300). That is a property
+        // of XCUITest, not a driver defect, and hardcoding "the topmost one"
+        // would assert the wrong thing.
+        //
+        // The invariant that matters is that the driver lands on the element
+        // both enumerations agree is first — whichever that turns out to be.
+        let firedIndex = fired.replacingOccurrences(of: "tapped: nested", with: "")
+        let firedElement = (0..<total)
+            .map { anyMatches.element(boundBy: $0) }
+            .first { $0.label.contains("nested \(firedIndex)") }
+        XCTAssertNotNil(
+            firedElement,
+            "FIXTURE: '\(fired)' does not name any of the nested matches, so the resolution cannot "
+            + "be checked against the enumeration")
+        XCTAssertEqual(
+            firedElement?.frame, firstOfAny,
+            "RESOLUTION: the driver tapped \(fired) at \(firedElement?.frame.debugDescription ?? "nil"), "
+            + "but both enumerations put \(firstOfAny) first. The driver is not resolving to the "
+            + "head of the enumeration it queries")
+    }
 }

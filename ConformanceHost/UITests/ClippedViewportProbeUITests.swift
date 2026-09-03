@@ -29,11 +29,20 @@
 //  ⚠️ The predicate is re-stated here rather than imported. ScrollDiagnosis
 //  lives in the vendored driver and only exists from 1.9.8, and the host is
 //  built against whatever driver is vendored — importing it would break the
-//  build for earlier drivers. The rule copied is three lines
+//  build for earlier drivers, and the arm could then no longer measure them.
+//  The rule copied is one line
 //  (`viewport.contains(CGPoint(x: element.midX, y: element.midY))`,
-//  ScrollDiagnosis.placement). What is under test is the INPUT — whether
-//  `scroller.frame` is the visible region — not the predicate. If the
-//  driver's rule ever changes, this arm measures the old one.
+//  ScrollDiagnosis.placement). What is under test is the INPUT — which
+//  rectangle is the viewport — not the predicate.
+//
+//  ⚠️ The cost of that choice, paid once already: this arm measures the rule
+//  it restates, NOT the rule the vendored driver runs. When the driver's
+//  viewport changed from `scroller.frame` to `frame ∩ window` (bb61498),
+//  this file went on measuring the old rule and would have stayed red
+//  against a fixed driver. Both rules are therefore computed here from the
+//  same measured rectangles: the new one is asserted, the old one printed.
+//  ⇒ If the driver's rule changes again, THIS FILE MUST BE UPDATED — a
+//  green here is a statement about the restated rule, not about the driver.
 //
 
 import XCTest
@@ -91,16 +100,33 @@ final class ClippedViewportProbeUITests: XCTestCase {
             + "and the visible region have not come apart and there is no discrepancy to measure")
 
         // ---- the measurement ----
-        let inside = hitPointIsInside(element: clippedFrame, viewport: viewport)
-        print("CLIP_PROBE_PLACEMENT hitPoint=(\(clippedFrame.midX), \(clippedFrame.midY)) "
-              + "insideViewport=\(inside) -> diagnosis would say "
-              + "\(inside ? "'something is drawn in front of it'" : "'out of view'")")
+        // Both rules are computed against the same measured rectangles, so
+        // the arm shows in one run that the new rule is right AND that the
+        // old one was wrong. Only the new rule is asserted; the old one is
+        // printed, because an assert on it would fail forever once the
+        // driver is fixed.
+        let window = app.frame
+        let visibleArea = viewport.intersection(window)
+        let oldRule = hitPointIsInside(element: clippedFrame, viewport: viewport)
+        let newRule = hitPointIsInside(element: clippedFrame, viewport: visibleArea)
+
+        print("CLIP_PROBE_APPFRAME \(window)")
+        print("CLIP_PROBE_VISIBLE_AREA \(visibleArea.isNull || visibleArea.isEmpty ? "none of it on screen" : "\(visibleArea)")")
+        print("CLIP_PROBE_RULES hitPoint=(\(clippedFrame.midX), \(clippedFrame.midY)) "
+              + "old(frame)=\(oldRule) new(frame ∩ window)=\(newRule)")
+
+        // The old rule must actually be wrong here, or this arm is not
+        // exercising the discrepancy and its pass would be vacuous.
+        XCTAssertTrue(
+            oldRule,
+            "FIXTURE: the old rule already said 'out of view' for item_26, so frame and visible "
+            + "region have not come apart and a pass on the new rule proves nothing")
 
         XCTAssertFalse(
-            inside,
-            "DISCRIMINATOR: item_26 is out of view (unhittable, nothing left to scroll) yet its hit "
-            + "point falls inside scroller.frame \(viewport). The 1.9.8 diagnosis would report "
-            + "'something is drawn in front of it' and rule out 'not a scrolling problem' — both "
-            + "wrong. The viewport must be the visible region, not the container's layout frame")
+            newRule,
+            "DISCRIMINATOR: item_26 is out of view (unhittable, nothing left to scroll) and its hit "
+            + "point is outside the visible area \(visibleArea), yet the rule reported it inside. "
+            + "The diagnosis would say 'something is drawn in front of it' and rule out 'not a "
+            + "scrolling problem' — both wrong for an element nothing is covering")
     }
 }

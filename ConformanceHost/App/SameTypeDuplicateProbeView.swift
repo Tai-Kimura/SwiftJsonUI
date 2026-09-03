@@ -67,11 +67,62 @@ struct SameTypeDuplicateProbeView: View {
                 .accessibilityIdentifier(Self.sharedIdentifier)
             }
 
+            Divider()
+
+            // Second group: same identifier, same type, but at DIFFERENT
+            // TREE DEPTHS. The flat group above only proves the two
+            // enumerations agree on SIBLING order; if they can diverge at
+            // all it is here, where document order and depth disagree.
+            //
+            //   nested0  depth 2 (HStack > VStack)  first in document order
+            //   nested1  depth 0 (flat sibling)     second
+            //   nested2  depth 1 (HStack)           third
+            // ⚠️ `.accessibilityElement(children: .contain)` is required, not
+            // decoration: plain HStack/VStack wrappers carry no accessibility
+            // role and SwiftUI FLATTENS them. Measured — without it all three
+            // matches reported the same snapshot depth (14, 14, 14), so the
+            // arm was the flat sibling case wearing another name. `.contain`
+            // makes the wrapper a container element without overwriting the
+            // descendants' identifiers (which `.accessibilityIdentifier` on a
+            // container would).
+            HStack(spacing: 0) {
+                VStack(spacing: 0) {
+                    nestedButton(0)
+                }
+                .accessibilityElement(children: .contain)
+            }
+            .accessibilityElement(children: .contain)
+
+            nestedButton(1)
+
+            HStack(spacing: 0) {
+                nestedButton(2)
+            }
+            .accessibilityElement(children: .contain)
+
             Spacer()
         }
         .padding(12)
         // No identifier on the root: it would propagate down and overwrite
         // every descendant's own identifier (measured in
-        // OffsetHitTargetProbeView).
+        // OffsetHitTargetProbeView). The HStack/VStack wrappers above carry
+        // none either, for the same reason.
+    }
+
+    static let nestedIdentifier = "nested_type_target"
+    static let nestedCount = 3
+
+    @ViewBuilder
+    private func nestedButton(_ index: Int) -> some View {
+        Button {
+            lastTapped = "nested\(index)"
+        } label: {
+            Text("nested \(index)")
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 6)
+                .background(Color(white: index % 2 == 0 ? 0.90 : 0.83))
+        }
+        .buttonStyle(.plain)
+        .accessibilityIdentifier(Self.nestedIdentifier)
     }
 }
