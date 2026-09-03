@@ -171,6 +171,7 @@ public struct DynamicScrollViewContainer: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .environment(\.jsonuiScrollingAncestor, true)
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 ForEach(Array(children.enumerated()), id: \.offset) { _, child in
@@ -184,6 +185,13 @@ public struct DynamicScrollViewContainer: View {
                 Spacer(minLength: 0)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // Everything inside a ScrollView sits under a scrolling ancestor
+            // — the fact a wrapping flow Collection below needs to hand its
+            // scrolling up (ScrollingAncestorContext). Either axis, as the
+            // static codegen marks it (sjui 912739e2). This container, not
+            // ScrollViewConverter, is what the builder dispatches "ScrollView"
+            // to.
+            .environment(\.jsonuiScrollingAncestor, true)
         }
     }
 

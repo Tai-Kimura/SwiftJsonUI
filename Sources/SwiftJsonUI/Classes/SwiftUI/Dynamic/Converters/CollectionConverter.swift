@@ -54,21 +54,45 @@ public struct CollectionConverter {
         data: [String: Any],
         viewId: String? = nil
     ) -> AnyView {
+        // Ruling (2026-09-03): a flow Collection with `lazy` in effect
+        // scrolls inside its own bounds — and a wrapping one has none. The
+        // flow arm wrapped its FlowLayout in a ScrollView unconditionally,
+        // so under a scrolling ancestor a wrapContent flow became an inner
+        // ScrollView grown to the outer viewport (the corpus's
+        // flowOverflow__wrap picture on iOS) while Android wraps and lets the
+        // parent scroll. Whether there IS a scrolling ancestor is a fact of
+        // the render context (a cell layout is another file), so both shapes
+        // are built and the environment picks: under a scrolling ancestor
+        // the non-scroll container, otherwise the ScrollView it always had —
+        // a full-screen chip destination relies on that one.
+        if flowDefersToScrollingAncestor(component, data: data, insideScrollingAncestor: true) {
+            // `CollectionStackMode.none`, spelled out: against an Optional
+            // parameter a bare `.none` is `Optional.none` — nil — and both
+            // shapes silently become the ScrollView one (the compiler only
+            // warns; measured as byte-identical pictures with the switch
+            // logging `inside=1`).
+            return AnyView(ScrollingAncestorSwitch(
+                underScrollingAncestor: render(component: component, data: data, viewId: viewId, forcedMode: CollectionStackMode.none),
+                otherwise: render(component: component, data: data, viewId: viewId, forcedMode: nil)
+            ))
+        }
+        return render(component: component, data: data, viewId: viewId, forcedMode: nil)
+    }
+
+    /// `forcedMode` overrides the declared `lazy` for the container choice
+    /// only — the deferred flow above renders as `.none` without the
+    /// declaration saying so, which is why that shape also has to be made
+    /// an accessibility container by hand below.
+    private static func render(
+        component: DynamicComponent,
+        data: [String: Any],
+        viewId: String?,
+        forcedMode: CollectionStackMode?
+    ) -> AnyView {
         let sections = component.sections ?? []
         let attrs = component.typedAttributes(CollectionAttributes.self)
-        // `horizontalScroll: true` is the declared boolean spelling of the
-        // same direction fact (ScrollView's vocabulary — real carousels use
-        // it). The static codegens honor it; the android dynamic renderer
-        // gained the same reading in the F4-P2 parity cycle.
-        let isHorizontal = component.layout == "horizontal"
-            || component.orientation == "horizontal"
-            || attrs.horizontalScroll == true
-        // Case-insensitive: the declared enum admits 'Flow' as well as
-        // 'flow' (the static codegens compare casecmp since the F4-P2
-        // parity cycle). 'leftAligned' is an alias spelling of flow (SSoT
-        // valueAliases, 2026-08-03 unification — the generated enum folds
-        // it the same way).
-        let isFlow = ["flow", "leftaligned"].contains(component.layout?.lowercased() ?? "")
+        let isHorizontal = Self.isHorizontal(component)
+        let isFlow = Self.isFlowLayout(component)
         let hasSections = !sections.isEmpty
         // `columns` accepts a literal number or a `@{binding}` (canonical
         // kind: number | binding — the contract the static codegens already
@@ -177,7 +201,7 @@ public struct CollectionConverter {
         // toggle propagates through the same CollectionStackView wrapper without
         // changing modifier-chain shape. Paging always wins (HorizontalPager is
         // inherently lazy).
-        let collectionMode = stackMode(component, data: data)
+        let collectionMode = forcedMode ?? stackMode(component, data: data)
 
         // 1. Build collection content based on layout type
         var result: AnyView
@@ -205,6 +229,15 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
             )
+            if forcedMode == CollectionStackMode.none {
+                // The deferred flow: a non-scroll container that the declared
+                // `lazy` does not announce, so the standard chain's
+                // isAccessibilityContainer says no and would apply a bare
+                // identifier — pushed down onto the cells, renaming them
+                // (the defect f419093 closed for the declared shape). Make it
+                // an element first; the chain's identifier then lands on it.
+                result = DynamicModifierHelper.makeAccessibilityContainer(result, component: component)
+            }
             // Collection insets are CONTENT padding: applied to the content
             // before frame/background so cells inset within the declared
             // container, exactly what the sjui codegen emits. The generic
@@ -1396,6 +1429,52 @@ public struct CollectionConverter {
         stackMode(component, data: [:]) == .none
     }
 
+    /// `horizontalScroll: true` is the declared boolean spelling of the
+    /// same direction fact (ScrollView's vocabulary — real carousels use
+    /// it). The static codegens honor it; the android dynamic renderer
+    /// gained the same reading in the F4-P2 parity cycle.
+    static func isHorizontal(_ component: DynamicComponent) -> Bool {
+        component.layout == "horizontal"
+            || component.orientation == "horizontal"
+            || component.typedAttributes(CollectionAttributes.self).horizontalScroll == true
+    }
+
+    /// Case-insensitive: the declared enum admits 'Flow' as well as 'flow'
+    /// (the static codegens compare casecmp since the F4-P2 parity cycle).
+    /// 'leftAligned' is an alias spelling of flow (SSoT valueAliases,
+    /// 2026-08-03 unification — the generated enum folds it the same way).
+    static func isFlowLayout(_ component: DynamicComponent) -> Bool {
+        ["flow", "leftaligned"].contains(component.layout?.lowercased() ?? "")
+    }
+
+    /// Would this flow Collection hand scrolling to a scrolling ancestor,
+    /// given that it has one? The component half of the decision — the same
+    /// table sjui's `flow_defers_to_scrolling_ancestor?` answers: `lazy` in
+    /// effect (anything but "none"), a flow layout, and no bounds of its own
+    /// (height undeclared or wrapContent). A numeric height clips and
+    /// scrolls inside its box, matchParent fills the parent's — both keep
+    /// the ScrollView; a bound height is unknown here and keeps it too.
+    static func flowDefersToScrollingAncestor(
+        _ component: DynamicComponent,
+        data: [String: Any],
+        insideScrollingAncestor: Bool
+    ) -> Bool {
+        guard insideScrollingAncestor else { return false }
+        guard isFlowLayout(component) else { return false }
+        guard stackMode(component, data: data) != .none else { return false }
+        guard let height = component.typedAttributes(CommonAttributes.self).height else { return true }
+        return height.value == .wrapContent
+    }
+
+    /// A vertically scrolling Collection is a scrolling ancestor for its
+    /// cells, headers and footers — and the cell layout is another file, so
+    /// only this context can tell it (the static codegen's known limit).
+    /// Horizontal shapes scroll the other axis and `lazy: "none"` does not
+    /// scroll at all: both leave the inherited mark alone.
+    static func scrollsVertically(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        stackMode(component, data: data) != .none && !isHorizontal(component)
+    }
+
     @ViewBuilder
     private static func buildCellView(
         cellClassName: String,
@@ -1427,6 +1506,9 @@ public struct CollectionConverter {
             viewId: cellClassName,
             data: cellData
         )
+        // The cell's own file cannot see that it sits inside a scrolling
+        // Collection; the environment tells it (ScrollingAncestorContext).
+        .modifier(ScrollingAncestorMark(active: scrollsVertically(component, data: data)))
         .accessibilityIdentifier(cellAccessibilityIdentifier(component: component, cellIndex: cellIndex))
         .onAppear {
             onItemAppear?(cellIndex)
@@ -1455,6 +1537,9 @@ public struct CollectionConverter {
             viewId: headerClassName,
             data: headerData
         )
+        // Headers live in the vertical section route, under the same
+        // scrolling ancestor as the cells (ScrollingAncestorContext).
+        .modifier(ScrollingAncestorMark(active: true))
     }
 
     @ViewBuilder
@@ -1471,6 +1556,7 @@ public struct CollectionConverter {
             viewId: footerClassName,
             data: footerData
         )
+        .modifier(ScrollingAncestorMark(active: true))
     }
 
     // MARK: - Alignment Helpers

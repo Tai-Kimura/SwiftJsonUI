@@ -999,25 +999,35 @@ public struct DynamicModifierHelper {
             // children, so it is never collapsed into its single child.
             // Only applied where that hazard exists — see
             // accessibilityMergeHazard (device stack-depth budget).
-            if accessibilityMergeHazard(component) {
-                return AnyView(
-                    view
-                        .overlay(alignment: .topLeading) {
-                            SwiftUI.Color.clear
-                                .frame(width: 0.5, height: 0.5)
-                                .accessibilityElement(children: .ignore)
-                        }
-                        .accessibilityElement(children: .contain)
-                        .accessibilityIdentifier(id)
-                )
-            }
             return AnyView(
-                view
-                    .accessibilityElement(children: .contain)
+                makeAccessibilityContainer(view, component: component)
                     .accessibilityIdentifier(id)
             )
         }
         return AnyView(view.accessibilityIdentifier(id))
+    }
+
+    /// The container half of `applyAccessibilityId`: an explicit
+    /// accessibility container, anchored against the single-child merge
+    /// where that hazard exists, WITHOUT the identifier. Exposed for the one
+    /// shape the chain cannot recognise from the component alone — a flow
+    /// Collection rendered as its non-scroll container because a scrolling
+    /// ancestor takes the scrolling (CollectionConverter): made an element
+    /// here first, the chain's bare identifier then lands on it instead of
+    /// on its cells.
+    static func makeAccessibilityContainer(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        if accessibilityMergeHazard(component) {
+            return AnyView(
+                view
+                    .overlay(alignment: .topLeading) {
+                        SwiftUI.Color.clear
+                            .frame(width: 0.5, height: 0.5)
+                            .accessibilityElement(children: .ignore)
+                    }
+                    .accessibilityElement(children: .contain)
+            )
+        }
+        return AnyView(view.accessibilityElement(children: .contain))
     }
 
     // MARK: - 18. ConfirmationDialog

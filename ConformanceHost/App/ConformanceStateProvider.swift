@@ -238,7 +238,7 @@ final class ConformanceStateStore: ObservableObject {
         var source = CollectionDataSource()
         if let cells = raw as? [[String: Any]] {
             var section = CollectionDataSection()
-            section.setCells(viewName: "", data: cells)
+            section.setCells(viewName: "", data: cells.map(materializeNestedCollections))
             source.addSection(section)
             return source
         }
@@ -250,10 +250,27 @@ final class ConformanceStateStore: ObservableObject {
             var section = CollectionDataSection()
             section.setCells(
                 viewName: sectionRaw["cell"] as? String ?? "",
-                data: sectionRaw["cells"] as? [[String: Any]] ?? []
+                data: (sectionRaw["cells"] as? [[String: Any]] ?? []).map(materializeNestedCollections)
             )
             source.addSection(section)
         }
         return source
+    }
+
+    /// A cell dict value written in the explicit contract shape
+    /// `{"sections": [...]}` is a NESTED Collection's data — a Collection
+    /// inside a cell (the consumer's chip flow in a list cell). A cell is
+    /// rendered from its own layout file with the cell dict as its `data`,
+    /// so this is the only channel a nested `items: "@{prop}"` can be fed
+    /// through: the layout-level materialization above never sees cell
+    /// files. Plain arrays are left alone — a string list looks the same.
+    private static func materializeNestedCollections(_ cell: [String: Any]) -> [String: Any] {
+        var out = cell
+        for (key, value) in cell {
+            if let dict = value as? [String: Any], dict["sections"] is [[String: Any]] {
+                out[key] = materializeCollection(dict)
+            }
+        }
+        return out
     }
 }
