@@ -948,7 +948,13 @@ public struct DynamicModifierHelper {
         let typeName = component.type?.lowercased() ?? ""
         if accessibilityContainerTypes.contains(typeName) { return true }
         guard typeName == "collection" else { return false }
-        return CollectionStackMode(json: component.rawAttribute("lazy")) == .none
+        // Asked of the converter that renders the shape, not read here: `lazy`
+        // accepts a legacy boolean besides the declared enum, so it is a raw
+        // read, and the read-discipline allowlist carries exactly one row for
+        // it — in CollectionConverter. A second read here would be a second
+        // unlisted violation and a second chance to disagree with what is
+        // actually rendered.
+        return CollectionConverter.rendersWithoutScrollContainer(component)
     }
 
     private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {

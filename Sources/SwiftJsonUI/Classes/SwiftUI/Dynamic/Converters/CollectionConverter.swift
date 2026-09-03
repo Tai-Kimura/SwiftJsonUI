@@ -177,13 +177,7 @@ public struct CollectionConverter {
         // toggle propagates through the same CollectionStackView wrapper without
         // changing modifier-chain shape. Paging always wins (HorizontalPager is
         // inherently lazy).
-        // `lazy` accepts a legacy boolean besides the declared enum —
-        // wider than the declared kind, so raw passthrough.
-        let resolvedLazy: Any? = DynamicBindingHelper.resolveValue(
-            component.rawAttribute("lazy"),
-            data: data
-        )
-        let collectionMode = CollectionStackMode(json: resolvedLazy)
+        let collectionMode = stackMode(component, data: data)
 
         // 1. Build collection content based on layout type
         var result: AnyView
@@ -1378,6 +1372,29 @@ public struct CollectionConverter {
     }
 
     // MARK: - Cell/Header/Footer View Builders
+
+    /// The outer container shape this Collection renders as.
+    ///
+    /// `lazy` accepts a legacy boolean besides the declared enum — wider than
+    /// the declared kind — so it is read raw here, which is the row the
+    /// read-discipline allowlist carries for this file. Kept as the ONE place
+    /// that reads it: `isAccessibilityContainer` needs the same answer, and a
+    /// second raw read elsewhere would be a second unlisted violation and a
+    /// second chance for the two to disagree about what shape is rendered.
+    static func stackMode(_ component: DynamicComponent, data: [String: Any]) -> CollectionStackMode {
+        let resolved: Any? = DynamicBindingHelper.resolveValue(
+            component.rawAttribute("lazy"),
+            data: data
+        )
+        return CollectionStackMode(json: resolved)
+    }
+
+    /// True when this Collection renders WITHOUT a scroll container — a bare
+    /// VStack/HStack, which is not an accessibility element, so a bare
+    /// identifier on it is pushed down onto its cells and renames them.
+    static func rendersWithoutScrollContainer(_ component: DynamicComponent) -> Bool {
+        stackMode(component, data: [:]) == .none
+    }
 
     @ViewBuilder
     private static func buildCellView(
