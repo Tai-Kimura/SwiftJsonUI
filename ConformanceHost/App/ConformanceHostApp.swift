@@ -173,6 +173,8 @@ struct ConformanceRootView: View {
                 SameTypeDuplicateProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-clippedViewportProbe") {
                 ClippedViewportProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-coveredTapProbe") {
+                CoveredTapProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
