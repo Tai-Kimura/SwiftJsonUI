@@ -24,10 +24,12 @@ import XCTest
 #if DEBUG
 final class CollectionCellIdentifierTests: XCTestCase {
 
-    private func component(id: String?, layout: String? = nil) throws -> DynamicComponent {
+    private func component(id: String?, layout: String? = nil,
+                           lazy: String? = nil) throws -> DynamicComponent {
         var json = "{\"type\":\"Collection\""
         if let id { json += ",\"id\":\"\(id)\"" }
         if let layout { json += ",\"layout\":\"\(layout)\"" }
+        if let lazy { json += ",\"lazy\":\"\(lazy)\"" }
         json += "}"
         return try JSONDecoder().decode(
             DynamicComponent.self, from: Data(json.utf8)
@@ -74,6 +76,50 @@ final class CollectionCellIdentifierTests: XCTestCase {
                 component: try component(id: ""), cellIndex: 0),
             ""
         )
+    }
+
+    // MARK: - the container the cells live in
+
+    /// Giving cells an address is not enough. A bare
+    /// `.accessibilityIdentifier` on a view that is not itself an
+    /// accessibility element is pushed DOWN onto its child elements, renaming
+    /// every cell to the collection's id — so `tapItem` can address no index
+    /// at all. Measured on the conformance host: with `lazy: "none"` the cell
+    /// addresses timed out; with the default they resolved.
+    ///
+    /// Collection is not a container by TYPE, which is why it stays out of
+    /// `accessibilityContainerTypes` and answers by shape instead.
+    func testANonScrollCollectionIsMadeAnElement() throws {
+        let c = try component(id: "c", layout: "flow", lazy: "none")
+        XCTAssertTrue(DynamicModifierHelper.isAccessibilityContainer(c))
+    }
+
+    func testScrollShapesAreLeftAlone() throws {
+        for lazy in [nil, "lazy", "eager"] {
+            let c = try component(id: "c", layout: "flow", lazy: lazy)
+            XCTAssertFalse(
+                DynamicModifierHelper.isAccessibilityContainer(c),
+                "lazy: \(lazy ?? "(default)") already renders a scroll container"
+            )
+        }
+    }
+
+    /// The shape decides, not the layout — `lazy: "none"` renders a bare
+    /// stack whichever way the cells are arranged.
+    func testItIsTheLazyModeAndNotTheLayoutThatDecides() throws {
+        for layout in ["vertical", "horizontal", "flow"] {
+            XCTAssertTrue(
+                DynamicModifierHelper.isAccessibilityContainer(
+                    try component(id: "c", layout: layout, lazy: "none")),
+                "layout: \(layout) with lazy:none is not a scroll container"
+            )
+        }
+    }
+
+    func testAPlainViewIsStillAContainerByType() throws {
+        let json = "{\"type\":\"View\",\"id\":\"v\"}"
+        let c = try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+        XCTAssertTrue(DynamicModifierHelper.isAccessibilityContainer(c))
     }
 }
 #endif

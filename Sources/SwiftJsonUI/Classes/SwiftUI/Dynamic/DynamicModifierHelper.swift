@@ -928,11 +928,34 @@ public struct DynamicModifierHelper {
         }
     }
 
+    /// Whether the view this component RENDERS AS is an accessibility element
+    /// on its own.
+    ///
+    /// Type is enough for everything in `accessibilityContainerTypes`, whose
+    /// rendered shape is fixed. A Collection's is not: every lazy shape wraps
+    /// in a ScrollView (or List / TabView / CollectionStackView), which is an
+    /// element and takes the identifier itself, while `lazy: "none"` renders
+    /// a bare stack, which is not. Measured on the conformance host: with
+    /// `lazy: "none"` the cell addresses time out, with the default they
+    /// resolve.
+    ///
+    /// Collection is deliberately NOT added to `accessibilityContainerTypes`
+    /// — that set's own sentence is "types whose SwiftUI representation is a
+    /// plain layout container", which would become false for its scroll
+    /// shapes, and every one of them would gain a redundant element.
+    /// Mirrors sjui_tools CollectionConverter#accessibility_container?.
+    static func isAccessibilityContainer(_ component: DynamicComponent) -> Bool {
+        let typeName = component.type?.lowercased() ?? ""
+        if accessibilityContainerTypes.contains(typeName) { return true }
+        guard typeName == "collection" else { return false }
+        return CollectionStackMode(json: component.rawAttribute("lazy")) == .none
+    }
+
     private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {
         if child.include != nil { return 0 } // unknown subtree
         if let visibility = child.visibilitySpelling(), visibility != "visible" { return 0 }
         let typeName = child.type?.lowercased() ?? ""
-        if accessibilityContainerTypes.contains(typeName) {
+        if isAccessibilityContainer(child) {
             // id-bearing container: becomes an explicit accessibility
             // container (a single element) under applyAccessibilityId
             if child.id != nil { return 1 }
@@ -945,7 +968,6 @@ public struct DynamicModifierHelper {
 
     public static func applyAccessibilityId(_ view: AnyView, component: DynamicComponent) -> AnyView {
         guard let id = component.id else { return view }
-        let typeName = component.type?.lowercased() ?? ""
         // Statically invisible components must not become accessibility
         // elements at all — explicit accessibility containers ignore an
         // ancestor's .accessibilityHidden(true), so creating one here would
@@ -954,7 +976,7 @@ public struct DynamicModifierHelper {
         if component.visibilitySpelling() == "invisible" {
             return view
         }
-        if accessibilityContainerTypes.contains(typeName) {
+        if isAccessibilityContainer(component) {
             // Plain SwiftUI containers are not accessibility elements, so a bare
             // .accessibilityIdentifier is pushed down onto the nearest descendant
             // element — it never surfaces for the container itself and can
