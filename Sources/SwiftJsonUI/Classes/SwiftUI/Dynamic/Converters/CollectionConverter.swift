@@ -1395,14 +1395,33 @@ public struct CollectionConverter {
         let visKeys = cellData.filter { $0.key.lowercased().contains("visibility") }
         let _ = Logger.debug("[CollectionConverter] cellData visibility keys: \(visKeys)")
 
+        // `{collectionId}_item_{index}` — the address the test drivers use
+        // (`tapItem`, `waitFor`), and the same spelling the static codegens
+        // emit. Dynamic emitted nothing here, on any layout, so a fixture —
+        // which always runs through Dynamic — could never check the contract
+        // that codegen is expected to keep. That is why two codegen arms
+        // could go without it unnoticed.
+        //
+        // Placed on the one builder every cell path calls (nine sites) so a
+        // tenth inherits it rather than having to remember, which is exactly
+        // how the static side lost two arms.
         DynamicView(
             jsonName: jsonFileName,
             viewId: cellClassName,
             data: cellData
         )
+        .accessibilityIdentifier(cellAccessibilityIdentifier(component: component, cellIndex: cellIndex))
         .onAppear {
             onItemAppear?(cellIndex)
         }
+    }
+
+    /// Empty when the Collection declares no id — there is nothing to build
+    /// an address out of, and an empty identifier is what SwiftUI treats as
+    /// "unset".
+    static func cellAccessibilityIdentifier(component: DynamicComponent, cellIndex: Int) -> String {
+        guard let collectionId = component.id, !collectionId.isEmpty else { return "" }
+        return "\(collectionId)_item_\(cellIndex)"
     }
 
     @ViewBuilder
