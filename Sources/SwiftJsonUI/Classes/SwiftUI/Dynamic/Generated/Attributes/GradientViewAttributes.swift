@@ -40,10 +40,10 @@ public struct GradientViewAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Child component(s). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (plan 51-E).
+    /// Child component(s). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (plan 51-E). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
 
-    /// Child components (alias for child). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (child || children) (plan 51-E).
+    /// Child components (alias for child). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (child || children) (plan 51-E). A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
 
     /// Unit coordinates in the view's own box for where the gradient ends: [x, y] or {"x": x, "y": y}, with 0 = leading/top, 0.5 = centre/middle, 1 = trailing/bottom. THREE faces read this key three incompatible ways today: sjui gradient_view_converter.rb:107-109 wants an OBJECT ({x, y}), rjui gradient_view_converter.rb:72-73 destructures an ARRAY ([x, y]), and kjui gradientview_component.rb:58-59 expects a STRING edge name ('top'). The two coordinate forms are declared because both are real coordinate spellings of the same thing; the android string form is NOT declared - it is `gradientDirection` semantics written under the wrong key, and is filed as a defect rather than blessed here. Declaring BOTH startPoint and endPoint replaces gradientDirection entirely; declaring only one is ignored and gradientDirection still decides (plan 51-E). [accepts: array | object]

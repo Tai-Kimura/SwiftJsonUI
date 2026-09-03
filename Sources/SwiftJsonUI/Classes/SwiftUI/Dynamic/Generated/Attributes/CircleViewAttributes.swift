@@ -28,10 +28,10 @@ public struct CircleViewAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Child component(s)
+    /// Child component(s). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
 
-    /// Child components (alias for child)
+    /// Child components (alias for child). A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —

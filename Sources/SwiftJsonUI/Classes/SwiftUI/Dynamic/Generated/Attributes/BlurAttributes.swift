@@ -40,10 +40,10 @@ public struct BlurAttributes {
     /// Blur radius in px/dp. Android and Web only: both blur by radius, while UIKit/SwiftUI express the appearance as effectStyle (UIVisualEffectView has styles, not radii). Overrides the radius effectStyle resolves to.
     public let blurRadius: Double?
 
-    /// Child component(s). Declared from the implementation, which already read it: sjui blur_converter.rb:16 (plan 51-E).
+    /// Child component(s). Declared from the implementation, which already read it: sjui blur_converter.rb:16 (plan 51-E). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
 
-    /// Child components (alias for child). Declared from the implementation, which already read it: sjui blur_converter.rb:16 (child || children) (plan 51-E).
+    /// Child components (alias for child). Declared from the implementation, which already read it: sjui blur_converter.rb:16 (child || children) (plan 51-E). A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
 
     /// Blur effect style

@@ -85,10 +85,10 @@ public struct ScrollViewAttributes {
     /// Enable bounce effect
     public let bounces: Bool?
 
-    /// Child component(s)
+    /// Child component(s). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
 
-    /// Child components
+    /// Child components. A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
 
     /// Content inset adjustment

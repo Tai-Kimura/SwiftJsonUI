@@ -47,10 +47,10 @@ public struct SafeAreaViewAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Child component(s)
+    /// Child component(s). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
 
-    /// Child components (alias for child)
+    /// Child components (alias for child). A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
 
     /// Layout direction. Declared from the implementation, which already read it: sjui view_converter.rb:140 (SafeAreaView routes through the View converter) (plan 51-E).
