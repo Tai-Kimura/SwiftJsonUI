@@ -311,6 +311,17 @@ map = {
 }
 File.write(File.join(staging, 'codegen-map.json'), JSON.pretty_generate(map) + "\n")
 
+# Also into Resources/, so the UITest can read it at run time. Staging and
+# the test used to judge "is this fixture hosted?" by different means: this
+# script drops fixtures for recorded reasons (embed companions, unhosted
+# modes), while the test decided by class alone. Widening the class filter
+# exposed the gap — 7 fixtures the generator had deliberately skipped were
+# still attempted, and failed as "layout failed to load/decode in host",
+# which reads like a defect in the layout rather than a fixture that was
+# never staged. One file, read by both, ends that.
+FileUtils.mkdir_p(File.join(host_dir, 'Resources'))
+File.write(File.join(host_dir, 'Resources', 'codegen-map.json'), JSON.pretty_generate(map) + "\n")
+
 missing = entries.reject { |f| f.dig('_codegen', 'generated') }
 puts "[codegen-host] #{generated}/#{entries.size} generated views; registry written"
 unless missing.empty?

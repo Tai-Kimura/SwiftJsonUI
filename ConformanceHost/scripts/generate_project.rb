@@ -73,9 +73,16 @@ end
 resources_group = project.main_group.new_group('Resources', 'Resources')
 fixtures_ref = resources_group.new_reference(File.join(host_dir, 'Resources', 'fixtures'))
 manifest_ref = resources_group.new_reference(File.join(host_dir, 'Resources', 'manifest.json'))
+# The codegen generator's own record of what it staged and what it skipped
+# (with reasons). The UITest reads it to decide what the codegen host can
+# render; without it in the bundle the test falls back to guessing by class,
+# which is how 7 deliberately-skipped fixtures came to be attempted and
+# reported as broken layouts.
+codegen_map_path = File.join(host_dir, 'Resources', 'codegen-map.json')
+codegen_map_ref = File.file?(codegen_map_path) ? resources_group.new_reference(codegen_map_path) : nil
 # the app also needs the manifest: ConformanceStateProvider reads each
 # interactive fixture's `state` declaration from it (INTERACTIVE_HOST_CONTRACT.md)
-app_target.add_resources([fixtures_ref, manifest_ref])
+app_target.add_resources([fixtures_ref, manifest_ref, codegen_map_ref].compact)
 
 # companion embedded-screen layouts (Embed fixtures): bundled as a Layouts/
 # folder reference so JSONLayoutLoader resolves screen names inside embeds
@@ -101,7 +108,7 @@ uitest_sources.each do |file|
   uitest_target.add_file_references([ref])
 end
 # UITest bundle carries the manifest and the fixtures (test JSONs)
-uitest_target.add_resources([fixtures_ref, manifest_ref])
+uitest_target.add_resources([fixtures_ref, manifest_ref, codegen_map_ref].compact)
 uitest_target.add_dependency(app_target)
 
 # ------------------------------------------------------------ build settings

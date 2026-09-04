@@ -183,6 +183,23 @@ final class ConformanceUITests: XCTestCase {
         ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
     }
 
+    /// Fixture ids the codegen generator actually staged, with the reasons it
+    /// skipped the rest (`codegen-map.json`, written next to the fixtures).
+    /// Nil when the file is absent — a dynamic-mode run never needs it.
+    private lazy var codegenMap: (hosted: Set<String>, skipped: [String: String])? = {
+        guard let data = try? loadBundledData(relativePath: "codegen-map.json"),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        let hosted = Set((root["fixtures"] as? [String: Any])?.keys.map { $0 } ?? [])
+        var reasons: [String: String] = [:]
+        for entry in (root["skipped"] as? [[String: Any]]) ?? [] {
+            if let id = entry["id"] as? String {
+                reasons[id] = (entry["reason"] as? String) ?? "not staged"
+            }
+        }
+        return (hosted, reasons)
+    }()
+
     /// This host renders SwiftUI dynamic mode only.
     private func skipReason(for fixture: ConformanceManifest.Fixture) -> String? {
         if !fixture.platforms.contains("ios") {
@@ -202,6 +219,22 @@ final class ConformanceUITests: XCTestCase {
             // codegen-side regression in cell addressing had no gate here and
             // no way to get one.
             return "class \(fixture.`class`) not hosted (codegen parity host is visual-only)"
+        }
+        // A fixture the generator did not stage cannot be rendered here, and
+        // attempting it produces "layout failed to load/decode in host" —
+        // which reads as a defect in the layout instead of a fixture that
+        // was never built. Ask the generator's own record.
+        if isCodegenHostMode {
+            // Absent map = the harness is misassembled, and the first version
+            // of this guard failed OPEN: `let map = codegenMap` simply did not
+            // match, every fixture fell through, and the run looked exactly
+            // like one where nothing was excluded. Say it instead.
+            guard let map = codegenMap else {
+                return "codegen-map.json not bundled — regenerate the project (scripts/generate_project.rb)"
+            }
+            if !map.hosted.contains(fixture.id) {
+                return "not staged for the codegen host: \(map.skipped[fixture.id] ?? "excluded by the generator")"
+            }
         }
         if let mode = fixture.mode {
             let values = mode.values
