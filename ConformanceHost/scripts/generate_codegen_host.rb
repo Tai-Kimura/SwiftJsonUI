@@ -64,9 +64,17 @@ FileUtils.mkdir_p(staging)
 #   carries them as 'missing' entries with this justification.
 entries = []
 skipped = []
+# Counted, not just skipped. `skipped` below records the fixtures this host
+# CHOSE not to stage for a stated reason; the class filter used to drop
+# whole classes with no trace at all, so the summary said "skipped 0" while
+# 86 fixtures were never hosted. A denominator nobody prints is a
+# denominator nobody checks: the cell-address contract turned out to be
+# asserted only on the dynamic face, and nothing in this output said so.
+by_class_excluded = Hash.new(0)
 manifest.fetch('fixtures', []).each do |fixture|
   next unless (fixture['platforms'] || []).include?('ios')
   unless fixture['class'] == 'visual'
+    by_class_excluded[fixture['class'].to_s] += 1
     next # not part of the visual parity surface at all
   end
   mode = fixture['mode']
@@ -113,6 +121,11 @@ cell_companions.each do |companion|
   FileUtils.cp(src, File.join(layouts_dir, bare))
 end
 puts "[codegen-host] staged #{entries.size} visual fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
+unless by_class_excluded.empty?
+  breakdown = by_class_excluded.sort.map { |cls, n| "#{cls} #{n}" }.join(', ')
+  puts "[codegen-host] NOT hosted on the codegen face (class filter): #{breakdown} " \
+       "— these fixtures run on the dynamic face only, so whatever they assert is unmeasured here"
+end
 
 # ------------------------------------------------------- L1 canonicalization
 # Production codegen never sees L0: `jui build` distributes layouts
