@@ -30,6 +30,7 @@
 
 require 'fileutils'
 require 'json'
+require_relative 'codegen_host_emit'
 
 host_dir = File.expand_path('..', __dir__)
 conformance_dir = ENV['CONFORMANCE_DIR'] or abort 'error: CONFORMANCE_DIR is not set'
@@ -115,8 +116,12 @@ manifest.fetch('fixtures', []).each do |fixture|
   # and the UITest side runs steps through the same executor whatever the
   # class. Excluding them left the cell-address contract — the corpus's only
   # `tapItem` among them — asserted on the dynamic face alone, with no way to
-  # get a codegen-side gate. `interactive` stays out: it drives bindings
-  # through the dynamic state store.
+  # get a codegen-side gate.
+  #
+  # `interactive` is NOT kept out either, despite what this comment said until
+  # the predicate below replaced the class filter. It said interactive "drives
+  # bindings through the dynamic state store", which stopped describing the
+  # code and left a false reason sitting next to a correct one.
   if drives_input?(conformance_dir, fixture)
     by_class_excluded[fixture['class'].to_s] += 1
     skipped << { 'id' => fixture['id'],
@@ -143,6 +148,21 @@ manifest.fetch('fixtures', []).each do |fixture|
   screen_companions = (fixture['companions'] || []).reject { |c| c.include?('__cells/') }
   if screen_companions.any?
     skipped << { 'id' => fixture['id'], 'reason' => 'embed-companion resolution not hosted in codegen yet' }
+    next
+  end
+  # Handlers are the second half of the interactive contract
+  # (INTERACTIVE_HOST_CONTRACT.md §2). `set` is wired below. `embed` drives
+  # the EmbedNavigatorRegistry stack, which this face has no path to — its
+  # embed companions are already unhosted, just above.
+  #
+  # Recorded rather than hosted-and-silently-dead: a fixture whose handler
+  # never fires still renders, still asserts, and reports the PRE-handler
+  # value. That is exactly how the first hosted handler fixture failed —
+  # `Expected 'fired', Actual 'ready'` — and nothing in the staging summary
+  # said the handler had no wiring.
+  unless CodegenHostEmit.wirable?((fixture['state'] || {})['handlers'])
+    skipped << { 'id' => fixture['id'],
+                 'reason' => 'handler kind not wired on the codegen face (only `set` is)' }
     next
   end
   entries << fixture
@@ -296,15 +316,9 @@ entries.each_with_index do |fixture, i|
   next unless has_view
 
   generated += 1
-  # @State keeps the Binding<Data> contract satisfied without a ViewModel:
-  # visual fixtures carry no data section, so default-initialized Data is
-  # exactly what the dynamic host renders too.
-  hosts << <<~SWIFT
-    private struct #{name}Host: View {
-        @State private var data = #{name}Data()
-        var body: some View { #{name}GeneratedView(data: $data) }
-    }
-  SWIFT
+  hosts << CodegenHostEmit.host_source(
+    name, (fixture['state'] || {})['handlers']
+  )
   cases << "        case #{fixture['id'].inspect}: return AnyView(#{name}Host())"
 end
 
