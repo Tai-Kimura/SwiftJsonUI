@@ -201,24 +201,55 @@ final class ConformanceUITests: XCTestCase {
     }()
 
     /// This host renders SwiftUI dynamic mode only.
+    /// Action verbs that need a driver. Kept in step with
+    /// `generate_codegen_host.rb`'s DRIVER_ACTIONS — the script decides what to
+    /// STAGE and this decides what to RUN, and a fixture staged but skipped
+    /// here (or the reverse) is a silent hole in the count.
+    private static let driverActions: Set<String> = [
+        "tap", "longPress", "swipe", "input", "selectOption"
+    ]
+
+    /// Whether the fixture's own steps ask for an interaction.
+    ///
+    /// Read from the test file, not inferred from `class`, because class was
+    /// measured not to predict it. An unreadable test file answers `false`:
+    /// running it and reporting the real failure beats skipping it here, where
+    /// the reason would be a guess.
+    private func requiresDriver(_ fixture: ConformanceManifest.Fixture) -> Bool {
+        guard let data = try? loadBundledData(relativePath: fixture.test),
+              let test = try? JSONDecoder().decode(ScreenTest.self, from: data) else {
+            return false
+        }
+        return test.cases.contains { testCase in
+            testCase.steps.contains { step in
+                guard let action = step.action else { return false }
+                return Self.driverActions.contains(action)
+            }
+        }
+    }
+
     private func skipReason(for fixture: ConformanceManifest.Fixture) -> String? {
         if !fixture.platforms.contains("ios") {
             return "not applicable to ios"
         }
-        if isCodegenHostMode && !["visual", "assertable"].contains(fixture.`class`) {
-            // Parity is a visual question (screenshot vs dynamic baseline),
-            // and interactive fixtures drive bindings through the dynamic
-            // state store, so they say nothing the codegen host can measure.
+        if isCodegenHostMode && requiresDriver(fixture) {
+            // What the codegen host cannot do is DRIVE: it has no interaction
+            // to give a fixture that taps, types or swipes. That is the whole
+            // of the limitation, and it is a property of the fixture's steps.
             //
-            // `assertable` is different and used to be excluded with them: it
-            // has no screenshot, but it does not need one — it states its own
-            // expectation in steps, and runFixture executes steps through the
-            // same XCUITestActionExecutor whatever the class. Excluding it
-            // left the Collection cell-address contract (and the corpus's
-            // only `tapItem`) asserted on the dynamic face alone, so a
-            // codegen-side regression in cell addressing had no gate here and
-            // no way to get one.
-            return "class \(fixture.`class`) not hosted (codegen parity host is visual-only)"
+            // This used to test `class` instead, excluding `declaration-only`
+            // and `interactive` wholesale on the grounds that interactive
+            // "drives bindings". Measured against the manifest, that reason
+            // did not describe what it excluded: 20 of 36 interactive fixtures
+            // drive nothing at all, and three of them
+            // (common/visibility__binding_*) were measured PASSING on the
+            // dynamic face while being unrunnable here. A fixture kept out by
+            // a rationale that does not fit it is unmeasured for no reason,
+            // and the summary said nothing about it either way.
+            //
+            // Class now describes what a fixture claims. It no longer decides
+            // where the fixture may run.
+            return "needs driver interaction, which the codegen host has none of"
         }
         // A fixture the generator did not stage cannot be rendered here, and
         // attempting it produces "layout failed to load/decode in host" —

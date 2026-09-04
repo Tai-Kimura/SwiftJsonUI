@@ -62,6 +62,44 @@ FileUtils.mkdir_p(staging)
 #   them in codegen needs the generated-screen resolution story from the
 #   navigation layer. Skipped with a recorded reason; the parity ledger
 #   carries them as 'missing' entries with this justification.
+# Fixtures are staged unless something about them cannot run here. CLASS is
+# not that something.
+#
+# The class filter excluded `declaration-only` and `interactive` wholesale, on
+# the stated grounds that interactive "drives bindings". Measured against the
+# manifest, that reason does not describe what it excluded: of 36 interactive
+# fixtures 20 drive nothing at all — they are `waitFor` plus an assertion, and
+# 12 of those carry no state vars either. Three of them
+# (`common/visibility__binding_{visible,invisible,gone}`) were measured passing
+# on the dynamic face while being unrunnable here, which is the shape of a
+# fixture kept out by a rationale that does not fit it.
+#
+# So the predicate is what it was always meant to be: a fixture that needs a
+# DRIVER (tap / input / swipe / longPress / selectOption) cannot run on a host
+# with no driver, and everything else can. Class is left to describe what a
+# fixture claims, not where it may run.
+DRIVER_ACTIONS = %w[tap longPress swipe input selectOption].freeze
+
+# Whether this fixture's steps ask for an interaction the codegen host cannot
+# perform. Read from the test file rather than inferred from `class`, because
+# the class turned out not to predict it.
+def drives_input?(conformance_dir, fixture)
+  rel = fixture['test'].to_s
+  return false if rel.empty?
+
+  path = File.join(conformance_dir, rel)
+  return false unless File.file?(path)
+
+  test = JSON.parse(File.read(path))
+  (test['cases'] || []).any? do |kase|
+    (kase['steps'] || []).any? { |step| DRIVER_ACTIONS.include?(step['action']) }
+  end
+rescue JSON::ParserError
+  # Unreadable is not "drives nothing" — stage it and let the run say so,
+  # rather than dropping it here where the output would not mention it.
+  false
+end
+
 entries = []
 skipped = []
 # Counted, not just skipped. `skipped` below records the fixtures this host
@@ -79,9 +117,11 @@ manifest.fetch('fixtures', []).each do |fixture|
   # `tapItem` among them — asserted on the dynamic face alone, with no way to
   # get a codegen-side gate. `interactive` stays out: it drives bindings
   # through the dynamic state store.
-  unless %w[visual assertable].include?(fixture['class'])
+  if drives_input?(conformance_dir, fixture)
     by_class_excluded[fixture['class'].to_s] += 1
-    next # not part of the visual parity surface at all
+    skipped << { 'id' => fixture['id'],
+                 'reason' => 'needs driver interaction (tap/input/swipe/longPress/selectOption)' }
+    next
   end
   mode = fixture['mode']
   mode_values =
@@ -126,11 +166,22 @@ cell_companions.each do |companion|
   bare = File.basename(companion).sub(/\.layout\.json\z/, '') + '.json'
   FileUtils.cp(src, File.join(layouts_dir, bare))
 end
-puts "[codegen-host] staged #{entries.size} visual fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
+puts "[codegen-host] staged #{entries.size} fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
+# The tool names its own denominator, per PREDICATE rather than as one total.
+# `skipped N` alone says how many were dropped and nothing about why, and a
+# reader cannot tell a deliberate exclusion from a fixture that fell through —
+# which is how 120 came to be unhosted while the summary read "skipped 0".
+unless skipped.empty?
+  skipped.group_by { |s| s['reason'] }.sort_by { |reason, rows| [-rows.size, reason] }
+         .each do |reason, rows|
+    puts "[codegen-host]   not hosted: #{rows.size} — #{reason}"
+  end
+  puts "[codegen-host]   ^ these run on the dynamic face only; whatever they assert is unmeasured here"
+end
 unless by_class_excluded.empty?
   breakdown = by_class_excluded.sort.map { |cls, n| "#{cls} #{n}" }.join(', ')
-  puts "[codegen-host] NOT hosted on the codegen face (class filter): #{breakdown} " \
-       "— these fixtures run on the dynamic face only, so whatever they assert is unmeasured here"
+  puts "[codegen-host]   driver-requiring fixtures by class: #{breakdown} " \
+       "(class does not decide hosting any more — it is recorded to show WHICH classes still need a driver)"
 end
 
 # ------------------------------------------------------- L1 canonicalization
