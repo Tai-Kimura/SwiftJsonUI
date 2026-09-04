@@ -188,11 +188,19 @@ final class ConformanceUITests: XCTestCase {
         if !fixture.platforms.contains("ios") {
             return "not applicable to ios"
         }
-        if isCodegenHostMode && fixture.`class` != "visual" {
-            // Parity is a visual question (screenshot vs dynamic baseline).
-            // Interactive fixtures drive bindings through the dynamic state
-            // store, and assert-only fixtures have no screenshot to compare —
-            // neither says anything the codegen host can measure.
+        if isCodegenHostMode && !["visual", "assertable"].contains(fixture.`class`) {
+            // Parity is a visual question (screenshot vs dynamic baseline),
+            // and interactive fixtures drive bindings through the dynamic
+            // state store, so they say nothing the codegen host can measure.
+            //
+            // `assertable` is different and used to be excluded with them: it
+            // has no screenshot, but it does not need one — it states its own
+            // expectation in steps, and runFixture executes steps through the
+            // same XCUITestActionExecutor whatever the class. Excluding it
+            // left the Collection cell-address contract (and the corpus's
+            // only `tapItem`) asserted on the dynamic face alone, so a
+            // codegen-side regression in cell addressing had no gate here and
+            // no way to get one.
             return "class \(fixture.`class`) not hosted (codegen parity host is visual-only)"
         }
         if let mode = fixture.mode {

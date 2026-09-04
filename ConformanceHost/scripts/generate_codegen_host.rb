@@ -73,7 +73,13 @@ skipped = []
 by_class_excluded = Hash.new(0)
 manifest.fetch('fixtures', []).each do |fixture|
   next unless (fixture['platforms'] || []).include?('ios')
-  unless fixture['class'] == 'visual'
+  # `assertable` too: those fixtures state their own expectation in steps,
+  # and the UITest side runs steps through the same executor whatever the
+  # class. Excluding them left the cell-address contract — the corpus's only
+  # `tapItem` among them — asserted on the dynamic face alone, with no way to
+  # get a codegen-side gate. `interactive` stays out: it drives bindings
+  # through the dynamic state store.
+  unless %w[visual assertable].include?(fixture['class'])
     by_class_excluded[fixture['class'].to_s] += 1
     next # not part of the visual parity surface at all
   end
