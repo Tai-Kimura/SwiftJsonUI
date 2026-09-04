@@ -1509,6 +1509,31 @@ public struct CollectionConverter {
         // The cell's own file cannot see that it sits inside a scrolling
         // Collection; the environment tells it (ScrollingAncestorContext).
         .modifier(ScrollingAncestorMark(active: scrollsVertically(component, data: data)))
+        // The wrapper's identifier must land on an ELEMENT. A plain SwiftUI
+        // container is not one, so a bare `.accessibilityIdentifier` here is
+        // pushed down onto the nearest descendants — the cell's own direct
+        // children — and they answer to `{collectionId}_item_{N}` instead of
+        // the identifiers their layout declared (measured 2026-09-05 on the
+        // static side: 8 of 8 cells in one consumer explained by whether the
+        // cell root declared an `id`, because an id-bearing root already
+        // became an explicit container).
+        //
+        // The static side fixes this at the cell ROOT, which it can do
+        // because `sjui build` sees the whole project and marks the layouts
+        // some Collection renders. Dynamic has no such pass here: the cell's
+        // JSON is loaded inside DynamicView, so the root's `id` is not
+        // knowable at this point without reading that file per cell. This
+        // makes the WRAPPER the element instead, which reaches the same
+        // outcome for the children.
+        //
+        // NOT settled by measurement yet, and deliberately not guessed at:
+        // whether a single-child cell needs the anchor overlay the static
+        // side emits (SwiftUI merges a container holding one accessibility
+        // child, which would put `{id}_item_{N}` back on that child). The
+        // conformance fixtures for an id-less cell root and a single-child
+        // cell run through THIS renderer, so they are what decides it — see
+        // the report for 2026-09-05.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier(cellAccessibilityIdentifier(component: component, cellIndex: cellIndex))
         .onAppear {
             onItemAppear?(cellIndex)
