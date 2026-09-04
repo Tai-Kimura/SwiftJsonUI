@@ -142,49 +142,14 @@ public enum DynamicBindingResolver {
     /// stored leaf (SwiftUI.Binding / AnyCodable wrappers preserved) so
     /// value-layer callers can inspect wrapper types; `nil` when the path
     /// is unresolved.
+    ///
+    /// The traversal itself lives in `JsonUIBindingPath`, which is outside
+    /// `#if DEBUG`: generated code resolves these same paths and is built for
+    /// release, so the implementation cannot live in this type. The wrapper
+    /// unwrap is passed in rather than moved, because `AnyCodable` is
+    /// dynamic-only and must not leak into the release-available core.
     public static func lookupRaw(path: String, in data: [String: Any]) -> Any? {
-        guard !path.isEmpty else { return nil }
-        if let flat = data[path] {
-            return flat
-        }
-        guard path.contains(".") || path.contains("[") else { return nil }
-        var current: Any? = data
-        for segment in path.split(separator: ".", omittingEmptySubsequences: false) {
-            guard let (name, indices) = parseSegment(String(segment)) else { return nil }
-            guard let dict = unwrapContainer(current) as? [String: Any],
-                  let named = dict[name] else { return nil }
-            current = named
-            for index in indices {
-                guard let array = unwrapContainer(current) as? [Any],
-                      array.indices.contains(index) else { return nil }
-                current = array[index]
-            }
-        }
-        return current
-    }
-
-    /// `"name"` → ("name", []); `"name[0]"` → ("name", [0]);
-    /// `"name[0][2]"` → ("name", [0, 2]). Only non-negative integer
-    /// literals are valid indices; anything malformed → nil (unresolved).
-    private static func parseSegment(_ segment: String) -> (name: String, indices: [Int])? {
-        guard !segment.isEmpty else { return nil }
-        guard let bracket = segment.firstIndex(of: "[") else {
-            guard !segment.contains("]") else { return nil }
-            return (segment, [])
-        }
-        let name = String(segment[..<bracket])
-        guard !name.isEmpty else { return nil }
-        var indices: [Int] = []
-        var rest = Substring(segment[bracket...])
-        while !rest.isEmpty {
-            guard rest.first == "[", let close = rest.firstIndex(of: "]") else { return nil }
-            let digits = rest[rest.index(after: rest.startIndex)..<close]
-            guard !digits.isEmpty, digits.allSatisfy({ $0.isNumber }),
-                  let index = Int(digits) else { return nil }
-            indices.append(index)
-            rest = rest[rest.index(after: close)...]
-        }
-        return (name, indices)
+        return JsonUIBindingPath.resolve(path: path, in: data, unwrap: unwrapContainer)
     }
 
     /// Container-level unwrap used during traversal (AnyCodable can wrap
@@ -228,32 +193,13 @@ public enum DynamicBindingResolver {
     /// Bool coercion: Bool; Int != 0; String "true"/"1"/"false"/"0"
     /// (case-insensitive); anything else → nil (unresolved).
     public static func coerceBool(_ value: Any?) -> Bool? {
-        guard let value = unwrap(value) else { return nil }
-        if let number = value as? NSNumber {
-            if isBooleanNumber(number) { return number.boolValue }
-            return number.doubleValue != 0
-        }
-        if let bool = value as? Bool { return bool }
-        if let string = value as? String {
-            switch string.lowercased() {
-            case "true", "1": return true
-            case "false", "0": return false
-            default: return nil
-            }
-        }
-        return nil
+        return JsonUIBindingPath.bool(unwrap(value))
     }
 
     /// Number coercion: number or numeric string; bools and anything else
     /// → nil (unresolved).
     public static func coerceDouble(_ value: Any?) -> Double? {
-        guard let value = unwrap(value) else { return nil }
-        if let number = value as? NSNumber {
-            if isBooleanNumber(number) { return nil }
-            return number.doubleValue
-        }
-        if let string = value as? String { return Double(string) }
-        return nil
+        return JsonUIBindingPath.double(unwrap(value))
     }
 
     /// Strict Bool: only genuine booleans (no int / string coercion).
@@ -274,23 +220,7 @@ public enum DynamicBindingResolver {
     /// dictionary / array / other objects → nil (unresolved) — never a
     /// `String(describing:)` debug dump.
     public static func stringify(_ value: Any?) -> String? {
-        guard let value = unwrap(value) else { return nil }
-        if let string = value as? String { return string }
-        if let number = value as? NSNumber {
-            if isBooleanNumber(number) { return number.boolValue ? "true" : "false" }
-            return stringifyDouble(number.doubleValue, number: number)
-        }
-        if let bool = value as? Bool { return bool ? "true" : "false" }
-        return nil
-    }
-
-    private static func stringifyDouble(_ double: Double, number: NSNumber? = nil) -> String {
-        if double.truncatingRemainder(dividingBy: 1) == 0,
-           double.magnitude < 1e15 {
-            return String(Int64(double))
-        }
-        if let number = number { return number.stringValue }
-        return "\(double)"
+        return JsonUIBindingPath.stringify(unwrap(value))
     }
 
     // MARK: - Context resolution: text
@@ -345,7 +275,7 @@ public enum DynamicBindingResolver {
         switch literal {
         case .string(let s): return s
         case .bool(let b): return b ? "true" : "false"
-        case .number(let d): return stringifyDouble(d)
+        case .number(let d): return JsonUIBindingPath.text(forNumber: d)
         case .null: return nil
         }
     }
@@ -367,7 +297,7 @@ public enum DynamicBindingResolver {
         switch literal {
         case .string(let s): return s
         case .bool(let b): return b ? "true" : "false"
-        case .number(let d): return stringifyDouble(d)
+        case .number(let d): return JsonUIBindingPath.text(forNumber: d)
         case .null: return nil
         }
     }
