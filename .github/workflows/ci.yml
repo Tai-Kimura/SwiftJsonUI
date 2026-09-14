@@ -111,19 +111,71 @@ jobs:
       - name: Attribute read discipline (raw reads + hand-written binding slots)
         run: bash scripts/check_converter_raw_reads.sh
 
+  # ------------------------------------------------------------------ #
+  # TWO LEGS, AND NEITHER ONE ALONE IS THE GATE.
+  #
+  # SJUIGlass.swift names types that exist only in the iOS 26 SDK, behind
+  # `#if compiler(>=6.2)`. That guard has two ways to be wrong and they fail
+  # in OPPOSITE directions, so one leg cannot see both:
+  #
+  #   Xcode 26.3  the glass code is actually COMPILED. Without this leg the
+  #               guard would fold everywhere and an entire feature would ship
+  #               with no compiler ever reading it -- "warnings: 0" because
+  #               nothing was measured, the same shape that hid a KotlinJsonUI
+  #               break earlier in this train.
+  #   Xcode 16.4  the guard actually FOLDS and the package still builds without
+  #               the SDK. README promises "iOS 17 or later / Swift 5.8+", so a
+  #               consumer on 16.4 is inside the supported range. 10.21.0 broke
+  #               exactly this (run 34841647809, "Cannot find type 'Glass'").
+  #
+  # macos-15 carries BOTH (16.4 is its default; 26.0.1-26.3 are installed
+  # alongside), so this is one runner image and a `setup-xcode` selection --
+  # not a runner bump, which would have fixed CI and left consumers broken.
+  #
+  # 🔑 Each leg DECLARES which side it expects via SJUI_EXPECT_GLASS_SDK, and
+  # an arm compares that against a flag compiled inside the guard. The
+  # expectation therefore comes from outside the source: a `#if` in the test
+  # would merely restate the `#if` in the library and could never fail.
+  #
+  # ⚠️ The job name carries the matrix value on purpose. Two legs under one
+  # name made a run-wide grep read one leg's numbers as the other's earlier in
+  # this train.
+  # ------------------------------------------------------------------ #
   unit-tests:
-    name: Library unit tests (iOS Simulator)
+    name: Library unit tests (Xcode ${{ matrix.xcode }}, iOS ${{ matrix.sim_os }} Simulator)
     runs-on: macos-15
     timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - xcode: "26.3"
+            sim_os: "26"
+            expect_glass_sdk: "1"
+          - xcode: "16.4"
+            sim_os: "18"
+            expect_glass_sdk: "0"
     steps:
       - uses: actions/checkout@v4
 
-      - name: Show Xcode / scheme / simulator inventory
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.xcode }}
+
+      - name: Show Xcode / Swift / scheme / simulator inventory
+        # `swift --version` is here because the guard's boundary is a claim
+        # about it that was transcribed from release notes, never compiled.
+        # Printing it puts the real number in every run's log.
         run: |
           xcodebuild -version
+          swift --version
           xcodebuild -list 2>&1 | sed -n '/Schemes:/,$p' || true
 
       - name: Run unit tests
+        env:
+          # Forwarded to the test process with the prefix stripped; a plain
+          # env var does NOT reach a simulator test runner.
+          TEST_RUNNER_SJUI_EXPECT_GLASS_SDK: ${{ matrix.expect_glass_sdk }}
         run: |
           set -o pipefail
           # Only SwiftJsonUITests.xcscheme is tracked; the "SwiftJsonUI"
@@ -138,43 +190,55 @@ jobs:
             exit 1
           fi
           echo "Using scheme=$SCHEME"
-          # Pick the first eligible iOS Simulator (prefer iPhone) from
-          # xcodebuild's own destination list — names must match
-          # xcodebuild's eligible list, not simctl's; runner images vary.
+          # 🔻 THE DESTINATION'S OS IS PART OF THE GATE, NOT A DETAIL.
+          # Xcode 26.3 can also drive the iOS 18 runtimes that sit on this
+          # image, and picking one of those makes every `@available(iOS 26)`
+          # arm fail to RUN. Measured locally: three arms listed under
+          # "Failing tests:" while the summary line still said
+          # "Executed 649 tests, with 0 failures" -- the count does not
+          # include arms that never started. So the OS is required here and
+          # there is no fallback to "any simulator".
           DESTS=$(xcodebuild -scheme "$SCHEME" -showdestinations 2>&1 \
             | grep 'platform:iOS Simulator' | grep -v 'placeholder' || true)
-          # `|| true` on every extraction: with -e + pipefail a no-match
-          # grep (exit 1) would otherwise kill the script before the
-          # fallback can run (exactly what the second CI attempt did).
-          # sed uses -n/p so a non-matching line yields NOTHING — a plain
-          # s///-only sed passes the whole line through, which once fed a
-          # brace-laden placeholder line into -destination (exit 64).
-          DEST_ID=$(echo "$DESTS" | grep 'name:iPhone' | head -1 \
-            | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
-          if [ -z "$DEST_ID" ]; then
-            DEST_ID=$(echo "$DESTS" | head -1 \
-              | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
+          WANT="OS:${{ matrix.sim_os }}."
+          echo "Eligible iOS Simulator destinations matching $WANT:"
+          echo "$DESTS" | grep -F "$WANT" || true
+          DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | grep 'name:iPhone' | head -1 || true)
+          if [ -z "$DEST_LINE" ]; then
+            DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | head -1 || true)
           fi
+          DEST_ID=$(echo "$DEST_LINE" | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
           if [ -z "$DEST_ID" ]; then
-            # Last resort: ask simctl for any available iPhone UDID
-            # (UDIDs are shared between simctl and xcodebuild's list).
-            DEST_ID=$(xcrun simctl list devices available \
-              | grep -m1 -E '^\s+iPhone' \
-              | sed -nE 's/.*\(([A-F0-9-]{8,})\).*/\1/p' || true)
-          fi
-          if [ -z "$DEST_ID" ]; then
-            echo "No eligible iOS Simulator destination found; raw list:" >&2
+            echo "::error::no iOS ${{ matrix.sim_os }} simulator for Xcode ${{ matrix.xcode }}; this leg cannot answer, so it fails rather than testing a different OS" >&2
             xcodebuild -scheme "$SCHEME" -showdestinations >&2 || true
-            xcrun simctl list devices available >&2 || true
             exit 1
           fi
-          echo "Using destination id=$DEST_ID"
-          # The full log is kept for the diagnostics gate below; the tail is
-          # what the job page shows.
+          echo "Using destination: $DEST_LINE"
+          # The full log is kept for the gates below; the tail is what the
+          # job page shows.
           xcodebuild test \
             -scheme "$SCHEME" \
             -destination "platform=iOS Simulator,id=$DEST_ID" \
             2>&1 | tee xcodebuild-test.log | tail -100
+
+      - name: The compile-time guard landed on the side this leg declared
+        # A skip here would make BOTH legs vacuous: the arm throws XCTSkip when
+        # SJUI_EXPECT_GLASS_SDK is absent, which is right on a developer machine
+        # and silent failure in CI. Measured, all four cases: declared=1 passes,
+        # declared=0 fails with both values printed, a bogus value fails, and an
+        # absent value SKIPS while the job stays green. This step closes that
+        # last one.
+        run: |
+          ARM=testTheCompileTimeGuardMatchesWhatThisLegDeclared
+          if grep -F "$ARM]' skipped" xcodebuild-test.log; then
+            echo "::error::the guard arm skipped -- SJUI_EXPECT_GLASS_SDK did not reach the test runner (TEST_RUNNER_ prefix?), so this leg proved nothing"
+            exit 1
+          fi
+          if ! grep -F "$ARM]' passed" xcodebuild-test.log; then
+            echo "::error::the guard arm did not pass on this leg; expected SJUI_EXPECT_GLASS_SDK=${{ matrix.expect_glass_sdk }}"
+            exit 1
+          fi
+          echo "guard arm ran and agreed with SJUI_EXPECT_GLASS_SDK=${{ matrix.expect_glass_sdk }}"
 
       - name: Swift diagnostics gate (Optional.none)
         # A bare `.none` against an `Optional<Enum>` parameter is

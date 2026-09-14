@@ -81,6 +81,7 @@ final class SJUIGlassTests: XCTestCase {
         XCTAssertFalse(SJUIGlass.isStaticallyResolvable(shape: "circle"), "size-dependent")
     }
 
+    #if compiler(>=6.2) // names `resolvedShape` / `DefaultGlassEffectShape`
     /// All four are resolved in one place, and each spelling produces a DIFFERENT
     /// outline. `AnyShape` is not Equatable, so the comparison is the path each one
     /// draws in the same rect — which is also the thing that would be visibly wrong
@@ -111,6 +112,7 @@ final class SJUIGlassTests: XCTestCase {
         // The radius reaches the outline, not just the parser.
         XCTAssertNotEqual(outline("rounded(4)"), outline("rounded(20)"))
     }
+    #endif
 
     /// Below iOS 26 the modifier returns the view unchanged. Asserted through the
     /// public entry point, because that is what generated code calls.
@@ -142,6 +144,7 @@ final class SJUIGlassTests: XCTestCase {
         XCTAssertEqual(explicitFalse.interactive, false)
     }
 
+    #if compiler(>=6.2) // names `Glass`
     /// The SDK cannot see the difference the contract requires. Recorded as a fact
     /// about the SDK, so the next reader does not "fix" Plan away.
     @available(iOS 26.0, *)
@@ -150,6 +153,7 @@ final class SJUIGlassTests: XCTestCase {
                        "if this ever fails, Glass gained the distinction and Plan's interactive field could move")
         XCTAssertNotEqual(Glass.regular, Glass.regular.interactive(true))
     }
+    #endif
 
     /// The plan is what the SDK call is built from, not a description written beside
     /// it: identity means no effect, and clear maps to the clear member.
@@ -185,6 +189,7 @@ final class SJUIGlassTests: XCTestCase {
         XCTAssertEqual(2, 2)
     }
 
+    #if compiler(>=6.2) // names `Glass`
     @available(iOS 26.0, *)
     func testStyleSpellingsMapToTheSDKsTwoMembers() {
         XCTAssertEqual(SJUIGlass.glass(style: "clear", tint: nil, interactive: nil), Glass.clear)
@@ -193,5 +198,40 @@ final class SJUIGlassTests: XCTestCase {
                        "an absent style is regular, the SDK's own default")
         XCTAssertEqual(SJUIGlass.glass(style: "nonsense", tint: nil, interactive: nil), Glass.regular,
                        "an unknown spelling falls back rather than failing to build")
+    }
+    #endif
+
+    /// WHICH SIDE OF THE COMPILE-TIME GUARD THIS BUILD LANDED ON.
+    ///
+    /// 🔑 The expectation comes from the ENVIRONMENT, not from a `#if` here. A
+    /// `#if` in the test would restate the `#if` in the library, so both would be
+    /// wrong together and this arm could never fail -- the exact shape that let a
+    /// broken `datetime-local` spelling pass its own arm earlier in this train.
+    /// ci.yml declares the answer per leg: Xcode 26.3 sets 1, Xcode 16.4 sets 0.
+    ///
+    /// What each side proves:
+    ///   1 -> the `Glass` / `glassEffect` / `DefaultGlassEffectShape` code was put
+    ///        in front of a compiler. Pinning CI back to an SDK-less Xcode to turn
+    ///        a red build green makes THIS red instead.
+    ///   0 -> the guard folded and the library still builds and tests without the
+    ///        SDK, which is what README's "iOS 17 / Swift 5.8+" promises consumers.
+    ///
+    /// ⚠️ It also fires back at the one thing not measured when the guard was
+    /// written: that Xcode 16.4's Swift really is below 6.2. That was transcribed
+    /// from release notes, not compiled. If it is wrong, the 16.4 leg fails HERE
+    /// with both values printed, instead of the guard silently covering nothing.
+    ///
+    /// The skip is deliberate for developer machines; ci.yml fails the job if this
+    /// arm skips THERE, because a silent skip would make both legs vacuous.
+    func testTheCompileTimeGuardMatchesWhatThisLegDeclared() throws {
+        guard let declared = ProcessInfo.processInfo.environment["SJUI_EXPECT_GLASS_SDK"] else {
+            throw XCTSkip("no leg declared; set SJUI_EXPECT_GLASS_SDK=0 or 1 (ci.yml does)")
+        }
+        guard declared == "0" || declared == "1" else {
+            return XCTFail("SJUI_EXPECT_GLASS_SDK must be 0 or 1, got \(declared.debugDescription)")
+        }
+        XCTAssertEqual(SJUIGlass.isCompiledAgainstGlassSDK, declared == "1",
+                       "this leg declared SJUI_EXPECT_GLASS_SDK=\(declared) but the build has "
+                       + "isCompiledAgainstGlassSDK=\(SJUIGlass.isCompiledAgainstGlassSDK)")
     }
 }
