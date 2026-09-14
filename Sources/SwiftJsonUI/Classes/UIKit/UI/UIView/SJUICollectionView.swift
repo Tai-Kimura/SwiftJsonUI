@@ -175,7 +175,14 @@ open class SJUICollectionView: UICollectionView {
     open class func getCollectionViewLayout(attr: JSON) -> UICollectionViewLayout {
         let collectionViewLayout = getCollectionViewFlowLayout(attr: attr)
         let weight = attr["itemWeight"].cgFloat != nil ? attr["itemWeight"].cgFloat! : 1.0
-        collectionViewLayout.itemSize = CGSize(width: UIScreen.main.bounds.size.width*weight, height: 300)
+        // ⚠️ This is a CLASS method: there is no collection to ask, so the item size
+        // computed here is a placeholder. The per-item size that actually ships comes
+        // from the delegate (SJUICollectionView+DataSource), which reads the live
+        // `bounds.width`. Sizing the placeholder from the display made it wrong by the
+        // difference between the display and the window; the window is at least the
+        // right order of magnitude, and the delegate corrects it at layout time.
+        let referenceWidth = SJUIWindowMetrics.bounds().width
+        collectionViewLayout.itemSize = CGSize(width: referenceWidth*weight, height: 300)
         var edgeInsets = Array<CGFloat>()
         if let insetStr = attr["insets"].string {
             let paddingStars = insetStr.components(separatedBy: "|")

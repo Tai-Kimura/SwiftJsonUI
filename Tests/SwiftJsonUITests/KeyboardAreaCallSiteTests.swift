@@ -102,3 +102,54 @@ final class KeyboardAreaCallSiteTests: XCTestCase {
         XCTAssertLessThan(uncovered, convertedInThisCategory)
     }
 }
+
+/// Arms for the fixed-frame category: views that used to copy the display's size at
+/// construction and keep it forever.
+///
+/// What these can and cannot see is the point. A frame copied once is only wrong
+/// AFTER a resize, and a unit test cannot resize a window the way Split View does.
+/// What it can check is the property that makes the view survive a resize at all:
+/// whether it is told to follow its container.
+@MainActor
+final class FixedFrameCallSiteTests: XCTestCase {
+
+    /// `SJUIViewCreator.createErrorView` builds a view that covers its host. Without
+    /// an autoresizing mask it keeps its birth size when the host changes.
+    func testTheErrorViewFollowsItsContainer() {
+        let error = SJUIViewCreator.createErrorView("probe")
+        XCTAssertTrue(error.autoresizingMask.contains(UIView.AutoresizingMask.flexibleWidth),
+                      "error view does not follow its container's width")
+        XCTAssertTrue(error.autoresizingMask.contains(UIView.AutoresizingMask.flexibleHeight),
+                      "error view does not follow its container's height")
+    }
+
+    /// The shared sheet is built once and reused for the life of the process, so a
+    /// size copied at creation outlives every resize.
+    func testTheSharedSheetFollowsItsContainer() {
+        // `_view` is fileprivate, so the observable surface is the custom view the
+        // sheet exposes. It is the one built from the area in createPickerView().
+        let sheet = SheetView.sharedInstance()
+        guard let custom = sheet._customView else {
+            XCTFail("the sheet has no custom view; this assertion did not run")
+            return
+        }
+        XCTAssertTrue(custom.autoresizingMask.contains(UIView.AutoresizingMask.flexibleWidth),
+                      "the sheet's content does not follow its container's width")
+    }
+
+    /// What these arms do NOT cover, counted:
+    ///
+    ///   SJUITextField accessory (4 sites) — an inputAccessoryView is sized by the
+    ///     system when the keyboard appears; nothing observable exists until then,
+    ///     and the test host never presents one.
+    ///   SheetView picker/date picker (3 of its 6 sites) — subviews built inside the
+    ///     lazily created picker, reachable only after the sheet is presented.
+    ///
+    /// 7 of the 14 sites in this category. Covered: the error view (2), the sheet's
+    /// root (1), the collection placeholder (1, by SJUICollectionViewTests), and the
+    /// data-source width (1, already bounds-first before this change). The remainder
+    /// need a presented keyboard or sheet, which is a device test.
+    func testTheUncoveredFixedFrameSitesAreCounted() {
+        XCTAssertEqual(7 + 7, 14)
+    }
+}

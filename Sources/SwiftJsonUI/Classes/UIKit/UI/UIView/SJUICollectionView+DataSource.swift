@@ -127,7 +127,7 @@ public extension SJUICollectionView {
                 if indexPath.section < dataSource.sections.count {
                     let section = dataSource.sections[indexPath.section]
                     if section.numberOfColumns > 1 {
-                        let collectionWidth = self?.bounds.width ?? UIScreen.main.bounds.width
+                        let collectionWidth = self?.bounds.width ?? SJUIWindowMetrics.bounds().width
                         let totalSpacing = section.interItemSpacing * CGFloat(section.numberOfColumns - 1)
                         let cellWidth = (collectionWidth - totalSpacing) / CGFloat(section.numberOfColumns)
                         let cellHeight = section.cellHeight ?? cellWidth

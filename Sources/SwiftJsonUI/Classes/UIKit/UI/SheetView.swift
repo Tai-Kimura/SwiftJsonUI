@@ -38,23 +38,33 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
     }
     public class func sharedInstance() -> SheetView {
         if (instance._view == nil) {
-            instance._view = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: UIScreen.main.bounds.size.height))
+            // Built once and reused, so a size copied at creation is wrong after any
+            // resize. Start from the window's area and follow the superview after that.
+            let area = SJUIWindowMetrics.bounds()
+            instance._view = UIView(frame: area)
+            instance._view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
             instance._view!.backgroundColor = backgroundColor
             let r = UITapGestureRecognizer(target: self, action: #selector(SheetView.backgroundTapped))
             r.delegate = instance
             instance._view.addGestureRecognizer(r)
             instance._customView = instance.createPickerView()
             var frame = instance._customView.frame
-            frame.origin.y = UIScreen.main.bounds.height + 100.0
+            // Parked below the visible area. `area` may be empty when no scene is
+            // connected; +100 past zero still parks it off screen for a view that is
+            // about to be laid out by its superview.
+            frame.origin.y = area.height + 100.0
             instance._customView.frame = frame
             instance._view.addSubview(instance._customView)
         }
         return instance
     }
     public func createPickerView() -> UIView {
-        let customView = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: SheetView.defaultHeight))
+        let area = SJUIWindowMetrics.bounds()
+        let customView = UIView(frame: CGRect(x: 0, y: 0, width: area.width, height: SheetView.defaultHeight))
+        customView.autoresizingMask = [.flexibleWidth]
         customView.backgroundColor = UIColor.white
-        _pickerView = UIPickerView(frame: CGRect(x: 0, y: 20.0, width: UIScreen.main.bounds.size.width, height: SheetView.defaultHeight - 20.0))
+        _pickerView = UIPickerView(frame: CGRect(x: 0, y: 20.0, width: area.width, height: SheetView.defaultHeight - 20.0))
+        _pickerView.autoresizingMask = [.flexibleWidth]
         _pickerView.delegate = self
         _pickerView.dataSource = self
         _pickerView.accessibilityIdentifier = "sjui_x7q_picker"
@@ -65,7 +75,8 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
         if #available(iOS 14.0, *) {
             _datePicker.tintColor = SheetView.textColor
             _datePicker.preferredDatePickerStyle = .wheels
-            _datePicker.frame = CGRect(x: 0, y: 20.0, width: UIScreen.main.bounds.width, height: SheetView.defaultHeight - 20.0)
+            _datePicker.frame = CGRect(x: 0, y: 20.0, width: area.width, height: SheetView.defaultHeight - 20.0)
+            _datePicker.autoresizingMask = [.flexibleWidth]
         } else {
             _datePicker.setValue(SheetView.textColor, forKeyPath: "textColor")
             if #available(iOS 13.0, *) {

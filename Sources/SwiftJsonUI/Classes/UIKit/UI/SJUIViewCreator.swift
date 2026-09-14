@@ -102,12 +102,16 @@ open class SJUIViewCreator:NSObject {
     
     @MainActor
     open class func createErrorView(_ text:String = "JSONの形式が正しくありません") -> UIView {
-        let view = UIView(frame: UIScreen.main.bounds)
+        // An error view is added to a host view; sizing it to the display makes it
+        // overhang in Split View. Follow the superview instead.
+        let view = UIView(frame: SJUIWindowMetrics.bounds())
+        view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         let label = UILabel(frame: CGRect(x: 0,y: 0,width: 100,height: 20.0))
         label.translatesAutoresizingMaskIntoConstraints = false
         label.textAlignment = NSTextAlignment.center
         label.text = text
-        label.preferredMaxLayoutWidth = UIScreen.main.bounds.size.width - 40.0
+        label.preferredMaxLayoutWidth = max(0, SJUIWindowMetrics.bounds().width - 40.0)
+        label.autoresizingMask = [.flexibleWidth]
         label.center = view.center
         view.addSubview(label)
         NSLayoutConstraint.activate([NSLayoutConstraint(item: label, attribute: .left, relatedBy: .equal, toItem: view, attribute: .left, multiplier: 1.0, constant: 0)])

@@ -196,7 +196,17 @@ final class SJUICollectionViewTests: XCTestCase {
 
         let flowLayout = cv.collectionViewLayout as? UICollectionViewFlowLayout
         XCTAssertNotNil(flowLayout)
-        XCTAssertEqual(flowLayout?.itemSize.width, UIScreen.main.bounds.size.width * 0.5)
+        // 2026-09-14: this used to assert the DISPLAY width × weight. The placeholder
+        // now comes from the window (SJUIWindowMetrics), because a display-derived size
+        // is wrong by the difference between the display and the app's window in Split
+        // View. The absolute value therefore depends on the host — in a unit-test host
+        // with no window scene it is 0 — so the arm asserts the property that holds in
+        // every host: the width is proportional to `itemWeight`.
+        //
+        // The size that actually ships is not this one: the delegate computes per-item
+        // sizes from the live `bounds.width` (SJUICollectionView+DataSource).
+        let referenceWidth = SJUIWindowMetrics.boundsAssumingMainActor().width
+        XCTAssertEqual(flowLayout?.itemSize.width, referenceWidth * 0.5)
     }
 
     func testDefaultItemWeight() {
@@ -212,8 +222,11 @@ final class SJUICollectionViewTests: XCTestCase {
 
         let flowLayout = cv.collectionViewLayout as? UICollectionViewFlowLayout
         XCTAssertNotNil(flowLayout)
-        // Default weight is 1.0
-        XCTAssertEqual(flowLayout?.itemSize.width, UIScreen.main.bounds.size.width)
+        // Default weight is 1.0. See the note on testItemWeight: the reference is the
+        // window, not the display, and the shipped per-item size comes from the
+        // delegate rather than from this placeholder.
+        let referenceWidth = SJUIWindowMetrics.boundsAssumingMainActor().width
+        XCTAssertEqual(flowLayout?.itemSize.width, referenceWidth)
     }
 
     // MARK: - Section Inset Tests

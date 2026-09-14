@@ -179,7 +179,11 @@ open class SJUITextField: UITextField {
                     }
 
                     let visualEffectView = UIVisualEffectView(effect: blurEffect)
-                    visualEffectView.frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: 50.0)
+                    // An inputAccessoryView is stretched to the keyboard's width by the
+                    // system. Pinning the display width made it overhang a narrow window;
+                    // a zero width plus flexibleWidth lets the system decide.
+                    visualEffectView.frame = CGRect(x: 0, y: 0, width: 0, height: 50.0)
+                    visualEffectView.autoresizingMask = [.flexibleWidth]
                     visualEffectView.layer.cornerRadius = accessoryRadius
                     visualEffectView.clipsToBounds = true
 
@@ -189,7 +193,9 @@ open class SJUITextField: UITextField {
                     vibrancyView.frame = visualEffectView.bounds
                     vibrancyView.autoresizingMask = [.flexibleWidth, .flexibleHeight]
 
-                    let l = SJUILabel(frame: CGRect(x: UIScreen.main.bounds.size.width - 100.0, y: 0, width: 100, height: 50))
+                    // Pinned to the trailing edge of whatever width the system gives.
+                    let l = SJUILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 50))
+                    l.autoresizingMask = [.flexibleLeftMargin]
                     l.textAlignment = NSTextAlignment.center
                     l.font = UIFont(name: SJUIViewCreator.defaultFont, size: 15.0)
                     l.textColor = UIColor.findColorByJSON(attr: attr["accessoryTextColor"]) ?? SJUITextField.accessoryTextColor
@@ -212,12 +218,15 @@ open class SJUITextField: UITextField {
                     t.inputAccessoryView = visualEffectView
                 } else {
                     // Fallback to regular view for older iOS versions or when liquid glass is disabled
-                    let accessory = UIView(frame: CGRect(x: 0, y: 0, width: UIScreen.main.bounds.size.width, height: 50.0))
+                    let accessory = UIView(frame: CGRect(x: 0, y: 0, width: 0, height: 50.0))
+                    accessory.autoresizingMask = [.flexibleWidth]
                     accessory.backgroundColor = UIColor.findColorByJSON(attr: attr["accessoryBackground"]) ?? SJUITextField.accessoryBackgroundColor
                     accessory.layer.cornerRadius = accessoryRadius
                     accessory.clipsToBounds = true
 
-                    let l = SJUILabel(frame: CGRect(x: UIScreen.main.bounds.size.width - 100.0, y: 0, width: 100, height: 50))
+                    // Pinned to the trailing edge of whatever width the system gives.
+                    let l = SJUILabel(frame: CGRect(x: 0, y: 0, width: 100, height: 50))
+                    l.autoresizingMask = [.flexibleLeftMargin]
                     l.textAlignment = NSTextAlignment.center
                     l.font = UIFont(name: SJUIViewCreator.defaultFont, size: 15.0)
                     l.textColor = UIColor.findColorByJSON(attr: attr["accessoryTextColor"]) ?? SJUITextField.accessoryTextColor
