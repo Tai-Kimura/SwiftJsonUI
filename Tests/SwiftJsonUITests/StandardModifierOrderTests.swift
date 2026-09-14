@@ -45,6 +45,7 @@ final class StandardModifierOrderTests: XCTestCase {
         "insets",
         "background",
         "safeAreaInsets",
+        "glass",
         "cornerRadius",
         "border",
         "margins",
