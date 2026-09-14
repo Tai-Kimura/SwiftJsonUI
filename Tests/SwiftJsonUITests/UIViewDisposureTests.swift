@@ -31,12 +31,45 @@ final class UIViewDisposureTests: XCTestCase {
         super.tearDown()
     }
 
-    // MARK: - Screen Size Tests
+    // MARK: - Screen Size (removed 2026-09-14, inverted)
 
-    func testScreenSizeProperty() {
-        let screenSize = UIViewDisposure.screenSize
-        XCTAssertTrue(screenSize.width > 0)
-        XCTAssertTrue(screenSize.height > 0)
+    /// `UIViewDisposure.screenSize` was a process-wide `UIScreen.main.bounds.size`,
+    /// evaluated once. It was removed on 2026-09-14 while preparing for iOS 27:
+    /// `UIScreen.main` is deprecated from iOS 26, and a cached whole-screen size is
+    /// wrong the moment the window is resized (iPad Split View, Stage Manager, a
+    /// folding device). Nothing in `Sources` referenced it; this test was the only
+    /// reference, which is why the reference count read 0 from the source tree.
+    ///
+    /// This test is INVERTED on purpose: removing behaviour leaves nothing that
+    /// fails when the behaviour comes back, so re-adding the constant would pass
+    /// silently. It asserts the declaration is absent from the source file.
+    func testScreenSizePropertyIsNotReintroduced() {
+        let source = Self.uiViewDisposureSource()
+        guard let source else {
+            // The instrument, not the property, is what failed. Say so rather than
+            // passing: a check that cannot run is not a check that passed.
+            XCTFail("UIViewDisposure.swift could not be read; this assertion did not run")
+            return
+        }
+        XCTAssertFalse(
+            source.contains("static let screenSize"),
+            "UIViewDisposure.screenSize was reintroduced. Read the size from the view's "
+            + "own context (view.window?.windowScene?.screen) — a process-wide constant "
+            + "is wrong under a resized window, and UIScreen.main is deprecated from iOS 26."
+        )
+    }
+
+    /// The file is located from this test file's own path, so the assertion reads the
+    /// checked-out source rather than a copy that may not exist in the test bundle.
+    private static func uiViewDisposureSource() -> String? {
+        var dir = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        for _ in 0..<6 {
+            let candidate = dir.appendingPathComponent(
+                "Sources/SwiftJsonUI/Classes/UIKit/UI/UIViewDisposure.swift")
+            if let text = try? String(contentsOf: candidate, encoding: .utf8) { return text }
+            dir = dir.deletingLastPathComponent()
+        }
+        return nil
     }
 
     // MARK: - Remove Constraint Tests

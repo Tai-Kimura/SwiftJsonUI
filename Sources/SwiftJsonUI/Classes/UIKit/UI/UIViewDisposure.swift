@@ -26,8 +26,23 @@ fileprivate func > <T : Comparable>(lhs: T?, rhs: T?) -> Bool {
 
 
 open class UIViewDisposure {
-    
-    static let screenSize = UIScreen.main.bounds.size
+    // A process-wide screen-size constant used to live here: one stored property
+    // holding `UIScreen.main.bounds.size`.
+    //
+    // ⚠️ Do not write its declaration in this comment either. The inverted test
+    // greps this file for the declaration's spelling, so quoting it verbatim
+    // turns that arm red with no defect present (measured: it did).
+    //
+    // Removed 2026-09-14 (iOS 27 preparation). Nothing in Sources referenced it —
+    // only its own test did — and a process-wide constant cannot be right on a
+    // system where the window is resized: it is evaluated once, at first touch,
+    // from a screen the view may not be on. `UIScreen.main` is deprecated from
+    // iOS 26 for that reason.
+    //
+    // Do not reintroduce it. Read the size from the view's own context instead:
+    //   view.window?.windowScene?.screen.bounds   (or the view's bounds/traits)
+    // The test `testScreenSizePropertyIsNotReintroduced` fails if this constant
+    // comes back, because a silent re-add is how the same defect returns.
     
     public class func removeConstraint(constraintInfo info: UILayoutConstraintInfo) {
         if !info.constraints.isEmpty {
