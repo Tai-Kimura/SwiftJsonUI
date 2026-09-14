@@ -27,6 +27,23 @@ set -euo pipefail
 
 HOST_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 SIMULATOR_NAME="${SIMULATOR_NAME:-iPhone 16 Pro}"
+# Which iOS runtime to draw on. Unset keeps the historical "newest wins".
+#
+# 🔻 "NEWEST WINS" IS NOT A PIN, AND IT HAS ALREADY MOVED ON ITS OWN.
+# `simctl` lists every runtime INSTALLED on the machine, not the ones the
+# selected Xcode came with, and the GitHub runner image installs new ones as it
+# is updated. The committed iOS results record the consequence: the runner
+# version oscillates 18.6 -> 26.2 -> 18.6 across four bakes (05d0fde0,
+# 761cc64c, 290f96a7) while the workflow's Xcode pin never changed. At one
+# point the two iOS lanes disagreed with each other in the same tree --
+# results/ios said ios-18.6 while codegen/ios said ios-26.2 -- and
+# `gate --parity` compares exactly those two sets of pictures.
+#
+# A runtime change re-renders every fixture, so this is the one input that must
+# not drift quietly. Set SIMULATOR_OS to a version prefix ("26", "26.2") and an
+# absent match is a HARD FAILURE rather than a fall-through to a neighbour:
+# falling through is how an unpinned runtime looked like a pin for months.
+SIMULATOR_OS="${SIMULATOR_OS:-}"
 
 # Resolve the name to one concrete device, so the status-bar override below
 # and the test run target the same simulator. Passing a name to xcodebuild
@@ -40,19 +57,38 @@ if [[ -z "${SIMULATOR_UDID:-}" ]]; then
 import json, re, sys
 
 name = sys.argv[1]
+want = sys.argv[2] if len(sys.argv) > 2 else ""
+# A prefix, compared component-wise: "26" accepts 26.2, "26.2" does not accept
+# 26.10. String startswith would, which is the sort of near-miss that makes a
+# pin look honoured while it is not.
+want_parts = tuple(int(n) for n in re.findall(r"\d+", want)) if want else ()
 best = None
 for runtime, devices in json.load(sys.stdin).get("devices", {}).items():
     if "SimRuntime.iOS" not in runtime:
         continue
     version = tuple(int(n) for n in re.findall(r"\d+", runtime.rsplit(".", 1)[-1]))
+    if want_parts and version[: len(want_parts)] != want_parts:
+        continue
     for device in devices:
         if device.get("name") != name or not device.get("isAvailable", True):
             continue
-        # Newest runtime wins — the same one xcodebuild picks by default.
+        # Newest MATCHING runtime wins. With SIMULATOR_OS unset that is the
+        # historical behaviour; with it set the candidates were already
+        # filtered, so "newest" only ever ranges inside the pin.
         if best is None or version > best[0]:
             best = (version, device["udid"])
 print(best[1] if best else "")
-' "$SIMULATOR_NAME" || true)"
+' "$SIMULATOR_NAME" "$SIMULATOR_OS" || true)"
+fi
+
+if [[ -n "$SIMULATOR_OS" && -z "${SIMULATOR_UDID:-}" ]]; then
+    # Deliberately fatal. The fall-through below picks SOME simulator, which is
+    # right when nothing was asked for and wrong when something was: drawing a
+    # baseline on a runtime nobody chose is the failure this pin exists to stop.
+    echo "error: SIMULATOR_OS=$SIMULATOR_OS was requested but no available" >&2
+    echo "       '$SIMULATOR_NAME' runs it. Installed iOS runtimes:" >&2
+    xcrun simctl list runtimes 2>/dev/null | grep -i "iOS" >&2 || true
+    exit 1
 fi
 
 if [[ -n "${SIMULATOR_UDID:-}" ]]; then
