@@ -137,14 +137,38 @@ public enum SJUIGlass {
     /// `AnyShape` rather than `some Shape`: a `@ViewBuilder` builds views, and the
     /// branches here are four different `Shape` types, so the erasure is what lets
     /// one function answer for all of them.
+    /// The spellings the declaration defines. Anything else is not silently accepted:
+    /// `resolvedShape` still answers with the SDK default so a typo cannot crash a
+    /// screen, but `isKnown` lets the generator reject it before that happens.
+    static let knownShapeSpellings = ["capsule", "circle", "rect", "rectangle"]
+
+    public static func isKnown(shape: String?) -> Bool {
+        guard let shape = shape?.lowercased() else { return true }
+        return knownShapeSpellings.contains(shape) || shape.hasPrefix("rounded")
+    }
+
     @available(iOS 26.0, *)
     static func resolvedShape(_ shape: String?) -> AnyShape {
         switch shape?.lowercased() {
         case "capsule": return AnyShape(Capsule())
         case "circle": return AnyShape(Circle())
+        case "rect", "rectangle": return AnyShape(Rectangle())
         case let s? where s.hasPrefix("rounded"):
             return AnyShape(RoundedRectangle(cornerRadius: roundedRadius(from: s) ?? 8))
-        default: return AnyShape(Rectangle())
+        default:
+            // No shape given, or a spelling the declaration does not define: use the
+            // SDK's own default, which is what `.glassEffect()` uses when called bare.
+            //
+            // ⚠️ This was `Rectangle()`. The declaration calls `glass: true` "the
+            // default treatment", and the default is the SDK's — `glassEffect(_:in:)`
+            // defaults its shape to `DefaultGlassEffectShape()`, which is public and
+            // writable here. Choosing a rectangle instead would have been a different
+            // look from the bare call, decided by this library rather than by the SDK.
+            //
+            // An unknown spelling lands here too, so a typo degrades to the default
+            // rather than failing to build. It should not reach this point: the
+            // generator can see the spelling statically and reject it (`isKnown`).
+            return AnyShape(DefaultGlassEffectShape())
         }
     }
 }

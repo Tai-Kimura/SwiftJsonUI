@@ -34,6 +34,19 @@ final class SJUIGlassTests: XCTestCase {
     /// The generator can only write constants, so two of the four shapes cannot be
     /// resolved there. This arm records which — it is the fact that decided the shape
     /// handling lives entirely in the helper.
+    /// The spellings the declaration defines. A typo must be visible to the generator
+    /// rather than becoming the default at render time — the same shape as a keyboard
+    /// type table that quietly folds unknown values into `.default`.
+    func testUnknownShapeSpellingsAreReportable() {
+        XCTAssertTrue(SJUIGlass.isKnown(shape: nil))
+        XCTAssertTrue(SJUIGlass.isKnown(shape: "capsule"))
+        XCTAssertTrue(SJUIGlass.isKnown(shape: "CIRCLE"))
+        XCTAssertTrue(SJUIGlass.isKnown(shape: "rect"))
+        XCTAssertTrue(SJUIGlass.isKnown(shape: "rounded(12)"))
+        XCTAssertFalse(SJUIGlass.isKnown(shape: "elipse"), "a typo must be reportable, not silently defaulted")
+        XCTAssertFalse(SJUIGlass.isKnown(shape: "squircle"))
+    }
+
     func testWhichShapesTheGeneratorCouldResolveStatically() {
         XCTAssertTrue(SJUIGlass.isStaticallyResolvable(shape: nil))
         XCTAssertTrue(SJUIGlass.isStaticallyResolvable(shape: "rect"))
@@ -61,8 +74,14 @@ final class SJUIGlassTests: XCTestCase {
         XCTAssertNotEqual(outline("circle"), rect, "circle fell through to the default")
         XCTAssertNotEqual(outline("rounded(12)"), rect, "rounded fell through to the default")
         XCTAssertNotEqual(outline("capsule"), outline("circle"))
-        XCTAssertEqual(outline(nil), rect, "an absent shape is the plain rectangle")
-        XCTAssertEqual(outline("unknown-spelling"), rect, "an unknown spelling falls back, it does not crash")
+        // An absent shape is the SDK's default, NOT a rectangle: `.glassEffect()` called
+        // bare uses DefaultGlassEffectShape, and the declaration calls `glass: true`
+        // "the default treatment" — the SDK's default, not one this library picks.
+        XCTAssertNotEqual(outline(nil), rect, "an absent shape must not be a plain rectangle")
+        XCTAssertEqual(outline(nil), AnyShape(DefaultGlassEffectShape()).path(in: box).description)
+        XCTAssertEqual(outline("unknown-spelling"), outline(nil),
+                       "an unknown spelling degrades to the default rather than crashing")
+        XCTAssertEqual(outline("rect"), rect, "an explicit rect is still a rectangle")
         // The radius reaches the outline, not just the parser.
         XCTAssertNotEqual(outline("rounded(4)"), outline("rounded(20)"))
     }
