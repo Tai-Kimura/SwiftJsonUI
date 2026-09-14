@@ -45,6 +45,11 @@ final class SJUIGlassTests: XCTestCase {
         XCTAssertTrue(SJUIGlass.isKnown(shape: "rounded(12)"))
         XCTAssertFalse(SJUIGlass.isKnown(shape: "elipse"), "a typo must be reportable, not silently defaulted")
         XCTAssertFalse(SJUIGlass.isKnown(shape: "squircle"))
+        // `rectangle` is NOT declared — the declaration says `rect`. It was accepted
+        // here once, taken from SwiftUI's type name rather than from the declaration.
+        // This asserts the implementation's vocabulary is the declaration's.
+        XCTAssertFalse(SJUIGlass.isKnown(shape: "rectangle"),
+                       "rectangle is the SwiftUI type's name, not a declared spelling")
     }
 
     func testWhichShapesTheGeneratorCouldResolveStatically() {

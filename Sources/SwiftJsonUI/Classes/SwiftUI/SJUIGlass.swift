@@ -137,10 +137,20 @@ public enum SJUIGlass {
     /// `AnyShape` rather than `some Shape`: a `@ViewBuilder` builds views, and the
     /// branches here are four different `Shape` types, so the erasure is what lets
     /// one function answer for all of them.
-    /// The spellings the declaration defines. Anything else is not silently accepted:
-    /// `resolvedShape` still answers with the SDK default so a typo cannot crash a
-    /// screen, but `isKnown` lets the generator reject it before that happens.
-    static let knownShapeSpellings = ["capsule", "circle", "rect", "rectangle"]
+    /// The spellings the declaration defines, verbatim: `capsule|rect|circle|rounded(N)`.
+    ///
+    /// ⚠️ `rectangle` was in this list. Nothing declared it — it was added here because
+    /// SwiftUI's type is named `Rectangle`, which is the implementation's vocabulary,
+    /// not the declaration's. An undeclared spelling that the implementation accepts
+    /// is worse than one it rejects: `isKnown` answered true for it, so a generator
+    /// built on this predicate would have let the typo through as well. Removed
+    /// 2026-09-14 after measuring that no consumer layout uses `glass` at all (642
+    /// layout files scanned, 0 hits), so nothing could break.
+    ///
+    /// Anything outside this set is not silently accepted: `resolvedShape` still
+    /// answers with the SDK default so a typo cannot crash a screen, but `isKnown`
+    /// lets the generator reject it while the spelling is still visible statically.
+    static let knownShapeSpellings = ["capsule", "circle", "rect"]
 
     public static func isKnown(shape: String?) -> Bool {
         guard let shape = shape?.lowercased() else { return true }
@@ -152,7 +162,7 @@ public enum SJUIGlass {
         switch shape?.lowercased() {
         case "capsule": return AnyShape(Capsule())
         case "circle": return AnyShape(Circle())
-        case "rect", "rectangle": return AnyShape(Rectangle())
+        case "rect": return AnyShape(Rectangle())
         case let s? where s.hasPrefix("rounded"):
             return AnyShape(RoundedRectangle(cornerRadius: roundedRadius(from: s) ?? 8))
         default:
