@@ -56,6 +56,10 @@ public struct EditTextAttributes {
         case url = "url"
         case password = "password"
         case decimal = "decimal"
+        case signedDecimal = "signedDecimal"
+        case date = "date"
+        case time = "time"
+        case datetime = "datetime"
     }
 
     public enum InputType: String {
@@ -176,7 +180,7 @@ public struct EditTextAttributes {
     /// Input accessory toolbar text color - hex string or color name from colors.json. UIKit only (see accessoryBackground).
     public let accessoryTextColor: String?
 
-    /// Apply liquid glass effect
+    /// Apply liquid glass effect. SUPERSEDED by the common attribute 'glass' as of 2026-09-14. The fold from this spelling to glass belongs to the normalizer and IS NOT IMPLEMENTED YET, so both spellings are live: this one stays TextField-only, UIKit-only and backed by UIBlurEffect, while glass is declared on common for SwiftUI and UIKit. Nothing breaks while both exist - they do not overlap in platform, mode or component - but a layout should be written against glass.
     public let applyLiquidGlass: Bool?
 
     /// Auto-capitalization type. UIKit's vocabulary, honoured on every platform (.textInputAutocapitalization / KeyboardCapitalization / the HTML autocapitalize attribute). `characters` is an accepted alias spelling of allCharacters.
@@ -218,7 +222,7 @@ public struct EditTextAttributes {
     /// Font size (binding supported)
     public let fontSize: AttrValue<Double>?
 
-    /// Glass effect style
+    /// Glass effect style. SUPERSEDED by glass.style as of 2026-09-14. As with applyLiquidGlass, the normalizer fold is NOT IMPLEMENTED YET and both spellings are live.
     public let glassEffectStyle: String?
 
     /// Has container view [DEPRECATED: hasContainer is a UIKit-only behavior.]
@@ -245,7 +249,7 @@ public struct EditTextAttributes {
     /// Placeholder line height multiplier. Declared from the implementation, which already read it: sjui textfield_converter.rb:153 and textview_converter.rb:93,117 (EditText/Input follow via _alias_of) (plan 51-E).
     public let hintLineHeightMultiple: Double?
 
-    /// Input type (includes 'allphabet' typo for backward compatibility)
+    /// Input type (includes 'allphabet' typo for backward compatibility). Not every face can express every value, and the degradations are declared here so that an implementer does not rediscover them one at a time. Android, codegen: all four of the values added in 1.8.8x land natively (Compose 1.12 KeyboardType.Date / Time / DateTime / DecimalSigned - note the order: Signed is a suffix in Compose, so the member is DecimalSigned, modifier last, while the value declared here is signedDecimal, modifier first. Each reads as a typo of the other. The plan for this work named the member SignedDecimal, which does not exist, and this description repeated it until 2026-09-14. Both spellings therefore appear in this text on purpose, here and in the four vendored tables that copy it, so grepping for SignedDecimal finds hits that are the correction rather than the defect - the hit count is not a measure of whether this was fixed). Android, dynamic: the runtime renderer has no case for any of the four - DynamicTextFieldComponent and DynamicTextViewComponent both fall to `else -> KeyboardType.Text` - so they degrade to plain text there. The two Android faces differ, and 'Android supports it' is true only of the generated one. The floor is codegen's alone: the generated Kotlin NAMES the member, so Compose below 1.12 would be a COMPILE error there rather than a degradation - ui-text 1.11 has ten KeyboardType members and none of these four, and 1.12.0 is the first with Date, Time, DateTime and DecimalSigned. Dynamic needs nothing new, because it never names them: it falls to KeyboardType.Text, which 1.11 already has. As of 1.8.80 the Compose emitter carries that floor, and it is DECLARED rather than detected: a project that declares nothing keeps the real members, and a project that sets compose_version below 1.12.0 in kjui.config.json gets these four - and only these four - degraded to KeyboardType.Text, on TextView as well as TextField because both read one table. Nothing is detected, because this generator never sees the consumer's dependency graph; a project on an older Compose that declares nothing therefore still gets a build failure rather than a silent keyboard change, which is the failure a reader can act on. The comparison is Gem::Version and never String, because '1.9.0' sorts ABOVE '1.12.0' as text and that is the direction that ships the build failure. web, TextField: date, time and datetime are not inputmode values; they change the element type to date, time and datetime-local, which is the path SelectBox's datepicker already takes. web, TextView: a textarea has no type attribute at all, so those three degrade to plain text there and the declared value cannot be honoured. web, inputmode: signedDecimal has no inputmode of its own and must share decimal with the decimal value above, so on web the two are INDISTINGUISHABLE. web, type: number and decimal already collapse to type=number, and signedDecimal joins them. iOS: UIKeyboardType has no member for the date family, so they fall back to .default, and signedDecimal to .numbersAndPunctuation.
     public let input: AttrEnum<Input>?
 
     /// Input type for Android (Android-only; `input` is the cross-platform attribute). Both the JsonUI spellings and the raw android:inputType names the frozen XML mapper passed through are accepted; the latter normalize to the former.
@@ -487,6 +491,10 @@ public struct EditTextAttributes {
             case "url": return .known(Input.url)
             case "password": return .known(Input.password)
             case "decimal": return .known(Input.decimal)
+            case "signeddecimal": return .known(Input.signedDecimal)
+            case "date": return .known(Input.date)
+            case "time": return .known(Input.time)
+            case "datetime": return .known(Input.datetime)
             default: break
             }
         }

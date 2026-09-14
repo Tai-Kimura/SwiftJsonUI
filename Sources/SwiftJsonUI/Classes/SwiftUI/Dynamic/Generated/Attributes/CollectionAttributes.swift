@@ -110,7 +110,7 @@ public struct CollectionAttributes {
     /// When true (and cellIdProperty is set), the library auto-computes each cellId as '<primary>_<hash>' so differential updates work without a manual hashForCell helper. If cellIdProperty is missing, the build emits a warning and cells fall back to index-based identity.
     public let autoChangeTrackingId: Bool?
 
-    /// Cell class definitions
+    /// Cell layouts this Collection may use. With `items` and no `sections`, a single cellClass renders every item; several cellClasses need `sections[].cell` to assign them.
     public let cellClasses: [Any]?
 
     /// Fixed height for every cell, in pt / dp / px. Applied to the cell view AFTER it is built, so it overrides whatever height the cell layout asked for; leave it out to let each cell size itself. Declared from the implementation, which already read it: sjui collection_converter.rb:260,286,318,402 (plan 51-E).
@@ -179,10 +179,10 @@ public struct CollectionAttributes {
     /// Enable keyboard avoidance
     public let keyboardAvoidance: Bool?
 
-    /// Layout type (vertical | horizontal | flow — wrapping layout packed to the leading edge). Flow/LeftAligned/leftAligned are accepted alias spellings of flow (2026-08-03 unification ruling; the old 'left-aligned wrapping' distinction was a frozen-UIKit fossil — no modern path ever implemented it).
+    /// Layout type (vertical | horizontal | flow — wrapping layout packed to the leading edge). Flow/LeftAligned/leftAligned are accepted alias spellings of flow (2026-08-03 unification ruling; the old 'left-aligned wrapping' distinction was a frozen-UIKit fossil — no modern path ever implemented it). Scroll rule for flow (2026-09-03 ruling): with `lazy` in effect (default or 'eager') the flow Collection scrolls vertically inside its own bounds; with lazy:'none' it only wraps and the parent must scroll.
     public let layout: AttrEnum<Layout>?
 
-    /// Outer container shape for the Collection (single-column section path uses CollectionStackView/CollectionStack). Accepts: 'lazy' (default) -> ScrollView+LazyVStack/LazyHStack on iOS, LazyColumn/LazyRow on Android, with virtualized cell rendering. 'eager' -> ScrollView+VStack/HStack on iOS, Column(verticalScroll)/Row(horizontalScroll) on Android — no virtualization, smooth scrolling for heavy cells (markdown / images / attributed text) that suffer from LazyVStack re-evaluation. 'none' -> VStack/HStack only, no scroll container, parent must already be scrollable. Bindings (@{prop}) are resolved at runtime via the wrapper's mode parameter so toggles preserve view identity. Sticky headers and paging require 'lazy'. [default: lazy]
+    /// Outer container shape for the Collection (single-column section path uses CollectionStackView/CollectionStack). Accepts: 'lazy' (default) -> ScrollView+LazyVStack/LazyHStack on iOS, LazyColumn/LazyRow on Android, with virtualized cell rendering. 'eager' -> ScrollView+VStack/HStack on iOS, Column(verticalScroll)/Row(horizontalScroll) on Android — no virtualization, smooth scrolling for heavy cells (markdown / images / attributed text) that suffer from LazyVStack re-evaluation. 'none' -> VStack/HStack only, no scroll container, parent must already be scrollable (for layout:'flow' this is the only value that removes the Collection's own vertical scroll). Bindings (@{prop}) are resolved at runtime via the wrapper's mode parameter so toggles preserve view identity. Sticky headers and paging require 'lazy'. [default: lazy]
     public let `lazy`: AttrValue<AttrEnum<Lazy>>?
 
     /// Spacing between rows. `sectionSpacing` folds here (sjui collection_converter.rb:799,960 read `sectionSpacing || lineSpacing || 8`). [aliases: sectionSpacing]

@@ -126,7 +126,7 @@ public struct SelectBoxAttributes {
     /// Include prompt in binding
     public let includePromptWhenDataBinding: Bool?
 
-    /// List of items for normal picker (can be template variable)
+    /// List of items for normal picker (can be template variable). Data (usually bound): entries are rendered as given and are NOT looked up in strings.
     public let items: AttrValue<[Any]>?
 
     /// Label styling attributes

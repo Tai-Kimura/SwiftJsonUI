@@ -46,7 +46,7 @@ public struct SegmentAttributes {
     /// Label color of the UNSELECTED segments - hex string or color name from colors.json [aliases: normalColor]
     public let fontColor: String?
 
-    /// Segment items array [required]
+    /// Segment items array. Static labels; an entry may be a strings key, resolved at render time on every face. [required]
     public let items: [Any]?
 
     /// Momentary selection mode
