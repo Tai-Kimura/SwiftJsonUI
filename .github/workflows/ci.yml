@@ -205,12 +205,37 @@ jobs:
           echo "$DESTS" | grep -F "$WANT" || true
           DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | grep 'name:iPhone' | head -1 || true)
           if [ -z "$DEST_LINE" ]; then
-            DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | head -1 || true)
+            DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | grep -v 'placeholder' | head -1 || true)
           fi
           DEST_ID=$(echo "$DEST_LINE" | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
           if [ -z "$DEST_ID" ]; then
+            # ⚠️ NOT a formatting nicety -- on Xcode 16.4 this is the ONLY path
+            # that works. Measured, job 103978410101: `-showdestinations` there
+            # lists the iOS Simulator PLACEHOLDER and no concrete device at all,
+            # so every filter over its output is empty whatever it asks for.
+            # Under Xcode 26.3 the same command does list devices. The original
+            # job survived on a simctl last-resort; requiring the OS removed the
+            # fallback along with the looseness, which is what broke this leg.
+            # UDIDs are shared between simctl and xcodebuild, so the id is
+            # usable either way.
+            #
+            # simctl groups devices under runtime headers ("-- iOS 18.5 --"), so
+            # the OS stays required here: the awk only emits lines inside a
+            # matching section. Verified locally against both sections present on
+            # a developer machine, plus a negative control (an absent "iOS 12"
+            # yields zero rather than falling through to another runtime).
+            echo "showdestinations gave no concrete device; asking simctl for an iOS ${{ matrix.sim_os }} one"
+            xcrun simctl list devices available | grep -E "^-- iOS" || true
+            DEST_ID=$(xcrun simctl list devices available \
+              | awk -v os="-- iOS ${{ matrix.sim_os }}" 'index($0,os)==1{f=1;next} /^-- /{f=0} f' \
+              | grep -m1 -E '^[[:space:]]+iPhone' \
+              | sed -nE 's/.*\(([A-F0-9-]{8,})\).*/\1/p' || true)
+            DEST_LINE=$(xcrun simctl list devices available | grep -F "$DEST_ID" | head -1 || true)
+          fi
+          if [ -z "$DEST_ID" ]; then
             echo "::error::no iOS ${{ matrix.sim_os }} simulator for Xcode ${{ matrix.xcode }}; this leg cannot answer, so it fails rather than testing a different OS" >&2
             xcodebuild -scheme "$SCHEME" -showdestinations >&2 || true
+            xcrun simctl list devices available >&2 || true
             exit 1
           fi
           echo "Using destination: $DEST_LINE"
