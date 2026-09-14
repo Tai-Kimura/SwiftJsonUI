@@ -185,7 +185,12 @@ public struct SelectBoxView: View {
                         let selectBoxHeight = selectBoxFrame.height > 0 ? selectBoxFrame.height : 50.0
                         let margin: CGFloat = 20.0
                         let totalOffsetFromBottom = sheetHeight + selectBoxHeight + margin
-                        let anchorY = 1.0 - (totalOffsetFromBottom / UIScreen.main.bounds.height)
+                        // The anchor is a fraction of the visible area. Against the display it is
+                            // wrong by exactly the amount the window is smaller than the screen.
+                            let visibleHeight = SJUIWindowMetrics.bounds().height
+                            let anchorY = visibleHeight > 0
+                                ? 1.0 - (totalOffsetFromBottom / visibleHeight)
+                                : 0.5
                         proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                     }
                 }
@@ -428,7 +433,11 @@ public struct SelectBoxView: View {
                             let selectBoxHeight = selectBoxFrame.height > 0 ? selectBoxFrame.height : 50.0
                             let margin: CGFloat = 20.0
                             let totalOffsetFromBottom = sheetHeight + selectBoxHeight + margin
-                            let anchorY = 1.0 - (totalOffsetFromBottom / UIScreen.main.bounds.height)
+                            // Same as above: a fraction of the window, not of the display.
+                                let visibleHeight = SJUIWindowMetrics.bounds().height
+                                let anchorY = visibleHeight > 0
+                                    ? 1.0 - (totalOffsetFromBottom / visibleHeight)
+                                    : 0.5
                             proxy.scrollTo(id, anchor: UnitPoint(x: 0.5, y: anchorY))
                         }
                     }

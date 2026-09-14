@@ -29,13 +29,13 @@ public class SelectBoxSheetResponder: ObservableObject {
             self.currentHeight = height
             self.isSheetVisible = true
             
-            // Calculate sheet frame based on screen size
-            let screenHeight = UIScreen.main.bounds.height
-            let screenWidth = UIScreen.main.bounds.width
+            // The sheet belongs to the window, not the display: in Split View the
+            // display's width would draw a sheet wider than the app itself.
+            let area = SJUIWindowMetrics.boundsAssumingMainActor()
             self.sheetFrame = CGRect(
                 x: 0,
-                y: screenHeight - height,
-                width: screenWidth,
+                y: area.height - height,
+                width: area.width,
                 height: height
             )
         }

@@ -106,8 +106,12 @@ extension UIScrollView: KeyboardAvoidanceScrollView {
         let scrollViewBottom = scrollViewFrameInWindow.origin.y + scrollViewFrameInWindow.size.height
         let keyboardTop = keyboardFrameEndInWindow.origin.y
         
-        // Check if keyboard is hidden (keyboard top is at or below screen bottom)
-        if keyboardTop >= UIScreen.main.bounds.height {
+        // Hidden means below OUR window, not below the display. `window` is already
+        // resolved above, so this site needs neither a scene lookup nor the screen.
+        // (`keyboardTop` stays for the inset arithmetic below.)
+        _ = keyboardTop
+        if SJUIKeyboardGeometry.isDismissed(
+            keyboardFrameInScreen: keyboardFrameEndInWindow, area: window.bounds) == true {
             // Keyboard is hidden
             if let original = originalContentInset {
                 UIView.animate(withDuration: KeyboardAvoidanceConfig.shared.animationDuration) {

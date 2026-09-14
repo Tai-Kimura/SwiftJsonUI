@@ -75,3 +75,54 @@ final class SJUIWindowMetricsTests: XCTestCase {
             "an unknown area must stay empty so callers use their own bounds")
     }
 }
+
+/// Keyboard geometry measured against a window, both branches — including the one
+/// where there is no window to measure against.
+final class SJUIKeyboardGeometryTests: XCTestCase {
+
+    private let phone = CGRect(x: 0, y: 0, width: 390, height: 844)
+    /// A Split View window: it ends at y=800 while the display goes to 1366.
+    private let splitWindow = CGRect(x: 0, y: 0, width: 320, height: 800)
+
+    func testAKeyboardBelowTheAreaCoversNothing() {
+        XCTAssertEqual(
+            SJUIKeyboardGeometry.overlapHeight(keyboardFrameInScreen: CGRect(x: 0, y: 844, width: 390, height: 336), area: phone),
+            0)
+        XCTAssertEqual(
+            SJUIKeyboardGeometry.isDismissed(keyboardFrameInScreen: CGRect(x: 0, y: 844, width: 390, height: 336), area: phone),
+            true)
+    }
+
+    func testAVisibleKeyboardCoversItsOverlap() {
+        XCTAssertEqual(
+            SJUIKeyboardGeometry.overlapHeight(keyboardFrameInScreen: CGRect(x: 0, y: 508, width: 390, height: 336), area: phone),
+            336)
+    }
+
+    /// The defect this exists for: against the DISPLAY this keyboard looks dismissed
+    /// (its top is above the display bottom but below the window), while against the
+    /// WINDOW it covers 100pt. The old code compared with the display.
+    func testAKeyboardInsideASplitViewWindowIsNotDismissed() {
+        let keyboard = CGRect(x: 0, y: 700, width: 320, height: 336)
+        XCTAssertEqual(
+            SJUIKeyboardGeometry.overlapHeight(keyboardFrameInScreen: keyboard, area: splitWindow),
+            100)
+        XCTAssertEqual(SJUIKeyboardGeometry.isDismissed(keyboardFrameInScreen: keyboard, area: splitWindow), false)
+    }
+
+    /// Unknown is not zero. A caller that conflates them hides a visible keyboard.
+    func testAnUnknownAreaAnswersNilNotZero() {
+        XCTAssertNil(SJUIKeyboardGeometry.overlapHeight(
+            keyboardFrameInScreen: CGRect(x: 0, y: 100, width: 390, height: 336), area: .zero))
+        XCTAssertNil(SJUIKeyboardGeometry.isDismissed(
+            keyboardFrameInScreen: CGRect(x: 0, y: 100, width: 390, height: 336), area: .zero))
+    }
+
+    /// The overlap never exceeds the area: a keyboard reported taller than the
+    /// window (a folded device mid-animation) must not push a larger inset.
+    func testTheOverlapIsClampedToTheArea() {
+        XCTAssertEqual(
+            SJUIKeyboardGeometry.overlapHeight(keyboardFrameInScreen: CGRect(x: 0, y: -200, width: 320, height: 1200), area: splitWindow),
+            800)
+    }
+}

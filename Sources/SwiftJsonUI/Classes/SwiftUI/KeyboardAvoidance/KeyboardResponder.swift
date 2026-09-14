@@ -61,8 +61,15 @@ public class KeyboardResponder: ObservableObject {
             }
             .sink { keyboardInfo in
                 withAnimation(.easeOut(duration: keyboardInfo.duration)) {
-                    // Check if keyboard is being dismissed (frame is below screen)
-                    if keyboardInfo.frame.origin.y >= UIScreen.main.bounds.height {
+                    // Dismissed means "below the WINDOW", not "below the display". A
+                    // window that does not reach the bottom of the display — Split View,
+                    // Stage Manager, a folded device — used to read as dismissed here.
+                    // `nil` is "no window to measure against"; keep the current state
+                    // rather than guessing the keyboard is gone.
+                    let dismissed = SJUIKeyboardGeometry.isDismissed(
+                        keyboardFrameInScreen: keyboardInfo.frame,
+                        area: SJUIWindowMetrics.boundsAssumingMainActor())
+                    if dismissed == true {
                         self.currentHeight = 0
                         self.keyboardFrame = .zero
                         self.isKeyboardVisible = false
@@ -84,19 +91,17 @@ public class KeyboardResponder: ObservableObject {
             return nil
         }
         
-        // Get the actual keyboard height relative to screen bottom
-        let screenHeight = UIScreen.main.bounds.height
-        let keyboardTop = keyboardFrame.origin.y
-        
-        // Calculate keyboard height only if it's visible (not below screen)
-        let keyboardHeight: CGFloat
-        if keyboardTop < screenHeight {
-            // For iPhone with home indicator, the keyboard frame already includes the safe area
-            // We should NOT subtract it again
-            keyboardHeight = screenHeight - keyboardTop
-        } else {
-            keyboardHeight = 0
-        }
+        // How much of OUR window the keyboard covers. The notification frame is in
+        // screen coordinates, so the reference must be the window, not the display.
+        // (On iPhone the keyboard frame already includes the safe area; nothing is
+        // subtracted again.)
+        //
+        // `nil` is "no window to measure against" — different from 0, which means
+        // "measured, covers nothing". Treating nil as 0 hides a visible keyboard, so
+        // fall back to the frame's own height.
+        let keyboardHeight = SJUIKeyboardGeometry.overlapHeight(
+            keyboardFrameInScreen: keyboardFrame,
+            area: SJUIWindowMetrics.boundsAssumingMainActor()) ?? keyboardFrame.height
         
         return (height: max(0, keyboardHeight), frame: keyboardFrame, duration: duration)
     }

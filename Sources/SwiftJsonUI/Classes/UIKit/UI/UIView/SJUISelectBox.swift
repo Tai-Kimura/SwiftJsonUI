@@ -370,7 +370,11 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         }
         referenceView.contentInset.bottom = SheetView.sharedInstance()._customView.frame.size.height
         let frame = label.convert(label.bounds, to: referenceView)
-        let offsetTop = UIScreen.main.bounds.size.height - SheetView.sharedInstance()._customView.frame.size.height
+        // The sheet sits at the bottom of the window this box lives in, not of the
+        // display. `self` is a view, so its own window is the right reference and no
+        // scene lookup is needed while it is on screen.
+        let visibleHeight = SJUIWindowMetrics.bounds(for: self).height
+        let offsetTop = visibleHeight - SheetView.sharedInstance()._customView.frame.size.height
         let originY = referenceView.frame.origin.y
         let minScrollY = frame.origin.y + frame.size.height + originY - referenceView.contentOffset.y + 20
         if minScrollY > offsetTop {
