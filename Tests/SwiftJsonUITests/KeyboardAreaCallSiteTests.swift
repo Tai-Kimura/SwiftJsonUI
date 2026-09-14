@@ -79,17 +79,27 @@ final class KeyboardAreaCallSiteTests: XCTestCase {
         XCTAssertEqual(SJUIWindowMetrics.bounds(for: box), window.bounds)
     }
 
-    /// What these arms do NOT cover, named so the count is honest:
+    /// What these arms do NOT cover, with what WOULD cover each one. The third column
+    /// matters: "waiting for a device test" and "no observable difference exists" are
+    /// different states, and merging them means that when the device test finally runs,
+    /// one row stays stubbornly unresolved with no explanation.
     ///
-    ///   KeyboardResponder:65,88   — reached only through a Combine pipeline fed by
-    ///                               UIKit's own keyboard notifications
-    ///   SelectBoxView:188,431     — a scroll anchor inside a SwiftUI body
-    ///   SJUISelectBox:373         — needs the shared SheetView singleton and a
-    ///                               populated scroll hierarchy
+    ///   site                     why not covered            what would cover it
+    ///   KeyboardResponder:65,88  Combine sink, UIKit posts  device/UI host: real
+    ///                            the notification            keyboard notifications
+    ///   SelectBoxView:188,431    anchor inside a SwiftUI     device test: the scroll
+    ///                            body                        position after present
+    ///   SJUISelectBox:373        needs the SheetView         device test: present the
+    ///                            singleton + scroll tree     sheet, read the offset
+    ///   UIScrollView:110         🔻 NOTHING WOULD. The       — the two versions are
+    ///                            clamp below is already in   equivalent here; a device
+    ///                            window coordinates, so      test will not go red for
+    ///                            both versions agree         it either
     ///
     /// 6 of the 8 converted sites in this category. Their LOGIC is covered by the seam
-    /// tests; their WIRING is not. Five need a device or a UI host; the sixth has no
-    /// observable difference to assert at all.
+    /// tests; their WIRING is not. FIVE are waiting for a device test. The SIXTH is not
+    /// waiting for anything — there is no difference to observe — so it must not be
+    /// counted as pending work.
     func testTheUncoveredSitesAreCountedNotForgotten() {
         // KeyboardResponder:65,88 — reached only through a Combine pipeline fed by
         //                            UIKit's own keyboard notifications
@@ -139,11 +149,17 @@ final class FixedFrameCallSiteTests: XCTestCase {
 
     /// What these arms do NOT cover, counted:
     ///
-    ///   SJUITextField accessory (4 sites) — an inputAccessoryView is sized by the
-    ///     system when the keyboard appears; nothing observable exists until then,
-    ///     and the test host never presents one.
-    ///   SheetView picker/date picker (3 of its 6 sites) — subviews built inside the
-    ///     lazily created picker, reachable only after the sheet is presented.
+    ///   site                              why not covered        what would cover it
+    ///   SJUITextField accessory (4)       the system sizes it    device test: present a
+    ///                                     only once a keyboard   keyboard, read the
+    ///                                     is presented           accessory's width
+    ///   SheetView picker/date picker (3)  built inside the       device test: present the
+    ///                                     lazy picker            sheet, read the widths
+    ///
+    /// Both rows are "waiting for a device test", not "unobservable". Unlike
+    /// UIScrollView:110 in the category above, a device test WILL separate the
+    /// versions here: an accessory pinned to the display width overhangs a narrow
+    /// window visibly.
     ///
     /// 7 of the 14 sites in this category. Covered: the error view (2), the sheet's
     /// root (1), the collection placeholder (1, by SJUICollectionViewTests), and the
