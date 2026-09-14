@@ -73,7 +73,7 @@ public struct RadioAttributes {
     /// Icon size (pt / dp).
     public let iconSize: Double?
 
-    /// List of items for normal picker (can be template variable). Declared from the implementation, which already read it: sjui radio_converter.rb:13 — the option list a radio GROUP renders; with it the converter emits a group, without it a single radio (plan 51-E).
+    /// List of items for normal picker (can be template variable). Declared from the implementation, which already read it: sjui radio_converter.rb:13 — the option list a radio GROUP renders; with it the converter emits a group, without it a single radio (plan 51-E). Data (usually bound): entries are rendered as given and are NOT looked up in strings.
     public let items: AttrValue<[Any]>?
 
     /// Radio label (can be data binding)
