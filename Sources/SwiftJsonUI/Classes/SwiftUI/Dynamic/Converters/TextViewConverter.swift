@@ -257,6 +257,37 @@ public struct TextViewConverter {
         default: break
         }
 
+        // --- 1.6 .keyboardType (input, then keyboardType) ---
+        // Both spellings were declared, both emitted by codegen
+        // (textview_converter.rb lines 267-270 for `input`, and
+        // apply_editable_and_keyboard for `keyboardType`), and NEITHER was
+        // read here — the same half-implemented shape as `editable` below,
+        // which that step's own comment already describes.
+        //
+        // ORDER IS THE EMITTER'S, NOT A PREFERENCE. Codegen appends `input`
+        // first and `keyboardType` second to the same :component_specific
+        // bag, so the emitted chain ends with `keyboardType` and the outer
+        // modifier is the one SwiftUI honours. Applying them in this order
+        // reproduces that: when a layout declares both, `keyboardType` wins.
+        if let raw = component.enumString(TextViewAttributes.self, \.input) {
+            result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw)))
+        }
+        // ⚠️ `keyboardType` IS A DIFFERENT VOCABULARY FROM `input`, and its
+        // assignments are not the ones `input` uses — `number` lands on
+        // `.decimalPad` here and on `.numberPad` there, `numeric` on
+        // `.phonePad` here and on `.numberPad` there. That reads like a
+        // defect and is NOT corrected here: this table is transcribed from
+        // textview_converter.rb#keyboard_type_to_swiftui, which is what the
+        // other face does, and "fixing" one face alone would replace a shared
+        // oddity with a real divergence. Three declared spellings (`search`,
+        // `text`, `numbersAndPunctuation`) have no row THERE either, so they
+        // fall through to no modifier here too — deliberately reproducing a
+        // gap rather than closing it on one side.
+        if let raw = component.enumString(TextViewAttributes.self, \.keyboardType),
+           let resolved = Self.keyboardType(fromKeyboardTypeSpelling: raw) {
+            result = AnyView(result.keyboardType(resolved))
+        }
+
         // --- 2. .onChange (onTextChange) ---
         // Fires for bound AND local-state text (the handler does not require
         // the text itself to be @{bound}).
@@ -314,6 +345,34 @@ public struct TextViewConverter {
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
 
         return result
+    }
+
+    /// `keyboardType` -> `UIKeyboardType`, transcribed from
+    /// textview_converter.rb#keyboard_type_to_swiftui.
+    ///
+    /// Local to TextView because it is local there: `keyboardType` is
+    /// declared on TextView only, while `input` is shared and lives in
+    /// DynamicHelpers. Returning nil means "no row" — the emitter guards with
+    /// `if resolved`, so an unmatched spelling emits no modifier at all
+    /// rather than an explicit `.default`, and the two are different (the
+    /// system default can differ from `.default` in a nested context).
+    ///
+    /// The Ruby normalises with `downcase.gsub(/[^a-z]/, '')`, which is why
+    /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
+    /// normalisation is applied so the declared spellings match.
+    static func keyboardType(fromKeyboardTypeSpelling value: String) -> UIKeyboardType? {
+        switch value.lowercased().filter({ $0.isLetter && $0.isASCII }) {
+        case "default": return .default
+        case "number", "numberpad", "decimal", "decimalpad": return .decimalPad
+        case "numeric", "phone", "phonepad": return .phonePad
+        case "email", "emailaddress": return .emailAddress
+        case "url", "weburl": return .URL
+        case "alphabet", "asciicapable": return .asciiCapable
+        case "namephonepad": return .namePhonePad
+        case "twitter": return .twitter
+        case "websearch": return .webSearch
+        default: return nil
+        }
     }
 }
 #endif // DEBUG
