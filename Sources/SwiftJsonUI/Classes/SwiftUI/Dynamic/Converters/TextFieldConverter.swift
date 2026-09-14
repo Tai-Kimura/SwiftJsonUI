@@ -241,7 +241,7 @@ public struct TextFieldConverter {
                 text: text,
                 fieldId: fieldId,
                 isSecure: isSecure,
-                keyboardType: getKeyboardType(from: component.input),
+                keyboardType: DynamicHelpers.keyboardType(forInput: component.input),
                 submitLabel: getSubmitLabel(from: component.returnKeyType),
                 textAlignment: DynamicHelpers.getTextAlignment(from: component),
                 nextFocusId: nextFocusId,
@@ -384,7 +384,7 @@ public struct TextFieldConverter {
         result = applyTextFieldStyle(result, component: component)
 
         // --- 6. keyboardType ---
-        let keyboardType = getKeyboardType(from: component.input)
+        let keyboardType = DynamicHelpers.keyboardType(forInput: component.input)
         if keyboardType != .default {
             result = AnyView(result.keyboardType(keyboardType))
         }
@@ -515,21 +515,6 @@ public struct TextFieldConverter {
         case .country: return AnyView(view.textContentType(.countryName))
         case .creditCardNumber: return AnyView(view.textContentType(.creditCardNumber))
         case .uRL: return AnyView(view.textContentType(.URL))
-        }
-    }
-
-    private static func getKeyboardType(from input: String?) -> UIKeyboardType {
-        switch input?.lowercased() {
-        case "email", "emailaddress": return .emailAddress
-        case "number", "numeric": return .numberPad
-        case "phone", "phonenumber": return .phonePad
-        case "decimal", "decimalpad": return .decimalPad
-        case "url", "weburl": return .URL
-        case "twitter": return .twitter
-        case "websearch": return .webSearch
-        case "ascii": return .asciiCapable
-        case "namephonepad": return .namePhonePad
-        default: return .default
         }
     }
 

@@ -12,6 +12,65 @@ import SwiftUI
 // MARK: - Helper Functions
 public struct DynamicHelpers {
 
+    // MARK: - Keyboard type
+
+    /// `input` -> `UIKeyboardType`.
+    ///
+    /// Shared between TextField and TextView for the same reason the codegen
+    /// half lives in `text_style_helper.rb` rather than in one converter:
+    /// both components declare `input` and both must answer alike. TextView
+    /// had NO answer at all here — `input` was declared, honoured by codegen
+    /// (`.keyboardType(...)` appended in textview_converter.rb) and read by
+    /// nobody on this face.
+    ///
+    /// 🔻 THREE DECLARED SPELLINGS LANDED ON `.default`, NEXT TO THE VALUE
+    /// THAT MEANS DEFAULT — which is the shape that makes a reader look like
+    /// it read the attribute when it did not. `alphabet`, its declared typo
+    /// alias `allphabet`, and `signedDecimal` had no case. The codegen face
+    /// carried the same defect for `alphabet` / `phone` / `url`, fixed it, and
+    /// this face was never re-measured against the declaration afterwards.
+    ///
+    /// ⚠️ `signedDecimal` is NOT `.decimalPad`: that pad has no minus key, so
+    /// it cannot type the sign the value is named for. `.numbersAndPunctuation`
+    /// is the narrowest UIKit type that offers one — member name taken from
+    /// UITextInputTraits.h and matching the codegen table, not from the plan
+    /// (the Android lane lost an hour to a member name that does not exist).
+    ///
+    /// The date family is spelled out rather than left to fall through,
+    /// because `.default` is the DECLARED answer for it and not an accident:
+    /// attribute_definitions.json says "iOS: UIKeyboardType has no member for
+    /// the date family, so they fall back to .default". Written as cases so a
+    /// reader can tell the two kinds of `.default` apart.
+    ///
+    /// ⚠️ Six spellings below are accepted here and declared NOWHERE —
+    /// `emailaddress`, `numeric`, `phonenumber`, `decimalpad`, `weburl`,
+    /// `ascii`. That is the `rectangle` shape: vocabulary taken from the
+    /// implementation instead of the declaration. They are KEPT, not removed:
+    /// `rectangle` was measured at 0 uses across consumer layouts before it
+    /// went, and nothing has measured these. Removing them needs that
+    /// measurement first, or it silently changes the keyboard on any layout
+    /// that spells `input` this way.
+    static func keyboardType(forInput input: String?) -> UIKeyboardType {
+        switch input?.lowercased() {
+        case "email", "emailaddress": return .emailAddress
+        case "number", "numeric": return .numberPad
+        case "phone", "phonenumber": return .phonePad
+        case "decimal", "decimalpad": return .decimalPad
+        case "signeddecimal": return .numbersAndPunctuation
+        case "alphabet", "allphabet", "ascii": return .asciiCapable
+        case "url", "weburl": return .URL
+        case "twitter": return .twitter
+        case "websearch": return .webSearch
+        case "namephonepad": return .namePhonePad
+        // Declared, read, and answered `.default` on purpose:
+        //   password              — the secure entry is a SecureField, not a keyboard
+        //   date / time / datetime — UIKeyboardType has no member for them
+        //   default                — says so
+        case "password", "date", "time", "datetime", "default": return .default
+        default: return .default
+        }
+    }
+
     // MARK: - Variable Processing (moved from DynamicViewModel)
 
     /// Process text with @{} variable placeholders.
