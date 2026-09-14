@@ -296,7 +296,10 @@ public struct NetworkImage: View {
         .onAppear {
             loader.loadIfNeeded(url: url, headers: headers)
         }
-        .onChange(of: url) { newUrl in
+        // Two-parameter form (iOS 17). The old value is not needed: `loadIfNeeded`
+        // compares against its OWN `currentUrl` and no-ops when the string is
+        // unchanged, so the previous value adds nothing here.
+        .onChange(of: url) { _, newUrl in
             loader.loadIfNeeded(url: newUrl, headers: headers)
         }
     }

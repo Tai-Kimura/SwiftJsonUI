@@ -79,7 +79,7 @@ public struct SegmentConverter {
                let binding = data[propName] as? SwiftUI.Binding<Int> {
                 let id = component.id ?? "segment"
                 result = AnyView(
-                    result.onChange(of: binding.wrappedValue) { newValue in
+                    result.onChange(of: binding.wrappedValue) { _, newValue in
                         DynamicEventHelper.callWithValue(
                             onValueChange,
                             id: id,

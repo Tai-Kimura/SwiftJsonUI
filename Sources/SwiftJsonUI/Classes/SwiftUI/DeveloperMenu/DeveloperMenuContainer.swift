@@ -147,7 +147,7 @@ public struct DeveloperMenuSheet<Screen: DeveloperScreen>: View {
     }
 
     public var body: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 // Dynamic Mode Toggle
                 Section {

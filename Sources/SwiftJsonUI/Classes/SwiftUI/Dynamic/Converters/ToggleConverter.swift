@@ -165,7 +165,7 @@ public struct ToggleConverter {
             if let onValueChange = handlerExpr,
                DynamicEventHelper.handlerName(from: onValueChange) != nil {
                 result = AnyView(
-                    result.onChange(of: bound.wrappedValue) { newValue in
+                    result.onChange(of: bound.wrappedValue) { _, newValue in
                         DynamicEventHelper.callWithValue(
                             onValueChange,
                             id: id,

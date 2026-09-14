@@ -1675,7 +1675,7 @@ private struct PagingCollectionWrapperView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .onChange(of: effectiveSelection.wrappedValue) { newValue in
+        .onChange(of: effectiveSelection.wrappedValue) { _, newValue in
             onPageChangedCallback?(newValue)
         }
     }

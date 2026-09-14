@@ -283,7 +283,7 @@ public struct SelectBoxView: View {
             }
         )
         .sheet(isPresented: $isPresented) {
-            NavigationView {
+            NavigationStack {
                 VStack {
                     switch selectItemType {
                     case .normal:

@@ -111,7 +111,7 @@ public struct SliderConverter {
                let binding = data[propName] as? SwiftUI.Binding<Double> {
                 let id = component.id ?? "slider"
                 result = AnyView(
-                    result.onChange(of: binding.wrappedValue) { newValue in
+                    result.onChange(of: binding.wrappedValue) { _, newValue in
                         DynamicEventHelper.callWithValue(
                             handler,
                             id: id,
