@@ -58,9 +58,25 @@ public enum SJUIGlass {
     /// on the laid-out size, so they are resolved at render time rather than emitted
     /// as a constant — the declaration's value set is deliberately NOT 1:1 with what
     /// codegen can spell.
+    /// ⚠️ `rectangle` was accepted here too. Dropping it from `knownShapeSpellings`
+    /// left this third site alive, so `isKnown("rectangle")` was false while
+    /// `isStaticallyResolvable("rectangle")` was true — a spelling that is not
+    /// declared yet is reported as one the generator could resolve. One removal, three
+    /// places that name the vocabulary.
+    ///
+    /// The invariant between them is pinned by an arm: anything this answers true for
+    /// must also be a spelling `isKnown` accepts.
+    ///
+    /// The guard is what ENFORCES it rather than merely reporting it, so re-adding a
+    /// case below cannot resurrect the bug — measured: with the guard in place,
+    /// putting `rectangle` back in the case list changes no answer, and removing the
+    /// guard while the case list is clean changes no answer either. Only both
+    /// together restore the old behaviour, which is what the arm catches.
     public static func isStaticallyResolvable(shape: String?) -> Bool {
+        guard isKnown(shape: shape) else { return false }
+
         switch shape?.lowercased() {
-        case nil, "rect", "rectangle": return true
+        case nil, "rect": return true
         case let s? where s.hasPrefix("rounded"): return true
         default: return false
         }

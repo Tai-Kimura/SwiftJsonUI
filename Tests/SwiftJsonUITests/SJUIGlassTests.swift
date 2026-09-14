@@ -52,6 +52,27 @@ final class SJUIGlassTests: XCTestCase {
                        "rectangle is the SwiftUI type's name, not a declared spelling")
     }
 
+    /// Three places in this file name the shape vocabulary: `knownShapeSpellings`,
+    /// the cases of `resolvedShape`, and the cases of `isStaticallyResolvable`.
+    /// Removing `rectangle` from the first left it alive in the third, so a spelling
+    /// no declaration defines was reported as one the generator could resolve.
+    ///
+    /// The invariant that catches the next such drift: anything reported statically
+    /// resolvable must be a spelling the declaration defines.
+    func testStaticallyResolvableImpliesDeclared() {
+        let probes = ["capsule", "circle", "rect", "rectangle", "rounded(12)", "rounded",
+                      "squircle", "elipse", "RECT", nil]
+        for probe in probes {
+            if SJUIGlass.isStaticallyResolvable(shape: probe) {
+                XCTAssertTrue(SJUIGlass.isKnown(shape: probe),
+                              "\(probe ?? "nil") is reported resolvable but is not declared")
+            }
+        }
+        // The specific regression, named: it must be neither.
+        XCTAssertFalse(SJUIGlass.isStaticallyResolvable(shape: "rectangle"))
+        XCTAssertFalse(SJUIGlass.isKnown(shape: "rectangle"))
+    }
+
     func testWhichShapesTheGeneratorCouldResolveStatically() {
         XCTAssertTrue(SJUIGlass.isStaticallyResolvable(shape: nil))
         XCTAssertTrue(SJUIGlass.isStaticallyResolvable(shape: "rect"))
