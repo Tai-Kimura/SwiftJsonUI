@@ -84,7 +84,7 @@ public struct HitTestClippingView<Content: View>: UIViewRepresentable {
     }
 
     public func updateUIView(_ container: HitTestClipContainer, context: Context) {
-        if var hosted = container.hosted as? UIContentView {
+        if let hosted = container.hosted as? UIContentView {
             hosted.configuration = UIHostingConfiguration { content }.margins(.all, 0)
         }
     }

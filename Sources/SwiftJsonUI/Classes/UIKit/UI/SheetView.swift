@@ -79,9 +79,10 @@ open class SheetView: NSObject, UIPickerViewDelegate, UIPickerViewDataSource, UI
             _datePicker.autoresizingMask = [.flexibleWidth]
         } else {
             _datePicker.setValue(SheetView.textColor, forKeyPath: "textColor")
-            if #available(iOS 13.0, *) {
-                _datePicker.setValue(false, forKey: "highlightsToday")
-            }
+            // An `if #available(iOS 13.0, *)` wrapped this line. The enclosing scope
+            // already guarantees a newer system — the deployment floor is iOS 17 — so
+            // the check never chose anything. Removed 2026-09-14.
+            _datePicker.setValue(false, forKey: "highlightsToday")
         }
         _datePicker.addTarget(self, action: #selector(SheetView.dateChanged), for: UIControl.Event.valueChanged)
         _datePicker.accessibilityIdentifier = "sjui_x7q_datePicker"

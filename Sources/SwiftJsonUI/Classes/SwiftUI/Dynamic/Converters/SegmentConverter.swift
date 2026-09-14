@@ -68,8 +68,10 @@ public struct SegmentConverter {
         )
 
         // onValueChange handler - called when selection changes
+        // The handler's NAME is not used here — only whether one could be extracted,
+        // which is what decides whether the binding is observed at all.
         if let onValueChange = component.onValueChangeSpelling(),
-           let handlerName = DynamicEventHelper.extractPropertyName(from: onValueChange) {
+           DynamicEventHelper.extractPropertyName(from: onValueChange) != nil {
             // Determine the binding property to observe
             // `selectedTabIndex` folds into `selectedIndex` in the generated
             // extraction (declared alias, plan 51-E), so one read covers both.

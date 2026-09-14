@@ -35,9 +35,11 @@ public struct LabelConverter {
     ) -> AnyView {
         let attrs = component.typedAttributes(LabelAttributes.self)
         // --- 1. Build PartialAttributedText ---
+        // `processText` returns a non-optional String, so the `?? ""` that used to be
+        // here could never be reached.
         let processedText = DynamicHelpers.processText(
             attrs.text?.rawRepresentation as? String, data: data
-        ) ?? ""
+        )
 
         // hint / hintAttributes — the Label placeholder. UIKit's SJUILabel
         // swaps in the styled hint when the text is empty and requires BOTH
