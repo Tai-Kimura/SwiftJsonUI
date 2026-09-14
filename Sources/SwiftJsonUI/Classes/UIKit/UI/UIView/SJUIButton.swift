@@ -148,11 +148,20 @@ open class SJUIButton: UIButton {
         let tp = attr["paddingTop"].cgFloat ?? 0
         let bp = attr["paddingBottom"].cgFloat ?? 0
         if lp > 0 || rp > 0 || tp > 0 || bp > 0 {
-            if #available(iOS 15.0, *), b.configuration != nil {
-                b.configuration?.contentInsets = NSDirectionalEdgeInsets(top: tp, leading: lp, bottom: bp, trailing: rp)
-            } else {
-                b.contentEdgeInsets = UIEdgeInsets(top: tp, left: lp, bottom: bp, right: rp)
-            }
+            // `contentEdgeInsets` (deprecated in iOS 15) used to be the else arm here,
+            // guarded by `#available(iOS 15, *), b.configuration != nil`.
+            //
+            // Neither half could be false. The deployment floor is iOS 17, so the
+            // availability check was always true; and the block above assigns
+            // `b.configuration` on every path — a declared style picks one, and the
+            // `else` there assigns `.plain()`. Measured, not read: a button built with
+            // padding and NO style comes back with a non-nil configuration
+            // (SJUIButtonInsetsProbe), so the deprecated arm was unreachable.
+            //
+            // That is why removing it is not a visual change. The concern it was kept
+            // for — "a styleless button with padding will look different" — describes
+            // a path that does not execute.
+            b.configuration?.contentInsets = NSDirectionalEdgeInsets(top: tp, leading: lp, bottom: bp, trailing: rp)
         }
         return b
     }
