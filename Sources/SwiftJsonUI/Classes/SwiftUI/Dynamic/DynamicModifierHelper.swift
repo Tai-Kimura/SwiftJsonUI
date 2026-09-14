@@ -318,6 +318,96 @@ public struct DynamicModifierHelper {
         return view
     }
 
+    // MARK: - 5d. Glass (Liquid Glass, iOS 26+)
+
+    /// `common.glass`, applied through the one library helper.
+    ///
+    /// 🔻 THIS FACE WAS EMPTY UNTIL NOW, AND NOTHING SAID SO. The attribute
+    /// shipped with a codegen implementation and no Dynamic one; both faces
+    /// rendered an identical picture on iOS 18 because neither drew glass, so
+    /// the conformance comparison agreed for the wrong reason. It only became
+    /// visible when the iOS lane moved to an SDK that has Liquid Glass —
+    /// measured on run 34849471695, `common_glass__true.png`, hamming 151.
+    /// A parity gap that only one OS can see is not a gap the suite finds; the
+    /// OS move is what turned the instrument on.
+    ///
+    /// The value contract is the emitter's, read from
+    /// `base_view_converter.rb#apply_glass` rather than restated from the
+    /// declaration prose, because the emitter is what the other face actually
+    /// does:
+    ///
+    ///   absent / `false` / `"false"`   -> nothing applied (no call emitted)
+    ///   `true` (any other scalar)      -> `.sjuiGlassEffect()`, bare
+    ///   object                         -> each of the four keys, each optional
+    ///
+    /// ⚠️ `interactive` is passed only when the KEY IS PRESENT. `false` is a
+    /// written value, not an absent key, and the helper distinguishes them —
+    /// `Glass`'s own Equatable does not, which is why SJUIGlass.Plan exists.
+    /// Defaulting the optional here would erase exactly the distinction the
+    /// other face is careful to preserve.
+    ///
+    /// Shape spellings are NOT validated here. Codegen can see the spelling
+    /// statically and rejects an undeclared one at build time (`isKnown`);
+    /// Dynamic reads JSON at runtime, where the equivalent of rejecting is
+    /// crashing a screen, so an unknown spelling degrades to the SDK default
+    /// the same way `resolvedShape` already handles it.
+    /// What `applyGlass` decided, before the helper sees it.
+    ///
+    /// ⚠️ Exists for the same reason `SJUIGlass.Plan` does one layer down: the
+    /// applied result is an `AnyView`, and a view cannot be asked which
+    /// arguments it was built from. Without this, an arm could only check that
+    /// SOMETHING was applied — and the distinction the contract turns on
+    /// (`interactive: false` present vs absent) is invisible at that
+    /// resolution. The applied call is built FROM this value, so it is not a
+    /// parallel description that can drift from what runs.
+    struct GlassCall: Equatable {
+        /// false means no call is made at all — `absent`, `false`, `"false"`.
+        let applies: Bool
+        let style: String?
+        let tint: Color?
+        let interactive: Bool?
+        let shape: String?
+
+        static let none = GlassCall(applies: false, style: nil, tint: nil, interactive: nil, shape: nil)
+    }
+
+    static func glassCall(component: DynamicComponent, data: [String: Any] = [:]) -> GlassCall {
+        guard let value = component.typedAttributes(CommonAttributes.self).glass else { return .none }
+
+        if let flag = value as? Bool, flag == false { return .none }
+        if let text = value as? String, text.lowercased() == "false" { return .none }
+
+        guard let config = value as? [String: Any] else {
+            // `true`, or any other scalar the emitter also treats as truthy:
+            // the default treatment, which is the bare call.
+            return GlassCall(applies: true, style: nil, tint: nil, interactive: nil, shape: nil)
+        }
+
+        let interactive: Bool?
+        if let raw = config["interactive"] {
+            interactive = (raw as? Bool) == true || (raw as? String)?.lowercased() == "true"
+        } else {
+            interactive = nil
+        }
+
+        return GlassCall(
+            applies: true,
+            style: config["style"] as? String,
+            tint: (config["tint"] as? String).flatMap { DynamicHelpers.getColor($0, data: data) },
+            interactive: interactive,
+            shape: config["shape"] as? String
+        )
+    }
+
+    public static func applyGlass(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        let call = glassCall(component: component, data: data)
+        guard call.applies else { return view }
+        return AnyView(view.sjuiGlassEffect(style: call.style,
+                                            tint: call.tint,
+                                            interactive: call.interactive,
+                                            shape: call.shape))
+    }
+
     // MARK: - 6. Corner Radius
 
     public static func applyCornerRadius(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
@@ -1246,6 +1336,19 @@ public struct DynamicModifierHelper {
         Stage("safeAreaInsets", when: { !$0.background }) { v, c, _ in
             applySafeAreaInsets(v, component: c)
         },
+        // 5d. glass — the Liquid Glass material. Slot fixed on BOTH faces, and
+        // the two were written from each other rather than each from the prose:
+        // codegen's MODIFIER_ORDER puts :glass after :background/:gradient and
+        // before :corner_radius, "so it sits after the two background entries
+        // and before :corner_radius, which clips the result rather than the
+        // glass". Same reasoning, same slot here — the material goes over the
+        // background, and the corner clip is applied to the result.
+        //
+        // NOT inside the background opt-out. That skip means "the caller
+        // already painted the background"; it says nothing about whether the
+        // caller applied glass, and folding glass into it would silently drop
+        // a declared attribute for every leaf that paints its own fill.
+        Stage("glass") { v, c, d in applyGlass(v, component: c, data: d) },
         Stage("cornerRadius") { v, c, d in applyCornerRadius(v, component: c, data: d) },
         Stage("border") { v, c, d in applyBorder(v, component: c, data: d) },
         Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
