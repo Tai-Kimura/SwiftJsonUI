@@ -147,6 +147,27 @@ fi
 # process* (not command-line build settings) to be forwarded into the test
 # runner's environment.
 export TEST_RUNNER_CONFORMANCE_STAGING_DIR="$STAGING"
+# 🔻 FORWARD EVERY CONFORMANCE_* THE CALLER SET, DERIVED — NOT A NAMED LIST.
+# The convention is "caller sets CONFORMANCE_X, this script re-exports it as
+# TEST_RUNNER_CONFORMANCE_X", and with a hand-kept list a NEW variable is
+# simply dropped: measured 2026-09-15, CONFORMANCE_WEB_PROBE was set exactly
+# per the convention and never reached the runner, so the diagnostic it gated
+# silently did not run. Nothing said so — the only signal was an output file
+# that never appeared. The explicit exports below stay for the ones that are
+# transformed rather than passed through.
+for _conf_var in ${!CONFORMANCE_*}; do
+    export "TEST_RUNNER_$_conf_var=${!_conf_var}"
+done
+# Conservation, the other direction: every CONFORMANCE_* must now have a
+# TEST_RUNNER_ twin. A forwarding loop that silently forwards nothing looks
+# exactly like a run with no variables set.
+for _conf_var in ${!CONFORMANCE_*}; do
+    if ! printenv "TEST_RUNNER_$_conf_var" >/dev/null; then
+        echo "error: $_conf_var was not forwarded to the runner" >&2
+        exit 1
+    fi
+done
+unset _conf_var
 if [[ -n "${CONFORMANCE_FILTER:-}" ]]; then
     export TEST_RUNNER_CONFORMANCE_FILTER="$CONFORMANCE_FILTER"
 fi
@@ -162,7 +183,12 @@ xcodebuild test \
     -derivedDataPath "$DERIVED_DATA" \
     -parallel-testing-enabled NO \
     -test-timeouts-enabled NO \
-    2>&1 | tail -40
+    2>&1 | tee "$STAGING/xcodebuild.log" | tail -40
 set +x
+# 🔻 THE FULL LOG, BECAUSE `tail -40` DISCARDS THE REASON. A compile error, a
+# per-fixture diagnostic, anything the runner prints — all of it lived only in
+# the last forty lines, so a 45-minute run had to finish before its own failure
+# could be read, and a diagnostic printed mid-run could not be read at all.
+echo "[conformance] full xcodebuild log: $STAGING/xcodebuild.log"
 
 CONFORMANCE_STAGING="$STAGING" HOST_MODE="$HOST_MODE" "$HOST_DIR/scripts/collect_results.sh"

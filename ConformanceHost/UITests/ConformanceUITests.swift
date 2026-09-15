@@ -35,6 +35,14 @@ struct ConformanceManifest: Decodable {
     struct Fixture: Decodable {
         let id: String
         let component: String
+        /// The component whose view actually hosts this fixture. ⚠️ NOT the
+        /// same as `component`: a control's component is `__control` while its
+        /// host is the component it controls, so counting web-bearing fixtures
+        /// by `component` silently drops `__control/Web`, which renders a web
+        /// view exactly like the fixture it is the control for. Measured on
+        /// the 1099-fixture manifest: host=="Web" gives 5 (2 runnable on ios),
+        /// component=="Web" gives 4 (1 on ios).
+        let host: String
         // null for __control fixtures — a control view belongs to no attribute
         let attribute: String?
         let `case`: String
@@ -81,6 +89,50 @@ struct FixtureResult: Encodable {
     let screenshot: String?
 }
 
+/// 🔻 A RUN-LEVEL CENSUS OF THE WEB LOAD-MARKER PATH, BECAUSE THE WAIT'S OWN
+/// FAILURE WEARS THE FACE OF THE BUG IT FIXES.
+///
+/// A web view exists the instant it is made, so a capture taken mid-load is
+/// blank — and a blank fixture still DIFFERS from its control, so control_diff
+/// calls the attribute active and a re-bake of the same race calls itself a
+/// pass. No arm that looks at pixels can separate "waited and painted" from
+/// "did not wait". Only the host knows, so the host counts.
+///
+/// ⚠️ THE FIRST VERSION OF THIS COUNTED THE WRONG THING AND REPORTED A FALSE
+/// ALARM ON ITS FIRST REAL RUN. It used the presence of the PENDING marker as
+/// the detector for "this fixture has a web view". Pending is a TRANSIENT
+/// state: `loadHTMLString` is local and settles before the runner's first
+/// query, so the tree already carried `sjui_web_loaded` and never
+/// `sjui_web_pending`. Measured 2026-09-15 by dumping the element tree at the
+/// exact query point — the 1x1 marker was present, as a child of the WebView,
+/// already flipped to loaded, with the page's own StaticText beside it. The
+/// census said 0 of 2 and the pictures were byte-identical to the baseline.
+///
+/// So the detector is now the DECLARED fact (`manifest.host == "Web"`, which is
+/// stable and names the control too) and the markers are used only as the
+/// wait's terminating condition. Every bucket below has an unambiguous zero.
+struct WebMarkerCensus: Encodable {
+    /// Runnable fixtures hosted by the Web component, from the manifest.
+    /// Informational: a fixture that errors before its screen comes up never
+    /// reaches the check, so this is not the denominator.
+    var webFixturesRunnable = 0
+    /// Web-hosted fixtures that reached the capture point. THE DENOMINATOR —
+    /// the four buckets below sum to exactly this.
+    var webFixturesReachedCapture = 0
+    /// Already carrying the loaded marker on arrival: the page painted before
+    /// the runner could look. Correct, and the common case locally.
+    var alreadySettled = 0
+    /// Found pending, then loaded arrived within the budget: the wait did work.
+    var waitedThenSettled = 0
+    /// Found pending, loaded never arrived. NOT a failure — the capture is
+    /// still judged by fixture-vs-control, which is readable; a hang is not.
+    var timedOut = 0
+    /// Neither marker ever appeared, through the whole budget. This is the one
+    /// that means the mechanism is gone — the env flag never reached the app,
+    /// the linked library predates the markers, or they stopped surfacing.
+    var markerAbsent = 0
+}
+
 // MARK: - Runner
 
 final class ConformanceUITests: XCTestCase {
@@ -88,6 +140,9 @@ final class ConformanceUITests: XCTestCase {
     /// Fixtures per app launch. Batching is relaunch-free within a batch via
     /// the Darwin advance notification.
     private let batchSize = 40
+
+    /// Accumulated across every batch and relaunch; written into the results.
+    private var webMarkerCensus = WebMarkerCensus()
 
     /// Seconds to wait for the fixture marker element after launch/advance.
     private let markerTimeout: TimeInterval = 15.0
@@ -97,11 +152,22 @@ final class ConformanceUITests: XCTestCase {
     /// budget is generous because a timeout here is not an error, only a
     /// capture taken without the guarantee.
     ///
-    /// Measured 2026-09-15 that the wait really executes, by DURATION rather
-    /// than by a log line (the runner's NSLog does not reach the device log):
-    /// with the library mutated never to settle the marker, the two-fixture
-    /// Web run went 43s -> 61s, i.e. 2 x this timeout. Unmutated it stays at
-    /// 43s, so the wait fires and settles rather than being skipped.
+    /// ⚠️ AN EARLIER VERSION OF THIS COMMENT CITED A CONFOUNDED MEASUREMENT,
+    /// and the number was carried into a commit message, a tag body and a
+    /// closed bug report before the confound was noticed. It compared the wall
+    /// clock of a run against a run with the LIBRARY MUTATED — and the wall
+    /// clock includes the build, so a recompile sits inside the delta. It was
+    /// evidence for "the wait blocks" only if build time is constant, which
+    /// was never measured.
+    ///
+    /// The claim is now carried by a variant that cannot recompile anything:
+    /// `CONFORMANCE_WEB_MARKERS_OFF=1` withholds the flag, so the same binary
+    /// runs and the library simply builds no marker. Measured 2026-09-15:
+    ///
+    ///     markers ON   31.772s   markerAbsent=0   TEST SUCCEEDED
+    ///     markers OFF  52.011s   markerAbsent=2   XCTAssertEqual failed
+    ///
+    /// +20.2s is two fixtures x this timeout, with no build in the delta.
     private let webLoadTimeout: TimeInterval = 10.0
 
     /// Optional filter for debugging: run only fixtures whose id contains one
@@ -162,6 +228,9 @@ final class ConformanceUITests: XCTestCase {
             }
         }
 
+        webMarkerCensus.webFixturesRunnable =
+            runnable.filter { $0.host == "Web" }.count
+
         try prepareStagingDirectories()
 
         var index = 0
@@ -179,10 +248,41 @@ final class ConformanceUITests: XCTestCase {
         XCTAssertEqual(ordered.count, manifest.fixtures.count,
                        "every manifest fixture must have exactly one result")
 
-        try writeResults(ordered, manifestHash: manifestHash)
+        try writeResults(ordered, manifestHash: manifestHash, webMarkers: webMarkerCensus)
+
+        // Two invariants, and they fail for different reasons.
+        //
+        // Conservation first: every Web-hosted fixture that reached capture
+        // landed in exactly one bucket. Without this, a future branch that
+        // falls through all four would shrink the population silently and the
+        // check below would pass by having nothing to judge.
+        let bucketed = webMarkerCensus.alreadySettled + webMarkerCensus.waitedThenSettled
+            + webMarkerCensus.timedOut + webMarkerCensus.markerAbsent
+        XCTAssertEqual(
+            bucketed, webMarkerCensus.webFixturesReachedCapture,
+            "web load-marker census does not add up: \(bucketed) bucketed vs "
+            + "\(webMarkerCensus.webFixturesReachedCapture) reached capture")
+
+        // Then the judgment. A timeout is deliberately NOT a failure — the
+        // capture is still judged by fixture-vs-control, and failing here would
+        // make a slow page indistinguishable from a broken marker. Never having
+        // had a marker at all IS the failure.
+        XCTAssertEqual(
+            webMarkerCensus.markerAbsent, 0,
+            "\(webMarkerCensus.markerAbsent) Web fixture(s) presented no load "
+            + "marker at all, so their captures carry the blank-page race the "
+            + "marker exists to remove. Check that "
+            + "JSONUI_CONFORMANCE_WEB_MARKERS reached the app and that the "
+            + "linked SwiftJsonUI is v10.23.0 or newer.")
 
         let counts = Dictionary(grouping: ordered, by: { $0.status }).mapValues { $0.count }
-        print("[conformance] finished: \(counts)")
+        print("[conformance] finished: \(counts) webMarkers: "
+              + "runnable=\(webMarkerCensus.webFixturesRunnable) "
+              + "reachedCapture=\(webMarkerCensus.webFixturesReachedCapture) "
+              + "alreadySettled=\(webMarkerCensus.alreadySettled) "
+              + "waitedThenSettled=\(webMarkerCensus.waitedThenSettled) "
+              + "timedOut=\(webMarkerCensus.timedOut) "
+              + "markerAbsent=\(webMarkerCensus.markerAbsent)")
     }
 
     // MARK: Skip policy
@@ -262,7 +362,17 @@ final class ConformanceUITests: XCTestCase {
             if isCodegenHostMode {
                 app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen"
             }
-            app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
+            // 🔻 A HOOK FOR THE CENSUS'S OWN CONTROL, ON BY DEFAULT. The
+            // `markerAbsent` bucket claims to detect "the marker mechanism is
+            // gone", and a check nobody has ever seen fail is a claim, not a
+            // gate. Withholding this flag is the one cheap way to produce that
+            // state deliberately: the library builds no marker, every Web
+            // fixture lands in `markerAbsent`, and the suite must go red.
+            // Permanent rather than a temporary edit, so re-running the control
+            // later costs one env var instead of rediscovering how.
+            if ProcessInfo.processInfo.environment["CONFORMANCE_WEB_MARKERS_OFF"] != "1" {
+                app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
+            }
             app.launch()
 
             var crashed = false
@@ -303,12 +413,37 @@ final class ConformanceUITests: XCTestCase {
                 // costs a single existence query. A timeout does NOT fail the
                 // fixture — the capture proceeds and the fixture-vs-control arm
                 // judges what was drawn, which is readable. Hanging is not.
-                let webPending = app.descendants(matching: .any)
-                    .matching(identifier: "sjui_web_pending").firstMatch
-                if webPending.exists {
-                    let webLoaded = app.descendants(matching: .any)
+                // 🔻 DRIVEN OFF THE DECLARED FACT, NOT OFF A TRANSIENT MARKER.
+                // `host == "Web"` comes from the manifest, is stable, and names
+                // the control (`__control/Web`, whose component is `__control`)
+                // as well as the attribute fixtures. Only these fixtures pay
+                // anything: 2 of 1099 on iOS, so the cheap-probe-for-everyone
+                // design the transient detector was bought with is not needed.
+                if current.host == "Web" {
+                    webMarkerCensus.webFixturesReachedCapture += 1
+                    let loaded = app.descendants(matching: .any)
                         .matching(identifier: "sjui_web_loaded").firstMatch
-                    _ = webLoaded.waitForExistence(timeout: webLoadTimeout)
+                    let pending = app.descendants(matching: .any)
+                        .matching(identifier: "sjui_web_pending").firstMatch
+                    if loaded.exists {
+                        webMarkerCensus.alreadySettled += 1
+                    } else if pending.exists {
+                        if loaded.waitForExistence(timeout: webLoadTimeout) {
+                            webMarkerCensus.waitedThenSettled += 1
+                        } else {
+                            webMarkerCensus.timedOut += 1
+                        }
+                    } else if loaded.waitForExistence(timeout: webLoadTimeout) {
+                        // Neither marker yet: the representable's makeUIView may
+                        // simply not have run at the instant the fixture marker
+                        // appeared. Waiting for loaded covers that.
+                        webMarkerCensus.waitedThenSettled += 1
+                    } else {
+                        // The whole budget with neither marker ever present. A
+                        // page that never arrives would have shown pending the
+                        // entire time, so this is the mechanism being gone.
+                        webMarkerCensus.markerAbsent += 1
+                    }
                 }
 
                 let loadError = app.descendants(matching: .any)
@@ -453,7 +588,8 @@ final class ConformanceUITests: XCTestCase {
         return relative
     }
 
-    private func writeResults(_ results: [FixtureResult], manifestHash: String) throws {
+    private func writeResults(_ results: [FixtureResult], manifestHash: String,
+                              webMarkers: WebMarkerCensus) throws {
         // Build JSON by hand-encodable structure to guarantee key order stability
         // is not required by the schema; standard JSONEncoder output is fine.
         struct ResultsFile: Encodable {
@@ -464,6 +600,7 @@ final class ConformanceUITests: XCTestCase {
             let platform: String
             let manifestHash: String
             let runner: Runner
+            let webMarkers: WebMarkerCensus
             let results: [FixtureResult]
         }
 
@@ -471,6 +608,7 @@ final class ConformanceUITests: XCTestCase {
             platform: "ios",
             manifestHash: manifestHash,
             runner: .init(name: "xcuitest", version: xcTestFrameworkVersion()),
+            webMarkers: webMarkers,
             results: results
         )
         let encoder = JSONEncoder()
