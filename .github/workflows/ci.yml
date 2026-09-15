@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v1.8.80 # jsonui-cli release tag; bumped with the glass re-vendor (guard text says: together)
+      JSONUI_CLI_MANIFEST_REF: v1.8.85 # jsonui-cli release tag; bumped with the TabView unselectedColor SCOPE re-vendor (guard text says: together)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
