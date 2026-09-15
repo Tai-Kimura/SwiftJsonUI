@@ -102,6 +102,22 @@ public struct NetworkImageConverter {
         // --- 5. .cornerRadius ---
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
+        // --- borderWidth + borderColor ---
+        // 🔻 THIS STEP WAS MISSING, AND THE OMISSION SHIPPED. A hand-rolled
+        // chain here mirrors the generator's modifier order, and the generator
+        // registers `:border` immediately after `:corner_radius`
+        // (label_converter.rb: "ボーダー（cornerRadius の直後、margins の前に適用）").
+        // The copy stopped at cornerRadius, so a declared border simply did not
+        // draw in dynamic mode while codegen drew it — measured 2026-09-16 on a
+        // consumer's chip: `type: Label, borderWidth: 1, borderColor: gold`
+        // rendered with a gold outline from the generated view and with none at
+        // all from the dynamic renderer, on the same screen.
+        //
+        // ⚠️ The standard pipeline HAS a border stage. Only the converters that
+        // opt out of it and re-implement the order by hand could lose this, and
+        // all four of them had (Label, Image, NetworkImage, Text).
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
+
         // --- 6. apply_margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
