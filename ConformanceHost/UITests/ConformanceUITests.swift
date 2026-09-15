@@ -92,6 +92,18 @@ final class ConformanceUITests: XCTestCase {
     /// Seconds to wait for the fixture marker element after launch/advance.
     private let markerTimeout: TimeInterval = 15.0
 
+    /// How long a Web fixture may take to finish painting after its screen is
+    /// on. Local `loadHTMLString` with no network settles in milliseconds; the
+    /// budget is generous because a timeout here is not an error, only a
+    /// capture taken without the guarantee.
+    ///
+    /// Measured 2026-09-15 that the wait really executes, by DURATION rather
+    /// than by a log line (the runner's NSLog does not reach the device log):
+    /// with the library mutated never to settle the marker, the two-fixture
+    /// Web run went 43s -> 61s, i.e. 2 x this timeout. Unmutated it stays at
+    /// 43s, so the wait fires and settles rather than being skipped.
+    private let webLoadTimeout: TimeInterval = 10.0
+
     /// Optional filter for debugging: run only fixtures whose id contains one
     /// of these comma-separated substrings
     /// (env CONFORMANCE_FILTER via TEST_RUNNER_CONFORMANCE_FILTER).
@@ -250,6 +262,7 @@ final class ConformanceUITests: XCTestCase {
             if isCodegenHostMode {
                 app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen"
             }
+            app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
             app.launch()
 
             var crashed = false
@@ -275,6 +288,27 @@ final class ConformanceUITests: XCTestCase {
                     remaining = remaining.dropFirst()
                     advanceFixture()
                     continue
+                }
+
+                // 🔻 THE FIXTURE MARKER ANSWERS "the screen is on", NOT "the
+                // content painted". A WKWebView exists the instant it is made,
+                // so a Web fixture was screenshotted mid-load — and committed
+                // baselines carry both sides of that race (the fixture blank in
+                // one bake, its control blank in an earlier one). `control_diff`
+                // called the fixture ACTIVE either way, because a race does
+                // produce a difference; it just is not the attribute's.
+                //
+                // Self-describing rather than driven off the fixture id: only a
+                // web view stamps `sjui_web_pending`, so a fixture without one
+                // costs a single existence query. A timeout does NOT fail the
+                // fixture — the capture proceeds and the fixture-vs-control arm
+                // judges what was drawn, which is readable. Hanging is not.
+                let webPending = app.descendants(matching: .any)
+                    .matching(identifier: "sjui_web_pending").firstMatch
+                if webPending.exists {
+                    let webLoaded = app.descendants(matching: .any)
+                        .matching(identifier: "sjui_web_loaded").firstMatch
+                    _ = webLoaded.waitForExistence(timeout: webLoadTimeout)
                 }
 
                 let loadError = app.descendants(matching: .any)

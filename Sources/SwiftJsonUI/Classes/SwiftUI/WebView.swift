@@ -10,6 +10,32 @@ import WebKit
 import Combine
 
 public struct WebView: UIViewRepresentable {
+    // MARK: - Conformance load markers
+    //
+    // 🔻 A WKWebView EXISTS THE INSTANT IT IS MADE, and the conformance host's
+    // only gate before a screenshot is "the fixture's screen is on". So the
+    // capture raced `loadHTMLString`, and BOTH SIDES of that race are present
+    // in committed baselines: one bake caught `Web/html__static` blank, an
+    // earlier one caught its control blank and hashed all zeroes. Either way
+    // `control_diff` reported the fixture ACTIVE — a race satisfies "differs
+    // from its control" for the wrong reason, so no Web attribute was being
+    // measured on iOS at all.
+    //
+    // The completion signal already existed (`didFinish`, below) and simply
+    // was not reachable from a UI test. It is surfaced here on the UIKit view
+    // rather than as a SwiftUI `.accessibilityIdentifier` on a wrapper: the
+    // host learned the hard way that an identifier on a wrapper is pushed down
+    // onto the content and clobbers the ids underneath it.
+    //
+    // ⚠️ OFF UNLESS ASKED. A consumer's own UI tests must not acquire a new
+    // element, so this does nothing until the host sets the variable at launch.
+    public static let webPendingIdentifier = "sjui_web_pending"
+    public static let webLoadedIdentifier = "sjui_web_loaded"
+    /// Read once: `ProcessInfo.environment` bridges a dictionary on every
+    /// access, and this is consulted from each navigation callback.
+    public static let conformanceLoadMarkersEnabled: Bool =
+        ProcessInfo.processInfo.environment["JSONUI_CONFORMANCE_WEB_MARKERS"] == "1"
+
     let url: URL?
     /// Raw HTML to render when there is no `url`, matching the web platform's
     /// own precedence (iframe `src` wins over `srcdoc`).
@@ -67,6 +93,27 @@ public struct WebView: UIViewRepresentable {
     public func makeUIView(context: Context) -> WKWebView {
         let webView = WKWebView()
         webView.navigationDelegate = context.coordinator
+        if Self.conformanceLoadMarkersEnabled {
+            // ⚠️ A MARKER SUBVIEW, NOT AN IDENTIFIER ON THE WEB VIEW. Setting
+            // `webView.accessibilityIdentifier` was the first attempt and was
+            // MEASURED not to reach the element tree: with it in place the
+            // host queried `pending=false loaded=false` on both Web fixtures.
+            // A WKWebView is an accessibility CONTAINER for the page content,
+            // so naming the container does not produce an element. A 1x1 view
+            // that IS an accessibility element does — the same shape the
+            // conformance host uses for its own fixture markers.
+            //
+            // Pending is stamped before any load starts: the window between
+            // makeUIView and didStartProvisionalNavigation is exactly the
+            // window the capture used to land in.
+            let marker = UIView(frame: CGRect(x: 0, y: 0, width: 1, height: 1))
+            marker.isAccessibilityElement = true
+            marker.accessibilityIdentifier = Self.webPendingIdentifier
+            marker.isUserInteractionEnabled = false
+            marker.backgroundColor = .clear
+            webView.addSubview(marker)
+            context.coordinator.loadMarker = marker
+        }
         webView.allowsBackForwardNavigationGestures = allowsBackForwardNavigationGestures
         webView.allowsLinkPreview = allowsLinkPreview
 
@@ -111,9 +158,23 @@ public struct WebView: UIViewRepresentable {
         var parent: WebView
         var lastLoadedURL: URL?
         var lastLoadedHTML: String?
+        /// The 1x1 element whose identifier says whether the page has painted.
+        /// Only made when the host asks for it; nil for every other caller.
+        weak var loadMarker: UIView?
         
         init(_ parent: WebView) {
             self.parent = parent
+        }
+
+        /// Navigation reached a TERMINAL outcome — finished or failed.
+        ///
+        /// A failure flips the marker too, on purpose: the host must not hang
+        /// waiting for a page that will never arrive, and a capture of the
+        /// failed state is a real answer the fixture-vs-control arm can judge.
+        /// Silence is the only outcome nobody can read.
+        func markSettled(_ webView: WKWebView) {
+            guard WebView.conformanceLoadMarkersEnabled else { return }
+            loadMarker?.accessibilityIdentifier = WebView.webLoadedIdentifier
         }
         
         public func webView(_ webView: WKWebView, didStartProvisionalNavigation navigation: WKNavigation!) {
@@ -130,12 +191,14 @@ public struct WebView: UIViewRepresentable {
         
         public func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
             parent.isLoading = false
+            markSettled(webView)
             parent.canGoBack = webView.canGoBack
             parent.canGoForward = webView.canGoForward
         }
         
         public func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
             parent.isLoading = false
+            markSettled(webView)
             parent.canGoBack = webView.canGoBack
             parent.canGoForward = webView.canGoForward
             print("WebView navigation failed: \(error.localizedDescription)")
@@ -143,6 +206,7 @@ public struct WebView: UIViewRepresentable {
         
         public func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
             parent.isLoading = false
+            markSettled(webView)
             parent.canGoBack = webView.canGoBack
             parent.canGoForward = webView.canGoForward
             print("WebView provisional navigation failed: \(error.localizedDescription)")
