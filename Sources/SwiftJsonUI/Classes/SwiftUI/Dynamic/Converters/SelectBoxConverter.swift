@@ -7,7 +7,7 @@
 //
 //  Modifier order (matches selectbox_converter.rb):
 //    1. SelectBoxView(...) creation
-//       - id, prompt, fontSize, fontColor, backgroundColor, cornerRadius
+//       - id, prompt, fontSize, fontColor, backgroundColor, cornerRadius, caret
 //       - selectItemType, items (normal) OR datePickerMode/datePickerStyle/dateStringFormat/
 //         minimumDate/maximumDate/minuteInterval/selectedDate (date)
 //       - selectedIndex, padding
@@ -183,6 +183,13 @@ public struct SelectBoxConverter {
             return nil
         }()
 
+        // caretAttributes — the closed-state caret. Absent: SelectBoxView
+        // keeps its fixed chevron, the picture every layout drew before the
+        // object was promoted from UIKit-only to every face (jsonui-cli
+        // 1.8.101). Present: the view draws the caret from the keys. The
+        // codegen (selectbox_converter.rb) emits the same struct.
+        let caret = SelectBoxConverter.caret(from: attrs, data: data)
+
         // onValueChange handler (+ onValueChanged alias)
         let handlerExpr: String? = component.onValueChangeSpelling()
             ?? component.onValueChangedSpelling()
@@ -213,6 +220,7 @@ public struct SelectBoxConverter {
                 hintColor: hintColor ?? .gray,
                 backgroundColor: backgroundColor,
                 cornerRadius: cornerRadius,
+                caret: caret,
                 selectItemType: selectItemType,
                 items: items,
                 datePickerMode: datePickerMode,
@@ -272,6 +280,35 @@ public struct SelectBoxConverter {
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
         return result
+    }
+
+    /// `caretAttributes` as the view's struct, or nil when the layout did
+    /// not declare the object — the absent/present distinction the SSoT
+    /// makes ("absent: native indicator; present: the face draws it").
+    ///
+    /// Read through the typed struct (`[String: Any]?`, coerced by the
+    /// generated table), the route `labelAttributes` takes above. Numbers
+    /// arrive as Double or Int depending on how the JSON spelled them, so
+    /// both are accepted; colours resolve through `getColor(_:data:)` so
+    /// the `@color/…` and bound spellings work here as they do everywhere.
+    static func caret(
+        from attrs: SelectBoxAttributes,
+        data: [String: Any]
+    ) -> SelectBoxView.CaretAttributes? {
+        guard let raw = attrs.caretAttributes else { return nil }
+        func number(_ key: String) -> CGFloat? {
+            if let d = raw[key] as? Double { return CGFloat(d) }
+            if let i = raw[key] as? Int { return CGFloat(i) }
+            return nil
+        }
+        return SelectBoxView.CaretAttributes(
+            src: raw["src"] as? String,
+            width: number("width"),
+            height: number("height"),
+            tintColor: DynamicHelpers.getColor(raw["tintColor"] as? String, data: data),
+            background: DynamicHelpers.getColor(raw["background"] as? String, data: data),
+            rightMargin: number("rightMargin")
+        )
     }
 }
 #endif // DEBUG

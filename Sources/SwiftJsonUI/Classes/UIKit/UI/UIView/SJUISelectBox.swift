@@ -186,21 +186,41 @@ open class SJUISelectBox: SJUIView, SheetViewDelegate {
         }
     }
     
+    // `caretAttributes`. This object came from here — the SSoT promoted it
+    // to every face in jsonui-cli 1.8.101 and added `rightMargin`, whose
+    // default (0, the caret flush against the right edge) is this view's
+    // contract. `height` and `tintColor` were declared but never read here;
+    // both are read now, under the SSoT's meaning: a declared height is the
+    // caret's own box (the default stays "as tall as the select"), and the
+    // tint reaches the image the way UIImageView applies it — only when the
+    // asset renders as a template. The rendering mode is not forced: the
+    // default glyph is the app's own `Triangle` asset, and recolouring a
+    // full-colour asset would be a change the SSoT does not ask for.
     private func initializeCaret(attr: JSON) {
         let caretWidth = attr["width"].cgFloat ?? SJUISelectBox.defaultCaretWidth
+        let rightMargin = attr["rightMargin"].cgFloat ?? 0
         let imageSrc = attr["src"].string ?? SJUISelectBox.defaultCaretImageName
         let caret = SJUIImageView()
         caret.contentMode = .center
         caret.translatesAutoresizingMaskIntoConstraints = false
         self.addSubview(caret)
-        let rightConstraint = NSLayoutConstraint(item: caret, attribute: .right, relatedBy: .equal, toItem: self, attribute: .right, multiplier: 1.0, constant: 0)
+        let rightConstraint = NSLayoutConstraint(item: caret, attribute: .right, relatedBy: .equal, toItem: self, attribute: .right, multiplier: 1.0, constant: -rightMargin)
         let verticalConstraint = NSLayoutConstraint(item: caret, attribute: .centerY, relatedBy: .equal, toItem: self, attribute: .centerY, multiplier: 1.0, constant: 0)
         let widthConstraint = NSLayoutConstraint(item: caret, attribute: .width, relatedBy: .equal, toItem: nil, attribute: .width, multiplier: 1.0, constant: caretWidth)
-        let heightConstraint = NSLayoutConstraint(item: caret, attribute: .height, relatedBy: .equal, toItem: self, attribute: .height, multiplier: 1.0, constant: 0)
-        self.addConstraints([rightConstraint,verticalConstraint,heightConstraint])
-        caret.addConstraints([widthConstraint])
+        self.addConstraints([rightConstraint,verticalConstraint])
+        if let caretHeight = attr["height"].cgFloat {
+            let heightConstraint = NSLayoutConstraint(item: caret, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .height, multiplier: 1.0, constant: caretHeight)
+            caret.addConstraints([widthConstraint, heightConstraint])
+        } else {
+            let heightConstraint = NSLayoutConstraint(item: caret, attribute: .height, relatedBy: .equal, toItem: self, attribute: .height, multiplier: 1.0, constant: 0)
+            self.addConstraints([heightConstraint])
+            caret.addConstraints([widthConstraint])
+        }
         if let background = UIColor.findColorByJSON(attr: attr["background"]) {
             caret.backgroundColor = background
+        }
+        if let tintColor = UIColor.findColorByJSON(attr: attr["tintColor"]) {
+            caret.tintColor = tintColor
         }
         caret.image = UIImage(named: imageSrc)
         self._caret = caret
