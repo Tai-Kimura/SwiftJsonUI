@@ -472,4 +472,43 @@ final class SJUISelectBoxTests: XCTestCase {
             selectBox.items = largeItemList
         }
     }
+
+    // MARK: - caretAttributes (rightMargin / height / tintColor)
+
+    private func caretConstraint(_ box: SJUISelectBox, _ attribute: NSLayoutConstraint.Attribute) -> NSLayoutConstraint? {
+        (box.constraints + box.caret.constraints).first {
+            ($0.firstItem as? UIView) === box.caret && $0.firstAttribute == attribute
+        }
+    }
+
+    /// The default is this view's original contract: flush right, as tall as
+    /// the select. `rightMargin` was added to the SSoT with 0 as its absent
+    /// value precisely so that this picture does not move.
+    func testCaretDefaultsSitFlushAndFullHeight() throws {
+        let right = try XCTUnwrap(caretConstraint(selectBox, .right))
+        XCTAssertEqual(right.constant, 0)
+        let height = try XCTUnwrap(caretConstraint(selectBox, .height))
+        XCTAssertTrue((height.secondItem as? UIView) === selectBox)
+    }
+
+    /// `rightMargin` is the distance from the select's right edge to the
+    /// caret's right edge, so it lands as a negative constant on the right
+    /// constraint. `height` and `tintColor` were declared but never read.
+    func testCaretAttributesRightMarginHeightAndTint() throws {
+        var views = [String: UIView]()
+        let box = SJUISelectBox.createFromJSON(
+            attr: JSON([
+                "type": "SelectBox",
+                "caretAttributes": ["rightMargin": 24, "height": 32, "tintColor": "#FF0000"]
+            ]),
+            target: testTarget,
+            views: &views
+        )
+        let right = try XCTUnwrap(caretConstraint(box, .right))
+        XCTAssertEqual(right.constant, -24)
+        let height = try XCTUnwrap(caretConstraint(box, .height))
+        XCTAssertNil(height.secondItem)
+        XCTAssertEqual(height.constant, 32)
+        XCTAssertEqual(box.caret.tintColor, UIColor.colorWithHexString("#FF0000"))
+    }
 }

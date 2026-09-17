@@ -1217,5 +1217,71 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertEqual(textFieldPlaceholderAlignment(for: .center), .center)
         XCTAssertEqual(textFieldPlaceholderAlignment(for: .trailing), .trailing)
     }
+
+    // MARK: - SelectBox.caretAttributes
+
+    /// The object was UIKit-only until jsonui-cli 1.8.101; the dynamic path
+    /// decoded it (`SelectBoxAttributes.caretAttributes`) and read nothing.
+    /// Every key is optional and `rightMargin` alone must be enough.
+    func testSelectBoxCaretAttributesReachTheView() throws {
+        let c = try component("""
+        { "type": "SelectBox", "items": ["a"],
+          "caretAttributes": { "width": 32, "height": 32, "tintColor": "#FF0000",
+                               "background": "#00AA00", "rightMargin": 24 } }
+        """)
+        let caret = try XCTUnwrap(
+            SelectBoxConverter.caret(from: c.typedAttributes(SelectBoxAttributes.self), data: [:])
+        )
+        XCTAssertNil(caret.src)
+        XCTAssertEqual(caret.width, 32)
+        XCTAssertEqual(caret.height, 32)
+        XCTAssertEqual(caret.rightMargin, 24)
+        XCTAssertNotNil(caret.tintColor)
+        XCTAssertNotNil(caret.background)
+    }
+
+    func testSelectBoxCaretRightMarginAloneIsEnough() throws {
+        let c = try component("""
+        { "type": "SelectBox", "items": ["a"], "caretAttributes": { "rightMargin": 12 } }
+        """)
+        let caret = try XCTUnwrap(
+            SelectBoxConverter.caret(from: c.typedAttributes(SelectBoxAttributes.self), data: [:])
+        )
+        XCTAssertEqual(caret, SelectBoxView.CaretAttributes(rightMargin: 12))
+    }
+
+    /// The SSoT's distinction is absent / present, not empty / non-empty:
+    /// `{}` is present, so the view draws its own default glyph at
+    /// rightMargin 0 (the web face reads it the same way).
+    func testSelectBoxEmptyCaretObjectIsPresent() throws {
+        let c = try component(#"{ "type": "SelectBox", "items": ["a"], "caretAttributes": {} }"#)
+        XCTAssertEqual(
+            SelectBoxConverter.caret(from: c.typedAttributes(SelectBoxAttributes.self), data: [:]),
+            SelectBoxView.CaretAttributes()
+        )
+    }
+
+    /// Absent means unchanged: no struct, and the view keeps the inset the
+    /// fixed chevron has always had. Present moves the caret to its own
+    /// margin from the select's edge, so the label inset stops applying on
+    /// that side (the UIKit contract `rightMargin` was defined from).
+    func testSelectBoxCaretAbsentKeepsThePreviousPicture() throws {
+        let c = try component(#"{ "type": "SelectBox", "items": ["a"] }"#)
+        XCTAssertNil(SelectBoxConverter.caret(from: c.typedAttributes(SelectBoxAttributes.self), data: [:]))
+
+        XCTAssertNil(SelectBoxView().caret)
+        XCTAssertEqual(SelectBoxView().contentInsets.trailing, 12)
+        XCTAssertEqual(
+            SelectBoxView(padding: EdgeInsets(top: 1, leading: 2, bottom: 3, trailing: 4)).contentInsets.trailing,
+            4
+        )
+        let declared = SelectBoxView(
+            caret: .init(rightMargin: 24),
+            padding: EdgeInsets(top: 1, leading: 2, bottom: 3, trailing: 4)
+        )
+        XCTAssertEqual(declared.caret?.rightMargin, 24)
+        XCTAssertEqual(declared.contentInsets.trailing, 0)
+        XCTAssertEqual(declared.contentInsets.leading, 2)
+    }
 }
 #endif

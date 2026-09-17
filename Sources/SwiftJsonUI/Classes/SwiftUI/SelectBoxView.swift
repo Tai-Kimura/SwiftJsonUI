@@ -79,8 +79,57 @@ public struct SelectBoxView: View {
     let initialSelectedIndex: Int?
     let initialSelectedDate: Date?
     let padding: EdgeInsets?
+    /// `caretAttributes`, or nil when the layout did not declare the object.
+    /// Nil keeps the fixed 12pt gray chevron this view has always drawn, so
+    /// no existing layout moves.
+    let caret: CaretAttributes?
     let onValueChange: ((String) -> Void)?
     var selectedIndexBinding: SwiftUI.Binding<Int>?
+
+    /// The closed-state caret, declared by `SelectBox.caretAttributes`.
+    ///
+    /// The object was UIKit-only (SJUISelectBox) until jsonui-cli 1.8.101;
+    /// the SSoT now declares it for every face, with one rule: absent means
+    /// the face keeps its native indicator, present means the face draws the
+    /// caret itself from these keys. Every key is optional — `{"rightMargin":
+    /// 12}` alone moves the default chevron off the trailing edge, which is
+    /// the request the promotion started from.
+    ///
+    /// `rightMargin` is measured from the select's trailing edge to the
+    /// caret's trailing edge, and defaults to 0 — the UIKit contract, where
+    /// the caret is a subview pinned to the right edge regardless of the
+    /// label's inset. That is why the label inset does not apply to the
+    /// caret once this object is present (see `contentInsets`).
+    public struct CaretAttributes: Equatable {
+        /// Asset name. Nil draws the default glyph (`chevron.down`).
+        public var src: String?
+        /// The caret's box. Nil keeps the glyph's own size on that axis.
+        public var width: CGFloat?
+        public var height: CGFloat?
+        /// Applies to the default glyph, and to a template `src`. A
+        /// full-colour asset keeps its colours — the rendering mode is the
+        /// asset's, not forced here.
+        public var tintColor: Color?
+        /// Fills the caret's box (width × height), not the select.
+        public var background: Color?
+        public var rightMargin: CGFloat?
+
+        public init(
+            src: String? = nil,
+            width: CGFloat? = nil,
+            height: CGFloat? = nil,
+            tintColor: Color? = nil,
+            background: Color? = nil,
+            rightMargin: CGFloat? = nil
+        ) {
+            self.src = src
+            self.width = width
+            self.height = height
+            self.tintColor = tintColor
+            self.background = background
+            self.rightMargin = rightMargin
+        }
+    }
 
     @State private var isPresented = false
     @State private var selectedIndex: Int? = nil
@@ -122,6 +171,8 @@ public struct SelectBoxView: View {
         hintColor: Color = .gray,
         backgroundColor: Color = Color(UIColor.systemGray6),
         cornerRadius: CGFloat = 8,
+        // `caretAttributes`. Nil keeps the fixed chevron — see CaretAttributes.
+        caret: CaretAttributes? = nil,
         selectItemType: SelectItemType = .normal,
         items: [String] = [],
         datePickerMode: DatePickerMode = .date,
@@ -152,6 +203,7 @@ public struct SelectBoxView: View {
         self.hintColor = hintColor
         self.backgroundColor = backgroundColor
         self.cornerRadius = cornerRadius
+        self.caret = caret
         self.selectItemType = selectItemType
         self.items = items
         self.datePickerMode = datePickerMode
@@ -221,13 +273,11 @@ public struct SelectBoxView: View {
                 .font(labelFont)
 
                 Spacer()
-                
+
                 // Caret icon
-                Image(systemName: "chevron.down")
-                    .foregroundColor(.gray)
-                    .font(.system(size: 12))
+                caretView
             }
-            .padding(padding ?? EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12))
+            .padding(contentInsets)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(backgroundColor)
             .cornerRadius(cornerRadius)
@@ -450,6 +500,56 @@ public struct SelectBoxView: View {
         }
     }
     
+    /// The inset around label + caret.
+    ///
+    /// Without `caret` this is the declared padding, or the 12pt the view has
+    /// always used. With it the trailing inset is 0: `rightMargin` is defined
+    /// from the select's own trailing edge (UIKit pins the caret subview to
+    /// the right edge and lets the label carry its own inset), so the caret
+    /// has to be positioned by its own margin, not by the label's.
+    var contentInsets: EdgeInsets {
+        var insets = padding ?? EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        if caret != nil {
+            insets.trailing = 0
+        }
+        return insets
+    }
+
+    /// The fixed chevron, or the declared caret.
+    ///
+    /// The declared form is a box of `width` × `height` (each nil axis keeps
+    /// the glyph's size) filled with `background`, holding the glyph tinted
+    /// `tintColor` (gray when absent, as before), whose trailing edge sits
+    /// `rightMargin` (0 when absent) from the select's trailing edge.
+    @ViewBuilder
+    private var caretView: some View {
+        if let caret {
+            caretGlyph(caret)
+                .frame(width: caret.width, height: caret.height)
+                .background(caret.background ?? Color.clear)
+                .padding(.trailing, caret.rightMargin ?? 0)
+        } else {
+            Image(systemName: "chevron.down")
+                .foregroundColor(.gray)
+                .font(.system(size: 12))
+        }
+    }
+
+    @ViewBuilder
+    private func caretGlyph(_ caret: CaretAttributes) -> some View {
+        if let src = caret.src {
+            // The asset's own rendering mode decides whether the tint lands
+            // — a template asset takes it, a full-colour one keeps its
+            // colours. Forcing `.template` here would recolour the latter.
+            Image(src)
+                .foregroundColor(caret.tintColor ?? .gray)
+        } else {
+            Image(systemName: "chevron.down")
+                .foregroundColor(caret.tintColor ?? .gray)
+                .font(.system(size: 12))
+        }
+    }
+
     private var datePickerComponents: DatePickerComponents {
         switch datePickerMode {
         case .date:
