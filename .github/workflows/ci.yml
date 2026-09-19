@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 5fdeb87ca1d9b4a1a6963bb9741718230c8d0f95 # jsonui-cli main (untagged at re-vendor time; v1.8.101 is cut after the ci baselines bake); bumped with the re-vendor that promotes SelectBox.caretAttributes to every platform and adds rightMargin (guard text says: together)
+      JSONUI_CLI_MANIFEST_REF: v1.8.106 # jsonui-cli release tag; bumped with the re-vendor of SelectBoxAttributes whose onValueChange doc states the payload per selection binding (guard text says: together)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
