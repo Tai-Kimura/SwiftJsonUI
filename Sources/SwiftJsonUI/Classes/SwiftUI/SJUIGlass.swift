@@ -14,7 +14,9 @@ import SwiftUI
 //
 // Every iOS-26 member in this file already carried `@available(iOS 26.0, *)`,
 // and that is a runtime annotation: it defers the CALL, it does not defer name
-// resolution. Built against the iOS 18.5 SDK (Xcode 16.4, which is the DEFAULT
+// resolution. (And it defers the call only where a CALLER checks `#available`:
+// XCTest invokes an `@available` test method regardless, so the test arms ask
+// the runtime themselves — SJUIGlassTests.belowTheGlassRuntime.) Built against the iOS 18.5 SDK (Xcode 16.4, which is the DEFAULT
 // on GitHub's macos-15 image) the type `Glass` does not exist and the file
 // fails to compile -- measured, run 34841647809:
 //
