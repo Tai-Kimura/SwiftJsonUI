@@ -125,12 +125,16 @@ public struct RadioConverter {
                         radioGlyph(component: component, selected: selectionBinding.wrappedValue == item)
                             .onTapGesture {
                                 selectionBinding.wrappedValue = item
-                                // onValueChange handler
+                                // onValueChange handler: the payload is the new
+                                // value of the selection binding — the item
+                                // String just written — as the sjui codegen,
+                                // kjui codegen and KotlinJsonUI dynamic pass.
+                                // `index` was an iOS-dynamic-only payload.
                                 if let onValueChange = component.onValueChangeSpelling() {
                                     DynamicEventHelper.callWithValue(
                                         onValueChange,
                                         id: id,
-                                        value: index,
+                                        value: item,
                                         data: data
                                     )
                                 }
