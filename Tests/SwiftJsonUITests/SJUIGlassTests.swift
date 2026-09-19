@@ -90,8 +90,8 @@ final class SJUIGlassTests: XCTestCase {
     /// ⚠️ The first version of this arm only called `resolvedShape` and asserted
     /// nothing. Mutating capsule to Rectangle left it green — measured — because
     /// "it did not crash" is not a claim about the shape.
-    @available(iOS 26.0, *)
-    func testEachShapeSpellingDrawsItsOwnOutline() {
+    func testEachShapeSpellingDrawsItsOwnOutline() throws {
+        guard #available(iOS 26.0, *) else { try Self.belowTheGlassRuntime(#function); return }
         let box = CGRect(x: 0, y: 0, width: 100, height: 40)
         func outline(_ spelling: String?) -> String {
             SJUIGlass.resolvedShape(spelling).path(in: box).description
@@ -147,8 +147,8 @@ final class SJUIGlassTests: XCTestCase {
     #if compiler(>=6.2) // names `Glass`
     /// The SDK cannot see the difference the contract requires. Recorded as a fact
     /// about the SDK, so the next reader does not "fix" Plan away.
-    @available(iOS 26.0, *)
-    func testTheSDKsOwnEqualityCannotSeeAnExplicitFalse() {
+    func testTheSDKsOwnEqualityCannotSeeAnExplicitFalse() throws {
+        guard #available(iOS 26.0, *) else { try Self.belowTheGlassRuntime(#function); return }
         XCTAssertEqual(Glass.regular, Glass.regular.interactive(false),
                        "if this ever fails, Glass gained the distinction and Plan's interactive field could move")
         XCTAssertNotEqual(Glass.regular, Glass.regular.interactive(true))
@@ -190,8 +190,8 @@ final class SJUIGlassTests: XCTestCase {
     }
 
     #if compiler(>=6.2) // names `Glass`
-    @available(iOS 26.0, *)
-    func testStyleSpellingsMapToTheSDKsTwoMembers() {
+    func testStyleSpellingsMapToTheSDKsTwoMembers() throws {
+        guard #available(iOS 26.0, *) else { try Self.belowTheGlassRuntime(#function); return }
         XCTAssertEqual(SJUIGlass.glass(style: "clear", tint: nil, interactive: nil), Glass.clear)
         XCTAssertEqual(SJUIGlass.glass(style: "regular", tint: nil, interactive: nil), Glass.regular)
         XCTAssertEqual(SJUIGlass.glass(style: nil, tint: nil, interactive: nil), Glass.regular,
@@ -221,6 +221,34 @@ final class SJUIGlassTests: XCTestCase {
     /// from release notes, not compiled. If it is wrong, the 16.4 leg fails HERE
     /// with both values printed, instead of the guard silently covering nothing.
     ///
+    /// THE RUNTIME QUESTION, ASKED INSIDE THE ARM.
+    ///
+    /// `@available(iOS 26.0, *)` on a test method answers nothing here: XCTest
+    /// finds the method through the ObjC runtime and invokes it with NSInvocation,
+    /// so no caller ever performs the `#available` check the attribute defers to.
+    /// On an iOS 18 simulator the arm ran anyway, and the weak-linked `Glass`
+    /// symbols (`nm -m`: `weak external _$s7SwiftUI5GlassV7regularACvgZ`) resolve
+    /// to NULL — EXC_BAD_ACCESS at address 0, measured 2026-09-19 on an iPhone
+    /// 16 Pro / iOS 18.6 simulator under Xcode 26.6 and 27.0, and green on the
+    /// same device type / iOS 26.5. The three Glass arms therefore open with
+    /// `guard #available(iOS 26.0, *)` and land here below it.
+    ///
+    /// Two exits, both visible: a developer machine gets a counted XCTSkip; a CI
+    /// leg that declared the Glass SDK (SJUI_EXPECT_GLASS_SDK=1) gets a FAILURE,
+    /// because that leg exists to run these arms, and a skipped gate gates nothing.
+    static func belowTheGlassRuntime(_ arm: String) throws {
+        let running = ProcessInfo.processInfo.operatingSystemVersionString
+        let why = "\(arm) needs an iOS 26 runtime; this simulator runs \(running). "
+            + "`@available` does not keep XCTest from invoking the arm, and the weak-linked "
+            + "Glass symbols are NULL below iOS 26 (EXC_BAD_ACCESS at 0)."
+        if ProcessInfo.processInfo.environment["SJUI_EXPECT_GLASS_SDK"] == "1" {
+            XCTFail("this leg declared SJUI_EXPECT_GLASS_SDK=1 but its simulator cannot run the "
+                    + "Glass arms — the leg would skip what it exists to run. " + why)
+            return
+        }
+        throw XCTSkip(why)
+    }
+
     /// The skip is deliberate for developer machines; ci.yml fails the job if this
     /// arm skips THERE, because a silent skip would make both legs vacuous.
     func testTheCompileTimeGuardMatchesWhatThisLegDeclared() throws {
