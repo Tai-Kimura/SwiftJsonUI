@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v1.8.109 # jsonui-cli release tag; bumped with the re-vendor of ScrollViewAttributes whose keyboardAvoidance doc now names both platforms (declaration swift → swift+kotlin)
+      JSONUI_CLI_MANIFEST_REF: v1.8.110 # jsonui-cli release tag; bumped with the re-vendor of ScrollViewAttributes whose keyboard-avoidance docs name Modifier.keyboardAvoidance on Android
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
