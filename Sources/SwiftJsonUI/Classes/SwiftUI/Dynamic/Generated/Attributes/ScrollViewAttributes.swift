@@ -113,7 +113,7 @@ public struct ScrollViewAttributes {
     /// Scroll indicator style
     public let indicatorStyle: String?
 
-    /// Enable keyboard avoidance
+    /// Enable keyboard avoidance (default true). iOS: AdvancedKeyboardAvoidingScrollView with the configuration disabled when false. Android: imePadding() and the keyboardAvoidancePadding clearance are emitted only when not false. Declared swift-only from the initial commit while the kjui codegen had read it all along (2026-09-22).
     public let keyboardAvoidance: Bool?
 
     /// Clearance, in points/dp, that a focused text field keeps from the ScrollView's VISIBLE bottom edge while the soft keyboard is up. The edge is whatever bounds the scroll area at that moment: the top of a fixed footer laid out below the ScrollView, or the keyboard itself when the ScrollView meets it directly. Default 20 (the platform keyboard-avoidance default; absent means 20, not 0). iOS: KeyboardAvoidanceConfiguration.additionalPadding, applied as a bottom safe-area inset while the keyboard is visible. Android: bottom padding on the scrollable after imePadding() while the IME is visible, so bringIntoView stops that far above it. Ignored when keyboardAvoidance is false. Web: not applicable (no soft-keyboard avoidance in the web renderer). [default: 20]
