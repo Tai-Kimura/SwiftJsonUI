@@ -83,6 +83,32 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                     .frame(minHeight: geometry.size.height)
                 }
                 .scrollDismissesKeyboard(scrollDismissMode)
+                // 🚨 THE ONE PLACE `additionalPadding` REACHES THE SCREEN.
+                //
+                // Reported 2026-09-22 from a real device: a focused field
+                // sat flush against (40px under, in fact) the fixed footer
+                // below its ScrollView, and the layout had no way to ask for
+                // room. `additionalPadding` (default 20) existed in the
+                // configuration and did nothing: `scrollToFocusedField`
+                // needs `focusTracker.focusedFieldId`, which only
+                // `trackFocus(id:)` sets, and nothing in this library or in
+                // generated code calls it; `calculateSpacerHeight` adds it
+                // only when the ScrollView itself extends under the keyboard,
+                // which a footer-and-scroll layout never does (the footer
+                // takes the keyboard's safe area, the ScrollView ends at the
+                // footer's top). What placed the field was SwiftUI's own
+                // focus scrolling, which stops at the visible edge — 0.
+                //
+                // So while the keyboard is up, the ScrollView's bottom safe
+                // area grows by `additionalPadding`. SwiftUI's focus
+                // scrolling keeps a focused field inside the SAFE region, so
+                // the field stops that far above whatever the visible edge
+                // is — the footer's top here, the keyboard's top where the
+                // ScrollView meets the keyboard directly. One definition for
+                // both shapes: the clearance from the visible bottom.
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: keyboardClearance)
+                }
                 .coordinateSpace(name: scrollSpace)
                 .onAppear {
                     self.scrollProxy = proxy
@@ -113,6 +139,14 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
         }
     }
     
+    /// `additionalPadding` while the keyboard is visible and avoidance is
+    /// on, 0 otherwise — the bottom safe-area inset the focus scrolling
+    /// respects. Animated with the keyboard so the field does not jump.
+    private var keyboardClearance: CGFloat {
+        guard configuration.isEnabled, keyboardResponder.isKeyboardVisible else { return 0 }
+        return configuration.additionalPadding
+    }
+
     private func calculateSpacerHeight(in geometry: GeometryProxy) -> CGFloat {
         guard keyboardResponder.isKeyboardVisible else { return 0 }
         
