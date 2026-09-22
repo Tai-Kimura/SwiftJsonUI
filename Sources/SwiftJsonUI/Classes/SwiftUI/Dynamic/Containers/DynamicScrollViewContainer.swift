@@ -64,12 +64,21 @@ public struct DynamicScrollViewContainer: View {
         let scrollAttrs = component.typedAttributes(ScrollViewAttributes.self)
         let keyboardAvoidance = scrollAttrs.keyboardAvoidance ?? true
         let keyboardDismissMode = scrollAttrs.keyboardDismissMode?.knownValue?.rawValue
+        // `keyboardAvoidancePadding` (SSoT: number, default 20): the clearance
+        // a focused field keeps from the visible bottom while the keyboard
+        // is up. Absent → the configuration's own default, which is the
+        // SSoT's 20 — the same emit the codegen makes (scrollview_converter).
+        var configuration = KeyboardAvoidanceConfiguration()
+        if let padding = scrollAttrs.keyboardAvoidancePadding {
+            configuration.additionalPadding = CGFloat(padding)
+        }
 
         if keyboardAvoidance {
             result = AnyView(
                 AdvancedKeyboardAvoidingScrollView(
                     axes,
                     showsIndicators: showsIndicators,
+                    configuration: configuration,
                     keyboardDismissMode: keyboardDismissMode
                 ) {
                     scrollContent(children: children, isHorizontal: isHorizontal)
