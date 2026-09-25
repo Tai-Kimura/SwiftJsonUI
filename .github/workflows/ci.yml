@@ -137,6 +137,8 @@ jobs:
                "shared/core/image_accessibility_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",
                "shared/core/tap_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/leaf_children_vectors.json",
+               "shared/core/leaf_children_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/swiftui_modifier_order.json",
                "sjui_tools/lib/swiftui/views/modifier_order.json"),
           ]

@@ -1037,6 +1037,7 @@ public struct DynamicModifierHelper {
     static func isAccessibilityContainer(_ component: DynamicComponent) -> Bool {
         let typeName = component.type?.lowercased() ?? ""
         if accessibilityContainerTypes.contains(typeName) { return true }
+        if isCustomContainer(component) { return true }
         guard typeName == "collection" else { return false }
         // Asked of the converter that renders the shape, not read here: `lazy`
         // accepts a legacy boolean besides the declared enum, so it is a raw
@@ -1045,6 +1046,19 @@ public struct DynamicModifierHelper {
         // unlisted violation and a second chance to disagree with what is
         // actually rendered.
         return CollectionConverter.rendersWithoutScrollContainer(component)
+    }
+
+    /// A project's own component (drawn by a registered CustomComponentAdapter)
+    /// that the layout gives children. Its adapter draws them inside its own
+    /// view, which is no more an accessibility element than a VStack is, so a
+    /// bare identifier was pushed down onto them: measured (XCUITest, iOS 26.5,
+    /// 2026-09-25) a custom container with one child had its id found on the
+    /// child and the child's own id 0 times; with two, its id twice. The list
+    /// above names SwiftJsonUI's types and cannot name a project's.
+    /// sjui's BaseViewConverter answers the same for its extension converters.
+    static func isCustomContainer(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type, CustomComponentRegistry.shared.adapter(for: type) != nil else { return false }
+        return (component.childComponents ?? []).contains { $0.isValid || $0.include != nil }
     }
 
     private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {

@@ -387,12 +387,26 @@ public struct DynamicComponentBuilder: View {
             // Default/Unknown
             default:
                 if let adapter = CustomComponentRegistry.shared.adapter(for: type) {
-                    adapter.buildView(
-                        component: component,
-                        data: data,
-                        viewId: viewId,
-                        parentOrientation: parentOrientation
-                    )
+                    // A leaf given children: the build refuses this layout, so
+                    // Debug says so in the component's place rather than
+                    // drawing it without them.
+                    if let refusal = LeafChildren.rejection(for: adapter, component: component) {
+                        Text("Error: \(refusal)")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(Color.red)
+                            .cornerRadius(6)
+                            .onAppear { Logger.debug("[CustomComponentAdapter] \(refusal)") }
+                    } else {
+                        adapter.buildView(
+                            component: component,
+                            data: data,
+                            viewId: viewId,
+                            parentOrientation: parentOrientation
+                        )
+                    }
                 } else {
                     Text("Error: Unknown component type '\(type)'")
                         .font(.system(size: 14, weight: .medium))

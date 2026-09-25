@@ -183,6 +183,10 @@ struct ConformanceRootView: View {
                 KeyboardClearanceProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-tapIdentifierOnce") {
                 TapIdentifierOnceView()
+            } else if ProcessInfo.processInfo.arguments.contains("-leafChildren") {
+                LeafChildrenProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-customContainerId") {
+                CustomContainerIdView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
