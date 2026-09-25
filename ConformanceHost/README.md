@@ -95,8 +95,9 @@ CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
 - **Output**: the UITest process writes `ios.results.json` (with
   `manifestHash` = SHA-256 of the manifest bytes it ran against) and PNG
   screenshots to a staging dir on the shared simulator/host filesystem
-  (default `/tmp/jsonui-conformance-ios`), and `scripts/collect_results.sh`
-  copies them into `$CONFORMANCE_DIR`.
+  (a directory of the run's own, `/tmp/jsonui-conformance-ios.<pid>.XXXXXX`,
+  removed when the run succeeds; or the one `CONFORMANCE_STAGING` names),
+  and `scripts/collect_results.sh` copies them into `$CONFORMANCE_DIR`.
 
 ## Assets
 
