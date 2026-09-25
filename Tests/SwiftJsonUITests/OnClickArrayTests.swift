@@ -63,5 +63,31 @@ final class OnClickArrayTests: XCTestCase {
         }
         XCTAssertEqual(fired, ["first", "second"], "both, in declaration order")
     }
+
+    /// A handler names a method (TapAccessibility.namesAMethod): an empty or
+    /// blank one is none, so `applyOnClick` attaches no tap. It attached one
+    /// that called nothing and took the tap from the view around it
+    /// (XCUITest, 2026-09-25: a row holding a Label with `"onClick": ""` did
+    /// not fire when the Label was tapped).
+    func testEmptyAndBlankHandlersNameNothing() throws {
+        let blanks = [
+            #""onClick": """#, #""onClick": "   ""#, #""onClick": "@{}""#, #""onClick": "@{ }""#,
+            #""onClick": "\u3000""#, #""onclick": """#, #""onclick": "   ""#, #""onclick": []"#,
+            #""onclick": ["", " "]"#,
+        ]
+        for blank in blanks {
+            let c = try component(#"{ "type": "View", "# + blank + " }")
+            XCTAssertEqual(c.effectiveOnClickHandlers, [], blank)
+            XCTAssertNil(c.effectiveOnClick, blank)
+        }
+    }
+
+    /// A blank element is not called; a blank onClick leaves the tap to onclick.
+    func testBlankElementsAreDroppedAndBlankOnClickFallsThrough() throws {
+        let array = try component(#"{ "type": "View", "onclick": ["", "first", " "] }"#)
+        XCTAssertEqual(array.effectiveOnClickHandlers, ["first"])
+        let fallback = try component(#"{ "type": "View", "onClick": "", "onclick": "only" }"#)
+        XCTAssertEqual(fallback.effectiveOnClickHandlers, ["only"])
+    }
 }
 #endif

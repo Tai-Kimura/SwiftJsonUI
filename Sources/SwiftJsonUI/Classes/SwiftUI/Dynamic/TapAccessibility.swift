@@ -58,12 +58,33 @@ enum TapAccessibility {
         return interactive.contains(type) || !known.contains(type)
     }
 
+    /// A handler names a method that is not blank: a binding's inside
+    /// (`@{onOpen}`), a bare selector, or each string of an `onclick` array.
+    /// `""`, `"   "`, `"@{}"`, `[]` and `[""]` name none, so they are no tap
+    /// (jsonui-cli shared/core/tap_accessibility.rb `handler?`; blank is
+    /// Unicode white space, a full-width space too). They used to attach a
+    /// tap that called nothing and took the tap from the view around it.
+    static func namesAMethod(_ value: String) -> Bool {
+        var inner = Substring(value)
+        if inner.hasPrefix("@{") && inner.hasSuffix("}") && inner.count >= 3 {
+            inner = inner.dropFirst(2).dropLast()
+        }
+        return !inner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// The elements of a handler value that name a method, in the order written.
+    static func handlerValues(_ value: Any?) -> [String] {
+        if let single = value as? String { return namesAMethod(single) ? [single] : [] }
+        if let many = value as? [Any] { return many.compactMap { $0 as? String }.filter(namesAMethod) }
+        return []
+    }
+
     /// A tap the Dynamic runtime attaches: a handler, not statically disabled,
     /// not gated shut (`canTap: false`, the SwiftUI tap gate).
     static func isTappable(_ component: DynamicComponent) -> Bool {
         if component.commonBool(\.enabled) == false { return false }
         if case .value(false)? = component.typedAttributes(CommonAttributes.self).canTap { return false }
-        return component.effectiveOnClickHandlers.contains { !$0.isEmpty }
+        return !component.effectiveOnClickHandlers.isEmpty
     }
 
     /// A Label that carries links of its own: `linkable` (true or bound), or
@@ -78,10 +99,7 @@ enum TapAccessibility {
         }
         guard let ranges = component.partialAttributes?.value as? [[String: Any]] else { return false }
         return ranges.contains { range in
-            ["onClick", "onclick"].contains { key in
-                if let text = range[key] as? String { return !text.isEmpty }
-                return range[key] != nil && !(range[key] is NSNull)
-            }
+            ["onClick", "onclick"].contains { key in !handlerValues(range[key]).isEmpty }
         }
     }
 
