@@ -5,17 +5,17 @@
 //  The `Web` attributes `onLoadFailed` and `reloadToken`
 //  (ssot-web-component-has-no-load-failure-event-or-reload-trigger).
 //
-//  The decision arms run without WebKit. The last four drive a real WKWebView
-//  with the library's Coordinator as its navigation delegate, because what
-//  "main frame", "4xx" and "cancelled" mean is WebKit's to say, not ours:
-//  a DNS failure on a name that can never resolve (RFC 2606 `.invalid`),
-//  404 / 500 from a loopback HTTP server to the main frame and to an iframe,
-//  a page that loads, and a load another one replaces.
+//  The decision arms run without WebKit. The HTTP-status arms call the
+//  decision `decidePolicyFor(navigationResponse:)` makes, with a real
+//  HTTPURLResponse; the cancellation arms call the two failure callbacks with
+//  real NSErrors. One arm drives a real
+//  WKWebView with the library's Coordinator as its delegate, with no server
+//  anywhere: a DNS failure on a name that can never resolve (RFC 2606
+//  `.invalid`). See "NO NETWORK BELOW" for why.
 //
 
 import XCTest
 import WebKit
-import Network
 @testable import SwiftJsonUI
 
 final class WebViewLoadFailureTests: XCTestCase {
@@ -103,77 +103,75 @@ final class WebViewLoadFailureTests: XCTestCase {
 
     // MARK: - WebKit
 
-    /// A loopback HTTP server, because the status has to come from HTTP: a
-    /// WKURLSchemeHandler's HTTPURLResponse reaches the navigation delegate as
-    /// a plain NSURLResponse with no status (measured on iOS 26.5 — `main=true
-    /// type=NSURLResponse`), so a scheme handler cannot serve a 404 to it.
-    private final class LoopbackServer {
-        private let listener: NWListener
-        private let queue = DispatchQueue(label: "sjui.tests.loopback")
-        let port: UInt16
+    // 🔻 NO NETWORK BELOW. The first version of these arms served 404 / 500
+    // from an NWListener on 127.0.0.1. They passed here (Xcode 26.6 on iOS
+    // 26.5 and 18.6) and failed on both CI legs (Xcode 16.4 / iOS 18 and 26.3
+    // / iOS 26, run 36075992379): the page never arrived, so an arm that
+    // asserts "reported once" could pass for the wrong reason and the page
+    // read timed out. What the runner's simulator does with loopback is not
+    // ours to decide, so:
+    // - the HTTP status goes straight into the decision
+    //   `decidePolicyFor(navigationResponse:)` makes (`reportIfFailed`), with
+    //   a real HTTPURLResponse. Neither vehicle for a WHOLE navigation
+    //   response works here: a WKURLSchemeHandler cannot deliver a status
+    //   (measured on iOS 26.5, it arrives as a plain NSURLResponse), and a
+    //   WKNavigationResponse subclass crashes in its dealloc on iOS 26.4;
+    // - the cancellation of a replaced load goes straight into the two
+    //   failure callbacks (whether WebKit reports it at all varies; see that
+    //   arm).
+    // The DNS arm stays on WebKit's own resolver: `.invalid` fails without a
+    // server, and it passed on both CI legs.
 
-        /// `/missing` 404, `/boom` 500, `/ok` a page whose iframe is a 404.
-        init() throws {
-            listener = try NWListener(using: .tcp, on: .any)
-            let ready = DispatchSemaphore(value: 0)
-            listener.stateUpdateHandler = { state in
-                if case .ready = state { ready.signal() }
-            }
-            listener.newConnectionHandler = { [queue] connection in
-                connection.start(queue: queue)
-                connection.receive(minimumIncompleteLength: 1, maximumLength: 65_536) { data, _, _, _ in
-                    let request = String(decoding: data ?? Data(), as: UTF8.self)
-                    let path = request.split(separator: " ").dropFirst().first.map(String.init) ?? "/"
-                    let (status, body): (Int, String)
-                    switch path {
-                    case "/ok":
-                        (status, body) = (200, "<html><body><p id=\"t\">ok</p><iframe src=\"/missing\"></iframe></body></html>")
-                    case "/boom":
-                        (status, body) = (500, "<html><body><p id=\"t\">boom</p></body></html>")
-                    default:
-                        (status, body) = (404, "<html><body><p id=\"t\">not found</p></body></html>")
-                    }
-                    let head = "HTTP/1.1 \(status) X\r\nContent-Type: text/html\r\n"
-                        + "Content-Length: \(body.utf8.count)\r\nConnection: close\r\n\r\n"
-                    connection.send(content: Data((head + body).utf8), completion: .contentProcessed { _ in
-                        connection.cancel()
-                    })
-                }
-            }
-            listener.start(queue: queue)
-            guard ready.wait(timeout: .now() + 10) == .success, let port = listener.port?.rawValue else {
-                listener.cancel()
-                throw NSError(domain: "LoopbackServer", code: 1)
-            }
-            self.port = port
-        }
-
-        func url(_ path: String) -> URL { URL(string: "http://127.0.0.1:\(port)\(path)")! }
-
-        deinit { listener.cancel() }
+    /// Runs the library's status decision on one response with a real HTTP
+    /// status. It is the body of `decidePolicyFor(navigationResponse:)`,
+    /// which only adds `decisionHandler(.allow)` — the server's page is
+    /// displayed as before.
+    private func failures(mainFrame: Bool, status: Int) -> Int {
+        var failures = 0
+        let coordinator = WebView.Coordinator(WebView(url: nil, onLoadFailed: { failures += 1 }))
+        let response = HTTPURLResponse(
+            url: URL(string: "https://example.test/page")!, statusCode: status,
+            httpVersion: "HTTP/1.1", headerFields: ["Content-Type": "text/html"]
+        )!
+        coordinator.reportIfFailed(isForMainFrame: mainFrame, response: response)
+        return failures
     }
 
-    /// The library's Coordinator, recording every provisional failure WebKit
-    /// hands it before deciding — so an arm about cancellation can first show
-    /// that a cancellation actually happened.
-    private final class RecordingCoordinator: WebView.Coordinator {
-        var provisionalErrors: [NSError] = []
-        override func webView(_ webView: WKWebView, didFailProvisionalNavigation navigation: WKNavigation!, withError error: Error) {
-            provisionalErrors.append(error as NSError)
-            super.webView(webView, didFailProvisionalNavigation: navigation, withError: error)
-        }
+    func testAMainFrame404ReportsOnce() {
+        XCTAssertEqual(failures(mainFrame: true, status: 404), 1)
+    }
+
+    func testAMainFrame500ReportsOnce() {
+        XCTAssertEqual(failures(mainFrame: true, status: 500), 1)
+    }
+
+    /// The negatives beside them, through the same method: a page that
+    /// loads, a 3xx, a 404 that is only a subframe's, and a response that is
+    /// not HTTP at all.
+    func testA200AndASubframe404ReportNothing() {
+        XCTAssertEqual(failures(mainFrame: true, status: 200), 0)
+        XCTAssertEqual(failures(mainFrame: true, status: 399), 0)
+        XCTAssertEqual(failures(mainFrame: false, status: 404), 0)
+        var calls = 0
+        let coordinator = WebView.Coordinator(WebView(url: nil, onLoadFailed: { calls += 1 }))
+        coordinator.reportIfFailed(
+            isForMainFrame: true,
+            response: URLResponse(url: URL(string: "about:blank")!, mimeType: "text/html",
+                                  expectedContentLength: 0, textEncodingName: nil)
+        )
+        XCTAssertEqual(calls, 0)
     }
 
     /// A real WKWebView whose delegate is the library's Coordinator; counts
     /// onLoadFailed.
     private final class Harness {
         var failures = 0
-        let coordinator: RecordingCoordinator
+        let coordinator: WebView.Coordinator
         let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
 
         init() {
             var box: Harness?
-            coordinator = RecordingCoordinator(WebView(url: nil, onLoadFailed: { box?.failures += 1 }))
+            coordinator = WebView.Coordinator(WebView(url: nil, onLoadFailed: { box?.failures += 1 }))
             box = self
             webView.navigationDelegate = coordinator
         }
@@ -185,24 +183,9 @@ final class WebViewLoadFailureTests: XCTestCase {
             return !view.isLoading
         }, evaluatedWith: webView)
         wait(for: [settled], timeout: 30)
-        // Anything WebKit would still deliver for this load (an iframe's
-        // response, a late failure) has had a moment to arrive.
+        // Anything WebKit would still deliver for this load has had a moment
+        // to arrive.
         RunLoop.main.run(until: Date().addingTimeInterval(extra))
-    }
-
-    /// The text the page actually shows. A page blocked before any response
-    /// (ATS, a refused connection) never shows the server's body, so this is
-    /// what tells "reported because of the status" from "reported because
-    /// the request never got an answer".
-    private func pageText(_ webView: WKWebView) -> String? {
-        var text: String?
-        let done = expectation(description: "js")
-        webView.evaluateJavaScript("document.getElementById('t') ? document.getElementById('t').textContent : null") { value, _ in
-            text = value as? String
-            done.fulfill()
-        }
-        wait(for: [done], timeout: 10)
-        return text
     }
 
     func testAnUnresolvableMainFrameHostReportsOnce() {
@@ -214,57 +197,33 @@ final class WebViewLoadFailureTests: XCTestCase {
         XCTAssertEqual(harness.failures, 1)
     }
 
-    func testAMainFrame404ReportsOnceAndStillShowsThePage() throws {
-        let server = try LoopbackServer()
-        let harness = Harness()
-        harness.webView.load(URLRequest(url: server.url("/missing")))
-        waitUntilSettled(harness.webView)
-        XCTAssertEqual(pageText(harness.webView), "not found")
-        XCTAssertEqual(harness.failures, 1)
+    /// A navigation another one replaced ends in NSURLErrorCancelled, through
+    /// either failure callback; it is not the page failing. Handed to the
+    /// library's delegate methods directly: whether WebKit reports the
+    /// cancellation at all varies — measured, a TEST-NET load replaced after
+    /// 1 s delivered it on iOS 26.5 and 18.6 here and nothing on either CI
+    /// leg, and a stalled custom-scheme load replaced by loadHTMLString
+    /// delivered nothing on 26.4 or 18.6 — so an end-to-end arm could pass
+    /// without ever meeting one.
+    func testACancelledNavigationReportsNothingThroughEitherCallback() {
+        var failures = 0
+        let coordinator = WebView.Coordinator(WebView(url: nil, onLoadFailed: { failures += 1 }))
+        let cancelled = NSError(domain: NSURLErrorDomain, code: NSURLErrorCancelled)
+        coordinator.webView(WKWebView(), didFailProvisionalNavigation: nil, withError: cancelled)
+        coordinator.webView(WKWebView(), didFail: nil, withError: cancelled)
+        XCTAssertEqual(failures, 0)
     }
 
-    func testAMainFrame500ReportsOnce() throws {
-        let server = try LoopbackServer()
-        let harness = Harness()
-        harness.webView.load(URLRequest(url: server.url("/boom")))
-        waitUntilSettled(harness.webView)
-        XCTAssertEqual(pageText(harness.webView), "boom")
-        XCTAssertEqual(harness.failures, 1)
-    }
-
-    /// The negative the arms above need: the same server, harness and wait,
-    /// and a page that loads — with a 404 in a subframe.
-    func testAPageThatLoadsWithA404IframeReportsNothing() throws {
-        let server = try LoopbackServer()
-        let harness = Harness()
-        harness.webView.load(URLRequest(url: server.url("/ok")))
-        waitUntilSettled(harness.webView, extra: 2.0)
-        XCTAssertEqual(pageText(harness.webView), "ok")
-        XCTAssertEqual(harness.failures, 0)
-    }
-
-    func testALoadReplacedMidFlightReportsNothing() throws {
-        let server = try LoopbackServer()
-        let harness = Harness()
-        // TEST-NET-1 (RFC 5737): never answers, so it is still in flight when
-        // the second load replaces it. The replacement waits until the first
-        // load is under way: issued back to back, WebKit drops the first
-        // before it starts and reports nothing at all, and the arm would pass
-        // without ever meeting a cancellation (measured: the filter could be
-        // removed and it stayed green).
-        harness.webView.load(URLRequest(url: URL(string: "https://192.0.2.1/")!))
-        RunLoop.main.run(until: Date().addingTimeInterval(1.0))
-        XCTAssertTrue(harness.webView.isLoading, "the first load must still be in flight")
-        harness.webView.load(URLRequest(url: server.url("/ok")))
-        waitUntilSettled(harness.webView, extra: 2.0)
-        XCTAssertEqual(pageText(harness.webView), "ok")
-        // The arm's own precondition: WebKit did hand over a cancellation.
-        XCTAssertTrue(
-            harness.coordinator.provisionalErrors.contains {
-                $0.domain == NSURLErrorDomain && $0.code == NSURLErrorCancelled
-            },
-            "no NSURLErrorCancelled reached the delegate: \(harness.coordinator.provisionalErrors)"
-        )
-        XCTAssertEqual(harness.failures, 0)
+    /// The same two callbacks with a real failure: each reports (the flag
+    /// resets between loads).
+    func testAFailedNavigationReportsThroughEitherCallback() {
+        var failures = 0
+        let coordinator = WebView.Coordinator(WebView(url: nil, onLoadFailed: { failures += 1 }))
+        let notFound = NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost)
+        coordinator.webView(WKWebView(), didFailProvisionalNavigation: nil, withError: notFound)
+        XCTAssertEqual(failures, 1)
+        coordinator.webView(WKWebView(), didStartProvisionalNavigation: nil)
+        coordinator.webView(WKWebView(), didFail: nil, withError: NSError(domain: NSURLErrorDomain, code: NSURLErrorNetworkConnectionLost))
+        XCTAssertEqual(failures, 2)
     }
 }

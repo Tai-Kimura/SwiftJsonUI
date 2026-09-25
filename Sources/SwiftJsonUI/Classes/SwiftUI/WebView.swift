@@ -284,12 +284,21 @@ public struct WebView: UIViewRepresentable {
             decidePolicyFor navigationResponse: WKNavigationResponse,
             decisionHandler: @escaping (WKNavigationResponsePolicy) -> Void
         ) {
-            if navigationResponse.isForMainFrame,
-               let http = navigationResponse.response as? HTTPURLResponse,
+            reportIfFailed(isForMainFrame: navigationResponse.isForMainFrame, response: navigationResponse.response)
+            decisionHandler(.allow)
+        }
+
+        /// The decision `decidePolicyFor(navigationResponse:)` makes, apart
+        /// from the delegate method so it can be tested: a WKNavigationResponse
+        /// cannot be made outside WebKit (a subclass crashes in
+        /// -[WKNavigationResponse dealloc] on iOS 26), and a real one needs a
+        /// server, which the CI simulators could not reach.
+        func reportIfFailed(isForMainFrame: Bool, response: URLResponse) {
+            if isForMainFrame,
+               let http = response as? HTTPURLResponse,
                Self.isLoadFailure(statusCode: http.statusCode) {
                 reportLoadFailure()
             }
-            decisionHandler(.allow)
         }
 
         public func webView(_ webView: WKWebView, didCommit navigation: WKNavigation!) {
