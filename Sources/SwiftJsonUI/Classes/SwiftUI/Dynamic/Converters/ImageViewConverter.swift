@@ -126,8 +126,8 @@ public struct ImageViewConverter {
             )
         }
 
-        // --- 4. .clipShape(Circle()) for CircleImage ---
-        if component.type?.lowercased() == "circleimage" {
+        // --- 4. .clipShape(Circle()) for CircleImage (and its CircleImageView spelling) ---
+        if ["circleimage", "circleimageview"].contains(component.type?.lowercased() ?? "") {
             result = AnyView(result.clipShape(Circle()))
         }
 
@@ -182,6 +182,10 @@ public struct ImageViewConverter {
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
 
         // --- 12. accessibilityIdentifier ---
+        // What VoiceOver reads: the alt, nothing (decorative), or — for an
+        // image that operates a control with no alt — the asset name as before.
+        result = AnyView(result.modifier(ImageAccessibilityModifier(component: component, data: data)))
+
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
         return result

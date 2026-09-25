@@ -51,7 +51,9 @@ public struct NetworkImageAttributes {
     /// spellings that are also declared attributes keep their own
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
+        "accessibilityLabel": "alt",
         "alpha": "opacity",
+        "contentDescription": "alt",
         "source": "url",
     ]
 
@@ -63,8 +65,8 @@ public struct NetworkImageAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Alt text for accessibility
-    public let alt: String?
+    /// What screen readers say for the image (VoiceOver, TalkBack, web alt): a strings.json key or text, localized like `text`, or a binding. "" marks the image decorative (skipped). With no alt the image is decorative too, unless it operates a control (a tap handler on the image, or the only content of a tappable with no text): then it keeps the id / asset name each platform read before, and the build names it (INFO). Decorative is the default, so give every image that carries meaning (a logo, a photo, an icon that is the only content of a button) an alt. [aliases: accessibilityLabel, contentDescription]
+    public let alt: AttrValue<String>?
 
     /// Cache policy
     public let cachePolicy: String?
@@ -109,7 +111,7 @@ public struct NetworkImageAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
-        self.alt = AttrCoerce.string(AttrCoerce.lookup(json, "alt"))
+        self.alt = AttrCoerce.attrValue(AttrCoerce.lookup(json, "alt", ["accessibilityLabel", "contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.cachePolicy = AttrCoerce.string(AttrCoerce.lookup(json, "cachePolicy"))
         self.contentMode = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentMode"), { Self.parseContentMode($0) })
         self.defaultImage = AttrCoerce.string(AttrCoerce.lookup(json, "defaultImage"))

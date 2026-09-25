@@ -126,6 +126,10 @@ public struct NetworkImageConverter {
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
 
         // --- 8. accessibilityIdentifier ---
+        // What VoiceOver reads: the alt, nothing (decorative), or — for an
+        // image that operates a control with no alt — the asset name as before.
+        result = AnyView(result.modifier(ImageAccessibilityModifier(component: component, data: data)))
+
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
         return result

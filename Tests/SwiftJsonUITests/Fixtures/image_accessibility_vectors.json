@@ -1,0 +1,85 @@
+{
+  "_comment": "The role each image of a layout gets from its alt and from the tappable around it: label (alt is read), decorative (skipped), control (no alt and it operates a control: it keeps the id / asset name and the build names it). One table for the sjui / kjui codegen (shared/core/image_accessibility.rb) and the KotlinJsonUI / SwiftJsonUI Dynamic runtimes, which copy this file byte for byte. `roles` maps every image id in the case to its role.",
+  "cases": [
+    {
+      "name": "an image with no alt that operates nothing is decorative",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "hero", "src": "hero" } ] },
+      "roles": { "hero": "decorative" }
+    },
+    {
+      "name": "an alt is read",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "logo", "src": "logo", "alt": "app_logo_label" } ] },
+      "roles": { "logo": "label" }
+    },
+    {
+      "name": "an empty alt is decorative, even on a tappable image",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "chevron", "src": "chevron", "alt": "", "onClick": "@{onOpen}" } ] },
+      "roles": { "chevron": "decorative" }
+    },
+    {
+      "name": "a tappable image with no alt is a control",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "close_icon", "src": "close", "onClick": "@{onClose}" } ] },
+      "roles": { "close_icon": "control" }
+    },
+    {
+      "name": "a tappable image with an alt is read",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "close_icon", "src": "close", "alt": "close_label", "onClick": "@{onClose}" } ] },
+      "roles": { "close_icon": "label" }
+    },
+    {
+      "name": "the only content of a tappable with no text is a control",
+      "layout": { "type": "View", "onClick": "@{onMenu}", "child": [ { "type": "Image", "id": "menu_icon", "src": "menu" } ] },
+      "roles": { "menu_icon": "control" }
+    },
+    {
+      "name": "an image beside the text of a tappable is decorative",
+      "layout": { "type": "View", "onClick": "@{onEdit}", "child": [ { "type": "Image", "id": "edit_icon", "src": "edit" }, { "type": "Label", "text": "edit_label" } ] },
+      "roles": { "edit_icon": "decorative" }
+    },
+    {
+      "name": "text bound at run time still names the tappable",
+      "layout": { "type": "View", "onClick": "@{onRow}", "child": [ { "type": "Image", "id": "row_icon", "src": "row" }, { "type": "Label", "text": "@{title}" } ] },
+      "roles": { "row_icon": "decorative" }
+    },
+    {
+      "name": "a labelled image names the tappable for the image beside it",
+      "layout": { "type": "View", "onClick": "@{onShare}", "child": [ { "type": "Image", "id": "share_icon", "src": "share", "alt": "share_label" }, { "type": "Image", "id": "share_badge", "src": "badge" } ] },
+      "roles": { "share_icon": "label", "share_badge": "decorative" }
+    },
+    {
+      "name": "the tappable counts however deep the image sits",
+      "layout": { "type": "View", "onClick": "@{onCamera}", "child": [ { "type": "View", "child": [ { "type": "Image", "id": "camera_icon", "src": "camera" } ] } ] },
+      "roles": { "camera_icon": "control" }
+    },
+    {
+      "name": "the nearest tappable decides, not an outer one with text",
+      "layout": { "type": "View", "onClick": "@{onCard}", "child": [ { "type": "Label", "text": "card_title" }, { "type": "View", "onClick": "@{onDelete}", "child": [ { "type": "Image", "id": "delete_icon", "src": "delete" } ] } ] },
+      "roles": { "delete_icon": "control" }
+    },
+    {
+      "name": "a long press and a selector onclick are taps too",
+      "layout": { "type": "View", "child": [ { "type": "View", "onLongPress": "@{onHold}", "child": [ { "type": "NetworkImage", "id": "avatar", "url": "@{avatarUrl}" } ] }, { "type": "View", "onclick": "openSearch", "child": [ { "type": "Image", "id": "search_icon", "src": "search" } ] } ] },
+      "roles": { "avatar": "control", "search_icon": "control" }
+    },
+    {
+      "name": "the alias spellings are alt",
+      "layout": { "type": "View", "onClick": "@{onPhoto}", "child": [ { "type": "Image", "id": "photo", "src": "photo", "contentDescription": "photo_label" }, { "type": "CircleImage", "id": "divider", "src": "divider", "accessibilityLabel": "" } ] },
+      "roles": { "photo": "label", "divider": "decorative" }
+    },
+    {
+      "name": "a bound alt is read",
+      "layout": { "type": "View", "child": [ { "type": "NetworkImage", "id": "item_photo", "url": "@{photoUrl}", "alt": "@{photoTitle}" } ] },
+      "roles": { "item_photo": "label" }
+    },
+    {
+      "name": "a type alias of Image is an image",
+      "layout": { "type": "View", "onClick": "@{onPortrait}", "child": [ { "type": "CircleImage", "id": "portrait", "src": "portrait" } ] },
+      "roles": { "portrait": "control" }
+    },
+    {
+      "name": "a placeholder image name is not text",
+      "layout": { "type": "View", "onClick": "@{onThumb}", "child": [ { "type": "NetworkImage", "id": "thumb", "url": "@{thumbUrl}", "placeholder": "thumb_placeholder" } ] },
+      "roles": { "thumb": "control" }
+    }
+  ]
+}
