@@ -80,6 +80,46 @@
       "name": "a placeholder image name is not text",
       "layout": { "type": "View", "onClick": "@{onThumb}", "child": [ { "type": "NetworkImage", "id": "thumb", "url": "@{thumbUrl}", "placeholder": "thumb_placeholder" } ] },
       "roles": { "thumb": "control" }
+    },
+    {
+      "name": "an empty onClick is no tap, so the image is decorative",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "empty_tap", "src": "empty_tap", "onClick": "" } ] },
+      "roles": { "empty_tap": "decorative" }
+    },
+    {
+      "name": "a blank, an empty binding and an empty onclick array are no tap either",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "blank_tap", "src": "blank_tap", "onClick": "   " }, { "type": "Image", "id": "empty_binding", "src": "empty_binding", "onClick": "@{}" }, { "type": "Image", "id": "empty_array", "src": "empty_array", "onclick": [] }, { "type": "Image", "id": "blank_array", "src": "blank_array", "onclick": [ "" ] } ] },
+      "roles": { "blank_tap": "decorative", "empty_binding": "decorative", "empty_array": "decorative", "blank_array": "decorative" }
+    },
+    {
+      "name": "a tap disabled by enabled: false is no tap",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "disabled_tap", "src": "disabled_tap", "onClick": "@{onOpen}", "enabled": false } ] },
+      "roles": { "disabled_tap": "decorative" }
+    },
+    {
+      "name": "a tap gated shut by canTap: false is no tap",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "shut_tap", "src": "shut_tap", "onClick": "@{onOpen}", "canTap": false } ] },
+      "roles": { "shut_tap": "decorative" }
+    },
+    {
+      "name": "a bound canTap still taps: the gate opens at run time",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "gated_tap", "src": "gated_tap", "onClick": "@{onOpen}", "canTap": "@{canOpen}" } ] },
+      "roles": { "gated_tap": "control" }
+    },
+    {
+      "name": "an empty, disabled or shut tappable around the image is not its control",
+      "layout": { "type": "View", "child": [ { "type": "View", "onClick": "", "child": [ { "type": "Image", "id": "in_empty", "src": "in_empty" } ] }, { "type": "View", "onClick": "@{onOpen}", "enabled": false, "child": [ { "type": "Image", "id": "in_disabled", "src": "in_disabled" } ] }, { "type": "View", "onClick": "@{onOpen}", "canTap": false, "child": [ { "type": "Image", "id": "in_shut", "src": "in_shut" } ] } ] },
+      "roles": { "in_empty": "decorative", "in_disabled": "decorative", "in_shut": "decorative" }
+    },
+    {
+      "name": "the nearest tappable that taps decides, past a shut one",
+      "layout": { "type": "View", "onClick": "@{onOpen}", "child": [ { "type": "Label", "text": "open_label" }, { "type": "View", "onClick": "@{onInner}", "canTap": false, "child": [ { "type": "Image", "id": "past_shut", "src": "past_shut" } ] } ] },
+      "roles": { "past_shut": "decorative" }
+    },
+    {
+      "name": "a blank or disabled long press is no action",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "blank_hold", "src": "blank_hold", "onLongPress": "   " }, { "type": "Image", "id": "disabled_hold", "src": "disabled_hold", "onLongPress": "@{onHold}", "enabled": false } ] },
+      "roles": { "blank_hold": "decorative", "disabled_hold": "decorative" }
     }
   ]
 }

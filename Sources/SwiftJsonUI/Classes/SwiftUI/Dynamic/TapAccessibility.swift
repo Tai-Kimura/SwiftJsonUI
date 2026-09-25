@@ -109,7 +109,25 @@ enum TapAccessibility {
     /// button. `canTap` without onClick has no handler either.
     static func isOperable(_ component: DynamicComponent) -> Bool {
         if isInteractiveType(component.type) || isTappable(component) || isLinkedText(component) { return true }
-        return component.commonBool(\.enabled) != false && component.commonAny(\.onLongPress) != nil
+        // A long press is a handler too (`handlerValues`): an empty or blank
+        // one names no method. `!= nil` counted `""` (tap_accessibility_vectors
+        // "an empty long press inside does not count").
+        return component.commonBool(\.enabled) != false
+            && !handlerValues(component.commonAny(\.onLongPress)).isEmpty
+    }
+
+    /// The same tap, read off a layout node as written — what the image rule
+    /// (ImageAccessibility) asks: a handler on onClick / onclick, `enabled`
+    /// not false, `canTap` not false. A bound gate still taps.
+    static func isTappable(node: [String: Any]) -> Bool {
+        if node["enabled"] as? Bool == false || node["canTap"] as? Bool == false { return false }
+        return ["onClick", "onclick"].contains { !handlerValues(node[$0]).isEmpty }
+    }
+
+    /// A long press on a layout node as written: a handler, `enabled` not
+    /// false (`canTap` gates the tap, not the long press).
+    static func hasLongPress(node: [String: Any]) -> Bool {
+        node["enabled"] as? Bool != false && !handlerValues(node["onLongPress"]).isEmpty
     }
 
     static func holdsAControl(_ component: DynamicComponent) -> Bool {

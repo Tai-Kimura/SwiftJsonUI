@@ -675,6 +675,82 @@
         "row": "combine",
         "t": null
       }
+    },
+    {
+      "name": "an empty long press inside does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "h",
+            "src": "icon",
+            "onLongPress": ""
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine",
+        "h": null
+      }
+    },
+    {
+      "name": "a blank long press inside does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "h",
+            "src": "icon",
+            "onLongPress": "   "
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine",
+        "h": null
+      }
+    },
+    {
+      "name": "a long press on a disabled image inside does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "h",
+            "src": "icon",
+            "onLongPress": "@{onHold}",
+            "enabled": false
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine",
+        "h": null
+      }
     }
   ]
 }
