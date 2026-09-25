@@ -169,6 +169,8 @@ struct ConformanceRootView: View {
                 ConfirmationDialogProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-duplicateIdentifierProbe") {
                 DuplicateIdentifierProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-decorativeImageProbe") {
+                DecorativeImageProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-sameTypeDuplicateProbe") {
                 SameTypeDuplicateProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-clippedViewportProbe") {
