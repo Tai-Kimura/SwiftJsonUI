@@ -181,6 +181,8 @@ struct ConformanceRootView: View {
                 CoveredTapProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-keyboardClearanceProbe") {
                 KeyboardClearanceProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-tapIdentifierOnce") {
+                TapIdentifierOnceView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()

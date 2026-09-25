@@ -1,0 +1,174 @@
+{
+  "type": "View",
+  "orientation": "vertical",
+  "child": [
+    {
+      "type": "View",
+      "id": "wrap_cg_one_label",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "One label",
+              "id": "cg_one_label"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_one_image",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Image",
+              "id": "cg_one_image",
+              "srcName": "conformance_sample",
+              "width": 40,
+              "height": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_one_plain",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "One plain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_two",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "Two a",
+              "id": "cg_two_a"
+            },
+            {
+              "type": "Label",
+              "text": "Two b",
+              "id": "cg_two_b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_own_one",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_own_one",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "Own one",
+              "id": "cg_own_one_label"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_own_image",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_own_image",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Image",
+              "id": "cg_own_image_child",
+              "srcName": "conformance_sample",
+              "width": 40,
+              "height": 40
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_own_plain",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_own_plain",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "Own plain"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_own_two",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_own_two",
+          "orientation": "vertical",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "Own two a",
+              "id": "cg_own_two_a"
+            },
+            {
+              "type": "Label",
+              "text": "Own two b",
+              "id": "cg_own_two_b"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

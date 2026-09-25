@@ -25,4 +25,9 @@ enum CodegenFixtureRegistry {
     static func view(for fixtureId: String) -> AnyView? {
         nil
     }
+
+    /// Probe layouts are generated only in the codegen host.
+    static func probeView(named name: String) -> AnyView? {
+        nil
+    }
 }
