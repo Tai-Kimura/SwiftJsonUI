@@ -459,6 +459,38 @@
       "shapes": {
         "t": null
       }
+    },
+    {
+      "name": "a tap gated shut by canTap: false is no tap",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "canTap": false,
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an Image gated shut by canTap: false is no tap",
+      "layout": {
+        "type": "Image",
+        "id": "t",
+        "src": "icon",
+        "canTap": false,
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": null
+      }
     }
   ]
 }

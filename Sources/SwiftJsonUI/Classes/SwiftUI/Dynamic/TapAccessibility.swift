@@ -58,9 +58,11 @@ enum TapAccessibility {
         return interactive.contains(type) || !known.contains(type)
     }
 
-    /// A tap the Dynamic runtime attaches: a handler, not statically disabled.
+    /// A tap the Dynamic runtime attaches: a handler, not statically disabled,
+    /// not gated shut (`canTap: false`, the SwiftUI tap gate).
     static func isTappable(_ component: DynamicComponent) -> Bool {
         if component.commonBool(\.enabled) == false { return false }
+        if case .value(false)? = component.typedAttributes(CommonAttributes.self).canTap { return false }
         return component.effectiveOnClickHandlers.contains { !$0.isEmpty }
     }
 

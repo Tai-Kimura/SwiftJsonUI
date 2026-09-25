@@ -97,8 +97,15 @@ public struct DynamicEventHelper {
         let handlers = component.effectiveOnClickHandlers
         guard !handlers.isEmpty else { return view }
 
-        // Note: canTap is a UIKit concept. In SwiftUI Dynamic mode,
-        // if onClick is explicitly set in JSON, always apply the tap gesture.
+        // common.canTap is the SwiftUI tap gate (attribute_definitions.json;
+        // on UIKit it is the pressed state instead): false, or a binding that
+        // resolves false, shuts the tap — what codegen's `.allowsHitTesting`
+        // does. It used to be ignored here, so `canTap: false` still tapped.
+        if DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).canTap, legacy: nil, data: data
+        ) == false {
+            return view
+        }
 
         let tapped = AnyView(
             view

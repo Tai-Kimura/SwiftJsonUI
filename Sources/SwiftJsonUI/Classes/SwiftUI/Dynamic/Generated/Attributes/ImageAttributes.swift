@@ -6,7 +6,6 @@ import Foundation
 
 /// Typed attribute extraction for the `Image` component.
 /// Shared attributes are available via `common`.
-/// Overrides the common definition of: `canTap` (use the property on this struct).
 public struct ImageAttributes {
     public enum ContentMode: String {
         case fit = "fit"
@@ -33,7 +32,6 @@ public struct ImageAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "alt",
-        "canTap",
         "contentMode",
         "defaultImage",
         "errorImage",
@@ -68,9 +66,6 @@ public struct ImageAttributes {
 
     /// What screen readers say for the image (VoiceOver, TalkBack, web alt): a strings.json key or text, localized like `text`, or a binding. "" marks the image decorative (skipped). With no alt the image is decorative too, unless it operates a control (a tap handler on the image, or the only content of a tappable with no text): then it keeps the id / asset name each platform read before, and the build names it (INFO). Decorative is the default, so give every image that carries meaning (a logo, a photo, an icon that is the only content of a button) an alt. [aliases: accessibilityLabel, contentDescription]
     public let alt: AttrValue<String>?
-
-    /// Enable tap gesture independent of onClick.
-    public let canTap: Bool?
 
     /// Content mode (binding supported). ScaleToFill is a declared synonym of fill (the stretch — see attribute_semantics.json#semantics.image); the normalizer folds it, fixtures are generated for the canonical spelling only.
     public let contentMode: AttrValue<AttrEnum<ContentMode>>?
@@ -116,7 +111,6 @@ public struct ImageAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.alt = AttrCoerce.attrValue(AttrCoerce.lookup(json, "alt", ["accessibilityLabel", "contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
-        self.canTap = AttrCoerce.boolean(AttrCoerce.lookup(json, "canTap"))
         self.contentMode = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentMode"), { Self.parseContentMode($0) })
         self.defaultImage = AttrCoerce.string(AttrCoerce.lookup(json, "defaultImage"))
         self.errorImage = AttrCoerce.string(AttrCoerce.lookup(json, "errorImage"))

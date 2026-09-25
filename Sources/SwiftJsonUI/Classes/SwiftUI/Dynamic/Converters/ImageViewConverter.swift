@@ -134,11 +134,15 @@ public struct ImageViewConverter {
         // --- 5. .onTapGesture (canTap + onClick) ---
         // `canTap` is boolean|binding — the hand-decoded slot is nil for a
         // binding, so `canTap: "@{isTappable}"` made the image untappable.
+        // common.canTap is the SwiftUI tap GATE (attribute_definitions.json):
+        // absent, the handler alone makes the tap; false (or a binding that
+        // resolves false) shuts it. It was `?? false` here, so an Image with
+        // onClick and no canTap had no tap in Dynamic while codegen gave it one.
         let canTap = DynamicHelpers.resolveBool(
             component.typedAttributes(CommonAttributes.self).canTap,
             legacy: nil,
             data: data
-        ) ?? false
+        ) ?? true
         if canTap, let onClick = component.commonAny(\.onClick) {
             let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
             if let closure = data[propName] as? () -> Void {
