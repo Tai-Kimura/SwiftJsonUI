@@ -11,8 +11,11 @@
 #   SIMULATOR_NAME       simulator device name    (default: iPhone 16 Pro)
 #   SIMULATOR_UDID       simulator UDID — takes precedence over SIMULATOR_NAME
 #                        (use when several devices share a name)
-#   CONFORMANCE_STAGING  staging dir for raw test output
-#                        (default: /tmp/jsonui-conformance-ios)
+#   CONFORMANCE_STAGING  staging dir for raw test output (default: a
+#                        directory of this run's own,
+#                        /tmp/jsonui-conformance-ios[-codegen].<pid>.XXXXXX,
+#                        removed when the run succeeds and kept, with its
+#                        path printed, when it fails)
 #   CONFORMANCE_FILTER   substring filter on fixture ids — everything else is
 #                        reported as skipped ("not executed in this run")
 #
@@ -103,10 +106,16 @@ fi
 # clobbers the dynamic artifacts. Default: dynamic.
 HOST_MODE="${HOST_MODE:-dynamic}"
 if [[ "$HOST_MODE" == "codegen" ]]; then
-    STAGING="${CONFORMANCE_STAGING:-/tmp/jsonui-conformance-ios-codegen}"
+    STAGING_FAMILY=jsonui-conformance-ios-codegen
 else
-    STAGING="${CONFORMANCE_STAGING:-/tmp/jsonui-conformance-ios}"
+    STAGING_FAMILY=jsonui-conformance-ios
 fi
+# 🔻 A STAGING DIRECTORY OF THIS RUN'S OWN. It was one fixed /tmp path,
+# emptied at the start of every run, so two runs at once (two lanes, two
+# worktrees) emptied each other's results before collect_results.sh copied
+# them (ticket conformance-host-codegen-staging-dir-collides-across-runs).
+# A directory the caller names in CONFORMANCE_STAGING is theirs: emptied
+# first, as before, and left in place. Made below, once the checks pass.
 DERIVED_DATA="${DERIVED_DATA:-$HOST_DIR/build/DerivedData}"
 
 if [[ -z "${CONFORMANCE_DIR:-}" ]]; then
@@ -118,8 +127,26 @@ if [[ ! -d "$HOST_DIR/ConformanceHost.xcodeproj" ]]; then
     exit 1
 fi
 
-rm -rf "$STAGING"
-mkdir -p "$STAGING"
+STAGING_OWNED=0
+if [[ -n "${CONFORMANCE_STAGING:-}" ]]; then
+    STAGING="$CONFORMANCE_STAGING"
+    rm -rf "$STAGING"
+    mkdir -p "$STAGING"
+else
+    STAGING="$(mktemp -d "/tmp/$STAGING_FAMILY.$$.XXXXXX")"
+    STAGING_OWNED=1
+fi
+finish_staging() {
+    local rc=$?
+    if [[ "$STAGING_OWNED" == 1 ]]; then
+        if [[ "$rc" == 0 ]]; then
+            rm -rf "$STAGING"
+        else
+            echo "[conformance] this run's staging is kept for the failure: $STAGING" >&2
+        fi
+    fi
+}
+trap finish_staging EXIT
 
 # Freeze the simulator status bar before capturing screenshots. The
 # conformance screenshots are full-page captures that include the status
@@ -189,6 +216,6 @@ set +x
 # per-fixture diagnostic, anything the runner prints — all of it lived only in
 # the last forty lines, so a 45-minute run had to finish before its own failure
 # could be read, and a diagnostic printed mid-run could not be read at all.
-echo "[conformance] full xcodebuild log: $STAGING/xcodebuild.log"
+echo "[conformance] full xcodebuild log: $STAGING/xcodebuild.log (a staging of this run's own is removed when the run succeeds)"
 
 CONFORMANCE_STAGING="$STAGING" HOST_MODE="$HOST_MODE" "$HOST_DIR/scripts/collect_results.sh"

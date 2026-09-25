@@ -31,6 +31,7 @@
 require 'fileutils'
 require 'json'
 require_relative 'codegen_host_emit'
+require_relative 'codegen_build_dir'
 
 host_dir = File.expand_path('..', __dir__)
 conformance_dir = ENV['CONFORMANCE_DIR'] or abort 'error: CONFORMANCE_DIR is not set'
@@ -47,9 +48,11 @@ manifest = JSON.parse(File.read(manifest_path))
 # ConformanceHost/ would resolve the source root to the host itself
 # (observed: "No JSON files found in .../ConformanceHost/Layouts"). Build
 # where no ancestor carries a project file, then copy the outputs in-tree.
-build_dir = ENV['CONFORMANCE_CODEGEN_BUILD_DIR'] || '/tmp/jsonui-codegen-ios-staging'
+# A directory of this run's own (codegen_build_dir.rb): it was one fixed
+# /tmp path, and two runs at once emptied each other's.
+build_dir, owned_build_dir = CodegenBuildDir.for_run
+at_exit { FileUtils.rm_rf(build_dir) if owned_build_dir }
 staging = File.join(host_dir, 'CodegenStaging')
-FileUtils.rm_rf(build_dir)
 FileUtils.rm_rf(staging)
 layouts_dir = File.join(build_dir, 'Layouts')
 FileUtils.mkdir_p(layouts_dir)
