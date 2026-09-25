@@ -206,9 +206,35 @@ final class WebViewLoadFailureTests: XCTestCase {
 
     private static var warmedUp = false
 
+    /// The key window the WebKit arms' web views sit in, one per process. A
+    /// WKWebView in no window can be treated as hidden and its web content
+    /// process throttled: CI's Xcode 16.4 leg logged "ProcessAssertion::
+    /// acquireSync Failed to acquire RBS assertion" and took 30.1 s for the
+    /// warm-up (run 36087089619), which takes 1–2 s here, and the 26.3 leg's
+    /// warm-up did not finish in 120 s. Which kind of window it got is
+    /// printed, so a run says whether there was a scene to put it in.
+    private static var hostWindow: UIWindow?
+
+    private func putInKeyWindow(_ webView: WKWebView) {
+        let window: UIWindow
+        if let existing = Self.hostWindow {
+            window = existing
+        } else {
+            let scene = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first
+            window = scene.map { UIWindow(windowScene: $0) } ?? UIWindow(frame: CGRect(x: 0, y: 0, width: 390, height: 844))
+            window.rootViewController = UIViewController()
+            window.makeKeyAndVisible()
+            Self.hostWindow = window
+            print("[WebViewLoadFailureTests] host window: \(scene == nil ? "no window scene, a bare window" : "in a window scene"), key=\(window.isKeyWindow)")
+        }
+        window.rootViewController?.view.addSubview(webView)
+    }
+
     private func warmUpWebKit() {
         guard !Self.warmedUp else { return }
         let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        putInKeyWindow(web)
+        defer { web.removeFromSuperview() }
         let recorder = FinishRecorder()
         web.navigationDelegate = recorder
         let start = Date()
@@ -246,6 +272,8 @@ final class WebViewLoadFailureTests: XCTestCase {
     func testAMainFrameLoadThatFailsReportsOnce() {
         warmUpWebKit()
         let harness = Harness()
+        putInKeyWindow(harness.webView)
+        defer { harness.webView.removeFromSuperview() }
         harness.webView.load(URLRequest(url: URL(string: "sjuifail://h/page")!))
         let reported = expectation(for: NSPredicate { _, _ in harness.failures > 0 }, evaluatedWith: nil)
         wait(for: [reported], timeout: 30)
