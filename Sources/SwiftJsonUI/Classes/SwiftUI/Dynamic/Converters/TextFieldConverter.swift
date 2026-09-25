@@ -347,6 +347,10 @@ public struct TextFieldConverter {
         // --- 26. hidden ---
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
 
+        // userInteractionEnabled / touchDisabledState (the standard chain's
+        // hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
         // --- 27. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
@@ -465,6 +469,10 @@ public struct TextFieldConverter {
 
         // --- 26. hidden ---
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
+
+        // userInteractionEnabled / touchDisabledState (the standard chain's
+        // hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
         // --- 27. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)

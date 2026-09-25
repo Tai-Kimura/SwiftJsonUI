@@ -279,6 +279,9 @@ public struct LabelConverter {
         // --- 13. onClick ---
         result = DynamicEventHelper.applyOnClick(result, component: component, data: data)
 
+        // userInteractionEnabled / touchDisabledState, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
         // --- 14. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 

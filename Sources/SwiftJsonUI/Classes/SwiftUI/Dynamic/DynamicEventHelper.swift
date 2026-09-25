@@ -88,6 +88,16 @@ public struct DynamicEventHelper {
 
     // MARK: - onClick / onTapGesture support
 
+    /// Whether `canTap` lets the onClick / onclick handler be called: it
+    /// gates the handler's call and nothing else — a control's own operation
+    /// (a Radio's selection, a Checkbox's value, a Button's press state) is
+    /// `enabled`'s. Absent, there is no gate.
+    static func tapGateOpen(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).canTap, legacy: nil, data: data
+        ) != false
+    }
+
     /// Apply onTapGesture if onClick is defined
     /// Matches tool pattern: .onTapGesture { data.onClick?() }
     static func applyOnClick(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
@@ -99,13 +109,9 @@ public struct DynamicEventHelper {
 
         // common.canTap is the SwiftUI tap gate (attribute_definitions.json;
         // on UIKit it is the pressed state instead): false, or a binding that
-        // resolves false, shuts the tap — what codegen's `.allowsHitTesting`
-        // does. It used to be ignored here, so `canTap: false` still tapped.
-        if DynamicHelpers.resolveBool(
-            component.typedAttributes(CommonAttributes.self).canTap, legacy: nil, data: data
-        ) == false {
-            return view
-        }
+        // resolves false, shuts the tap and leaves the view as it is. It used
+        // to be ignored here, so `canTap: false` still tapped.
+        if !tapGateOpen(component, data: data) { return view }
 
         let tapped = AnyView(
             view

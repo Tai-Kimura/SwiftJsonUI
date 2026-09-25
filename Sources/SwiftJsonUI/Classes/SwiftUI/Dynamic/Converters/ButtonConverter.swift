@@ -58,7 +58,12 @@ public struct ButtonConverter {
 
         // Action - onClick uses binding format @{functionName}; legacy
         // "onclick" selector format resolves to the same data-dict closure.
+        // `canTap` gates the handler's call, as it gates every other type's
+        // tap (DynamicEventHelper.tapGateOpen) — not `.disabled`: a button
+        // that cannot be tapped is not disabled to VoiceOver.
+        let tapOpen = DynamicEventHelper.tapGateOpen(component, data: data)
         let action: () -> Void = {
+            guard tapOpen else { return }
             for handler in component.effectiveOnClickHandlers {
                 DynamicEventHelper.call(handler, data: data)
             }
@@ -237,6 +242,11 @@ public struct ButtonConverter {
         // shared onLongPress gesture is applied here; simultaneousGesture keeps
         // the Button's own tap action working.
         result = DynamicEventHelper.applyOnLongPress(result, component: component, data: data)
+
+        // userInteractionEnabled / touchDisabledState, outside the button's
+        // own tap and long press (the standard chain's hitTesting stage, which
+        // this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
         // --- 5. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)

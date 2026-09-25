@@ -103,6 +103,8 @@ public struct IconLabelConverter {
                     fontName: fontName,
                     isSelected: declaredSelected,
                     action: {
+                        // canTap gates the handler's call (tapGateOpen).
+                        guard DynamicEventHelper.tapGateOpen(component, data: data) else { return }
                         DynamicEventHelper.call(component.commonAny(\.onClick), data: data)
                     }
                 )
