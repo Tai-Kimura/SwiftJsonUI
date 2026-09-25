@@ -124,7 +124,17 @@ enum TapAccessibility {
                         .accessibilityElement(children: .ignore)
                 })
             }
-            return AnyView(base.accessibilityElement(children: .combine).accessibilityAddTraits(.isButton))
+            let combined = base.accessibilityElement(children: .combine).accessibilityAddTraits(.isButton)
+            // An id-less combined tap takes its children's identifiers as its
+            // own (measured, XCUITest 2026-09-25): one child's id was found
+            // twice — on the button and on the child — and two children's
+            // were joined ("a-b") on the button. An explicit empty identifier
+            // keeps the button's own; a component with an id gets it on the
+            // button from applyAccessibilityId instead.
+            if component.id == nil {
+                return AnyView(combined.accessibilityIdentifier(""))
+            }
+            return AnyView(combined)
         default:
             return view
         }
