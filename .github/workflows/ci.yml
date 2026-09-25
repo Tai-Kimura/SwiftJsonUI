@@ -222,6 +222,10 @@ jobs:
           xcodebuild -list 2>&1 | sed -n '/Schemes:/,$p' || true
 
       - name: Run unit tests
+        # Shorter than the job's 60 so the log upload below still runs when
+        # this step is stopped; the watchdog inside stops a hang at 25 min
+        # with its own message long before this is reached.
+        timeout-minutes: 45
         env:
           # Forwarded to the test process with the prefix stripped; a plain
           # env var does NOT reach a simulator test runner.
@@ -289,12 +293,51 @@ jobs:
             exit 1
           fi
           echo "Using destination: $DEST_LINE"
-          # The full log is kept for the gates below; the tail is what the
-          # job page shows.
-          xcodebuild test \
-            -scheme "$SCHEME" \
-            -destination "platform=iOS Simulator,id=$DEST_ID" \
-            2>&1 | tee xcodebuild-test.log | tail -100
+          # Boot first, on its own limit and with its time printed. The
+          # destination is listed Shutdown on these runners, so a hang while
+          # booting and a hang in the tests would otherwise look the same.
+          BOOT_START=$(date +%s)
+          xcrun simctl bootstatus "$DEST_ID" -b &
+          BOOT_PID=$!
+          while kill -0 "$BOOT_PID" 2>/dev/null; do
+            sleep 2
+            if [ $(( $(date +%s) - BOOT_START )) -ge 600 ]; then
+              echo "::error::the simulator did not finish booting in 600 s"
+              xcrun simctl list devices booted || true
+              kill "$BOOT_PID" 2>/dev/null || true
+              exit 1
+            fi
+          done
+          if ! wait "$BOOT_PID"; then
+            echo "::error::xcrun simctl bootstatus -b failed for $DEST_ID"
+            exit 1
+          fi
+          echo "simulator booted in $(( $(date +%s) - BOOT_START )) s"
+          # The full log is kept for the gates below. It used to reach the
+          # job page only through `| tail -100`, which prints nothing until
+          # xcodebuild exits: run 36080760768's Xcode 26.3 leg was cancelled
+          # at 60 min with no test line at all. The watchdog prints progress
+          # while it runs, and stops a hang at 25 min (or 120 s after the
+          # suite's closing line) with the log's last lines, the processes
+          # and the booted simulators — see scripts/xcodebuild_watchdog.sh.
+          STATUS=0
+          bash scripts/xcodebuild_watchdog.sh xcodebuild-test.log 1500 120 -- \
+            xcodebuild test \
+              -scheme "$SCHEME" \
+              -destination "platform=iOS Simulator,id=$DEST_ID" || STATUS=$?
+          echo "::group::last 100 lines of xcodebuild-test.log"
+          tail -100 xcodebuild-test.log
+          echo "::endgroup::"
+          exit "$STATUS"
+
+      - name: Keep the xcodebuild log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-test-log-xcode-${{ matrix.xcode }}
+          path: xcodebuild-test.log
+          if-no-files-found: warn
+          retention-days: 14
 
       - name: The compile-time guard landed on the side this leg declared
         # A skip here would make BOTH legs vacuous: the arm throws XCTSkip when
