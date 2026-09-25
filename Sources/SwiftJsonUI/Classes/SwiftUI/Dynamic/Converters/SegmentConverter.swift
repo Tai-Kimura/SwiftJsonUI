@@ -50,22 +50,43 @@ public struct SegmentConverter {
         let selectedColor = DynamicHelpers.getColor(attrs.tintColor, data: data)
 
         // Picker with .segmented style
-        var result = AnyView(
-            Picker("", selection: selectedBinding) {
-                ForEach(Array(items.enumerated()), id: \.offset) { index, item in
-                    Text(item.dynamicLocalized()).tag(index)
+        let buildPicker: (SwiftUI.Binding<Int>) -> AnyView = { selection in
+            AnyView(
+                Picker("", selection: selection) {
+                    ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                        Text(item.dynamicLocalized()).tag(index)
+                    }
                 }
-            }
-            .pickerStyle(.segmented)
-            .onAppear {
-                configureSegmentAppearance(
-                    backgroundColor: bgColor,
-                    normalColor: normalColor,
-                    selectedFontColor: selectedFontColor,
-                    selectedColor: selectedColor
-                )
-            }
-        )
+                .pickerStyle(.segmented)
+                .onAppear {
+                    configureSegmentAppearance(
+                        backgroundColor: bgColor,
+                        normalColor: normalColor,
+                        selectedFontColor: selectedFontColor,
+                        selectedColor: selectedColor
+                    )
+                }
+            )
+        }
+        let id = component.id ?? "segment"
+        let handler = component.onValueChangeSpelling()
+            .flatMap { DynamicEventHelper.extractPropertyName(from: $0) != nil ? $0 : nil }
+
+        // No two-way binding in the data — a literal, no value, or a plain
+        // value: the segment holds its own state seeded from it
+        // (DynamicLocalState). It was a `.constant`, and a tap did nothing.
+        guard let bound: SwiftUI.Binding<Int> = DynamicBindingHelper.twoWay(selectionExpr, data: data) else {
+            let local = AnyView(DynamicLocalState(
+                initial: selectedBinding.wrappedValue,
+                onChange: { newValue in
+                    guard let handler else { return }
+                    DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data)
+                },
+                content: buildPicker
+            ))
+            return DynamicModifierHelper.applyStandardModifiers(local, component: component, data: data)
+        }
+        var result = buildPicker(bound)
 
         // onValueChange handler - called when selection changes
         // The handler's NAME is not used here — only whether one could be extracted,
@@ -79,7 +100,6 @@ public struct SegmentConverter {
 
             if let propName = observeProperty,
                let binding = data[propName] as? SwiftUI.Binding<Int> {
-                let id = component.id ?? "segment"
                 result = AnyView(
                     result.onChange(of: binding.wrappedValue) { _, newValue in
                         DynamicEventHelper.callWithValue(

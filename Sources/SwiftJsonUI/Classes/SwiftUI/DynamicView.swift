@@ -13,6 +13,8 @@ import Combine
 // MARK: - Dynamic View
 public struct DynamicView: View {
     @State private var refreshId = UUID()
+    /// Each unbound group of single Radios on this screen (DynamicRadioGroups).
+    @StateObject private var radioGroups = DynamicRadioGroups()
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
     private let data: [String: Any]
@@ -84,6 +86,7 @@ public struct DynamicView: View {
                 viewId: viewId
             )
             .id(refreshId)
+            .environment(\.dynamicRadioGroups, radioGroups)
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("layoutFileDidChanged"))) { _ in
                 DynamicStringManager.shared.reload()
                 refreshId = UUID()

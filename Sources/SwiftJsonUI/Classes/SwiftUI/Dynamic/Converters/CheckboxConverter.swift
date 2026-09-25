@@ -151,10 +151,11 @@ public struct CheckboxConverter {
             }
         }()
 
-        // Build CheckBoxView
-        var result = AnyView(
+        // Build CheckBoxView — over whichever value it moves (the view
+        // model's two-way binding, or its own below).
+        let buildCheckBox: (SwiftUI.Binding<Bool>) -> AnyView = { isOn in AnyView(
             CheckBoxView(
-                isOn: isOnBinding,
+                isOn: isOn,
                 label: labelText.isEmpty ? nil : labelText,
                 icon: icon,
                 selectedIcon: selectedIcon,
@@ -176,7 +177,13 @@ public struct CheckboxConverter {
                 isEnabled: isEnabled,
                 onValueChanged: onValueChanged
             )
-        )
+        ) }
+        // No two-way binding in the data — a literal, no value, or a plain
+        // value: the checkbox holds its own state seeded from it
+        // (DynamicLocalState; CheckBoxView reports the tap itself). It was a
+        // `.constant`, and a tap did nothing.
+        var result = DynamicBindingHelper.extractBoolBinding(from: isOnExpr, data: data).map(buildCheckBox)
+            ?? AnyView(DynamicLocalState(initial: isOnBinding.wrappedValue, content: buildCheckBox))
 
         // Standard modifiers
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
