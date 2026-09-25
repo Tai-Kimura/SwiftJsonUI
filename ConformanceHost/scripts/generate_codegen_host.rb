@@ -285,9 +285,37 @@ File.write(File.join(build_dir, 'Package.swift'), <<~SWIFT)
   let package = Package(name: "ConformanceCodegenStaging")
 SWIFT
 
+# Custom components a probe layout uses (ProbeLayouts/extensions/
+# components.json: [{"name", "mode": "container"|"leaf"|absent, "attributes"}]).
+# A project scaffolds these with `sjui g converter`, which writes the converter
+# into the tool's own views/extensions — so the tool is COPIED into the build
+# dir (links dereferenced) and scaffolded there, and the build runs that copy.
+# The checkout named by SJUI_TOOLS_PATH is never written to. The Swift views
+# the converters call are compiled into the app from App/ (the same files the
+# Dynamic adapters draw).
+build_bin = sjui_bin
+components_file = File.join(host_dir, 'ProbeLayouts', 'extensions', 'components.json')
+if File.file?(components_file)
+  tool_copy = File.join(build_dir, 'sjui_tools')
+  FileUtils.mkdir_p(tool_copy)
+  %w[bin lib].each do |d|
+    system('cp', '-RL', File.join(sjui_tools, d), tool_copy) or abort "error: could not copy sjui_tools/#{d}"
+  end
+  build_bin = File.join(tool_copy, 'bin', 'sjui')
+  components = JSON.parse(File.read(components_file))
+  components.each do |c|
+    flag = { 'container' => ['--container'], 'leaf' => ['--no-container'] }.fetch(c['mode'], [])
+    attrs = c['attributes'] ? ['--attributes', c['attributes']] : []
+    ok = system({ 'PWD' => build_dir }, RbConfig.ruby, build_bin, 'g', 'converter', c['name'], *flag, *attrs, '--force',
+                chdir: build_dir, out: File::NULL, err: File::NULL)
+    abort "error: sjui g converter #{c['name']} failed" unless ok
+  end
+  puts "[codegen-host] scaffolded #{components.size} custom component(s) into a copy of sjui_tools"
+end
+
 puts "[codegen-host] running sjui build (#{sjui_tools})"
 build_log = File.join(host_dir, 'codegen-build.log')
-ok = system({ 'PWD' => build_dir }, RbConfig.ruby, sjui_bin, 'build',
+ok = system({ 'PWD' => build_dir }, RbConfig.ruby, build_bin, 'build',
             chdir: build_dir, out: build_log, err: %i[child out])
 unless ok
   abort "error: sjui build failed — see #{build_log}"

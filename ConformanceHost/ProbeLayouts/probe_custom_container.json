@@ -1,0 +1,189 @@
+{
+  "type": "View",
+  "id": "cg_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "wrap_cg_one",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeAuto",
+          "id": "cg_one",
+          "title": "one",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_one_kid",
+              "text": "One kid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_two",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeAuto",
+          "id": "cg_two",
+          "title": "two",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_two_a",
+              "text": "Two a"
+            },
+            {
+              "type": "Label",
+              "id": "cg_two_b",
+              "text": "Two b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_nest",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeAuto",
+          "id": "cg_nest",
+          "title": "nest",
+          "child": [
+            {
+              "type": "View",
+              "id": "cg_nest_view",
+              "orientation": "vertical",
+              "child": [
+                {
+                  "type": "Label",
+                  "id": "cg_nest_kid",
+                  "text": "Nest kid"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_noid",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeAuto",
+          "title": "noid",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_noid_kid",
+              "text": "No-id kid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_shelf",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeShelf",
+          "id": "cg_shelf",
+          "title": "shelf",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_shelf_kid",
+              "text": "Shelf kid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_tap",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeAuto",
+          "id": "cg_tap",
+          "title": "tap",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_tap_kid",
+              "text": "Tap kid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_tapnoid",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "LeafProbeAuto",
+          "title": "tapnoid",
+          "onClick": "@{onTap}",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_tapnoid_kid",
+              "text": "Tap no-id kid"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "wrap_cg_view",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_view",
+          "orientation": "vertical",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_view_kid",
+              "text": "View kid"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
