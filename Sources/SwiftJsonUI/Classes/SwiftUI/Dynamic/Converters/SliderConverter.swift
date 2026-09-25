@@ -55,48 +55,69 @@ public struct SliderConverter {
             fallback: component.number(SliderAttributes.self, \.value, data: data).map { Double($0) } ?? minValue
         )
 
-        // Slider
-        var result = AnyView(
-            Slider(value: valueBinding, in: minValue...maxValue)
-        )
+        // Slider — built over whichever value it moves (the view model's, or
+        // its own below).
+        let buildSlider: (SwiftUI.Binding<Double>) -> AnyView = { value in
+            var result = AnyView(
+                Slider(value: value, in: minValue...maxValue)
+            )
 
-        // Tint color (.accentColor to match Ruby converter)
-        //
-        // `progressTintColor` is the specific spelling for the filled part of
-        // the track, which is exactly what `.tint()` colours on a SwiftUI
-        // Slider — so it wins over the generic `tintColor`, the same
-        // precedence progress_converter.rb:54 uses. The SSoT called it
-        // "deprecated on swift — SwiftUI Slider uses unified tint only";
-        // ProgressConverter had already disproved that, and 49-E retracted it.
-        let sliderTint = attrs.progressTintColor ?? attrs.tintColor
-        if let tintColor = sliderTint, let color = DynamicHelpers.getColor(tintColor) {
-            // .tint is the modern accent path — .accentColor alone left the
-            // conformance render untinted (33 cross-effect, ios inert).
-            result = AnyView(result.tint(color).accentColor(color))
-        }
+            // Tint color (.accentColor to match Ruby converter)
+            //
+            // `progressTintColor` is the specific spelling for the filled part of
+            // the track, which is exactly what `.tint()` colours on a SwiftUI
+            // Slider — so it wins over the generic `tintColor`, the same
+            // precedence progress_converter.rb:54 uses. The SSoT called it
+            // "deprecated on swift — SwiftUI Slider uses unified tint only";
+            // ProgressConverter had already disproved that, and 49-E retracted it.
+            let sliderTint = attrs.progressTintColor ?? attrs.tintColor
+            if let tintColor = sliderTint, let color = DynamicHelpers.getColor(tintColor) {
+                // .tint is the modern accent path — .accentColor alone left the
+                // conformance render untinted (33 cross-effect, ios inert).
+                result = AnyView(result.tint(color).accentColor(color))
+            }
 
-        // trackTintColor — the UNFILLED part of the track. `.tint()` colours
-        // the filled part and SwiftUI exposes nothing for the rest, so this
-        // goes through UISlider.appearance() at appear time. Same route
-        // ToggleConverter already takes for thumbTintColor, which is why the
-        // "SwiftUI Slider uses unified tint only" deprecation was wrong twice
-        // over: the filled track has a modifier, and the unfilled one has a
-        // precedent in this repo.
-        if let track = attrs.trackTintColor,
-           let color = DynamicHelpers.getColor(track) {
-            result = AnyView(result.onAppear {
-                UISlider.appearance().maximumTrackTintColor = UIColor(color)
-            })
-        }
+            // trackTintColor — the UNFILLED part of the track. `.tint()` colours
+            // the filled part and SwiftUI exposes nothing for the rest, so this
+            // goes through UISlider.appearance() at appear time. Same route
+            // ToggleConverter already takes for thumbTintColor, which is why the
+            // "SwiftUI Slider uses unified tint only" deprecation was wrong twice
+            // over: the filled track has a modifier, and the unfilled one has a
+            // precedent in this repo.
+            if let track = attrs.trackTintColor,
+               let color = DynamicHelpers.getColor(track) {
+                result = AnyView(result.onAppear {
+                    UISlider.appearance().maximumTrackTintColor = UIColor(color)
+                })
+            }
 
-        // Disabled state
-        if component.commonBool(\.enabled) == false {
-            result = AnyView(result.disabled(true))
+            // Disabled state
+            if component.commonBool(\.enabled) == false {
+                result = AnyView(result.disabled(true))
+            }
+            return result
         }
 
         // onValueChange handler (onValueChanged alias resolved inside
         // the generated extraction, L0 only)
         let handler = attrs.onValueChange?.rawRepresentation as? String
+        let id = component.id ?? "slider"
+
+        // No two-way binding in the data — a literal, no value (the minimum),
+        // or a plain value: the slider holds its own state seeded from it
+        // (DynamicLocalState). It was a `.constant`, and a drag did nothing.
+        guard let bound: SwiftUI.Binding<Double> = DynamicBindingHelper.twoWay(valueExpr, data: data) else {
+            let local = AnyView(DynamicLocalState(
+                initial: valueBinding.wrappedValue,
+                onChange: { newValue in
+                    guard let handler, DynamicEventHelper.extractPropertyName(from: handler) != nil else { return }
+                    DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data)
+                },
+                content: buildSlider
+            ))
+            return DynamicModifierHelper.applyStandardModifiers(local, component: component, data: data)
+        }
+        var result = buildSlider(bound)
         if let handler = handler,
            let _ = DynamicEventHelper.extractPropertyName(from: handler) {
             // Determine the binding property to observe
@@ -109,7 +130,6 @@ public struct SliderConverter {
 
             if let propName = observeProperty,
                let binding = data[propName] as? SwiftUI.Binding<Double> {
-                let id = component.id ?? "slider"
                 result = AnyView(
                     result.onChange(of: binding.wrappedValue) { _, newValue in
                         DynamicEventHelper.callWithValue(

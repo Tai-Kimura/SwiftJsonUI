@@ -32,14 +32,17 @@ public struct TextViewConverter {
         let declaredText = component.string(TextViewAttributes.self, \.text)
         let resolvedBinding = DynamicBindingHelper.string(declaredText, data: data)
 
-        // Bound (or data-resolved) @{var} text: use the resolved binding.
-        if DynamicEventHelper.extractPropertyName(from: declaredText) != nil {
-            return convertBody(component: component, data: data, textBinding: resolvedBinding)
+        // A two-way binding in the data: the view model's text.
+        if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(declaredText, data: data) {
+            return convertBody(component: component, data: data, textBinding: bound)
         }
 
-        // Unbound literal/absent text: local editing state — a native text
-        // view is inherently stateful on every other JsonUI runtime, so a
-        // `.constant` SwiftUI editor would wrongly reject edits here.
+        // Literal, absent, or a plain value under @{var}: local editing state
+        // seeded from it — a native text view is inherently stateful on every
+        // other JsonUI runtime, so a `.constant` SwiftUI editor would wrongly
+        // reject edits here. A plain value was handed that `.constant` (ticket
+        // sjui-dynamic-plain-bound-controls-do-not-follow-the-view-model); a
+        // new value from the view model replaces the edit.
         return AnyView(
             DynamicLocalState(initial: resolvedBinding.wrappedValue) { binding in
                 convertBody(component: component, data: data, textBinding: binding)

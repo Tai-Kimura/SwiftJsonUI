@@ -80,18 +80,32 @@ public struct TabViewConverter {
             onTabChangeCallback = data[propName] as? ((Int) -> Void)
         }
 
-        var result = AnyView(
-            TabViewWrapperView(
-                tabItems: tabItems,
-                selectionBinding: selectionBinding,
-                tabBarBackground: tabBarBackground,
-                unselectedColor: unselectedColor,
-                onTabChangeCallback: onTabChangeCallback,
-                component: component,
-                data: data,
-                viewId: viewId
+        // The tab view, over whichever selection it moves (the view model's
+        // two-way binding, or its own below).
+        let build: (SwiftUI.Binding<Int>) -> AnyView = { selection in
+            AnyView(
+                TabViewWrapperView(
+                    tabItems: tabItems,
+                    selectionBinding: selection,
+                    tabBarBackground: tabBarBackground,
+                    unselectedColor: unselectedColor,
+                    onTabChangeCallback: onTabChangeCallback,
+                    component: component,
+                    data: data,
+                    viewId: viewId
+                )
             )
-        )
+        }
+        // No two-way binding in the data — a literal selectedIndex, none, or a
+        // plain value: the tab view holds its own selection seeded from it
+        // (DynamicLocalState). The wrapper's binding was a `.constant`, and the
+        // tab bar did not move.
+        var result: AnyView
+        if let bound: SwiftUI.Binding<Int> = DynamicBindingHelper.twoWay(selectedIndexRaw, data: data) {
+            result = build(bound)
+        } else {
+            result = AnyView(DynamicLocalState(initial: selectionBinding.wrappedValue, content: build))
+        }
 
         // 5. applyStandardModifiers (tintColor is handled inside applyStandardModifiers)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
@@ -112,7 +126,7 @@ private struct TabItemModel: Identifiable {
     let view: String?
 }
 
-// MARK: - TabView Wrapper (manages @State internally for selection)
+// MARK: - TabView Wrapper (the selection it is handed: the view model's, or the converter's local state)
 
 private struct TabViewWrapperView: View {
     let tabItems: [TabItemModel]

@@ -95,7 +95,7 @@ public struct RadioConverter {
         // Seeding it also makes `checked` stand down correctly: the glyph's
         // `literalChecked && selection.isEmpty` guard is exactly the third
         // rung of that precedence.
-        let selectionBinding = DynamicBindingHelper.string(
+        let declaredSelection = DynamicBindingHelper.string(
             selectionExpr,
             data: data,
             fallback: radioAttrs.selectedValue?.value ?? ""
@@ -112,7 +112,9 @@ public struct RadioConverter {
             return nil
         }()
 
-        return AnyView(
+        // The group, over whichever selection it moves (the view model's two-way
+        // binding, or its own below).
+        let build: (SwiftUI.Binding<String>) -> AnyView = { selectionBinding in AnyView(
             VStack(alignment: .leading, spacing: 8) {
                 // Group title text
                 if !text.isEmpty {
@@ -143,8 +145,16 @@ public struct RadioConverter {
                     }
                 }
             }
-        )
+        ) }
+        if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(selectionExpr, data: data) {
+            return build(bound)
+        }
+        // No two-way binding — a literal selectedValue, none, or a plain value:
+        // the group holds its own selection seeded from it (DynamicLocalState).
+        // It was a `.constant`, and a tap did nothing.
+        return AnyView(DynamicLocalState(initial: declaredSelection.wrappedValue, content: build))
     }
+
 
     // MARK: - Single Radio Button
 
@@ -155,22 +165,6 @@ public struct RadioConverter {
         data: [String: Any]
     ) -> AnyView {
         let group = component.group ?? "defaultGroup"
-
-        // Selection binding for the group
-        let groupBinding = DynamicBindingHelper.string(
-            nil, // Single radios use group-level state managed externally
-            data: data,
-            fallback: ""
-        )
-
-        // Check if group selection is provided via data
-        let groupSelectionBinding: SwiftUI.Binding<String> = {
-            // Try to find group binding in data
-            if let binding = data[group] as? SwiftUI.Binding<String> {
-                return binding
-            }
-            return groupBinding
-        }()
 
         // Font and color
         let labelFont = radioFont(component, data: data)
@@ -196,35 +190,47 @@ public struct RadioConverter {
             legacy: nil,
             data: data
         ) == true
-        let isGlyphSelected = groupSelectionBinding.wrappedValue == id ||
-            (literalChecked && groupSelectionBinding.wrappedValue.isEmpty)
+        // The row, over the group's selection (the view model's two-way binding
+        // under the group's name, or the screen's own store below).
+        let build: (SwiftUI.Binding<String>) -> AnyView = { groupSelectionBinding in
+            let isGlyphSelected = groupSelectionBinding.wrappedValue == id ||
+                (literalChecked && groupSelectionBinding.wrappedValue.isEmpty)
 
-        return AnyView(
-            HStack(spacing: iconTextSpacing(component, data: data)) {
-                radioGlyph(component: component, selected: isGlyphSelected)
+            return AnyView(
+                HStack(spacing: iconTextSpacing(component, data: data)) {
+                    radioGlyph(component: component, selected: isGlyphSelected)
 
-                if !text.isEmpty {
-                    buildLabelText(text: text, font: labelFont, color: labelColor)
+                    if !text.isEmpty {
+                        buildLabelText(text: text, font: labelFont, color: labelColor)
+                    }
                 }
-            }
-            // Whole row is tappable (label included), not just the icon
-            .contentShape(Rectangle())
-            .onTapGesture {
-                groupSelectionBinding.wrappedValue = id
-                // onClick handler. canTap gates the call, not the selection
-                // above it: that is the radio's own operation, `enabled`'s.
-                if let onClick = component.commonAny(\.onClick),
-                   DynamicEventHelper.tapGateOpen(component, data: data) {
-                    DynamicEventHelper.call(onClick, data: data)
+                // Whole row is tappable (label included), not just the icon
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    groupSelectionBinding.wrappedValue = id
+                    // onClick handler. canTap gates the call, not the selection
+                    // above it: that is the radio's own operation, `enabled`'s.
+                    if let onClick = component.commonAny(\.onClick),
+                       DynamicEventHelper.tapGateOpen(component, data: data) {
+                        DynamicEventHelper.call(onClick, data: data)
+                    }
                 }
-            }
-            // One accessibility element for the row whose label is the radio
-            // text — otherwise the SF Symbol image leaks its symbol name
-            // ("circle") as the element label.
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(text.dynamicLocalized())
-            .accessibilityAddTraits(.isButton)
-        )
+                // One accessibility element for the row whose label is the radio
+                // text — otherwise the SF Symbol image leaks its symbol name
+                // ("circle") as the element label.
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(text.dynamicLocalized())
+                .accessibilityAddTraits(.isButton)
+            )
+        }
+
+        if let binding = data[group] as? SwiftUI.Binding<String> {
+            return build(binding)
+        }
+        // No two-way binding under the group's name: the screen's store holds
+        // the group's selection (DynamicRadioGroups), seeded by a plain value
+        // there or, with none, by the checked Radio.
+        return AnyView(DynamicGroupRadio(group: group, declared: data[group] as? String ?? "", content: build))
     }
 
     // MARK: - Shared reads (internal: the tests go through these)

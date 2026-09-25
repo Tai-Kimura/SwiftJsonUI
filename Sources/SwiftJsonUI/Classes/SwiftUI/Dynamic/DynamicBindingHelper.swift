@@ -19,6 +19,19 @@ public struct DynamicBindingHelper {
         return DynamicEventHelper.extractPropertyName(from: value)
     }
 
+    // MARK: - The view model's two-way value, if it holds one
+
+    /// The two-way `SwiftUI.Binding<T>` that `@{property}` names in `data`, or
+    /// nil when there is none — a literal, an absent value, or a plain value.
+    /// With none, the control holds its own state seeded from the declared
+    /// value (`DynamicLocalState`), which the user changes and a new declared
+    /// value replaces (tickets static-valued-controls-do-not-change-on-a-users-
+    /// tap, sjui-dynamic-plain-bound-controls-do-not-follow-the-view-model).
+    static func twoWay<T>(_ expression: String?, data: [String: Any]) -> SwiftUI.Binding<T>? {
+        guard let propName = extractPropertyName(from: expression) else { return nil }
+        return data[propName] as? SwiftUI.Binding<T>
+    }
+
     // MARK: - Binding<String>
 
     /// Resolve @{property} to Binding<String>

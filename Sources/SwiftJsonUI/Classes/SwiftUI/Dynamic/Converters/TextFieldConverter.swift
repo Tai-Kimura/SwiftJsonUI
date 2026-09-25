@@ -149,14 +149,18 @@ public struct TextFieldConverter {
             return built
         }
 
-        // Bound (or data-resolved) @{var} text: use the resolved binding.
-        if DynamicEventHelper.extractPropertyName(from: declaredText) != nil {
-            return build(textBinding)
+        // A two-way binding in the data: the view model's text.
+        if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(declaredText, data: data) {
+            return build(bound)
         }
 
-        // Unbound literal/absent text: local editing state — a native field
-        // is inherently stateful on every other JsonUI runtime, so a
-        // `.constant` SwiftUI field would wrongly reject edits here.
+        // Literal, absent, or a plain value under @{var}: local editing state
+        // seeded from it — a native field is inherently stateful on every
+        // other JsonUI runtime, so a `.constant` SwiftUI field would wrongly
+        // reject edits here. A plain value was handed that `.constant`, and the
+        // field could not be edited (ticket
+        // sjui-dynamic-plain-bound-controls-do-not-follow-the-view-model); a
+        // new value from the view model replaces the edit.
         return AnyView(DynamicLocalState(initial: textBinding.wrappedValue, content: build))
     }
 
