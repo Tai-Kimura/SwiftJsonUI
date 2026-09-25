@@ -27,6 +27,40 @@ public protocol CustomComponentAdapter {
         viewId: String?,
         parentOrientation: String?
     ) -> AnyView
+
+    /// False for a leaf — a component scaffolded with `sjui g converter <Name>
+    /// --no-container`, which has no content slot. A layout that gives it
+    /// children then draws an error naming the component and the children
+    /// instead of the component, as `jui build` refuses that layout in
+    /// codegen. Defaults to true, so an adapter that does not say is drawn as
+    /// before.
+    var acceptsChildren: Bool { get }
+}
+
+extension CustomComponentAdapter {
+    public var acceptsChildren: Bool { true }
+}
+
+/// What a leaf given children is told, in Dynamic as in the build.
+public enum LeafChildren {
+    /// The message for `component` drawn by `adapter`, or nil when there is
+    /// nothing to refuse: the adapter takes children, or the layout gives
+    /// none. Data-only entries (`{"data": [...]}`) are not children.
+    public static func rejection(for adapter: CustomComponentAdapter, component: DynamicComponent) -> String? {
+        guard !adapter.acceptsChildren else { return nil }
+        let key = component.child != nil ? "child" : "children"
+        let dropped = (component.childComponents ?? []).enumerated().compactMap { index, child -> String? in
+            guard child.isValid || child.include != nil else { return nil }
+            return "\(key)[\(index)]" + (child.id.map { " (id=\($0))" } ?? "")
+        }
+        guard !dropped.isEmpty else { return nil }
+        let node = component.id.map { " (id=\($0))" } ?? ""
+        // The same sentence as the wrapper kjui writes for an Android leaf:
+        // jsonui-cli shared/core/leaf_children_vectors.json binds the two.
+        return "'\(adapter.componentType)'\(node) takes no children — it is declared a leaf, so "
+            + dropped.joined(separator: ", ") + (dropped.count == 1 ? " is" : " are") + " not drawn."
+            + " Remove the children, or regenerate the component with --container."
+    }
 }
 
 /// Registry for custom component adapters
