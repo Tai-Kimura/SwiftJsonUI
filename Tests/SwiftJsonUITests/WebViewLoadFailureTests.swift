@@ -190,6 +190,40 @@ final class WebViewLoadFailureTests: XCTestCase {
         }
     }
 
+    /// Finishes one trivial load before the arm's own, and says how long it
+    /// took. On the CI's Xcode 26.3 / iOS 26 leg the FIRST WebKit load in the
+    /// test process did not settle in 30 s three runs in a row (a DNS load
+    /// twice, this scheme-handler load once — runs 36078332508 ×2 and
+    /// 36079699274), while in run 36075992379 the same kind of load passed in
+    /// 3.1 s after four other WebKit arms had run first. So it is the process's
+    /// first load, not the route, that the runner holds up. The warm-up takes
+    /// that cost apart from the arm, with its own name when it is the thing
+    /// that times out.
+    private final class FinishRecorder: NSObject, WKNavigationDelegate {
+        var finished = false
+        func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { finished = true }
+    }
+
+    private static var warmedUp = false
+
+    private func warmUpWebKit() {
+        guard !Self.warmedUp else { return }
+        let web = WKWebView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let recorder = FinishRecorder()
+        web.navigationDelegate = recorder
+        let start = Date()
+        web.loadHTMLString("<html><body>warm</body></html>", baseURL: nil)
+        let finished = expectation(for: NSPredicate { _, _ in recorder.finished }, evaluatedWith: nil)
+        let result = XCTWaiter().wait(for: [finished], timeout: 120)
+        let elapsed = Date().timeIntervalSince(start)
+        print("[WebViewLoadFailureTests] WebKit warm-up: \(result == .completed ? "finished" : "did NOT finish") in \(String(format: "%.1f", elapsed)) s")
+        guard result == .completed else {
+            XCTFail("WebKit warm-up: an html load did not finish in 120 s — this runner's WebKit is not serving loads, so the arm below measured nothing")
+            return
+        }
+        Self.warmedUp = true
+    }
+
     private func waitUntilSettled(_ webView: WKWebView, extra: TimeInterval = 1.0) {
         let settled = expectation(for: NSPredicate { object, _ in
             guard let view = object as? WKWebView else { return false }
@@ -210,6 +244,7 @@ final class WebViewLoadFailureTests: XCTestCase {
     /// resolver fails `.invalid` is not ours. A failing scheme handler reports
     /// in 0.2–0.5 s on both runtimes here, with no resolver in the path.
     func testAMainFrameLoadThatFailsReportsOnce() {
+        warmUpWebKit()
         let harness = Harness()
         harness.webView.load(URLRequest(url: URL(string: "sjuifail://h/page")!))
         let reported = expectation(for: NSPredicate { _, _ in harness.failures > 0 }, evaluatedWith: nil)
