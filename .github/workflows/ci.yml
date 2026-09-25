@@ -137,6 +137,8 @@ jobs:
                "shared/core/image_accessibility_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",
                "shared/core/tap_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/swiftui_modifier_order.json",
+               "sjui_tools/lib/swiftui/views/modifier_order.json"),
           ]
           # Same three exit codes as the step above: 0 compared and agreed,
           # 1 compared and diverged, 2 could not compare.

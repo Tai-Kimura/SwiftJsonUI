@@ -1263,11 +1263,12 @@ public struct DynamicModifierHelper {
     }
 
     // MARK: - Standard Modifier Combination
-    // Matches tool's base_view_converter.rb apply_modifiers order:
-    // padding → frame_constraints → frame_size → insets → background → cornerRadius → border
-    // → margins → opacity → shadow → clipped → offset → hidden
-    // → safeAreaInsets → disabled → tag → hitTesting → tintColor
-    // → onClick → lifecycle → confirmationDialog → accessibilityId
+    // The order is codegen's: sjui's ModifierBag::MODIFIER_ORDER, then what
+    // BaseViewConverter writes after the bag. It is not restated here —
+    // StandardOrderFollowsCodegenTests reads it from jsonui-cli's
+    // modifier_order.json (vendored as Fixtures/swiftui_modifier_order.json,
+    // compared with jsonui-cli by CI) and fails when `standardOrder` departs
+    // from it.
 
 
     /// One stage of the standard modifier chain: a name and what it does.
@@ -1310,19 +1311,22 @@ public struct DynamicModifierHelper {
     /// The standard chain, in application order. ORDER IS LOAD-BEARING —
     /// see the per-stage notes; `disabled` genuinely appears twice.
     public static let standardOrder: [Stage] = [
-        // 1. padding (skipped for relative positioning containers)
+        // padding (skipped for relative positioning containers)
         Stage("padding", when: { !$0.padding }) { v, c, d in
             applyPadding(v, component: c, data: d)
+        },
+        // insets (skipped for Collection, which handles insets with spacers).
+        // Codegen writes them into the same slot as padding, after it — inside
+        // the frame. They used to come after the frame here, which drew the
+        // box larger than declared.
+        Stage("insets", when: { !$0.insets }) { v, c, _ in
+            applyInsets(v, component: c)
         },
         Stage("frameConstraints") { v, c, d in
             applyFrameConstraints(v, component: c, data: d)
         },
         Stage("frameSize") { v, c, d in applyFrameSize(v, component: c, data: d) },
-        // 4. insets (skipped for Collection which handles insets with spacers)
-        Stage("insets", when: { !$0.insets }) { v, c, _ in
-            applyInsets(v, component: c)
-        },
-        // 5. background (skipped when the caller already painted it — an empty
+        // background (skipped when the caller already painted it — an empty
         // View renders Rectangle().fill, the codegen leaf contract).
         // highlighted → highlightBackground REPLACES the base background,
         // exactly as UIKit swaps SJUIView's backgroundColor. `.background`
@@ -1334,12 +1338,7 @@ public struct DynamicModifierHelper {
             }
             return applyBackground(v, component: c, data: d)
         },
-        // 5c. safeAreaInsetPositions — reserves the named edges. Inside the
-        // background opt-out, as it always has been.
-        Stage("safeAreaInsets", when: { !$0.background }) { v, c, _ in
-            applySafeAreaInsets(v, component: c)
-        },
-        // 5d. glass — the Liquid Glass material. Slot fixed on BOTH faces, and
+        // glass — the Liquid Glass material. Slot fixed on BOTH faces, and
         // the two were written from each other rather than each from the prose:
         // codegen's MODIFIER_ORDER puts :glass after :background/:gradient and
         // before :corner_radius, "so it sits after the two background entries
@@ -1354,18 +1353,18 @@ public struct DynamicModifierHelper {
         Stage("glass") { v, c, d in applyGlass(v, component: c, data: d) },
         Stage("cornerRadius") { v, c, d in applyCornerRadius(v, component: c, data: d) },
         Stage("border") { v, c, d in applyBorder(v, component: c, data: d) },
-        Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
-        Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
         Stage("shadow") { v, c, _ in applyShadow(v, component: c) },
         Stage("clipped") { v, c, d in applyClipped(v, component: c, data: d) },
-        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
-        // 12b. zIndex (indexBelow / indexAbove)
-        Stage("zIndex") { v, c, _ in applyZIndex(v, component: c) },
+        Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
         Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },
-        Stage("disabled") { v, c, d in applyDisabled(v, component: c, data: d) },
+        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
+        // margins — after the clip, the fade and the offset, as codegen writes
+        // them: a clip before them cuts at the view's own edge, not the
+        // margin's.
+        Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
         Stage("hitTesting") { v, c, d in applyHitTesting(v, component: c, data: d) },
         Stage("tint") { v, c, d in applyTint(v, component: c, data: d) },
-        // 17. onClick + lifecycle events
+        // onClick, onLongPress, onPan, onPinch, onAppear / onDisappear
         Stage("events") { v, c, d in
             DynamicEventHelper.applyEvents(v, component: c, data: d)
         },
@@ -1377,8 +1376,17 @@ public struct DynamicModifierHelper {
             guard #available(iOS 15.0, *) else { return v }
             return applyAlert(v, component: c, data: d)
         },
+        // safeAreaInsetPositions — reserves the named edges. Inside the
+        // background opt-out, as it always has been; late in the chain, where
+        // codegen writes it.
+        Stage("safeAreaInsets", when: { !$0.background }) { v, c, _ in
+            applySafeAreaInsets(v, component: c)
+        },
+        // zIndex (indexBelow / indexAbove)
+        Stage("zIndex") { v, c, _ in applyZIndex(v, component: c) },
+        Stage("disabled") { v, c, d in applyDisabled(v, component: c, data: d) },
         Stage("accessibilityId") { v, c, _ in applyAccessibilityId(v, component: c) },
-        // 20. disabled again, OUTSIDE the accessibility element. The earlier
+        // disabled again, OUTSIDE the accessibility element. The earlier
         // `disabled` puts it inside the chain, but accessibilityId creates the
         // container's a11y element on top of it — an element outside the
         // disabled environment never gets the notEnabled trait, so XCUITest

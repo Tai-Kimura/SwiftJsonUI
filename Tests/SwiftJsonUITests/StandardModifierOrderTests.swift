@@ -33,6 +33,10 @@ final class StandardModifierOrderTests: XCTestCase {
     /// removing a stage must touch both places, which is what makes the change
     /// a statement of intent instead of a side effect.
     ///
+    /// The order itself is codegen's, and StandardOrderFollowsCodegenTests
+    /// holds it to jsonui-cli's modifier_order.json; this list only makes a
+    /// change to it a statement of intent.
+    ///
     /// ORDER IS LOAD-BEARING. `disabled` really does appear twice — the second
     /// application sits outside the accessibility element, because an element
     /// outside the disabled environment never carries the notEnabled trait
@@ -40,27 +44,27 @@ final class StandardModifierOrderTests: XCTestCase {
     /// not a duplicate to be tidied away.
     private let expectedOrder = [
         "padding",
+        "insets",
         "frameConstraints",
         "frameSize",
-        "insets",
         "background",
-        "safeAreaInsets",
         "glass",
         "cornerRadius",
         "border",
-        "margins",
-        "opacity",
         "shadow",
         "clipped",
-        "offset",
-        "zIndex",
+        "opacity",
         "hidden",
-        "disabled",
+        "offset",
+        "margins",
         "hitTesting",
         "tint",
         "events",
         "confirmationDialog",
         "alert",
+        "safeAreaInsets",
+        "zIndex",
+        "disabled",
         "accessibilityId",
         "disabledOuter",
     ]
