@@ -146,8 +146,9 @@ public struct DynamicView: View {
                 guard let value = DataDefaultValue.select(declared) else {
                     // Written per platform with no `swift` entry: the class's
                     // vocabulary value, as the generated Data model has it.
-                    let given = (declared as? [String: Any]).map { $0.keys.sorted().joined(separator: ", ") } ?? ""
-                    Logger.log("[SwiftJsonUI] WARNING: data '\(name)' defaultValue is given for \(given) but not swift")
+                    let given = (declared as? [String: Any]).map { $0.keys.sorted() } ?? []
+                    Logger.log("[SwiftJsonUI] WARNING: " + DataDefaultValue.missingPlatformWarning(
+                        name: name, given: given, className: className))
                     if let vocabulary = DataDefaultValue.vocabulary(className) {
                         merged[name] = vocabulary
                         defaultCount += 1

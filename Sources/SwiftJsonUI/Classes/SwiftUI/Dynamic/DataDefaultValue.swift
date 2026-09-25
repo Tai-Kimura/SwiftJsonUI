@@ -67,6 +67,35 @@ enum DataDefaultValue {
         }
     }
 
+    /// The warning for a value written per platform that names no `swift`:
+    /// the code generators' sentence (TypeConverterCore
+    /// #default_for_missing_platform) without the layout, which dynamic mode
+    /// does not know. `given` in the order the caller has it.
+    static func missingPlatformWarning(name: String, given: [String], className: String?) -> String {
+        let answer: String
+        if className?.trimmingCharacters(in: .whitespaces).hasSuffix("?") == true {
+            answer = "nil"
+        } else if let value = vocabulary(className), let type = className {
+            answer = "the \(type) default \(literal(value))"
+        } else {
+            answer = "no default (\(className ?? "") has no vocabulary value)"
+        }
+        return "data '\(name)' defaultValue is given for \(given.joined(separator: ", ")) "
+            + "but not \(language) — \(language) gets \(answer)"
+    }
+
+    /// A vocabulary value as the generators print it (Ruby's inspect).
+    private static func literal(_ value: Any) -> String {
+        switch value {
+        case let text as String: return "\"\(text)\""
+        case let flag as Bool: return flag ? "true" : "false"
+        case let number as Int: return String(number)
+        case let number as Double: return String(number)
+        case let list as [Any]: return list.isEmpty ? "[]" : String(describing: list)
+        default: return String(describing: value)
+        }
+    }
+
     /// The text a String default's spelling means:
     ///   bare (canonical)  the text as written
     ///   ''                empty

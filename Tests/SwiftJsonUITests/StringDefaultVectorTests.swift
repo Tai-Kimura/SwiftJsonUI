@@ -44,6 +44,27 @@ final class StringDefaultVectorTests: XCTestCase {
         return "other:\(value)" as NSString
     }
 
+    // The code generators' sentence (jsonui-cli, measured 2026-09-26 on sjui),
+    // less the layout: one wording for the notice on every face.
+    func testTheWarningIsTheGeneratorsSentence() {
+        XCTAssertEqual(
+            DataDefaultValue.missingPlatformWarning(name: "mode", given: ["kotlin", "typescript"], className: "String"),
+            "data 'mode' defaultValue is given for kotlin, typescript but not swift — swift gets the String default \"\""
+        )
+        XCTAssertEqual(
+            DataDefaultValue.missingPlatformWarning(name: "n", given: ["kotlin"], className: "Int"),
+            "data 'n' defaultValue is given for kotlin but not swift — swift gets the Int default 0"
+        )
+        XCTAssertEqual(
+            DataDefaultValue.missingPlatformWarning(name: "o", given: ["kotlin"], className: "String?"),
+            "data 'o' defaultValue is given for kotlin but not swift — swift gets nil"
+        )
+        XCTAssertEqual(
+            DataDefaultValue.missingPlatformWarning(name: "c", given: ["kotlin"], className: "Color"),
+            "data 'c' defaultValue is given for kotlin but not swift — swift gets no default (Color has no vocabulary value)"
+        )
+    }
+
     func testEverySpellingReadsAsItsText() throws {
         let rows = try XCTUnwrap(try loadVectors()["spellings"] as? [[String: Any]])
         XCTAssertGreaterThanOrEqual(rows.count, 20, "the table has spellings")
