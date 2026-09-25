@@ -13,6 +13,8 @@ public struct WebAttributes {
         "allowsBackForwardNavigationGestures",
         "allowsLinkPreview",
         "html",
+        "onLoadFailed",
+        "reloadToken",
         "sandbox",
         "url",
     ])
@@ -44,6 +46,12 @@ public struct WebAttributes {
     /// HTML content
     public let html: String?
 
+    /// Handler called when the MAIN-FRAME load fails - binding only (@{functionName}), called with no arguments. A failure is either the navigation itself failing (no connection, timeout, DNS, TLS) or the main-frame response carrying HTTP 4xx/5xx. Never called for a subresource (image, CSS, script) or a subframe, and never for a navigation that was cancelled because another one replaced it - a reloadToken change during a load is exactly that (iOS reports it as NSURLErrorCancelled, which is excluded; Android excludes net::ERR_ABORTED should it be reported). At most one call per load. The page a server returns with a 4xx/5xx is still displayed; to show an error face instead, hide the Web from the handler. iOS: WKNavigationDelegate didFail / didFailProvisionalNavigation and the status in decidePolicyFor(navigationResponse:). Android: WebViewClient onReceivedError / onReceivedHttpError, both gated on request.isForMainFrame. Not declared for react: an iframe reports neither the HTTP status of its document nor a cross-origin load failure (its load event fires for the browser's error page too, and error never fires for a document), so a web face could not honour this declaration. [binding: one-way]
+    public let onLoadFailed: AttrValue<Any>?
+
+    /// Binding to a plain value (declare it Int) that reloads the component's own source each time the value CHANGES - the current `url`, or `html` when there is no url. Increment it in the ViewModel to retry after onLoadFailed. The value present when the view is created loads nothing extra; only a later change does. Writing the same url back does not reload (a url is compared with the last one loaded), which is why this exists. It reloads the declared source, not a page the user navigated to inside the view. Not declared for react: an iframe could be re-keyed, but the attribute exists to retry what onLoadFailed reports and the web face has no onLoadFailed.
+    public let reloadToken: AttrValue<Any>?
+
     /// Iframe sandboxing kill-switch. `false` emits no sandbox attribute at all; otherwise the permission list is built from the other Web attributes (javaScriptEnabled, javaScriptCanOpenWindowsAutomatically, allowPopupsToEscapeSandbox, allowModals, ...) rather than from a value written here.
     public let sandbox: Bool?
 
@@ -58,6 +66,8 @@ public struct WebAttributes {
         self.allowsBackForwardNavigationGestures = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsBackForwardNavigationGestures"))
         self.allowsLinkPreview = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsLinkPreview"))
         self.html = AttrCoerce.string(AttrCoerce.lookup(json, "html"))
+        self.onLoadFailed = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onLoadFailed"))
+        self.reloadToken = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "reloadToken"))
         self.sandbox = AttrCoerce.boolean(AttrCoerce.lookup(json, "sandbox"))
         self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url"), AttrCoerce.string)
     }

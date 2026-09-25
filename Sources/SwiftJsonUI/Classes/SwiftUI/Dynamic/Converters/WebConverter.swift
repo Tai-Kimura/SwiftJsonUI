@@ -6,7 +6,7 @@
 //  Rewritten to match web_converter.rb modifier order.
 //
 //  Modifier order (matching Ruby converter):
-//  1. WebView(url:)
+//  1. WebView(url:, html:, backgroundColor:, onLoadFailed:, reloadToken:)
 //  2. applyStandardModifiers()
 //
 
@@ -61,8 +61,26 @@ public struct WebConverter {
             return nil
         }()
 
-        // 1. WebView(url:, html:, backgroundColor:)
-        var result = AnyView(WebView(url: url, html: htmlString, backgroundColor: bgColor))
+        // onLoadFailed / reloadToken — binding-only on both, as in the
+        // codegen (web_converter.rb): a bare string names nothing.
+        let onLoadFailed: (() -> Void)? = attrs.onLoadFailed?.bindingExpression.map { expr in
+            { DynamicEventHelper.call("@{\(expr)}", data: data) }
+        }
+        let reloadToken: AnyHashable? = attrs.reloadToken?.bindingExpression.flatMap { expr in
+            let expression = DynamicBindingResolver.parse(expr)
+            return DynamicBindingResolver.unwrap(
+                DynamicBindingResolver.lookupRaw(path: expression.path, in: data)
+            ) as? AnyHashable
+        }
+
+        // 1. WebView(url:, html:, backgroundColor:, onLoadFailed:, reloadToken:)
+        var result = AnyView(WebView(
+            url: url,
+            html: htmlString,
+            backgroundColor: bgColor,
+            onLoadFailed: onLoadFailed,
+            reloadToken: reloadToken
+        ))
 
         // 2. applyStandardModifiers()
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)

@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v1.8.110 # jsonui-cli release tag; bumped with the re-vendor of ScrollViewAttributes whose keyboard-avoidance docs name Modifier.keyboardAvoidance on Android
+      JSONUI_CLI_MANIFEST_REF: aae665bb391a7cbb9ce7204392ed7ebe619e22a9 # jsonui-cli commit (support/web-load-failed) that adds Web onLoadFailed / reloadToken and re-emits WebAttributes; re-pin to the jsonui-cli release tag that carries it
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
