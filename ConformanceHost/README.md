@@ -60,6 +60,28 @@ CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
   environment (a repeat run with no source changes rebuilds incrementally
   and is fast).
 
+## Optional pre-push check: Swift 6.2 type-check
+
+CI builds this host with Xcode 26.3 (Swift 6.2); local Xcodes are 26.5+
+(Swift 6.3+), which type-check some expressions that 6.2 gives up on
+("unable to type-check this expression in reasonable time"). A local build
+cannot see that failure. `scripts/typecheck_swift62.sh` can:
+
+```bash
+./scripts/typecheck_swift62.sh fetch   # once: swift.org Swift 6.2.4 toolchain, sha256 + signature checked, not installed
+DEVELOPER_DIR=/Applications/Xcode-26.5.0.app/Contents/Developer ./scripts/typecheck_swift62.sh
+```
+
+It type-checks SwiftJsonUI, `App/` (dynamic-only, or with `CodegenStaging/`
+when present) and `UITests/` (when the driver is vendored) with Swift 6.2.4,
+exits 1 on any error and lists everything slower than `THRESHOLD_MS`
+(default 300). Measured wall time: 2-3 minutes dynamic-only; with
+`CodegenStaging/` (~1,900 files) 2.5-11 minutes, depending on load. It first
+checks a control: the expression that failed CI, standalone, must fail, or
+the run stops. It is not Xcode 26.3 (open-source 6.2.4 build, the SDK of an
+installed Xcode rather than CI's 26.2) — the script's header says what it
+does and does not prove.
+
 ## How it works
 
 - **Host app** (`App/ConformanceHostApp.swift`): takes `-fixtureId <id>` or a

@@ -94,10 +94,14 @@ struct InteractionGateProbeView: View {
         return out
     }
 
+    // Lets and one interpolated literal, as in CanTapCodegenProbeView: the
+    // `+` chain here took 273-305 ms to type-check on Swift 6.2.4 (Xcode
+    // 26.3 is the CI pin). The text is unchanged; the UI test parses it.
     private var readout: String {
-        "counts[" + data.counts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",") + "] " +
-            "sw[swUiePlain=\(data.swUiePlain),swUieFalse=\(data.swUieFalse),dynSwPlain=\(data.dynSw["dynSwPlain"] ?? false)," +
-            "dynSwUieFalse=\(data.dynSw["dynSwUieFalse"] ?? false)]"
+        let counts = data.counts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        let dynSwPlain = data.dynSw["dynSwPlain"] ?? false
+        let dynSwUieFalse = data.dynSw["dynSwUieFalse"] ?? false
+        return "counts[\(counts)] sw[swUiePlain=\(data.swUiePlain),swUieFalse=\(data.swUieFalse),dynSwPlain=\(dynSwPlain),dynSwUieFalse=\(dynSwUieFalse)]"
     }
 
     var body: some View {

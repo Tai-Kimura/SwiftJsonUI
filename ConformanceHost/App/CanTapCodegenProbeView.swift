@@ -52,10 +52,17 @@ struct CanTapCodegenProbeView: View {
     @State private var cgCheckFalseIsOn = false
     @State private var cgCheckNoneIsOn = false
 
+    // One `let` per bracket and one interpolated literal each. This was a
+    // single chain of 20 `+` over 21 strings, and Swift 6.2 (Xcode 26.3, the
+    // CI pin) gave up on it: "unable to type-check this expression in
+    // reasonable time" (Swift 6.2.4, after ~14 s). Swift 6.3 (Xcode 26.5/26.6)
+    // checked the same chain in ~20 ms. The text is unchanged; the UI test
+    // parses it.
     private var readout: String {
-        "counts[" + data.counts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",") + "] " +
-            "radios[" + "selectedGcgradiobclosed=\(selectedGcgradiobclosed)" + "," + "selectedGcgradiobopen=\(selectedGcgradiobopen)" + "," + "selectedGcgradiofalse=\(selectedGcgradiofalse)" + "," + "selectedGcgradionone=\(selectedGcgradionone)" + "] " +
-            "checks[" + "cgCheckBClosedIsOn=\(cgCheckBClosedIsOn)" + "," + "cgCheckBOpenIsOn=\(cgCheckBOpenIsOn)" + "," + "cgCheckFalseIsOn=\(cgCheckFalseIsOn)" + "," + "cgCheckNoneIsOn=\(cgCheckNoneIsOn)" + "]"
+        let counts = data.counts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
+        let radios = "selectedGcgradiobclosed=\(selectedGcgradiobclosed),selectedGcgradiobopen=\(selectedGcgradiobopen),selectedGcgradiofalse=\(selectedGcgradiofalse),selectedGcgradionone=\(selectedGcgradionone)"
+        let checks = "cgCheckBClosedIsOn=\(cgCheckBClosedIsOn),cgCheckBOpenIsOn=\(cgCheckBOpenIsOn),cgCheckFalseIsOn=\(cgCheckFalseIsOn),cgCheckNoneIsOn=\(cgCheckNoneIsOn)"
+        return "counts[\(counts)] radios[\(radios)] checks[\(checks)]"
     }
 
     var body: some View {
