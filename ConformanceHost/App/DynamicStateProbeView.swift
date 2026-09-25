@@ -12,6 +12,9 @@
 //    static    literal values, no binding
 //    plain     `@{key}` over plain values in the data — nothing writes back
 //    binding   `@{key}` over SwiftUI.Binding values the model owns
+//    codegen   what `sjui build` emits for the static form's layout
+//              (StaticControlsCodegenPaste) — ticket
+//              static-valued-controls-do-not-change-on-a-users-tap
 //
 //  Buttons outside the dynamic tree: `dsp_unrelated` changes a key no control
 //  reads (a Label in the tree shows it, so the test sees the new data
@@ -33,11 +36,11 @@ struct DynamicStateProbeView: View {
 
     static let declared: [String: Any] = [
         "sw_on": false, "tg_on": false, "cb_on": false, "rv_sel": "ra", "seg_sel": 0,
-        "tab_sel": 0, "sl_val": 0.2, "sb_idx": 0, "sbi_sel": "pp",
+        "tab_sel": 0, "sl_val": 0.2, "sb_idx": 0, "sbi_sel": "pp", "grp": "",
     ]
     static let chosen: [String: Any] = [
         "sw_on": true, "tg_on": true, "cb_on": true, "rv_sel": "rb", "seg_sel": 1,
-        "tab_sel": 1, "sl_val": 0.8, "sb_idx": 1, "sbi_sel": "qq",
+        "tab_sel": 1, "sl_val": 0.8, "sb_idx": 1, "sbi_sel": "qq", "grp": "rg2",
     ]
 
     static var form: String {
@@ -55,6 +58,10 @@ struct DynamicStateProbeView: View {
             #"{"type": "Toggle", "id": "tg", "isOn": \#(v("false", "tg_on"))}"#,
             #"{"type": "CheckBox", "id": "cb", "label": "cbl", "isOn": \#(v("false", "cb_on"))}"#,
             #"{"type": "Radio", "id": "rv", "items": ["ra", "rb"], "selectedValue": \#(v(#""ra""#, "rv_sel"))}"#,
+            // A group of single Radios, one checked. Its selection is whatever
+            // the data holds under the group's name (`grp`), in every form.
+            #"{"type": "Radio", "id": "rg1", "group": "grp", "text": "rg1", "checked": true}"#,
+            #"{"type": "Radio", "id": "rg2", "group": "grp", "text": "rg2"}"#,
             #"{"type": "Segment", "id": "seg", "items": ["sx", "sy"], "selectedIndex": \#(v("0", "seg_sel"))}"#,
             #"{"type": "View", "width": "matchParent", "height": 130, "child": [{"type": "TabView", "id": "tab", "#
                 + #""tabs": [{"title": "ta"}, {"title": "tb"}], "selectedIndex": \#(v("0", "tab_sel"))}]}"#,
@@ -89,6 +96,7 @@ struct DynamicStateProbeView: View {
             out["sl_val"] = bind("sl_val", 0.0)
             out["sb_idx"] = bind("sb_idx", 0)
             out["sbi_sel"] = bind("sbi_sel", "")
+            out["grp"] = bind("grp", "")
         default:
             break
         }
@@ -109,7 +117,12 @@ struct DynamicStateProbeView: View {
                 Text("ready").accessibilityIdentifier("dsp_ready")
             }
             Text(readout).font(.system(size: 8)).accessibilityIdentifier("dsp_readout")
-            if let layout = dynamicLayout {
+            if form == "codegen" {
+                // What sjui build emits for the static layout (the static form's
+                // controls, less the Label), pasted — StaticControlsCodegenPaste.
+                Text("u\(data.unrelated)")
+                StaticControlsCodegenPaste()
+            } else if let layout = dynamicLayout {
                 DynamicComponentBuilder(component: layout, data: dynamicData)
             } else {
                 Text("layout did not decode").accessibilityIdentifier("dsp_decode_failed")

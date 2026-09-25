@@ -18,9 +18,11 @@ import UIKit
 /// a SelectBox's label). A CheckBox and a Radio say nothing about their state.
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_DYNAMIC_STATE_PROBE=1;
-/// TEST_RUNNER_DYNAMIC_STATE_FORMS=static,plain,binding picks the forms.
+/// TEST_RUNNER_DYNAMIC_STATE_FORMS=static,plain,binding,codegen picks the forms
+/// (`codegen`: what sjui build emits for the static layout, pasted — ticket
+/// static-valued-controls-do-not-change-on-a-users-tap).
 final class DynamicStateProbeUITests: XCTestCase {
-    static let controls = ["sw", "tg", "cb", "rv", "seg", "tab", "sl", "sb", "sbi"]
+    static let controls = ["sw", "tg", "cb", "rv", "rg", "seg", "tab", "sl", "sb", "sbi"]
 
     struct Crop { let width: Int; let height: Int; let bytes: [UInt8] }
     struct Reading { var crops: [String: Crop] = [:]; var a11y: [String: String] = [:] }
@@ -33,7 +35,7 @@ final class DynamicStateProbeUITests: XCTestCase {
             throw XCTSkip("dynamic state probe: run with the guard lifted, as the other probes are")
         }
         continueAfterFailure = true
-        let forms = (env["DYNAMIC_STATE_FORMS"] ?? "static,plain,binding").split(separator: ",").map(String.init)
+        let forms = (env["DYNAMIC_STATE_FORMS"] ?? "static,plain,binding,codegen").split(separator: ",").map(String.init)
         for form in forms { run(form) }
     }
 
@@ -47,7 +49,8 @@ final class DynamicStateProbeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["dsp_decode_failed"].exists, "\(form): the dynamic layout did not decode")
         XCTAssertTrue(app.staticTexts["u0"].waitForExistence(timeout: 5), "\(form): the dynamic tree shows the data")
         sleep(1)
-        let bound = form != "static"
+        let bound = form == "plain" || form == "binding"
+        let controls = Self.controls
 
         let declared = read()
         // Before the user touches anything: the model moves every bound
@@ -79,7 +82,7 @@ final class DynamicStateProbeUITests: XCTestCase {
         }
         print("DSP \(form) readout_end=\(app.staticTexts["dsp_readout"].label)")
 
-        for id in Self.controls {
+        for id in controls {
             guard let a = declared.crops[id], let b = chosen.crops[id] else {
                 XCTFail("\(form) \(id): no crop"); continue
             }
@@ -120,6 +123,10 @@ final class DynamicStateProbeUITests: XCTestCase {
         app.switches["tg"].tap()
         element("cb").tap()
         radioGlyph("rb").tap()
+        // A group of single Radios (rg1 checked): the rows are leading-aligned
+        // at the probe's 12 pt padding, the glyph their first 20-odd points.
+        let row = element("rg2").frame
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 22, dy: row.midY)).tap()
         app.buttons["sy"].tap()
         app.tabBars.buttons["tb"].tap()
         app.sliders["sl"].adjust(toNormalizedSliderPosition: 0.8)
@@ -151,6 +158,8 @@ final class DynamicStateProbeUITests: XCTestCase {
         let ra = app.staticTexts["ra"].frame, rb = app.staticTexts["rb"].frame
         var rv = ra.union(rb)
         rv = CGRect(x: window.minX, y: rv.minY, width: rv.maxX - window.minX, height: rv.height)
+        let rg1 = element("rg1"), rg2 = element("rg2")
+        let rg = rg1.exists && rg2.exists ? rg1.frame.union(rg2.frame) : CGRect.null
         return [
             "sw": app.switches["sw"].frame,
             "tg": app.switches["tg"].frame,
@@ -161,6 +170,7 @@ final class DynamicStateProbeUITests: XCTestCase {
             "sl": app.sliders["sl"].frame,
             "sb": element("sb").frame,
             "sbi": element("sbi").frame,
+            "rg": rg.isEmpty ? .zero : CGRect(x: window.minX, y: rg.minY, width: window.width, height: rg.height),
         ]
     }
 
