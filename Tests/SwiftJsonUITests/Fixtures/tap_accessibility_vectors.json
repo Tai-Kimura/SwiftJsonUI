@@ -491,6 +491,190 @@
       "shapes": {
         "t": null
       }
+    },
+    {
+      "name": "an empty onClick is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": ""
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a blank onClick is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": "   "
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a full-width space is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": "　"
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an empty binding is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": "@{}"
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a blank binding is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": "@{ }"
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an empty onclick is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onclick": ""
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a blank onclick is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onclick": "   "
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an empty onclick array is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onclick": []
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an onclick array of blanks is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onclick": [
+          "",
+          "  "
+        ]
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a blank element beside a name still taps",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onclick": [
+          "",
+          "onOpen"
+        ]
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a blank onClick leaves the tap to onclick",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": "",
+        "onclick": "onOpen"
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a child with a blank handler does not stop its row being one button",
+      "layout": {
+        "type": "View",
+        "id": "row",
+        "onClick": "@{onRow}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "t",
+            "text": "Open",
+            "onClick": "   "
+          }
+        ]
+      },
+      "shapes": {
+        "row": "combine",
+        "t": null
+      }
+    },
+    {
+      "name": "a range with a blank handler is not a link",
+      "layout": {
+        "type": "View",
+        "id": "row",
+        "onClick": "@{onRow}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "t",
+            "text": "Open terms",
+            "partialAttributes": [
+              {
+                "range": "terms",
+                "onclick": "  "
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "row": "combine",
+        "t": null
+      }
     }
   ]
 }

@@ -256,14 +256,13 @@ extension DynamicComponent {
     /// `onClick` (camelCase) is binding-only — one `@{handler}` — so it
     /// contributes at most one name and wins when both are declared, which
     /// is the precedence the single-value accessor always had.
+    ///
+    /// Only names (TapAccessibility.namesAMethod): an empty or blank onClick
+    /// leaves the tap to onclick, a blank element is not called, and none at
+    /// all is no tap — `applyOnClick` attaches nothing.
     var effectiveOnClickHandlers: [String] {
-        if let onClick = commonAny(\.onClick) { return [onClick] }
-        let declared = typedAttributes(CommonAttributes.self).onclick
-        if let single = declared as? String { return [single] }
-        if let many = declared as? [Any] {
-            return many.compactMap { $0 as? String }
-        }
-        return []
+        if let onClick = commonAny(\.onClick), TapAccessibility.namesAMethod(onClick) { return [onClick] }
+        return TapAccessibility.handlerValues(typedAttributes(CommonAttributes.self).onclick)
     }
 }
 #endif // DEBUG
