@@ -187,6 +187,15 @@ cell_companions.each do |companion|
   FileUtils.cp(src, File.join(layouts_dir, bare))
 end
 puts "[codegen-host] staged #{entries.size} fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
+
+# Probe layouts (ProbeLayouts/*.json) are not fixtures — no baseline, no parity
+# entry. They are built here so a probe's UI test measures the sjui-GENERATED
+# shape as well as the Dynamic one (TapIdentifierOnceView asks
+# probeView(named:) for its generated half). Staged under their own names,
+# which cannot collide with fx_NNNN.
+probe_layouts = Dir[File.join(host_dir, 'ProbeLayouts', '*.json')].sort
+probe_layouts.each { |src| FileUtils.cp(src, File.join(layouts_dir, File.basename(src))) }
+puts "[codegen-host] staged #{probe_layouts.size} probe layout(s)"
 # The tool names its own denominator, per PREDICATE rather than as one total.
 # `skipped N` alone says how many were dropped and nothing about why, and a
 # reader cannot tell a deliberate exclusion from a fixture that fell through —
@@ -335,6 +344,22 @@ lines << ''
 lines << '    static func view(for fixtureId: String) -> AnyView? {'
 lines << '        switch fixtureId {'
 lines.concat(cases)
+lines << '        default: return nil'
+lines << '        }'
+lines << '    }'
+lines << ''
+lines << '    /// Probe layouts (ProbeLayouts/), by file name without `.json`.'
+lines << '    static func probeView(named name: String) -> AnyView? {'
+lines << '        switch name {'
+probe_layouts.each do |src|
+  base = File.basename(src, '.json')
+  pascal = base.split('_').map(&:capitalize).join
+  unless File.file?(File.join(staging, 'View', pascal, "#{pascal}GeneratedView.swift"))
+    abort "error: probe layout #{File.basename(src)} produced no generated view (View/#{pascal}/)"
+  end
+  hosts << CodegenHostEmit.plain_host(pascal)
+  lines << "        case #{base.inspect}: return AnyView(#{pascal}Host())"
+end
 lines << '        default: return nil'
 lines << '        }'
 lines << '    }'

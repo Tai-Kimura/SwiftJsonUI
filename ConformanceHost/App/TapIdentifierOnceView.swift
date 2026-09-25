@@ -17,6 +17,11 @@
 //  the buttons inside it. `dup` is the instrument's positive control: the
 //  same id on two plain views, which must count 2.
 //
+//  In the codegen host the same eight shapes also appear as sjui GENERATED
+//  them — ProbeLayouts/probe_tap_identifier_once.json, built by
+//  scripts/generate_codegen_host.rb, ids prefixed `cg_` — with the marker
+//  `tio_codegen` beside them. The dynamic host has no generated views.
+//
 
 import SwiftUI
 import SwiftJsonUI
@@ -52,6 +57,10 @@ struct TapIdentifierOnceView: View {
                     }
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier(shape.0)
+                }
+                if let generated = CodegenFixtureRegistry.probeView(named: "probe_tap_identifier_once") {
+                    Text("codegen shapes").accessibilityIdentifier("tio_codegen")
+                    generated
                 }
                 // The positive control: two elements, one id.
                 Text("dup one").accessibilityIdentifier("tio_dup")
