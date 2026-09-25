@@ -25,7 +25,7 @@ import UIKit
 final class DynamicStateProbeUITests: XCTestCase {
     static let groups = [
         "controls": ["sw", "tg", "cb", "rv", "rg", "seg", "tab", "sl", "sb", "sbi"],
-        "inputs": ["tf", "tv", "sbv", "sbd"],
+        "inputs": ["tf", "tv", "sbv", "sbd", "sln"],
     ]
 
     struct Crop { let width: Int; let height: Int; let bytes: [UInt8] }
@@ -94,7 +94,7 @@ final class DynamicStateProbeUITests: XCTestCase {
                 XCTFail("\(group) \(form) \(id): no crop"); continue
             }
             var line = "DSP \(group) \(form) \(id)"
-            if let modelFirst, let moved = modelFirst.moved.crops[id], let back = modelFirst.back.crops[id] {
+            if !Self.neverBound.contains(id), let modelFirst, let moved = modelFirst.moved.crops[id], let back = modelFirst.back.crops[id] {
                 let away = diff(a, moved), home = diff(a, back)
                 line += " | model_first moved=\(away) a11y=\(modelFirst.moved.a11y[id] ?? "-") back=\(home) a11y=\(modelFirst.back.a11y[id] ?? "-")"
                 XCTAssertGreaterThan(away, Self.tolerance, "\(group) \(form) \(id): the control follows the model's value")
@@ -104,12 +104,16 @@ final class DynamicStateProbeUITests: XCTestCase {
             line += " | tap pixels=\(tapped) a11y \(declared.a11y[id] ?? "-")->\(chosen.a11y[id] ?? "-")"
             let changeable = tapped > Self.tolerance
             if !changeable { line += " TAP_DID_NOT_CHANGE_IT" }
+            // A static value (or a plain one) is where the control starts, and
+            // the user changes it (ticket static-valued-controls-do-not-change-
+            // on-a-users-tap).
+            XCTAssertTrue(changeable, "\(group) \(form) \(id): the user's tap / pick / key moves it")
             let survived = classify(afterUnrelated.crops[id], a, b)
             line += " | after_an_unrelated_key_changed=\(survived) a11y=\(afterUnrelated.a11y[id] ?? "-")"
             if changeable {
                 XCTAssertEqual(survived, "chosen", "\(group) \(form) \(id): the choice survives an unrelated data change")
             }
-            if let modelAfter, let moved = modelAfter.moved.crops[id], let back = modelAfter.back.crops[id] {
+            if !Self.neverBound.contains(id), let modelAfter, let moved = modelAfter.moved.crops[id], let back = modelAfter.back.crops[id] {
                 let home = diff(a, back)
                 line += " | model_after moved=\(diff(a, moved)) a11y=\(modelAfter.moved.a11y[id] ?? "-") back=\(home) a11y=\(modelAfter.back.a11y[id] ?? "-")"
                 XCTAssertLessThanOrEqual(home, Self.tolerance, "\(group) \(form) \(id): after the user's choice the control follows the model back to the declared value")
@@ -174,6 +178,8 @@ final class DynamicStateProbeUITests: XCTestCase {
             XCTFail("sbd: the date picker did not open")
         }
         sleep(1)
+        // The slider with no value: its start is read, then it is moved to 30%.
+        app.sliders["sln"].adjust(toNormalizedSliderPosition: 0.3)
         let tv = element("tv")
         tv.tap()
         tv.typeText("x")
@@ -276,6 +282,8 @@ final class DynamicStateProbeUITests: XCTestCase {
     /// unchanged control measured 0 (iOS 26.5 simulator, 2026-09-26); the
     /// smallest real change, a SelectBox's "pp" -> "qq", measured 662.
     static let tolerance = 16
+    /// Controls no form binds — the model's steps pass them by.
+    static let neverBound: Set<String> = ["sln"]
 
     /// "declared", "chosen", or neither with both distances.
     private func classify(_ x: Crop?, _ declared: Crop, _ chosen: Crop) -> String {

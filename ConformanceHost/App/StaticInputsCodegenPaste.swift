@@ -23,6 +23,7 @@ struct StaticInputsCodegenPaste: View {
     @State private var tfText: String = "t0"
     @FocusState private var tfIsFocused: Bool
     @State private var tvText: String = "v0"
+    @State private var sliderValuesln: Double = -2
 
     var body: some View {
             VStack(alignment: .leading, spacing: 8) {
@@ -59,6 +60,8 @@ struct StaticInputsCodegenPaste: View {
                     )
                         .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                         .accessibilityIdentifier("sbd")
+                    Slider(value: $sliderValuesln, in: -2...1)
+                        .accessibilityIdentifier("sln")
             }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
     }

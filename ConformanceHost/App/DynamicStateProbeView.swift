@@ -72,6 +72,9 @@ struct DynamicStateProbeView: View {
             #"{"type": "SelectBox", "id": "sbv", "height": 40, "items": ["pp", "qq"], "selectedValue": \#(v(#""pp""#, "sbv_sel"))}"#,
             #"{"type": "SelectBox", "id": "sbd", "height": 40, "selectItemType": "Date", "datePickerMode": "date", "#
                 + #""dateStringFormat": "yyyy-MM-dd", "selectedDate": \#(v(#""2026-01-02""#, "sbd_date"))}"#,
+            // No value, over -2 ... 1: where a slider starts when nothing says
+            // (the minimum, 0 or the midpoint are three different places).
+            #"{"type": "Slider", "id": "sln", "minimumValue": -2, "maximumValue": 1}"#,
         ] : [
             #"{"type": "Label", "id": "unrelated_shown", "text": "@{unrelated}"}"#,
             #"{"type": "Switch", "id": "sw", "isOn": \#(v("false", "sw_on"))}"#,
@@ -145,7 +148,9 @@ struct DynamicStateProbeView: View {
                 Text("u\(data.unrelated)")
                 if group == "inputs" { StaticInputsCodegenPaste() } else { StaticControlsCodegenPaste() }
             } else if let layout = dynamicLayout {
-                DynamicComponentBuilder(component: layout, data: dynamicData)
+                // DynamicView, as a screen renders: it holds the screen-wide
+                // state (a group of single Radios' selection).
+                DynamicView(component: layout, viewId: "dsp", data: dynamicData)
             } else {
                 Text("layout did not decode").accessibilityIdentifier("dsp_decode_failed")
             }
