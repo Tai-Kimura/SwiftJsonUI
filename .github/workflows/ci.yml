@@ -220,6 +220,11 @@ jobs:
           xcodebuild -version
           swift --version
           xcodebuild -list 2>&1 | sed -n '/Schemes:/,$p' || true
+          # Which simulator runtimes the image has, next to which devices it
+          # lists: on the 26.3 leg the iOS 26.1 / 26.2 sections list no
+          # device and showdestinations offers no concrete iOS 26 one.
+          xcrun simctl list runtimes || true
+          xcrun simctl list devices available || true
 
       - name: Run unit tests
         # Shorter than the job's 60 so the log upload below still runs when
@@ -296,23 +301,13 @@ jobs:
           # Boot first, on its own limit and with its time printed. The
           # destination is listed Shutdown on these runners, so a hang while
           # booting and a hang in the tests would otherwise look the same.
-          BOOT_START=$(date +%s)
-          xcrun simctl bootstatus "$DEST_ID" -b &
-          BOOT_PID=$!
-          while kill -0 "$BOOT_PID" 2>/dev/null; do
-            sleep 2
-            if [ $(( $(date +%s) - BOOT_START )) -ge 600 ]; then
-              echo "::error::the simulator did not finish booting in 600 s"
-              xcrun simctl list devices booted || true
-              kill "$BOOT_PID" 2>/dev/null || true
-              exit 1
-            fi
-          done
-          if ! wait "$BOOT_PID"; then
-            echo "::error::xcrun simctl bootstatus -b failed for $DEST_ID"
-            exit 1
-          fi
-          echo "simulator booted in $(( $(date +%s) - BOOT_START )) s"
+          # Run 36085845499's 26.3 leg then waited 600 s on "Waiting on
+          # BackBoard" booting a device that booted in earlier runs, so each
+          # attempt is limited and the next one tries another remedy (erase,
+          # then a new device on the newest iOS runtime); the log says which
+          # attempt booted. See scripts/ci_boot_simulator.sh.
+          DEST_ID=$(bash scripts/ci_boot_simulator.sh "$DEST_ID" "${{ matrix.sim_os }}" 240)
+          echo "Testing on: $(xcrun simctl list devices | grep -F "($DEST_ID)" | head -1)"
           # The full log is kept for the gates below. It used to reach the
           # job page only through `| tail -100`, which prints nothing until
           # xcodebuild exits: run 36080760768's Xcode 26.3 leg was cancelled
