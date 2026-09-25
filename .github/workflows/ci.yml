@@ -141,6 +141,10 @@ jobs:
                "shared/core/leaf_children_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/swiftui_modifier_order.json",
                "sjui_tools/lib/swiftui/views/modifier_order.json"),
+              # Not a fixture: the table Dynamic draws type synonyms with
+              # (TypeSynonyms), shipped in the package's resource bundle.
+              ("Sources/SwiftJsonUI/Resources/type_synonyms.json",
+               "shared/core/type_synonyms.json"),
           ]
           # Same three exit codes as the step above: 0 compared and agreed,
           # 1 compared and diverged, 2 could not compare.

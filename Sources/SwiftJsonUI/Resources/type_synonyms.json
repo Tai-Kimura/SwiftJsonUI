@@ -1,0 +1,167 @@
+{
+  "_description": [
+    "Type-spelling synonyms: a node `type` that is not a section of attribute_definitions.json, mapped to the section that declares it (`canonical`).",
+    "The one table. Validation (jui_cli alias_table.py, the Ruby attribute_validator_core.rb) and every renderer (the sjui / kjui / rjui converters, SwiftJsonUI and KotlinJsonUI Dynamic, which read a vendored copy) read this file; none holds a list of its own.",
+    "A renderer draws a synonym as its canonical type — except where the entry names `render_as`: the spelling draws differently from its canonical type (CircleImage clips to a circle), and the renderer draws `render_as` with the converter of that name, while validation still reads the canonical section. A type an app registers as its own component is the app's, whatever its spelling, and is never rewritten.",
+    "Any other key of an entry is an attribute the spelling itself means, of the canonical section: HStack and Row are a View with `orientation: horizontal`, VStack and Column one with `vertical`. A renderer adds it when the node does not set it. When the node sets it otherwise (an HStack with `orientation: vertical`), the node's value is drawn and the renderer warns, naming both. ZStack and Box add nothing: a View without orientation is already the stack they mean.",
+    "Not here: EditText / Input / Check / Toggle. They are sections of attribute_definitions.json that point at their canonical section with `_alias_of`; the exact-match lookup finds them first. Spacer / Divider / Triangle are neither declared nor synonyms, and draw as undeclared types."
+  ],
+  "synonyms": {
+    "Text": {
+      "canonical": "Label"
+    },
+    "MultiLineEditText": {
+      "canonical": "TextView"
+    },
+    "Textarea": {
+      "canonical": "TextView"
+    },
+    "ImageView": {
+      "canonical": "Image"
+    },
+    "Img": {
+      "canonical": "Image"
+    },
+    "NetworkImageView": {
+      "canonical": "NetworkImage"
+    },
+    "CircleImage": {
+      "canonical": "Image",
+      "render_as": "CircleImage"
+    },
+    "CircleImageView": {
+      "canonical": "Image",
+      "render_as": "CircleImage"
+    },
+    "AsyncImage": {
+      "canonical": "NetworkImage"
+    },
+    "Spinner": {
+      "canonical": "SelectBox"
+    },
+    "DatePicker": {
+      "canonical": "SelectBox"
+    },
+    "Select": {
+      "canonical": "SelectBox"
+    },
+    "Picker": {
+      "canonical": "SelectBox"
+    },
+    "Checkbox": {
+      "canonical": "CheckBox"
+    },
+    "RadioButton": {
+      "canonical": "Radio"
+    },
+    "RadioGroup": {
+      "canonical": "Radio"
+    },
+    "SegmentedControl": {
+      "canonical": "Segment"
+    },
+    "TabLayout": {
+      "canonical": "Segment"
+    },
+    "TabGroup": {
+      "canonical": "Segment"
+    },
+    "SeekBar": {
+      "canonical": "Slider"
+    },
+    "Range": {
+      "canonical": "Slider"
+    },
+    "ProgressBar": {
+      "canonical": "Progress"
+    },
+    "ActivityIndicator": {
+      "canonical": "Indicator"
+    },
+    "Loading": {
+      "canonical": "Indicator"
+    },
+    "LinearLayout": {
+      "canonical": "View"
+    },
+    "RelativeLayout": {
+      "canonical": "View"
+    },
+    "FrameLayout": {
+      "canonical": "View"
+    },
+    "HStack": {
+      "canonical": "View",
+      "orientation": "horizontal"
+    },
+    "VStack": {
+      "canonical": "View",
+      "orientation": "vertical"
+    },
+    "ZStack": {
+      "canonical": "View"
+    },
+    "Div": {
+      "canonical": "View"
+    },
+    "Box": {
+      "canonical": "View"
+    },
+    "Container": {
+      "canonical": "View"
+    },
+    "Column": {
+      "canonical": "View",
+      "orientation": "vertical"
+    },
+    "Row": {
+      "canonical": "View",
+      "orientation": "horizontal"
+    },
+    "ConstraintLayout": {
+      "canonical": "View"
+    },
+    "Scroll": {
+      "canonical": "ScrollView"
+    },
+    "CollectionView": {
+      "canonical": "Collection"
+    },
+    "RecyclerView": {
+      "canonical": "Collection"
+    },
+    "Table": {
+      "canonical": "Collection"
+    },
+    "TableView": {
+      "canonical": "Collection"
+    },
+    "List": {
+      "canonical": "Collection"
+    },
+    "Grid": {
+      "canonical": "Collection"
+    },
+    "LazyGrid": {
+      "canonical": "Collection"
+    },
+    "ListView": {
+      "canonical": "Collection"
+    },
+    "LazyColumn": {
+      "canonical": "Collection"
+    },
+    "Gradient": {
+      "canonical": "GradientView"
+    },
+    "BlurView": {
+      "canonical": "Blur"
+    },
+    "WebView": {
+      "canonical": "Web"
+    },
+    "Iframe": {
+      "canonical": "Web"
+    }
+  }
+}

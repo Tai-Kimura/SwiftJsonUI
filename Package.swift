@@ -19,7 +19,13 @@ let package = Package(
         // Targets can depend on other targets in this package and products from dependencies.
         .target(
             name: "SwiftJsonUI",
-            path: "Sources"),
+            path: "Sources",
+            resources: [
+                // jsonui-cli's shared/core/type_synonyms.json, vendored byte
+                // for byte (CI compares it with the pinned jsonui-cli ref).
+                // Dynamic draws a type-synonym spelling as this table says.
+                .copy("SwiftJsonUI/Resources/type_synonyms.json")
+            ]),
         .testTarget(
             name: "SwiftJsonUITests",
             dependencies: ["SwiftJsonUI"],
