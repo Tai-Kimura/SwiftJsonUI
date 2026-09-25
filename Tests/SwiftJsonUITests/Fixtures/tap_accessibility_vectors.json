@@ -1,0 +1,496 @@
+{
+  "_description": "The tap shapes shared/core/tap_accessibility.rb assigns — the table the sjui and kjui codegen and the SwiftJsonUI / KotlinJsonUI Dynamic runtimes all run (the libraries from byte-identical copies). `shapes` maps an id to button / combine / none, or null for a node that is not a tappable. `interactive_types` and `known_types` are component_metadata.json's `interactive` declaration with its aliases, pinned to it by sjui_tools/spec/core/tap_accessibility_spec.rb.",
+  "interactive_types": [
+    "Button",
+    "Check",
+    "CheckBox",
+    "Checkbox",
+    "Collection",
+    "EditText",
+    "Embed",
+    "Input",
+    "Radio",
+    "RecyclerView",
+    "ScrollView",
+    "Segment",
+    "SelectBox",
+    "Slider",
+    "Switch",
+    "TabView",
+    "Table",
+    "TableView",
+    "TextField",
+    "TextView",
+    "Toggle",
+    "Web"
+  ],
+  "known_types": [
+    "Blur",
+    "Button",
+    "Check",
+    "CheckBox",
+    "Checkbox",
+    "CircleImage",
+    "CircleImageView",
+    "CircleView",
+    "Collection",
+    "EditText",
+    "Embed",
+    "GradientView",
+    "IconLabel",
+    "Image",
+    "ImageView",
+    "Img",
+    "Indicator",
+    "Input",
+    "Label",
+    "NetworkImage",
+    "Progress",
+    "Radio",
+    "RecyclerView",
+    "SafeAreaView",
+    "ScrollView",
+    "Segment",
+    "SelectBox",
+    "Slider",
+    "Switch",
+    "TabView",
+    "Table",
+    "TableView",
+    "Text",
+    "TextField",
+    "TextView",
+    "Toggle",
+    "View",
+    "Web"
+  ],
+  "cases": [
+    {
+      "name": "a tappable Label is a button",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a tappable Image is a button",
+      "layout": {
+        "type": "Image",
+        "id": "t",
+        "src": "icon",
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a tappable View with no children is a button",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "the onclick spelling is a tap too (a View)",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onclick": "open",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a Label with the onclick spelling is a button",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "onclick": "open"
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a View holding a Label is one button",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a View holding a Label and an Image is one button",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "i",
+            "src": "icon"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "an image alias is not a control",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "CircleImage",
+            "id": "i",
+            "src": "icon"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a View holding a Switch is left as it was",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Switch",
+            "id": "s"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a control two levels down counts",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "View",
+            "id": "v",
+            "child": [
+              {
+                "type": "TextField",
+                "id": "f"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a child with its own tap counts, and is a button itself",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Label",
+            "id": "c",
+            "text": "More",
+            "onClick": "@{onMore}"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none",
+        "c": "button"
+      }
+    },
+    {
+      "name": "a checkbox alias is a control",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Check",
+            "id": "k"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a collection alias is a control",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Table",
+            "id": "k"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a type the declaration does not know counts as a control",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "PromoCard",
+            "id": "p"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a Button is a control already",
+      "layout": {
+        "type": "Button",
+        "id": "t",
+        "text": "Go",
+        "onClick": "@{onGo}"
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a statically disabled tap is no tap",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "enabled": false,
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an empty handler is no tap",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "x",
+        "onClick": ""
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a Label that links inside counts",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "see https://example.com",
+            "linkable": true
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a bound linkable counts too",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x",
+            "linkable": "@{isLinkable}"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a Label with a tappable range counts",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "Terms and Privacy",
+            "partialAttributes": [
+              {
+                "range": [
+                  0,
+                  5
+                ],
+                "onclick": "openTerms"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a long press inside counts",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "i",
+            "src": "icon",
+            "onLongPress": "@{onHold}"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a long press alone is no tap",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onLongPress": "@{onHold}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a tap gated shut by canTap: false is no tap",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "canTap": false,
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "an Image gated shut by canTap: false is no tap",
+      "layout": {
+        "type": "Image",
+        "id": "t",
+        "src": "icon",
+        "canTap": false,
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": null
+      }
+    }
+  ]
+}

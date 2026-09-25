@@ -10,14 +10,10 @@
 //    2. .resizable()
 //    3. .aspectRatio(contentMode:)
 //    4. .clipShape(Circle()) for CircleImage
-//    5. .onTapGesture (canTap + onClick)
-//    6. apply_frame_size
-//    7. apply_padding
-//    8. .background
-//    9. .cornerRadius
-//   10. apply_margins
-//   11. .opacity / .hidden
-//   12. accessibilityIdentifier
+//    5. what VoiceOver reads (ImageAccessibilityModifier)
+//    6. the standard chain (applyStandardModifiers) — padding, frame, background,
+//       …, events, accessibilityIdentifier, in the order every other Dynamic
+//       component runs
 //
 
 import SwiftUI
@@ -126,63 +122,31 @@ public struct ImageViewConverter {
             )
         }
 
-        // --- 4. .clipShape(Circle()) for CircleImage ---
-        if component.type?.lowercased() == "circleimage" {
+        // --- 4. .clipShape(Circle()) for CircleImage (and its CircleImageView spelling) ---
+        if ["circleimage", "circleimageview"].contains(component.type?.lowercased() ?? "") {
             result = AnyView(result.clipShape(Circle()))
         }
 
-        // --- 5. .onTapGesture (canTap + onClick) ---
-        // `canTap` is boolean|binding — the hand-decoded slot is nil for a
-        // binding, so `canTap: "@{isTappable}"` made the image untappable.
-        let canTap = DynamicHelpers.resolveBool(
-            component.typedAttributes(CommonAttributes.self).canTap,
-            legacy: nil,
-            data: data
-        ) ?? false
-        if canTap, let onClick = component.commonAny(\.onClick) {
-            let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
-            if let closure = data[propName] as? () -> Void {
-                result = AnyView(result.onTapGesture { closure() })
-            }
-        }
+        // --- 5. What VoiceOver reads ---
+        // The alt, nothing (decorative), or — for an image that operates a
+        // control with no alt — the asset name as before. Innermost, right
+        // after the image itself: codegen emits it there (before `.padding`),
+        // so the standard chain's traits and identifier land on top of it.
+        result = AnyView(result.modifier(ImageAccessibilityModifier(component: component, data: data)))
 
-        // --- 6. apply_frame_size ---
-        result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
-
-        // --- 7. apply_padding ---
-        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
-
-        // --- 8. background ---
-        result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
-
-        // --- 9. cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
-
-        // --- borderWidth + borderColor ---
-        // 🔻 THIS STEP WAS MISSING, AND THE OMISSION SHIPPED. A hand-rolled
-        // chain here mirrors the generator's modifier order, and the generator
-        // registers `:border` immediately after `:corner_radius`
-        // (label_converter.rb: "ボーダー（cornerRadius の直後、margins の前に適用）").
-        // The copy stopped at cornerRadius, so a declared border simply did not
-        // draw in dynamic mode while codegen drew it — measured 2026-09-16 on a
-        // consumer's chip: `type: Label, borderWidth: 1, borderColor: gold`
-        // rendered with a gold outline from the generated view and with none at
-        // all from the dynamic renderer, on the same screen.
-        //
-        // ⚠️ The standard pipeline HAS a border stage. Only the converters that
-        // opt out of it and re-implement the order by hand could lose this, and
-        // all four of them had (Label, Image, NetworkImage, Text).
-        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
-
-        // --- 10. margins ---
-        result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
-
-        // --- 11. opacity / hidden ---
-        result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
-        result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
-
-        // --- 12. accessibilityIdentifier ---
-        result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+        // --- 6. The standard chain ---
+        // Every stage codegen emits for an image, through the same chain every
+        // other Dynamic component runs: image_converter.rb reaches them through
+        // apply_modifiers (modifier_bag.rb), not a list of its own. This chain
+        // used to be hand-picked (frameSize, padding, background, cornerRadius,
+        // border, margins, opacity, hidden), and each stage it left out was
+        // simply not drawn: the border until it was restored on its own, the
+        // events until the fix before this one, and shadow, offset, zIndex,
+        // min / max frame, tint and safeAreaInsetPositions until now (measured
+        // by `dump` against a View through this chain). Padding now sits
+        // INSIDE the frame, as codegen puts it (`.padding` before `.frame`);
+        // the hand-picked chain framed first and padded outside.
+        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
 
         return result
     }

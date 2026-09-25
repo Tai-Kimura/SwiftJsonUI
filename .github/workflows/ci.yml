@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v1.8.119 # jsonui-cli release tag (commit dc816d4a); the attr tables and every fixture copy in this job are compared at it
+      JSONUI_CLI_MANIFEST_REF: 3024c1c511036034253f0dd516134f86191c57f5 # jsonui-cli commit (support/image-alt-a11y) that makes alt every image's screen-reader text; re-pin to the release tag that carries it
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
@@ -133,6 +133,12 @@ jobs:
                "shared/core/include_ids_fixture.json"),
               ("Tests/SwiftJsonUITests/Fixtures/camel_case_vectors.json",
                "shared/core/camel_case_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/image_accessibility_vectors.json",
+               "shared/core/image_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",
+               "shared/core/tap_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/swiftui_modifier_order.json",
+               "sjui_tools/lib/swiftui/views/modifier_order.json"),
           ]
           # Same three exit codes as the step above: 0 compared and agreed,
           # 1 compared and diverged, 2 could not compare.

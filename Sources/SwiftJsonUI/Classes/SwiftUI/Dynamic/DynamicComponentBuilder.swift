@@ -42,11 +42,16 @@ public struct DynamicComponentBuilder: View {
         let needsVisibilityWrapper = component.visibilitySpelling() != nil || component.commonBool(\.hidden) == true
             || bindingHiddenExpression != nil
 
-        if needsVisibilityWrapper {
-            buildWithVisibility()
-        } else {
-            buildComponentWithModifiers()
+        Group {
+            if needsVisibilityWrapper {
+                buildWithVisibility()
+            } else {
+                buildComponentWithModifiers()
+            }
         }
+        // A component with a tap handler is the nearest tappable for every
+        // image rendered inside it (ImageAccessibility.role).
+        .modifier(ImageTappableMark(node: ImageAccessibility.isTappable(component.rawData) ? component.rawData : nil))
     }
 
     /// The `hidden` value when it is a binding expression (a literal bool is
@@ -278,8 +283,11 @@ public struct DynamicComponentBuilder: View {
             case "textview":
                 TextViewConverter.convert(component: component, data: data)
 
-            // Image components
-            case "image":
+            // Image components. CircleImage, CircleImageView, ImageView and
+            // Img are Image's type aliases (component_metadata.json); they
+            // used to fall to `default:` and draw the red "Unknown component
+            // type" box. ImageViewConverter clips `circleimage`.
+            case "image", "circleimage", "circleimageview", "imageview", "img":
                 ImageViewConverter.convert(component: component, data: data)
 
             case "networkimage":
@@ -295,12 +303,13 @@ public struct DynamicComponentBuilder: View {
             case "scrollview", "scroll":
                 DynamicScrollViewContainer(component: component, data: data, viewId: viewId)
 
-            // Spacer and Divider
-            case "spacer", "space":
-                SpacerConverter.convert(component: component, data: data)
-
-            case "divider", "separator":
-                DividerConverter.convert(component: component, data: data)
+            // No case for Spacer / Space / Divider / Separator. None of them is
+            // a component type (attribute_definitions.json, component_metadata
+            // .json), and codegen sends all four to DefaultConverter — the
+            // "Unsupported component" Text any undeclared type gets. This
+            // runtime used to draw them as a SwiftUI Spacer and Divider, so
+            // DEBUG showed a screen the release build does not. They fall to
+            // `default:` below with every other undeclared type.
 
             // Selection components
             case "toggle", "switch":

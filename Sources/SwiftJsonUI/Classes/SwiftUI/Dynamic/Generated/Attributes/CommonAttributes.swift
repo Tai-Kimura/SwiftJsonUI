@@ -298,7 +298,7 @@ public struct CommonAttributes {
     /// Bottom padding (alias for paddingBottom, binding supported)
     public let bottomPadding: AttrValue<Double>?
 
-    /// Whether component is tappable (binding supported)
+    /// SwiftUI / Compose: a gate on the tap — false (or a binding that resolves false) turns onClick / onclick off; absent, there is no gate and the handler alone makes the tap. UIKit: whether the view shows its pressed state (tapBackgroundColor, an image's highlight filter); the tap itself comes from onclick either way.
     public let canTap: AttrValue<Bool>?
 
     /// Center horizontally in parent (binding supported)
