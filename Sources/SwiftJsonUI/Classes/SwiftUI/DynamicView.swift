@@ -105,7 +105,7 @@ public struct DynamicView: View {
     /// Both are read; the root-level array wins on duplicate names.
     /// (KotlinJsonUI's applyDataSectionDefaults had the same child-only scan
     /// bug — see docs/bugs 2026-07-02 root-level data section defaults.)
-    private static func mergeDataDefaults(component: DynamicComponent, externalData: [String: Any]) -> [String: Any] {
+    static func mergeDataDefaults(component: DynamicComponent, externalData: [String: Any]) -> [String: Any] {
         var dataEntries: [AnyCodable] = []
 
         // Legacy shape: data section child (no type, has data array)
@@ -139,8 +139,27 @@ public struct DynamicView: View {
                 continue
             }
 
-            if let defaultValue = dict["defaultValue"] {
-                merged[name] = defaultValue
+            if let declared = dict["defaultValue"] {
+                // The value for this platform (DataDefaultValue — the code
+                // generators' reading, measured against the shared vectors).
+                let className = DataDefaultValue.className(dict["class"])
+                guard let value = DataDefaultValue.select(declared) else {
+                    // Written per platform with no `swift` entry: the class's
+                    // vocabulary value, as the generated Data model has it.
+                    let given = (declared as? [String: Any]).map { $0.keys.sorted().joined(separator: ", ") } ?? ""
+                    Logger.log("[SwiftJsonUI] WARNING: data '\(name)' defaultValue is given for \(given) but not swift")
+                    if let vocabulary = DataDefaultValue.vocabulary(className) {
+                        merged[name] = vocabulary
+                        defaultCount += 1
+                    }
+                    continue
+                }
+                // A String's spelling ('' / "…" / '…' / bare) read as its text.
+                if className == "String", let spelling = value as? String {
+                    merged[name] = DataDefaultValue.text(spelling)
+                } else {
+                    merged[name] = value
+                }
                 defaultCount += 1
             }
         }
