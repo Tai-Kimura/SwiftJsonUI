@@ -1072,7 +1072,10 @@ public struct DynamicModifierHelper {
         if component.visibilitySpelling() == "invisible" {
             return view
         }
-        if isAccessibilityContainer(component) {
+        // A tappable combined into one button (TapAccessibility) is an element
+        // already: the identifier goes on it, and a container would split it
+        // back into its children.
+        if isAccessibilityContainer(component), TapAccessibility.shape(of: component) != .combine {
             // Plain SwiftUI containers are not accessibility elements, so a bare
             // .accessibilityIdentifier is pushed down onto the nearest descendant
             // element — it never surfaces for the container itself and can

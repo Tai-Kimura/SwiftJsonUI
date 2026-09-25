@@ -135,6 +135,8 @@ jobs:
                "shared/core/camel_case_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/image_accessibility_vectors.json",
                "shared/core/image_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",
+               "shared/core/tap_accessibility_vectors.json"),
           ]
           # Same three exit codes as the step above: 0 compared and agreed,
           # 1 compared and diverged, 2 could not compare.

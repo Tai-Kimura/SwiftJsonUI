@@ -142,7 +142,7 @@ public struct ImageViewConverter {
         if canTap, let onClick = component.commonAny(\.onClick) {
             let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
             if let closure = data[propName] as? () -> Void {
-                result = AnyView(result.onTapGesture { closure() })
+                result = TapAccessibility.apply(AnyView(result.onTapGesture { closure() }), component: component)
             }
         }
 

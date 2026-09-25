@@ -100,7 +100,7 @@ public struct DynamicEventHelper {
         // Note: canTap is a UIKit concept. In SwiftUI Dynamic mode,
         // if onClick is explicitly set in JSON, always apply the tap gesture.
 
-        return AnyView(
+        let tapped = AnyView(
             view
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -111,6 +111,9 @@ public struct DynamicEventHelper {
                     }
                 }
         )
+        // What VoiceOver is told about the tap (TapAccessibility): a button,
+        // one button made of its content, or nothing where it holds a control.
+        return TapAccessibility.apply(tapped, component: component)
     }
 
     // MARK: - onLongPress support
