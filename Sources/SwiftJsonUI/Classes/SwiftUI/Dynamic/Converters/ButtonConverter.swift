@@ -58,7 +58,12 @@ public struct ButtonConverter {
 
         // Action - onClick uses binding format @{functionName}; legacy
         // "onclick" selector format resolves to the same data-dict closure.
+        // `canTap` gates the handler's call, as it gates every other type's
+        // tap (DynamicEventHelper.tapGateOpen) — not `.disabled`: a button
+        // that cannot be tapped is not disabled to VoiceOver.
+        let tapOpen = DynamicEventHelper.tapGateOpen(component, data: data)
         let action: () -> Void = {
+            guard tapOpen else { return }
             for handler in component.effectiveOnClickHandlers {
                 DynamicEventHelper.call(handler, data: data)
             }

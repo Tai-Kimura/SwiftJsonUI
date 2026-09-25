@@ -131,8 +131,13 @@ public struct CheckboxConverter {
         // `onValueChange` (plan 51-E, 57a527a), so the generated extraction
         // resolves all three spellings and only `onClick` — which stays a
         // `common` attribute of its own — needs a second read.
+        //
+        // `canTap` gates the onClick handler's call — not the check itself,
+        // which is the checkbox's own operation (`enabled`'s), nor an
+        // onValueChange handler.
         let handlerExpr: String? = attrs.onValueChange?.bindingString
-            ?? attrs.common.onClick?.bindingString
+            ?? (DynamicEventHelper.tapGateOpen(component, data: data)
+                ? attrs.common.onClick?.bindingString : nil)
 
         let onValueChanged: ((Bool) -> Void)? = {
             guard let expr = handlerExpr else { return nil }

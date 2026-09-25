@@ -211,8 +211,10 @@ public struct RadioConverter {
             .contentShape(Rectangle())
             .onTapGesture {
                 groupSelectionBinding.wrappedValue = id
-                // onClick handler
-                if let onClick = component.commonAny(\.onClick) {
+                // onClick handler. canTap gates the call, not the selection
+                // above it: that is the radio's own operation, `enabled`'s.
+                if let onClick = component.commonAny(\.onClick),
+                   DynamicEventHelper.tapGateOpen(component, data: data) {
                     DynamicEventHelper.call(onClick, data: data)
                 }
             }
