@@ -44,7 +44,8 @@ public enum ImageAccessibility {
     /// The canonical spelling first, then the declared aliases.
     public static let altKeys = ["alt", "accessibilityLabel", "contentDescription"]
 
-    /// What a screen-reader user activates: a tap and a long press.
+    /// The keys a screen-reader action is written on: a tap and a long press.
+    /// Whether one operates is the tap rule's to say (`isTappable`).
     public static let tapKeys = ["onClick", "onclick", "onLongPress"]
 
     /// Text that names a control it sits in (on an image, hint / placeholder name an image).
@@ -54,8 +55,12 @@ public enum ImageAccessibility {
         (node["type"] as? String).map { imageTypes.contains($0.lowercased()) } ?? false
     }
 
+    /// Whether a node operates something a screen-reader user can activate —
+    /// a tap or a long press — as the tap rule judges it (TapAccessibility).
+    /// It read the handler key before, so an image with an empty onClick,
+    /// `enabled: false` or `canTap: false` was a control.
     static func isTappable(_ node: [String: Any]) -> Bool {
-        tapKeys.contains { node[$0] != nil }
+        TapAccessibility.isTappable(node: node) || TapAccessibility.hasLongPress(node: node)
     }
 
     /// The image's alt as written, or nil when it declares none (JSON null counts as none).
