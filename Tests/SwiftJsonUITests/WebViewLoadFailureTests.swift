@@ -9,9 +9,8 @@
 //  decision `decidePolicyFor(navigationResponse:)` makes, with a real
 //  HTTPURLResponse; the cancellation arms call the two failure callbacks with
 //  real NSErrors. One arm drives a real
-//  WKWebView with the library's Coordinator as its delegate, with no server
-//  anywhere: a DNS failure on a name that can never resolve (RFC 2606
-//  `.invalid`). See "NO NETWORK BELOW" for why.
+//  WKWebView with the library's Coordinator as its delegate, with no network
+//  at all: a custom-scheme load that fails. See "NO NETWORK BELOW" for why.
 //
 
 import XCTest
@@ -119,8 +118,9 @@ final class WebViewLoadFailureTests: XCTestCase {
     // - the cancellation of a replaced load goes straight into the two
     //   failure callbacks (whether WebKit reports it at all varies; see that
     //   arm).
-    // The DNS arm stays on WebKit's own resolver: `.invalid` fails without a
-    // server, and it passed on both CI legs.
+    // The one WebKit arm fails its load in a scheme handler rather than at a
+    // resolver: `.invalid` passed on both CI legs once and timed out on the
+    // 26.3 leg the next time (run 36078332508).
 
     /// Runs the library's status decision on one response with a real HTTP
     /// status. It is the body of `decidePolicyFor(navigationResponse:)`,
@@ -162,14 +162,27 @@ final class WebViewLoadFailureTests: XCTestCase {
         XCTAssertEqual(calls, 0)
     }
 
+    /// A custom-scheme request that fails the way a lookup does
+    /// (NSURLErrorCannotFindHost), with no resolver and no server involved.
+    private final class FailingSchemeHandler: NSObject, WKURLSchemeHandler {
+        func webView(_ webView: WKWebView, start task: WKURLSchemeTask) {
+            task.didFailWithError(NSError(domain: NSURLErrorDomain, code: NSURLErrorCannotFindHost))
+        }
+        func webView(_ webView: WKWebView, stop task: WKURLSchemeTask) {}
+    }
+
     /// A real WKWebView whose delegate is the library's Coordinator; counts
     /// onLoadFailed.
     private final class Harness {
         var failures = 0
         let coordinator: WebView.Coordinator
-        let webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 200, height: 200))
+        let webView: WKWebView
+        private let failing = FailingSchemeHandler()
 
         init() {
+            let configuration = WKWebViewConfiguration()
+            configuration.setURLSchemeHandler(failing, forURLScheme: "sjuifail")
+            webView = WKWebView(frame: CGRect(x: 0, y: 0, width: 200, height: 200), configuration: configuration)
             var box: Harness?
             coordinator = WebView.Coordinator(WebView(url: nil, onLoadFailed: { box?.failures += 1 }))
             box = self
@@ -188,9 +201,17 @@ final class WebViewLoadFailureTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(extra))
     }
 
-    func testAnUnresolvableMainFrameHostReportsOnce() {
+    /// The one arm through WebKit itself: a main-frame load that fails before
+    /// any response reaches didFailProvisionalNavigation and reports once.
+    /// It used to load `https://conformance.invalid/` — measured, 20 of 20
+    /// reported within ~2 s here (Xcode 26.5 / iOS 26.4, Xcode 26.6 / iOS
+    /// 18.6), and on CI it passed on both legs once and then waited 30 s for
+    /// nothing on the Xcode 26.3 leg (run 36078332508): how fast a runner's
+    /// resolver fails `.invalid` is not ours. A failing scheme handler reports
+    /// in 0.2–0.5 s on both runtimes here, with no resolver in the path.
+    func testAMainFrameLoadThatFailsReportsOnce() {
         let harness = Harness()
-        harness.webView.load(URLRequest(url: URL(string: "https://conformance.invalid/")!))
+        harness.webView.load(URLRequest(url: URL(string: "sjuifail://h/page")!))
         let reported = expectation(for: NSPredicate { _, _ in harness.failures > 0 }, evaluatedWith: nil)
         wait(for: [reported], timeout: 30)
         waitUntilSettled(harness.webView)
