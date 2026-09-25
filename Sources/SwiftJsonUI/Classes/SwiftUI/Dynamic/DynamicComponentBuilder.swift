@@ -303,12 +303,13 @@ public struct DynamicComponentBuilder: View {
             case "scrollview", "scroll":
                 DynamicScrollViewContainer(component: component, data: data, viewId: viewId)
 
-            // Spacer and Divider
-            case "spacer", "space":
-                SpacerConverter.convert(component: component, data: data)
-
-            case "divider", "separator":
-                DividerConverter.convert(component: component, data: data)
+            // No case for Spacer / Space / Divider / Separator. None of them is
+            // a component type (attribute_definitions.json, component_metadata
+            // .json), and codegen sends all four to DefaultConverter — the
+            // "Unsupported component" Text any undeclared type gets. This
+            // runtime used to draw them as a SwiftUI Spacer and Divider, so
+            // DEBUG showed a screen the release build does not. They fall to
+            // `default:` below with every other undeclared type.
 
             // Selection components
             case "toggle", "switch":
