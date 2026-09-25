@@ -122,8 +122,9 @@ public struct ImageViewConverter {
             )
         }
 
-        // --- 4. .clipShape(Circle()) for CircleImage (and its CircleImageView spelling) ---
-        if ["circleimage", "circleimageview"].contains(component.type?.lowercased() ?? "") {
+        // --- 4. .clipShape(Circle()) for CircleImage (CircleImageView arrives
+        // as CircleImage: TypeSynonyms `render_as`) ---
+        if component.type?.lowercased() == "circleimage" {
             result = AnyView(result.clipShape(Circle()))
         }
 

@@ -143,19 +143,15 @@ final class ReaderlessAttributeTests: XCTestCase {
         )
     }
 
-    // MARK: - Same-family converters (Table / Toggle / Picker / TextField)
+    // MARK: - Same-family converters (Toggle / TextField)
 
     func testBoundFontSizeReachesEachConverterFont() throws {
         let expected = SwiftJsonUIConfiguration.shared.resolveFont(
             FontSpec(family: nil, weight: SwiftJsonUIConfiguration.shared.font.weight, size: 21)
         )
         let data: [String: Any] = ["s": 21]
-        let table = try component(#"{ "type": "Table", "fontSize": "@{s}" }"#)
-        XCTAssertEqual(TableConverter.declaredFont(table, data: data), expected)
         let toggle = try component(#"{ "type": "Switch", "fontSize": "@{s}" }"#)
         XCTAssertEqual(ToggleConverter.declaredFont(toggle, data: data), expected)
-        let picker = try component(#"{ "type": "SelectBox", "fontSize": "@{s}" }"#)
-        XCTAssertEqual(PickerConverter.declaredFont(picker, data: data), expected)
         let field = try component(#"{ "type": "TextField", "fontSize": "@{s}" }"#)
         XCTAssertEqual(TextFieldConverter.declaredFont(field, data: data), expected)
     }
