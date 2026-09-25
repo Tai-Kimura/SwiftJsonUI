@@ -1094,7 +1094,14 @@ open class SJUIViewCreator:NSObject {
         styleCache = [String:JSON]()
     }
     
-    // Helper method to convert binding_id to camelCase (same logic as Ruby)
+    // Helper method to convert binding_id to camelCase.
+    // NOT the codegen's rule, although this comment used to say "same logic
+    // as Ruby": Foundation's `capitalized` title-cases each segment
+    // ("verify_2FA_form" -> "verify2FaForm") where Ruby's `capitalize` lowers
+    // the rest ("verify2faForm"), and `split` drops empty segments. UIKit mode
+    // is outside ruling U8 (include-child-ids-are-spelled-differently-on-each-
+    // platform), so the behaviour is kept as it is; the SwiftUI Dynamic
+    // IncludeExpander is the one held to the codegen.
     private class func convertBindingIdToCamelCase(_ bindingId: String) -> String {
         let components = bindingId.split(separator: "_")
         return components.enumerated().map { index, component in

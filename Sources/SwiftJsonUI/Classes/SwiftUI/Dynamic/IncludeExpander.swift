@@ -18,31 +18,56 @@ public class IncludeExpander {
 
     // MARK: - String Helpers
 
+    // 🔻 THE CODEGEN'S SPELLING IS THE SPELLING. An element inside an include
+    // that carries an id is addressed by one id on every face (ruling U8,
+    // include-child-ids-are-spelled-differently-on-each-platform), and the one
+    // chosen is what the Ruby codegen writes — sjui_tools / kjui_tools
+    // include_expander.rb `to_camel_case` / `combine_with_prefix`. These two
+    // functions are that Ruby, answer for answer:
+    // - segments split like Ruby's `split('_')`: leading and inner empty
+    //   segments kept, trailing ones dropped (`_leading` → `Leading`,
+    //   `a__b` → `aB`, `trailing_` → `trailing`);
+    // - every segment after the first goes through `capitalize`, which
+    //   LOWERCASES the rest (`verify_2FA_form` → `verify2faForm`,
+    //   `clear_URL_button` → `clearUrlButton`); the first stays as written
+    //   (`URL_field` → `URLField`);
+    // - after a prefix only a leading `[a-z]` is raised (`sub(/^[a-z]/)`).
+    // This used to keep each segment's case, and `split` dropped a leading
+    // empty segment, so the dynamic ids and the codegen's differed on exactly
+    // those shapes. Measured against both Ruby expanders (ruby 2.6.10).
+
+    /// Ruby's `String#split('_')`.
+    static func rubySplit(_ str: String) -> [String] {
+        var parts = str.components(separatedBy: "_")
+        while let last = parts.last, last.isEmpty { parts.removeLast() }
+        return parts
+    }
+
+    /// Ruby's `String#capitalize` (identifiers are ASCII): the first
+    /// character raised, the rest lowered.
+    static func rubyCapitalize(_ part: String) -> String {
+        part.prefix(1).uppercased() + part.dropFirst().lowercased()
+    }
+
     /// Convert snake_case to camelCase
     /// e.g., "header1_title_label" -> "header1TitleLabel"
     func toCamelCase(_ str: String) -> String {
         guard str.contains("_") else { return str }
-
-        let parts = str.split(separator: "_")
-        guard let first = parts.first else { return str }
-
-        let rest = parts.dropFirst().map { part in
-            part.prefix(1).uppercased() + part.dropFirst()
-        }
-
-        return String(first) + rest.joined()
+        let parts = Self.rubySplit(str)
+        guard let first = parts.first else { return "" }
+        return first + parts.dropFirst().map(Self.rubyCapitalize).joined()
     }
 
     /// Combine prefix and name in camelCase
     /// e.g., prefix="header1", name="title" -> "header1Title"
     /// e.g., prefix="header1", name="title_label" -> "header1TitleLabel"
     func combineWithPrefix(_ prefix: String?, _ name: String) -> String {
-        guard let prefix = prefix, !prefix.isEmpty else { return name }
-
+        guard let prefix = prefix else { return name }
         let camelName = toCamelCase(name)
-        // Capitalize first letter of camelName
-        let capitalizedName = camelName.prefix(1).uppercased() + camelName.dropFirst()
-        return prefix + capitalizedName
+        guard let head = camelName.unicodeScalars.first, ("a"..."z").contains(head) else {
+            return prefix + camelName
+        }
+        return prefix + camelName.prefix(1).uppercased() + camelName.dropFirst()
     }
 
     // MARK: - Main Processing
@@ -70,7 +95,10 @@ public class IncludeExpander {
             if let existingPrefix = idPrefix, let includeId = includeId {
                 newPrefix = combineWithPrefix(existingPrefix, includeId)
             } else if let includeId = includeId {
-                newPrefix = includeId
+                // camel(includeId), as the codegen does (`to_camel_case`).
+                // It was the raw id, so `hero_card` + `title` gave
+                // `hero_cardTitle` here and `heroCardTitle` in the codegen.
+                newPrefix = toCamelCase(includeId)
             } else {
                 newPrefix = idPrefix
             }
@@ -155,7 +183,8 @@ public class IncludeExpander {
 
     /// Apply ID prefix to all elements, data definitions, and @{} bindings
     func applyIdPrefix(_ jsonData: [String: Any], prefix: String?) -> [String: Any] {
-        guard let prefix = prefix, !prefix.isEmpty else { return jsonData }
+        // nil only, as the codegen's `apply_id_prefix` (`&& prefix`).
+        guard let prefix = prefix else { return jsonData }
 
         var json = jsonData
 
