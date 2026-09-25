@@ -64,8 +64,15 @@ final class BindingVectorTests: XCTestCase {
                 XCTFail("[\(id)] unknown runtime context '\(context)'")
             }
         }
-        // 89 total cases, 9 of them validation-kind at semantics v1
-        XCTAssertEqual(runCount, 80, "unexpected number of runtime vector cases")
+        // Every runtime case in the file reached a runner. The expected count
+        // is read from the file with its own spelling of the rule, not typed
+        // here: a hand-written 80 went stale when jsonui-cli added a case,
+        // and whether this copy is jsonui-cli's current table is the CI
+        // guard's question (vendored-attr-guard compares its sha256 at the
+        // pinned ref), not this test's.
+        let runtimeCases = vectors.cases.filter { ($0["kind"] as? String) != "validation" }.count
+        XCTAssertGreaterThan(runtimeCases, 0, "binding_vectors.json has no runtime cases")
+        XCTAssertEqual(runCount, runtimeCases, "a runtime vector case did not reach a runner")
     }
 
     // MARK: - Case runners

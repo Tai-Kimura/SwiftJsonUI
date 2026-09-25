@@ -111,6 +111,56 @@ jobs:
       - name: Attribute read discipline (raw reads + hand-written binding slots)
         run: bash scripts/check_converter_raw_reads.sh
 
+      # Test fixtures copied from jsonui-cli, byte for byte. Each copy must
+      # hash the same as its source at JSONUI_CLI_MANIFEST_REF; re-copy and
+      # move the pin in the same commit. Nothing compared them before this
+      # step, and binding_vectors.json sat one case behind jsonui-cli from
+      # 2026-09-10 until it existed. It runs even when a step above failed:
+      # these files do not depend on the attr tables, and a second
+      # divergence should not wait for the first to be fixed.
+      - name: Vendored jsonui-cli test fixtures match the pinned ref
+        if: ${{ !cancelled() }}
+        run: |
+          python3 - <<'EOF'
+          import hashlib, os, sys, urllib.request
+
+          ref = os.environ["JSONUI_CLI_MANIFEST_REF"]
+          # (copy in this repo, source in jsonui-cli)
+          COPIES = [
+              ("Tests/SwiftJsonUITests/Fixtures/binding_vectors.json",
+               "shared/core/binding_vectors.json"),
+          ]
+          # Same three exit codes as the step above: 0 compared and agreed,
+          # 1 compared and diverged, 2 could not compare.
+          problems = []
+          for copy, source in COPIES:
+              url = f"https://raw.githubusercontent.com/Tai-Kimura/jsonui-cli/{ref}/{source}"
+              try:
+                  upstream = urllib.request.urlopen(url).read()
+              except Exception as error:
+                  print(f"cannot compare {copy}: {url} did not load ({error})")
+                  sys.exit(2)
+              if not os.path.isfile(copy):
+                  problems.append(f"missing copy: {copy}")
+                  continue
+              mine = hashlib.sha256(open(copy, "rb").read()).hexdigest()
+              theirs = hashlib.sha256(upstream).hexdigest()
+              if mine != theirs:
+                  problems.append(
+                      f"{copy} is not jsonui-cli {source} @ {ref[:12]} "
+                      f"(sha256 {mine[:12]} here, {theirs[:12]} there) "
+                      "— re-copy it and move the pin together"
+                  )
+              else:
+                  print(f"  {copy} == {source} ({theirs[:12]})")
+          if problems:
+              print(f"vendored test fixtures diverge from jsonui-cli @ {ref}:")
+              for p in problems:
+                  print(f"  - {p}")
+              sys.exit(1)
+          print(f"vendored test fixtures match jsonui-cli @ {ref[:12]} ({len(COPIES)} files)")
+          EOF
+
   # ------------------------------------------------------------------ #
   # TWO LEGS, AND NEITHER ONE ALONE IS THE GATE.
   #
