@@ -67,7 +67,10 @@ public class IncludeExpander {
         guard let head = camelName.unicodeScalars.first, ("a"..."z").contains(head) else {
             return prefix + camelName
         }
-        return prefix + camelName.prefix(1).uppercased() + camelName.dropFirst()
+        // Every operand a String: Xcode 16.4's type checker resolves a bare
+        // `dropFirst()` at the end of this three-operand chain to the
+        // Sequence overload (DropFirstSequence) and fails to compile.
+        return prefix + camelName.prefix(1).uppercased() + String(camelName.dropFirst())
     }
 
     // MARK: - Main Processing
