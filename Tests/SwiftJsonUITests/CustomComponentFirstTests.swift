@@ -16,11 +16,13 @@ import SwiftUI
 /// release build drew the app's.
 final class CustomComponentFirstTests: XCTestCase {
     private static var built: [String: Int] = [:]
+    private static var given: [String: DynamicComponent] = [:]
 
     private struct Probe: CustomComponentAdapter {
         let componentType: String
         func buildView(component: DynamicComponent, data: [String: Any], viewId: String?, parentOrientation: String?) -> AnyView {
             CustomComponentFirstTests.built[componentType, default: 0] += 1
+            CustomComponentFirstTests.given[componentType] = component
             return AnyView(Text("app \(componentType)"))
         }
     }
@@ -50,6 +52,19 @@ final class CustomComponentFirstTests: XCTestCase {
         for t in types {
             XCTAssertEqual(try draw("{\"type\": \"\(t)\", \"text\": \"t\"}"), [t], "\(t) reaches the app's adapter")
         }
+    }
+
+    func testTheAppIsGivenTheNodeAsWrittenBeforeAnySynonymIsResolved() throws {
+        // HStack is a synonym (drawn as a View with orientation horizontal).
+        // Registered by the app, it is the app's: given the type and
+        // attributes as written, not the ones the synonym table would draw.
+        CustomComponentRegistry.shared.register(Probe(componentType: "HStack"))
+        defer { CustomComponentRegistry.shared.reset() }
+        Self.given = [:]
+        XCTAssertEqual(try draw(#"{"type": "View", "child": [{"type": "HStack", "child": []}]}"#), ["HStack"])
+        let node = try XCTUnwrap(Self.given["HStack"])
+        XCTAssertEqual(node.type, "HStack")
+        XCTAssertNil(node.rawData["orientation"])
     }
 }
 #endif

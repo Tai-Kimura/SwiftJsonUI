@@ -299,10 +299,44 @@ public struct DynamicComponentBuilder: View {
             // while the release build drew the app's (measured: the adapter
             // was not called).
             appComponent(adapter, component)
-        } else if let type = component.type {
+        } else if component.type != nil {
+            // A type-synonym spelling (HStack, ProgressBar, WebView, …) is drawn
+            // as its type, from the vendored table (TypeSynonyms) — after the
+            // app's registry was asked, above, with the node as written.
+            declaredComponent(drawn(component))
+        } else {
+            EmptyView()
+        }
+    }
+
+    /// `component` as drawn: a type-synonym spelling rewritten by
+    /// TypeSynonyms (its type, and the attributes the spelling means), decoded
+    /// again from its raw data. Anything else is `component` itself.
+    private func drawn(_ component: DynamicComponent) -> DynamicComponent {
+        guard let raw = TypeSynonyms.canonicalize(component.rawData) else { return component }
+        do {
+            let json = try JSONSerialization.data(withJSONObject: raw, options: [])
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: component.isNormalized)
+            let drawn = try decoder.decode(DynamicComponent.self, from: json)
+            let _ = JsonUIAttributeAudit.audit(component: drawn)
+            return drawn
+        } catch {
+            Logger.debug("[TypeSynonyms] '\(component.type ?? "")' could not be decoded as "
+                + "'\(raw["type"] ?? "")': \(error)")
+            return component
+        }
+    }
+
+    /// The declared types. They held synonym spellings of their own, which
+    /// drifted from the table and from KotlinJsonUI's cases; a spelling that
+    /// is neither declared nor a synonym (Spacer, Triangle, …) is unknown.
+    @ViewBuilder
+    private func declaredComponent(_ component: DynamicComponent) -> some View {
+        if let type = component.type {
             switch type.lowercased() {
             // Text components
-            case "text", "label":
+            case "label":
                 LabelConverter.convert(component: component, data: data, parentOrientation: parentOrientation)
 
             case "button":
@@ -316,11 +350,10 @@ public struct DynamicComponentBuilder: View {
             case "textview":
                 TextViewConverter.convert(component: component, data: data)
 
-            // Image components. CircleImage, CircleImageView, ImageView and
-            // Img are Image's type aliases (component_metadata.json); they
-            // used to fall to `default:` and draw the red "Unknown component
-            // type" box. ImageViewConverter clips `circleimage`.
-            case "image", "circleimage", "circleimageview", "imageview", "img":
+            // Image components. CircleImage / CircleImageView are Image
+            // synonyms drawn as CircleImage (`render_as`), which
+            // ImageViewConverter clips to a circle.
+            case "image", "circleimage":
                 ImageViewConverter.convert(component: component, data: data)
 
             case "networkimage":
@@ -333,7 +366,7 @@ public struct DynamicComponentBuilder: View {
             case "safeareaview":
                 DynamicSafeAreaViewContainer(component: component, data: data, viewId: viewId)
 
-            case "scrollview", "scroll":
+            case "scrollview":
                 DynamicScrollViewContainer(component: component, data: data, viewId: viewId)
 
             // No case for Spacer / Space / Divider / Separator. None of them is
@@ -354,11 +387,8 @@ public struct DynamicComponentBuilder: View {
             case "radio":
                 RadioConverter.convert(component: component, data: data)
 
-            case "segment", "segmentedcontrol":
+            case "segment":
                 SegmentConverter.convert(component: component, data: data)
-
-            case "picker":
-                PickerConverter.convert(component: component, data: data)
 
             case "selectbox":
                 SelectBoxConverter.convert(component: component, data: data)
@@ -366,10 +396,10 @@ public struct DynamicComponentBuilder: View {
             case "slider":
                 SliderConverter.convert(component: component, data: data)
 
-            case "progress", "progressbar":
+            case "progress":
                 ProgressConverter.convert(component: component, data: data)
 
-            case "indicator", "activityindicator":
+            case "indicator":
                 IndicatorConverter.convert(component: component, data: data)
 
             // Complex components
@@ -379,23 +409,20 @@ public struct DynamicComponentBuilder: View {
             case "collection":
                 CollectionConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "table", "list":
-                TableConverter.convert(component: component, data: data, viewId: viewId)
-
             case "tabview":
                 TabViewConverter.convert(component: component, data: data, viewId: viewId)
 
             case "embed":
                 EmbedConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "web", "webview":
+            case "web":
                 WebConverter.convert(component: component, data: data)
 
             // Special effects
-            case "gradientview", "gradient":
+            case "gradientview":
                 GradientViewConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "blur", "blurview":
+            case "blur":
                 BlurConverter.convert(component: component, data: data, viewId: viewId)
 
             // Synthetic node for a child whose decode threw (see
@@ -428,8 +455,6 @@ public struct DynamicComponentBuilder: View {
                     .background(Color.red)
                     .cornerRadius(6)
             }
-        } else {
-            EmptyView()
         }
     }
 }
