@@ -7,15 +7,10 @@
 //
 //  Modifier order (matches network_image_converter.rb):
 //    1. NetworkImage(...) creation
-//    2. apply_frame_size (width/height)
-//    3. apply_padding (paddings/paddingTop etc.)
-//    4. .background
-//    5. .cornerRadius
-//    6. apply_margins
-//    7. .opacity / .hidden
-//    8. disabled / hitTesting / events (onClick with canTap, onLongPress,
-//       onPan, onPinch, onAppear / onDisappear)
-//    9. accessibilityIdentifier
+//    2. what VoiceOver reads (ImageAccessibilityModifier)
+//    3. the standard chain (applyStandardModifiers) — padding, frame, background,
+//       …, events, accessibilityIdentifier, in the order every other Dynamic
+//       component runs
 //
 
 import SwiftUI
@@ -92,64 +87,26 @@ public struct NetworkImageConverter {
             )
         )
 
-        // --- 2. apply_frame_size (width/height) ---
-        result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
-
-        // --- 3. apply_padding (paddings/paddingTop etc.) ---
-        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
-
-        // --- 4. .background ---
-        result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
-
-        // --- 5. .cornerRadius ---
-        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
-
-        // --- borderWidth + borderColor ---
-        // 🔻 THIS STEP WAS MISSING, AND THE OMISSION SHIPPED. A hand-rolled
-        // chain here mirrors the generator's modifier order, and the generator
-        // registers `:border` immediately after `:corner_radius`
-        // (label_converter.rb: "ボーダー（cornerRadius の直後、margins の前に適用）").
-        // The copy stopped at cornerRadius, so a declared border simply did not
-        // draw in dynamic mode while codegen drew it — measured 2026-09-16 on a
-        // consumer's chip: `type: Label, borderWidth: 1, borderColor: gold`
-        // rendered with a gold outline from the generated view and with none at
-        // all from the dynamic renderer, on the same screen.
-        //
-        // ⚠️ The standard pipeline HAS a border stage. Only the converters that
-        // opt out of it and re-implement the order by hand could lose this, and
-        // all four of them had (Label, Image, NetworkImage, Text).
-        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
-
-        // --- 6. apply_margins ---
-        result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
-
-        // --- 7. .opacity / .hidden ---
-        result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
-        result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
-
-        // --- 8. disabled / hitTesting / events ---
-        // 🔻 THIS STEP WAS MISSING: a NetworkImage with onClick had no tap in
-        // Dynamic while codegen tapped it (network_image_converter.rb reaches
-        // the events through apply_modifiers). This chain is hand-picked, so
-        // it never reached the standard chain's events stage — onLongPress,
-        // onPan, onPinch, onAppear and onDisappear were dropped with it.
-        // Measured 2026-09-25 (XCUITest, a data: URL image): elementType
-        // image, and a tap called nothing.
-        //
-        // The same stages as Image, in the standard chain's order: onClick /
-        // onclick behind the canTap gate with the button trait
-        // (TapAccessibility), shut by `enabled: false` and
-        // `userInteractionEnabled: false`.
-        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
-        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
-        result = DynamicEventHelper.applyEvents(result, component: component, data: data)
-
-        // --- 9. accessibilityIdentifier ---
-        // What VoiceOver reads: the alt, nothing (decorative), or — for an
-        // image that operates a control with no alt — the asset name as before.
+        // --- 2. What VoiceOver reads ---
+        // The alt, nothing (decorative), or — for an image that operates a
+        // control with no alt — the asset name as before. Innermost, right
+        // after the image itself: codegen emits it there (before `.padding`),
+        // so the standard chain's traits and identifier land on top of it.
         result = AnyView(result.modifier(ImageAccessibilityModifier(component: component, data: data)))
 
-        result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+        // --- 3. The standard chain ---
+        // Every stage codegen emits for an image, through the same chain every
+        // other Dynamic component runs: network_image_converter.rb reaches them through
+        // apply_modifiers (modifier_bag.rb), not a list of its own. This chain
+        // used to be hand-picked (frameSize, padding, background, cornerRadius,
+        // border, margins, opacity, hidden), and each stage it left out was
+        // simply not drawn: the border until it was restored on its own, the
+        // events until the fix before this one, and shadow, offset, zIndex,
+        // min / max frame, tint and safeAreaInsetPositions until now (measured
+        // by `dump` against a View through this chain). Padding now sits
+        // INSIDE the frame, as codegen puts it (`.padding` before `.frame`);
+        // the hand-picked chain framed first and padded outside.
+        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
 
         return result
     }

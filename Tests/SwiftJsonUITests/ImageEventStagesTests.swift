@@ -2,13 +2,14 @@
 //  ImageEventStagesTests.swift
 //  SwiftJsonUITests
 //
-//  Image and NetworkImage hand-pick their modifier chain instead of running
-//  applyStandardModifiers, so the standard chain's events stage reaches them
-//  only where the converter calls it. NetworkImage never did: onClick,
-//  onLongPress, onPan, onPinch, onAppear and onDisappear were all dropped in
-//  Dynamic while codegen emitted every one (measured 2026-09-25, XCUITest:
-//  a NetworkImage with onClick was an image that a tap did not reach).
-//  Image carried an onClick tap of its own and dropped the rest.
+//  The events stage on Image and NetworkImage. Their chains were hand-picked,
+//  and NetworkImage's never called the events stage: onClick, onLongPress,
+//  onPan, onPinch, onAppear and onDisappear were all dropped in Dynamic while
+//  codegen emitted every one (measured 2026-09-25, XCUITest: a NetworkImage
+//  with onClick was an image that a tap did not reach). Image carried an
+//  onClick tap of its own and dropped the rest. Both now run the standard
+//  chain (ImageStandardChainTests holds every stage to it); these arms say
+//  what the events stage does there.
 //
 //  Two arms, each red when the events stage leaves either converter:
 //    - onAppear, rendered: the converted view goes into a window and its
