@@ -13,8 +13,11 @@
 //    plain     `@{key}` over plain values in the data — nothing writes back
 //    binding   `@{key}` over SwiftUI.Binding values the model owns
 //    codegen   what `sjui build` emits for the static form's layout
-//              (StaticControlsCodegenPaste) — ticket
+//              (StaticControlsCodegenPaste, StaticInputsCodegenPaste) — ticket
 //              static-valued-controls-do-not-change-on-a-users-tap
+//
+//  `-dspGroup inputs` lays out the TextField, the TextView and the SelectBox
+//  by selectedValue and by date instead of the choice controls.
 //
 //  Buttons outside the dynamic tree: `dsp_unrelated` changes a key no control
 //  reads (a Label in the tree shows it, so the test sees the new data
@@ -37,10 +40,12 @@ struct DynamicStateProbeView: View {
     static let declared: [String: Any] = [
         "sw_on": false, "tg_on": false, "cb_on": false, "rv_sel": "ra", "seg_sel": 0,
         "tab_sel": 0, "sl_val": 0.2, "sb_idx": 0, "sbi_sel": "pp", "grp": "",
+        "tf_text": "t0", "tv_text": "v0", "sbv_sel": "pp", "sbd_date": "2026-01-02",
     ]
     static let chosen: [String: Any] = [
         "sw_on": true, "tg_on": true, "cb_on": true, "rv_sel": "rb", "seg_sel": 1,
         "tab_sel": 1, "sl_val": 0.8, "sb_idx": 1, "sbi_sel": "qq", "grp": "rg2",
+        "tf_text": "t0x", "tv_text": "v0x", "sbv_sel": "qq", "sbd_date": "2026-01-03",
     ]
 
     static var form: String {
@@ -49,10 +54,25 @@ struct DynamicStateProbeView: View {
         return arguments[at + 1]
     }
 
-    private static func layout(_ form: String) -> DynamicComponent? {
+    /// `-dspGroup inputs`: the text inputs and the other two SelectBox
+    /// spellings (a second screen — one does not hold them all).
+    static var group: String {
+        let arguments = ProcessInfo.processInfo.arguments
+        guard let at = arguments.firstIndex(of: "-dspGroup"), at + 1 < arguments.count else { return "controls" }
+        return arguments[at + 1]
+    }
+
+    private static func layout(_ form: String, _ group: String) -> DynamicComponent? {
         let bound = form != "static"
         func v(_ literal: String, _ key: String) -> String { bound ? #""@{\#(key)}""# : literal }
-        let items = [
+        let items = group == "inputs" ? [
+            #"{"type": "Label", "id": "unrelated_shown", "text": "@{unrelated}"}"#,
+            #"{"type": "TextField", "id": "tf", "height": 40, "text": \#(v(#""t0""#, "tf_text"))}"#,
+            #"{"type": "TextView", "id": "tv", "height": 60, "text": \#(v(#""v0""#, "tv_text"))}"#,
+            #"{"type": "SelectBox", "id": "sbv", "height": 40, "items": ["pp", "qq"], "selectedValue": \#(v(#""pp""#, "sbv_sel"))}"#,
+            #"{"type": "SelectBox", "id": "sbd", "height": 40, "selectItemType": "Date", "datePickerMode": "date", "#
+                + #""dateStringFormat": "yyyy-MM-dd", "selectedDate": \#(v(#""2026-01-02""#, "sbd_date"))}"#,
+        ] : [
             #"{"type": "Label", "id": "unrelated_shown", "text": "@{unrelated}"}"#,
             #"{"type": "Switch", "id": "sw", "isOn": \#(v("false", "sw_on"))}"#,
             #"{"type": "Toggle", "id": "tg", "isOn": \#(v("false", "tg_on"))}"#,
@@ -75,7 +95,8 @@ struct DynamicStateProbeView: View {
     }
 
     private let form = Self.form
-    private let dynamicLayout = Self.layout(Self.form)
+    private let group = Self.group
+    private let dynamicLayout = Self.layout(Self.form, Self.group)
 
     private var dynamicData: [String: Any] {
         let data = self.data
@@ -97,6 +118,7 @@ struct DynamicStateProbeView: View {
             out["sb_idx"] = bind("sb_idx", 0)
             out["sbi_sel"] = bind("sbi_sel", "")
             out["grp"] = bind("grp", "")
+            for key in ["tf_text", "tv_text", "sbv_sel", "sbd_date"] { out[key] = bind(key, "") }
         default:
             break
         }
@@ -121,7 +143,7 @@ struct DynamicStateProbeView: View {
                 // What sjui build emits for the static layout (the static form's
                 // controls, less the Label), pasted — StaticControlsCodegenPaste.
                 Text("u\(data.unrelated)")
-                StaticControlsCodegenPaste()
+                if group == "inputs" { StaticInputsCodegenPaste() } else { StaticControlsCodegenPaste() }
             } else if let layout = dynamicLayout {
                 DynamicComponentBuilder(component: layout, data: dynamicData)
             } else {

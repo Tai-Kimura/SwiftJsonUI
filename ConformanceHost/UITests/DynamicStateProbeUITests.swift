@@ -18,16 +18,21 @@ import UIKit
 /// a SelectBox's label). A CheckBox and a Radio say nothing about their state.
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_DYNAMIC_STATE_PROBE=1;
-/// TEST_RUNNER_DYNAMIC_STATE_FORMS=static,plain,binding,codegen picks the forms
+/// TEST_RUNNER_DYNAMIC_STATE_FORMS=static,plain,binding,codegen picks the forms and
+/// TEST_RUNNER_DYNAMIC_STATE_GROUPS=controls,inputs the screens
 /// (`codegen`: what sjui build emits for the static layout, pasted — ticket
 /// static-valued-controls-do-not-change-on-a-users-tap).
 final class DynamicStateProbeUITests: XCTestCase {
-    static let controls = ["sw", "tg", "cb", "rv", "rg", "seg", "tab", "sl", "sb", "sbi"]
+    static let groups = [
+        "controls": ["sw", "tg", "cb", "rv", "rg", "seg", "tab", "sl", "sb", "sbi"],
+        "inputs": ["tf", "tv", "sbv", "sbd"],
+    ]
 
     struct Crop { let width: Int; let height: Int; let bytes: [UInt8] }
     struct Reading { var crops: [String: Crop] = [:]; var a11y: [String: String] = [:] }
 
     private var app: XCUIApplication!
+    private var group = "controls"
 
     func testAChoiceSurvivesAnUnrelatedDataChangeAndTheModelIsFollowed() throws {
         let env = ProcessInfo.processInfo.environment
@@ -36,21 +41,23 @@ final class DynamicStateProbeUITests: XCTestCase {
         }
         continueAfterFailure = true
         let forms = (env["DYNAMIC_STATE_FORMS"] ?? "static,plain,binding,codegen").split(separator: ",").map(String.init)
-        for form in forms { run(form) }
+        let groups = (env["DYNAMIC_STATE_GROUPS"] ?? "controls,inputs").split(separator: ",").map(String.init)
+        for group in groups { for form in forms { run(form, group) } }
     }
 
     // MARK: - One form
 
-    private func run(_ form: String) {
+    private func run(_ form: String, _ group: String) {
         app = XCUIApplication()
-        app.launchArguments = ["-dynamicStateProbe", form]
+        app.launchArguments = ["-dynamicStateProbe", form, "-dspGroup", group]
         app.launch()
         XCTAssertTrue(app.staticTexts["dsp_ready"].waitForExistence(timeout: 15), "\(form): probe did not start")
         XCTAssertFalse(app.staticTexts["dsp_decode_failed"].exists, "\(form): the dynamic layout did not decode")
         XCTAssertTrue(app.staticTexts["u0"].waitForExistence(timeout: 5), "\(form): the dynamic tree shows the data")
         sleep(1)
         let bound = form == "plain" || form == "binding"
-        let controls = Self.controls
+        let controls = Self.groups[group] ?? []
+        self.group = group
 
         let declared = read()
         // Before the user touches anything: the model moves every bound
@@ -64,7 +71,7 @@ final class DynamicStateProbeUITests: XCTestCase {
         }
         choose()
         let chosen = read()
-        print("DSP \(form) readout_chosen=\(app.staticTexts["dsp_readout"].label)")
+        print("DSP \(group) \(form) readout_chosen=\(app.staticTexts["dsp_readout"].label)")
 
         app.buttons["dsp_unrelated"].tap()
         XCTAssertTrue(app.staticTexts["u1"].waitForExistence(timeout: 5), "\(form): the unrelated change reached the dynamic tree")
@@ -80,18 +87,18 @@ final class DynamicStateProbeUITests: XCTestCase {
             app.buttons["dsp_vm_declared"].tap(); sleep(1)
             modelAfter = (moved, read())
         }
-        print("DSP \(form) readout_end=\(app.staticTexts["dsp_readout"].label)")
+        print("DSP \(group) \(form) readout_end=\(app.staticTexts["dsp_readout"].label)")
 
         for id in controls {
             guard let a = declared.crops[id], let b = chosen.crops[id] else {
-                XCTFail("\(form) \(id): no crop"); continue
+                XCTFail("\(group) \(form) \(id): no crop"); continue
             }
-            var line = "DSP \(form) \(id)"
+            var line = "DSP \(group) \(form) \(id)"
             if let modelFirst, let moved = modelFirst.moved.crops[id], let back = modelFirst.back.crops[id] {
                 let away = diff(a, moved), home = diff(a, back)
                 line += " | model_first moved=\(away) a11y=\(modelFirst.moved.a11y[id] ?? "-") back=\(home) a11y=\(modelFirst.back.a11y[id] ?? "-")"
-                XCTAssertGreaterThan(away, Self.tolerance, "\(form) \(id): the control follows the model's value")
-                XCTAssertLessThanOrEqual(home, Self.tolerance, "\(form) \(id): the control follows the model back to the declared value")
+                XCTAssertGreaterThan(away, Self.tolerance, "\(group) \(form) \(id): the control follows the model's value")
+                XCTAssertLessThanOrEqual(home, Self.tolerance, "\(group) \(form) \(id): the control follows the model back to the declared value")
             }
             let tapped = diff(a, b)
             line += " | tap pixels=\(tapped) a11y \(declared.a11y[id] ?? "-")->\(chosen.a11y[id] ?? "-")"
@@ -100,12 +107,12 @@ final class DynamicStateProbeUITests: XCTestCase {
             let survived = classify(afterUnrelated.crops[id], a, b)
             line += " | after_an_unrelated_key_changed=\(survived) a11y=\(afterUnrelated.a11y[id] ?? "-")"
             if changeable {
-                XCTAssertEqual(survived, "chosen", "\(form) \(id): the choice survives an unrelated data change")
+                XCTAssertEqual(survived, "chosen", "\(group) \(form) \(id): the choice survives an unrelated data change")
             }
             if let modelAfter, let moved = modelAfter.moved.crops[id], let back = modelAfter.back.crops[id] {
                 let home = diff(a, back)
                 line += " | model_after moved=\(diff(a, moved)) a11y=\(modelAfter.moved.a11y[id] ?? "-") back=\(home) a11y=\(modelAfter.back.a11y[id] ?? "-")"
-                XCTAssertLessThanOrEqual(home, Self.tolerance, "\(form) \(id): after the user's choice the control follows the model back to the declared value")
+                XCTAssertLessThanOrEqual(home, Self.tolerance, "\(group) \(form) \(id): after the user's choice the control follows the model back to the declared value")
             }
             print(line)
         }
@@ -119,6 +126,7 @@ final class DynamicStateProbeUITests: XCTestCase {
     }
 
     private func choose() {
+        if group == "inputs" { chooseInputs(); return }
         app.switches["sw"].tap()
         app.switches["tg"].tap()
         element("cb").tap()
@@ -144,6 +152,37 @@ final class DynamicStateProbeUITests: XCTestCase {
         sleep(1)
     }
 
+    /// The SelectBoxes first (a sheet each), then the TextView, then the
+    /// TextField, whose return key ends the editing and puts the keyboard away.
+    private func chooseInputs() {
+        element("sbv").tap()
+        let wheel = app.pickerWheels.firstMatch
+        if wheel.waitForExistence(timeout: 5) {
+            wheel.adjust(toPickerWheelValue: "qq")
+            app.buttons["Done"].tap()
+        } else {
+            XCTFail("sbv: the picker did not open")
+        }
+        sleep(1)
+        element("sbd").tap()
+        let day = app.pickerWheels.element(boundBy: 1)
+        if day.waitForExistence(timeout: 5) {
+            print("DSP \(group) sbd wheels=\(app.pickerWheels.allElementsBoundByIndex.map { $0.value as? String ?? "?" })")
+            day.adjust(toPickerWheelValue: "3")
+            app.buttons["Done"].tap()
+        } else {
+            XCTFail("sbd: the date picker did not open")
+        }
+        sleep(1)
+        let tv = element("tv")
+        tv.tap()
+        tv.typeText("x")
+        let tf = element("tf")
+        tf.tap()
+        tf.typeText("x\n")
+        sleep(1)
+    }
+
     /// A Radio row's tap is on its glyph, not its text.
     private func radioGlyph(_ item: String) -> XCUICoordinate {
         let text = app.staticTexts[item].frame
@@ -154,6 +193,9 @@ final class DynamicStateProbeUITests: XCTestCase {
     // MARK: - Reading
 
     private func frames() -> [String: CGRect] {
+        if group == "inputs" {
+            return Dictionary(uniqueKeysWithValues: (Self.groups["inputs"] ?? []).map { ($0, element($0).frame) })
+        }
         let window = app.windows.firstMatch.frame
         let ra = app.staticTexts["ra"].frame, rb = app.staticTexts["rb"].frame
         var rv = ra.union(rb)
@@ -178,6 +220,13 @@ final class DynamicStateProbeUITests: XCTestCase {
         var reading = Reading()
         let shot = XCUIScreen.main.screenshot().image
         for (id, frame) in frames() { reading.crops[id] = crop(shot, frame) }
+        if group == "inputs" {
+            for id in Self.groups["inputs"] ?? [] {
+                let e = element(id)
+                reading.a11y[id] = "\(e.value ?? "nil")|\(e.label)"
+            }
+            return reading
+        }
         reading.a11y["sw"] = "\(app.switches["sw"].value ?? "nil")"
         reading.a11y["tg"] = "\(app.switches["tg"].value ?? "nil")"
         let cb = element("cb")
