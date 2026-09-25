@@ -113,6 +113,44 @@
       "text": "a\\nb"
     }
   ],
+  "optionalStringsDescription": "A String? default is read as a String's (spellings above); with no defaultValue it stays no value — nil / null / undefined in the code generators, absent from the data map in dynamic mode (text null here).",
+  "optionalStrings": [
+    {
+      "name": "String? bare",
+      "spelling": "Hello",
+      "text": "Hello"
+    },
+    {
+      "name": "String? with every special character",
+      "spelling": "Say \"hi\" \\ $x \\(z) ${y} `b` it's",
+      "text": "Say \"hi\" \\ $x \\(z) ${y} `b` it's"
+    },
+    {
+      "name": "String? with parentheses",
+      "spelling": "Hello (world)",
+      "text": "Hello (world)"
+    },
+    {
+      "name": "String? ''",
+      "spelling": "''",
+      "text": ""
+    },
+    {
+      "name": "String? \"…\" with JSON's escapes",
+      "spelling": "\"a\\nb \\u00e9\"",
+      "text": "a\nb é"
+    },
+    {
+      "name": "String? '…'",
+      "spelling": "'it''s'",
+      "text": "it''s"
+    },
+    {
+      "name": "String? with no defaultValue",
+      "spelling": null,
+      "text": null
+    }
+  ],
   "platformsDescription": "A defaultValue written per platform ({\"swift\": …, \"kotlin\": …, \"typescript\": …}). A platform it names gets its value (a String value read as in spellings; swift reads the swiftui mode, kotlin the compose mode). A platform it does not name gets the class's vocabulary value — \"\" / 0 / 0.0 / false / [] — or no value (null here) for an optional, and the code generators warn naming the layout, the property and the platform. A dictionary whose keys are not all platform names is a value, the same on every platform. warnFor lists the platforms a code generator warns for.",
   "platforms": [
     {

@@ -155,8 +155,9 @@ public struct DynamicView: View {
                     }
                     continue
                 }
-                // A String's spelling ('' / "…" / '…' / bare) read as its text.
-                if className == "String", let spelling = value as? String {
+                // A String's or String?'s spelling ('' / "…" / '…' / bare) read
+                // as its text.
+                if DataDefaultValue.isText(className), let spelling = value as? String {
                     merged[name] = DataDefaultValue.text(spelling)
                 } else {
                     merged[name] = value

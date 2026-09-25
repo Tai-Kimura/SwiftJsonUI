@@ -49,6 +49,13 @@ enum DataDefaultValue {
         return select(declared) as? String
     }
 
+    /// Whether a class's default is text read by its spelling: a String
+    /// and a String? alike (the code generators read both since 1.8.121).
+    static func isText(_ className: String?) -> Bool {
+        guard let type = className?.trimmingCharacters(in: .whitespaces) else { return false }
+        return type == "String" || type == "String?"
+    }
+
     /// A class's value when the layout gives this platform none: the
     /// vocabulary `jui g project` writes a spec's types with — "" / 0 / 0.0 /
     /// false / [] — and nil (no value) for an optional or any other class.
