@@ -1,0 +1,346 @@
+{
+  "version": 1,
+  "title": "JsonUI include ids — one layout set, the same ids on every platform",
+  "notes": "Design U8. Each specimen is a screen (`include_ids.json`) and the partials it includes, keyed by their path from the layouts root (the root every include path resolves from). `expected` is the ids the expanded screen carries — a SORTED LIST, duplicates kept: a duplicate is what `jui build`'s layout-id gate stops, so its count is part of the answer. The spelling is codegen's (shared/core/camel_case_vectors.json): an include's id prefixes the ids inside it, camelCase-joined (`hero` + `type_badge` -> `heroTypeBadge`); a nested include combines its id with the prefix above it; an include without an id adds none; the include node's own id is not an element. Read by jsonui-cli (test_tools/tests/test_include_ids_are_one_set_on_every_platform.py: the Python expander, sjui SwiftUI, kjui Compose, rjui with the prefix on) and by the SwiftJsonUI / KotlinJsonUI dynamic expanders' tests, which carry a copy checked against this file.",
+  "screen": "include_ids.json",
+  "specimens": {
+    "nested_ids_from_the_root": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/row",
+              "id": "row"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/row.json": {
+          "type": "View",
+          "id": "row_root",
+          "child": [
+            {
+              "include": "shared/chip",
+              "id": "chip_a"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "shared/chip.json": {
+          "type": "View",
+          "id": "chip_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "chip_label",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "rowChipAChipLabel",
+        "rowChipAChipRoot",
+        "rowRowRoot",
+        "screen_root"
+      ]
+    },
+    "nested_inner_id_only": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/outer"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/outer.json": {
+          "type": "View",
+          "id": "outer_box",
+          "child": [
+            {
+              "include": "parts/inner",
+              "id": "inner_box"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/inner.json": {
+          "type": "View",
+          "id": "in_box",
+          "child": [
+            {
+              "type": "Label",
+              "id": "deep_label",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "innerBoxDeepLabel",
+        "innerBoxInBox",
+        "outer_box",
+        "screen_root"
+      ]
+    },
+    "one_partial_twice": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/tile",
+              "id": "left"
+            },
+            {
+              "include": "parts/tile",
+              "id": "right"
+            },
+            {
+              "include": "parts/tile",
+              "id": "left"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/tile.json": {
+          "type": "View",
+          "id": "tile_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "title",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "leftTileRoot",
+        "leftTileRoot",
+        "leftTitle",
+        "leftTitle",
+        "rightTileRoot",
+        "rightTitle",
+        "screen_root"
+      ]
+    },
+    "two_include_ids_meet": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/a",
+              "id": "hero"
+            },
+            {
+              "include": "parts/b",
+              "id": "hero_card"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/a.json": {
+          "type": "View",
+          "id": "a_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "card_type_badge",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/b.json": {
+          "type": "View",
+          "id": "b_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "type_badge",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "heroARoot",
+        "heroCardBRoot",
+        "heroCardTypeBadge",
+        "heroCardTypeBadge",
+        "screen_root"
+      ]
+    },
+    "two_spellings_meet": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/badges",
+              "id": "hero"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/badges.json": {
+          "type": "View",
+          "id": "badges_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "type_badge",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            },
+            {
+              "type": "Label",
+              "id": "typeBadge",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "heroBadgesRoot",
+        "heroTypeBadge",
+        "heroTypeBadge",
+        "screen_root"
+      ]
+    },
+    "unnamed_include_under_a_prefix": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/panel",
+              "id": "hero"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel_root",
+          "child": [
+            {
+              "include": "parts/body"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/body.json": {
+          "type": "View",
+          "id": "body_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "body_label",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "heroBodyLabel",
+        "heroBodyRoot",
+        "heroPanelRoot",
+        "screen_root"
+      ]
+    },
+    "upper_case_segment": {
+      "layouts": {
+        "include_ids.json": {
+          "type": "View",
+          "id": "screen_root",
+          "child": [
+            {
+              "include": "parts/d",
+              "id": "hero"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        },
+        "parts/d.json": {
+          "type": "View",
+          "id": "d_root",
+          "child": [
+            {
+              "type": "Label",
+              "id": "info_URL",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            },
+            {
+              "type": "Label",
+              "id": "verify_2FA_form",
+              "text": "x",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "width": "matchParent",
+          "height": "wrapContent"
+        }
+      },
+      "expected": [
+        "heroDRoot",
+        "heroInfoUrl",
+        "heroVerify2faForm",
+        "screen_root"
+      ]
+    }
+  }
+}

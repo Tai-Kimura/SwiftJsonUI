@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: aae665bb391a7cbb9ce7204392ed7ebe619e22a9 # jsonui-cli commit (support/web-load-failed) that adds Web onLoadFailed / reloadToken and re-emits WebAttributes; re-pin to the jsonui-cli release tag that carries it
+      JSONUI_CLI_MANIFEST_REF: v1.8.119 # jsonui-cli release tag (commit dc816d4a); the attr tables and every fixture copy in this job are compared at it
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
@@ -129,6 +129,10 @@ jobs:
           COPIES = [
               ("Tests/SwiftJsonUITests/Fixtures/binding_vectors.json",
                "shared/core/binding_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/include_ids_fixture.json",
+               "shared/core/include_ids_fixture.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/camel_case_vectors.json",
+               "shared/core/camel_case_vectors.json"),
           ]
           # Same three exit codes as the step above: 0 compared and agreed,
           # 1 compared and diverged, 2 could not compare.

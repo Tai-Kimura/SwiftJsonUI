@@ -7,13 +7,12 @@
 //  and it is the one the codegen writes. These arms hold the Dynamic
 //  IncludeExpander to the codegen's answers.
 //
-//  WHERE THE EXPECTED VALUES COME FROM — both are machine output, pasted:
-//  - `camelCaseTable`: the snake→camel table, from running sjui_tools
-//    include_expander.rb:14/23 and kjui_tools include_expander.rb:16/25 under
-//    ruby 2.6.10 (the two agreed on every row). Transcribed; compared by
-//    script with jsonui-cli shared/core/camel_case_vectors.json at 7bc802c4
-//    (the `input` / `camel` / `combined` columns): identical in order and
-//    value. Vendor that file instead once it is released.
+//  WHERE THE EXPECTED VALUES COME FROM — both are machine output:
+//  - the snake→camel table is jsonui-cli shared/core/camel_case_vectors.json,
+//    copied byte-identical into Fixtures/ (CI's vendored-attr-guard compares
+//    the copy with the file at the pinned jsonui-cli ref). jsonui-cli wrote it
+//    by running sjui_tools and kjui_tools' include_expander.rb
+//    (`to_camel_case`, `combine_with_prefix`), which agree on every row.
 //  - `expectedJSON`: the ids, data names and bindings that the codegen's
 //    `process_includes` produces for `specimensJSON`, run under ruby 3.2.2
 //    against jsonui-cli f45a0cfc — sjui_tools and kjui_tools gave
@@ -34,40 +33,44 @@ final class IncludeExpanderIdSpellingTests: XCTestCase {
 
     // MARK: - The two functions, row by row (the snake→camel table)
 
-    /// (input, to_camel_case, combine_with_prefix("hero", input))
-    private let camelCaseTable: [(String, String, String)] = [
-        ("email_verify_view", "emailVerifyView", "heroEmailVerifyView"),
-        ("header1_title_label", "header1TitleLabel", "heroHeader1TitleLabel"),
-        ("verify_2FA_form", "verify2faForm", "heroVerify2faForm"),
-        ("clear_URL_button", "clearUrlButton", "heroClearUrlButton"),
-        ("info_URL", "infoUrl", "heroInfoUrl"),
-        ("URL_field", "URLField", "heroURLField"),
-        ("iOS_version", "iOSVersion", "heroIOSVersion"),
-        ("item_2", "item2", "heroItem2"),
-        ("step2_done", "step2Done", "heroStep2Done"),
-        ("a__b", "aB", "heroAB"),
-        ("trailing_", "trailing", "heroTrailing"),
-        ("_leading", "Leading", "heroLeading"),
-        ("alreadyCamel", "alreadyCamel", "heroAlreadyCamel"),
-        ("single", "single", "heroSingle"),
-    ]
+    private struct CamelCaseRow: Decodable {
+        let input: String
+        let camel: String
+        let combined: String
+        let unprefixed: String
+    }
 
-    func testToCamelCaseAnswersAsTheCodegenDoes() {
-        for (input, camel, _) in camelCaseTable {
-            XCTAssertEqual(expander.toCamelCase(input), camel, input)
+    private struct CamelCaseVectors: Decodable {
+        let prefix: String
+        let cases: [CamelCaseRow]
+    }
+
+    /// camel = to_camel_case(input); combined = combine_with_prefix(prefix,
+    /// input); unprefixed = combine_with_prefix(nil, input).
+    private func camelCaseVectors() throws -> CamelCaseVectors {
+        let vectors = try JSONDecoder().decode(
+            CamelCaseVectors.self, from: TestFixtures.loadJSON(named: "camel_case_vectors"))
+        XCTAssertFalse(vectors.cases.isEmpty, "camel_case_vectors.json has no cases")
+        return vectors
+    }
+
+    func testToCamelCaseAnswersAsTheCodegenDoes() throws {
+        for row in try camelCaseVectors().cases {
+            XCTAssertEqual(expander.toCamelCase(row.input), row.camel, row.input)
         }
     }
 
-    func testCombineWithPrefixAnswersAsTheCodegenDoes() {
-        for (input, _, combined) in camelCaseTable {
-            XCTAssertEqual(expander.combineWithPrefix("hero", input), combined, input)
+    func testCombineWithPrefixAnswersAsTheCodegenDoes() throws {
+        let vectors = try camelCaseVectors()
+        for row in vectors.cases {
+            XCTAssertEqual(expander.combineWithPrefix(vectors.prefix, row.input), row.combined, row.input)
         }
     }
 
-    /// The table's `unprefixed` column: with no prefix the name is as written.
-    func testNoPrefixLeavesEveryNameAsWritten() {
-        for (input, _, _) in camelCaseTable {
-            XCTAssertEqual(expander.combineWithPrefix(nil, input), input, input)
+    /// With no prefix the name is as written.
+    func testNoPrefixLeavesEveryNameAsWritten() throws {
+        for row in try camelCaseVectors().cases {
+            XCTAssertEqual(expander.combineWithPrefix(nil, row.input), row.unprefixed, row.input)
         }
     }
 
