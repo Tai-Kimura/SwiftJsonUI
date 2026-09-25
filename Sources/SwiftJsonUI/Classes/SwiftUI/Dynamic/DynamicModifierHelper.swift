@@ -1376,12 +1376,18 @@ public struct DynamicModifierHelper {
         // them: a clip before them cuts at the view's own edge, not the
         // margin's.
         Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
-        Stage("hitTesting") { v, c, d in applyHitTesting(v, component: c, data: d) },
         Stage("tint") { v, c, d in applyTint(v, component: c, data: d) },
         // onClick, onLongPress, onPan, onPinch, onAppear / onDisappear
         Stage("events") { v, c, d in
             DynamicEventHelper.applyEvents(v, component: c, data: d)
         },
+        // userInteractionEnabled / touchDisabledState stop the whole view, so
+        // hit testing wraps the view's own gestures: attached outside it, a
+        // View's onClick, onLongPress and a Label's tap still ran under
+        // `userInteractionEnabled: false` (measured, ConformanceHost
+        // -interactionGateProbe). codegen's order moved with it
+        // (modifier_order.json: allows_hit_testing after on_pinch).
+        Stage("hitTesting") { v, c, d in applyHitTesting(v, component: c, data: d) },
         Stage("confirmationDialog") { v, c, d in
             guard #available(iOS 15.0, *) else { return v }
             return applyConfirmationDialog(v, component: c, data: d)

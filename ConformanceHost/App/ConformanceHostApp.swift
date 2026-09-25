@@ -175,6 +175,10 @@ struct ConformanceRootView: View {
                 ImageEventsProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-canTapGateProbe") {
                 CanTapGateProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-interactionGateProbe") {
+                InteractionGateProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-interactionInputsProbe") {
+                InteractionInputsProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-canTapCodegenProbe") {
                 CanTapCodegenProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-sameTypeDuplicateProbe") {
