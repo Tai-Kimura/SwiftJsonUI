@@ -19,7 +19,10 @@ open class Binding: NSObject {
     // Helper method to get view with optional binding_id prefix
     public func getView<T>(_ id: String, bindingId: String? = nil) -> T? {
         if let bindingId = bindingId {
-            // Convert binding_id from snake_case to camelCase to match the prefix format
+            // Convert binding_id from snake_case to camelCase to match the prefix format.
+            // The same rule as SJUIViewCreator.convertBindingIdToCamelCase —
+            // Foundation's `capitalized`, not the codegen's `capitalize`
+            // ("2FA" -> "2Fa", not "2fa"). UIKit is outside ruling U8; kept.
             let components = bindingId.split(separator: "_")
             let camelCasePrefix = components.enumerated().map { index, word in
                 if index == 0 {

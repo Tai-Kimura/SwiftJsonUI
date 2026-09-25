@@ -41,6 +41,7 @@
     {"id": "text_bool_false", "context": "text", "template": "@{flag}", "data": {"flag": false}, "expect": {"text": "false"}},
     {"id": "text_null_value_renders_empty", "context": "text", "template": "@{value}", "data": {"value": null}, "expect": {"text": ""}},
     {"id": "text_object_value_renders_empty", "context": "text", "template": "@{profile}", "data": {"profile": {"name": "Grace"}}, "expect": {"text": ""}},
+    {"id": "text_array_value_renders_empty", "context": "text", "template": "@{items}", "data": {"items": [1, 2]}, "expect": {"text": ""}},
     {"id": "text_defaultvalue_precedence_over_inline", "context": "text", "template": "@{name ?? 'Inline'}", "dataDefaults": {"name": "Default"}, "data": {}, "expect": {"text": "Default"}},
     {"id": "text_inline_when_no_defaultvalue", "context": "text", "template": "@{name ?? 'Inline'}", "dataDefaults": {}, "data": {}, "expect": {"text": "Inline"}},
     {"id": "text_runtime_data_overrides_defaultvalue", "context": "text", "template": "@{name}", "dataDefaults": {"name": "Default"}, "data": {"name": "Ada"}, "expect": {"text": "Ada"}},
