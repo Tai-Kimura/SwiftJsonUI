@@ -10,13 +10,14 @@
 //    2. .resizable()
 //    3. .aspectRatio(contentMode:)
 //    4. .clipShape(Circle()) for CircleImage
-//    5. .onTapGesture (canTap + onClick)
-//    6. apply_frame_size
-//    7. apply_padding
-//    8. .background
-//    9. .cornerRadius
-//   10. apply_margins
-//   11. .opacity / .hidden
+//    5. apply_frame_size
+//    6. apply_padding
+//    7. .background
+//    8. .cornerRadius
+//    9. apply_margins
+//   10. .opacity / .hidden
+//   11. disabled / hitTesting / events (onClick with canTap, onLongPress,
+//       onPan, onPinch, onAppear / onDisappear)
 //   12. accessibilityIdentifier
 //
 
@@ -131,35 +132,16 @@ public struct ImageViewConverter {
             result = AnyView(result.clipShape(Circle()))
         }
 
-        // --- 5. .onTapGesture (canTap + onClick) ---
-        // `canTap` is boolean|binding — the hand-decoded slot is nil for a
-        // binding, so `canTap: "@{isTappable}"` made the image untappable.
-        // common.canTap is the SwiftUI tap GATE (attribute_definitions.json):
-        // absent, the handler alone makes the tap; false (or a binding that
-        // resolves false) shuts it. It was `?? false` here, so an Image with
-        // onClick and no canTap had no tap in Dynamic while codegen gave it one.
-        let canTap = DynamicHelpers.resolveBool(
-            component.typedAttributes(CommonAttributes.self).canTap,
-            legacy: nil,
-            data: data
-        ) ?? true
-        if canTap, let onClick = component.commonAny(\.onClick) {
-            let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
-            if let closure = data[propName] as? () -> Void {
-                result = TapAccessibility.apply(AnyView(result.onTapGesture { closure() }), component: component)
-            }
-        }
-
-        // --- 6. apply_frame_size ---
+        // --- 5. apply_frame_size ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
-        // --- 7. apply_padding ---
+        // --- 6. apply_padding ---
         result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
-        // --- 8. background ---
+        // --- 7. background ---
         result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
 
-        // --- 9. cornerRadius ---
+        // --- 8. cornerRadius ---
         result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
 
         // --- borderWidth + borderColor ---
@@ -178,12 +160,29 @@ public struct ImageViewConverter {
         // all four of them had (Label, Image, NetworkImage, Text).
         result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
-        // --- 10. margins ---
+        // --- 9. margins ---
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
-        // --- 11. opacity / hidden ---
+        // --- 10. opacity / hidden ---
         result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
+
+        // --- 11. disabled / hitTesting / events ---
+        // The standard chain's stages, in its order, at the slot codegen
+        // emits them (image_converter.rb reaches them through apply_modifiers,
+        // after margins and opacity): onClick / onclick behind the canTap
+        // gate with the button trait (TapAccessibility), onLongPress, onPan,
+        // onPinch, onAppear / onDisappear, shut by `enabled: false` and
+        // `userInteractionEnabled: false` as codegen's `.disabled` /
+        // `.allowsHitTesting` shut them.
+        //
+        // The tap used to be this converter's own, before the frame: onClick
+        // only (not the onclick selector), with no enabled gate, and on the
+        // fitted image rather than the box codegen's `.contentShape` makes
+        // tappable. Every other event was not attached at all.
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+        result = DynamicEventHelper.applyEvents(result, component: component, data: data)
 
         // --- 12. accessibilityIdentifier ---
         // What VoiceOver reads: the alt, nothing (decorative), or — for an

@@ -13,7 +13,9 @@
 //    5. .cornerRadius
 //    6. apply_margins
 //    7. .opacity / .hidden
-//    8. accessibilityIdentifier
+//    8. disabled / hitTesting / events (onClick with canTap, onLongPress,
+//       onPan, onPinch, onAppear / onDisappear)
+//    9. accessibilityIdentifier
 //
 
 import SwiftUI
@@ -125,7 +127,24 @@ public struct NetworkImageConverter {
         result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
         result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
 
-        // --- 8. accessibilityIdentifier ---
+        // --- 8. disabled / hitTesting / events ---
+        // 🔻 THIS STEP WAS MISSING: a NetworkImage with onClick had no tap in
+        // Dynamic while codegen tapped it (network_image_converter.rb reaches
+        // the events through apply_modifiers). This chain is hand-picked, so
+        // it never reached the standard chain's events stage — onLongPress,
+        // onPan, onPinch, onAppear and onDisappear were dropped with it.
+        // Measured 2026-09-25 (XCUITest, a data: URL image): elementType
+        // image, and a tap called nothing.
+        //
+        // The same stages as Image, in the standard chain's order: onClick /
+        // onclick behind the canTap gate with the button trait
+        // (TapAccessibility), shut by `enabled: false` and
+        // `userInteractionEnabled: false`.
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+        result = DynamicEventHelper.applyEvents(result, component: component, data: data)
+
+        // --- 9. accessibilityIdentifier ---
         // What VoiceOver reads: the alt, nothing (decorative), or — for an
         // image that operates a control with no alt — the asset name as before.
         result = AnyView(result.modifier(ImageAccessibilityModifier(component: component, data: data)))
