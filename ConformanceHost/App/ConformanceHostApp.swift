@@ -181,6 +181,8 @@ struct ConformanceRootView: View {
                 InteractionInputsProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-canTapCodegenProbe") {
                 CanTapCodegenProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-responsiveDisabledProbe") {
+                ResponsiveDisabledProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-sameTypeDuplicateProbe") {
                 SameTypeDuplicateProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-clippedViewportProbe") {
