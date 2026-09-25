@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 3024c1c511036034253f0dd516134f86191c57f5 # jsonui-cli commit (support/image-alt-a11y) that makes alt every image's screen-reader text; re-pin to the release tag that carries it
+      JSONUI_CLI_MANIFEST_REF: e1a85ca2fd42c4615442f9982bafa6183a6c3730 # jsonui-cli commit (rel/v1.8.121 at release-check) that carries alt, the tap vectors, modifier_order.json and every table this release vendors; re-pin to v1.8.121 once it is tagged
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
