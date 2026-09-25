@@ -173,6 +173,8 @@ struct ConformanceRootView: View {
                 DecorativeImageProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-imageEventsProbe") {
                 ImageEventsProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-responsiveDisabledProbe") {
+                ResponsiveDisabledProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-sameTypeDuplicateProbe") {
                 SameTypeDuplicateProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-clippedViewportProbe") {
