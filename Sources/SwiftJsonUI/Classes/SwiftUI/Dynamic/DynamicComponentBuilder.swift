@@ -257,6 +257,30 @@ public struct DynamicComponentBuilder: View {
 
     // MARK: - Component Routing
 
+    /// An app-registered component. A leaf given children: the build refuses
+    /// this layout, so Debug says so in the component's place rather than
+    /// drawing it without them.
+    @ViewBuilder
+    private func appComponent(_ adapter: CustomComponentAdapter, _ component: DynamicComponent) -> some View {
+        if let refusal = LeafChildren.rejection(for: adapter, component: component) {
+            Text("Error: \(refusal)")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(Color.red)
+                .cornerRadius(6)
+                .onAppear { Logger.debug("[CustomComponentAdapter] \(refusal)") }
+        } else {
+            adapter.buildView(
+                component: component,
+                data: data,
+                viewId: viewId,
+                parentOrientation: parentOrientation
+            )
+        }
+    }
+
     @ViewBuilder
     func buildView(from component: DynamicComponent) -> some View {
         // Debug audit: warn once per (type, key) about attributes that
@@ -266,6 +290,15 @@ public struct DynamicComponentBuilder: View {
         let _ = JsonUIAttributeAudit.audit(component: component)
         if component.include != nil {
             IncludeConverter.convert(component: component, data: data, viewId: viewId)
+        } else if let type = component.type, let adapter = CustomComponentRegistry.shared.adapter(for: type) {
+            // A type the app registered as its own component is taken before
+            // the built-in cases, as sjui's codegen takes the app's converter
+            // before its own. It was asked only in `default:`, so an app's own
+            // component named like a built-in or one of its spellings — an
+            // app's ProgressBar — was drawn in Debug as the built-in Progress
+            // while the release build drew the app's (measured: the adapter
+            // was not called).
+            appComponent(adapter, component)
         } else if let type = component.type {
             switch type.lowercased() {
             // Text components
@@ -386,36 +419,14 @@ public struct DynamicComponentBuilder: View {
 
             // Default/Unknown
             default:
-                if let adapter = CustomComponentRegistry.shared.adapter(for: type) {
-                    // A leaf given children: the build refuses this layout, so
-                    // Debug says so in the component's place rather than
-                    // drawing it without them.
-                    if let refusal = LeafChildren.rejection(for: adapter, component: component) {
-                        Text("Error: \(refusal)")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(Color.red)
-                            .cornerRadius(6)
-                            .onAppear { Logger.debug("[CustomComponentAdapter] \(refusal)") }
-                    } else {
-                        adapter.buildView(
-                            component: component,
-                            data: data,
-                            viewId: viewId,
-                            parentOrientation: parentOrientation
-                        )
-                    }
-                } else {
-                    Text("Error: Unknown component type '\(type)'")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 8)
-                        .background(Color.red)
-                        .cornerRadius(6)
-                }
+                // The app's registry was asked first, above.
+                Text("Error: Unknown component type '\(type)'")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(Color.red)
+                    .cornerRadius(6)
             }
         } else {
             EmptyView()

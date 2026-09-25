@@ -1,0 +1,291 @@
+{
+  "description": "What a String data property's defaultValue means, for every reader: the code generators (sjui / kjui / rjui — JsonUIShared::StringLiterals.default_text and TypeConverterCore#normalize_data_property) and the dynamic runtimes (SwiftJsonUI and KotlinJsonUI DynamicView). Each row is written by hand, not computed. Canonical copy: jsonui-cli shared/core/string_default_vectors.json; SwiftJsonUI and KotlinJsonUI vendor it byte-identical for their tests (the COPIES list in their CI).",
+  "spellingsDescription": "A String defaultValue as written in the layout, and the text it means. bare (canonical): the text as written. '' : empty. \"…\" : JSON's escapes; when they do not parse, the text between the quotes as written. '…' : the text between the quotes as written. A raw control character or a lone surrogate is not JSON either.",
+  "spellings": [
+    {
+      "name": "bare",
+      "spelling": "Hello",
+      "text": "Hello"
+    },
+    {
+      "name": "bare, every special character",
+      "spelling": "Say \"hi\" \\ $x \\(z) ${y} `b` it's",
+      "text": "Say \"hi\" \\ $x \\(z) ${y} `b` it's"
+    },
+    {
+      "name": "bare, a quote at one end only",
+      "spelling": "\"lead",
+      "text": "\"lead"
+    },
+    {
+      "name": "bare, an apostrophe at one end only",
+      "spelling": "trail'",
+      "text": "trail'"
+    },
+    {
+      "name": "bare, one quote",
+      "spelling": "\"",
+      "text": "\""
+    },
+    {
+      "name": "bare, one apostrophe",
+      "spelling": "'",
+      "text": "'"
+    },
+    {
+      "name": "''",
+      "spelling": "''",
+      "text": ""
+    },
+    {
+      "name": "\"\" (JSON's empty)",
+      "spelling": "\"\"",
+      "text": ""
+    },
+    {
+      "name": "\"…\"",
+      "spelling": "\"Test\"",
+      "text": "Test"
+    },
+    {
+      "name": "\"…\" with no escape",
+      "spelling": "\"Pay $x ${y} `b` {c} it's\"",
+      "text": "Pay $x ${y} `b` {c} it's"
+    },
+    {
+      "name": "\"…\" with JSON's escapes",
+      "spelling": "\"a\\nb \\\"hi\\\" \\\\ \\u00e9 \\/ \\t\"",
+      "text": "a\nb \"hi\" \\ é / \t"
+    },
+    {
+      "name": "\"…\" with an escape JSON does not have",
+      "spelling": "\"C:\\new \\(t)\"",
+      "text": "C:\\new \\(t)"
+    },
+    {
+      "name": "\"…\" with an unknown escape",
+      "spelling": "\"bad \\d\"",
+      "text": "bad \\d"
+    },
+    {
+      "name": "\"…\" that is not JSON",
+      "spelling": "\"a\"b\"",
+      "text": "a\"b"
+    },
+    {
+      "name": "\"…\" holding a raw control character",
+      "spelling": "\"a\tb\\n\"",
+      "text": "a\tb\\n"
+    },
+    {
+      "name": "\"…\" with a surrogate pair",
+      "spelling": "\"\\ud83d\\ude00\"",
+      "text": "😀"
+    },
+    {
+      "name": "\"…\" with a lone high surrogate",
+      "spelling": "\"\\ud800x\"",
+      "text": "\\ud800x"
+    },
+    {
+      "name": "\"…\" with a lone low surrogate",
+      "spelling": "\"\\udc00x\"",
+      "text": "\\udc00x"
+    },
+    {
+      "name": "\"…\" with an escaped NUL",
+      "spelling": "\"a\\u0000b\"",
+      "text": "a\u0000b"
+    },
+    {
+      "name": "'…'",
+      "spelling": "'Single'",
+      "text": "Single"
+    },
+    {
+      "name": "'…' holding ''",
+      "spelling": "'it''s'",
+      "text": "it''s"
+    },
+    {
+      "name": "'…' holding a backslash",
+      "spelling": "'a\\nb'",
+      "text": "a\\nb"
+    }
+  ],
+  "platformsDescription": "A defaultValue written per platform ({\"swift\": …, \"kotlin\": …, \"typescript\": …}). A platform it names gets its value (a String value read as in spellings; swift reads the swiftui mode, kotlin the compose mode). A platform it does not name gets the class's vocabulary value — \"\" / 0 / 0.0 / false / [] — or no value (null here) for an optional, and the code generators warn naming the layout, the property and the platform. A dictionary whose keys are not all platform names is a value, the same on every platform. warnFor lists the platforms a code generator warns for.",
+  "platforms": [
+    {
+      "name": "String given for swift and kotlin",
+      "class": "String",
+      "defaultValue": {
+        "swift": "eager",
+        "kotlin": "lazy"
+      },
+      "expect": {
+        "swift": "eager",
+        "kotlin": "lazy",
+        "typescript": ""
+      },
+      "warnFor": [
+        "typescript"
+      ]
+    },
+    {
+      "name": "String given for typescript only",
+      "class": "String",
+      "defaultValue": {
+        "typescript": "t"
+      },
+      "expect": {
+        "swift": "",
+        "kotlin": "",
+        "typescript": "t"
+      },
+      "warnFor": [
+        "swift",
+        "kotlin"
+      ]
+    },
+    {
+      "name": "String spellings inside a platform dictionary",
+      "class": "String",
+      "defaultValue": {
+        "swift": "'it''s'",
+        "kotlin": "\"a\\nb\"",
+        "typescript": "bare"
+      },
+      "expect": {
+        "swift": "it''s",
+        "kotlin": "a\nb",
+        "typescript": "bare"
+      },
+      "warnFor": []
+    },
+    {
+      "name": "String given per mode",
+      "class": "String",
+      "defaultValue": {
+        "swift": {
+          "swiftui": "s",
+          "uikit": "u"
+        },
+        "kotlin": {
+          "compose": "c",
+          "xml": "x"
+        }
+      },
+      "expect": {
+        "swift": "s",
+        "kotlin": "c",
+        "typescript": ""
+      },
+      "warnFor": [
+        "typescript"
+      ]
+    },
+    {
+      "name": "Int given for swift only",
+      "class": "Int",
+      "defaultValue": {
+        "swift": 1
+      },
+      "expect": {
+        "swift": 1,
+        "kotlin": 0,
+        "typescript": 0
+      },
+      "warnFor": [
+        "kotlin",
+        "typescript"
+      ]
+    },
+    {
+      "name": "Double given for kotlin only",
+      "class": "Double",
+      "defaultValue": {
+        "kotlin": 2.5
+      },
+      "expect": {
+        "swift": 0.0,
+        "kotlin": 2.5,
+        "typescript": 0.0
+      },
+      "warnFor": [
+        "swift",
+        "typescript"
+      ]
+    },
+    {
+      "name": "Bool given for typescript only",
+      "class": "Bool",
+      "defaultValue": {
+        "typescript": true
+      },
+      "expect": {
+        "swift": false,
+        "kotlin": false,
+        "typescript": true
+      },
+      "warnFor": [
+        "swift",
+        "kotlin"
+      ]
+    },
+    {
+      "name": "[String] given for kotlin only",
+      "class": "[String]",
+      "defaultValue": {
+        "kotlin": [
+          "a"
+        ]
+      },
+      "expect": {
+        "swift": [],
+        "kotlin": [
+          "a"
+        ],
+        "typescript": []
+      },
+      "warnFor": [
+        "swift",
+        "typescript"
+      ]
+    },
+    {
+      "name": "an optional given for swift only",
+      "class": "String?",
+      "defaultValue": {
+        "swift": "x"
+      },
+      "expect": {
+        "swift": "x",
+        "kotlin": null,
+        "typescript": null
+      },
+      "warnFor": [
+        "kotlin",
+        "typescript"
+      ]
+    },
+    {
+      "name": "a dictionary that is a value, not platforms",
+      "class": "Object",
+      "defaultValue": {
+        "name": "Grace"
+      },
+      "expect": {
+        "swift": {
+          "name": "Grace"
+        },
+        "kotlin": {
+          "name": "Grace"
+        },
+        "typescript": {
+          "name": "Grace"
+        }
+      },
+      "warnFor": []
+    }
+  ]
+}
