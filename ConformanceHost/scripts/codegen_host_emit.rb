@@ -75,7 +75,9 @@ module CodegenHostEmit
     set = handler['set']
     raise ArgumentError, "handler #{handler['name'].inspect} has no `set` operation" unless set
 
-    value = swift_string_literal(set['value'].to_s)
+    # An integer is an Int literal (a probe's scrollTo index, say); anything
+    # else the string it has always been.
+    value = set['value'].is_a?(Integer) ? set['value'].to_s : swift_string_literal(set['value'].to_s)
     "        data.#{handler['name']} = { [weak self] in " \
       "self?.data.#{set['var']} = #{value} }"
   end

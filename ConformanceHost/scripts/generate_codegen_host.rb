@@ -388,7 +388,11 @@ probe_layouts.each do |src|
   unless File.file?(File.join(staging, 'View', pascal, "#{pascal}GeneratedView.swift"))
     abort "error: probe layout #{File.basename(src)} produced no generated view (View/#{pascal}/)"
   end
-  hosts << CodegenHostEmit.plain_host(pascal)
+  # A probe's handlers (ProbeLayouts/handlers/<probe>.json, the manifest's
+  # `state.handlers` shape): its buttons set data the way a fixture's do.
+  handlers_file = File.join(host_dir, 'ProbeLayouts', 'handlers', File.basename(src))
+  handlers = File.file?(handlers_file) ? JSON.parse(File.read(handlers_file)) : []
+  hosts << CodegenHostEmit.host_source(pascal, handlers)
   lines << "        case #{base.inspect}: return AnyView(#{pascal}Host())"
 end
 lines << '        default: return nil'

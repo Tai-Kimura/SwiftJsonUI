@@ -84,6 +84,12 @@ quoted = E.host_source('Fx9003', [{ 'name' => 'h',
                                     'set' => { 'var' => 'v', 'value' => 'a"b\\c' } }])
 check('a quote in the value is escaped') { quoted.include?('"a\\"b\\\\c"') }
 
+# --- an integer value is an Int literal, a numeric string still a string ------
+numbers = E.host_source('Fx9005', [{ 'name' => 'h', 'set' => { 'var' => 'n', 'value' => 13 } },
+                                   { 'name' => 'g', 'set' => { 'var' => 's', 'value' => '13' } }])
+check('an integer value is an Int literal') { numbers.include?('self?.data.n = 13 }') }
+check('a numeric string is still a string') { numbers.include?('self?.data.s = "13" }') }
+
 # --- an unwirable handler is refused, not emitted empty ---------------------
 check('embed handlers are not wirable') do
   !E.wirable?([{ 'name' => 'go', 'embed' => { 'id' => 'e', 'action' => 'push' } }])
