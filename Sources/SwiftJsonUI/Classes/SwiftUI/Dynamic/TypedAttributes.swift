@@ -146,7 +146,9 @@ public enum JsonUITypedAttributesRegistry {
         "parent_orientation", "cellClasses", "sections",
         // build directives consumed (and removed) at distribution time
         "platform", "platforms",
-        JsonUINormalization.markerKey
+        JsonUINormalization.markerKey,
+        // a node's position, stamped by JSONLayoutLoader (LayoutPath.key)
+        "_layoutPath"
     ]
 
     /// Undeclared keys the converters still honor (legacy / extension
