@@ -11,7 +11,9 @@
 //  handler declared `(String)`; one View's `()` beside them. NOT part of the
 //  conformance suite. Launch with `-tapArityProbe` and `-taPath
 //  <dynamic|codegen>`: DynamicView over the layout, or what sjui build emits
-//  for it (TapArityCodegenPaste). `ta_hide` hides the last row (onDisappear).
+//  for it (TapArityCodegenPaste). `ta_hide` hides the rows with onDisappear.
+//  Last, onAppear / onDisappear spelled `@{x}` and `x:` — the one name `x` on
+//  every path — each `(String)` and `()`.
 //
 
 import SwiftUI
@@ -31,7 +33,7 @@ struct TapArityProbeView: View {
     @State private var shown = "visible"
     private let path = OnClickProbeView.arg("-taPath", "dynamic")
 
-    static let layout = ##"{"type":"View","orientation":"vertical","spacing":4,"width":"matchParent","data":[{"name":"tS","class":"((String) -> Void)?"},{"name":"iS","class":"((String) -> Void)?"},{"name":"lS","class":"((String) -> Void)?"},{"name":"sS","class":"((String) -> Void)?"},{"name":"bS","class":"((String) -> Void)?"},{"name":"wS","class":"((String) -> Void)?"},{"name":"pS","class":"((String) -> Void)?"},{"name":"aS","class":"((String) -> Void)?"},{"name":"dS","class":"((String) -> Void)?"},{"name":"t0","class":"(() -> Void)?"},{"name":"shown","class":"String","defaultValue":"visible"},{"name":"txt0","class":"String","defaultValue":"tap tS"},{"name":"txt1","class":"String","defaultValue":"tap t0"},{"name":"txt2","class":"String","defaultValue":"img iS"},{"name":"txt3","class":"String","defaultValue":"tap lS"},{"name":"txt4","class":"String","defaultValue":"tap sS"},{"name":"txt5","class":"String","defaultValue":"tap bS"},{"name":"txt6","class":"String","defaultValue":"press pS"},{"name":"txt7","class":"String","defaultValue":"appear aS"},{"name":"txt8","class":"String","defaultValue":"gone dS"}],"child":[{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt0}","fontSize":12}],"onClick":"@{tS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt1}","fontSize":12}],"onClick":"@{t0}"},{"type":"Image","srcName":"probe_none","width":60,"height":30,"background":"#C8C8FF","alt":"@{txt2}","onClick":"@{iS}"},{"type":"Label","text":"@{txt3}","fontSize":12,"height":30,"onClick":"@{lS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt4}","fontSize":12}],"onclick":"sS"},{"type":"Button","text":"@{txt5}","height":34,"onClick":"@{bS}"},{"type":"Switch","isOn":false,"onClick":"@{wS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt6}","fontSize":12}],"onLongPress":"@{pS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt7}","fontSize":12}],"onAppear":"aS"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt8}","fontSize":12}],"onDisappear":"dS","visibility":"@{shown}"}]}"##
+    static let layout = ##"{"type":"View","orientation":"vertical","spacing":4,"width":"matchParent","data":[{"name":"tS","class":"((String) -> Void)?"},{"name":"iS","class":"((String) -> Void)?"},{"name":"lS","class":"((String) -> Void)?"},{"name":"sS","class":"((String) -> Void)?"},{"name":"bS","class":"((String) -> Void)?"},{"name":"wS","class":"((String) -> Void)?"},{"name":"pS","class":"((String) -> Void)?"},{"name":"aS","class":"((String) -> Void)?"},{"name":"dS","class":"((String) -> Void)?"},{"name":"aB","class":"((String) -> Void)?"},{"name":"aC","class":"((String) -> Void)?"},{"name":"dB","class":"((String) -> Void)?"},{"name":"dC","class":"((String) -> Void)?"},{"name":"t0","class":"(() -> Void)?"},{"name":"a0","class":"(() -> Void)?"},{"name":"a0b","class":"(() -> Void)?"},{"name":"a0c","class":"(() -> Void)?"},{"name":"d0","class":"(() -> Void)?"},{"name":"d0b","class":"(() -> Void)?"},{"name":"d0c","class":"(() -> Void)?"},{"name":"shown","class":"String","defaultValue":"visible"},{"name":"txt0","class":"String","defaultValue":"tap tS"},{"name":"txt1","class":"String","defaultValue":"tap t0"},{"name":"txt2","class":"String","defaultValue":"img iS"},{"name":"txt3","class":"String","defaultValue":"tap lS"},{"name":"txt4","class":"String","defaultValue":"tap sS"},{"name":"txt5","class":"String","defaultValue":"tap bS"},{"name":"txt6","class":"String","defaultValue":"press pS"},{"name":"txt7","class":"String","defaultValue":"appear aS"},{"name":"txt8","class":"String","defaultValue":"gone dS"}],"child":[{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt0}","fontSize":12}],"onClick":"@{tS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt1}","fontSize":12}],"onClick":"@{t0}"},{"type":"Image","srcName":"probe_none","width":60,"height":30,"background":"#C8C8FF","alt":"@{txt2}","onClick":"@{iS}"},{"type":"Label","text":"@{txt3}","fontSize":12,"height":30,"onClick":"@{lS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt4}","fontSize":12}],"onclick":"sS"},{"type":"Button","text":"@{txt5}","height":34,"onClick":"@{bS}"},{"type":"Switch","isOn":false,"onClick":"@{wS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt6}","fontSize":12}],"onLongPress":"@{pS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt7}","fontSize":12}],"onAppear":"aS"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt8}","fontSize":12}],"onDisappear":"dS","visibility":"@{shown}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"@{aB}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"aC:"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"a0"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"@{a0b}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"a0c:"},{"type":"View","orientation":"vertical","width":"matchParent","visibility":"@{shown}","child":[{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"@{dB}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"dC:"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"d0"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"@{d0b}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"d0c:"}]}]}"##
 
     private var layout: DynamicComponent? {
         try? JSONDecoder().decode(DynamicComponent.self, from: Data(Self.layout.utf8))
@@ -40,13 +42,14 @@ struct TapArityProbeView: View {
     /// The words the layout binds its texts to (seeded by `defaultValue`).
     static let texts: [String: String] = ["txt0": "tap tS", "txt1": "tap t0", "txt2": "img iS", "txt3": "tap lS", "txt4": "tap sS", "txt5": "tap bS", "txt6": "press pS", "txt7": "appear aS", "txt8": "gone dS"]
 
-    static let takesTheViewId = ["tS", "iS", "lS", "sS", "bS", "wS", "pS", "aS", "dS"]
+    static let takesTheViewId = ["tS", "iS", "lS", "sS", "bS", "wS", "pS", "aS", "dS", "aB", "aC", "dB", "dC"]
+    static let takesNothing = ["t0", "a0", "a0b", "a0c", "d0", "d0b", "d0c"]
 
     private var dynamicData: [String: Any] {
         let l = log
         var out: [String: Any] = [:]
         for n in Self.takesTheViewId { out[n] = { (id: String) -> Void in l.record("\(n)(\(id))") } }
-        out["t0"] = { () -> Void in l.record("t0()") }
+        for n in Self.takesNothing { out[n] = { () -> Void in l.record("\(n)()") } }
         out["shown"] = shown
         for (key, words) in Self.texts { out[key] = words }
         return out
@@ -64,7 +67,17 @@ struct TapArityProbeView: View {
         data.pS = { l.record("pS(\($0))") }
         data.aS = { l.record("aS(\($0))") }
         data.dS = { l.record("dS(\($0))") }
+        data.aB = { l.record("aB(\($0))") }
+        data.aC = { l.record("aC(\($0))") }
+        data.dB = { l.record("dB(\($0))") }
+        data.dC = { l.record("dC(\($0))") }
         data.t0 = { l.record("t0()") }
+        data.a0 = { l.record("a0()") }
+        data.a0b = { l.record("a0b()") }
+        data.a0c = { l.record("a0c()") }
+        data.d0 = { l.record("d0()") }
+        data.d0b = { l.record("d0b()") }
+        data.d0c = { l.record("d0c()") }
         return data
     }
 

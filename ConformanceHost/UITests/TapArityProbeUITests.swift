@@ -6,7 +6,8 @@ import XCTest
 /// `()` with no argument, `(String)` with the viewId — every node id-less, so
 /// the drawn type and the position. A View's, an Image's and a Label's tap, the
 /// onclick selector, a Button, a Switch's onClick from its flip, a long press,
-/// onAppear and onDisappear.
+/// onAppear and onDisappear — these two also spelled `@{x}` and `x:`, the
+/// one name `x`, each `(String)` and `()`.
 ///
 /// Every operation's calls are read from the log: exactly the one expected.
 ///
@@ -52,11 +53,11 @@ final class TapArityProbeUITests: XCTestCase {
         XCTAssertTrue(labelled("tap tS").waitForExistence(timeout: 5), "\(path): the rows are there")
         sleep(1)
 
-        // onAppear, from the launch: its own calls, whatever else ran.
-        let appeared = calls().filter { $0.hasPrefix("aS(") }
-        print("TAPARITY \(path) onAppear calls=\(appeared.joined(separator: "|")) all=\(calls().joined(separator: "|"))")
-        XCTAssertFalse(appeared.isEmpty, "\(path) onAppear: called")
-        XCTAssertEqual(Set(appeared), ["aS(view_0_8)"], "\(path) onAppear")
+        // onAppear, from the launch — `x`, `@{x}` and `x:` alike, each as
+        // declared: every one called, with nothing else.
+        let appeared = calls()
+        print("TAPARITY \(path) onAppear calls=\(appeared.joined(separator: "|"))")
+        XCTAssertEqual(Set(appeared), ["aS(view_0_8)", "aB(view_0_10)", "aC(view_0_11)", "a0()", "a0b()", "a0c()"], "\(path) onAppear")
 
         check(path, "View tap (String)", ["tS(view_0_0)"]) { labelled("tap tS").tap() }
         check(path, "View tap ()", ["t0()"]) { labelled("tap t0").tap() }
@@ -66,7 +67,13 @@ final class TapArityProbeUITests: XCTestCase {
         check(path, "Button", ["bS(button_0_5)"]) { app.buttons["tap bS"].tap() }
         check(path, "Switch flip", ["wS(switch_0_6)"]) { app.switches.firstMatch.tap() }
         check(path, "long press", ["pS(view_0_7)"]) { labelled("press pS").press(forDuration: 1.2) }
-        check(path, "onDisappear", ["dS(view_0_9)"]) { app.buttons["ta_hide"].tap() }
+        // onDisappear — the rows hidden together, in no promised order.
+        let before = calls().count
+        app.buttons["ta_hide"].tap()
+        sleep(1)
+        let gone = Array(calls().dropFirst(before))
+        print("TAPARITY \(path) onDisappear calls=\(gone.joined(separator: "|"))")
+        XCTAssertEqual(gone.sorted(), ["d0()", "d0b()", "d0c()", "dB(view_0_15_0)", "dC(view_0_15_1)", "dS(view_0_9)"], "\(path) onDisappear")
         print("TAPARITY \(path) readout=\(app.staticTexts["ta_readout"].label)")
         app.terminate()
     }

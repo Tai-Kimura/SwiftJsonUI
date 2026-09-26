@@ -27,11 +27,21 @@ public struct DynamicEventHelper {
     /// (shared/core/attribute_definitions.json):
     ///   - binding:  "@{handlerName}"  (camelCase attrs, e.g. onClick)
     ///   - selector: "handlerName"     (legacy lowercase attrs, e.g. onclick)
-    /// Both resolve to the same data-dict closure in Dynamic mode.
+    /// Both resolve to the same data-dict closure in Dynamic mode. A `:` —
+    /// UIKit's sender mark (`handlerName:`), which means nothing here — is
+    /// not part of the name (4f's ruling on
+    /// control-onclick-is-called-differently-on-every-path, 1.9.0; kjui and
+    /// KJUI Dynamic strip it, sjui reads the name without it): `handlerName:`
+    /// looked up a closure named with the colon, and nothing was called.
     public static func handlerName(from value: String?) -> String? {
-        if let name = extractPropertyName(from: value) { return name }
+        if let name = extractPropertyName(from: value) { return withoutSenderMark(name) }
         guard let value = value, !value.isEmpty, !value.contains("@{") else { return nil }
-        return value
+        return withoutSenderMark(value)
+    }
+
+    private static func withoutSenderMark(_ name: String) -> String? {
+        let bare = name.replacingOccurrences(of: ":", with: "")
+        return bare.isEmpty ? nil : bare
     }
 
     // MARK: - Simple call: data.handler?()
