@@ -84,5 +84,17 @@ final class SelectBoxPickReportTests: XCTestCase {
         SelectBoxConverter.reportPick("@{item}", id: "box", picked: "b", index: 1, data: ["item": "not a closure"])
         XCTAssertEqual(calls, [])
     }
+
+    /// `selectItemType` as declared: "Date" is a date picker, anything else
+    /// — "date" too — a list (4f's ruling, 1.9.0; the codegen's comparison).
+    func testSelectItemTypeIsReadAsDeclared() throws {
+        func type(_ json: String) throws -> SelectBoxView.SelectItemType {
+            SelectBoxConverter.itemType(of: try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8)))
+        }
+        XCTAssertEqual(try type(#"{"type":"SelectBox","selectItemType":"Date"}"#), .date)
+        XCTAssertEqual(try type(#"{"type":"SelectBox","selectItemType":"Normal"}"#), .normal)
+        XCTAssertEqual(try type(#"{"type":"SelectBox"}"#), .normal)
+        XCTAssertEqual(try type(#"{"type":"SelectBox","selectItemType":"date"}"#), .normal)
+    }
 }
 #endif

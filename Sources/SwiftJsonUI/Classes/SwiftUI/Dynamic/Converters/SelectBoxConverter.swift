@@ -25,6 +25,14 @@ import SwiftUI
 
 public struct SelectBoxConverter {
 
+    /// A date picker for `selectItemType` "Date", as declared
+    /// (attribute_definitions.json SelectBox.selectItemType: "Normal" | "Date"),
+    /// a list otherwise — the spelling the codegen compares (4f's ruling,
+    /// 1.9.0). "date" was a date picker on this path only.
+    static func itemType(of component: DynamicComponent) -> SelectBoxView.SelectItemType {
+        component.selectItemType == "Date" ? .date : .normal
+    }
+
     /// onValueChange's call for a pick, by the closure the data holds for it
     /// (4f's ruling on control-onclick-is-called-differently-on-every-path,
     /// 1.9.0; selectbox_converter.rb's pick_invocation reads the same from the
@@ -141,12 +149,7 @@ public struct SelectBoxConverter {
         let cornerRadius = component.number(CommonAttributes.self, \.cornerRadius, data: data) ?? 8
 
         // selectItemType
-        let selectItemType: SelectBoxView.SelectItemType = {
-            if let itemType = component.selectItemType, itemType.lowercased() == "date" {
-                return .date
-            }
-            return .normal
-        }()
+        let selectItemType = SelectBoxConverter.itemType(of: component)
 
         // items (for normal type) - with binding support
         let items: [String] = {
