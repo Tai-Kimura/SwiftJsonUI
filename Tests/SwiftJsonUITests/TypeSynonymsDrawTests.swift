@@ -34,6 +34,8 @@ final class TypeSynonymsDrawTests: XCTestCase {
         "GradientView": ##", "gradient": ["#FF0000", "#0000FF"]"##,
         "Blur": "",
         "Web": #", "url": "data:text/html,probe""#,
+        "TextField": #", "text": "t""#,
+        "Switch": "",
     ]
 
     /// The node drawn by the builder on white, 320 x 200 at scale 1. The
@@ -161,6 +163,30 @@ final class TypeSynonymsDrawTests: XCTestCase {
         XCTAssertTrue(isUnknownBox(try render(#"{"type": "Triangle"}"#)), "Triangle was not the unknown-type box")
         // control: a declared type is not
         XCTAssertFalse(isUnknownBox(try render(#"{"type": "Label", "text": "t"}"#)))
+    }
+
+    /// A declared alias section (`_alias_of`: EditText / Input -> TextField,
+    /// Check -> CheckBox, Toggle -> Switch) draws as its canonical section.
+    /// The pairs are the generated JsonUIComponentAliases — the declaration's
+    /// projection into this library (vendored; CI checks it against the
+    /// pinned jsonui-cli manifest).
+    @MainActor
+    func testEveryAliasSectionDrawsAsItsCanonicalSection() throws {
+        XCTAssertGreaterThanOrEqual(JsonUIComponentAliases.canonical.count, 4)
+        var differ: [String] = []
+        for (alias, canonical) in JsonUIComponentAliases.canonical.sorted(by: { $0.key < $1.key }) {
+            let x = try XCTUnwrap(extra[canonical], "no drawing extra for \(canonical)")
+            let asAlias = try render(#"{"type": "\#(alias)"\#(x)}"#)
+            let asCanonical = try render(#"{"type": "\#(canonical)"\#(x)}"#)
+            XCTAssertEqual(asCanonical.pngData(), try render(#"{"type": "\#(canonical)"\#(x)}"#).pngData(),
+                           "\(canonical) draws differently each time")
+            if asAlias.pngData() != asCanonical.pngData() { differ.append("\(alias) differs from \(canonical)") }
+            // (ImageRenderer draws a UIKit-backed view — a Switch — as a
+            // placeholder with red in it: red counts only where the
+            // canonical section has none.)
+            if isUnknownBox(asAlias) && !isUnknownBox(asCanonical) { differ.append("\(alias) drew the unknown-type box") }
+        }
+        XCTAssertEqual(differ, [], "alias sections drawn otherwise than their canonical section")
     }
 }
 #endif

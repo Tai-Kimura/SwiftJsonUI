@@ -319,7 +319,17 @@ public struct DynamicComponentBuilder: View {
     /// TypeSynonyms (its type, and the attributes the spelling means), decoded
     /// again from its raw data. Anything else is `component` itself.
     private func drawn(_ component: DynamicComponent) -> DynamicComponent {
-        guard let raw = TypeSynonyms.canonicalize(component.rawData) else { return component }
+        var raw = TypeSynonyms.canonicalize(component.rawData)
+        // A declared alias section (EditText / Input -> TextField, Check ->
+        // CheckBox, Toggle -> Switch: `_alias_of`, generated as
+        // JsonUIComponentAliases) is drawn as its canonical section.
+        if let type = (raw ?? component.rawData)["type"] as? String,
+           let canonical = JsonUIComponentAliases.canonical(for: type) {
+            var aliased = raw ?? component.rawData
+            aliased["type"] = canonical
+            raw = aliased
+        }
+        guard let raw = raw else { return component }
         do {
             let json = try JSONSerialization.data(withJSONObject: raw, options: [])
             let decoder = JSONDecoder()
@@ -334,9 +344,10 @@ public struct DynamicComponentBuilder: View {
         }
     }
 
-    /// The declared types. They held synonym spellings of their own, which
-    /// drifted from the table and from KotlinJsonUI's cases; a spelling that
-    /// is neither declared nor a synonym (Spacer, Triangle, …) is unknown.
+    /// The canonical declared sections. They held synonym and alias
+    /// spellings of their own, which drifted from the table and from
+    /// KotlinJsonUI's cases; a spelling that is neither declared nor a
+    /// synonym (Spacer, Triangle, …) is unknown.
     @ViewBuilder
     private func declaredComponent(_ component: DynamicComponent) -> some View {
         if let type = component.type {
@@ -350,7 +361,7 @@ public struct DynamicComponentBuilder: View {
 
             // EditText / Input are component-name aliases of TextField
             // (attribute_definitions.json `_alias_of`)
-            case "textfield", "edittext", "input":
+            case "textfield":
                 TextFieldConverter.convert(component: component, data: data)
 
             case "textview":
@@ -384,10 +395,10 @@ public struct DynamicComponentBuilder: View {
             // `default:` below with every other undeclared type.
 
             // Selection components
-            case "toggle", "switch":
+            case "switch":
                 ToggleConverter.convert(component: component, data: data)
 
-            case "checkbox", "check":
+            case "checkbox":
                 CheckboxConverter.convert(component: component, data: data)
 
             case "radio":
