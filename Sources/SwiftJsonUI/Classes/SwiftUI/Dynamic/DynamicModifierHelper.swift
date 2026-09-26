@@ -293,6 +293,24 @@ public struct DynamicModifierHelper {
     // MARK: - 5. Background
 
     public static func applyBackground(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        applyBackground(view, base: backgroundColor(component: component, data: data), component: component, data: data)
+    }
+
+    /// The background slot with `base` as its colour. On a node with a tap
+    /// and a tapBackground the pressed colour replaces it while the node is
+    /// pressed (jsonui-cli 1.9.0; PressedBackground.swift) — applyOnClick
+    /// tracks the press.
+    static func applyBackground(_ view: AnyView, base: Color?, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        if let pressed = DynamicEventHelper.pressedBackgroundColor(component, data: data) {
+            return AnyView(view.pressedBackground(pressed, base: base))
+        }
+        guard let base else { return view }
+        return AnyView(view.background(base))
+    }
+
+    /// The background colour at rest: disabledBackground while disabled,
+    /// else background.
+    static func backgroundColor(component: DynamicComponent, data: [String: Any]) -> Color? {
         // enabled=false + disabledBackground
         // `disabledBackground` is string|binding: the raw String cast read a
         // bound spelling as a literal colour name, which resolves to nothing.
@@ -300,22 +318,14 @@ public struct DynamicModifierHelper {
            let disabledBg = component.typedAttributes(CommonAttributes.self)
                .disabledBackground?.rawRepresentation as? String,
            let color = DynamicHelpers.getColor(disabledBg, data: data) {
-            return AnyView(view.background(color))
+            return color
         }
 
-        guard let background = component.commonString(\.background) else { return view }
+        guard let background = component.commonString(\.background) else { return nil }
 
-        // Check binding — getColor already handles SwiftUI.Binding unwrapping
-        if let color = DynamicHelpers.getColor(background, data: data) {
-            return AnyView(view.background(color))
-        }
-
-        // Try direct color name
-        if let color = DynamicHelpers.getColor(background) {
-            return AnyView(view.background(color))
-        }
-
-        return view
+        // Check binding — getColor already handles SwiftUI.Binding unwrapping,
+        // then the direct color name
+        return DynamicHelpers.getColor(background, data: data) ?? DynamicHelpers.getColor(background)
     }
 
     // MARK: - 5d. Glass (Liquid Glass, iOS 26+)
@@ -1346,12 +1356,14 @@ public struct DynamicModifierHelper {
         // highlighted → highlightBackground REPLACES the base background,
         // exactly as UIKit swaps SJUIView's backgroundColor. `.background`
         // layers behind the view, so painting the highlight after the opaque
-        // base hid it entirely.
+        // base hid it entirely. A pressed node's tapBackground replaces
+        // either (applyBackground).
         Stage("background", when: { !$0.background }) { v, c, d in
-            if let highlight = highlightedBackgroundColor(component: c, data: d) {
-                return AnyView(v.background(highlight))
-            }
-            return applyBackground(v, component: c, data: d)
+            applyBackground(
+                v,
+                base: highlightedBackgroundColor(component: c, data: d) ?? backgroundColor(component: c, data: d),
+                component: c, data: d
+            )
         },
         // glass — the Liquid Glass material. Slot fixed on BOTH faces, and
         // the two were written from each other rather than each from the prose:

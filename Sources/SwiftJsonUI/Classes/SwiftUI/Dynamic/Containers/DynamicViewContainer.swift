@@ -77,17 +77,14 @@ public struct DynamicViewContainer: View {
         // --- 1. Build container content (use childData to avoid flag propagation) ---
         var result: AnyView
 
-        if component.commonString(\.tapBackground) != nil {
-            result = AnyView(
-                StateAwareContainer(component: component, data: data) {
-                    containerContent(children: children, orientation: orientation, needsRelativePositioning: needsRelativePositioning)
-                }
-            )
-        } else {
-            result = AnyView(
-                containerContent(children: children, orientation: orientation, needsRelativePositioning: needsRelativePositioning)
-            )
-        }
+        // tapBackground is drawn in the background slot and pressed by the tap
+        // (applyBackground / applyOnClick), as on every node with a tap. It
+        // was a StateAwareContainer around the content — on any View with a
+        // tapBackground, tap or none, and painting only the content's own
+        // bounds, inside the padding and the frame.
+        result = AnyView(
+            containerContent(children: children, orientation: orientation, needsRelativePositioning: needsRelativePositioning)
+        )
 
         // --- 2. applyStandardModifiers (use original data with weighted flags for self) ---
         // Empty view with background: emptyContent already painted it as
@@ -195,8 +192,13 @@ public struct DynamicViewContainer: View {
         // colour is painted exactly once — the double opaque layer used to
         // cast the declared .shadow twice.
         if component.commonString(\.background) != nil, gradientColors(component) == nil {
-            Rectangle()
-                .fill(DynamicHelpers.getColor(component.commonString(\.background)) ?? Color.clear)
+            let base = DynamicHelpers.getColor(component.commonString(\.background))
+            if let pressed = DynamicEventHelper.pressedBackgroundColor(component, data: data) {
+                PressedFill(pressed: pressed, base: base)
+            } else {
+                Rectangle()
+                    .fill(base ?? Color.clear)
+            }
         } else if hasExplicitSize || hasWeight || gradientColors(component) != nil {
             Color.clear
         } else {
