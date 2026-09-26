@@ -136,9 +136,18 @@ public struct CollectionConverter {
         let legacyCell = hasSections ? nil : singleDeclaredCell(attrs)
         let legacyHeader = hasSections ? nil : attrs.headerClasses?.first.flatMap(declaredClassName)
         let legacyFooter = hasSections ? nil : attrs.footerClasses?.first.flatMap(declaredClassName)
-        let drawsSomething = hasSections || legacyCell != nil || legacyHeader != nil || legacyFooter != nil
+        let isLegacyShape = !hasSections && (legacyCell != nil || legacyHeader != nil || legacyFooter != nil)
+        let drawsSomething = hasSections || isLegacyShape
+        // No data source (no `items`, or nothing bound yet): the legacy shape
+        // still draws its container — the codegen's legacy List / grid /
+        // stack is emitted whatever `items` says, and its headerClasses /
+        // footerClasses with it (the header of an items-less Collection is
+        // on screen in the release build). An empty source reaches the same
+        // routes with no cells. A sectioned Collection keeps the empty view
+        // below, as before.
+        let resolvedSource = dataSource ?? (isLegacyShape ? CollectionDataSource() : nil)
 
-        guard let dataSource = dataSource, drawsSomething else {
+        guard let dataSource = resolvedSource, drawsSomething else {
             // Declaration-faithful (2026-08-02 ruling): no declared data
             // source → no items rendered, but the container still carries
             // its declared frame/background — route the empty view through
@@ -261,7 +270,8 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback,
                 legacyHeader: legacyHeader,
-                legacyFooter: legacyFooter
+                legacyFooter: legacyFooter,
+                oneGridForAllSections: !hasSections
             )
             if forcedMode == CollectionStackMode.none {
                 // The deferred flow: a non-scroll container that the declared
@@ -393,7 +403,8 @@ public struct CollectionConverter {
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback,
                 legacyHeader: legacyHeader,
-                legacyFooter: legacyFooter
+                legacyFooter: legacyFooter,
+                oneGridForAllSections: !hasSections
             )
         }
 
@@ -1194,7 +1205,8 @@ public struct CollectionConverter {
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil,
         legacyHeader: String? = nil,
-        legacyFooter: String? = nil
+        legacyFooter: String? = nil,
+        oneGridForAllSections: Bool = false
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         // Declaration-faithful: undeclared spacing is 0, matching Compose
@@ -1226,6 +1238,23 @@ public struct CollectionConverter {
                         buildHeaderView(headerClassName: legacyHeader, headerData: [:], data: data, viewId: viewId)
                             .padding(headerFooterEdges)
                     }
+                    Group {
+                    if oneGridForAllSections {
+                        singleGridForAllSections(
+                            component: component,
+                            dataSource: dataSource,
+                            sections: sections,
+                            cellIdProperty: cellIdProperty,
+                            columns: effectiveGridColumns(component, declared: globalColumns),
+                            columnSpacing: itemSpacing,
+                            lineSpacing: lineSpacing,
+                            cellWidth: cellWidth,
+                            cellHeight: cellHeight,
+                            data: data,
+                            viewId: viewId,
+                            onItemAppear: onItemAppear
+                        )
+                    } else {
                     // spacing nil = the same context default the bare
                     // builder content had; single-section grids (the common
                     // shape) are unaffected either way.
@@ -1288,6 +1317,8 @@ public struct CollectionConverter {
                                 viewId: viewId
                             )
                         }
+                    }
+                    }
                     }
                     }
                     .padding(contentEdges ?? EdgeInsets())
@@ -1365,6 +1396,53 @@ public struct CollectionConverter {
         )
     }
 
+    /// The legacy shape's grid (no `sections`): every data section's cells in
+    /// ONE grid, as the codegen's legacy grid emits them — a single LazyVGrid
+    /// around generate_fallback_foreach, on the lazy and the `lazy: none`
+    /// routes alike. One grid per data section (what the sectioned route
+    /// draws) broke the rows at every section boundary instead. A cell's
+    /// index counts within its section, as there.
+    private static func singleGridForAllSections(
+        component: DynamicComponent,
+        dataSource: CollectionDataSource,
+        sections: [[String: Any]],
+        cellIdProperty: String?,
+        columns: Int,
+        columnSpacing: CGFloat,
+        lineSpacing: CGFloat,
+        cellWidth: CGFloat?,
+        cellHeight: CGFloat?,
+        data: [String: Any],
+        viewId: String?,
+        onItemAppear: ((Int) -> Void)?
+    ) -> AnyView {
+        let gridItemSize: GridItem.Size = cellWidth.map { .fixed($0) } ?? .flexible()
+        let gridColumns = Array(repeating: GridItem(gridItemSize, spacing: columnSpacing), count: columns)
+        let sectionCount = min(sections.count, dataSource.sections.count)
+        return AnyView(
+            LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
+                ForEach(0..<sectionCount, id: \.self) { sectionIndex in
+                    if let cellName = sections[sectionIndex]["cell"] as? String,
+                       let cellsData = dataSource.sections[sectionIndex].cells {
+                        ForEach(identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)) { cell in
+                            buildCellView(
+                                cellClassName: cellName,
+                                cellData: cell.data,
+                                cellIndex: cell.index,
+                                component: component,
+                                data: data,
+                                viewId: viewId,
+                                onItemAppear: onItemAppear
+                            )
+                            .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
+                            .id(cell.id)
+                        }
+                    }
+                }
+            }
+        )
+    }
+
     /// Non-lazy layout: no ScrollView, no Lazy* containers. Expects a parent
     /// that already provides scrolling. Sticky headers, scrollTo, and page
     /// anchors are not supported here.
@@ -1380,7 +1458,8 @@ public struct CollectionConverter {
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil,
         legacyHeader: String? = nil,
-        legacyFooter: String? = nil
+        legacyFooter: String? = nil,
+        oneGridForAllSections: Bool = false
     ) -> AnyView {
         let itemSpacing = component.itemSpacing ?? 0
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
@@ -1512,8 +1591,25 @@ public struct CollectionConverter {
                     if let legacyHeader {
                         buildHeaderView(headerClassName: legacyHeader, headerData: [:], data: data, viewId: viewId)
                     }
-                    ForEach(0..<sectionCount, id: \.self) { sectionIndex in
-                        sectionBodies(sectionIndex)
+                    if oneGridForAllSections && globalColumns > 1 {
+                        singleGridForAllSections(
+                            component: component,
+                            dataSource: dataSource,
+                            sections: sections,
+                            cellIdProperty: cellIdProperty,
+                            columns: effectiveGridColumns(component, declared: globalColumns),
+                            columnSpacing: itemSpacing,
+                            lineSpacing: lineSpacing,
+                            cellWidth: cellWidth,
+                            cellHeight: cellHeight,
+                            data: data,
+                            viewId: viewId,
+                            onItemAppear: onItemAppear
+                        )
+                    } else {
+                        ForEach(0..<sectionCount, id: \.self) { sectionIndex in
+                            sectionBodies(sectionIndex)
+                        }
                     }
                     if let legacyFooter {
                         buildFooterView(footerClassName: legacyFooter, footerData: [:], data: data, viewId: viewId)

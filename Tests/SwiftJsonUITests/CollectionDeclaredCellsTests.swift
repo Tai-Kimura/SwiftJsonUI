@@ -21,6 +21,12 @@
 //  place for them (the single-column List, the grid, and their `lazy: none`
 //  stacks) and not on the horizontal, flow and paging routes.
 //
+//  The codegen emits that legacy container whatever `items` says, so an
+//  items-less Collection still shows its header and footer (and a lone
+//  cellClass is an empty List); and its legacy grid is ONE grid around every
+//  data section's cells. Dynamic drew nothing without a source, and a grid
+//  per data section (measured before the change: both red).
+//
 
 import XCTest
 import SwiftUI
@@ -37,13 +43,21 @@ final class CollectionDeclaredCellsTests: XCTestCase {
     /// What was drawn, in build order: "cell:<title>", "other:<title>",
     /// "header", "footer".
     private static var drawn: [String] = []
+    /// Where each of them landed, in window coordinates.
+    private static var frames: [String: CGRect] = [:]
 
     private struct Probe: CustomComponentAdapter {
         let componentType: String
         let record: ([String: Any]) -> String
         func buildView(component: DynamicComponent, data: [String: Any], viewId: String?, parentOrientation: String?) -> AnyView {
-            CollectionDeclaredCellsTests.drawn.append(record(data))
-            return AnyView(Text(componentType).frame(width: 40, height: 20))
+            let key = record(data)
+            CollectionDeclaredCellsTests.drawn.append(key)
+            return AnyView(
+                Text(componentType).frame(width: 40, height: 20)
+                    .background(GeometryReader { g in
+                        Color.clear.onAppear { CollectionDeclaredCellsTests.frames[key] = g.frame(in: .global) }
+                    })
+            )
         }
     }
 
@@ -93,6 +107,7 @@ final class CollectionDeclaredCellsTests: XCTestCase {
     /// more than once, and a List builds its rows in an order of its own.
     private func draw(_ attrs: String, data: [String: Any]? = nil) throws -> Set<String> {
         Self.drawn = []
+        Self.frames = [:]
         let json = "{\"type\": \"Collection\", \"id\": \"c\", \"width\": \"matchParent\", \"height\": \"matchParent\"\(attrs)}"
         let component = try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
         let host = UIHostingController(rootView: DynamicComponentBuilder(
@@ -219,6 +234,114 @@ final class CollectionDeclaredCellsTests: XCTestCase {
     /// With sections the codegen draws `sections[].header` / `.footer` only.
     func testSectionsIgnoreHeaderAndFooterClasses() throws {
         XCTAssertEqual(try draw(headed + ", \"sections\": [{\"cell\": \"\(Self.cell)\"}]"), abc)
+    }
+
+    // MARK: - no items source (the codegen still draws the container)
+
+    private var headedNoItems: String {
+        ", \"cellClasses\": [\"\(Self.cell)\"], \"headerClasses\": [\"\(Self.header)\"], \"footerClasses\": [\"\(Self.footer)\"]"
+    }
+
+    /// The codegen emits its legacy List / grid / stack whatever `items`
+    /// says, header and footer included; only the cells need a source.
+    /// Measured before: nothing drawn on any route.
+    func testWithNoItemsTheHeaderAndFooterAreStillDrawn() throws {
+        let both: Set<String> = ["header", "footer"]
+        for route in ["", ", \"columns\": 2", ", \"lazy\": \"none\"", ", \"lazy\": \"none\", \"columns\": 2"] {
+            XCTAssertEqual(try draw(headedNoItems + route, data: [:]), both, "no items\(route)")
+            // `items` declared but nothing bound to it yet: the same.
+            XCTAssertEqual(try draw(headedNoItems + ", \"items\": \"@{items}\"" + route, data: [:]), both,
+                           "unbound items\(route)")
+        }
+    }
+
+    /// Routes that have no place for them draw neither, with or without items.
+    func testWithNoItemsTheHorizontalFlowAndPagingRoutesDrawNothing() throws {
+        for route in [", \"layout\": \"horizontal\"", ", \"layout\": \"flow\"",
+                      ", \"layout\": \"horizontal\", \"paging\": true",
+                      ", \"lazy\": \"none\", \"layout\": \"horizontal\""] {
+            XCTAssertEqual(try draw(headedNoItems + route, data: [:]), [], route)
+        }
+    }
+
+    /// A sectioned Collection with no source draws nothing, as before.
+    func testWithNoItemsASectionedCollectionDrawsNothing() throws {
+        let attrs = ", \"sections\": [{\"cell\": \"\(Self.cell)\", \"header\": \"\(Self.header)\"}], \"items\": \"@{items}\""
+        XCTAssertEqual(try draw(attrs, data: [:]), [])
+    }
+
+    /// The codegen's legacy List is emitted for a declared cellClass with no
+    /// items too — an empty List, whose chrome is on screen. Found in what
+    /// the converter builds (no hosting needed: nothing is drawn in it).
+    func testWithNoItemsTheLegacyListIsStillAList() throws {
+        func containsList(_ attrs: String) throws -> Bool {
+            let json = "{\"type\": \"Collection\", \"id\": \"c\"\(attrs)}"
+            let component = try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+            let listName = String(String(describing: type(of: List<Never, EmptyView> { EmptyView() })).prefix { $0 != "<" })
+            var found = false
+            var visited = Set<ObjectIdentifier>()
+            func walk(_ value: Any, _ depth: Int) {
+                guard !found, depth < 200 else { return }
+                if value is DynamicComponent || value is [String: Any] { return }
+                if type(of: value) is AnyClass {
+                    guard visited.insert(ObjectIdentifier(value as AnyObject)).inserted else { return }
+                }
+                if String(describing: type(of: value)).hasPrefix(listName + "<") { found = true; return }
+                let mirror = Mirror(reflecting: value)
+                for child in mirror.children { walk(child.value, depth + 1) }
+                var superMirror = mirror.superclassMirror
+                while let m = superMirror {
+                    for child in m.children { walk(child.value, depth + 1) }
+                    superMirror = m.superclassMirror
+                }
+            }
+            walk(CollectionConverter.convert(component: component, data: [:]), 0)
+            return found
+        }
+        XCTAssertTrue(try containsList(", \"cellClasses\": [\"\(Self.cell)\"]"))
+        // Controls: nothing declared draws the empty view; a declared
+        // listStyle draws its chrome List, as before.
+        XCTAssertFalse(try containsList(""))
+        XCTAssertTrue(try containsList(", \"listStyle\": \"grouped\""))
+    }
+
+    // MARK: - several data sections, no `sections`: one grid
+
+    private var twoDataSections: CollectionDataSource {
+        CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "a"]])),
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "b"], ["title": "c"]])),
+        ])
+    }
+
+    /// Two columns, data sections [a] and [b, c]. One grid (the codegen's
+    /// legacy grid) puts b beside a and c under a; a grid per section puts
+    /// b and c on a row of their own.
+    private func placement(_ attrs: String) throws -> (bBesideA: Bool, cUnderA: Bool) {
+        _ = try draw(attrs, data: ["items": twoDataSections])
+        let a = try XCTUnwrap(Self.frames["cell:a"], "a not placed")
+        let b = try XCTUnwrap(Self.frames["cell:b"], "b not placed")
+        let c = try XCTUnwrap(Self.frames["cell:c"], "c not placed")
+        // Rows touch (lineSpacing 0): c's top is a's bottom.
+        return (abs(b.minY - a.minY) < 1 && b.minX > a.maxX,
+                abs(c.minX - a.minX) < 1 && c.minY > a.maxY - 1)
+    }
+
+    func testSeveralDataSectionsWithoutSectionsShareOneGrid() throws {
+        for route in [", \"columns\": 2", ", \"columns\": 2, \"lazy\": \"none\""] {
+            let p = try placement(items + route)
+            XCTAssertTrue(p.bBesideA, "b is not beside a\(route)")
+            XCTAssertTrue(p.cUnderA, "c is not under a\(route)")
+        }
+    }
+
+    /// Control: declared sections keep a grid per section (b starts a row).
+    func testDeclaredSectionsKeepAGridEach() throws {
+        let sectioned = ", \"items\": \"@{items}\", \"columns\": 2, \"sections\": [{\"cell\": \"\(Self.cell)\"}, {\"cell\": \"\(Self.cell)\"}]"
+        for route in ["", ", \"lazy\": \"none\""] {
+            let p = try placement(sectioned + route)
+            XCTAssertFalse(p.bBesideA, "sectioned\(route)")
+        }
     }
 }
 #endif
