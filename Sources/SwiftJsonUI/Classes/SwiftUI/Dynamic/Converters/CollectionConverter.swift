@@ -198,8 +198,10 @@ public struct CollectionConverter {
         // `sections[].cell` on every section of the data source — the
         // codegen's List and grid routes draw every section with it
         // (`generate_fallback_foreach`); its horizontal and flow routes read
-        // `sections.first?.cells` only, hence `firstSectionOnly`. The paging
-        // route reads declared `sections` only, on both faces.
+        // `sections.first?.cells` only, hence `firstSectionOnly` — which the
+        // paging route takes too (4f ruling, 2026-09-26, round 6: a page per
+        // cell, the class-list shape one section; it read declared
+        // `sections` only and drew no page, on every face).
         let cellSections: [[String: Any]] = {
             if hasSections { return sections }
             guard let legacyCell else { return [] }
@@ -378,7 +380,7 @@ public struct CollectionConverter {
             result = buildPagingHorizontalLayout(
                 component: component,
                 dataSource: dataSource,
-                sections: sections,
+                sections: firstSectionOnly,
                 cellIdProperty: cellIdProperty,
                 data: data,
                 viewId: viewId,

@@ -183,9 +183,63 @@ final class CollectionDeclaredCellsTests: XCTestCase {
                        ["cell:a", "cell:b"], "flow: first section")
     }
 
-    /// The codegen's paging route reads `sections[].cell` only.
-    func testThePagingRouteDrawsNothingWithoutSections() throws {
-        XCTAssertEqual(try draw(items + ", \"layout\": \"horizontal\", \"paging\": true"), [])
+    /// The pager's pages, as it holds them: [(tag, the page's title)] from
+    /// PagingCollectionWrapperView's page list (the TabView builds its pages
+    /// lazily, so what the probes record is only the ones on screen).
+    private func pages(_ attrs: String, _ source: Any) throws -> [(tag: Int, title: String)] {
+        let json = "{\"type\": \"Collection\", \"id\": \"c\", \"items\": \"@{items}\", \"layout\": \"horizontal\", \"paging\": true\(attrs)}"
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+        var found: [(tag: Int, title: String)]?
+        func walk(_ value: Any, _ depth: Int) {
+            guard found == nil, depth < 200 else { return }
+            if value is DynamicComponent || value is [String: Any] { return }
+            let mirror = Mirror(reflecting: value)
+            if String(describing: type(of: value)).hasSuffix("PagingCollectionWrapperView") {
+                let items = mirror.children.first { $0.label == "pageItems" }?.value as? [Any] ?? []
+                found = items.map { item in
+                    let fields = Dictionary(uniqueKeysWithValues: Mirror(reflecting: item).children.compactMap { c in c.label.map { ($0, c.value) } })
+                    return ((fields["index"] as? Int) ?? -1, ((fields["data"] as? [String: Any])?["title"] as? String) ?? "?")
+                }
+                return
+            }
+            for child in mirror.children { walk(child.value, depth + 1) }
+            var superMirror = mirror.superclassMirror
+            while let m = superMirror {
+                for child in m.children { walk(child.value, depth + 1) }
+                superMirror = m.superclassMirror
+            }
+        }
+        walk(CollectionConverter.convert(component: component, data: ["items": source]), 0)
+        return found ?? []
+    }
+
+    /// 4f ruling (2026-09-26, round 6): paging draws the class-list shape as
+    /// one section — the first data section, a page per cell — as the
+    /// horizontal and flow routes do. It drew nothing (it read declared
+    /// `sections` only).
+    func testThePagingRouteDrawsTheFirstDataSectionWithoutSections() throws {
+        let two = CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "a"], ["title": "b"]])),
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "c"]])),
+        ])
+        let classList = ", \"cellClasses\": [\"\(Self.cell)\"]"
+        XCTAssertEqual(try pages(classList, two).map(\.title), ["a", "b"])
+        XCTAssertEqual(try pages(classList, arrayOfRows).map(\.title), ["a", "b", "c"], "an array: one section")
+        XCTAssertTrue(try draw(items + ", \"layout\": \"horizontal\", \"paging\": true", data: ["items": two]).contains("cell:a"))
+    }
+
+    /// Every declared section's cells in order, each page's tag its place
+    /// among all the pages — a bound currentPage names one page (the tags do
+    /// not restart per section).
+    func testPagingTagsCountAcrossTheSections() throws {
+        let two = CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "a"], ["title": "b"]])),
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "c"]])),
+        ])
+        let sectioned = ", \"sections\": [{\"cell\": \"\(Self.cell)\"}, {\"cell\": \"\(Self.cell)\"}]"
+        let p = try pages(sectioned, two)
+        XCTAssertEqual(p.map(\.title), ["a", "b", "c"])
+        XCTAssertEqual(p.map(\.tag), [0, 1, 2])
     }
 
     /// No data source declared: nothing to draw, as before.
@@ -221,14 +275,15 @@ final class CollectionDeclaredCellsTests: XCTestCase {
 
     private let arrayOfRows: [Any] = [["title": "a"], ["title": "b"], ["title": "c"]]
 
-    func testAnArrayIsOneSectionOnEveryRouteButPaging() throws {
+    func testAnArrayIsOneSectionOnEveryRoute() throws {
         let routes = ["", ", \"columns\": 2", ", \"layout\": \"horizontal\"", ", \"layout\": \"flow\"",
                       ", \"lazy\": \"none\"", ", \"lazy\": \"none\", \"columns\": 2", ", \"lazy\": \"none\", \"layout\": \"horizontal\""]
         for route in routes {
             XCTAssertEqual(try draw(items + route, data: ["items": arrayOfRows]), abc, "route\(route)")
         }
-        XCTAssertEqual(try draw(items + ", \"layout\": \"horizontal\", \"paging\": true", data: ["items": arrayOfRows]), [],
-                       "paging reads declared sections only")
+        let paging = try draw(items + ", \"layout\": \"horizontal\", \"paging\": true", data: ["items": arrayOfRows])
+        XCTAssertTrue(paging.contains("cell:a") && paging.isSubset(of: abc),
+                      "paging: the array's cells (4f ruling, round 6; it drew none): \(paging)")
     }
 
     /// A generated Data struct's array — what the codegen reads with
@@ -286,7 +341,9 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         XCTAssertEqual(try draw(headed + ", \"layout\": \"flow\""), abc)
         XCTAssertEqual(try draw(headed + ", \"lazy\": \"none\", \"layout\": \"horizontal\""), abc)
         XCTAssertEqual(try draw(headed + ", \"lazy\": \"none\", \"layout\": \"flow\""), abc)
-        XCTAssertEqual(try draw(headed + ", \"layout\": \"horizontal\", \"paging\": true"), [])
+        let paging = try draw(headed + ", \"layout\": \"horizontal\", \"paging\": true")
+        XCTAssertFalse(paging.contains("header") || paging.contains("footer"), "\(paging)")
+        XCTAssertFalse(paging.isEmpty, "paging draws the cells (4f ruling, round 6)")
     }
 
     /// With sections the codegen draws `sections[].header` / `.footer` only.
@@ -620,6 +677,23 @@ final class CollectionDeclaredCellsTests: XCTestCase {
     /// A declared gap is drawn as declared: columnSpacing between cells,
     /// lineSpacing between lines and blocks, itemSpacing the fallback for
     /// both — and a declared 0 is 0 (the `lazy: none` flow drew 8 for it).
+    /// sectionSpacing is lineSpacing's alias (SSoT `aliases`), as a layout
+    /// that has not been normalised may spell it: alone it is lineSpacing —
+    /// the lines and the section blocks; with lineSpacing, the canonical
+    /// lineSpacing wins (4f ruling 2026-09-26, round 6; the typed attribute
+    /// reads the canonical key first — this pins it, as sjui codegen now
+    /// reads it too).
+    func testSectionSpacingIsLineSpacingsAlias() throws {
+        for route in ["", ", \"lazy\": \"none\""] {
+            let alone = try flowGaps(", \"sectionSpacing\": 12" + route)
+            XCTAssertEqual(alone.lines, 12, accuracy: 0.5, "the alias alone: the lines\(route)")
+            XCTAssertEqual(alone.sections, 12, accuracy: 0.5, "the alias alone: the blocks\(route)")
+            let both = try flowGaps(", \"sectionSpacing\": 12, \"lineSpacing\": 4" + route)
+            XCTAssertEqual(both.lines, 4, accuracy: 0.5, "both: the lines\(route)")
+            XCTAssertEqual(both.sections, 4, accuracy: 0.5, "both: the blocks\(route)")
+        }
+    }
+
     func testADeclaredFlowGapIsDrawnAsDeclared() throws {
         let cases: [(String, (CGFloat, CGFloat, CGFloat))] = [
             (", \"columnSpacing\": 10, \"lineSpacing\": 4", (10, 4, 4)),
