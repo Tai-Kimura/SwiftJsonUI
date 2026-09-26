@@ -25,6 +25,33 @@ import SwiftUI
 
 public struct SelectBoxConverter {
 
+    /// onValueChange's call for a pick, by the closure the data holds for it
+    /// (4f's ruling on control-onclick-is-called-differently-on-every-path,
+    /// 1.9.0; selectbox_converter.rb's pick_invocation reads the same from the
+    /// declaration): `(String)` — the picked item, even with selectedIndex
+    /// bound; `(String, Int)` — the viewId and the index; `(String, String)` —
+    /// the viewId and the item; `(Int)` — the index; `()` — nothing. `index`
+    /// is the item's place in `items` (the bound selectedIndex once
+    /// SelectBoxView has written it), -1 for the prompt; a date has none, and
+    /// a handler taking an Int is not called for it.
+    ///
+    /// It was `callWithValue` with the index where selectedIndex is bound and
+    /// the item otherwise, which tries `(String, T)`, `(T)`, `()`: a
+    /// `(String)` handler over a bound index, a `(String, String)` one over a
+    /// bound index and a `(String, Int)` one over anything else were not
+    /// called.
+    static func reportPick(_ handler: String, id: String, picked: String, index: Int?, data: [String: Any]) {
+        guard let name = DynamicEventHelper.handlerName(from: handler) else { return }
+        switch data[name] {
+        case let call as (String) -> Void: call(picked)
+        case let call as (String, String) -> Void: call(id, picked)
+        case let call as (String, Int) -> Void: if let index { call(id, index) }
+        case let call as (Int) -> Void: if let index { call(index) }
+        case let call as () -> Void: call()
+        default: break
+        }
+    }
+
     /// Convert DynamicComponent to SwiftUI SelectBoxView
     /// Matches selectbox_converter.rb convert method exactly
     public static func convert(
@@ -212,23 +239,19 @@ public struct SelectBoxConverter {
 
         // onValueChange from the user's pick — after the selection is written
         // (SelectBoxView writes the index binding, and this closure the date,
-        // first) and before onClick — with the value of what is bound: the
-        // index for a bound selectedIndex, the item (or the date) otherwise.
-        // Not from the view model's own writes: an `.onChange(of:)` on the
-        // bound value reported those too, on the next update and so after the
-        // call (4f's ruling: the control's update, then onValueChange, then
-        // onClick, all from the user's operation). A box bound to a plain
-        // value had neither: nothing was observed, and the pick was not passed
-        // on.
-        let indexBound = selectItemType != .date && attrs.selectedIndex?.bindingString != nil
+        // first) and before onClick — with what the handler's parameters ask
+        // for (reportPick). Not from the view model's own writes: an
+        // `.onChange(of:)` on the bound value reported those too, on the next
+        // update and so after the call (4f's ruling: the control's update,
+        // then onValueChange, then onClick, all from the user's operation). A
+        // box bound to a plain value had neither: nothing was observed, and
+        // the pick was not passed on.
+        let isDate = selectItemType == .date
         let report: ((String) -> Void)? = {
             guard let handler = handlerExpr, DynamicEventHelper.handlerName(from: handler) != nil else { return nil }
             return { picked in
-                if indexBound {
-                    DynamicEventHelper.callWithValue(handler, id: id, value: items.firstIndex(of: picked) ?? -1, data: data)
-                } else {
-                    DynamicEventHelper.callWithValue(handler, id: id, value: picked, data: data)
-                }
+                reportPick(handler, id: id, picked: picked,
+                           index: isDate ? nil : items.firstIndex(of: picked) ?? -1, data: data)
             }
         }()
         // A date bound to a two-way Binding<String> is written back on a pick —
