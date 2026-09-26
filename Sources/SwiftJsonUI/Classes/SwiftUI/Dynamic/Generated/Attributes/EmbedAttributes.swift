@@ -11,6 +11,9 @@ public struct EmbedAttributes {
     public enum NavigationMode: String {
         case delegate = "delegate"
         case isolated = "isolated"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["delegate", "isolated"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -61,13 +64,14 @@ public struct EmbedAttributes {
     private static func parseNavigationMode(_ raw: Any?) -> AttrEnum<NavigationMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "delegate": return .known(NavigationMode.delegate)
             case "isolated": return .known(NavigationMode.isolated)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Embed.navigationMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in NavigationMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Embed.navigationMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

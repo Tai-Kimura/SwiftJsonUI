@@ -11,6 +11,9 @@ public struct ProgressAttributes {
     public enum IndicatorStyle: String {
         case medium = "medium"
         case large = "large"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["medium", "large"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -91,13 +94,14 @@ public struct ProgressAttributes {
     private static func parseIndicatorStyle(_ raw: Any?) -> AttrEnum<IndicatorStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "medium": return .known(IndicatorStyle.medium)
             case "large": return .known(IndicatorStyle.large)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Progress.indicatorStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in IndicatorStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Progress.indicatorStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

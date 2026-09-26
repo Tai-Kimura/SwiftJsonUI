@@ -13,11 +13,17 @@ public struct SafeAreaViewAttributes {
         case leftToRight = "leftToRight"
         case rightToLeft = "rightToLeft"
         case none = "none"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["topToBottom", "bottomToTop", "leftToRight", "rightToLeft", "none"]
     }
 
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["horizontal", "vertical"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -84,29 +90,31 @@ public struct SafeAreaViewAttributes {
     private static func parseDirection(_ raw: Any?) -> AttrEnum<Direction>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "toptobottom": return .known(Direction.topToBottom)
-            case "bottomtotop": return .known(Direction.bottomToTop)
-            case "lefttoright": return .known(Direction.leftToRight)
-            case "righttoleft": return .known(Direction.rightToLeft)
+            switch s {
+            case "topToBottom": return .known(Direction.topToBottom)
+            case "bottomToTop": return .known(Direction.bottomToTop)
+            case "leftToRight": return .known(Direction.leftToRight)
+            case "rightToLeft": return .known(Direction.rightToLeft)
             case "none": return .known(Direction.none)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("SafeAreaView.direction: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Direction.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("SafeAreaView.direction: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "horizontal": return .known(Orientation.horizontal)
             case "vertical": return .known(Orientation.vertical)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("SafeAreaView.orientation: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Orientation.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("SafeAreaView.orientation: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

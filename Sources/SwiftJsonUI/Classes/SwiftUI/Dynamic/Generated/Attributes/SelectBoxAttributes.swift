@@ -10,6 +10,9 @@ public struct SelectBoxAttributes {
     public enum ColorScheme: String {
         case light = "light"
         case dark = "dark"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["light", "dark"]
     }
 
     public enum DatePickerMode: String {
@@ -17,6 +20,9 @@ public struct SelectBoxAttributes {
         case time = "time"
         case dateAndTime = "dateAndTime"
         case countDown = "countDown"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["date", "time", "datetime", "dateAndTime", "countDown"]
     }
 
     public enum DatePickerStyle: String {
@@ -26,11 +32,17 @@ public struct SelectBoxAttributes {
         case compact = "compact"
         case graphical = "graphical"
         case inline = "inline"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["automatic", "wheel", "wheels", "compact", "graphical", "inline"]
     }
 
     public enum SelectItemType: String {
         case normal = "Normal"
         case date = "Date"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Normal", "Date"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -217,35 +229,37 @@ public struct SelectBoxAttributes {
     private static func parseColorScheme(_ raw: Any?) -> AttrEnum<ColorScheme>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "light": return .known(ColorScheme.light)
             case "dark": return .known(ColorScheme.dark)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("SelectBox.colorScheme: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ColorScheme.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("SelectBox.colorScheme: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseDatePickerMode(_ raw: Any?) -> AttrEnum<DatePickerMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "date": return .known(DatePickerMode.date)
             case "time": return .known(DatePickerMode.time)
-            case "dateandtime", "datetime": return .known(DatePickerMode.dateAndTime)
-            case "countdown": return .known(DatePickerMode.countDown)
+            case "dateAndTime", "datetime": return .known(DatePickerMode.dateAndTime)
+            case "countDown": return .known(DatePickerMode.countDown)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("SelectBox.datePickerMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in DatePickerMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("SelectBox.datePickerMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseDatePickerStyle(_ raw: Any?) -> AttrEnum<DatePickerStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "automatic": return .known(DatePickerStyle.automatic)
             case "wheel": return .known(DatePickerStyle.wheel)
             case "wheels": return .known(DatePickerStyle.wheels)
@@ -255,20 +269,22 @@ public struct SelectBoxAttributes {
             default: break
             }
         }
-        AttrCodegenWarnings.emit("SelectBox.datePickerStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in DatePickerStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("SelectBox.datePickerStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseSelectItemType(_ raw: Any?) -> AttrEnum<SelectItemType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "normal": return .known(SelectItemType.normal)
-            case "date": return .known(SelectItemType.date)
+            switch s {
+            case "Normal": return .known(SelectItemType.normal)
+            case "Date": return .known(SelectItemType.date)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("SelectBox.selectItemType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in SelectItemType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("SelectBox.selectItemType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

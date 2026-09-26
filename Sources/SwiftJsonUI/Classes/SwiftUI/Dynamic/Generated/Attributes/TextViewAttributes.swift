@@ -22,6 +22,9 @@ public struct TextViewAttributes {
         case date = "date"
         case time = "time"
         case datetime = "datetime"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["default", "alphabet", "allphabet", "email", "number", "phone", "url", "password", "decimal", "signedDecimal", "date", "time", "datetime"]
     }
 
     public enum KeyboardType: String {
@@ -35,6 +38,9 @@ public struct TextViewAttributes {
         case webSearch = "webSearch"
         case namePhonePad = "namePhonePad"
         case twitter = "twitter"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["default", "asciiCapable", "alphabet", "number", "numberPad", "decimal", "decimalPad", "phone", "phonePad", "email", "emailAddress", "URL", "webURL", "webSearch", "search", "namePhonePad", "twitter", "text", "numeric", "numbersAndPunctuation"]
     }
 
     public enum LineBreakMode: String {
@@ -44,6 +50,9 @@ public struct TextViewAttributes {
         case head = "Head"
         case middle = "Middle"
         case tail = "Tail"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Char", "Clip", "Word", "Head", "Middle", "Tail"]
     }
 
     public enum Resize: String {
@@ -51,6 +60,9 @@ public struct TextViewAttributes {
         case both = "both"
         case horizontal = "horizontal"
         case vertical = "vertical"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["none", "both", "horizontal", "vertical"]
     }
 
     public enum ReturnKeyType: String {
@@ -65,12 +77,18 @@ public struct TextViewAttributes {
         case route = "Route"
         case yahoo = "Yahoo"
         case google = "Google"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Done", "Go", "Next", "Return", "Search", "Send", "Continue", "Join", "Route", "Yahoo", "Google"]
     }
 
     public enum TextAlign: String {
         case left = "Left"
         case center = "Center"
         case right = "Right"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Left", "Center", "Right", "left", "center", "right"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -301,7 +319,7 @@ public struct TextViewAttributes {
     private static func parseInput(_ raw: Any?) -> AttrEnum<Input>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "default": return .known(Input.`default`)
             case "alphabet": return .known(Input.alphabet)
             case "allphabet": return .known(Input.allphabet)
@@ -311,59 +329,62 @@ public struct TextViewAttributes {
             case "url": return .known(Input.url)
             case "password": return .known(Input.password)
             case "decimal": return .known(Input.decimal)
-            case "signeddecimal": return .known(Input.signedDecimal)
+            case "signedDecimal": return .known(Input.signedDecimal)
             case "date": return .known(Input.date)
             case "time": return .known(Input.time)
             case "datetime": return .known(Input.datetime)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("TextView.input: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Input.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("TextView.input: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseKeyboardType(_ raw: Any?) -> AttrEnum<KeyboardType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "default", "text": return .known(KeyboardType.`default`)
-            case "asciicapable", "alphabet": return .known(KeyboardType.asciiCapable)
-            case "number", "numberpad", "numbersandpunctuation": return .known(KeyboardType.number)
-            case "decimal", "decimalpad": return .known(KeyboardType.decimal)
-            case "phone", "phonepad", "numeric": return .known(KeyboardType.phone)
-            case "email", "emailaddress": return .known(KeyboardType.email)
-            case "url", "weburl": return .known(KeyboardType.uRL)
-            case "websearch", "search": return .known(KeyboardType.webSearch)
-            case "namephonepad": return .known(KeyboardType.namePhonePad)
+            case "asciiCapable", "alphabet": return .known(KeyboardType.asciiCapable)
+            case "number", "numberPad", "numbersAndPunctuation": return .known(KeyboardType.number)
+            case "decimal", "decimalPad": return .known(KeyboardType.decimal)
+            case "phone", "phonePad", "numeric": return .known(KeyboardType.phone)
+            case "email", "emailAddress": return .known(KeyboardType.email)
+            case "URL", "webURL": return .known(KeyboardType.uRL)
+            case "webSearch", "search": return .known(KeyboardType.webSearch)
+            case "namePhonePad": return .known(KeyboardType.namePhonePad)
             case "twitter": return .known(KeyboardType.twitter)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("TextView.keyboardType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in KeyboardType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("TextView.keyboardType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseLineBreakMode(_ raw: Any?) -> AttrEnum<LineBreakMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "char": return .known(LineBreakMode.char)
-            case "clip": return .known(LineBreakMode.clip)
-            case "word": return .known(LineBreakMode.word)
-            case "head": return .known(LineBreakMode.head)
-            case "middle": return .known(LineBreakMode.middle)
-            case "tail": return .known(LineBreakMode.tail)
+            switch s {
+            case "Char": return .known(LineBreakMode.char)
+            case "Clip": return .known(LineBreakMode.clip)
+            case "Word": return .known(LineBreakMode.word)
+            case "Head": return .known(LineBreakMode.head)
+            case "Middle": return .known(LineBreakMode.middle)
+            case "Tail": return .known(LineBreakMode.tail)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("TextView.lineBreakMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in LineBreakMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("TextView.lineBreakMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseResize(_ raw: Any?) -> AttrEnum<Resize>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "none": return .known(Resize.none)
             case "both": return .known(Resize.both)
             case "horizontal": return .known(Resize.horizontal)
@@ -371,43 +392,46 @@ public struct TextViewAttributes {
             default: break
             }
         }
-        AttrCodegenWarnings.emit("TextView.resize: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Resize.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("TextView.resize: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseReturnKeyType(_ raw: Any?) -> AttrEnum<ReturnKeyType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "done": return .known(ReturnKeyType.done)
-            case "go": return .known(ReturnKeyType.go)
-            case "next": return .known(ReturnKeyType.next)
-            case "return": return .known(ReturnKeyType.`return`)
-            case "search": return .known(ReturnKeyType.search)
-            case "send": return .known(ReturnKeyType.send)
-            case "continue": return .known(ReturnKeyType.`continue`)
-            case "join": return .known(ReturnKeyType.join)
-            case "route": return .known(ReturnKeyType.route)
-            case "yahoo": return .known(ReturnKeyType.yahoo)
-            case "google": return .known(ReturnKeyType.google)
+            switch s {
+            case "Done": return .known(ReturnKeyType.done)
+            case "Go": return .known(ReturnKeyType.go)
+            case "Next": return .known(ReturnKeyType.next)
+            case "Return": return .known(ReturnKeyType.`return`)
+            case "Search": return .known(ReturnKeyType.search)
+            case "Send": return .known(ReturnKeyType.send)
+            case "Continue": return .known(ReturnKeyType.`continue`)
+            case "Join": return .known(ReturnKeyType.join)
+            case "Route": return .known(ReturnKeyType.route)
+            case "Yahoo": return .known(ReturnKeyType.yahoo)
+            case "Google": return .known(ReturnKeyType.google)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("TextView.returnKeyType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ReturnKeyType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("TextView.returnKeyType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseTextAlign(_ raw: Any?) -> AttrEnum<TextAlign>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "left": return .known(TextAlign.left)
-            case "center": return .known(TextAlign.center)
-            case "right": return .known(TextAlign.right)
+            switch s {
+            case "Left", "left": return .known(TextAlign.left)
+            case "Center", "center": return .known(TextAlign.center)
+            case "Right", "right": return .known(TextAlign.right)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("TextView.textAlign: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in TextAlign.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("TextView.textAlign: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

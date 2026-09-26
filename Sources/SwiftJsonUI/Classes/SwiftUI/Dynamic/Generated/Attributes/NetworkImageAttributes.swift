@@ -17,16 +17,25 @@ public struct NetworkImageAttributes {
         case right = "right"
         case aspectFill = "AspectFill"
         case aspectFit = "AspectFit"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["fit", "fill", "center", "top", "bottom", "left", "right", "AspectFill", "AspectFit", "Center"]
     }
 
     public enum Loading: String {
         case `lazy` = "lazy"
         case eager = "eager"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["lazy", "eager"]
     }
 
     public enum RenderingMode: String {
         case original = "original"
         case template = "template"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["original", "template"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -130,46 +139,49 @@ public struct NetworkImageAttributes {
     private static func parseContentMode(_ raw: Any?) -> AttrEnum<ContentMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "fit": return .known(ContentMode.fit)
             case "fill": return .known(ContentMode.fill)
-            case "center": return .known(ContentMode.center)
+            case "center", "Center": return .known(ContentMode.center)
             case "top": return .known(ContentMode.top)
             case "bottom": return .known(ContentMode.bottom)
             case "left": return .known(ContentMode.left)
             case "right": return .known(ContentMode.right)
-            case "aspectfill": return .known(ContentMode.aspectFill)
-            case "aspectfit": return .known(ContentMode.aspectFit)
+            case "AspectFill": return .known(ContentMode.aspectFill)
+            case "AspectFit": return .known(ContentMode.aspectFit)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("NetworkImage.contentMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ContentMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("NetworkImage.contentMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseLoading(_ raw: Any?) -> AttrEnum<Loading>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "lazy": return .known(Loading.`lazy`)
             case "eager": return .known(Loading.eager)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("NetworkImage.loading: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Loading.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("NetworkImage.loading: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseRenderingMode(_ raw: Any?) -> AttrEnum<RenderingMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "original": return .known(RenderingMode.original)
             case "template": return .known(RenderingMode.template)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("NetworkImage.renderingMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in RenderingMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("NetworkImage.renderingMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

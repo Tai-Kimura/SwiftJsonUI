@@ -8,8 +8,13 @@ import Foundation
 /// Shared attributes are available via `common`.
 public struct IndicatorAttributes {
     public enum IndicatorStyle: String {
+        case small = "small"
         case medium = "medium"
         case large = "large"
+        case linear = "linear"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["small", "medium", "large", "linear"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -45,7 +50,7 @@ public struct IndicatorAttributes {
     /// Hide when stopped. Decides SPACE: `true` collapses the stopped indicator out of the layout, `false` keeps it drawn AND laid out. Full ruling in attribute_semantics.json -> indicatorStopped.
     public let hidesWhenStopped: Bool?
 
-    /// Indicator style
+    /// Indicator style: `small` / `medium` / `large` are the spinner's size (`medium` the platform's own) and `linear` a bar instead of a spinner. A declared width / height wins over the style's size. The legacy spellings `style` (naming one of these values) and `size` (a length) are folded by the layout normalizer, with a warning: `style` into this attribute, `size` into width and height.
     public let indicatorStyle: AttrEnum<IndicatorStyle>?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
@@ -61,13 +66,16 @@ public struct IndicatorAttributes {
     private static func parseIndicatorStyle(_ raw: Any?) -> AttrEnum<IndicatorStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
+            case "small": return .known(IndicatorStyle.small)
             case "medium": return .known(IndicatorStyle.medium)
             case "large": return .known(IndicatorStyle.large)
+            case "linear": return .known(IndicatorStyle.linear)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Indicator.indicatorStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in IndicatorStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Indicator.indicatorStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

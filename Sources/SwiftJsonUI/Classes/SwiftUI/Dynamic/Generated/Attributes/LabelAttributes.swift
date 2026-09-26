@@ -14,12 +14,18 @@ public struct LabelAttributes {
         case head = "Head"
         case middle = "Middle"
         case tail = "Tail"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Char", "Clip", "Word", "Head", "Middle", "Tail"]
     }
 
     public enum TextAlign: String {
         case left = "Left"
         case center = "Center"
         case right = "Right"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Left", "Center", "Right", "left", "center", "right"]
     }
 
     public enum TextTransform: String {
@@ -27,6 +33,9 @@ public struct LabelAttributes {
         case capitalize = "capitalize"
         case uppercase = "uppercase"
         case lowercase = "lowercase"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["none", "capitalize", "uppercase", "lowercase"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -202,38 +211,40 @@ public struct LabelAttributes {
     private static func parseLineBreakMode(_ raw: Any?) -> AttrEnum<LineBreakMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "char": return .known(LineBreakMode.char)
-            case "clip": return .known(LineBreakMode.clip)
-            case "word": return .known(LineBreakMode.word)
-            case "head": return .known(LineBreakMode.head)
-            case "middle": return .known(LineBreakMode.middle)
-            case "tail": return .known(LineBreakMode.tail)
+            switch s {
+            case "Char": return .known(LineBreakMode.char)
+            case "Clip": return .known(LineBreakMode.clip)
+            case "Word": return .known(LineBreakMode.word)
+            case "Head": return .known(LineBreakMode.head)
+            case "Middle": return .known(LineBreakMode.middle)
+            case "Tail": return .known(LineBreakMode.tail)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Label.lineBreakMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in LineBreakMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Label.lineBreakMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseTextAlign(_ raw: Any?) -> AttrEnum<TextAlign>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "left": return .known(TextAlign.left)
-            case "center": return .known(TextAlign.center)
-            case "right": return .known(TextAlign.right)
+            switch s {
+            case "Left", "left": return .known(TextAlign.left)
+            case "Center", "center": return .known(TextAlign.center)
+            case "Right", "right": return .known(TextAlign.right)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Label.textAlign: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in TextAlign.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Label.textAlign: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseTextTransform(_ raw: Any?) -> AttrEnum<TextTransform>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "none": return .known(TextTransform.none)
             case "capitalize": return .known(TextTransform.capitalize)
             case "uppercase": return .known(TextTransform.uppercase)
@@ -241,7 +252,8 @@ public struct LabelAttributes {
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Label.textTransform: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in TextTransform.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Label.textTransform: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

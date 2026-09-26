@@ -11,6 +11,9 @@ public struct GradientViewAttributes {
         case vertical = "Vertical"
         case horizontal = "Horizontal"
         case oblique = "Oblique"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Vertical", "Horizontal", "Oblique"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -77,14 +80,15 @@ public struct GradientViewAttributes {
     private static func parseGradientDirection(_ raw: Any?) -> AttrEnum<GradientDirection>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "vertical": return .known(GradientDirection.vertical)
-            case "horizontal": return .known(GradientDirection.horizontal)
-            case "oblique": return .known(GradientDirection.oblique)
+            switch s {
+            case "Vertical": return .known(GradientDirection.vertical)
+            case "Horizontal": return .known(GradientDirection.horizontal)
+            case "Oblique": return .known(GradientDirection.oblique)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("GradientView.gradientDirection: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in GradientDirection.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("GradientView.gradientDirection: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

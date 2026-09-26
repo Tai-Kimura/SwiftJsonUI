@@ -12,6 +12,9 @@ public struct IconLabelAttributes {
         case right = "Right"
         case top = "Top"
         case bottom = "Bottom"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Left", "Right", "Top", "Bottom"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -103,15 +106,16 @@ public struct IconLabelAttributes {
     private static func parseIconPosition(_ raw: Any?) -> AttrEnum<IconPosition>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "left": return .known(IconPosition.left)
-            case "right": return .known(IconPosition.right)
-            case "top": return .known(IconPosition.top)
-            case "bottom": return .known(IconPosition.bottom)
+            switch s {
+            case "Left": return .known(IconPosition.left)
+            case "Right": return .known(IconPosition.right)
+            case "Top": return .known(IconPosition.top)
+            case "Bottom": return .known(IconPosition.bottom)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("IconLabel.iconPosition: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in IconPosition.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("IconLabel.iconPosition: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }
