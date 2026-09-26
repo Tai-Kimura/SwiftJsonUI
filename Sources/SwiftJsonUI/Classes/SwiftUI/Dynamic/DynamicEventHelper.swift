@@ -92,10 +92,17 @@ public struct DynamicEventHelper {
     /// gates the handler's call and nothing else — a control's own operation
     /// (a Radio's selection, a Checkbox's value, a Button's press state) is
     /// `enabled`'s. Absent, there is no gate.
+    ///
+    /// `userInteractionEnabled` shuts it as canTap does (the tap rule,
+    /// TapAccessibility): false, or a binding resolving false, on the
+    /// component or on one around it (`interactionStoppedAround`). Its
+    /// `.allowsHitTesting` stopped a touch, not VoiceOver, which activates a
+    /// Button through its action and announced the tap as a button.
     static func tapGateOpen(_ component: DynamicComponent, data: [String: Any]) -> Bool {
-        DynamicHelpers.resolveBool(
-            component.typedAttributes(CommonAttributes.self).canTap, legacy: nil, data: data
-        ) != false
+        let attributes = component.typedAttributes(CommonAttributes.self)
+        return DynamicHelpers.resolveBool(attributes.canTap, legacy: nil, data: data) != false
+            && DynamicHelpers.resolveBool(attributes.userInteractionEnabled, legacy: nil, data: data) != false
+            && !component.interactionStoppedAround
     }
 
     // MARK: - A control's onClick: from its own operation

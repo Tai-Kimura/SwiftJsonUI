@@ -13,7 +13,8 @@ import SwiftUI
 
 // MARK: - Component Builder
 public struct DynamicComponentBuilder: View {
-    let component: DynamicComponent
+    /// The component as the layout gives it; `component` is what is built.
+    let source: DynamicComponent
     let data: [String: Any]
     let viewId: String?
     let isWeightedChild: Bool
@@ -24,8 +25,18 @@ public struct DynamicComponentBuilder: View {
     /// and re-resolve colors via `themedColorProvider`.
     @ObservedObject private var config = SwiftJsonUIConfiguration.shared
 
+    /// Inside a component whose `userInteractionEnabled` is false, or a
+    /// binding resolving false (TapAccessibility).
+    @Environment(\.jsonuiInteractionStopped) private var stoppedAround
+
+    /// The component built: marked when a component around it stops
+    /// interaction, so its tap, its traits and the image rule read no tap.
+    var component: DynamicComponent {
+        stoppedAround ? source.markedStopped() : source
+    }
+
     public init(component: DynamicComponent, data: [String: Any], viewId: String? = nil, isWeightedChild: Bool = false, parentOrientation: String? = nil) {
-        self.component = component
+        self.source = component
         self.data = data
         self.viewId = viewId
         self.isWeightedChild = isWeightedChild
@@ -51,7 +62,20 @@ public struct DynamicComponentBuilder: View {
         }
         // A component with a tap handler is the nearest tappable for every
         // image rendered inside it (ImageAccessibility.role).
-        .modifier(ImageTappableMark(node: ImageAccessibility.isTappable(component.rawData) ? component.rawData : nil))
+        .modifier(ImageTappableMark(
+            node: ImageAccessibility.isTappable(component.rawData, stopped: stoppedAround) ? component.rawData : nil
+        ))
+        // A component whose userInteractionEnabled is false, or a binding
+        // resolving false, stops everything built inside it (TapAccessibility).
+        // Always applied, so a binding that flips keeps the subtree's identity.
+        .environment(\.jsonuiInteractionStopped, stoppedAround || stopsInteraction)
+    }
+
+    /// `userInteractionEnabled` is false, or a binding resolving false.
+    private var stopsInteraction: Bool {
+        DynamicHelpers.resolveBool(
+            source.typedAttributes(CommonAttributes.self).userInteractionEnabled, legacy: nil, data: data
+        ) == false
     }
 
     /// The `hidden` value when it is a binding expression (a literal bool is
@@ -324,9 +348,10 @@ public struct DynamicComponentBuilder: View {
             let json = try JSONSerialization.data(withJSONObject: raw, options: [])
             let decoder = JSONDecoder()
             JsonUINormalization.apply(to: decoder, normalized: component.isNormalized)
-            let drawn = try decoder.decode(DynamicComponent.self, from: json)
-            let _ = JsonUIAttributeAudit.audit(component: drawn)
-            return drawn
+            let decoded = try decoder.decode(DynamicComponent.self, from: json)
+            let _ = JsonUIAttributeAudit.audit(component: decoded)
+            // Decoded again: the mark it carried goes with it.
+            return component.interactionStoppedAround ? decoded.markedStopped() : decoded
         } catch {
             Logger.debug("[TypeSynonyms] '\(component.type ?? "")' could not be decoded as "
                 + "'\(raw["type"] ?? "")': \(error)")
