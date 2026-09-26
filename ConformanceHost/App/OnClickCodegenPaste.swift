@@ -9,6 +9,10 @@
 //  line each: sjui declares a Radio group's `@State` once per Radio, and the
 //  checked one's seed and the other's "" do not compile together (ticket
 //  sjui-codegen-state-declarations-collide-by-name) — the second is left out.
+//  And gate V's three unbound Switch / Segment / Slider observers: they read
+//  `data.swuVIsOn`, `data.selectedSeguv`, `data.sliderValuesluV`, which the
+//  Data struct does not have (the state is the view's own), and do not
+//  compile — each is left out where it was, with a note.
 //  For ticket control-onclick-is-called-differently-on-every-path.
 //
 
@@ -995,6 +999,588 @@ struct OnClickECodegenPaste: View {
                     .disabled(true)
                     .accessibilityIdentifier("swlE")
                     .disabled(true)
+        }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+}
+
+struct OnClickVData {
+    // Data properties from JSON
+    var onSwuV: (() -> Void)? = nil
+    var onSwuC: (() -> Void)? = nil
+    var onSwbV: (() -> Void)? = nil
+    var onSwbC: (() -> Void)? = nil
+    var onCbuV: (() -> Void)? = nil
+    var onCbuC: (() -> Void)? = nil
+    var onCbbV: (() -> Void)? = nil
+    var onCbbC: (() -> Void)? = nil
+    var onRvuV: (() -> Void)? = nil
+    var onRvuC: (() -> Void)? = nil
+    var onRvbV: (() -> Void)? = nil
+    var onRvbC: (() -> Void)? = nil
+    var onSeguV: (() -> Void)? = nil
+    var onSeguC: (() -> Void)? = nil
+    var onSegbV: (() -> Void)? = nil
+    var onSegbC: (() -> Void)? = nil
+    var onSluV: (() -> Void)? = nil
+    var onSluC: (() -> Void)? = nil
+    var onSlbV: (() -> Void)? = nil
+    var onSlbC: (() -> Void)? = nil
+    var onSbuV: (() -> Void)? = nil
+    var onSbuC: (() -> Void)? = nil
+    var onSbbV: (() -> Void)? = nil
+    var onSbbC: (() -> Void)? = nil
+    var onSbdV: (() -> Void)? = nil
+    var onSbdC: (() -> Void)? = nil
+    var swbOn: Bool = false
+    var cbbOn: Bool = false
+    var rvbSel: String = "ba".localized()
+    var segbIdx: Int = 0
+    var slbVal: Double = 0.2
+    var sbbIdx: Int = 0
+    var sbdDate: String = "2026-01-02"
+    var selectedRadiogroup: String = ""
+
+    // Update properties from dictionary
+    mutating func update(dictionary: [String: Any]) {
+        if let value = dictionary["onSwuV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwuV = typedValue
+            }
+        }
+        if let value = dictionary["onSwuC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwuC = typedValue
+            }
+        }
+        if let value = dictionary["onSwbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwbV = typedValue
+            }
+        }
+        if let value = dictionary["onSwbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwbC = typedValue
+            }
+        }
+        if let value = dictionary["onCbuV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onCbuV = typedValue
+            }
+        }
+        if let value = dictionary["onCbuC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onCbuC = typedValue
+            }
+        }
+        if let value = dictionary["onCbbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onCbbV = typedValue
+            }
+        }
+        if let value = dictionary["onCbbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onCbbC = typedValue
+            }
+        }
+        if let value = dictionary["onRvuV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onRvuV = typedValue
+            }
+        }
+        if let value = dictionary["onRvuC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onRvuC = typedValue
+            }
+        }
+        if let value = dictionary["onRvbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onRvbV = typedValue
+            }
+        }
+        if let value = dictionary["onRvbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onRvbC = typedValue
+            }
+        }
+        if let value = dictionary["onSeguV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSeguV = typedValue
+            }
+        }
+        if let value = dictionary["onSeguC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSeguC = typedValue
+            }
+        }
+        if let value = dictionary["onSegbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegbV = typedValue
+            }
+        }
+        if let value = dictionary["onSegbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegbC = typedValue
+            }
+        }
+        if let value = dictionary["onSluV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSluV = typedValue
+            }
+        }
+        if let value = dictionary["onSluC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSluC = typedValue
+            }
+        }
+        if let value = dictionary["onSlbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSlbV = typedValue
+            }
+        }
+        if let value = dictionary["onSlbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSlbC = typedValue
+            }
+        }
+        if let value = dictionary["onSbuV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSbuV = typedValue
+            }
+        }
+        if let value = dictionary["onSbuC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSbuC = typedValue
+            }
+        }
+        if let value = dictionary["onSbbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSbbV = typedValue
+            }
+        }
+        if let value = dictionary["onSbbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSbbC = typedValue
+            }
+        }
+        if let value = dictionary["onSbdV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSbdV = typedValue
+            }
+        }
+        if let value = dictionary["onSbdC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSbdC = typedValue
+            }
+        }
+        if let value = dictionary["swbOn"] {
+            if let boolValue = value as? Bool {
+                self.swbOn = boolValue
+            }
+        }
+        if let value = dictionary["cbbOn"] {
+            if let boolValue = value as? Bool {
+                self.cbbOn = boolValue
+            }
+        }
+        if let value = dictionary["rvbSel"] {
+            if let stringValue = value as? String {
+                self.rvbSel = stringValue
+            }
+        }
+        if let value = dictionary["segbIdx"] {
+            if let intValue = value as? Int {
+                self.segbIdx = intValue
+            }
+        }
+        if let value = dictionary["slbVal"] {
+            if let doubleValue = value as? Double {
+                self.slbVal = doubleValue
+            }
+        }
+        if let value = dictionary["sbbIdx"] {
+            if let intValue = value as? Int {
+                self.sbbIdx = intValue
+            }
+        }
+        if let value = dictionary["sbdDate"] {
+            if let stringValue = value as? String {
+                self.sbdDate = stringValue
+            }
+        }
+        if let value = dictionary["selectedRadiogroup"] {
+            if let stringValue = value as? String {
+                self.selectedRadiogroup = stringValue
+            }
+        }
+    }
+
+    // Convert properties to dictionary for Dynamic mode
+    func toDictionary() -> [String: Any] {
+        var dict: [String: Any] = [:]
+        
+        // Data properties
+        if let value = onSwuV {
+            dict["onSwuV"] = value
+        }
+        if let value = onSwuC {
+            dict["onSwuC"] = value
+        }
+        if let value = onSwbV {
+            dict["onSwbV"] = value
+        }
+        if let value = onSwbC {
+            dict["onSwbC"] = value
+        }
+        if let value = onCbuV {
+            dict["onCbuV"] = value
+        }
+        if let value = onCbuC {
+            dict["onCbuC"] = value
+        }
+        if let value = onCbbV {
+            dict["onCbbV"] = value
+        }
+        if let value = onCbbC {
+            dict["onCbbC"] = value
+        }
+        if let value = onRvuV {
+            dict["onRvuV"] = value
+        }
+        if let value = onRvuC {
+            dict["onRvuC"] = value
+        }
+        if let value = onRvbV {
+            dict["onRvbV"] = value
+        }
+        if let value = onRvbC {
+            dict["onRvbC"] = value
+        }
+        if let value = onSeguV {
+            dict["onSeguV"] = value
+        }
+        if let value = onSeguC {
+            dict["onSeguC"] = value
+        }
+        if let value = onSegbV {
+            dict["onSegbV"] = value
+        }
+        if let value = onSegbC {
+            dict["onSegbC"] = value
+        }
+        if let value = onSluV {
+            dict["onSluV"] = value
+        }
+        if let value = onSluC {
+            dict["onSluC"] = value
+        }
+        if let value = onSlbV {
+            dict["onSlbV"] = value
+        }
+        if let value = onSlbC {
+            dict["onSlbC"] = value
+        }
+        if let value = onSbuV {
+            dict["onSbuV"] = value
+        }
+        if let value = onSbuC {
+            dict["onSbuC"] = value
+        }
+        if let value = onSbbV {
+            dict["onSbbV"] = value
+        }
+        if let value = onSbbC {
+            dict["onSbbC"] = value
+        }
+        if let value = onSbdV {
+            dict["onSbdV"] = value
+        }
+        if let value = onSbdC {
+            dict["onSbdC"] = value
+        }
+        dict["swbOn"] = swbOn
+        dict["cbbOn"] = cbbOn
+        dict["rvbSel"] = rvbSel
+        dict["segbIdx"] = segbIdx
+        dict["slbVal"] = slbVal
+        dict["sbbIdx"] = sbbIdx
+        dict["sbdDate"] = sbdDate
+        dict["selectedRadiogroup"] = selectedRadiogroup
+        
+        return dict
+    }
+
+    #if DEBUG
+    // Convert properties to binding dictionary for Dynamic mode reactivity
+    // SwiftUI.Binding<T> values enable automatic re-rendering on changes
+    func toDictionary(binding dataBinding: SwiftUI.Binding<OnClickVData>) -> [String: Any] {
+        var dict: [String: Any] = [:]
+        
+        // Data properties as SwiftUI.Binding for reactivity
+        if let onSwuV = onSwuV {
+            dict["onSwuV"] = onSwuV
+        }
+        if let onSwuC = onSwuC {
+            dict["onSwuC"] = onSwuC
+        }
+        if let onSwbV = onSwbV {
+            dict["onSwbV"] = onSwbV
+        }
+        if let onSwbC = onSwbC {
+            dict["onSwbC"] = onSwbC
+        }
+        if let onCbuV = onCbuV {
+            dict["onCbuV"] = onCbuV
+        }
+        if let onCbuC = onCbuC {
+            dict["onCbuC"] = onCbuC
+        }
+        if let onCbbV = onCbbV {
+            dict["onCbbV"] = onCbbV
+        }
+        if let onCbbC = onCbbC {
+            dict["onCbbC"] = onCbbC
+        }
+        if let onRvuV = onRvuV {
+            dict["onRvuV"] = onRvuV
+        }
+        if let onRvuC = onRvuC {
+            dict["onRvuC"] = onRvuC
+        }
+        if let onRvbV = onRvbV {
+            dict["onRvbV"] = onRvbV
+        }
+        if let onRvbC = onRvbC {
+            dict["onRvbC"] = onRvbC
+        }
+        if let onSeguV = onSeguV {
+            dict["onSeguV"] = onSeguV
+        }
+        if let onSeguC = onSeguC {
+            dict["onSeguC"] = onSeguC
+        }
+        if let onSegbV = onSegbV {
+            dict["onSegbV"] = onSegbV
+        }
+        if let onSegbC = onSegbC {
+            dict["onSegbC"] = onSegbC
+        }
+        if let onSluV = onSluV {
+            dict["onSluV"] = onSluV
+        }
+        if let onSluC = onSluC {
+            dict["onSluC"] = onSluC
+        }
+        if let onSlbV = onSlbV {
+            dict["onSlbV"] = onSlbV
+        }
+        if let onSlbC = onSlbC {
+            dict["onSlbC"] = onSlbC
+        }
+        if let onSbuV = onSbuV {
+            dict["onSbuV"] = onSbuV
+        }
+        if let onSbuC = onSbuC {
+            dict["onSbuC"] = onSbuC
+        }
+        if let onSbbV = onSbbV {
+            dict["onSbbV"] = onSbbV
+        }
+        if let onSbbC = onSbbC {
+            dict["onSbbC"] = onSbbC
+        }
+        if let onSbdV = onSbdV {
+            dict["onSbdV"] = onSbdV
+        }
+        if let onSbdC = onSbdC {
+            dict["onSbdC"] = onSbdC
+        }
+        dict["swbOn"] = SwiftUI.Binding<Bool>(
+            get: { dataBinding.wrappedValue.swbOn },
+            set: { dataBinding.wrappedValue.swbOn = $0 }
+        )
+        dict["cbbOn"] = SwiftUI.Binding<Bool>(
+            get: { dataBinding.wrappedValue.cbbOn },
+            set: { dataBinding.wrappedValue.cbbOn = $0 }
+        )
+        dict["rvbSel"] = SwiftUI.Binding<String>(
+            get: { dataBinding.wrappedValue.rvbSel },
+            set: { dataBinding.wrappedValue.rvbSel = $0 }
+        )
+        dict["segbIdx"] = SwiftUI.Binding<Int>(
+            get: { dataBinding.wrappedValue.segbIdx },
+            set: { dataBinding.wrappedValue.segbIdx = $0 }
+        )
+        dict["slbVal"] = SwiftUI.Binding<Double>(
+            get: { dataBinding.wrappedValue.slbVal },
+            set: { dataBinding.wrappedValue.slbVal = $0 }
+        )
+        dict["sbbIdx"] = SwiftUI.Binding<Int>(
+            get: { dataBinding.wrappedValue.sbbIdx },
+            set: { dataBinding.wrappedValue.sbbIdx = $0 }
+        )
+        dict["sbdDate"] = SwiftUI.Binding<String>(
+            get: { dataBinding.wrappedValue.sbdDate },
+            set: { dataBinding.wrappedValue.sbdDate = $0 }
+        )
+        dict["selectedRadiogroup"] = SwiftUI.Binding<String>(
+            get: { dataBinding.wrappedValue.selectedRadiogroup },
+            set: { dataBinding.wrappedValue.selectedRadiogroup = $0 }
+        )
+        
+        return dict
+    }
+    #endif
+}
+
+struct OnClickVCodegenPaste: View {
+    @SwiftUI.Binding var data: OnClickVData
+    @State private var swuVIsOn: Bool = false
+    @State private var cbuVIsOn: Bool = false
+    @State private var selectedRvuv: String = "ua"
+    @State private var selectedSeguv: Int = 0
+    @State private var sliderValuesluV: Double = 0.2
+
+    var body: some View {
+            AnyView(section0())
+    }
+
+    @ViewBuilder private func section0() -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+                Toggle(isOn: SwiftUI.Binding(get: { $swuVIsOn.wrappedValue }, set: { $swuVIsOn.wrappedValue = $0; data.onSwuC?() })) {
+                    Text("")
+                }
+                    .labelsHidden()
+                    // (`.onChange(of: data.swuVIsOn)` here — left out: OnClickVData has no swuVIsOn; it does not compile)
+                    .accessibilityIdentifier("swuV")
+                Toggle(isOn: SwiftUI.Binding(get: { $data.swbOn.wrappedValue }, set: { $data.swbOn.wrappedValue = $0; data.onSwbC?() })) {
+                    Text("")
+                }
+                    .labelsHidden()
+                    .onChange(of: data.swbOn) { _, newValue in
+                    data.onSwbV?()
+                }
+                    .accessibilityIdentifier("swbV")
+                CheckBoxView(
+                    isOn: $cbuVIsOn,
+                    label: "cbu",
+                    onValueChanged: { newValue in data.onCbuV?(); data.onCbuC?() }
+                )
+                    .accessibilityIdentifier("cbuV")
+                CheckBoxView(
+                    isOn: $data.cbbOn,
+                    label: "cbb",
+                    onValueChanged: { newValue in data.onCbbV?(); data.onCbbC?() }
+                )
+                    .accessibilityIdentifier("cbbV")
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: selectedRvuv == "ua" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            selectedRvuv = "ua"
+                            data.onRvuV?()
+                            data.onRvuC?()
+                        }
+                        Text("ua")
+                    }
+                    HStack {
+                        Image(systemName: selectedRvuv == "ub" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            selectedRvuv = "ub"
+                            data.onRvuV?()
+                            data.onRvuC?()
+                        }
+                        Text("ub")
+                    }
+                }
+                    .accessibilityIdentifier("rvuV")
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: data.rvbSel == "ba" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            data.rvbSel = "ba"
+                            data.onRvbV?()
+                            data.onRvbC?()
+                        }
+                        Text("ba")
+                    }
+                    HStack {
+                        Image(systemName: data.rvbSel == "bb" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            data.rvbSel = "bb"
+                            data.onRvbV?()
+                            data.onRvbC?()
+                        }
+                        Text("bb")
+                    }
+                }
+                    .accessibilityIdentifier("rvbV")
+                Picker("", selection: SwiftUI.Binding(get: { $selectedSeguv.wrappedValue }, set: { $selectedSeguv.wrappedValue = $0; data.onSeguC?() })) {
+                    Text("ux".localized()).tag(0)
+                    Text("uy".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    // (`.onChange(of: data.selectedSeguv)` here — left out: OnClickVData has no selectedSeguv; it does not compile)
+                    .accessibilityIdentifier("seguV")
+                Picker("", selection: SwiftUI.Binding(get: { $data.segbIdx.wrappedValue }, set: { $data.segbIdx.wrappedValue = $0; data.onSegbC?() })) {
+                    Text("bx".localized()).tag(0)
+                    Text("by".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    .onChange(of: data.segbIdx) { _, newValue in
+                    data.onSegbV?()
+                }
+                    .accessibilityIdentifier("segbV")
+                Slider(value: $sliderValuesluV, in: 0...1, onEditingChanged: { editing in if !editing { data.onSluC?() } })
+                    // (`.onChange(of: data.sliderValuesluV)` here — left out: OnClickVData has no sliderValuesluV; it does not compile)
+                    .accessibilityIdentifier("sluV")
+                Slider(value: $data.slbVal, in: 0...1, onEditingChanged: { editing in if !editing { data.onSlbC?() } })
+                    .onChange(of: data.slbVal) { _, newValue in
+                    data.onSlbV?()
+                }
+                    .accessibilityIdentifier("slbV")
+                SelectBoxView(
+                    id: "sbuV",
+                    selectItemType: .normal,
+                    items: ["up", "uq"],
+                    selectedIndex: 0,
+                    onValueChange: { _ in data.onSbuC?() }
+                )
+                    .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
+                    .accessibilityIdentifier("sbuV")
+                SelectBoxView(
+                    id: "sbbV",
+                    selectItemType: .normal,
+                    items: ["bp", "bq"],
+                    selectedIndexBinding: $data.sbbIdx,
+                    onValueChange: { _ in data.onSbbC?() }
+                )
+                    .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
+                    .onChange(of: data.sbbIdx) { _, newValue in
+                            data.onSbbV?()
+                        }
+                    .accessibilityIdentifier("sbbV")
+                SelectBoxView(
+                    id: "sbdV",
+                    selectItemType: .date,
+                    datePickerMode: .date,
+                    dateStringFormat: "yyyy-MM-dd",
+                    selectedDate: data.sbdDate.toDate(format: "yyyy-MM-dd"),
+                    onValueChange: { newValue in
+                        data.sbdDate = newValue
+                        data.onSbdV?()
+                        data.onSbdC?()
+                    }
+                )
+                    .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
+                    .onChange(of: data.sbdDate) { _, newValue in
+                            data.onSbdV?()
+                        }
+                    .accessibilityIdentifier("sbdV")
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }

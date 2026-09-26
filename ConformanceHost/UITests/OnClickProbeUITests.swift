@@ -30,8 +30,9 @@ final class OnClickProbeUITests: XCTestCase {
         }
         continueAfterFailure = true
         let paths = (ProcessInfo.processInfo.environment["ON_CLICK_PATHS"] ?? "dynamic,codegen").split(separator: ",").map(String.init)
+        let gates = (ProcessInfo.processInfo.environment["ON_CLICK_GATES"] ?? "N,C,E,V").split(separator: ",").map(String.init)
         for path in paths {
-            for gate in ["N", "C", "E"] { run(path, gate) }
+            for gate in gates { gate == "V" ? runV(path) : run(path, gate) }
         }
     }
 
@@ -75,6 +76,81 @@ final class OnClickProbeUITests: XCTestCase {
             }
         }
         app.terminate()
+    }
+
+    // MARK: - Gate V: onValueChange, then onClick, from the user only
+
+    /// Each control over a value of its own (…u) and bound to the data (…b),
+    /// and a bound date.
+    private let valued = ["swu", "swb", "cbu", "cbb", "rvu", "rvb", "segu", "segb", "slu", "slb", "sbu", "sbb", "sbd"]
+
+    private func runV(_ path: String) {
+        gate = "V"
+        app = XCUIApplication()
+        app.launchArguments = ["-onClickProbe", "V", "-ocPath", path]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["oc_ready"].waitForExistence(timeout: 15), "\(path) V: probe did not start")
+        XCTAssertTrue(element("swuV").waitForExistence(timeout: 5), "\(path) V: the controls are there")
+        sleep(1)
+
+        operateV()
+        sleep(1)
+        let operated = sequence()
+        print("ONCLICK \(path) V operated seq=\(operated.joined(separator: ","))")
+        for c in valued {
+            let v = "on" + c.prefix(1).uppercased() + c.dropFirst() + "V"
+            let k = "on" + c.prefix(1).uppercased() + c.dropFirst() + "C"
+            let own = operated.filter { $0 == v || $0 == k }.map { $0 == v ? "v" : "c" }.joined()
+            print("ONCLICK \(path) V \(c) order=\(own)")
+            // A slider reports every value of the drag, then the click once
+            // at its end; every other control one value and one click.
+            let want = c.hasPrefix("sl") ? own.range(of: "^v+c$", options: .regularExpression) != nil : own == "vc"
+            XCTAssertTrue(want, "\(path) V \(c): onValueChange, then onClick — got \(own)")
+        }
+
+        element("oc_vm").tap()
+        sleep(2)
+        let after = sequence()
+        let fromModel = Array(after.dropFirst(operated.count))
+        print("ONCLICK \(path) V model seq=\(fromModel.joined(separator: ","))")
+        XCTAssertEqual(fromModel, [], "\(path) V: the view model's change calls nothing")
+        app.terminate()
+    }
+
+    private func sequence() -> [String] {
+        let readout = app.staticTexts["oc_readout"].label
+        guard let start = readout.range(of: "seq[")?.upperBound,
+              let end = readout[start...].firstIndex(of: "]") else { return [] }
+        return readout[start..<end].split(separator: ",").map(String.init)
+    }
+
+    private func operateV() {
+        for id in ["swuV", "swbV", "cbuV", "cbbV"] { element(id).tap() }
+        radioGlyph(app.staticTexts["ub"].frame).tap()
+        radioGlyph(app.staticTexts["bb"].frame).tap()
+        app.buttons["uy"].tap()
+        app.buttons["by"].tap()
+        app.sliders["sluV"].adjust(toNormalizedSliderPosition: 0.8)
+        app.sliders["slbV"].adjust(toNormalizedSliderPosition: 0.8)
+        for (id, item) in [("sbuV", "uq"), ("sbbV", "bq")] {
+            element(id).tap()
+            let wheel = app.pickerWheels.firstMatch
+            if wheel.waitForExistence(timeout: 3) {
+                wheel.adjust(toPickerWheelValue: item)
+                app.buttons["Done"].tap()
+            } else {
+                XCTFail("\(id): the picker did not open")
+            }
+            sleep(1)
+        }
+        element("sbdV").tap()
+        let day = app.pickerWheels.element(boundBy: 1)
+        if day.waitForExistence(timeout: 5) {
+            day.adjust(toPickerWheelValue: "3")
+            app.buttons["Done"].tap()
+        } else {
+            XCTFail("sbdV: the date picker did not open")
+        }
     }
 
     // MARK: - Operating
