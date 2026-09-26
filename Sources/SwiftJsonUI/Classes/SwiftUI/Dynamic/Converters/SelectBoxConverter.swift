@@ -171,7 +171,20 @@ public struct SelectBoxConverter {
                 let binding = DynamicBindingHelper.int(si, data: data, fallback: selectedIndex ?? 0)
                 return binding
             }
-            return nil
+            // A bound selectedItem / selectedValue — declared two-way — is the
+            // same selection as the item's index: read through `items`, so the
+            // box follows the view model, and written back through them when the
+            // data holds a two-way Binding<String> (a plain value is only read).
+            // It was taken once, as the seed above, and never followed nor
+            // written (ticket selectbox-selected-item-binding-is-read-once).
+            let itemExpr = attrs.selectedItem?.bindingString ?? attrs.selectedValue?.bindingString
+            guard let itemExpr, DynamicEventHelper.extractPropertyName(from: itemExpr) != nil else { return nil }
+            let twoWay: SwiftUI.Binding<String>? = DynamicBindingHelper.twoWay(itemExpr, data: data)
+            let current = DynamicBindingHelper.string(itemExpr, data: data).wrappedValue
+            return SwiftUI.Binding<Int>(
+                get: { items.firstIndex(of: twoWay?.wrappedValue ?? current) ?? -1 },
+                set: { index in twoWay?.wrappedValue = items.indices.contains(index) ? items[index] : "" }
+            )
         }()
 
         // padding (internal padding for SelectBoxView)
@@ -197,6 +210,7 @@ public struct SelectBoxConverter {
         // Which bound var (if any) can be observed for changes
         let observedBindingProp: String? = attrs.selectedIndex?.bindingExpression
             ?? attrs.selectedItem?.bindingExpression
+            ?? attrs.selectedValue?.bindingExpression
 
         // Without a bound var there is nothing to observe — pass the handler
         // straight into SelectBoxView (it manages its own selection state and
@@ -209,6 +223,15 @@ public struct SelectBoxConverter {
                 DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data)
             }
         }()
+        // A date bound to a two-way Binding<String> is written back on a pick —
+        // it followed the view model but a pick never reached it (ticket
+        // selectbox-selected-item-binding-is-read-once).
+        let dateBinding: SwiftUI.Binding<String>? = selectItemType == .date
+            ? DynamicBindingHelper.twoWay(attrs.selectedDate?.bindingString, data: data) : nil
+        let onPick: ((String) -> Void)? = dateBinding == nil ? directOnValueChange : { newValue in
+            dateBinding?.wrappedValue = newValue
+            directOnValueChange?(newValue)
+        }
 
         var result = AnyView(
             SelectBoxView(
@@ -233,7 +256,7 @@ public struct SelectBoxConverter {
                 selectedIndexBinding: selectedIndexBinding,
                 selectedDate: selectedDate,
                 padding: padding,
-                onValueChange: directOnValueChange
+                onValueChange: onPick
             )
         )
 
