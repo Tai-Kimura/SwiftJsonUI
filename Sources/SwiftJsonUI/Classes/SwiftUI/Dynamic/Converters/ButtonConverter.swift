@@ -65,7 +65,7 @@ public struct ButtonConverter {
         let action: () -> Void = {
             guard tapOpen else { return }
             for handler in component.effectiveOnClickHandlers {
-                DynamicEventHelper.call(handler, data: data)
+                DynamicEventHelper.callWithId(handler, id: LayoutPath.viewId(of: component), data: data)
             }
         }
 

@@ -105,7 +105,7 @@ public struct IconLabelConverter {
                     action: {
                         // canTap gates the handler's call (tapGateOpen).
                         guard DynamicEventHelper.tapGateOpen(component, data: data) else { return }
-                        DynamicEventHelper.call(component.commonAny(\.onClick), data: data)
+                        DynamicEventHelper.callWithId(component.commonAny(\.onClick), id: LayoutPath.viewId(of: component), data: data)
                     }
                 )
             )

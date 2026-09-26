@@ -47,8 +47,15 @@ public struct DynamicEventHelper {
 
     // MARK: - Call with id: data.handler?("viewId")
 
-    /// Call a (String) -> Void closure with component id
-    /// Matches tool pattern: data.onMyClick?("viewId")
+    /// A handler that takes no value — a tap, a control's or a Button's
+    /// onClick, a long press, onAppear / onDisappear, a Web's onLoadFailed —
+    /// called as the closure the data holds asks (4f's ruling on
+    /// control-onclick-is-called-differently-on-every-path, 1.9.0):
+    /// `(String) -> Void` with the viewId (LayoutPath.viewId: the id, else
+    /// the drawn type and the position), `() -> Void` with nothing — what the
+    /// codegen writes from the declaration (sjui no_value_call,
+    /// get_event_handler_invocation). They were called through `call`, which
+    /// calls `() -> Void` only: a `(String)` handler was silently not called.
     static func callWithId(_ bindingExpr: String?, id: String?, data: [String: Any]) {
         guard let name = handlerName(from: bindingExpr) else { return }
 
@@ -139,7 +146,7 @@ public struct DynamicEventHelper {
         return {
             guard tapGateOpen(component, data: data) else { return }
             for handler in handlers {
-                DynamicEventHelper.call(handler, data: data)
+                DynamicEventHelper.callWithId(handler, id: LayoutPath.viewId(of: component), data: data)
             }
         }
     }
@@ -207,7 +214,7 @@ public struct DynamicEventHelper {
                     // All of them, in declaration order — the array spelling
                     // names a sequence, and codegen emits one call per name.
                     for handler in handlers {
-                        DynamicEventHelper.call(handler, data: data)
+                        DynamicEventHelper.callWithId(handler, id: LayoutPath.viewId(of: component), data: data)
                     }
                 }
         )
@@ -233,7 +240,7 @@ public struct DynamicEventHelper {
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     LongPressGesture(minimumDuration: 0.5).onEnded { _ in
-                        DynamicEventHelper.call(onLongPress, data: data)
+                        DynamicEventHelper.callWithId(onLongPress, id: LayoutPath.viewId(of: component), data: data)
                     }
                 )
         )
@@ -290,7 +297,7 @@ public struct DynamicEventHelper {
         guard component.onAppear != nil else { return view }
         return AnyView(
             view.onAppear {
-                DynamicEventHelper.call(component.onAppear, data: data)
+                DynamicEventHelper.callWithId(component.onAppear, id: LayoutPath.viewId(of: component), data: data)
             }
         )
     }
@@ -300,7 +307,7 @@ public struct DynamicEventHelper {
         guard component.onDisappear != nil else { return view }
         return AnyView(
             view.onDisappear {
-                DynamicEventHelper.call(component.onDisappear, data: data)
+                DynamicEventHelper.callWithId(component.onDisappear, id: LayoutPath.viewId(of: component), data: data)
             }
         )
     }

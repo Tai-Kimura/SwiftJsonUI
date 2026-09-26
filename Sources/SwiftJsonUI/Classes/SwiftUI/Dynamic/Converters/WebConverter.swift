@@ -64,7 +64,7 @@ public struct WebConverter {
         // onLoadFailed / reloadToken — binding-only on both, as in the
         // codegen (web_converter.rb): a bare string names nothing.
         let onLoadFailed: (() -> Void)? = attrs.onLoadFailed?.bindingExpression.map { expr in
-            { DynamicEventHelper.call("@{\(expr)}", data: data) }
+            { DynamicEventHelper.callWithId("@{\(expr)}", id: LayoutPath.viewId(of: component), data: data) }
         }
         let reloadToken: AnyHashable? = attrs.reloadToken?.bindingExpression.flatMap { expr in
             let expression = DynamicBindingResolver.parse(expr)
