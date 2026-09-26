@@ -339,6 +339,15 @@ public struct DynamicComponentBuilder: View {
     /// Tests count them; nothing in the library sets it.
     public static var unknownTypeHandler: ((String) -> Void)?
 
+    /// The types declaredComponent draws, as spelled (the SSoT's section
+    /// names; CircleImage is a type-synonym spelling drawn as Image). The
+    /// switch compared `type.lowercased()`, so "switch" was drawn as Switch
+    /// on this path alone (4f's ruling, 1.9.0: case-sensitive).
+    static let declaredTypes = ["Label", "Button", "TextField", "TextView", "Image", "CircleImage", "NetworkImage",
+                                "View", "SafeAreaView", "ScrollView", "Switch", "CheckBox", "Radio", "Segment",
+                                "SelectBox", "Slider", "Progress", "Indicator", "IconLabel", "Collection", "TabView",
+                                "Embed", "Web", "GradientView", "Blur"]
+
     /// `component` as drawn: a type-synonym spelling rewritten by
     /// TypeSynonyms (its type, and the attributes the spelling means), decoded
     /// again from its raw data. Anything else is `component` itself.
@@ -376,39 +385,39 @@ public struct DynamicComponentBuilder: View {
     @ViewBuilder
     private func declaredComponent(_ component: DynamicComponent) -> some View {
         if let type = component.type {
-            switch type.lowercased() {
+            switch type {
             // Text components
-            case "label":
+            case "Label":
                 LabelConverter.convert(component: component, data: data, parentOrientation: parentOrientation)
 
-            case "button":
+            case "Button":
                 ButtonConverter.convert(component: component, data: data, parentOrientation: parentOrientation)
 
             // EditText / Input are component-name aliases of TextField
             // (attribute_definitions.json `_alias_of`)
-            case "textfield":
+            case "TextField":
                 TextFieldConverter.convert(component: component, data: data)
 
-            case "textview":
+            case "TextView":
                 TextViewConverter.convert(component: component, data: data)
 
             // Image components. CircleImage / CircleImageView are Image
             // synonyms drawn as CircleImage (`render_as`), which
             // ImageViewConverter clips to a circle.
-            case "image", "circleimage":
+            case "Image", "CircleImage":
                 ImageViewConverter.convert(component: component, data: data)
 
-            case "networkimage":
+            case "NetworkImage":
                 NetworkImageConverter.convert(component: component, data: data)
 
             // Container components
-            case "view":
+            case "View":
                 DynamicViewContainer(component: component, data: data, viewId: viewId)
 
-            case "safeareaview":
+            case "SafeAreaView":
                 DynamicSafeAreaViewContainer(component: component, data: data, viewId: viewId)
 
-            case "scrollview":
+            case "ScrollView":
                 DynamicScrollViewContainer(component: component, data: data, viewId: viewId)
 
             // No case for Spacer / Space / Divider / Separator. None of them is
@@ -420,51 +429,51 @@ public struct DynamicComponentBuilder: View {
             // `default:` below with every other undeclared type.
 
             // Selection components
-            case "switch":
+            case "Switch":
                 ToggleConverter.convert(component: component, data: data)
 
-            case "checkbox":
+            case "CheckBox":
                 CheckboxConverter.convert(component: component, data: data)
 
-            case "radio":
+            case "Radio":
                 RadioConverter.convert(component: component, data: data)
 
-            case "segment":
+            case "Segment":
                 SegmentConverter.convert(component: component, data: data)
 
-            case "selectbox":
+            case "SelectBox":
                 SelectBoxConverter.convert(component: component, data: data)
 
-            case "slider":
+            case "Slider":
                 SliderConverter.convert(component: component, data: data)
 
-            case "progress":
+            case "Progress":
                 ProgressConverter.convert(component: component, data: data)
 
-            case "indicator":
+            case "Indicator":
                 IndicatorConverter.convert(component: component, data: data)
 
             // Complex components
-            case "iconlabel":
+            case "IconLabel":
                 IconLabelConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "collection":
+            case "Collection":
                 CollectionConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "tabview":
+            case "TabView":
                 TabViewConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "embed":
+            case "Embed":
                 EmbedConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "web":
+            case "Web":
                 WebConverter.convert(component: component, data: data)
 
             // Special effects
-            case "gradientview":
+            case "GradientView":
                 GradientViewConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "blur":
+            case "Blur":
                 BlurConverter.convert(component: component, data: data, viewId: viewId)
 
             // Synthetic node for a child whose decode threw (see
@@ -488,7 +497,12 @@ public struct DynamicComponentBuilder: View {
 
             // Default/Unknown
             default:
-                // The app's registry was asked first, above.
+                // The app's registry was asked first, above. A declared type
+                // written in another case is unknown, as in the codegens, and
+                // named with the spelling it may mean (TypeNameSpelling).
+                let _ = TypeNameSpelling.nameOnce(
+                    written: type,
+                    declared: Self.declaredTypes.first { $0.caseInsensitiveCompare(type) == .orderedSame })
                 let _ = Self.unknownTypeHandler?(type)
                 Text("Error: Unknown component type '\(type)'")
                     .font(.system(size: 14, weight: .medium))

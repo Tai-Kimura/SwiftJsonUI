@@ -63,12 +63,47 @@ public enum LeafChildren {
     }
 }
 
+/// A component type drawn as unknown — declared nowhere, or written in
+/// another case than it is declared or registered in ("switch" for "Switch"),
+/// which no path draws as that type — named once per spelling in DEBUG, in
+/// the sentence every path says (4f's ruling, 1.9.0: the shared validator,
+/// the codegens, both Dynamic runtimes), with the type it may mean.
+public enum TypeNameSpelling {
+    /// The sentence, and its tail for a type that differs in case only.
+    static let unknownType = "Unknown component type '%@'"
+    static let didYouMean = " — did you mean '%@'? Type names are case-sensitive."
+
+    /// Hook for tests / apps; defaults to Logger.debug.
+    public static var warningHandler: ((String) -> Void)?
+
+    private static var reported = Set<String>()
+    private static let lock = NSLock()
+
+    static func sentence(written: String, declared: String?) -> String {
+        String(format: unknownType, written) + (declared.map { String(format: didYouMean, $0) } ?? "")
+    }
+
+    static func nameOnce(written: String, declared: String?) {
+        lock.lock()
+        let firstTime = reported.insert(written).inserted
+        lock.unlock()
+        guard firstTime else { return }
+        let message = sentence(written: written, declared: declared)
+        if let warningHandler {
+            warningHandler(message)
+        } else {
+            Logger.debug(message)
+        }
+    }
+}
+
 /// Registry for custom component adapters
 public class CustomComponentRegistry {
     /// Shared singleton instance
     public static let shared = CustomComponentRegistry()
     
-    /// Dictionary of registered adapters keyed by component type
+    /// Registered adapters keyed by component type, as spelled: a type
+    /// name is case-sensitive, as the SSoT spells it (4f's ruling, 1.9.0).
     private var adapters: [String: CustomComponentAdapter] = [:]
     
     private init() {}
@@ -76,8 +111,7 @@ public class CustomComponentRegistry {
     /// Register a custom component adapter
     /// - Parameter adapter: The adapter to register
     public func register(_ adapter: CustomComponentAdapter) {
-        let key = adapter.componentType.lowercased()
-        adapters[key] = adapter
+        adapters[adapter.componentType] = adapter
         print("📦 Registered custom adapter for type: \(adapter.componentType)")
     }
     
@@ -90,8 +124,17 @@ public class CustomComponentRegistry {
     /// Get an adapter for the given component type
     /// - Parameter type: The component type to look up
     /// - Returns: The registered adapter if found, nil otherwise
+    ///
+    /// The type as spelled. One registered under another case ("progressbar"
+    /// for "ProgressBar") is not taken — the codegen does not take it — and
+    /// is named once in DEBUG (TypeNameSpelling). The key was lowercased on
+    /// both sides, so Dynamic drew a spelling the release build did not.
     public func adapter(for type: String) -> CustomComponentAdapter? {
-        return adapters[type.lowercased()]
+        if let adapter = adapters[type] { return adapter }
+        if let near = adapters.keys.first(where: { $0.caseInsensitiveCompare(type) == .orderedSame }) {
+            TypeNameSpelling.nameOnce(written: type, declared: near)
+        }
+        return nil
     }
     
     /// Remove all registered adapters
