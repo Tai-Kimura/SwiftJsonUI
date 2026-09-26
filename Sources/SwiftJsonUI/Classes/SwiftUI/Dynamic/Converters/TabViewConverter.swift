@@ -80,6 +80,12 @@ public struct TabViewConverter {
             onTabChangeCallback = data[propName] as? ((Int) -> Void)
         }
 
+        // `enabled` stops the tab items, not the tab view (applyDisabled
+        // leaves a TabView as it is): each tab's content sets the tab bar
+        // items' isEnabled (jsonuiTabItemsEnabled), so the tab shown still
+        // works — the Compose and web forms (4f's ruling, jsonui-cli 1.9.0).
+        let tabsEnabled = DynamicModifierHelper.enabledBinding(component, data: data)
+
         // The tab view, over whichever selection it moves (the view model's
         // two-way binding, or its own below).
         let build: (SwiftUI.Binding<Int>) -> AnyView = { selection in
@@ -90,6 +96,7 @@ public struct TabViewConverter {
                     tabBarBackground: tabBarBackground,
                     unselectedColor: unselectedColor,
                     onTabChangeCallback: onTabChangeCallback,
+                    tabsEnabled: tabsEnabled,
                     component: component,
                     data: data,
                     viewId: viewId
@@ -134,6 +141,8 @@ private struct TabViewWrapperView: View {
     let tabBarBackground: Color?
     let unselectedColor: Color?
     let onTabChangeCallback: ((Int) -> Void)?
+    /// `enabled`, for the tab items (nil: not disabled).
+    let tabsEnabled: SwiftUI.Binding<Bool>?
     let component: DynamicComponent
     let data: [String: Any]
     let viewId: String?
@@ -144,6 +153,7 @@ private struct TabViewWrapperView: View {
         tabBarBackground: Color?,
         unselectedColor: Color? = nil,
         onTabChangeCallback: ((Int) -> Void)?,
+        tabsEnabled: SwiftUI.Binding<Bool>? = nil,
         component: DynamicComponent,
         data: [String: Any],
         viewId: String?
@@ -153,6 +163,7 @@ private struct TabViewWrapperView: View {
         self.tabBarBackground = tabBarBackground
         self.unselectedColor = unselectedColor
         self.onTabChangeCallback = onTabChangeCallback
+        self.tabsEnabled = tabsEnabled
         self.component = component
         self.data = data
         self.viewId = viewId
@@ -162,7 +173,7 @@ private struct TabViewWrapperView: View {
         // 1. TabView(selection:) { children.tabItem().badge().tag() }
         TabView(selection: $selectedTab) {
             ForEach(tabItems) { item in
-                tabContent(for: item)
+                tabItemsEnabled(tabContent(for: item))
                     .tabItem { tabItemLabel(for: item) }
                     .applyBadge(item.badge, data: data)
                     .tag(item.id)
@@ -238,6 +249,17 @@ private struct TabViewWrapperView: View {
             } else {
                 Label(item.title.dynamicLocalized(), systemImage: item.icon)
             }
+        }
+    }
+
+    /// Every tab's content sets the tab items' isEnabled — only the one on
+    /// screen is in the window to find the tab bar.
+    @ViewBuilder
+    private func tabItemsEnabled<Content: View>(_ content: Content) -> some View {
+        if let tabsEnabled {
+            content.jsonuiTabItemsEnabled(tabsEnabled.wrappedValue)
+        } else {
+            content
         }
     }
 
