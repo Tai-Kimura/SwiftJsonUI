@@ -155,28 +155,16 @@ public extension NSAttributedString {
                         if range.count > 1 {
                             let r = NSRange(location: range[0], length: range[1])
                             attString.addAttributes(attributes, range: r)
-                            // Add to linkedRanges for tap handling
-                            // "onclick" (lowercase) = selector string, "onClick" (camelCase) = binding expression (handled by setPartialAttributeOnClick)
+                            // Add to linkedRanges for tap handling (PartialRangeHandler).
                             // Include partialAttributeIndex for mapping with setPartialAttributeOnClick
-                            if let onclick = attr["onclick"].string {
-                                label?.linkedRanges.append(["start": range[0], "end": range[1], "onclick": onclick, "partialAttributeIndex": attrIndex])
-                            } else if attr["onClick"].string != nil {
-                                // onClick binding exists - add range without onclick selector (closure will be set via setPartialAttributeOnClick)
-                                label?.linkedRanges.append(["start": range[0], "end": range[1], "partialAttributeIndex": attrIndex])
-                            }
+                            label?.appendLinkedRange(start: range[0], end: range[1], handler: PartialRangeHandler(attr), index: attrIndex)
                         }
                     } else if let range = range as? String {
                         let textRange = text.range(of: range.localized())
                         attString.addAttributes(attributes, range: textRange)
-                        // Add to linkedRanges for tap handling
-                        // "onclick" (lowercase) = selector string, "onClick" (camelCase) = binding expression (handled by setPartialAttributeOnClick)
+                        // Add to linkedRanges for tap handling (PartialRangeHandler).
                         // Include partialAttributeIndex for mapping with setPartialAttributeOnClick
-                        if let onclick = attr["onclick"].string {
-                            label?.linkedRanges.append(["start": textRange.lowerBound, "end": textRange.upperBound, "onclick": onclick, "partialAttributeIndex": attrIndex])
-                        } else if attr["onClick"].string != nil {
-                            // onClick binding exists - add range without onclick selector (closure will be set via setPartialAttributeOnClick)
-                            label?.linkedRanges.append(["start": textRange.lowerBound, "end": textRange.upperBound, "partialAttributeIndex": attrIndex])
-                        }
+                        label?.appendLinkedRange(start: textRange.lowerBound, end: textRange.upperBound, handler: PartialRangeHandler(attr), index: attrIndex)
                     }
                 }
             }
@@ -184,4 +172,56 @@ public extension NSAttributedString {
         return attString
     }
 
+}
+
+/// A partialAttributes range's handler, as the UIKit label takes it: `onClick`
+/// first, then `onclick`, its alias, each a binding or a method name — as
+/// jsonui-cli shared/core/tap_accessibility.rb `range_handler` reads them. From
+/// jsonui-cli 1.9.0 the normalizer folds `onclick` into `onClick` in the
+/// layouts `jui build` distributes, so a name arrives in onClick; this read
+/// `onclick` as the selector and onClick as a binding only, and a folded name
+/// was a range that called nothing. A name is the selector the label performs;
+/// a binding is the closure the generated binding code sets
+/// (`setPartialAttributeOnClick`). A value that names no method (`""`, `"@{ }"`)
+/// or is neither a binding nor a name (`"@{a} b"`) passes to the next spelling;
+/// with none, the range is no link.
+enum PartialRangeHandler: Equatable {
+    case selector(String)
+    case binding
+
+    init?(_ attr: JSON) {
+        for key in ["onClick", "onclick"] {
+            guard let value = attr[key].string, PartialRangeHandler.namesAMethod(value) else { continue }
+            if value.hasPrefix("@{") && value.hasSuffix("}") { self = .binding; return }
+            if !value.hasPrefix("@{") { self = .selector(value); return }
+        }
+        return nil
+    }
+
+    /// Not blank, inside a binding's braces or as a bare name (Unicode white
+    /// space is blank) — the Dynamic runtime's TapAccessibility.namesAMethod,
+    /// which is built for DEBUG only.
+    private static func namesAMethod(_ value: String) -> Bool {
+        var inner = Substring(value)
+        if inner.hasPrefix("@{") && inner.hasSuffix("}") && inner.count >= 3 {
+            inner = inner.dropFirst(2).dropLast()
+        }
+        return !inner.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+}
+
+extension SJUILabel {
+    /// A linked range for a partialAttributes range with a handler: a selector
+    /// range carries its name under "onclick"; a binding range carries none,
+    /// and setPartialAttributeOnClick gives it its closure.
+    func appendLinkedRange(start: Int, end: Int, handler: PartialRangeHandler?, index: Int) {
+        switch handler {
+        case .selector(let name)?:
+            linkedRanges.append(["start": start, "end": end, "onclick": name, "partialAttributeIndex": index])
+        case .binding?:
+            linkedRanges.append(["start": start, "end": end, "partialAttributeIndex": index])
+        case nil:
+            break
+        }
+    }
 }

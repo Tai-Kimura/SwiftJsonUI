@@ -210,6 +210,55 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         XCTAssertEqual(try draw(attrs), abc)
     }
 
+    // MARK: - items bound to an array
+
+    // Collection.items is a CollectionDataSource or an array
+    // (attribute_definitions.json; 4f ruling, 2026-09-26). With no `sections`
+    // an array is one section of the declared cell, on the routes a
+    // one-section data source takes; the codegens decide by the layout's data
+    // declaration, this renderer by the value's shape. Measured before the
+    // change (b314fd2): an array drew 0 of 3 on every route.
+
+    private let arrayOfRows: [Any] = [["title": "a"], ["title": "b"], ["title": "c"]]
+
+    func testAnArrayIsOneSectionOnEveryRouteButPaging() throws {
+        let routes = ["", ", \"columns\": 2", ", \"layout\": \"horizontal\"", ", \"layout\": \"flow\"",
+                      ", \"lazy\": \"none\"", ", \"lazy\": \"none\", \"columns\": 2", ", \"lazy\": \"none\", \"layout\": \"horizontal\""]
+        for route in routes {
+            XCTAssertEqual(try draw(items + route, data: ["items": arrayOfRows]), abc, "route\(route)")
+        }
+        XCTAssertEqual(try draw(items + ", \"layout\": \"horizontal\", \"paging\": true", data: ["items": arrayOfRows]), [],
+                       "paging reads declared sections only")
+    }
+
+    /// A generated Data struct's array — what the codegen reads with
+    /// `toDictionary()` — is read by the struct's stored properties.
+    func testAnArrayOfDataStructsIsReadByTheirProperties() throws {
+        struct Row { let title: String }
+        XCTAssertEqual(try draw(items, data: ["items": [Row(title: "a"), Row(title: "b"), Row(title: "c")]]), abc)
+    }
+
+    /// `sections` declared: a list is not a data source for them (the
+    /// sectioned shape reads a CollectionDataSource), so nothing is drawn.
+    func testDeclaredSectionsDoNotReadAnArray() throws {
+        XCTAssertEqual(try draw(items + ", \"sections\": [{\"cell\": \"\(Self.cell)\"}]", data: ["items": arrayOfRows]), [])
+    }
+
+    /// Several cellClasses over an array: no cell, as over a data source —
+    /// and named, once per Collection: a Dynamic layout does not pass the
+    /// build that refuses it. It was drawn as nothing and said nothing.
+    func testSeveralCellClassesOverAnArrayDrawNoCellAndAreNamed() throws {
+        CollectionConverter.named = []
+        CollectionConverter.loggedSeveralCellClassesIds = []
+        let several = ", \"items\": \"@{items}\", \"cellClasses\": [\"\(Self.cell)\", \"\(Self.otherCell)\"]"
+        XCTAssertEqual(try draw(several, data: ["items": arrayOfRows]), [])
+        XCTAssertEqual(try draw(several), [])
+        XCTAssertEqual(CollectionConverter.named, [
+            "[CollectionConverter] Collection (id=c): 2 cellClasses declared without sections — no cell is drawn. " +
+            "Fix: assign cells via sections[].cell, or declare a single cellClass."
+        ])
+    }
+
     // MARK: - headerClasses / footerClasses
 
     private var headed: String {
@@ -532,6 +581,58 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         for route in ["", ", \"lazy\": \"none\""] {
             let p = try placement(sectioned + route)
             XCTAssertFalse(p.bBesideA, "sectioned\(route)")
+        }
+    }
+
+    // MARK: - flow spacing (jsonui-cli attribute_semantics.json -> collectionSpacing)
+
+    /// The three gaps a flow draws, measured: between the cells of a line,
+    /// between lines, between the section blocks. The first section holds
+    /// nine 40pt cells — more than a 320pt line holds at any gap here, so it
+    /// wraps; the second holds one.
+    private func flowGaps(_ attrs: String) throws -> (cells: CGFloat, lines: CGFloat, sections: CGFloat) {
+        let first = (0..<9).map { "f\($0)" }
+        let source = CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: first.map { ["title": $0] })),
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "z"]])),
+        ])
+        let flow = ", \"layout\": \"flow\", \"items\": \"@{items}\", \"sections\": [{\"cell\": \"\(Self.cell)\"}, {\"cell\": \"\(Self.cell)\"}]"
+        _ = try draw(flow + attrs, data: ["items": source])
+        let cells = try first.map { try frame($0) }
+        let secondLine = try XCTUnwrap(cells.first { $0.minY > cells[0].minY + 1 }, "the first section did not wrap\(attrs)")
+        let lastRow = try XCTUnwrap(cells.map(\.maxY).max())
+        return (cells[1].minX - cells[0].maxX, secondLine.minY - cells[0].maxY, try frame("z").minY - lastRow)
+    }
+
+    /// 4f ruling (2026-09-26): an undeclared gap is 0 on every route, flow
+    /// included. Before: the lazy flow drew 8 between cells and lines and
+    /// left the blocks to the ScrollView's own stack spacing; the `lazy:
+    /// none` flow drew 8 between cells and lines.
+    func testAnUndeclaredFlowGapIsZero() throws {
+        for route in ["", ", \"lazy\": \"none\""] {
+            let g = try flowGaps(route)
+            XCTAssertEqual(g.cells, 0, accuracy: 0.5, "between cells\(route)")
+            XCTAssertEqual(g.lines, 0, accuracy: 0.5, "between lines\(route)")
+            XCTAssertEqual(g.sections, 0, accuracy: 0.5, "between the section blocks\(route)")
+        }
+    }
+
+    /// A declared gap is drawn as declared: columnSpacing between cells,
+    /// lineSpacing between lines and blocks, itemSpacing the fallback for
+    /// both — and a declared 0 is 0 (the `lazy: none` flow drew 8 for it).
+    func testADeclaredFlowGapIsDrawnAsDeclared() throws {
+        let cases: [(String, (CGFloat, CGFloat, CGFloat))] = [
+            (", \"columnSpacing\": 10, \"lineSpacing\": 4", (10, 4, 4)),
+            (", \"itemSpacing\": 6", (6, 6, 6)),
+            (", \"lineSpacing\": 0, \"columnSpacing\": 0, \"itemSpacing\": 6", (0, 0, 0)),
+        ]
+        for route in ["", ", \"lazy\": \"none\""] {
+            for (attrs, want) in cases {
+                let g = try flowGaps(attrs + route)
+                XCTAssertEqual(g.cells, want.0, accuracy: 0.5, "between cells\(attrs)\(route)")
+                XCTAssertEqual(g.lines, want.1, accuracy: 0.5, "between lines\(attrs)\(route)")
+                XCTAssertEqual(g.sections, want.2, accuracy: 0.5, "between the section blocks\(attrs)\(route)")
+            }
         }
     }
 }
