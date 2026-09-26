@@ -118,10 +118,15 @@ public struct ToggleConverter {
             return nil
         }()
 
+        // The declared onClick, called from the switch's own flip — after the
+        // value is written (and, on the local path, after onValueChange); no
+        // tap around it (DynamicEventHelper.operationClick).
+        let click = DynamicEventHelper.operationClick(component, data: data)
+
         // Toggle construction shared by the bound and local-state paths
         let buildToggle: (SwiftUI.Binding<Bool>) -> AnyView = { isOnBinding in
             var built = AnyView(
-                Toggle(isOn: isOnBinding) {
+                Toggle(isOn: DynamicEventHelper.calling(click, after: isOnBinding)) {
                     buildLabelText(text: text, font: labelFont, color: labelColor)
                 }
             )

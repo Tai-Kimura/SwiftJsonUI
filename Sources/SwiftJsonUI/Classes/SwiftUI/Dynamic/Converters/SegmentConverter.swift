@@ -49,10 +49,15 @@ public struct SegmentConverter {
         // 57a527a), folded by the generated extraction.
         let selectedColor = DynamicHelpers.getColor(attrs.tintColor, data: data)
 
+        // The declared onClick, called from the user's choice of a segment —
+        // after the selection is written (and, on the local path, after
+        // onValueChange); no tap around it (DynamicEventHelper.operationClick).
+        let click = DynamicEventHelper.operationClick(component, data: data)
+
         // Picker with .segmented style
         let buildPicker: (SwiftUI.Binding<Int>) -> AnyView = { selection in
             AnyView(
-                Picker("", selection: selection) {
+                Picker("", selection: DynamicEventHelper.calling(click, after: selection)) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         Text(item.dynamicLocalized()).tag(index)
                     }

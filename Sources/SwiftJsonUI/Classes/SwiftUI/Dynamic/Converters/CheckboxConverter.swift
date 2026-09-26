@@ -129,25 +129,29 @@ public struct CheckboxConverter {
         //
         // `action` and `onValueChanged` are now declared aliases of
         // `onValueChange` (plan 51-E, 57a527a), so the generated extraction
-        // resolves all three spellings and only `onClick` — which stays a
-        // `common` attribute of its own — needs a second read.
+        // resolves all three spellings.
         //
-        // `canTap` gates the onClick handler's call — not the check itself,
-        // which is the checkbox's own operation (`enabled`'s), nor an
-        // onValueChange handler.
+        // The declared onClick — a `common` attribute of its own — is called
+        // from the check too, after onValueChange; `canTap` gates that call
+        // and not the check, which is the checkbox's own operation
+        // (`enabled`'s), nor onValueChange (DynamicEventHelper.operationClick).
+        // It was read as onValueChange's fallback: a CheckBox with both called
+        // only onValueChange, and one with only onClick passed it the value.
         let handlerExpr: String? = attrs.onValueChange?.bindingString
-            ?? (DynamicEventHelper.tapGateOpen(component, data: data)
-                ? attrs.common.onClick?.bindingString : nil)
+        let click = DynamicEventHelper.operationClick(component, data: data)
 
         let onValueChanged: ((Bool) -> Void)? = {
-            guard let expr = handlerExpr else { return nil }
+            guard handlerExpr != nil || click != nil else { return nil }
             return { newValue in
-                DynamicEventHelper.callWithValue(
-                    expr,
-                    id: id,
-                    value: newValue,
-                    data: data
-                )
+                if let expr = handlerExpr {
+                    DynamicEventHelper.callWithValue(
+                        expr,
+                        id: id,
+                        value: newValue,
+                        data: data
+                    )
+                }
+                click?()
             }
         }()
 

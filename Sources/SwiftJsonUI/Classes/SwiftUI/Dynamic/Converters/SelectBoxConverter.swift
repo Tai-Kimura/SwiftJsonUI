@@ -228,9 +228,16 @@ public struct SelectBoxConverter {
         // selectbox-selected-item-binding-is-read-once).
         let dateBinding: SwiftUI.Binding<String>? = selectItemType == .date
             ? DynamicBindingHelper.twoWay(attrs.selectedDate?.bindingString, data: data) : nil
-        let onPick: ((String) -> Void)? = dateBinding == nil ? directOnValueChange : { newValue in
+        // The declared onClick, called from the user's pick — after the
+        // selection is written and onValueChange — and from nothing else: no
+        // tap around the box, whose own tap opens the picker
+        // (DynamicEventHelper.operationClick). SelectBoxView reports a pick
+        // through this closure and only a pick.
+        let click = DynamicEventHelper.operationClick(component, data: data)
+        let onPick: ((String) -> Void)? = dateBinding == nil && click == nil ? directOnValueChange : { newValue in
             dateBinding?.wrappedValue = newValue
             directOnValueChange?(newValue)
+            click?()
         }
 
         var result = AnyView(
@@ -303,8 +310,15 @@ public struct SelectBoxConverter {
         // hitTesting stage, which this hand-built chain did not run)
         result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
+        // enabled — the standard chain's disabled stages, inside and outside
+        // the accessibility element, which this hand-built chain did not run
+        // either: `enabled: false` still opened the picker and took a pick
+        // (ConformanceHost OnClickProbeUITests, both paths).
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
         // --- 7. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
 
         return result
     }

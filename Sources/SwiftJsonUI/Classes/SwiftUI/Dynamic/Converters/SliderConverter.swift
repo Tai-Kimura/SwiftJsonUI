@@ -55,11 +55,18 @@ public struct SliderConverter {
             fallback: component.number(SliderAttributes.self, \.value, data: data).map { Double($0) } ?? minValue
         )
 
+        // The declared onClick, called when the user's change of the value
+        // finishes — the end of a drag, as kjui's onValueChangeFinished; no
+        // tap around it (DynamicEventHelper.operationClick).
+        let click = DynamicEventHelper.operationClick(component, data: data)
+
         // Slider — built over whichever value it moves (the view model's, or
         // its own below).
         let buildSlider: (SwiftUI.Binding<Double>) -> AnyView = { value in
             var result = AnyView(
-                Slider(value: value, in: minValue...maxValue)
+                Slider(value: value, in: minValue...maxValue, onEditingChanged: { editing in
+                    if !editing { click?() }
+                })
             )
 
             // Tint color (.accentColor to match Ruby converter)
