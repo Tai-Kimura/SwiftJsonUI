@@ -583,5 +583,57 @@ final class CollectionDeclaredCellsTests: XCTestCase {
             XCTAssertFalse(p.bBesideA, "sectioned\(route)")
         }
     }
+
+    // MARK: - flow spacing (jsonui-cli attribute_semantics.json -> collectionSpacing)
+
+    /// The three gaps a flow draws, measured: between the cells of a line,
+    /// between lines, between the section blocks. The first section holds
+    /// nine 40pt cells — more than a 320pt line holds at any gap here, so it
+    /// wraps; the second holds one.
+    private func flowGaps(_ attrs: String) throws -> (cells: CGFloat, lines: CGFloat, sections: CGFloat) {
+        let first = (0..<9).map { "f\($0)" }
+        let source = CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: first.map { ["title": $0] })),
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "z"]])),
+        ])
+        let flow = ", \"layout\": \"flow\", \"items\": \"@{items}\", \"sections\": [{\"cell\": \"\(Self.cell)\"}, {\"cell\": \"\(Self.cell)\"}]"
+        _ = try draw(flow + attrs, data: ["items": source])
+        let cells = try first.map { try frame($0) }
+        let secondLine = try XCTUnwrap(cells.first { $0.minY > cells[0].minY + 1 }, "the first section did not wrap\(attrs)")
+        let lastRow = try XCTUnwrap(cells.map(\.maxY).max())
+        return (cells[1].minX - cells[0].maxX, secondLine.minY - cells[0].maxY, try frame("z").minY - lastRow)
+    }
+
+    /// 4f ruling (2026-09-26): an undeclared gap is 0 on every route, flow
+    /// included. Before: the lazy flow drew 8 between cells and lines and
+    /// left the blocks to the ScrollView's own stack spacing; the `lazy:
+    /// none` flow drew 8 between cells and lines.
+    func testAnUndeclaredFlowGapIsZero() throws {
+        for route in ["", ", \"lazy\": \"none\""] {
+            let g = try flowGaps(route)
+            XCTAssertEqual(g.cells, 0, accuracy: 0.5, "between cells\(route)")
+            XCTAssertEqual(g.lines, 0, accuracy: 0.5, "between lines\(route)")
+            XCTAssertEqual(g.sections, 0, accuracy: 0.5, "between the section blocks\(route)")
+        }
+    }
+
+    /// A declared gap is drawn as declared: columnSpacing between cells,
+    /// lineSpacing between lines and blocks, itemSpacing the fallback for
+    /// both — and a declared 0 is 0 (the `lazy: none` flow drew 8 for it).
+    func testADeclaredFlowGapIsDrawnAsDeclared() throws {
+        let cases: [(String, (CGFloat, CGFloat, CGFloat))] = [
+            (", \"columnSpacing\": 10, \"lineSpacing\": 4", (10, 4, 4)),
+            (", \"itemSpacing\": 6", (6, 6, 6)),
+            (", \"lineSpacing\": 0, \"columnSpacing\": 0, \"itemSpacing\": 6", (0, 0, 0)),
+        ]
+        for route in ["", ", \"lazy\": \"none\""] {
+            for (attrs, want) in cases {
+                let g = try flowGaps(attrs + route)
+                XCTAssertEqual(g.cells, want.0, accuracy: 0.5, "between cells\(attrs)\(route)")
+                XCTAssertEqual(g.lines, want.1, accuracy: 0.5, "between lines\(attrs)\(route)")
+                XCTAssertEqual(g.sections, want.2, accuracy: 0.5, "between the section blocks\(attrs)\(route)")
+            }
+        }
+    }
 }
 #endif
