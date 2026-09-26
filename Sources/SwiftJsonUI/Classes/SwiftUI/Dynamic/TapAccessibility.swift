@@ -191,8 +191,27 @@ enum TapAccessibility {
         return node["enabled"] as? Bool != false && !handlerValues(node["onLongPress"]).isEmpty
     }
 
+    /// The keys the tools write on a node that the layout did not: the
+    /// position stamp and the rule's own marks (jsonui-cli
+    /// shared/core/tap_accessibility.rb WRITTEN_STAMPS).
+    private static let writtenStamps: Set<String> = ["_layoutPath", "_tapShape", "_tapStopped", "_tapGates"]
+
+    /// A data-only element — `data` the only key the layout wrote — declares
+    /// the data and draws nothing (jsonui-cli `data_only?`).
+    static func isDataOnly(_ component: DynamicComponent) -> Bool {
+        Set(component.rawData.keys).subtracting(writtenStamps) == ["data"]
+    }
+
+    /// The children a component draws: the shapes do not count a data-only
+    /// one (jsonui-cli `drawn_children`). It read as a child of unknown type,
+    /// a control, and a Label with onClick whose only child declared its data
+    /// was no button (4f's ruling, jsonui-cli 1.9.0).
+    static func drawnChildren(_ component: DynamicComponent) -> [DynamicComponent] {
+        (component.childComponents ?? []).filter { !isDataOnly($0) }
+    }
+
     static func holdsAControl(_ component: DynamicComponent, stopped: Bool = false) -> Bool {
-        (component.childComponents ?? []).contains {
+        drawnChildren(component).contains {
             let inner = stopped || stops($0)
             return isOperable($0, stopped: inner) || holdsAControl($0, stopped: inner)
         }
@@ -201,7 +220,7 @@ enum TapAccessibility {
     static func shape(of component: DynamicComponent) -> Shape? {
         guard isTappable(component) else { return nil }
         if isInteractiveType(component.type) { return .unchanged }
-        if (component.childComponents ?? []).isEmpty { return .button }
+        if drawnChildren(component).isEmpty { return .button }
         if holdsAControl(component) { return .unchanged }
         return .combine
     }

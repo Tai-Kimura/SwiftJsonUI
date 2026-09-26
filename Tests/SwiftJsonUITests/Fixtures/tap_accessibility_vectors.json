@@ -1219,6 +1219,77 @@
       "shapes": {
         "t": "none"
       }
+    },
+    {
+      "name": "a Label with onClick whose only child declares its data is a button: a data-only element draws nothing",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "x",
+        "onClick": "@{onTap}",
+        "child": [
+          {
+            "data": [
+              {
+                "name": "onTap",
+                "class": "(() -> Void)?"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a View with onClick holding text and a data-only element combines",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onTap}",
+        "child": [
+          {
+            "data": [
+              {
+                "name": "onTap",
+                "class": "(() -> Void)?"
+              }
+            ]
+          },
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a data-only element the tools stamped with its position still draws nothing: a stamp is not a key the layout wrote",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "x",
+        "onClick": "@{onTap}",
+        "child": [
+          {
+            "_layoutPath": "0_0",
+            "data": [
+              {
+                "name": "onTap",
+                "class": "(() -> Void)?"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "button"
+      }
     }
   ]
 }
