@@ -256,7 +256,7 @@ public struct DynamicEventHelper {
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     DragGesture(minimumDistance: 10).onChanged { value in
-                        DynamicEventHelper.callWithValue(onPan, id: component.id, value: value.translation, data: data)
+                        DynamicEventHelper.callWithValue(onPan, id: LayoutPath.viewId(of: component), value: value.translation, data: data)
                     }
                 )
         )
@@ -277,7 +277,7 @@ public struct DynamicEventHelper {
                 .contentShape(Rectangle())
                 .simultaneousGesture(
                     MagnifyGesture().onChanged { value in
-                        DynamicEventHelper.callWithValue(onPinch, id: component.id, value: value.magnification, data: data)
+                        DynamicEventHelper.callWithValue(onPinch, id: LayoutPath.viewId(of: component), value: value.magnification, data: data)
                     }
                 )
         )

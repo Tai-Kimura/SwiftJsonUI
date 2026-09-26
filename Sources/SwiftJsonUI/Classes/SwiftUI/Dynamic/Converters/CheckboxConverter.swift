@@ -20,7 +20,9 @@ public struct CheckboxConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let id = component.id ?? "checkbox"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `checkbox` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
         let attrs = component.typedAttributes(CheckBoxAttributes.self)
 
         // Resolve isOn binding: check isOn, checked, bind

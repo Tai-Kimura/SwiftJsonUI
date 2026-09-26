@@ -55,7 +55,9 @@ public struct TextViewConverter {
         data: [String: Any],
         textBinding: SwiftUI.Binding<String>
     ) -> AnyView {
-        let id = component.id ?? "textEditor"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `textEditor` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
 
         // --- 1. Build TextViewWithPlaceholder ---
 

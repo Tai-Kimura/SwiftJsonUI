@@ -30,7 +30,9 @@ public struct ToggleConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let id = component.id ?? "toggle"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `toggle` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
         let attrs = component.typedAttributes(ToggleAttributes.self)
 
         // Resolve isOn binding: isOn first, then checked, then `value` —

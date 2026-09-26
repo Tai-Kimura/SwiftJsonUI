@@ -59,6 +59,36 @@ enum LayoutPath {
         node[key] != nil
     }
 
+    /// The viewId a component's handlers are handed: its id, else the type it
+    /// is drawn as with its first letter lowercased, `_`, and its position —
+    /// `switch_0_1`, `selectBox_0_3` — the name every path gives it
+    /// (JsonUIShared::LayoutPath.view_id; 4f's ruling, 1.9.0). An id-less
+    /// component's viewId was a per-kind word (`toggle`, `selectBox`,
+    /// `textEditor`), the same for every one of the kind.
+    static func viewId(of component: DynamicComponent) -> String {
+        viewId(id: component.id, type: component.type, path: path(of: component))
+    }
+
+    /// The same name for a layout node as written (the shared vectors).
+    static func viewId(of node: [String: Any]) -> String {
+        viewId(id: node["id"] as? String, type: node["type"] as? String, path: node[key] as? String ?? "0")
+    }
+
+    static func viewId(id: String?, type: String?, path: String) -> String {
+        if let id { return id }
+        let drawn = drawnType(type ?? "")
+        return drawn.prefix(1).lowercased() + drawn.dropFirst() + "_" + path
+    }
+
+    /// The type a spelling is drawn as: a section declared as an alias of
+    /// another (`_alias_of`, generated as JsonUIComponentAliases) as that
+    /// section, a synonym as its `render_as` else its `canonical`
+    /// (TypeSynonyms), anything else as written — the rule of the shared
+    /// function, held to it by the vectors' `view_id_cases`.
+    static func drawnType(_ type: String) -> String {
+        JsonUIComponentAliases.canonical(for: type) ?? TypeSynonyms.drawnAs(type)
+    }
+
     /// A component's path, or `0` — a component decoded from a tree nothing
     /// stamped is its own root.
     static func path(of component: DynamicComponent) -> String {
