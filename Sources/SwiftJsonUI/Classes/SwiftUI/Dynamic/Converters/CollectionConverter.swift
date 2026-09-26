@@ -340,6 +340,9 @@ public struct CollectionConverter {
                 dataSource: dataSource,
                 sections: sections,
                 cellIdProperty: cellIdProperty,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
+                scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
@@ -969,6 +972,38 @@ public struct CollectionConverter {
         return nil
     }
 
+    /// The scrollTo request on a route's scroll container (4f ruling
+    /// 2026-09-27; jsonui-cli 1.9.0, the SSoT's Collection.scrollTo): a CHANGE
+    /// of the value scrolls to the cell it names (scrollID(for:…)) — keyed on
+    /// the value, the same shape as Compose's LaunchedEffect and web's effect —
+    /// and the value the Collection is drawn with scrolls nowhere
+    /// (`.onChange(of:)` does not fire for it). The value is optional here, so a
+    /// value arriving where there was none is a change like any other. Until
+    /// jsonui-cli 1.9.0 the modifier was attached only while there was a value
+    /// (`ifLet`), so the first value to arrive scrolled nowhere — and, switching
+    /// the view's branch, rebuilt the scroll container.
+    static func scrollOnChange<Content: View>(
+        _ view: Content,
+        target: CollectionScrollTarget?,
+        proxy: ScrollViewProxy,
+        sections: [[String: Any]],
+        dataSource: CollectionDataSource,
+        cellIdProperty: String?,
+        animated: Bool,
+        anchor: UnitPoint
+    ) -> some View {
+        view.onChange(of: target) { _, newTarget in
+            guard let newTarget,
+                  let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty)
+            else { return }
+            if animated {
+                withAnimation { proxy.scrollTo(id, anchor: anchor) }
+            } else {
+                proxy.scrollTo(id, anchor: anchor)
+            }
+        }
+    }
+
     // MARK: - Paging Page Item Helper
 
     /// Flatten all cells from all sections into a single array of page items for paging layout.
@@ -1099,21 +1134,8 @@ public struct CollectionConverter {
                         }
                     }
                 }
-                .ifLet(scrollTarget) { view, target in
-                    // Keyed on the value: SwiftUI re-runs this when it
-                    // changes, the same shape as Compose's LaunchedEffect and
-                    // web's useEffect on the same property.
-                    view.onChange(of: target) { _, newTarget in
-                        // The cell the value names, by its scroll id
-                        // (scrollID(for:…)); none, no scroll.
-                        guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty) else { return }
-                        if scrollAnimated {
-                            withAnimation { scrollProxy.scrollTo(id, anchor: scrollAnchorPoint) }
-                        } else {
-                            scrollProxy.scrollTo(id, anchor: scrollAnchorPoint)
-                        }
-                    }
-                }
+                .collectionScrollOnChange(scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
             }
         )
     }
@@ -1128,6 +1150,9 @@ public struct CollectionConverter {
         dataSource: CollectionDataSource,
         sections: [[String: Any]],
         cellIdProperty: String?,
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
+        scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
@@ -1135,7 +1160,11 @@ public struct CollectionConverter {
         let listStyle = component.enumString(CollectionAttributes.self, \.listStyle) ?? "plain"
         let hideSeparator = component.typedAttributes(CollectionAttributes.self).hideSeparator ?? false
 
-        return applyListStyle(AnyView(
+        // The scrollTo reaches the List's cells by their scroll ids (as on the
+        // CollectionStackView route); until jsonui-cli 1.9.0 this route had no
+        // ScrollViewReader and a scrollTo drew nothing.
+        return AnyView(ScrollViewReader { scrollProxy in
+            scrollOnChange(applyListStyle(AnyView(
             List {
                 Group {
                     ForEach(
@@ -1163,6 +1192,7 @@ public struct CollectionConverter {
                             if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
                                 sectionGrid(
                                     columns: ownColumns,
+                                    section: sectionIndex,
                                     items: items,
                                     cellName: cellName,
                                     component: component,
@@ -1184,7 +1214,7 @@ public struct CollectionConverter {
                                     )),
                                     component: component
                                 )
-                                .id(cell.id)
+                                .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                             }
                             }
                         }
@@ -1202,7 +1232,9 @@ public struct CollectionConverter {
                 }
                 .listRowSeparator(hideSeparator ? .hidden : .automatic)
             }
-        ), style: listStyle)
+        ), style: listStyle), target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+            cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+        })
     }
 
     /// Codegen's apply_cell_frame, non-grid dialect: a declared cellWidth /
@@ -1430,21 +1462,8 @@ public struct CollectionConverter {
                         }
                     }
                 }
-                .ifLet(scrollTarget) { view, target in
-                    // Keyed on the value: SwiftUI re-runs this when it
-                    // changes, the same shape as Compose's LaunchedEffect and
-                    // web's useEffect on the same property.
-                    view.onChange(of: target) { _, newTarget in
-                        // The cell the value names, by its scroll id
-                        // (scrollID(for:…)); none, no scroll.
-                        guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty) else { return }
-                        if scrollAnimated {
-                            withAnimation { scrollProxy.scrollTo(id, anchor: scrollAnchorPoint) }
-                        } else {
-                            scrollProxy.scrollTo(id, anchor: scrollAnchorPoint)
-                        }
-                    }
-                }
+                .collectionScrollOnChange(scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
             }
         )
     }
@@ -1658,21 +1677,8 @@ public struct CollectionConverter {
                     }
                     }
                 }
-                .ifLet(scrollTarget) { view, target in
-                    // Keyed on the value: SwiftUI re-runs this when it
-                    // changes, the same shape as Compose's LaunchedEffect and
-                    // web's useEffect on the same property.
-                    view.onChange(of: target) { _, newTarget in
-                        // The cell the value names, by its scroll id
-                        // (scrollID(for:…)); none, no scroll.
-                        guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty) else { return }
-                        if scrollAnimated {
-                            withAnimation { scrollProxy.scrollTo(id, anchor: scrollAnchorPoint) }
-                        } else {
-                            scrollProxy.scrollTo(id, anchor: scrollAnchorPoint)
-                        }
-                    }
-                }
+                .collectionScrollOnChange(scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
             }
         )
     }
@@ -1693,7 +1699,11 @@ public struct CollectionConverter {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         let gaps = flowSpacing(component)
 
-        return AnyView(
+        // The scrollTo reaches the flow's cells by their scroll ids (as on the
+        // other routes); until jsonui-cli 1.9.0 the flow had neither the ids
+        // nor a ScrollViewReader, and a scrollTo drew nothing.
+        return AnyView(ScrollViewReader { scrollProxy in
+            scrollOnChange(
             ScrollView(.vertical, showsIndicators: showsIndicators) {
                 VStack(spacing: gaps.sections) {
                     ForEach(
@@ -1730,7 +1740,7 @@ public struct CollectionConverter {
                                         viewId: viewId,
                                         onItemAppear: onItemAppear
                                     )
-                                    .id(cell.id)
+                                    .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                                 }
                             }
                         }
@@ -1743,8 +1753,9 @@ public struct CollectionConverter {
                         }
                     }
                 }
-            }
-        )
+            }, target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+               cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+        })
     }
 
     /// The legacy shape's grid (no `sections`): every data section's cells in
@@ -2292,6 +2303,23 @@ fileprivate func cgFloatFromRaw(_ value: Any?) -> CGFloat? {
     if let v = value as? Int { return CGFloat(v) }
     if let v = value as? NSNumber { return CGFloat(truncating: v) }
     return nil
+}
+
+/// CollectionConverter.scrollOnChange as a modifier, for the routes that
+/// chain their scroll container's modifiers.
+fileprivate extension View {
+    func collectionScrollOnChange(
+        _ target: CollectionScrollTarget?,
+        proxy: ScrollViewProxy,
+        sections: [[String: Any]],
+        dataSource: CollectionDataSource,
+        cellIdProperty: String?,
+        animated: Bool,
+        anchor: UnitPoint
+    ) -> some View {
+        CollectionConverter.scrollOnChange(self, target: target, proxy: proxy, sections: sections, dataSource: dataSource,
+                                           cellIdProperty: cellIdProperty, animated: animated, anchor: anchor)
+    }
 }
 
 #endif // DEBUG
