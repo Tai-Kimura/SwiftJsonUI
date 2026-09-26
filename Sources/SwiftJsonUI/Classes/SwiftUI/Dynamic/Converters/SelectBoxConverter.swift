@@ -10,8 +10,9 @@
 //       - id, prompt, fontSize, fontColor, backgroundColor, cornerRadius, caret
 //       - selectItemType, items (normal) OR datePickerMode/datePickerStyle/dateStringFormat/
 //         minimumDate/maximumDate/minuteInterval/selectedDate (date)
-//       - selectedIndex, padding
-//    2. .onChange (onValueChange)
+//       - selectedIndex, padding, onValueChange (the pick: onValueChange,
+//         then onClick)
+//    2. (no .onChange: onValueChange is the user's pick only)
 //    3. apply_frame_constraints + apply_frame_size
 //    4. .overlay (border)
 //    5. apply_margins
@@ -207,20 +208,25 @@ public struct SelectBoxConverter {
         let handlerExpr: String? = component.onValueChangeSpelling()
             ?? component.onValueChangedSpelling()
 
-        // Which bound var (if any) can be observed for changes
-        let observedBindingProp: String? = attrs.selectedIndex?.bindingExpression
-            ?? attrs.selectedItem?.bindingExpression
-            ?? attrs.selectedValue?.bindingExpression
-
-        // Without a bound var there is nothing to observe — pass the handler
-        // straight into SelectBoxView (it manages its own selection state and
-        // reports picks through this closure).
-        let directOnValueChange: ((String) -> Void)? = {
-            guard observedBindingProp == nil,
-                  let handler = handlerExpr,
-                  DynamicEventHelper.handlerName(from: handler) != nil else { return nil }
-            return { newValue in
-                DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data)
+        // onValueChange from the user's pick — after the selection is written
+        // (SelectBoxView writes the index binding, and this closure the date,
+        // first) and before onClick — with the value of what is bound: the
+        // index for a bound selectedIndex, the item (or the date) otherwise.
+        // Not from the view model's own writes: an `.onChange(of:)` on the
+        // bound value reported those too, on the next update and so after the
+        // call (4f's ruling: the control's update, then onValueChange, then
+        // onClick, all from the user's operation). A box bound to a plain
+        // value had neither: nothing was observed, and the pick was not passed
+        // on.
+        let indexBound = selectItemType != .date && attrs.selectedIndex?.bindingString != nil
+        let report: ((String) -> Void)? = {
+            guard let handler = handlerExpr, DynamicEventHelper.handlerName(from: handler) != nil else { return nil }
+            return { picked in
+                if indexBound {
+                    DynamicEventHelper.callWithValue(handler, id: id, value: items.firstIndex(of: picked) ?? -1, data: data)
+                } else {
+                    DynamicEventHelper.callWithValue(handler, id: id, value: picked, data: data)
+                }
             }
         }()
         // A date bound to a two-way Binding<String> is written back on a pick —
@@ -234,9 +240,9 @@ public struct SelectBoxConverter {
         // (DynamicEventHelper.operationClick). SelectBoxView reports a pick
         // through this closure and only a pick.
         let click = DynamicEventHelper.operationClick(component, data: data)
-        let onPick: ((String) -> Void)? = dateBinding == nil && click == nil ? directOnValueChange : { newValue in
+        let onPick: ((String) -> Void)? = dateBinding == nil && report == nil && click == nil ? nil : { newValue in
             dateBinding?.wrappedValue = newValue
-            directOnValueChange?(newValue)
+            report?(newValue)
             click?()
         }
 
@@ -266,30 +272,6 @@ public struct SelectBoxConverter {
                 onValueChange: onPick
             )
         )
-
-        // --- 2. .onChange (onValueChange) ---
-        // Determine which binding property to observe for changes
-        if let onValueChange = handlerExpr,
-           DynamicEventHelper.handlerName(from: onValueChange) != nil {
-            if let prop = observedBindingProp {
-                // Observe Int binding (selectedIndex)
-                if let binding = data[prop] as? SwiftUI.Binding<Int> {
-                    result = AnyView(
-                        result.onChange(of: binding.wrappedValue) { _, newValue in
-                            DynamicEventHelper.callWithValue(onValueChange, id: id, value: newValue, data: data)
-                        }
-                    )
-                }
-                // Observe String binding (selectedItem)
-                else if let binding = data[prop] as? SwiftUI.Binding<String> {
-                    result = AnyView(
-                        result.onChange(of: binding.wrappedValue) { _, newValue in
-                            DynamicEventHelper.callWithValue(onValueChange, id: id, value: newValue, data: data)
-                        }
-                    )
-                }
-            }
-        }
 
         // --- 3. apply_frame_constraints + apply_frame_size ---
         // SelectBoxView handles padding/background/cornerRadius internally

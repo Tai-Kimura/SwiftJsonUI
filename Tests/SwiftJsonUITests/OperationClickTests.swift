@@ -96,5 +96,34 @@ final class OperationClickTests: XCTestCase {
         XCTAssertEqual(wrapped.wrappedValue, 5, "the view model's change passes through")
         XCTAssertEqual(seen, [3], "and calls nothing")
     }
+
+    /// The control's update, then onValueChange, then onClick: `reporting`
+    /// under `calling`, as the bound converters stack them. onValueChange
+    /// reports a write that changes the value and nothing else — not a read,
+    /// not a write of the same value, not the view model's change.
+    func testOnValueChangeThenOnClickFromTheWriteOnly() {
+        var value = 0
+        var log: [String] = []
+        let base = SwiftUI.Binding(get: { value }, set: { value = $0 })
+        let reported = DynamicEventHelper.reporting({ log.append("v\($0) (value \(value))") }, after: base)
+        let control = DynamicEventHelper.calling({ log.append("c (value \(value))") }, after: reported)
+        _ = control.wrappedValue
+        XCTAssertEqual(log, [], "reading calls nothing")
+        control.wrappedValue = 2
+        XCTAssertEqual(log, ["v2 (value 2)", "c (value 2)"], "the value written, then onValueChange, then onClick")
+        control.wrappedValue = 2
+        XCTAssertEqual(log, ["v2 (value 2)", "c (value 2)", "c (value 2)"], "the same value: no value change, still the operation")
+        value = 7
+        XCTAssertEqual(control.wrappedValue, 7)
+        XCTAssertEqual(log.count, 3, "the view model's change calls neither")
+    }
+
+    func testNoHandlerLeavesTheBindingAsItIs() {
+        var value = 1
+        let base = SwiftUI.Binding(get: { value }, set: { value = $0 })
+        let reported = DynamicEventHelper.reporting(nil as ((Int) -> Void)?, after: base)
+        reported.wrappedValue = 4
+        XCTAssertEqual(value, 4)
+    }
 }
 #endif

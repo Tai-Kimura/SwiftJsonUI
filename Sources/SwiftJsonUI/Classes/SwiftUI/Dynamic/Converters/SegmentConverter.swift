@@ -5,7 +5,8 @@
 //  Converts DynamicComponent to SwiftUI segmented Picker.
 //
 //  Modifier order (matches segment_converter.rb):
-//    Picker(.segmented) -> .onChange(onValueChange) -> applyStandardModifiers()
+//    Picker(.segmented) -> applyStandardModifiers(); the user's choice writes
+//    the selection, then calls onValueChange, then onClick
 //
 
 import SwiftUI
@@ -91,32 +92,14 @@ public struct SegmentConverter {
             ))
             return DynamicModifierHelper.applyStandardModifiers(local, component: component, data: data)
         }
-        var result = buildPicker(bound)
-
-        // onValueChange handler - called when selection changes
-        // The handler's NAME is not used here — only whether one could be extracted,
-        // which is what decides whether the binding is observed at all.
-        if let onValueChange = component.onValueChangeSpelling(),
-           DynamicEventHelper.extractPropertyName(from: onValueChange) != nil {
-            // Determine the binding property to observe
-            // `selectedTabIndex` folds into `selectedIndex` in the generated
-            // extraction (declared alias, plan 51-E), so one read covers both.
-            let observeProperty: String? = attrs.selectedIndex?.bindingExpression
-
-            if let propName = observeProperty,
-               let binding = data[propName] as? SwiftUI.Binding<Int> {
-                result = AnyView(
-                    result.onChange(of: binding.wrappedValue) { _, newValue in
-                        DynamicEventHelper.callWithValue(
-                            onValueChange,
-                            id: id,
-                            value: newValue,
-                            data: data
-                        )
-                    }
-                )
-            }
+        // onValueChange from the user's choice, after the bound selection is
+        // written and before onClick (DynamicEventHelper.reporting) — not from
+        // the view model's own writes, which an `.onChange(of:)` here reported
+        // too, on the next update and so after the call.
+        let report: ((Int) -> Void)? = handler.map { handler in
+            { newValue in DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data) }
         }
+        var result = buildPicker(DynamicEventHelper.reporting(report, after: bound))
 
         // Standard modifiers (padding -> frame -> background -> cornerRadius -> border -> margins -> ...)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)

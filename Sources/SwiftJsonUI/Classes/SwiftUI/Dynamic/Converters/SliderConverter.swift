@@ -6,7 +6,8 @@
 //
 //  Modifier order (matches slider_converter.rb):
 //    Slider(value:in:) -> .accentColor(tintColor) -> .disabled()
-//    -> .onChange(onValueChange) -> applyStandardModifiers()
+//    -> applyStandardModifiers(); each value of the user's drag writes the
+//    value, then calls onValueChange; onClick at the drag's end
 //
 
 import SwiftUI
@@ -124,31 +125,16 @@ public struct SliderConverter {
             ))
             return DynamicModifierHelper.applyStandardModifiers(local, component: component, data: data)
         }
-        var result = buildSlider(bound)
-        if let handler = handler,
-           let _ = DynamicEventHelper.extractPropertyName(from: handler) {
-            // Determine the binding property to observe
-            let observeProperty: String? = {
-                if let v = valueExpr {
-                    return DynamicEventHelper.extractPropertyName(from: v)
-                }
-                return nil
-            }()
-
-            if let propName = observeProperty,
-               let binding = data[propName] as? SwiftUI.Binding<Double> {
-                result = AnyView(
-                    result.onChange(of: binding.wrappedValue) { _, newValue in
-                        DynamicEventHelper.callWithValue(
-                            handler,
-                            id: id,
-                            value: newValue,
-                            data: data
-                        )
-                    }
-                )
+        // onValueChange from every value of the user's drag, after the bound
+        // value is written — onClick follows at the drag's end
+        // (DynamicEventHelper.reporting) — and not from the view model's own
+        // writes, which an `.onChange(of:)` here reported too.
+        let report: ((Double) -> Void)? = handler
+            .flatMap { DynamicEventHelper.extractPropertyName(from: $0) != nil ? $0 : nil }
+            .map { handler in
+                { newValue in DynamicEventHelper.callWithValue(handler, id: id, value: newValue, data: data) }
             }
-        }
+        var result = buildSlider(DynamicEventHelper.reporting(report, after: bound))
 
         // Standard modifiers (padding -> frame -> background -> cornerRadius -> border -> margins -> ...)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
