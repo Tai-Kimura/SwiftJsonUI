@@ -1339,12 +1339,7 @@ public struct CollectionConverter {
         // anything. The codegen hides row separators on the header-less
         // shape only, and hides the section separator between the cells'
         // Section and the footer's.
-        // A scrollTo reaches the cells by their scroll ids — every data
-        // section's (`sections`, the class-list shape's one per data section)
-        // — as on the other lists; until jsonui-cli 1.9.0 this route had no
-        // ScrollViewReader and a scrollTo drew nothing.
-        return AnyView(ScrollViewReader { scrollProxy in
-            scrollOnChange(applyListStyle(AnyView(
+        let list = applyListStyle(AnyView(
             List {
                 if let headerName {
                     Section {
@@ -1368,8 +1363,18 @@ public struct CollectionConverter {
                     }
                 }
             }
-        ), style: listStyle), target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-            cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+        ), style: listStyle)
+
+        // A scrollTo reaches the cells by their scroll ids — every data
+        // section's (`sections`, the class-list shape's one per data section)
+        // — as on the other lists; until jsonui-cli 1.9.0 this route had no
+        // ScrollViewReader and a scrollTo drew nothing. Only a Collection that
+        // declares scrollTo takes the reader: any other stays the List it was
+        // (CollectionDeclaredCellsTests finds it by walking the view).
+        guard component.typedAttributes(CollectionAttributes.self).scrollTo != nil else { return list }
+        return AnyView(ScrollViewReader { scrollProxy in
+            scrollOnChange(list, target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+                           cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
         })
     }
 
