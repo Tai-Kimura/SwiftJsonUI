@@ -1631,6 +1631,15 @@ public struct CollectionConverter {
                         let sectionConfig = sections[sectionIndex]
                         let sectionData = dataSource.sections[sectionIndex]
 
+                        // The section's declared header: a row of its own
+                        // above its wrap, full width, leading (4f ruling
+                        // 2026-09-26, round 7). The lazy flow drew none.
+                        if let headerName = sectionConfig["header"] as? String,
+                           let headerData = sectionData.header {
+                            buildHeaderView(headerClassName: headerName, headerData: headerData.data, data: data, viewId: viewId)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
@@ -1652,6 +1661,13 @@ public struct CollectionConverter {
                                     .id(cell.id)
                                 }
                             }
+                        }
+
+                        // …and its footer, a row below the wrap.
+                        if let footerName = sectionConfig["footer"] as? String,
+                           let footerData = sectionData.footer {
+                            buildFooterView(footerClassName: footerName, footerData: footerData.data, data: data, viewId: viewId)
+                                .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                 }
@@ -1744,6 +1760,9 @@ public struct CollectionConverter {
                             data: data,
                             viewId: viewId
                         )
+                        // A flow's header is a full-width row (round 7), as
+                        // on the lazy flow.
+                        .frame(maxWidth: isFlow ? .infinity : nil, alignment: .leading)
                     }
 
                     if let cellName = sectionConfig["cell"] as? String,
@@ -1836,6 +1855,7 @@ public struct CollectionConverter {
                             data: data,
                             viewId: viewId
                         )
+                        .frame(maxWidth: isFlow ? .infinity : nil, alignment: .leading)
                     }
                 }
             )
