@@ -73,6 +73,23 @@ enum TapAccessibility {
         return interactive.contains(drawn) || !known.contains(drawn)
     }
 
+    /// The interactive types that hold the operated things rather than being
+    /// one (jsonui-cli shared/core/tap_accessibility.rb STOP_CONTAINER_TYPES).
+    private static let stopContainers: Set<String> = [
+        "tabview", "scrollview", "collection", "table", "tableview", "recyclerview", "web", "embed"
+    ]
+
+    /// A control a stop holds — operated where it is, not a container
+    /// (jsonui-cli shared/core/tap_accessibility.rb `control?`): the stop takes
+    /// its operation without a tap on it, a screen reader's activation too
+    /// (DynamicModifierHelper.applyHitTesting, JsonUIStoppedControl). Asked of
+    /// the type it is drawn as, as isInteractiveType is.
+    static func isControl(_ type: String?) -> Bool {
+        guard let type = type else { return false }
+        let drawn = TypeSynonyms.drawnType(type).lowercased()
+        return interactive.contains(drawn) && !stopContainers.contains(drawn)
+    }
+
     /// A handler names a method that is not blank: a binding's inside
     /// (`@{onOpen}`), a bare selector, or each string of an `onclick` array.
     /// `""`, `"   "`, `"@{}"`, `[]` and `[""]` name none, so they are no tap

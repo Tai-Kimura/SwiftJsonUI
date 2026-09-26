@@ -14,9 +14,10 @@
 //  called; the UI test sends the touch for each element that returned false.
 //
 //  Left: what `sjui build` emits for the two layouts below — sjui_tools of
-//  jsonui-cli 4476d6d0 with this branch's changes (jsonui-cli 1.9.0 in
-//  progress), JsonToSwiftUIConverter over a layouts directory holding both, as
-//  the build calls it — the probe's body and the cell's body pasted unchanged
+//  jsonui-cli support4f/tap-rule-uie-round4 (on aea0a0a4; jsonui-cli 1.9.0 in
+//  progress: a control a stop holds carries `.jsonuiStoppedControl(…)`),
+//  JsonToSwiftUIConverter over a layouts directory holding both, as the build
+//  calls it — the probe's body and the cell's body pasted unchanged
 //  (A11yActivationCodegenBody, AxCellGeneratedView). The cell's View / Data /
 //  ViewModel are the shapes `sjui g collection` writes (collection_generator
 //  .rb): the cell view is Equatable on its cellId, and a Collection with
@@ -54,8 +55,14 @@
 //        {"type": "Label", "id": "cgCellLbl", "text": "cgCellLbl", "onClick": "@{onRow}"}
 //      ]}
 //  Below the paste, not emitted: the same cell drawn without `.equatable()`
-//  (the contrast for the cell), and two candidate fixes on a Switch inside a
-//  stop — `.disabled(true)` and `.accessibilityRespondsToUserInteraction(false)`.
+//  (the contrast for the cell), and the candidate fixes for a Switch and a
+//  Button inside a stop (A11yActivationProbeView.candidates) — the setter
+//  gated, `.accessibilityRespondsToUserInteraction(false)`, the button and
+//  toggle traits removed, a no-op default action, `.accessibilityElement(
+//  children: .ignore)`, and `.disabled(true)` as the reference. Each entry
+//  reports the activation, what it moved, and what a screen reader reads:
+//  the traits (hex, and the toggle trait), respondsToUserInteraction, the
+//  value.
 //
 //  Right: the Dynamic runtime with the same rows (no Collection: its cells are
 //  layouts loaded by name, and this host bundles none).
@@ -84,8 +91,35 @@ final class A11yActivationProbeData: ObservableObject {
     @Published var swInFalse = false { didSet { if swInFalse != oldValue { bump("cgSwInFalse") } } }
     @Published var swInBound = false { didSet { if swInBound != oldValue { bump("cgSwInBound") } } }
     @Published var swSelfFalse = false { didSet { if swSelfFalse != oldValue { bump("cgSwSelfFalse") } } }
-    @Published var fixDisabledSw = false { didSet { if fixDisabledSw != oldValue { bump("fixDisabledSw") } } }
-    @Published var fixRespondsSw = false { didSet { if fixRespondsSw != oldValue { bump("fixRespondsSw") } } }
+    // The candidates (not emitted): each Switch counts each change of value.
+    @Published var cand: [String: Bool] = [:]
+    func candBinding(_ name: String) -> SwiftUI.Binding<Bool> {
+        SwiftUI.Binding(get: { self.cand[name] ?? false }, set: { value in
+            if (self.cand[name] ?? false) != value { self.bump(name) }
+            self.cand[name] = value
+        })
+    }
+    @Published var candValues: [String: Double] = [:]
+    func candSlider(_ name: String) -> SwiftUI.Binding<Double> {
+        SwiftUI.Binding(get: { self.candValues[name] ?? 0.5 }, set: { value in
+            if (self.candValues[name] ?? 0.5) != value { self.bump(name) }
+            self.candValues[name] = value
+        })
+    }
+    func candSegment(_ name: String) -> SwiftUI.Binding<Int> {
+        SwiftUI.Binding(get: { Int(self.candValues[name] ?? 0) }, set: { value in
+            if Int(self.candValues[name] ?? 0) != value { self.bump(name) }
+            self.candValues[name] = Double(value)
+        })
+    }
+    @Published var candTexts: [String: String] = [:]
+    func candText(_ name: String) -> SwiftUI.Binding<String> {
+        SwiftUI.Binding(get: { self.candTexts[name] ?? "" }, set: { self.candTexts[name] = $0 })
+    }
+    /// The setter gate the candidates try: a stopped Switch takes no value.
+    func gatedBinding(_ name: String) -> SwiftUI.Binding<Bool> {
+        SwiftUI.Binding(get: { self.cand[name] ?? false }, set: { _ in })
+    }
     @Published var dynSw: [String: Bool] = [:]
     lazy var onLblPlain: (() -> Void)? = { [weak self] in self?.bump("cgLblPlain") }
     lazy var onBtnPlain: (() -> Void)? = { [weak self] in self?.bump("cgBtnPlain") }
@@ -230,6 +264,7 @@ struct A11yActivationCodegenBody: View {
                             action: { },
                             isEnabled: true
                         )
+                            .jsonuiStoppedControl(true)
                             .accessibilityIdentifier("cgBtnInFalse")
                         PartialAttributedText(
                             "cgLblInFalse",
@@ -250,6 +285,7 @@ struct A11yActivationCodegenBody: View {
                             Text("")
                         }
                             .labelsHidden()
+                            .jsonuiStoppedControl(true)
                             .accessibilityIdentifier("cgSwInFalse")
                 }
                     .allowsHitTesting(false)
@@ -261,6 +297,7 @@ struct A11yActivationCodegenBody: View {
                             action: { if (data.gateOpen ?? false) { data.onBtnInBound?() } },
                             isEnabled: true
                         )
+                            .jsonuiStoppedControl(!((data.gateOpen ?? false)))
                             .accessibilityIdentifier("cgBtnInBound")
                         PartialAttributedText(
                             "cgLblInBound",
@@ -291,6 +328,7 @@ struct A11yActivationCodegenBody: View {
                             Text("")
                         }
                             .labelsHidden()
+                            .jsonuiStoppedControl(!((data.gateOpen ?? false)))
                             .accessibilityIdentifier("cgSwInBound")
                         CollectionStackView(
                             mode: .lazy,
@@ -323,16 +361,37 @@ struct A11yActivationCodegenBody: View {
                     isEnabled: true
                 )
                     .allowsHitTesting(false)
+                    .jsonuiStoppedControl(true)
                     .accessibilityIdentifier("cgBtnSelfFalse")
                 Toggle(isOn: $data.swSelfFalse) {
                     Text("")
                 }
                     .labelsHidden()
                     .allowsHitTesting(false)
+                    .jsonuiStoppedControl(true)
                     .accessibilityIdentifier("cgSwSelfFalse")
         }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("cgRoot")
+    }
+}
+
+// MARK: - a candidate modifier for the library
+
+/// While `stopped`: no button or toggle trait, not responding to user
+/// interaction, and the default action (VoiceOver's activation) replaced by
+/// nothing. Not stopped: the view as it is.
+struct ProbeStoppedControl: ViewModifier {
+    let stopped: Bool
+    func body(content: Content) -> some View {
+        if stopped {
+            content
+                .accessibilityAction { }
+                .accessibilityRemoveTraits([.isButton, .isToggle])
+                .accessibilityRespondsToUserInteraction(false)
+        } else {
+            content
+        }
     }
 }
 
@@ -415,6 +474,19 @@ enum A11yActivator {
     /// node `scope` when given), and how it was found: `self` (the node with
     /// the identifier is an element), `child` (the first element under it),
     /// `container` (no element at all), `none` (no node with the id).
+    /// The element labelled `label` under the node `scope` (a Picker's segment).
+    static func labelled(_ label: String, scope: String) -> (NSObject?, String, Int) {
+        guard let window = keyWindow(), let root = matches(scope, under: window).first else { return (nil, "noscope", 0) }
+        var seen = Set<ObjectIdentifier>()
+        var stack: [NSObject] = [root]
+        while let node = stack.popLast() {
+            guard seen.insert(ObjectIdentifier(node)).inserted else { continue }
+            if node.isAccessibilityElement && node.accessibilityLabel == label { return (node, "label", 1) }
+            stack += children(node).reversed()
+        }
+        return (nil, "none", 0)
+    }
+
     static func target(_ id: String, scope: String?) -> (NSObject?, String, Int) {
         guard let window = keyWindow() else { return (nil, "nowindow", 0) }
         var root: NSObject = window
@@ -435,10 +507,16 @@ struct A11yTarget {
     let name: String
     let id: String
     let scope: String?
-    init(_ name: String, id: String? = nil, scope: String? = nil) {
+    /// Found by its accessibility label under `scope` (a segment of a Picker).
+    let label: String?
+    /// VoiceOver's swipe up on an adjustable element, not its double tap.
+    let increment: Bool
+    init(_ name: String, id: String? = nil, scope: String? = nil, label: String? = nil, increment: Bool = false) {
         self.name = name
         self.id = id ?? name
         self.scope = scope
+        self.label = label
+        self.increment = increment
     }
 }
 
@@ -449,12 +527,28 @@ struct A11yActivationProbeView: View {
                        "BtnInFalse", "LblInFalse", "ViewInFalse", "SwInFalse",
                        "BtnInBound", "LblInBound", "ViewInBound", "SwInBound",
                        "BtnSelfFalse", "SwSelfFalse"]
-    static let targets: [A11yTarget] =
-        rows.map { A11yTarget("cg\($0)") }
-        + [A11yTarget("cgCellEq", id: "cgCellLbl", scope: "cgListBound"),
-           A11yTarget("cgCellNoEq", id: "cgCellLbl", scope: "cgListBoundNoEq")]
-        + rows.map { A11yTarget("dyn\($0)") }
-        + [A11yTarget("fixDisabledSw"), A11yTarget("fixRespondsSw")]
+    // Built statement by statement: the one `+` chain took Swift 6.2.4 (the
+    // CI pin) past its type-check limit (scripts/typecheck_swift62.sh).
+    static let targets: [A11yTarget] = {
+        var out: [A11yTarget] = rows.map { A11yTarget("cg\($0)") }
+        out.append(A11yTarget("cgCellEq", id: "cgCellLbl", scope: "cgListBound"))
+        out.append(A11yTarget("cgCellNoEq", id: "cgCellLbl", scope: "cgListBoundNoEq"))
+        out += rows.map { A11yTarget("dyn\($0)") }
+        out += A11yActivationProbeView.candidates.map { A11yTarget($0) }
+        out += ["candSlPlain", "candSlEmitted", "candSlMod", "candSlHidden"].map { A11yTarget($0, increment: true) }
+        out += ["candSegPlain", "candSegEmitted", "candSegMod", "candSegHidden"].map { A11yTarget($0, scope: $0, label: "b") }
+        out += ["candTfPlain", "candTfEmitted", "candTfMod", "candTfHidden"].map { A11yTarget($0) }
+        return out
+    }()
+
+    /// The candidate fixes, each inside a stop drawn as the codegen draws
+    /// `userInteractionEnabled: false` (`.allowsHitTesting(false)`): the
+    /// Switch and the Button as emitted, then with one change or a pair.
+    static let candidates = ["candSwEmitted", "candSwEmitted2", "candSwGate", "candSwGateTraitsResp", "candSwGateButtonResp",
+                             "candSwGateResp", "candSwActionTraitsResp", "candSwDisabled",
+                             "candBtnEmitted", "candBtnEmitted2", "candBtnTraitsResp", "candBtnDisabled",
+                             "candCondOpenSw", "candCondOpenBtn", "candHiddenSw", "candHiddenBtn", "candHiddenLbl",
+                             "candSwMod", "candSwModOpen", "candBtnMod", "candBtnModOpen"]
 
     /// The Dynamic rows, with the ids and handlers of the codegen rows.
     static let dynamicLayout: DynamicComponent? = {
@@ -508,21 +602,30 @@ struct A11yActivationProbeView: View {
                 return
             }
             let t = Self.targets[i]
-            let (element, via, n) = A11yActivator.target(t.id, scope: t.scope)
+            let (element, via, n) = t.label.map { A11yActivator.labelled($0, scope: t.scope ?? t.id) } ?? A11yActivator.target(t.id, scope: t.scope)
             let before = data.counts[t.name] ?? 0
             guard let element else {
-                entries.append("\(t.name)=\(via)/0/0/0/0/0/-1,-1")
+                entries.append("\(t.name)=\(via)/0/0/0/0/0/-1,-1/0/0/0/")
                 step(i + 1)
                 return
             }
             let traits = element.accessibilityTraits
             let point = element.accessibilityActivationPoint
-            let returned = element.accessibilityActivate()
+            let responds = element.accessibilityRespondsToUserInteraction
+            let value = (element.accessibilityValue ?? "").replacingOccurrences(of: "/", with: "|").replacingOccurrences(of: ";", with: ",")
+            let returned: Bool
+            if t.increment {
+                element.accessibilityIncrement()
+                returned = true
+            } else {
+                returned = element.accessibilityActivate()
+            }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 let moved = (data.counts[t.name] ?? 0) - before
                 entries.append("\(t.name)=\(via)\(n > 1 ? "\(n)" : "")/\(element.isAccessibilityElement ? 1 : 0)/"
                     + "\(traits.contains(.button) ? 1 : 0)/\(traits.contains(.notEnabled) ? 1 : 0)/"
-                    + "\(returned ? 1 : 0)/\(moved)/\(Int(point.x.rounded())),\(Int(point.y.rounded()))")
+                    + "\(returned ? 1 : 0)/\(moved)/\(Int(point.x.rounded())),\(Int(point.y.rounded()))/"
+                    + "\(String(traits.rawValue, radix: 16))/\(traits.contains(.toggleButton) ? 1 : 0)/\(responds ? 1 : 0)/\(value)")
                 step(i + 1)
             }
         }
@@ -535,6 +638,141 @@ struct A11yActivationProbeView: View {
         let counts = data.counts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         let gate = (data.gateOpen ?? false) ? "open" : "closed"
         return "ran=\(data.ran) gate=\(gate) walk=\(data.walk) act[\(data.act)] counts[\(counts)]"
+    }
+
+
+    @FocusState private var focus: String?
+
+    /// `-candidates`: the candidate fixes alone, on a screen of their own (the
+    /// probe's two columns fill the screen).
+    static let candidatesOnly = ProcessInfo.processInfo.arguments.contains("-candidates")
+
+    @ViewBuilder private var candidatesBlock: some View {
+        // not emitted: the candidate fixes, inside a stop as emitted — the
+        // conditional forms take `stopped` (the stop, as a codegen would
+        // read it); `candCondOpen…` are the same forms with it false
+        let stopped = true
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(isOn: data.candBinding("candSwEmitted")) { Text("") }
+                .labelsHidden().accessibilityIdentifier("candSwEmitted")
+            Toggle(isOn: data.candBinding("candSwEmitted2")) { Text("") }
+                .labelsHidden().accessibilityIdentifier("candSwEmitted2")
+            Toggle(isOn: data.gatedBinding("candSwGate")) { Text("") }
+                .labelsHidden().accessibilityIdentifier("candSwGate")
+            Toggle(isOn: data.gatedBinding("candSwGateTraitsResp")) { Text("") }
+                .labelsHidden()
+                .accessibilityRemoveTraits(stopped ? [.isButton, .isToggle] : [])
+                .accessibilityRespondsToUserInteraction(!stopped)
+                .accessibilityIdentifier("candSwGateTraitsResp")
+            Toggle(isOn: data.gatedBinding("candSwGateButtonResp")) { Text("") }
+                .labelsHidden()
+                .accessibilityRemoveTraits(stopped ? .isButton : [])
+                .accessibilityRespondsToUserInteraction(!stopped)
+                .accessibilityIdentifier("candSwGateButtonResp")
+            Toggle(isOn: data.gatedBinding("candSwGateResp")) { Text("") }
+                .labelsHidden()
+                .accessibilityRespondsToUserInteraction(!stopped)
+                .accessibilityIdentifier("candSwGateResp")
+            Toggle(isOn: data.candBinding("candSwActionTraitsResp")) { Text("") }
+                .labelsHidden()
+                .accessibilityAction { }
+                .accessibilityRemoveTraits([.isButton, .isToggle])
+                .accessibilityRespondsToUserInteraction(false)
+                .accessibilityIdentifier("candSwActionTraitsResp")
+            Toggle(isOn: data.candBinding("candSwDisabled")) { Text("") }
+                .labelsHidden()
+                .disabled(true)
+                .accessibilityIdentifier("candSwDisabled")
+            StateAwareButtonView(text: "B", action: { }, isEnabled: true)
+                .accessibilityIdentifier("candBtnEmitted")
+            StateAwareButtonView(text: "B", action: { }, isEnabled: true)
+                .accessibilityIdentifier("candBtnEmitted2")
+            StateAwareButtonView(text: "B", action: { }, isEnabled: true)
+                .accessibilityRemoveTraits(stopped ? .isButton : [])
+                .accessibilityRespondsToUserInteraction(!stopped)
+                .accessibilityIdentifier("candBtnTraitsResp")
+            StateAwareButtonView(text: "B", action: { data.bump("candBtnDisabled") }, isEnabled: true)
+                .disabled(true)
+                .accessibilityIdentifier("candBtnDisabled")
+        }
+            .allowsHitTesting(false)
+        // one modifier, conditional on the stop: the traits and the response
+        // follow it; the default action is replaced by nothing while it is
+        // stopped (ProbeStoppedControl, the candidate for the library)
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(isOn: data.candBinding("candSwMod")) { Text("") }
+                .labelsHidden().modifier(ProbeStoppedControl(stopped: true)).accessibilityIdentifier("candSwMod")
+            Toggle(isOn: data.candBinding("candSwModOpen")) { Text("") }
+                .labelsHidden().modifier(ProbeStoppedControl(stopped: false)).accessibilityIdentifier("candSwModOpen")
+            StateAwareButtonView(text: "B", action: { data.bump("candBtnMod") }, isEnabled: true)
+                .modifier(ProbeStoppedControl(stopped: true)).accessibilityIdentifier("candBtnMod")
+            StateAwareButtonView(text: "B", action: { data.bump("candBtnModOpen") }, isEnabled: true)
+                .modifier(ProbeStoppedControl(stopped: false)).accessibilityIdentifier("candBtnModOpen")
+        }
+        // a Slider (VoiceOver adjusts it: swipe up), a segmented Picker (each
+        // segment its own element) and a text field (double tap: focus), each
+        // as emitted, with the modifier, and under a hidden stop
+        VStack(alignment: .leading, spacing: 4) {
+            Slider(value: data.candSlider("candSlEmitted"), in: 0...1).frame(width: 160).accessibilityIdentifier("candSlEmitted")
+            Slider(value: data.candSlider("candSlMod"), in: 0...1).frame(width: 160)
+                .modifier(ProbeStoppedControl(stopped: true)).accessibilityIdentifier("candSlMod")
+            Picker("", selection: data.candSegment("candSegEmitted")) { Text("a").tag(0); Text("b").tag(1) }
+                .pickerStyle(.segmented).frame(width: 160).accessibilityIdentifier("candSegEmitted")
+            Picker("", selection: data.candSegment("candSegMod")) { Text("a").tag(0); Text("b").tag(1) }
+                .pickerStyle(.segmented).frame(width: 160)
+                .modifier(ProbeStoppedControl(stopped: true)).accessibilityIdentifier("candSegMod")
+            TextField("tf", text: data.candText("candTfEmitted")).frame(width: 160)
+                .focused($focus, equals: "candTfEmitted").accessibilityIdentifier("candTfEmitted")
+            TextField("tf", text: data.candText("candTfMod")).frame(width: 160)
+                .focused($focus, equals: "candTfMod")
+                .modifier(ProbeStoppedControl(stopped: true)).accessibilityIdentifier("candTfMod")
+        }
+            .allowsHitTesting(false)
+        VStack(alignment: .leading, spacing: 4) {
+            Slider(value: data.candSlider("candSlHidden"), in: 0...1).frame(width: 160).accessibilityIdentifier("candSlHidden")
+            Picker("", selection: data.candSegment("candSegHidden")) { Text("a").tag(0); Text("b").tag(1) }
+                .pickerStyle(.segmented).frame(width: 160).accessibilityIdentifier("candSegHidden")
+            TextField("tf", text: data.candText("candTfHidden")).frame(width: 160)
+                .focused($focus, equals: "candTfHidden").accessibilityIdentifier("candTfHidden")
+        }
+            .allowsHitTesting(false)
+            .accessibilityHidden(stopped)
+            .onChange(of: focus) { _, now in if let now { data.bump(now) } }
+        // the same three with no stop: the controls for them
+        VStack(alignment: .leading, spacing: 4) {
+            Slider(value: data.candSlider("candSlPlain"), in: 0...1).frame(width: 160).accessibilityIdentifier("candSlPlain")
+            Picker("", selection: data.candSegment("candSegPlain")) { Text("a").tag(0); Text("b").tag(1) }
+                .pickerStyle(.segmented).frame(width: 160).accessibilityIdentifier("candSegPlain")
+            TextField("tf", text: data.candText("candTfPlain")).frame(width: 160)
+                .focused($focus, equals: "candTfPlain").accessibilityIdentifier("candTfPlain")
+        }
+        // the stop hides what it holds from assistive technologies — the
+        // container's `.accessibilityHidden(stopped)`, as web's inert
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(isOn: data.candBinding("candHiddenSw")) { Text("") }
+                .labelsHidden().accessibilityIdentifier("candHiddenSw")
+            StateAwareButtonView(text: "B", action: { data.bump("candHiddenBtn") }, isEnabled: true)
+                .accessibilityIdentifier("candHiddenBtn")
+            Text("candHiddenLbl").accessibilityIdentifier("candHiddenLbl")
+        }
+            .allowsHitTesting(false)
+            .accessibilityHidden(stopped)
+        // the same conditional forms with nothing stopped (outside a stop):
+        // a Switch that switches and a Button that calls, read as they are
+        let open = false
+        VStack(alignment: .leading, spacing: 4) {
+            Toggle(isOn: SwiftUI.Binding(get: { data.cand["candCondOpenSw"] ?? false }, set: { value in
+                if !open { data.candBinding("candCondOpenSw").wrappedValue = value }
+            })) { Text("") }
+                .labelsHidden()
+                .accessibilityRemoveTraits(open ? [.isButton, .isToggle] : [])
+                .accessibilityRespondsToUserInteraction(!open)
+                .accessibilityIdentifier("candCondOpenSw")
+            StateAwareButtonView(text: "B", action: { if !open { data.bump("candCondOpenBtn") } }, isEnabled: true)
+                .accessibilityRemoveTraits(open ? .isButton : [])
+                .accessibilityRespondsToUserInteraction(!open)
+                .accessibilityIdentifier("candCondOpenBtn")
+        }
     }
 
     var body: some View {
@@ -551,6 +789,9 @@ struct A11yActivationProbeView: View {
             Text(readout).font(.system(size: 4)).lineLimit(nil)
                 .frame(width: 360, height: 60, alignment: .topLeading).clipped()
                 .accessibilityIdentifier("a11y_readout")
+            if Self.candidatesOnly {
+                ScrollView { VStack(alignment: .leading, spacing: 4) { candidatesBlock } }
+            } else {
             HStack(alignment: .top, spacing: 16) {
                 VStack(alignment: .leading, spacing: 4) {
                     A11yActivationCodegenBody(data: data)
@@ -580,28 +821,13 @@ struct A11yActivationProbeView: View {
                     }
                         .allowsHitTesting((data.gateOpen ?? false))
                         .transformEnvironment(\.jsonuiInteractionStopped) { $0 = $0 || !(data.gateOpen ?? false) }
-                    // not emitted: two candidate fixes on a Switch inside a
-                    // stop (`userInteractionEnabled: false` as emitted, plus one)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Toggle(isOn: $data.fixDisabledSw) { Text("") }
-                            .labelsHidden()
-                            .accessibilityIdentifier("fixDisabledSw")
-                    }
-                        .allowsHitTesting(false)
-                        .disabled(true)
-                    VStack(alignment: .leading, spacing: 4) {
-                        Toggle(isOn: $data.fixRespondsSw) { Text("") }
-                            .labelsHidden()
-                            .accessibilityRespondsToUserInteraction(false)
-                            .accessibilityIdentifier("fixRespondsSw")
-                    }
-                        .allowsHitTesting(false)
                 }
                 if let layout = Self.dynamicLayout {
                     DynamicComponentBuilder(component: layout, data: dynamicData)
                 } else {
                     Text("layout did not decode").accessibilityIdentifier("a11y_decode_failed")
                 }
+            }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)

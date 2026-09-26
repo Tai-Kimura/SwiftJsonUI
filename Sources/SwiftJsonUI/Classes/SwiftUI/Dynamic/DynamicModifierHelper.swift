@@ -937,7 +937,15 @@ public struct DynamicModifierHelper {
         component: DynamicComponent,
         data: [String: Any] = [:]
     ) -> AnyView {
-        stopsHitTesting(component, data: data) ? AnyView(view.allowsHitTesting(false)) : view
+        let stops = stopsHitTesting(component, data: data)
+        let result = stops ? AnyView(view.allowsHitTesting(false)) : view
+        // A control a stop holds: the hit-test stop keeps a touch out, and
+        // VoiceOver's activation still called its default action (measured,
+        // ConformanceHost -a11yActivationProbe: a Switch inside a stop
+        // switched). Its own flag, a stop around it (the mark), or one handed
+        // down (the environment, which the modifier reads itself).
+        guard TapAccessibility.isControl(component.type) else { return result }
+        return AnyView(result.jsonuiStoppedControl(stops || component.interactionStoppedAround))
     }
 
     /// `userInteractionEnabled` false, or a binding resolving false — the
