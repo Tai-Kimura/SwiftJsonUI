@@ -143,12 +143,36 @@ public struct ResponsiveResolver {
         var result = json
         result.removeValue(forKey: "responsive")
 
-        // Merge overrides on top of base attributes
-        for (key, value) in matchingOverrides {
+        // Merge overrides on top of base attributes — but `style`: an
+        // override's attributes are its own, written in it, and a style named
+        // there is applied by no path (4f's ruling, 1.9.0; the shared
+        // validator names it). Merged, it sat on the node unapplied until a
+        // second pass of the stages applied it.
+        for (key, value) in matchingOverrides where key != "style" {
             result[key] = value
         }
+        if matchingOverrides["style"] != nil { Self.nameStyleInOverrideOnce() }
 
         return result
+    }
+
+    /// The shared validator's sentence for a `style` inside a responsive
+    /// override.
+    static let styleInOverride = "'style' inside a responsive override is not applied — put the attributes in the override"
+
+    /// Hook for tests / apps; defaults to Logger.debug.
+    public static var warningHandler: ((String) -> Void)?
+    /// Named already, this process (tests reset it).
+    static var named = false
+    private static let lock = NSLock()
+
+    private static func nameStyleInOverrideOnce() {
+        lock.lock()
+        let first = !named
+        named = true
+        lock.unlock()
+        guard first else { return }
+        if let warningHandler { warningHandler(styleInOverride) } else { Logger.debug(styleInOverride) }
     }
 
     /// Determine the best-matching override dictionary from the responsive
