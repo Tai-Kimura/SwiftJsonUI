@@ -2,7 +2,8 @@
 //  BoundSelectsCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli rel/v1.8.121 = 32785ce8) emits
+//  What `sjui build` (sjui_tools of jsonui-cli triage/selectbox-item-binding
+//  07b26b0d, on rel/v1.8.121) emits
 //  for four SelectBoxes bound to the data — by selectedItem, selectedValue,
 //  selectedDate and selectedIndex — the generated Data struct and the body,
 //  pasted unchanged, for ticket selectbox-selected-item-binding-is-read-once.
@@ -94,7 +95,7 @@ struct BoundSelectsCodegenPaste: View {
                         id: "sbi",
                         selectItemType: .normal,
                         items: ["pp", "qq"],
-                        selectedIndex: ["pp", "qq"].firstIndex(of: (data.sbiSel)),
+                        selectedIndexBinding: SwiftUI.Binding(get: { ["pp", "qq"].firstIndex(of: (data.sbiSel)) ?? -1 }, set: { index in data.sbiSel = ["pp", "qq"].indices.contains(index) ? ["pp", "qq"][index] : "" }),
                     )
                         .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                         .accessibilityIdentifier("sbi")
@@ -102,7 +103,7 @@ struct BoundSelectsCodegenPaste: View {
                         id: "sbv",
                         selectItemType: .normal,
                         items: ["pp", "qq"],
-                        selectedIndex: ["pp", "qq"].firstIndex(of: (data.sbvSel)),
+                        selectedIndexBinding: SwiftUI.Binding(get: { ["pp", "qq"].firstIndex(of: (data.sbvSel)) ?? -1 }, set: { index in data.sbvSel = ["pp", "qq"].indices.contains(index) ? ["pp", "qq"][index] : "" }),
                     )
                         .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                         .accessibilityIdentifier("sbv")
