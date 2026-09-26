@@ -267,8 +267,8 @@ public struct ButtonConverter {
         return attrsArray.compactMap { dict -> PartialAttribute? in
             // Resolve onClick closure from data dictionary
             var onClickClosure: (() -> Void)? = nil
-            if let onClick = dict["onclick"] as? String ?? dict["onClick"] as? String {
-                let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
+            // Both spellings, the canonical onClick first (LabelConverter.partialHandlerName).
+            if let propName = LabelConverter.partialHandlerName(dict) {
                 onClickClosure = data[propName] as? () -> Void
             }
 
@@ -297,7 +297,7 @@ public struct ButtonConverter {
                     strikethrough: dict["strikethrough"] as? Bool ?? false,
                     backgroundColor: (dict["background"] as? String).flatMap { DynamicHelpers.getColor($0) },
                     onClick: onClickClosure,
-                    onClickActionName: dict["onclick"] as? String ?? dict["onClick"] as? String
+                    onClickActionName: dict["onClick"] as? String ?? dict["onclick"] as? String
                 )
             } else if let pattern = dict["range"] as? String {
                 return PartialAttribute(
@@ -309,7 +309,7 @@ public struct ButtonConverter {
                     strikethrough: dict["strikethrough"] as? Bool ?? false,
                     backgroundColor: (dict["background"] as? String).flatMap { DynamicHelpers.getColor($0) },
                     onClick: onClickClosure,
-                    onClickActionName: dict["onclick"] as? String ?? dict["onClick"] as? String
+                    onClickActionName: dict["onClick"] as? String ?? dict["onclick"] as? String
                 )
             } else {
                 return nil
