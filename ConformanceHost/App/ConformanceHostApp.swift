@@ -177,6 +177,8 @@ struct ConformanceRootView: View {
                 CanTapGateProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-interactionGateProbe") {
                 InteractionGateProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-a11yActivationProbe") {
+                A11yActivationProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-interactionInputsProbe") {
                 InteractionInputsProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-canTapCodegenProbe") {

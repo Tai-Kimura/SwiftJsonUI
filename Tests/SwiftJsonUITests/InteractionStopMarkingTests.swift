@@ -135,6 +135,28 @@ final class InteractionStopMarkingTests: XCTestCase {
         XCTAssertEqual(Self.environment["cell"], false)
     }
 
+    /// The stop reaches a cell by the view tree, not by the type's spelling:
+    /// a Collection written as one of its synonyms (TableView, List,
+    /// ListView, RecyclerView — the type-synonym canon) draws its cells under
+    /// the same environment. Beside no stop, the same cell is drawn and not
+    /// marked — the contrast, and the proof the spelling draws a cell at all.
+    func testACellOfACollectionSynonymInsideAStopIsMarked() throws {
+        let items = CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "a"]]))
+        ])
+        for synonym in ["Collection", "TableView", "List", "ListView", "RecyclerView"] {
+            let collection = #"{"type": "\#(synonym)", "id": "c", "width": "matchParent", "height": 200, "items": "@{items}", "cellClasses": ["\#(Self.cell)"]}"#
+            try draw(#"{"type": "View", "width": "matchParent", "height": "matchParent", "child": [\#(collection)]}"#,
+                     data: ["items": items])
+            XCTAssertEqual(Self.marked["cell"], false, "\(synonym) beside no stop")
+            XCTAssertEqual(Self.environment["cell"], false, "\(synonym) beside no stop")
+            try draw(#"{"type": "View", "width": "matchParent", "height": "matchParent", "userInteractionEnabled": false, "child": [\#(collection)]}"#,
+                     data: ["items": items])
+            XCTAssertEqual(Self.marked["cell"], true, synonym)
+            XCTAssertEqual(Self.environment["cell"], true, synonym)
+        }
+    }
+
     /// An Embed's screen is drawn by its registered adapter; the environment
     /// reaches what it draws.
     func testAnEmbeddedScreenInsideAStopSeesTheStop() throws {

@@ -176,7 +176,7 @@ public struct TextConverter {
         // --- 15. onClick ---
         result = DynamicEventHelper.applyOnClick(result, component: component, data: data)
 
-        // userInteractionEnabled / touchDisabledState, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
+        // userInteractionEnabled, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
         result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
         // --- 16. accessibilityIdentifier ---

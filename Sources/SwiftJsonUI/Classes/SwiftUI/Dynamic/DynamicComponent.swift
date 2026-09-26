@@ -98,8 +98,9 @@ public struct DynamicComponent: Decodable {
     let html: String?
     let allowsBackForwardNavigationGestures: Bool?
     let allowsLinkPreview: Bool?
-    // View touch disable attributes
-    let touchDisabledState: String?
+    // View touch disable attributes. touchDisabledState is UIKit's hit-test
+    // mode (SJUIView) and no slot here: a Bool written for it failed this
+    // decode and dropped the component.
     let touchEnabledViewIds: [String]?
     // IconLabel attributes
     let selectedFontColor: String?
@@ -222,7 +223,7 @@ public struct DynamicComponent: Decodable {
         case onTextChange, accessoryBackground, accessoryTextColor, doneText
         case caretAttributes, dividerAttributes, labelAttributes, canBack, prompt, includePromptWhenDataBinding, minuteInterval
         case html, allowsBackForwardNavigationGestures, allowsLinkPreview
-        case touchDisabledState, touchEnabledViewIds
+        case touchEnabledViewIds
         case selectedFontColor, iconMargin
         case locations
         case itemWeight, layout, cellClasses, headerClasses, footerClasses, sections
@@ -382,7 +383,6 @@ public struct DynamicComponent: Decodable {
         allowsBackForwardNavigationGestures = try container.decodeIfPresent(Bool.self, forKey: .allowsBackForwardNavigationGestures)
         allowsLinkPreview = try container.decodeIfPresent(Bool.self, forKey: .allowsLinkPreview)
         // View touch disable attributes
-        touchDisabledState = try container.decodeIfPresent(String.self, forKey: .touchDisabledState)
         touchEnabledViewIds = try container.decodeIfPresent([String].self, forKey: .touchEnabledViewIds)
         // IconLabel attributes
         selectedFontColor = try container.decodeIfPresent(String.self, forKey: .selectedFontColor)

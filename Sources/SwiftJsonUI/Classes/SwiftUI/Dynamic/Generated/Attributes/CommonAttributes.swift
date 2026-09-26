@@ -43,6 +43,13 @@ public struct CommonAttributes {
         case chrome = "Chrome"
     }
 
+    public enum TouchDisabledState: String {
+        case none = "none"
+        case onlyMe = "onlyMe"
+        case viewsWithoutTouchEnabled = "viewsWithoutTouchEnabled"
+        case viewsWithoutInList = "viewsWithoutInList"
+    }
+
     public enum Visibility: String {
         case visible = "visible"
         case invisible = "invisible"
@@ -268,7 +275,7 @@ public struct CommonAttributes {
     /// Background color - hex string (#RRGGBB or #RRGGBBAA) or color name from colors.json (can be data binding). `backgroundColor` folds here: the genuine layout reads of that spelling all chain with `background` (kjui blurview_component.rb:42 `background || backgroundColor`, kjui segment_component.rb:55 `backgroundColor || background`, rjui blur_converter.rb:58 and circle_view_converter.rb:55). Note the two kjui sites read the pair in OPPOSITE order, so a layout setting both drew two different colours until the normalizer began folding them — the same defect shape as CheckBox's accent chain (plan 51-E). When a `gradient` is also declared on the same view, the GRADIENT wins and this is the fallback fill — not a layer underneath it. Full ruling in attribute_semantics.json -> backgroundFill; do not restate it in toolchain comments.
     public let background: AttrValue<String>?
 
-    /// Two-way binding for the component's primary value — Switch/Check isOn, Slider value, Segment selectedIndex, SelectBox selectedValue, Progress progress, Table items. An alternative spelling to each component's own value attribute, which takes precedence when both are set. [binding: two-way]
+    /// Two-way binding for the component's primary value — Switch/Check isOn, Slider value, Segment selectedIndex, SelectBox selectedValue, Progress progress. An alternative spelling to each component's own value attribute, which takes precedence when both are set. Not a Collection's data source (Table is a Collection): that is `items`, and the validator says so. [binding: two-way]
     public let bind: AttrValue<Any>?
 
     /// Legacy UIKit KVC binding: names the data property a view is bound to (SJUIViewCreator sets view.binding / view.bindingSet, and UIKit's Binding class pushes values through it). The object form is also the pre-@{} Table data source ({"data": "@{items}"}). Superseded by '@{...}' in the attribute value itself — use `bind` or the component's own value attribute instead. [accepts: string | object]
@@ -514,13 +521,13 @@ public struct CommonAttributes {
     /// Vertical offset applied after layout, in pt / dp / px. Measurement and sibling placement are unchanged — the layout is computed first and the offset moves only this view. Its INTERACTIVE region moves with it: an offset control is tappable where it is drawn, which is what rules out a draw-only translation. Absolute, not RTL-mirroring, like leftMargin/rightMargin rather than startMargin/endMargin. Pairs with offsetX; either one alone implies 0 for the other. Full ruling (including the android primitive) in attribute_semantics.json -> offset.
     public let offsetY: AttrValue<Double>?
 
-    /// Lifecycle callback when view appears (SwiftUI/Compose only)
+    /// Lifecycle callback when view appears (SwiftUI/Compose only). The handler's name (e.g. "screenAppeared"); written as a binding (`@{screenAppeared}`) or with UIKit's sender mark (`screenAppeared:`, which means nothing in SwiftUI or Compose) it is read as the same name, as the other event handlers are. Called as its declared closure type asks: `()` with nothing, `(String)` with the viewId.
     public let onAppear: String?
 
     /// Click handler (camelCase) - binding only (@{functionName})
     public let onClick: AttrValue<Any>?
 
-    /// Lifecycle callback when view disappears (SwiftUI/Compose only)
+    /// Lifecycle callback when view disappears (SwiftUI/Compose only). The handler's name (e.g. "screenDisappeared"); written as a binding (`@{screenDisappeared}`) or with UIKit's sender mark (`screenDisappeared:`, which means nothing in SwiftUI or Compose) it is read as the same name, as the other event handlers are. Called as its declared closure type asks: `()` with nothing, `(String)` with the viewId.
     public let onDisappear: String?
 
     /// Long press gesture handler (camelCase) - binding only (@{functionName}) [binding: one-way]
@@ -616,8 +623,8 @@ public struct CommonAttributes {
     /// Top padding (alias for paddingTop, binding supported)
     public let topPadding: AttrValue<Double>?
 
-    /// Touch disable mode
-    public let touchDisabledState: String?
+    /// The hit-test mode of SJUIView (UIKit). none — as usual; onlyMe — the view itself lets a touch through to what is behind it, its subviews still take theirs; viewsWithoutTouchEnabled — only subviews with isUserInteractionEnabled take a touch; viewsWithoutInList — only the subviews whose id is in touchEnabledViewIds do. SwiftUI, Compose and web do not read it: to stop a view and everything in it, use userInteractionEnabled: false.
+    public let touchDisabledState: AttrEnum<TouchDisabledState>?
 
     /// IDs of enabled views
     public let touchEnabledViewIds: [Any]?
@@ -787,7 +794,7 @@ public struct CommonAttributes {
         self.toView = AttrCoerce.string(AttrCoerce.lookup(json, "toView"))
         self.topMargin = AttrCoerce.attrValue(AttrCoerce.lookup(json, "topMargin"), AttrCoerce.number)
         self.topPadding = AttrCoerce.attrValue(AttrCoerce.lookup(json, "topPadding"), AttrCoerce.number)
-        self.touchDisabledState = AttrCoerce.string(AttrCoerce.lookup(json, "touchDisabledState"))
+        self.touchDisabledState = Self.parseTouchDisabledState(AttrCoerce.lookup(json, "touchDisabledState"))
         self.touchEnabledViewIds = AttrCoerce.array(AttrCoerce.lookup(json, "touchEnabledViewIds"))
         self.type = AttrCoerce.string(AttrCoerce.lookup(json, "type"))
         self.userInteractionEnabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "userInteractionEnabled"), AttrCoerce.boolean)
@@ -866,6 +873,21 @@ public struct CommonAttributes {
             }
         }
         AttrCodegenWarnings.emit("common.effectStyle: unknown enum value '\(raw)'")
+        return .unknown(raw)
+    }
+
+    private static func parseTouchDisabledState(_ raw: Any?) -> AttrEnum<TouchDisabledState>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s.lowercased() {
+            case "none": return .known(TouchDisabledState.none)
+            case "onlyme": return .known(TouchDisabledState.onlyMe)
+            case "viewswithouttouchenabled": return .known(TouchDisabledState.viewsWithoutTouchEnabled)
+            case "viewswithoutinlist": return .known(TouchDisabledState.viewsWithoutInList)
+            default: break
+            }
+        }
+        AttrCodegenWarnings.emit("common.touchDisabledState: unknown enum value '\(raw)'")
         return .unknown(raw)
     }
 

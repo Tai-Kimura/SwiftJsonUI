@@ -1131,6 +1131,94 @@
       "shapes": {
         "t": "combine"
       }
+    },
+    {
+      "name": "a Label with links and userInteractionEnabled: false does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Label",
+            "id": "k",
+            "text": "see https://example.com",
+            "linkable": true,
+            "userInteractionEnabled": false
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a Label with links inside a node with userInteractionEnabled: false does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "View",
+            "userInteractionEnabled": false,
+            "child": [
+              {
+                "type": "Label",
+                "id": "k",
+                "text": "Terms",
+                "partialAttributes": [
+                  {
+                    "range": [
+                      0,
+                      5
+                    ],
+                    "onclick": "openTerms"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a Label with links under a bound userInteractionEnabled still counts",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Label",
+            "id": "k",
+            "text": "see https://example.com",
+            "linkable": true,
+            "userInteractionEnabled": "@{isActive}"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
     }
   ]
 }
