@@ -27,3 +27,44 @@ public extension EnvironmentValues {
         set { self[JsonUIInteractionStoppedKey.self] = newValue }
     }
 }
+
+/// A control a stop holds — a Switch, a Button, a Slider, a text field
+/// inside `userInteractionEnabled: false` (or a binding while it is false),
+/// or with the flag of its own. The hit-test stop keeps a touch out, and
+/// nothing else: VoiceOver's activation called the control's default action
+/// through it (measured, ConformanceHost `-a11yActivationProbe`, iOS 26.5: a
+/// Switch inside a stop switched, codegen and Dynamic). While `stopped`, or
+/// while a stop is handed down (`jsonuiInteractionStopped`), the default
+/// action is replaced by nothing, the button and toggle traits are removed,
+/// and the element does not respond to user interaction — so a screen
+/// reader neither operates it nor reads it as something to operate. Nothing
+/// drawn changes (measured against the control as drawn without it; the
+/// alternative `.disabled(true)` dims it). Not stopped: the view as it is.
+public struct JsonUIStoppedControl: ViewModifier {
+    @Environment(\.jsonuiInteractionStopped) private var handedDown
+    let stopped: Bool
+
+    public init(stopped: Bool) {
+        self.stopped = stopped
+    }
+
+    public func body(content: Content) -> some View {
+        if stopped || handedDown {
+            content
+                .accessibilityAction { }
+                .accessibilityRemoveTraits([.isButton, .isToggle])
+                .accessibilityRespondsToUserInteraction(false)
+        } else {
+            content
+        }
+    }
+}
+
+public extension View {
+    /// JsonUIStoppedControl: `stopped` is the stop the build can see (the
+    /// flag on the control or around it, or its binding); a stop handed down
+    /// from another layout is read from the environment.
+    func jsonuiStoppedControl(_ stopped: Bool = false) -> some View {
+        modifier(JsonUIStoppedControl(stopped: stopped))
+    }
+}
