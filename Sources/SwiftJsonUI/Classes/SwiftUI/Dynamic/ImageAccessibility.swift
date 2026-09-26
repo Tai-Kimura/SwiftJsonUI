@@ -59,8 +59,10 @@ public enum ImageAccessibility {
     /// a tap or a long press — as the tap rule judges it (TapAccessibility).
     /// It read the handler key before, so an image with an empty onClick,
     /// `enabled: false` or `canTap: false` was a control.
-    static func isTappable(_ node: [String: Any]) -> Bool {
-        TapAccessibility.isTappable(node: node) || TapAccessibility.hasLongPress(node: node)
+    /// `stopped`: a node around it has `userInteractionEnabled: false`, so its
+    /// tap is none (TapAccessibility), as its own `false` makes it none.
+    static func isTappable(_ node: [String: Any], stopped: Bool = false) -> Bool {
+        TapAccessibility.isTappable(node: node, stopped: stopped) || TapAccessibility.hasLongPress(node: node)
     }
 
     /// The image's alt as written, or nil when it declares none (JSON null counts as none).
@@ -101,9 +103,10 @@ public enum ImageAccessibility {
     }
 
     /// The role of an image, given the nearest tappable around it (nil when none).
-    public static func role(_ node: [String: Any], nearestTappable: [String: Any]?) -> Role {
+    /// `stopped`: a node around it has `userInteractionEnabled: false`.
+    public static func role(_ node: [String: Any], nearestTappable: [String: Any]?, stopped: Bool = false) -> Role {
         if let value = alt(node) { return value.isEmpty ? .decorative : .label }
-        if isTappable(node) { return .control }
+        if isTappable(node, stopped: stopped) { return .control }
         if let tappable = nearestTappable, !namesSomething(tappable) { return .control }
         return .decorative
     }
@@ -160,7 +163,9 @@ struct ImageAccessibilityModifier: ViewModifier {
 
     @ViewBuilder
     func body(content: Content) -> some View {
-        let role = ImageAccessibility.role(component.rawData, nearestTappable: nearestTappable)
+        let role = ImageAccessibility.role(
+            component.rawData, nearestTappable: nearestTappable, stopped: component.interactionStoppedAround
+        )
         switch ImageAccessibility.spoken(role: role, resolvedAlt: {
             ImageAccessibility.resolvedAlt(component.rawData, data: data)
         }) {

@@ -271,7 +271,8 @@ public struct CollectionConverter {
                 onItemAppear: onItemAppearCallback,
                 legacyHeader: legacyHeader,
                 legacyFooter: legacyFooter,
-                oneGridForAllSections: !hasSections
+                oneGridForAllSections: !hasSections,
+                columnsIsBinding: columnsIsBinding
             )
             if forcedMode == CollectionStackMode.none {
                 // The deferred flow: a non-scroll container that the declared
@@ -382,7 +383,9 @@ public struct CollectionConverter {
                 data: data,
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback,
-                mode: collectionMode
+                mode: collectionMode,
+                globalColumns: globalColumns,
+                columnsIsBinding: columnsIsBinding
             )
         } else {
             // Multiple columns: ScrollView + LazyVGrid. The grid pads its
@@ -679,6 +682,73 @@ public struct CollectionConverter {
                         onItemAppear: onItemAppear
                     )
                     .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
+                    .id(cell.id)
+                }
+            }
+        )
+    }
+
+    /// The lanes of a horizontal Collection's section (4f ruling,
+    /// 2026-09-26): `columns` on a horizontal Collection is its number of
+    /// lanes — the SSoT names LazyHorizontalGrid / LazyHGrid for it — and a
+    /// section's own `columns` is that section block's lanes. nil for one
+    /// lane, which keeps the single-lane stack. A bound `columns` keeps the
+    /// grid even at 1 (SSoT Collection.columns: "always renders on the
+    /// multi-column grid path"), unless the section declares its own.
+    static func horizontalLanes(_ sectionConfig: [String: Any], globalColumns: Int, columnsIsBinding: Bool) -> Int? {
+        let own = declaredSectionColumns(sectionConfig)
+        let lanes = own ?? globalColumns
+        if lanes > 1 { return lanes }
+        return (columnsIsBinding && own == nil) ? 1 : nil
+    }
+
+    /// Spacing in a horizontal grid. The SSoT describes lineSpacing as
+    /// "Spacing between rows" and columnSpacing as "Spacing between columns"
+    /// in a vertical grid's words; they were declared from UIKit's flow
+    /// layout (SJUICollectionView: lineSpacing -> minimumLineSpacing,
+    /// columnSpacing -> minimumInteritemSpacing), where a horizontally
+    /// scrolling grid's lines are its columns. So, on a horizontal grid:
+    /// lineSpacing (else itemSpacing) between successive columns of cells,
+    /// along the scroll axis; columnSpacing (else itemSpacing) between the
+    /// lanes. Android's horizontal grids space the scroll axis by lineSpacing
+    /// first too.
+    static func horizontalGridSpacing(_ component: DynamicComponent) -> (betweenLanes: CGFloat, alongScroll: CGFloat) {
+        let attrs = component.typedAttributes(CollectionAttributes.self)
+        let alongScroll = attrs.lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
+        let betweenLanes = component.columnSpacing ?? component.itemSpacing ?? 0
+        return (betweenLanes, alongScroll)
+    }
+
+    /// A section's cells as a horizontal grid of `lanes` rows (LazyHGrid):
+    /// cells fill a column top to bottom, then the next column — the order
+    /// of Android's LazyHorizontalGrid. Each section is a block of its own,
+    /// starting a new column.
+    private static func sectionHGrid(
+        lanes: Int,
+        items: [IdentifiedCellItem],
+        cellName: String,
+        component: DynamicComponent,
+        data: [String: Any],
+        viewId: String?,
+        onItemAppear: ((Int) -> Void)?
+    ) -> AnyView {
+        let spacing = horizontalGridSpacing(component)
+        let rows = Array(repeating: GridItem(.flexible(), spacing: spacing.betweenLanes), count: lanes)
+        return AnyView(
+            LazyHGrid(rows: rows, alignment: getHStackAlignment(from: component), spacing: spacing.alongScroll) {
+                ForEach(items) { cell in
+                    applyDeclaredCellFrame(
+                        AnyView(buildCellView(
+                            cellClassName: cellName,
+                            cellData: cell.data,
+                            cellIndex: cell.index,
+                            component: component,
+                            data: data,
+                            viewId: viewId,
+                            onItemAppear: onItemAppear
+                        )),
+                        component: component
+                    )
                     .id(cell.id)
                 }
             }
@@ -1142,7 +1212,9 @@ public struct CollectionConverter {
         data: [String: Any],
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil,
-        mode: CollectionStackMode = .lazy
+        mode: CollectionStackMode = .lazy,
+        globalColumns: Int = 1,
+        columnsIsBinding: Bool = false
     ) -> AnyView {
         let showsIndicators = component.showsHorizontalScrollIndicator ?? true
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? 0
@@ -1180,6 +1252,19 @@ public struct CollectionConverter {
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            // `columns` on a horizontal Collection is its lanes
+                            // (horizontalLanes); one lane keeps the stack.
+                            if let lanes = horizontalLanes(sectionConfig, globalColumns: globalColumns, columnsIsBinding: columnsIsBinding) {
+                                sectionHGrid(
+                                    lanes: lanes,
+                                    items: items,
+                                    cellName: cellName,
+                                    component: component,
+                                    data: data,
+                                    viewId: viewId,
+                                    onItemAppear: onItemAppear
+                                )
+                            } else {
                             ForEach(items) { cell in
                                 applyDeclaredCellFrame(
                                     AnyView(buildCellView(
@@ -1194,6 +1279,7 @@ public struct CollectionConverter {
                                     component: component
                                 )
                                 .id(cell.id)
+                            }
                             }
                         }
 
@@ -1551,7 +1637,8 @@ public struct CollectionConverter {
         onItemAppear: ((Int) -> Void)? = nil,
         legacyHeader: String? = nil,
         legacyFooter: String? = nil,
-        oneGridForAllSections: Bool = false
+        oneGridForAllSections: Bool = false,
+        columnsIsBinding: Bool = false
     ) -> AnyView {
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
@@ -1596,6 +1683,17 @@ public struct CollectionConverter {
                                     .id(cell.id)
                                 }
                             }
+                        } else if isHorizontal,
+                                  let lanes = horizontalLanes(sectionConfig, globalColumns: globalColumns, columnsIsBinding: columnsIsBinding) {
+                            sectionHGrid(
+                                lanes: lanes,
+                                items: items,
+                                cellName: cellName,
+                                component: component,
+                                data: data,
+                                viewId: viewId,
+                                onItemAppear: onItemAppear
+                            )
                         } else if !isHorizontal && (globalColumns > 1 || sectionOwnGridColumns(sectionConfig, component: component) != nil) {
                             // A grid when the Collection has columns > 1, or
                             // when this section declares its own (the other
