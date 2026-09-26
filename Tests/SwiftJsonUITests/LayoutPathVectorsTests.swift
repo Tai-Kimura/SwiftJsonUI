@@ -76,5 +76,24 @@ final class LayoutPathVectorsTests: XCTestCase {
         let kept = try XCTUnwrap(JSONLayoutLoader.decodeComponent(from: stamped)?.childComponents)
         XCTAssertEqual(kept.map(LayoutPath.path(of:)), ["0_3_0", "0_3_1"])
     }
+
+    /// A component the app decoded itself — no loader — is stamped on its way
+    /// into DynamicView(component:) (JSONLayoutLoader.stamped), keeping its
+    /// normalization; a stamped one is left as it is.
+    func testAComponentDecodedWithoutTheLoaderIsStampedOnItsWayIn() throws {
+        let json = #"{"type":"View","child":[{"type":"Radio","group":"g","text":"a"},{"type":"Radio","group":"g","text":"b"}]}"#
+        let own = try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+        XCTAssertEqual(try XCTUnwrap(own.childComponents).map(LayoutPath.path(of:)), ["0", "0"], "unstamped: every node its own root")
+
+        let stamped = JSONLayoutLoader.stamped(own)
+        XCTAssertEqual(try XCTUnwrap(stamped.childComponents).map(LayoutPath.path(of:)), ["0_0", "0_1"])
+        XCTAssertEqual(LayoutPath.path(of: JSONLayoutLoader.stamped(stamped)), "0", "stamped: left as it is")
+
+        let decoder = JSONDecoder()
+        JsonUINormalization.apply(to: decoder, normalized: true)
+        let normalized = try decoder.decode(DynamicComponent.self, from: Data(json.utf8))
+        XCTAssertTrue(JSONLayoutLoader.stamped(normalized).isNormalized, "the normalization is kept")
+        XCTAssertFalse(JSONLayoutLoader.stamped(own).isNormalized)
+    }
 }
 #endif

@@ -111,6 +111,26 @@ public class JSONLayoutLoader {
     /// Decode a processed JSON dictionary into a DynamicComponent.
     /// Honors the `$jui` L1 normalization marker (stripped before
     /// decoding; nested components expose `isNormalized`).
+    /// A component decoded without the loader — an app's own decode handed
+    /// to DynamicView(component:) — carries no position: it is decoded again
+    /// from its own raw tree (the root's rawData holds the whole tree),
+    /// stamped by the rule the loader stamps with (LayoutPath), with its
+    /// normalization kept. Its id-less Radios fell back to `radio_0`, all one
+    /// option. A stamped component, or one whose tree does not decode again,
+    /// is returned as it is.
+    static func stamped(_ component: DynamicComponent) -> DynamicComponent {
+        guard !LayoutPath.isStamped(component.rawData) else { return component }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: LayoutPath.stamp(component.rawData), options: [])
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: component.isNormalized)
+            return try decoder.decode(DynamicComponent.self, from: data)
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Could not stamp a component handed over decoded: \(error)")
+            return component
+        }
+    }
+
     public static func decodeComponent(from json: [String: Any]) -> DynamicComponent? {
         do {
             // A tree the loader did not stamp (a caller's own dictionary) is
