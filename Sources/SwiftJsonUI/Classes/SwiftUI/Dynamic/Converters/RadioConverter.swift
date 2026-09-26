@@ -21,7 +21,12 @@ public struct RadioConverter {
         component: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
-        let id = component.id ?? "radio"
+        // No id: the Radio's position (LayoutPath) — `radio_0_14` — its value
+        // in its group, as sjui build names it. `radio` was every id-less
+        // Radio's value, so the id-less Radios of a group were one option: a
+        // tap on one selected them all (ticket
+        // sjui-codegen-state-declarations-collide-by-name).
+        let id = component.id ?? "radio_\(LayoutPath.path(of: component))"
         let items = component.stringList(SelectBoxAttributes.self, \.items) ?? []
         // `label` is the Radio-specific spelling and wins over the generic
         // `text` — the same order CheckboxConverter uses, and what

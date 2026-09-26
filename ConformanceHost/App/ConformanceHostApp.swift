@@ -201,6 +201,10 @@ struct ConformanceRootView: View {
                 OnClickProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-tabEnabledProbe") {
                 TabEnabledProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-stateNamesProbe") {
+                StateNamesProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-pickArityProbe") {
+                PickArityProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-dynamicStateProbe") {
                 DynamicStateProbeView()
             } else if batch.fixtureIds.isEmpty {
