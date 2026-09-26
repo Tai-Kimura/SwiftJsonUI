@@ -44,14 +44,15 @@ final class TabEnabledProbeUITests: XCTestCase {
     }
 
     /// The candidates for stopping only the tab items (TabEnabledCandidates):
-    /// a tap on tab Two, whether it reads enabled, and whether tab One's
-    /// Button still works.
+    /// a tap on tab Two, whether it reads enabled (XCUITest, and the in-app
+    /// walk's traits), and whether tab One's Button still works. Printed, not
+    /// judged. `TAB_CANDIDATES` (comma-separated) runs a few.
     func testTheCandidates() throws {
         guard ProcessInfo.processInfo.environment["TAB_ENABLED_PROBE"] == "1" else {
             throw XCTSkip("tab enabled probe: run with the guard lifted, as the other probes are")
         }
         continueAfterFailure = true
-        for kind in ["C0", "C1", "C2", "C3", "C4", "C5", "N"] {
+        for kind in ProcessInfo.processInfo.environment["TAB_CANDIDATES"].map { $0.split(separator: ",").map(String.init) } ?? ["C0", "C1", "C2", "C3", "C4", "C5", "C6", "C7", "N"] {
             let app = XCUIApplication()
             app.launchArguments = ["-tabEnabledProbe", kind, "-ocPath", "candidate"]
             app.launch()

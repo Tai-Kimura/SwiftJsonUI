@@ -194,6 +194,19 @@ struct TabItemsEnabledProbe: UIViewRepresentable {
                         if self.variant == "traits" {
                             tbc.tabBar.items?.forEach { $0.accessibilityTraits = self.enabled ? .button : [.button, .notEnabled] }
                         }
+                        if self.variant == "buttons" {
+                            // C8: the tab bar's own button views, their traits set
+                            var stack: [UIView] = [tbc.tabBar]
+                            var n = 0
+                            while let v = stack.popLast() {
+                                if v.isAccessibilityElement && v.accessibilityTraits.contains(.button) {
+                                    v.accessibilityTraits.insert(.notEnabled); n += 1
+                                }
+                                stack += v.subviews
+                            }
+                            self.counts?.found = "found \(type(of: tbc)) buttons=\(n)"
+                            return
+                        }
                         self.counts?.found = "found \(type(of: tbc)) items=\(tbc.tabBar.items?.count ?? -1)"
                         return
                     }
@@ -205,9 +218,14 @@ struct TabItemsEnabledProbe: UIViewRepresentable {
     }
 }
 
-/// C0: what sjui emits today (the whole TabView disabled); C1: the selection
-/// gated (a set is dropped); C2: the tab bar items disabled (UIKit); C12: both.
-/// Tab One holds a Button: whether the content still works.
+/// C0: what sjui emitted until jsonui-cli 1.9.0 (the whole TabView
+/// disabled); C1: the selection gated (a set is dropped); C2: the tab bar
+/// items disabled (UIKit — what jsonuiTabItemsEnabled does); C12: both; C3:
+/// C2 and the items' accessibility traits; C4: the tab bar's
+/// isUserInteractionEnabled; C5: `.disabled` inside the tabItem's label; C6:
+/// the `Tab` API with `TabContent.disabled` (iOS 18.4) on each tab; C7: C6
+/// with the tab shown left enabled; C8: C2 and the tab bar buttons' own
+/// traits. Tab One holds a Button: whether the content still works.
 struct TabEnabledCandidates: View {
     let kind: String
     @StateObject private var counts = TabCandidateCounts()
@@ -260,19 +278,50 @@ struct TabEnabledCandidates: View {
                 Text("content-one").accessibilityIdentifier("te_content_one")
                 Button("btnOne") { counts.taps += 1 }.accessibilityIdentifier("te_btn_one")
             }
-            .background(kind.contains("2") || kind == "C3" || kind == "C4" ? AnyView(TabItemsEnabledProbe(enabled: false, counts: counts, variant: kind == "C3" ? "traits" : (kind == "C4" ? "bar" : ""))) : AnyView(EmptyView()))
+            .background(kind.contains("2") || kind == "C3" || kind == "C4" || kind == "C8" ? AnyView(TabItemsEnabledProbe(enabled: false, counts: counts, variant: kind == "C3" ? "traits" : (kind == "C4" ? "bar" : (kind == "C8" ? "buttons" : "")))) : AnyView(EmptyView()))
             .tabItem { Label("One", systemImage: "circle").disabled(kind == "C5") }
             .badge(counts.taps)
             .tag(0)
             Text("content-two").accessibilityIdentifier("te_content_two")
-                .background(kind.contains("2") || kind == "C3" || kind == "C4" ? AnyView(TabItemsEnabledProbe(enabled: false, counts: counts, variant: kind == "C3" ? "traits" : (kind == "C4" ? "bar" : ""))) : AnyView(EmptyView()))
+                .background(kind.contains("2") || kind == "C3" || kind == "C4" || kind == "C8" ? AnyView(TabItemsEnabledProbe(enabled: false, counts: counts, variant: kind == "C3" ? "traits" : (kind == "C4" ? "bar" : (kind == "C8" ? "buttons" : "")))) : AnyView(EmptyView()))
                 .tabItem { Label("Two", systemImage: "circle").disabled(kind == "C5") }
                 .tag(1)
         }
-        if kind == "C0" {
+        if kind == "C6" || kind == "C7" {
+            if #available(iOS 18.4, *) {
+                tabAPI
+            } else {
+                Text("C6 needs iOS 18.4").accessibilityIdentifier("te_unavailable")
+            }
+        } else if kind == "C0" {
             view.disabled(true).accessibilityIdentifier("tabC").disabled(true)
         } else {
             view.accessibilityIdentifier("tabC")
         }
+    }
+
+    /// C6: the Tab API (iOS 18) with `TabContent.disabled` (iOS 18.4) on each
+    /// tab; C7: the same, the tab shown left enabled.
+    @available(iOS 18.4, *)
+    @ViewBuilder private var tabAPI: some View {
+        TabView(selection: $selection) {
+            Tab(value: 0) {
+                VStack {
+                    Text("content-one").accessibilityIdentifier("te_content_one")
+                    Button("btnOne") { counts.taps += 1 }.accessibilityIdentifier("te_btn_one")
+                }
+            } label: {
+                Label("One", systemImage: "circle")
+            }
+            .disabled(kind == "C6")
+            .badge(counts.taps)
+            Tab(value: 1) {
+                Text("content-two").accessibilityIdentifier("te_content_two")
+            } label: {
+                Label("Two", systemImage: "circle")
+            }
+            .disabled(true)
+        }
+        .accessibilityIdentifier("tabC")
     }
 }

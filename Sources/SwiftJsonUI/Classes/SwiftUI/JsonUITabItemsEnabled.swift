@@ -20,9 +20,15 @@
 //  A tap on a stopped tab does nothing, and VoiceOver's activation, which
 //  returns false and sends a touch, does nothing either (measured); the
 //  shown tab's controls still work. A tab item still reads as enabled to a
-//  screen reader: the iOS 26.5 tab buttons read the same with the items'
-//  `isEnabled` false, with their accessibility traits set, and with the
-//  whole TabView `.disabled` (measured, each).
+//  screen reader, on every form measured (ConformanceHost -tabEnabledProbe
+//  candidates, iOS 26.5 and 18.6, the in-app accessibility walk and
+//  XCUITest's `isEnabled` alike): the items' `isEnabled` false, the items'
+//  accessibility traits set, the tab bar buttons' own traits set, the whole
+//  TabView `.disabled`, and the `Tab` API with `TabContent.disabled` (iOS
+//  18.4) — the last stops the tab as this does and reads the same, so it is
+//  not used: it would need a second TabView per layout for no difference a
+//  screen reader hears. The tab buttons (UITabBarButton on 18, _UITabButton
+//  on 26) answer their traits themselves.
 //
 
 import SwiftUI

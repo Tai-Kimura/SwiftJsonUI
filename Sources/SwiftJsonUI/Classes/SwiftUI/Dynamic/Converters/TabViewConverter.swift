@@ -69,16 +69,7 @@ public struct TabViewConverter {
         // resolver ever saw it. tabBarBackground two lines up had it right.
         let unselectedColor: Color? = DynamicHelpers.resolveColor(attrs.unselectedColor, data: data)
 
-        // Resolve tab-change callback. onValueChange is the canonical
-        // name; onTabChange / onPageChanged are the definitions aliases
-        // (consulted only for raw L0 layouts).
-        var onTabChangeCallback: ((Int) -> Void)? = nil
-        let tabChangeRaw = (attrs.onValueChange?.rawRepresentation as? String)
-            ?? (component.isNormalized ? nil : component.onTabChange)
-        if let onTabChangeRaw = tabChangeRaw,
-           let propName = DynamicEventHelper.extractPropertyName(from: onTabChangeRaw) {
-            onTabChangeCallback = data[propName] as? ((Int) -> Void)
-        }
+        let onTabChangeCallback = tabChangeCallback(component: component, data: data)
 
         // `enabled` stops the tab items, not the tab view (applyDisabled
         // leaves a TabView as it is): each tab's content sets the tab bar
@@ -118,6 +109,24 @@ public struct TabViewConverter {
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
 
         return result
+    }
+}
+
+extension TabViewConverter {
+    /// The tab-change handler, called with the new index as the data holds it
+    /// (DynamicEventHelper.callWithValue: `(String, Int)` with the viewId
+    /// first, `(Int)` with the index, `()` with nothing) — sjui build calls it
+    /// as its declaration says (get_event_handler_invocation). A handler held
+    /// as anything but `(Int) -> Void` was never called. onValueChange is the
+    /// canonical name; onTabChange / onPageChanged are the definitions
+    /// aliases (consulted only for raw L0 layouts). nil for no handler.
+    static func tabChangeCallback(component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
+        let attrs = component.typedAttributes(TabViewAttributes.self)
+        let raw = (attrs.onValueChange?.rawRepresentation as? String)
+            ?? (component.isNormalized ? nil : component.onTabChange)
+        guard let raw, DynamicEventHelper.extractPropertyName(from: raw) != nil else { return nil }
+        let id = LayoutPath.viewId(of: component)
+        return { DynamicEventHelper.callWithValue(raw, id: id, value: $0, data: data) }
     }
 }
 

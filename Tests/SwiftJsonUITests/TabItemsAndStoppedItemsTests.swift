@@ -62,6 +62,24 @@ final class TabItemsAndStoppedItemsTests: XCTestCase {
         XCTAssertFalse(DynamicEventHelper.tabViewOperationsShut(view, data: ["on": false]))
     }
 
+    /// The tab-change handler is called as the data holds it: `(Int)`,
+    /// `(String, Int)` (the viewId first) and `()` alike, and each alias.
+    /// Only `(Int) -> Void` was called.
+    func testTheTabChangeHandlerIsCalledAsTheDataHoldsIt() throws {
+        var got: [String] = []
+        let data: [String: Any] = [
+            "onIndex": { (i: Int) in got.append("index \(i)") } as (Int) -> Void,
+            "onIdIndex": { (id: String, i: Int) in got.append("\(id) \(i)") } as (String, Int) -> Void,
+            "onNothing": { got.append("nothing") } as () -> Void,
+        ]
+        for (key, handler) in [("onValueChange", "onIndex"), ("onValueChange", "onIdIndex"), ("onTabChange", "onNothing")] {
+            let callback = try XCTUnwrap(TabViewConverter.tabChangeCallback(component: try tabView([key: "@{\(handler)}"]), data: data), key)
+            callback(1)
+        }
+        XCTAssertEqual(got, ["index 1", "t 1", "nothing"])
+        XCTAssertNil(TabViewConverter.tabChangeCallback(component: try tabView(), data: data))
+    }
+
     func testOnlyASegmentHoldsItemElements() throws {
         XCTAssertTrue(DynamicModifierHelper.holdsItemElements(try component(["type": "Segment", "id": "s", "items": ["a", "b"]])))
         for type in ["Radio", "Switch", "CheckBox", "Button", "SelectBox", "Slider", "TextField"] {
