@@ -32,8 +32,11 @@ public struct SelectBoxConverter {
     /// bound; `(String, Int)` — the viewId and the index; `(String, String)` —
     /// the viewId and the item; `(Int)` — the index; `()` — nothing. `index`
     /// is the item's place in `items` (the bound selectedIndex once
-    /// SelectBoxView has written it), -1 for the prompt; a date has none, and
-    /// a handler taking an Int is not called for it.
+    /// SelectBoxView has written it), -1 for the prompt. A date has none: a
+    /// handler taking an Int is not called for it, and is named once in DEBUG
+    /// (4f's ruling, 1.9.0; the build names it too —
+    /// BindingValidatorCore.date_pick_handler_problem — and sjui writes an
+    /// `// ERROR:` comment where the call would be).
     ///
     /// It was `callWithValue` with the index where selectedIndex is bound and
     /// the item otherwise, which tries `(String, T)`, `(T)`, `()`: a
@@ -45,10 +48,37 @@ public struct SelectBoxConverter {
         switch data[name] {
         case let call as (String) -> Void: call(picked)
         case let call as (String, String) -> Void: call(id, picked)
-        case let call as (String, Int) -> Void: if let index { call(id, index) }
-        case let call as (Int) -> Void: if let index { call(index) }
+        case let call as (String, Int) -> Void:
+            if let index { call(id, index) } else { warnOnce(id: id, handler: name) }
+        case let call as (Int) -> Void:
+            if let index { call(index) } else { warnOnce(id: id, handler: name) }
         case let call as () -> Void: call()
         default: break
+        }
+    }
+
+    /// The sentence the build says for the same declaration
+    /// (BindingValidatorCore::DATE_PICK_HAS_NO_INDEX).
+    static let datePickHasNoIndex = "a date SelectBox has no index: declare onValueChange as (String) or (String, String)"
+
+    /// Hook for tests / apps; defaults to Logger.debug.
+    public static var warningHandler: ((String) -> Void)?
+
+    /// One warning per (viewId, handler) per process — a box is re-rendered
+    /// and picked again; the declaration does not change.
+    private static var reported = Set<String>()
+    private static let lock = NSLock()
+
+    private static func warnOnce(id: String, handler: String) {
+        lock.lock()
+        let firstTime = reported.insert("\(id).\(handler)").inserted
+        lock.unlock()
+        guard firstTime else { return }
+        let message = "[SelectBox] \(id): onValueChange '\(handler)' is not called: \(datePickHasNoIndex)"
+        if let warningHandler {
+            warningHandler(message)
+        } else {
+            Logger.debug(message)
         }
     }
 

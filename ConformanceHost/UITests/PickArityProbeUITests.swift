@@ -6,7 +6,8 @@ import XCTest
 /// `(String)` the picked item, even with selectedIndex bound; `(String, Int)`
 /// the viewId and the index; `(String, String)` the viewId and the item — each
 /// over an item binding, an index binding and nothing bound. A date picker's
-/// `(String)` and `(String, String)` take the date. A box without an id is
+/// `(String)` and `(String, String)` take the date; one declared
+/// `(String, Int)` is not called (a date has no index). A box without an id is
 /// `selectBox_<its position>`.
 ///
 /// Every box is picked once — its second item, a date's 3rd day — and the
@@ -22,6 +23,8 @@ final class PickArityProbeUITests: XCTestCase {
         ("sbNi", "Ni2", "pNi(sbNi,Ni2)"), ("sbNx", "Nx2", "pNx(sbNx,Nx2)"), ("sbNn", "Nn2", "pNn(sbNn,Nn2)"),
         ("sbDS", "3", "dS(2026-01-03)"), ("sbDN", "3", "dN(sbDN,2026-01-03)"),
         ("anonI", "aI2", "aI(selectBox_0_11,1)"), ("anonN", "aN2", "aN(selectBox_0_12,aN2)"),
+        // A date has no index: a handler that takes one is not called.
+        ("sbDI", "3", ""),
     ]
 
     func testEachDeclarationIsHandedWhatItAsksFor() throws {
@@ -73,7 +76,7 @@ final class PickArityProbeUITests: XCTestCase {
             sleep(1)
             let made = Array(calls().dropFirst(before))
             print("PICKARITY \(path) \(name) calls=\(made.joined(separator: "|"))")
-            XCTAssertEqual(made, [call], "\(path) \(name): onValueChange is handed")
+            XCTAssertEqual(made, call.isEmpty ? [] : [call], "\(path) \(name): onValueChange is handed")
         }
         print("PICKARITY \(path) readout=\(app.staticTexts["pa_readout"].label)")
         app.terminate()

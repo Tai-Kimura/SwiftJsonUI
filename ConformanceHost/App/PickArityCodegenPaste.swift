@@ -2,7 +2,7 @@
 //  PickArityCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli triage/view-id-by-position 4b5d4e62) emits for
+//  What `sjui build` (sjui_tools of jsonui-cli triage/date-selectbox-index 452afd91) emits for
 //  PickArityProbeView's layout — SelectBoxes whose onValueChange is declared
 //  `(String)`, `(String, Int)` and `(String, String)` — the generated Data
 //  struct, the view-local state, the body and its sections, pasted unchanged.
@@ -27,6 +27,8 @@ struct PickArityData {
     var dN: ((String, String) -> Void)? = nil
     var aI: ((String, Int) -> Void)? = nil
     var aN: ((String, String) -> Void)? = nil
+    var dI: ((String, Int) -> Void)? = nil
+    var dayI: String = "2026-01-02"
     var selS: String = ""
     var idxS: Int = 0
     var selI: String = ""
@@ -101,6 +103,16 @@ struct PickArityData {
         if let value = dictionary["aN"] {
             if let typedValue = value as? ((String, String) -> Void)? {
                 self.aN = typedValue
+            }
+        }
+        if let value = dictionary["dI"] {
+            if let typedValue = value as? ((String, Int) -> Void)? {
+                self.dI = typedValue
+            }
+        }
+        if let value = dictionary["dayI"] {
+            if let stringValue = value as? String {
+                self.dayI = stringValue
             }
         }
         if let value = dictionary["selS"] {
@@ -189,6 +201,10 @@ struct PickArityData {
         if let value = aN {
             dict["aN"] = value
         }
+        if let value = dI {
+            dict["dI"] = value
+        }
+        dict["dayI"] = dayI
         dict["selS"] = selS
         dict["idxS"] = idxS
         dict["selI"] = selI
@@ -247,6 +263,13 @@ struct PickArityData {
         if let aN = aN {
             dict["aN"] = aN
         }
+        if let dI = dI {
+            dict["dI"] = dI
+        }
+        dict["dayI"] = SwiftUI.Binding<String>(
+            get: { dataBinding.wrappedValue.dayI },
+            set: { dataBinding.wrappedValue.dayI = $0 }
+        )
         dict["selS"] = SwiftUI.Binding<String>(
             get: { dataBinding.wrappedValue.selS },
             set: { dataBinding.wrappedValue.selS = $0 }
@@ -428,6 +451,20 @@ struct PickArityCodegenPaste: View {
                 )
                     .frame(maxWidth: .infinity)
                     .frame(minHeight: 36, idealHeight: 36, maxHeight: 36)
+                SelectBoxView(
+                    id: "sbDI",
+                    selectItemType: .date,
+                    datePickerMode: .date,
+                    dateStringFormat: "yyyy-MM-dd",
+                    selectedDate: data.dayI.toDate(format: "yyyy-MM-dd"),
+                    onValueChange: { newValue in
+                        data.dayI = newValue
+                        // ERROR: SelectBox.onValueChange dI is not called: a date SelectBox has no index: declare onValueChange as (String) or (String, String)
+                    }
+                )
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 36, idealHeight: 36, maxHeight: 36)
+                    .accessibilityIdentifier("sbDI")
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }

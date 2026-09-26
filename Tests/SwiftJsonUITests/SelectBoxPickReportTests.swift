@@ -8,8 +8,8 @@
 //  the picked item, even with selectedIndex bound; `(String, Int)` the viewId
 //  and the index; `(String, String)` the viewId and the item; `(Int)` the
 //  index; `()` nothing. A date has no index: a handler taking an Int is not
-//  called for it. End to end, on both iOS paths: ConformanceHost
-//  PickArityProbeUITests.
+//  called for it, and is named once (4f's ruling, 1.9.0). End to end, on both
+//  iOS paths: ConformanceHost PickArityProbeUITests.
 //
 
 import XCTest
@@ -57,6 +57,25 @@ final class SelectBoxPickReportTests: XCTestCase {
         XCTAssertEqual(report("indexed", index: nil), [])
         XCTAssertEqual(report("index", index: nil), [])
         XCTAssertEqual(report("bare", index: nil), ["bare()"])
+    }
+
+    /// A date's handler that takes an index is named, once per box and
+    /// handler, in the build's sentence; a list's never is.
+    func testADateHandlerTakingAnIndexIsNamedOnce() {
+        var said: [String] = []
+        SelectBoxConverter.warningHandler = { said.append($0) }
+        defer { SelectBoxConverter.warningHandler = nil }
+        let box = "date-\(UUID().uuidString)"
+        for _ in 0..<3 {
+            SelectBoxConverter.reportPick("@{indexed}", id: box, picked: "2026-01-03", index: nil, data: handlers())
+        }
+        SelectBoxConverter.reportPick("@{index}", id: box, picked: "2026-01-03", index: nil, data: handlers())
+        SelectBoxConverter.reportPick("@{indexed}", id: box, picked: "b", index: 1, data: handlers())
+        SelectBoxConverter.reportPick("@{named}", id: box, picked: "2026-01-03", index: nil, data: handlers())
+        XCTAssertEqual(said, [
+            "[SelectBox] \(box): onValueChange 'indexed' is not called: a date SelectBox has no index: declare onValueChange as (String) or (String, String)",
+            "[SelectBox] \(box): onValueChange 'index' is not called: a date SelectBox has no index: declare onValueChange as (String) or (String, String)",
+        ])
     }
 
     func testAHandlerTheDataDoesNotHoldIsNotCalled() {
