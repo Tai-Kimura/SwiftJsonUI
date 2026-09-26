@@ -99,7 +99,7 @@ final class TypeSynonymsDrawTests: XCTestCase {
         var differ: [String] = []
         var unsteady: Set<String> = []
         for spelling in synonyms.keys.sorted() {
-            let entry = try XCTUnwrap(TypeSynonyms.entries[spelling.lowercased()])
+            let entry = try XCTUnwrap(TypeSynonyms.entries[spelling])
             let target = entry.drawnAs
             let x = try XCTUnwrap(extra[target], "no drawing extra for \(target)")
             let implied = entry.implied.map { #", "\#($0.key)": "\#($0.value)""# }.joined()

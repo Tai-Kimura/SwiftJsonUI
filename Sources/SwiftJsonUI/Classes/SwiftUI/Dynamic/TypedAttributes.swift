@@ -188,7 +188,7 @@ public enum JsonUITypedAttributesRegistry {
     public static func metadata(
         forType type: String
     ) -> (declared: Set<String>, aliasMap: [String: String])? {
-        let section = TypeSynonyms.entries[type.lowercased()]?.canonical ?? type
+        let section = TypeSynonyms.entries[type]?.canonical ?? type
         let generated: JsonUIGeneratedAttributes.Type?
         switch section.lowercased() {
         case "label": generated = LabelAttributes.self
@@ -248,7 +248,7 @@ public enum JsonUIAttributeAudit {
               let meta = JsonUITypedAttributesRegistry.metadata(forType: type) else {
             return
         }
-        let section = TypeSynonyms.entries[type.lowercased()]?.canonical ?? type
+        let section = TypeSynonyms.entries[type]?.canonical ?? type
         let allowed = JsonUITypedAttributesRegistry.consumedUndeclaredKeys[section.lowercased()] ?? []
         for key in component.rawData.keys {
             if meta.declared.contains(key) { continue }
