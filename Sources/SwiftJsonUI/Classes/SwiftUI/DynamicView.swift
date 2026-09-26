@@ -31,7 +31,10 @@ public struct DynamicView: View {
 
     public init(component: DynamicComponent, viewId: String? = nil, data: [String: Any] = [:]) {
         self.jsonName = nil
-        self.directComponent = component
+        // A component the app decoded itself has no positions: stamped here,
+        // as the loader stamps, so its id-less nodes are named alike on every
+        // entry (JSONLayoutLoader.stamped).
+        self.directComponent = JSONLayoutLoader.stamped(component)
         self.data = data
         self.viewId = viewId ?? "component"
     }
