@@ -40,16 +40,32 @@ public extension EnvironmentValues {
 /// reader neither operates it nor reads it as something to operate. Nothing
 /// drawn changes (measured against the control as drawn without it; the
 /// alternative `.disabled(true)` dims it). Not stopped: the view as it is.
+///
+/// `items`: a control whose items are elements of their own — a Segment
+/// (a segmented Picker: UIKit's segments). What the modifiers above change is
+/// the control's element, and a segment is not one: inside a stop each
+/// segment still read as a button that responds (measured, ConformanceHost
+/// `-a11yActivationProbe -wrappers`, iOS 26.5; a touch was stopped). With
+/// `items`, a screen reader reads the same control disabled instead
+/// (`accessibilityRepresentation`, which is not drawn): each segment is still
+/// there, with its selection, and reads not enabled and not responding.
+/// Nothing drawn changes (measured; `.disabled(true)` on the control itself
+/// dims it). 4f's ruling (jsonui-cli 1.9.0): the items are told they are
+/// stopped too, as Compose marks each one disabled.
 public struct JsonUIStoppedControl: ViewModifier {
     @Environment(\.jsonuiInteractionStopped) private var handedDown
     let stopped: Bool
+    let items: Bool
 
-    public init(stopped: Bool) {
+    public init(stopped: Bool, items: Bool = false) {
         self.stopped = stopped
+        self.items = items
     }
 
     public func body(content: Content) -> some View {
-        if stopped || handedDown {
+        if (stopped || handedDown) && items {
+            content.accessibilityRepresentation { content.disabled(true) }
+        } else if stopped || handedDown {
             content
                 .accessibilityAction { }
                 .accessibilityRemoveTraits([.isButton, .isToggle])
@@ -63,8 +79,9 @@ public struct JsonUIStoppedControl: ViewModifier {
 public extension View {
     /// JsonUIStoppedControl: `stopped` is the stop the build can see (the
     /// flag on the control or around it, or its binding); a stop handed down
-    /// from another layout is read from the environment.
-    func jsonuiStoppedControl(_ stopped: Bool = false) -> some View {
-        modifier(JsonUIStoppedControl(stopped: stopped))
+    /// from another layout is read from the environment. `items` for a
+    /// control whose items are elements of their own (a Segment).
+    func jsonuiStoppedControl(_ stopped: Bool = false, items: Bool = false) -> some View {
+        modifier(JsonUIStoppedControl(stopped: stopped, items: items))
     }
 }

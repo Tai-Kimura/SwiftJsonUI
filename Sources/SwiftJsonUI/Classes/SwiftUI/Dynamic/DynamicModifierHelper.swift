@@ -907,6 +907,12 @@ public struct DynamicModifierHelper {
     // MARK: - 15. Disabled
 
     public static func applyDisabled(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        // A TabView's `enabled` stops its tab items, not the tab view: the
+        // TabView converter hands it to each tab (jsonuiTabItemsEnabled).
+        // `.disabled` here disabled the controls of the tab shown too (4f's
+        // ruling, jsonui-cli 1.9.0; measured, ConformanceHost
+        // -tabEnabledProbe).
+        if isTabView(component) { return view }
         if component.commonBool(\.enabled) == false {
             return AnyView(view.disabled(true))
         }
@@ -930,6 +936,24 @@ public struct DynamicModifierHelper {
         return view
     }
 
+    static func isTabView(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type else { return false }
+        return TypeSynonyms.drawnType(type).lowercased() == "tabview"
+    }
+
+    /// A node's `enabled` as a value its tab items read: `.constant(false)`
+    /// for the literal false; for a bound one the binding (read where it is
+    /// applied, as ReactiveDisabledWrapper reads it) or its value now — true
+    /// too, so the items are enabled again when it turns true; nil when there
+    /// is nothing to read (none, or the literal true).
+    static func enabledBinding(_ component: DynamicComponent, data: [String: Any]) -> SwiftUI.Binding<Bool>? {
+        if component.commonBool(\.enabled) == false { return .constant(false) }
+        guard let expr = component.typedAttributes(CommonAttributes.self).enabled?.bindingExpression else { return nil }
+        let enabledValue = "@{\(expr)}"
+        if let binding = DynamicBindingHelper.extractBoolBinding(from: enabledValue, data: data) { return binding }
+        return .constant(DynamicBindingHelper.resolveBool(enabledValue, data: data, fallback: true))
+    }
+
     // MARK: - 16. Hit Testing
 
     public static func applyHitTesting(
@@ -945,7 +969,18 @@ public struct DynamicModifierHelper {
         // switched). Its own flag, a stop around it (the mark), or one handed
         // down (the environment, which the modifier reads itself).
         guard TapAccessibility.isControl(component.type) else { return result }
-        return AnyView(result.jsonuiStoppedControl(stops || component.interactionStoppedAround))
+        return AnyView(result.jsonuiStoppedControl(stops || component.interactionStoppedAround,
+                                                   items: holdsItemElements(component)))
+    }
+
+    /// A control whose items are elements of their own, which the stopped
+    /// control's treatment has to reach as the control's representation
+    /// (JsonUIStoppedControl `items`): a Segment — a segmented Picker, whose
+    /// segments are UIKit's. A Radio's items are SwiftUI views the treatment
+    /// already reaches (measured, `-a11yActivationProbe -wrappers`).
+    static func holdsItemElements(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type else { return false }
+        return TypeSynonyms.drawnType(type).lowercased() == "segment"
     }
 
     /// `userInteractionEnabled` false, or a binding resolving false — the

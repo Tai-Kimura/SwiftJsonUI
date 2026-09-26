@@ -19,6 +19,12 @@ import XCTest
 /// The cell drawn `.equatable()` must also carry the button trait exactly
 /// while the stop is open — the environment reaching it after the binding
 /// flipped; the cell drawn without `.equatable()` is the contrast.
+/// A wrapper control's item (a Segment's segment, a Radio's item — elements
+/// of their own inside the control) responds with no stop, and inside the
+/// stop neither responds nor reads as an enabled button (4f's ruling,
+/// jsonui-cli 1.9.0: a stopped control does not say it is operable, down to
+/// its items). `-wrappers` prints the forms the emit chose from
+/// (testTheWrapperCandidates).
 /// The candidate fixes (`cand…`) are printed, not judged: what the
 /// activation moved, what a screen reader reads (traits, the toggle trait,
 /// respondsToUserInteraction, the value), and whether each draws as the
@@ -151,12 +157,28 @@ final class A11yActivationProbeUITests: XCTestCase {
                 if let expected, moved != expected {
                     mismatches.append("run \(phase) \(e.name): moved \(moved) (activate=\(e.returned) \(e.moved), touch \(touched.map(String.init) ?? "-")), want \(expected)")
                 }
+                // A wrapper control's item (a segment, a Radio's item) — an
+                // element of its own inside the control: with no stop it
+                // responds; inside the stop it neither responds nor reads as
+                // an enabled button (4f's ruling, jsonui-cli 1.9.0: a stopped
+                // control does not say it is operable, down to its items).
+                if (e.name.hasPrefix("cg") || e.name.hasPrefix("dyn")) && ["Seg", "Rad"].contains(where: { e.name.contains($0) }) {
+                    if e.via != "label" {
+                        mismatches.append("run \(phase) \(e.name): the item was not reached (\(e.via))")
+                    } else if e.name.hasSuffix("Plain") && !e.responds {
+                        mismatches.append("run \(phase) \(e.name): no stop, and the item does not respond")
+                    } else if e.name.contains("InFalse") && (e.responds || (e.button && !e.notEnabled)) {
+                        mismatches.append("run \(phase) \(e.name): inside the stop the item reads operable "
+                                          + "(responds=\(e.responds) button=\(e.button) notEnabled=\(e.notEnabled))")
+                    }
+                }
                 if e.name.hasPrefix("cgCell") && e.button != open {
                     mismatches.append("run \(phase) \(e.name): button trait \(e.button) with the stop \(open ? "open" : "closed") — the environment did not reach the cell")
                 }
             }
             let names = Set(list.map(\.name))
-            for required in ["cgCellEq", "cgCellNoEq", "cgSwInFalse", "dynSwInFalse"] where !names.contains(required) {
+            for required in ["cgCellEq", "cgCellNoEq", "cgSwInFalse", "dynSwInFalse"] + ["cg", "dyn"].flatMap({ side in
+                ["SegPlain", "RadPlain", "SegInFalse", "RadInFalse"].map { "\(side)\($0)" } }) where !names.contains(required) {
                 mismatches.append("run \(phase): no entry for \(required)")
             }
         }
@@ -231,6 +253,60 @@ final class A11yActivationProbeUITests: XCTestCase {
             print("A11Y_PROBE cand \(e.name) via=\(e.via) activate=\(e.returned) activateMoved=\(e.moved) "
                   + "touchMoved=\(touched.map(String.init) ?? "-") button=\(e.button) toggle=\(e.toggle) "
                   + "notEnabled=\(e.notEnabled) responds=\(e.responds) traits=\(e.traits) value=\(e.value)")
+        }
+    }
+
+    /// The wrapper controls' candidates (`-wrappers`, WrapperStopCandidates):
+    /// every element under each scope — what it reads and what its
+    /// activation, or the touch VoiceOver sends when that returns false,
+    /// moved. Printed, not judged.
+    func testTheWrapperCandidates() throws {
+        guard ProcessInfo.processInfo.environment["A11Y_ACTIVATION_PROBE"] == "1" else {
+            throw XCTSkip("a11y activation probe: run with the guard lifted, as the other probes are")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-a11yActivationProbe", "-wrappers"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["a11y_probe_ready"].waitForExistence(timeout: 15), "probe did not start")
+        let readout = app.staticTexts["a11y_readout"]
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "wrappers"
+        shot.lifetime = .keepAlways
+        add(shot)
+        for (reference, ids) in [("wSegPlain", ["wSegEm", "wSegIgnore", "wSegCombine", "wSegDisabled", "wSegReprText", "wSegReprDisabled", "wSegIgnoreValue", "wSegReprContent", "wSegReprContentOpen"]),
+                                 ("wRadPlain", ["wRadEm", "wRadItem", "wRadCombine", "wRadDisabled", "wRadReprContent"])] {
+            let e = app.descendants(matching: .any).matching(identifier: reference).firstMatch
+            let ref = e.waitForExistence(timeout: 5) ? e.screenshot().image : nil
+            for id in ids {
+                let o = app.descendants(matching: .any).matching(identifier: id).firstMatch
+                print("A11Y_PROBE visual \(id) against \(reference): \(Self.pixelDifference(ref, o.exists ? o.screenshot().image : nil))")
+            }
+        }
+        app.buttons["a11y_run"].tap()
+        let done = expectation(for: NSPredicate(format: "label BEGINSWITH %@", "ran=1 "), evaluatedWith: readout)
+        wait(for: [done], timeout: 90)
+        for part in section(readout.label, "act")?.split(separator: ";") ?? [] {
+            let kv = part.split(separator: "=", maxSplits: 1).map(String.init)
+            guard kv.count == 2 else { continue }
+            let f = kv[1].split(separator: "/", omittingEmptySubsequences: false).map(String.init)
+            var touched = "-"
+            if f.count >= 9, f[6] == "0" {
+                let xy = f[8].split(separator: ",").compactMap { Double($0) }
+                let scope = String(kv[0].split(separator: "#")[0])
+                if xy.count == 2 {
+                    let before = counts(readout.label)[scope] ?? 0
+                    origin.withOffset(CGVector(dx: xy[0], dy: xy[1])).tap()
+                    usleep(400_000)
+                    touched = String((counts(readout.label)[scope] ?? 0) - before)
+                }
+            }
+            if f.count >= 9 {
+                print("A11Y_PROBE wrap \(kv[0]) label=\(f[0]) value=\(f[1]) traits=\(f[2]) button=\(f[3]) notEnabled=\(f[4]) "
+                      + "responds=\(f[5]) activate=\(f[6]) activateMoved=\(f[7]) touchMoved=\(touched)")
+            } else {
+                print("A11Y_PROBE wrap \(kv[0]) \(kv[1])")
+            }
         }
     }
 

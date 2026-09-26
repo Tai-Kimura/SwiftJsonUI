@@ -14,17 +14,20 @@
 //  called; the UI test sends the touch for each element that returned false.
 //
 //  Left: what `sjui build` emits for the two layouts below — sjui_tools of
-//  jsonui-cli support4f/tap-rule-uie-round4 (on aea0a0a4; jsonui-cli 1.9.0 in
-//  progress: a control a stop holds carries `.jsonuiStoppedControl(…)`),
+//  jsonui-cli support4f/tap-rule-uie-round5 (on b9d10daf; jsonui-cli 1.9.0 in
+//  progress: a control a stop holds carries `.jsonuiStoppedControl(…)`, a
+//  Segment's with `items: true`),
 //  JsonToSwiftUIConverter over a layouts directory holding both, as the build
 //  calls it — the probe's body and the cell's body pasted unchanged
 //  (A11yActivationCodegenBody, AxCellGeneratedView). The cell's View / Data /
 //  ViewModel are the shapes `sjui g collection` writes (collection_generator
 //  .rb): the cell view is Equatable on its cellId, and a Collection with
 //  `sections` draws it `.equatable()`. The rows:
-//  - no stop (the controls): a Label with onClick, a Button, a Switch;
+//  - no stop (the controls): a Label with onClick, a Button, a Switch, a
+//    Segment and a Radio group (the wrapper controls: each segment and each
+//    item is an element of its own — the item "b", the glyph "circle");
 //  - inside a View with `userInteractionEnabled: false`: a Button, a Label
-//    with onClick, a View with onClick, a Switch;
+//    with onClick, a View with onClick, a Switch, a Segment, a Radio group;
 //  - inside a View with `userInteractionEnabled: "@{gateOpen}"`: the same
 //    four, and a Collection whose cell has a Label with onClick (the cell is
 //    a layout the stop reaches: it reads `jsonuiInteractionStopped`);
@@ -34,11 +37,15 @@
 //        {"type": "Label", "id": "cgLblPlain", "text": "cgLblPlain", "onClick": "@{onLblPlain}"}
 //        {"type": "Button", "id": "cgBtnPlain", "text": "cgBtnPlain", "onClick": "@{onBtnPlain}"}
 //        {"type": "Switch", "id": "cgSwPlain", "isOn": "@{swPlain}"}
+//        {"type": "Segment", "id": "cgSegPlain", "items": ["a", "b"], "selectedIndex": "@{segPlain}"}
+//        {"type": "Radio", "id": "cgRadPlain", "items": ["a", "b"], "selectedValue": "@{radPlain}"}
 //        {"type": "View", "id": "cgParFalse", "orientation": "vertical", "spacing": 4, "userInteractionEnabled": false, "child": [
 //          {"type": "Button", "id": "cgBtnInFalse", "text": "cgBtnInFalse", "onClick": "@{onBtnInFalse}"}
 //          {"type": "Label", "id": "cgLblInFalse", "text": "cgLblInFalse", "onClick": "@{onLblInFalse}"}
 //          {"type": "View", "id": "cgViewInFalse", "width": 80, "height": 30, "background": "#3366CC", "onClick": "@{onViewInFalse}"}
 //          {"type": "Switch", "id": "cgSwInFalse", "isOn": "@{swInFalse}"}
+//          {"type": "Segment", "id": "cgSegInFalse", "items": ["a", "b"], "selectedIndex": "@{segInFalse}"}
+//          {"type": "Radio", "id": "cgRadInFalse", "items": ["a", "b"], "selectedValue": "@{radInFalse}"}
 //        ]}
 //        {"type": "View", "id": "cgParBound", "orientation": "vertical", "spacing": 4, "userInteractionEnabled": "@{gateOpen}", "child": [
 //          {"type": "Button", "id": "cgBtnInBound", "text": "cgBtnInBound", "onClick": "@{onBtnInBound}"}
@@ -91,6 +98,13 @@ final class A11yActivationProbeData: ObservableObject {
     @Published var swInFalse = false { didSet { if swInFalse != oldValue { bump("cgSwInFalse") } } }
     @Published var swInBound = false { didSet { if swInBound != oldValue { bump("cgSwInBound") } } }
     @Published var swSelfFalse = false { didSet { if swSelfFalse != oldValue { bump("cgSwSelfFalse") } } }
+    // The wrapper controls: a Segment and a Radio group count each change of
+    // their selection (a segment's, an item's).
+    @Published var segPlain = 0 { didSet { if segPlain != oldValue { bump("cgSegPlain") } } }
+    @Published var radPlain = "a" { didSet { if radPlain != oldValue { bump("cgRadPlain") } } }
+    @Published var segInFalse = 0 { didSet { if segInFalse != oldValue { bump("cgSegInFalse") } } }
+    @Published var radInFalse = "a" { didSet { if radInFalse != oldValue { bump("cgRadInFalse") } } }
+    @Published var dynSel: [String: String] = [:]
     // The candidates (not emitted): each Switch counts each change of value.
     @Published var cand: [String: Bool] = [:]
     func candBinding(_ name: String) -> SwiftUI.Binding<Bool> {
@@ -258,6 +272,31 @@ struct A11yActivationCodegenBody: View {
                 }
                     .labelsHidden()
                     .accessibilityIdentifier("cgSwPlain")
+                Picker("", selection: $data.segPlain) {
+                    Text("a".localized()).tag(0)
+                    Text("b".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("cgSegPlain")
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: data.radPlain == "a" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            data.radPlain = "a"
+                        }
+                        Text("a")
+                    }
+                    HStack {
+                        Image(systemName: data.radPlain == "b" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            data.radPlain = "b"
+                        }
+                        Text("b")
+                    }
+                }
+                    .accessibilityIdentifier("cgRadPlain")
                 VStack(alignment: .leading, spacing: 4) {
                         StateAwareButtonView(
                             text: "cgBtnInFalse",
@@ -287,6 +326,33 @@ struct A11yActivationCodegenBody: View {
                             .labelsHidden()
                             .jsonuiStoppedControl(true)
                             .accessibilityIdentifier("cgSwInFalse")
+                        Picker("", selection: $data.segInFalse) {
+                            Text("a".localized()).tag(0)
+                            Text("b".localized()).tag(1)
+                        }
+                            .pickerStyle(.segmented)
+                            .jsonuiStoppedControl(true, items: true)
+                            .accessibilityIdentifier("cgSegInFalse")
+                        VStack(alignment: .leading, spacing: 8) {
+                            HStack {
+                                Image(systemName: data.radInFalse == "a" ? "largecircle.fill.circle" : "circle")
+                                    .foregroundColor(.blue)
+                                    .onTapGesture {
+                                    data.radInFalse = "a"
+                                }
+                                Text("a")
+                            }
+                            HStack {
+                                Image(systemName: data.radInFalse == "b" ? "largecircle.fill.circle" : "circle")
+                                    .foregroundColor(.blue)
+                                    .onTapGesture {
+                                    data.radInFalse = "b"
+                                }
+                                Text("b")
+                            }
+                        }
+                            .jsonuiStoppedControl(true)
+                            .accessibilityIdentifier("cgRadInFalse")
                 }
                     .allowsHitTesting(false)
                     .accessibilityElement(children: .contain)
@@ -475,10 +541,15 @@ enum A11yActivator {
     /// the identifier is an element), `child` (the first element under it),
     /// `container` (no element at all), `none` (no node with the id).
     /// The element labelled `label` under the node `scope` (a Picker's segment).
+    /// Every node with the scope's identifier is searched: an identifier on
+    /// a stack that is no element lands on each of its elements (a Radio's
+    /// items).
     static func labelled(_ label: String, scope: String) -> (NSObject?, String, Int) {
-        guard let window = keyWindow(), let root = matches(scope, under: window).first else { return (nil, "noscope", 0) }
+        guard let window = keyWindow() else { return (nil, "nowindow", 0) }
+        let roots = matches(scope, under: window)
+        guard !roots.isEmpty else { return (nil, "noscope", 0) }
         var seen = Set<ObjectIdentifier>()
-        var stack: [NSObject] = [root]
+        var stack: [NSObject] = roots.reversed()
         while let node = stack.popLast() {
             guard seen.insert(ObjectIdentifier(node)).inserted else { continue }
             if node.isAccessibilityElement && node.accessibilityLabel == label { return (node, "label", 1) }
@@ -523,6 +594,10 @@ struct A11yTarget {
 struct A11yActivationProbeView: View {
     @StateObject private var data = A11yActivationProbeData()
 
+    /// The wrapper controls (a Segment's segments and a Radio's items are
+    /// elements of their own): with no stop, and inside `false`.
+    static let wrapperRows = ["SegPlain", "RadPlain", "SegInFalse", "RadInFalse"]
+
     static let rows = ["LblPlain", "BtnPlain", "SwPlain",
                        "BtnInFalse", "LblInFalse", "ViewInFalse", "SwInFalse",
                        "BtnInBound", "LblInBound", "ViewInBound", "SwInBound",
@@ -534,6 +609,15 @@ struct A11yActivationProbeView: View {
         out.append(A11yTarget("cgCellEq", id: "cgCellLbl", scope: "cgListBound"))
         out.append(A11yTarget("cgCellNoEq", id: "cgCellLbl", scope: "cgListBoundNoEq"))
         out += rows.map { A11yTarget("dyn\($0)") }
+        // A wrapper control's item, found by its label under the control: a
+        // segment "b", a Radio item's glyph (an unselected one reads
+        // "circle").
+        for side in ["cg", "dyn"] {
+            for row in wrapperRows {
+                let name = "\(side)\(row)"
+                out.append(A11yTarget(name, scope: name, label: row.hasPrefix("Seg") ? "b" : "circle"))
+            }
+        }
         out += A11yActivationProbeView.candidates.map { A11yTarget($0) }
         out += ["candSlPlain", "candSlEmitted", "candSlMod", "candSlHidden"].map { A11yTarget($0, increment: true) }
         out += ["candSegPlain", "candSegEmitted", "candSegMod", "candSegHidden"].map { A11yTarget($0, scope: $0, label: "b") }
@@ -557,12 +641,17 @@ struct A11yActivationProbeView: View {
                 + #"{"type": "Button", "id": "dynBtnIn\#(s)", "text": "dynBtnIn\#(s)", "onClick": "@{on_dynBtnIn\#(s)}"}, "#
                 + #"{"type": "Label", "id": "dynLblIn\#(s)", "text": "dynLblIn\#(s)", "onClick": "@{on_dynLblIn\#(s)}"}, "#
                 + ##"{"type": "View", "id": "dynViewIn\##(s)", "width": 80, "height": 30, "background": "#3366CC", "onClick": "@{on_dynViewIn\##(s)}"}, "##
-                + #"{"type": "Switch", "id": "dynSwIn\#(s)", "isOn": "@{dynSwIn\#(s)}"}]}"#
+                + #"{"type": "Switch", "id": "dynSwIn\#(s)", "isOn": "@{dynSwIn\#(s)}"}"#
+                + (s == "False" ? #", {"type": "Segment", "id": "dynSegInFalse", "items": ["a", "b"], "selectedIndex": "@{dynSegInFalse}"}, "#
+                    + #"{"type": "Radio", "id": "dynRadInFalse", "items": ["a", "b"], "selectedValue": "@{dynRadInFalse}"}"# : "")
+                + "]}"
         }
         let json = #"{"type": "View", "orientation": "vertical", "spacing": 6, "child": ["#
             + #"{"type": "Label", "id": "dynLblPlain", "text": "dynLblPlain", "onClick": "@{on_dynLblPlain}"}, "#
             + #"{"type": "Button", "id": "dynBtnPlain", "text": "dynBtnPlain", "onClick": "@{on_dynBtnPlain}"}, "#
             + #"{"type": "Switch", "id": "dynSwPlain", "isOn": "@{dynSwPlain}"}, "#
+            + #"{"type": "Segment", "id": "dynSegPlain", "items": ["a", "b"], "selectedIndex": "@{dynSegPlain}"}, "#
+            + #"{"type": "Radio", "id": "dynRadPlain", "items": ["a", "b"], "selectedValue": "@{dynRadPlain}"}, "#
             + kids("False", "false") + ", " + kids("Bound", #""@{gateOpen}""#) + ", "
             + #"{"type": "Button", "id": "dynBtnSelfFalse", "text": "dynBtnSelfFalse", "onClick": "@{on_dynBtnSelfFalse}", "userInteractionEnabled": false}, "#
             + #"{"type": "Switch", "id": "dynSwSelfFalse", "isOn": "@{dynSwSelfFalse}", "userInteractionEnabled": false}]}"#
@@ -583,6 +672,21 @@ struct A11yActivationProbeView: View {
                 data.dynSw[name] = value
             })
         }
+        // The wrapper controls' selections: a change counts as the row's.
+        for row in Self.wrapperRows {
+            let name = "dyn\(row)"
+            if row.hasPrefix("Seg") {
+                out[name] = SwiftUI.Binding<Int>(get: { Int(data.dynSel[name] ?? "0") ?? 0 }, set: { value in
+                    if (Int(data.dynSel[name] ?? "0") ?? 0) != value { data.bump(name) }
+                    data.dynSel[name] = String(value)
+                })
+            } else {
+                out[name] = SwiftUI.Binding<String>(get: { data.dynSel[name] ?? "a" }, set: { value in
+                    if (data.dynSel[name] ?? "a") != value { data.bump(name) }
+                    data.dynSel[name] = value
+                })
+            }
+        }
         return out
     }
 
@@ -591,6 +695,17 @@ struct A11yActivationProbeView: View {
     /// is what the activation moved (handler calls, or Switch changes), x,y
     /// the activation point VoiceOver touches when `returned` is 0.
     private func run() {
+        if Self.wrappersOnly { runWrappers(); return }
+        // The wrapper controls with no stop start each run on their first
+        // item, so the item a run operates ("b", an unselected glyph) moves
+        // the selection again.
+        data.segPlain = 0
+        data.radPlain = "a"
+        data.dynSel = [:]
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { runTargets() }
+    }
+
+    private func runTargets() {
         let phase = data.ran + 1
         var entries: [String] = []
         let census = A11yActivator.census()
@@ -632,6 +747,58 @@ struct A11yActivationProbeView: View {
         step(0)
     }
 
+    /// Every accessibility element under each wrapper scope, in walk order:
+    /// scope#i=label/value/traits/button/notEnabled/responds/returned/moved/x,y
+    /// — `moved` is what the scope's selection moved after the activation.
+    private func runWrappers() {
+        let phase = data.ran + 1
+        var entries: [String] = []
+        var queue: [(String, NSObject)] = []
+        guard let window = A11yActivator.keyWindow() else { return }
+        for scope in WrapperStopCandidates.scopes {
+            guard let root = A11yActivator.matches(scope, under: window).first else {
+                entries.append("\(scope)#-=noscope")
+                continue
+            }
+            var seen = Set<ObjectIdentifier>()
+            var stack: [NSObject] = [root]
+            var found = 0
+            while let node = stack.popLast() {
+                guard seen.insert(ObjectIdentifier(node)).inserted else { continue }
+                if node.isAccessibilityElement { queue.append((scope, node)); found += 1 }
+                stack += A11yActivator.children(node).reversed()
+            }
+            if found == 0 { entries.append("\(scope)#-=noelement") }
+        }
+        func clean(_ s: String?) -> String {
+            (s ?? "").replacingOccurrences(of: "/", with: "|").replacingOccurrences(of: ";", with: ",").replacingOccurrences(of: "=", with: ":")
+        }
+        var index: [String: Int] = [:]
+        func step(_ i: Int) {
+            guard i < queue.count else {
+                data.act = entries.joined(separator: ";")
+                data.ran = phase
+                return
+            }
+            let (scope, element) = queue[i]
+            let n = index[scope, default: 0]
+            index[scope] = n + 1
+            let traits = element.accessibilityTraits
+            let point = element.accessibilityActivationPoint
+            let before = data.counts[scope] ?? 0
+            let returned = element.accessibilityActivate()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                let moved = (data.counts[scope] ?? 0) - before
+                entries.append("\(scope)#\(n)=\(clean(element.accessibilityLabel))/\(clean(element.accessibilityValue))/"
+                    + "\(String(traits.rawValue, radix: 16))/\(traits.contains(.button) ? 1 : 0)/\(traits.contains(.notEnabled) ? 1 : 0)/"
+                    + "\(element.accessibilityRespondsToUserInteraction ? 1 : 0)/\(returned ? 1 : 0)/\(moved)/"
+                    + "\(Int(point.x.rounded())),\(Int(point.y.rounded()))")
+                step(i + 1)
+            }
+        }
+        step(0)
+    }
+
     // Lets and one interpolated literal (see InteractionGateProbeView): the
     // counts are live, so the UI test reads what a touch moved as well.
     private var readout: String {
@@ -646,6 +813,8 @@ struct A11yActivationProbeView: View {
     /// `-candidates`: the candidate fixes alone, on a screen of their own (the
     /// probe's two columns fill the screen).
     static let candidatesOnly = ProcessInfo.processInfo.arguments.contains("-candidates")
+    /// `-wrappers`: the wrapper controls' candidates (WrapperStopCandidates).
+    static let wrappersOnly = ProcessInfo.processInfo.arguments.contains("-wrappers")
 
     @ViewBuilder private var candidatesBlock: some View {
         // not emitted: the candidate fixes, inside a stop as emitted — the
@@ -789,7 +958,9 @@ struct A11yActivationProbeView: View {
             Text(readout).font(.system(size: 4)).lineLimit(nil)
                 .frame(width: 360, height: 60, alignment: .topLeading).clipped()
                 .accessibilityIdentifier("a11y_readout")
-            if Self.candidatesOnly {
+            if Self.wrappersOnly {
+                WrapperStopCandidates(data: data)
+            } else if Self.candidatesOnly {
                 ScrollView { VStack(alignment: .leading, spacing: 4) { candidatesBlock } }
             } else {
             HStack(alignment: .top, spacing: 16) {
@@ -831,5 +1002,109 @@ struct A11yActivationProbeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+    }
+}
+
+// MARK: - wrapper controls inside a stop (measurement only, not emitted)
+
+/// A Segment's segments and a Radio's items are elements of their own inside
+/// the control: what each reads and what its activation moves, inside a stop
+/// drawn as the codegen draws `userInteractionEnabled: false`
+/// (`.allowsHitTesting(false)`), as emitted today and with each candidate.
+struct WrapperStopCandidates: View {
+    @ObservedObject var data: A11yActivationProbeData
+
+    static let scopes = ["wSegPlain", "wSegEm", "wSegIgnore", "wSegCombine", "wSegDisabled",
+                         "wSegReprText", "wSegReprDisabled", "wSegIgnoreValue", "wSegReprContent", "wSegReprContentOpen", "wRadReprContent",
+                         "wRadPlain", "wRadEm", "wRadItem", "wRadCombine", "wRadDisabled"]
+
+    private func segment(_ name: String) -> some View {
+        Picker("", selection: data.candSegment(name)) { Text("a").tag(0); Text("b").tag(1) }
+            .pickerStyle(.segmented).frame(width: 160)
+    }
+
+    private func radioBinding(_ name: String) -> SwiftUI.Binding<String> {
+        SwiftUI.Binding(get: { data.candTexts[name] ?? "a" }, set: { value in
+            if (data.candTexts[name] ?? "a") != value { data.bump(name) }
+            data.candTexts[name] = value
+        })
+    }
+
+    /// As sjui emits a Radio's items (radio_converter.rb), each item's tap
+    /// on its Image; `itemStop` puts the stopped control's treatment on each
+    /// item too.
+    private func radio(_ name: String, itemStop: Bool = false) -> some View {
+        let sel = radioBinding(name)
+        return VStack(alignment: .leading, spacing: 8) {
+            ForEach(["a", "b"], id: \.self) { v in
+                HStack {
+                    Image(systemName: sel.wrappedValue == v ? "largecircle.fill.circle" : "circle")
+                        .foregroundColor(.blue)
+                        .onTapGesture { sel.wrappedValue = v }
+                        .jsonuiStoppedControl(itemStop)
+                    Text(v)
+                }
+            }
+        }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 6) {
+                segment("wSegPlain").accessibilityIdentifier("wSegPlain")
+                Group {
+                    segment("wSegEm").jsonuiStoppedControl(true).accessibilityIdentifier("wSegEm")
+                    segment("wSegIgnore").accessibilityElement(children: .ignore).jsonuiStoppedControl(true).accessibilityIdentifier("wSegIgnore")
+                    segment("wSegCombine").accessibilityElement(children: .combine).jsonuiStoppedControl(true).accessibilityIdentifier("wSegCombine")
+                    segment("wSegDisabled").disabled(true).jsonuiStoppedControl(true).accessibilityIdentifier("wSegDisabled")
+                }
+                    .allowsHitTesting(false)
+                Group {
+                    segment("wSegReprText")
+                        .accessibilityRepresentation {
+                            HStack {
+                                ForEach(Array(["a", "b"].enumerated()), id: \.offset) { i, t in
+                                    Text(t).accessibilityAddTraits(Int(data.candValues["wSegReprText"] ?? 0) == i ? .isSelected : [])
+                                }
+                            }
+                        }
+                        .jsonuiStoppedControl(true).accessibilityIdentifier("wSegReprText")
+                    segment("wSegReprDisabled")
+                        .accessibilityRepresentation {
+                            Picker("", selection: data.candSegment("wSegReprDisabled")) { Text("a").tag(0); Text("b").tag(1) }
+                                .pickerStyle(.segmented).disabled(true)
+                        }
+                        .jsonuiStoppedControl(true).accessibilityIdentifier("wSegReprDisabled")
+                    segment("wSegReprContent").modifier(ProbeStoppedItems(stopped: true)).accessibilityIdentifier("wSegReprContent")
+                    segment("wSegReprContentOpen").modifier(ProbeStoppedItems(stopped: false)).accessibilityIdentifier("wSegReprContentOpen")
+                    radio("wRadReprContent").modifier(ProbeStoppedItems(stopped: true)).accessibilityElement(children: .contain).accessibilityIdentifier("wRadReprContent")
+                    segment("wSegIgnoreValue").accessibilityElement(children: .ignore)
+                        .accessibilityValue(Text(["a", "b"][Int(data.candValues["wSegIgnoreValue"] ?? 0)]))
+                        .jsonuiStoppedControl(true).accessibilityIdentifier("wSegIgnoreValue")
+                }
+                    .allowsHitTesting(false)
+                radio("wRadPlain").accessibilityElement(children: .contain).accessibilityIdentifier("wRadPlain")
+                Group {
+                    radio("wRadEm").jsonuiStoppedControl(true).accessibilityElement(children: .contain).accessibilityIdentifier("wRadEm")
+                    radio("wRadItem", itemStop: true).jsonuiStoppedControl(true).accessibilityElement(children: .contain).accessibilityIdentifier("wRadItem")
+                    radio("wRadCombine").accessibilityElement(children: .combine).jsonuiStoppedControl(true).accessibilityIdentifier("wRadCombine")
+                    radio("wRadDisabled").disabled(true).jsonuiStoppedControl(true).accessibilityElement(children: .contain).accessibilityIdentifier("wRadDisabled")
+                }
+                    .allowsHitTesting(false)
+            }
+        }
+    }
+}
+
+/// The candidate for a wrapper control's items: while stopped, a screen
+/// reader reads the control as the same control disabled (not drawn).
+struct ProbeStoppedItems: ViewModifier {
+    let stopped: Bool
+    func body(content: Content) -> some View {
+        if stopped {
+            content.accessibilityRepresentation { content.disabled(true) }
+        } else {
+            content
+        }
     }
 }
