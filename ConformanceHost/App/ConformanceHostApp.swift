@@ -207,6 +207,8 @@ struct ConformanceRootView: View {
                 TapArityProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-pickArityProbe") {
                 PickArityProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-linkTapProbe") {
+                LinkTapProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-dynamicStateProbe") {
                 DynamicStateProbeView()
             } else if batch.fixtureIds.isEmpty {

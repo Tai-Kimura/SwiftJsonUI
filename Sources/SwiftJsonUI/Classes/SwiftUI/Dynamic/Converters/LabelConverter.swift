@@ -352,6 +352,28 @@ public struct LabelConverter {
 
     // MARK: - PartialAttributes builder
 
+    /// A range's handler name, from either declared spelling: `onClick` (a
+    /// binding, the canonical one) first, then `onclick` (a selector, its
+    /// alias) — also when onClick is written but is not a binding. A blank
+    /// value is none. 4f ruling, jsonui-cli 1.9.0: every path reads both, as
+    /// the normalizer folds the alias; this path took `onclick` first.
+    static func partialHandlerName(_ dict: [String: Any]) -> String? {
+        let blank: (String) -> Bool = { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+        if let onClick = dict["onClick"] as? String,
+           let name = DynamicEventHelper.extractPropertyName(from: onClick), !blank(name) {
+            return name
+        }
+        if let onclick = dict["onclick"] as? String, !blank(onclick), !onclick.contains("@{") {
+            return onclick
+        }
+        return nil
+    }
+
+    /// The ranges the Label draws, for tests.
+    static func partialAttributesForTest(component: DynamicComponent, data: [String: Any]) -> [PartialAttribute] {
+        buildPartialAttributes(component: component, data: data) ?? []
+    }
+
     private static func buildPartialAttributes(
         component: DynamicComponent,
         data: [String: Any]
@@ -363,8 +385,8 @@ public struct LabelConverter {
         return attrsArray.compactMap { dict -> PartialAttribute? in
             // Resolve onClick closure from data dictionary
             var onClickClosure: (() -> Void)? = nil
-            if let onClick = dict["onclick"] as? String ?? dict["onClick"] as? String {
-                let propName = DynamicEventHelper.extractPropertyName(from: onClick) ?? onClick
+            let handlerName = partialHandlerName(dict)
+            if let propName = handlerName {
                 onClickClosure = data[propName] as? () -> Void
             }
 
@@ -409,7 +431,7 @@ public struct LabelConverter {
                     strikethrough: drawsLine(dict["strikethrough"]),
                     backgroundColor: background,
                     onClick: onClickClosure,
-                    onClickActionName: dict["onclick"] as? String ?? dict["onClick"] as? String
+                    onClickActionName: dict["onClick"] as? String ?? dict["onclick"] as? String
                 )
             } else if let rawPattern = dict["range"] as? String,
                       let pattern = resolvePartialString(rawPattern, data: data),
@@ -425,7 +447,7 @@ public struct LabelConverter {
                     strikethrough: drawsLine(dict["strikethrough"]),
                     backgroundColor: background,
                     onClick: onClickClosure,
-                    onClickActionName: dict["onclick"] as? String ?? dict["onClick"] as? String
+                    onClickActionName: dict["onClick"] as? String ?? dict["onclick"] as? String
                 )
             } else {
                 return nil
