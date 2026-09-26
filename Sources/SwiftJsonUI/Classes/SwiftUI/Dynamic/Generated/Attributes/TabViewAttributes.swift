@@ -8,6 +8,13 @@ import Foundation
 /// Shared attributes are available via `common`.
 /// Overrides the common definition of: `tintColor` (use the property on this struct).
 public struct TabViewAttributes {
+    public enum Tabs {
+        public enum IconType {
+            /// The spellings `tabs.iconType` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["system", "resource", "lucide"]
+        }
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "onValueChange",

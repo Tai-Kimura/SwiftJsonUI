@@ -26,6 +26,23 @@ public struct ButtonAttributes {
         public static let declaredSpellings: [String] = ["Left", "Center", "Right"]
     }
 
+    public enum PartialAttributes {
+        public enum LineBreakMode {
+            /// The spellings `partialAttributes.lineBreakMode` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Char", "Clip", "Word", "Head", "Middle", "Tail"]
+        }
+        public enum TextAlign {
+            /// The spellings `partialAttributes.textAlign` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Left", "Right", "Center"]
+        }
+        public enum Underline {
+            public enum LineStyle {
+                /// The spellings `partialAttributes.underline.lineStyle` is declared as — case-sensitive.
+                public static let declaredSpellings: [String] = ["Single", "Double", "Thick", "None"]
+            }
+        }
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "buttonType",

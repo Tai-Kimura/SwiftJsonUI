@@ -45,6 +45,17 @@ public struct SelectBoxAttributes {
         public static let declaredSpellings: [String] = ["Normal", "Date"]
     }
 
+    public enum LabelAttributes {
+        public enum TextAlign {
+            /// The spellings `labelAttributes.textAlign` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Left", "Right", "Center"]
+        }
+        public enum LineBreakMode {
+            /// The spellings `labelAttributes.lineBreakMode` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Char", "Clip", "Word", "Head", "Middle", "Tail"]
+        }
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "canBack",

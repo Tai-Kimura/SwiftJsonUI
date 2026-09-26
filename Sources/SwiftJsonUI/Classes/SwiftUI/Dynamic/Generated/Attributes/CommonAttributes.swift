@@ -71,6 +71,24 @@ public struct CommonAttributes {
         public static let declaredSpellings: [String] = ["top", "bottom", "centerVertical", "left", "right", "centerHorizontal", "center"]
     }
 
+    public enum ConfirmationDialog {
+        public enum TitleVisibility {
+            /// The spellings `confirmationDialog.titleVisibility` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["automatic", "visible", "hidden"]
+        }
+    }
+
+    public enum Glass {
+        public enum Style {
+            /// The spellings `glass.style` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["regular", "clear", "identity"]
+        }
+        public enum Shape {
+            /// The spellings `glass.shape` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["capsule", "circle", "rect"]
+        }
+    }
+
     /// Canonical attribute names declared for this component (public metadata contract).
     public static let declaredAttributes: Set<String> = [
         "alert",

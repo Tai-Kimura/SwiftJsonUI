@@ -38,6 +38,44 @@ public struct LabelAttributes {
         public static let declaredSpellings: [String] = ["none", "capitalize", "uppercase", "lowercase"]
     }
 
+    public enum HighlightAttributes {
+        public enum TextAlign {
+            /// The spellings `highlightAttributes.textAlign` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Left", "Right", "Center"]
+        }
+    }
+
+    public enum PartialAttributes {
+        public enum LineBreakMode {
+            /// The spellings `partialAttributes.lineBreakMode` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Char", "Clip", "Word", "Head", "Middle", "Tail"]
+        }
+        public enum TextAlign {
+            /// The spellings `partialAttributes.textAlign` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Left", "Right", "Center"]
+        }
+        public enum Underline {
+            public enum LineStyle {
+                /// The spellings `partialAttributes.underline.lineStyle` is declared as — case-sensitive.
+                public static let declaredSpellings: [String] = ["Single", "Double", "Thick", "None"]
+            }
+        }
+    }
+
+    public enum Strikethrough {
+        public enum LineStyle {
+            /// The spellings `strikethrough.lineStyle` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Single", "Double", "Thick", "None"]
+        }
+    }
+
+    public enum Underline {
+        public enum LineStyle {
+            /// The spellings `underline.lineStyle` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Single", "Double", "Thick", "None"]
+        }
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "autoShrink",
