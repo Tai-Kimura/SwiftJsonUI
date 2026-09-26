@@ -133,9 +133,13 @@ enum TapAccessibility {
     /// button. `canTap` without onClick has no handler either.
     /// `stopped`: a component around it has `userInteractionEnabled: false`,
     /// so its own tap and long press are none (its type still says whether it
-    /// is a control).
+    /// is a control) — and so are its links: a Label's links stop with it
+    /// (PartialAttributedText reads the stop), so they do not count
+    /// (jsonui-cli 1.9.0; shared/core/tap_accessibility.rb `operable?`).
     static func isOperable(_ component: DynamicComponent, stopped: Bool = false) -> Bool {
-        if isInteractiveType(component.type) || (!stopped && isTappable(component)) || isLinkedText(component) { return true }
+        let linksStopped = stopped || stops(component) || component.interactionStoppedAround
+        if isInteractiveType(component.type) || (!stopped && isTappable(component))
+            || (!linksStopped && isLinkedText(component)) { return true }
         // A long press is a handler too (`handlerValues`): an empty or blank
         // one names no method. `!= nil` counted `""` (tap_accessibility_vectors
         // "an empty long press inside does not count"). The flag stops it as
