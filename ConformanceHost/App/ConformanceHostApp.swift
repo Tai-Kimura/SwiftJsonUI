@@ -203,6 +203,8 @@ struct ConformanceRootView: View {
                 TabEnabledProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-stateNamesProbe") {
                 StateNamesProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-tapArityProbe") {
+                TapArityProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-pickArityProbe") {
                 PickArityProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-dynamicStateProbe") {
