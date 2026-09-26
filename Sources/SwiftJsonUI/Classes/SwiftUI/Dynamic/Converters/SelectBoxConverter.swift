@@ -353,6 +353,12 @@ public struct SelectBoxConverter {
         // (ConformanceHost OnClickProbeUITests, both paths).
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
 
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
+
         // --- 7. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)

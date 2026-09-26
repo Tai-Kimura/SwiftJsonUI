@@ -293,7 +293,7 @@ public struct TextFieldConverter {
 
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
-            if let tintColor = attrs.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
+            if let tintColor = attrs.tintColor, let c = DynamicHelpers.getColor(tintColor, data: data) { return c }
             if let caretAttrs = attrs.caretAttributes,
                let caretFontColor = caretAttrs["fontColor"] as? String,
                let c = DynamicHelpers.getColor(caretFontColor) { return c }
@@ -416,7 +416,7 @@ public struct TextFieldConverter {
 
         // --- 10. tint (tintColor / caretAttributes) ---
         let caretColor: Color? = {
-            if let tintColor = attrs.tintColor, let c = DynamicHelpers.getColor(tintColor) { return c }
+            if let tintColor = attrs.tintColor, let c = DynamicHelpers.getColor(tintColor, data: data) { return c }
             if let caretAttrs = attrs.caretAttributes,
                let caretFontColor = caretAttrs["fontColor"] as? String,
                let c = DynamicHelpers.getColor(caretFontColor) { return c }
