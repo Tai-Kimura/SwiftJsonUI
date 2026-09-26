@@ -223,6 +223,8 @@ struct ConformanceRootView: View {
                 ScrollRuleProbeView(grid: false)
             } else if ProcessInfo.processInfo.arguments.contains("-sectionGridProbe") {
                 ScrollRuleProbeView(grid: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-scrollNoKeyProbe") {
+                ScrollRuleProbeView(grid: false, noKey: true)
             } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe") {
                 ScrollRouteProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbeCodegen") {

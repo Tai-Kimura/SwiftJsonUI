@@ -6,8 +6,9 @@
 //  grid lays out its headers and footers, on the Dynamic renderer and — in
 //  the codegen host — as sjui GENERATES it (4f round 10, 2026-09-27;
 //  jsonui-cli 1.9.0, the SSoT's Collection.scrollTo). NOT part of the
-//  conformance suite; launch with `-scrollRuleProbe` (the lists) or
-//  `-sectionGridProbe` (the grid). Its test (ScrollRuleProbeUITests) is NOT
+//  conformance suite; launch with `-scrollRuleProbe` (the lists),
+//  `-sectionGridProbe` (the grid) or `-scrollNoKeyProbe` (a cell with no
+//  key). Its test (ScrollRuleProbeUITests) is NOT
 //  opt-in: in the dynamic host, which has no generated views, it asks the
 //  Dynamic half only.
 //
@@ -24,9 +25,18 @@
 //    footer, then one of a header, B0 and B1. A header or footer is a
 //    full-width row with the view at its start, the rows spaced 4.
 //
-//  The generated half: ProbeLayouts/probe_scroll_rule.json and
-//  probe_section_grid.json (handlers: ProbeLayouts/handlers/), built by
-//  scripts/generate_codegen_host.rb.
+//  - `*_rule_nokey` (`-scrollNoKeyProbe`, 4f round 13): cellIdProperty `key`;
+//    a section of ten cells with no key (c0…c9), then one of ten (d0…d9)
+//    keyed y0…y9 but d5 keyed "3" and d7 with no key. A cell with no key
+//    has no key: "go 3" names d5, the first cell whose key is "3" — not c3;
+//    "1:7" and "1:y2" name no cell (a later section's place and loop id
+//    spelled as a String); "go y6" names d6. Until jsonui-cli 1.9.0 sjui's
+//    loop id of a cell with no key was "\(index)", "<section>:\(index)"
+//    after the first section.
+//
+//  The generated half: ProbeLayouts/probe_scroll_rule.json,
+//  probe_section_grid.json and probe_scroll_nokey.json (handlers:
+//  ProbeLayouts/handlers/), built by scripts/generate_codegen_host.rb.
 //
 
 import SwiftUI
@@ -34,9 +44,11 @@ import SwiftJsonUI
 
 struct ScrollRuleProbeView: View {
     let grid: Bool
+    var noKey = false
 
     static let indexLayout = ##"{"type": "Collection", "id": "dyn_rule_index", "width": 200, "height": 84, "background": "#DDDDDD", "items": "@{ruleRows}", "sections": [{"cell": "conformance_cell", "header": "conformance_cell", "footer": "conformance_cell"}, {"cell": "conformance_cell", "header": "conformance_cell"}], "scrollTo": "@{ruleIndex}", "scrollAnchor": "top", "scrollAnimated": false}"##
     static let keyLayout = ##"{"type": "Collection", "id": "dyn_rule_key", "width": 200, "height": 84, "background": "#DDDDDD", "items": "@{ruleKeyed}", "sections": [{"cell": "conformance_cell"}, {"cell": "conformance_cell"}], "cellIdProperty": "key", "scrollTo": "@{ruleKey}", "scrollAnchor": "top", "scrollAnimated": false}"##
+    static let noKeyLayout = ##"{"type": "Collection", "id": "dyn_rule_nokey", "width": 200, "height": 84, "background": "#DDDDDD", "items": "@{noKeyRows}", "sections": [{"cell": "conformance_cell"}, {"cell": "conformance_cell"}], "cellIdProperty": "key", "scrollTo": "@{noKey}", "scrollAnchor": "top", "scrollAnimated": false}"##
     static let gridLayout = ##"{"type": "Collection", "id": "dyn_rule_grid", "width": 200, "height": 200, "background": "#DDDDDD", "items": "@{gridRows}", "sections": [{"cell": "conformance_cell", "header": "conformance_cell", "footer": "conformance_cell"}, {"cell": "conformance_cell", "header": "conformance_cell"}], "columns": 2, "lineSpacing": 4, "columnSpacing": 10}"##
 
     static func section(header: String? = nil, cells: [[String: Any]], footer: String? = nil) -> CollectionDataSection {
@@ -62,6 +74,15 @@ struct ScrollRuleProbeView: View {
         ])
     }
 
+    static var noKeyRows: CollectionDataSource {
+        CollectionDataSource(sections: [
+            section(cells: (0..<10).map { ["title": "c\($0)"] }),
+            section(cells: (0..<10).map { i -> [String: Any] in
+                i == 7 ? ["title": "d7"] : ["title": "d\(i)", "key": i == 5 ? "3" : "y\(i)"]
+            })
+        ])
+    }
+
     static var gridRows: CollectionDataSource {
         CollectionDataSource(sections: [
             section(header: "H0", cells: ["A0", "A1", "A2"].map { ["title": $0] }, footer: "F0"),
@@ -71,6 +92,7 @@ struct ScrollRuleProbeView: View {
 
     @State private var ruleIndex = 0
     @State private var ruleKey = ""
+    @State private var noKeyTarget = ""
 
     private func dynamic(_ json: String, data: [String: Any], frame: String) -> some View {
         Group {
@@ -87,7 +109,21 @@ struct ScrollRuleProbeView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(grid ? "section grid probe" : "scroll rule probe").accessibilityIdentifier("sr_ready")
-            if grid {
+            if noKey {
+                HStack {
+                    Button("dyn go 3") { noKeyTarget = "3" }
+                    Button("dyn go 1:7") { noKeyTarget = "1:7" }
+                    Button("dyn go 1:y2") { noKeyTarget = "1:y2" }
+                    Button("dyn go y6") { noKeyTarget = "y6" }
+                }
+                dynamic(Self.noKeyLayout, data: ["noKeyRows": Self.noKeyRows, "noKey": noKeyTarget], frame: "dyn_nokey_frame")
+                if let generated = CodegenFixtureRegistry.probeView(named: "probe_scroll_nokey") {
+                    Text("codegen no key").accessibilityIdentifier("sr_codegen")
+                    generated
+                        .accessibilityElement(children: .contain)
+                        .accessibilityIdentifier("cg_nokey_frame")
+                }
+            } else if grid {
                 dynamic(Self.gridLayout, data: ["gridRows": Self.gridRows], frame: "dyn_grid_frame")
                 if let generated = CodegenFixtureRegistry.probeView(named: "probe_section_grid") {
                     Text("codegen grid").accessibilityIdentifier("sr_codegen")

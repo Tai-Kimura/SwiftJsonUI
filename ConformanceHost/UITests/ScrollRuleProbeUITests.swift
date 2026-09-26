@@ -10,7 +10,10 @@
 //  - scrollTo "k3", a key the first section's a3 and the second's b0 share,
 //    lands on a3;
 //  - in the grid, each header and footer is a full-width row with the view
-//    at its start, and the rows are 4 apart (lineSpacing).
+//    at its start, and the rows are 4 apart (lineSpacing);
+//  - a cell with no key has no key (4f round 13): "3", on a list whose first
+//    section has no keys (c0…c9) and whose second keys d5 "3", lands on d5;
+//    "1:7" and "1:y2" land nowhere; "y6" lands on d6.
 //  NOT opt-in. The dynamic host has no generated half: it asks the Dynamic
 //  half only.
 //
@@ -88,6 +91,30 @@ final class ScrollRuleProbeUITests: XCTestCase {
             XCTAssertEqual(keyed, "a3", "\(half.name): scrollTo \"k3\" did not land on a3, the first section's cell")
         }
         report(lines, "SRP")
+    }
+
+    func testACellWithNoKeyAnswersNoKey() throws {
+        let app = launch("-scrollNoKeyProbe")
+        let labels = (0..<10).map { "c\($0)" } + (0..<10).map { "d\($0)" }
+        var lines: [String] = []
+        var halves: [(name: String, prefix: String, list: XCUIElement)] = [("dynamic", "dyn", element(app, "dyn_nokey_frame"))]
+        if codegenHost { halves.append(("codegen", "cg", element(app, "cg_rule_nokey"))) }
+        // The value, and the cell at the top after it: "3" is d5's key, and
+        // c3's place; "1:7" and "1:y2" are no cell's key (d7's place and d2's
+        // loop id before jsonui-cli 1.9.0), so the list stays at d5.
+        let steps = [("3", "d5"), ("1:7", "d5"), ("1:y2", "d5"), ("y6", "d6")]
+        for half in halves {
+            XCTAssertTrue(half.list.waitForExistence(timeout: 5), "\(half.name): no list")
+            lines.append("\(half.name) before: top=\(top(of: half.list, among: labels))")
+            for (value, expected) in steps {
+                app.buttons["\(half.prefix) go \(value)"].tap()
+                sleep(1)
+                let landed = top(of: half.list, among: labels)
+                lines.append("\(half.name) after \(value): top=\(landed)")
+                XCTAssertEqual(landed, expected, "\(half.name): after scrollTo \"\(value)\" the top is not \(expected)")
+            }
+        }
+        report(lines, "SNK")
     }
 
     func testASectionedGridDrawsItsHeadersAndFootersAsLeadingRows() throws {

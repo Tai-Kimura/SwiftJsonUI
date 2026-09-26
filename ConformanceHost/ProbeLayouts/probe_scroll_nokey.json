@@ -1,0 +1,161 @@
+{
+  "type": "View",
+  "id": "cg_nokey_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Button",
+      "id": "cg_nokey_go_3",
+      "text": "cg go 3",
+      "onClick": "@{onNoKey3}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_nokey_go_1_7",
+      "text": "cg go 1:7",
+      "onClick": "@{onNoKeyPlace}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_nokey_go_1_y2",
+      "text": "cg go 1:y2",
+      "onClick": "@{onNoKeyLoopId}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_nokey_go_y6",
+      "text": "cg go y6",
+      "onClick": "@{onNoKeyY6}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_rule_nokey",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{noKeyRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "key",
+      "scrollTo": "@{noKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    }
+  ],
+  "data": [
+    {
+      "name": "noKeyRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "c0"
+              },
+              {
+                "title": "c1"
+              },
+              {
+                "title": "c2"
+              },
+              {
+                "title": "c3"
+              },
+              {
+                "title": "c4"
+              },
+              {
+                "title": "c5"
+              },
+              {
+                "title": "c6"
+              },
+              {
+                "title": "c7"
+              },
+              {
+                "title": "c8"
+              },
+              {
+                "title": "c9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "d0",
+                "key": "y0"
+              },
+              {
+                "title": "d1",
+                "key": "y1"
+              },
+              {
+                "title": "d2",
+                "key": "y2"
+              },
+              {
+                "title": "d3",
+                "key": "y3"
+              },
+              {
+                "title": "d4",
+                "key": "y4"
+              },
+              {
+                "title": "d5",
+                "key": "3"
+              },
+              {
+                "title": "d6",
+                "key": "y6"
+              },
+              {
+                "title": "d7"
+              },
+              {
+                "title": "d8",
+                "key": "y8"
+              },
+              {
+                "title": "d9",
+                "key": "y9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "noKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "onNoKey3",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onNoKeyPlace",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onNoKeyLoopId",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onNoKeyY6",
+      "class": "() -> Void"
+    }
+  ]
+}
