@@ -62,9 +62,15 @@ enum TapAccessibility {
     private static let interactive = Set(interactiveTypes.map { $0.lowercased() })
     private static let known = Set(knownTypes.map { $0.lowercased() })
 
+    /// Asked of the type the node is drawn as (TypeSynonyms.drawnType): an
+    /// HStack is a View, a Textarea a TextView. Read as written, a synonym
+    /// the lists do not hold counted as a custom component (operable), so
+    /// the tappable around it was not flattened where the same layout
+    /// spelled canonically was.
     static func isInteractiveType(_ type: String?) -> Bool {
-        guard let type = type?.lowercased() else { return true }
-        return interactive.contains(type) || !known.contains(type)
+        guard let type = type else { return true }
+        let drawn = TypeSynonyms.drawnType(type).lowercased()
+        return interactive.contains(drawn) || !known.contains(drawn)
     }
 
     /// A handler names a method that is not blank: a binding's inside
@@ -114,7 +120,7 @@ enum TapAccessibility {
     /// A Label that carries links of its own: `linkable` (true or bound), or
     /// a partialAttributes range with its own tap.
     static func isLinkedText(_ component: DynamicComponent) -> Bool {
-        guard let type = component.type?.lowercased(), type == "label" || type == "text" else { return false }
+        guard let type = component.type, TypeSynonyms.drawnType(type).lowercased() == "label" else { return false }
         switch component.typedAttributes(LabelAttributes.self).linkable {
         case .value(true)?, .binding(_)?:
             return true

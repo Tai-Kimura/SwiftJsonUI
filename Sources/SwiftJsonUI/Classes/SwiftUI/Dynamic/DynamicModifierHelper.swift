@@ -121,8 +121,7 @@ public struct DynamicModifierHelper {
             // When both dimensions are fixed, apply gravity-based alignment so a
             // frame larger than its content honors gravity (matches frame_helper.rb:
             // .frame(width:, height:, alignment: gravity_to_frame_alignment)).
-            let typeStr = component.type?.lowercased() ?? ""
-            let isTextComponent = ["label", "text"].contains(typeStr)
+            let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
             let hasDeclaredTextFrameAlign = isTextComponent &&
                 (component.textAlignSpelling() != nil || component.gravity != nil)
             // Text with NEITHER textAlign NOR gravity declared drops the
@@ -966,9 +965,12 @@ public struct DynamicModifierHelper {
     /// always gets the merge-hazard anchor (subtree unknown, contribution 0).
     /// Keep in sync with sjui_tools BaseViewConverter::
     /// ACCESSIBILITY_CONTAINER_TYPES.
+    /// Drawn types only (downcased): a node is looked up by the type it is
+    /// drawn as (TypeSynonyms.drawnType), so an HStack is a view and a
+    /// Scroll a scrollview without a spelling of their own here.
     private static let accessibilityContainerTypes: Set<String> = [
-        "view", "safeareaview", "scrollview", "scroll",
-        "blur", "blurview", "gradientview", "gradient",
+        "view", "safeareaview", "scrollview",
+        "blur", "gradientview",
         "embed"
     ]
 
@@ -979,11 +981,12 @@ public struct DynamicModifierHelper {
     /// counted by `accessibilityMergeHazard`.
     /// Keep in sync with sjui_tools BaseViewConverter::
     /// CERTAIN_ACCESSIBILITY_ELEMENT_TYPES.
+    /// Drawn types only (downcased), as accessibilityContainerTypes.
     private static let certainAccessibilityElementTypes: Set<String> = [
-        "label", "text", "iconlabel", "button",
-        "textfield", "edittext", "input", "textview",
+        "label", "iconlabel", "button",
+        "textfield", "textview",
         "image", "circleimage", "networkimage",
-        "switch", "toggle", "checkbox", "check", "radio",
+        "switch", "checkbox", "radio",
         "segment", "progress", "slider", "indicator", "selectbox"
     ]
 
@@ -1035,7 +1038,8 @@ public struct DynamicModifierHelper {
     /// shapes, and every one of them would gain a redundant element.
     /// Mirrors sjui_tools CollectionConverter#accessibility_container?.
     static func isAccessibilityContainer(_ component: DynamicComponent) -> Bool {
-        let typeName = component.type?.lowercased() ?? ""
+        // the node as it is drawn: a child is read here as written
+        let typeName = component.type.map { TypeSynonyms.drawnType($0).lowercased() } ?? ""
         if accessibilityContainerTypes.contains(typeName) { return true }
         if isCustomContainer(component) { return true }
         guard typeName == "collection" else { return false }
@@ -1064,7 +1068,7 @@ public struct DynamicModifierHelper {
     private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {
         if child.include != nil { return 0 } // unknown subtree
         if let visibility = child.visibilitySpelling(), visibility != "visible" { return 0 }
-        let typeName = child.type?.lowercased() ?? ""
+        let typeName = child.type.map { TypeSynonyms.drawnType($0).lowercased() } ?? ""
         if isAccessibilityContainer(child) {
             // id-bearing container: becomes an explicit accessibility
             // container (a single element) under applyAccessibilityId
@@ -1432,8 +1436,7 @@ public struct DynamicModifierHelper {
     /// For Label/Text: based on textAlign (leading/center/trailing)
     /// For other components: based on gravity
     private static func frameAlignment(for component: DynamicComponent, bothAxes: Bool) -> Alignment? {
-        let typeStr = component.type?.lowercased() ?? ""
-        let isTextComponent = ["label", "text"].contains(typeStr)
+        let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
 
         if isTextComponent {
             // Match frame_helper.rb: Label/Text use textAlign for frame alignment

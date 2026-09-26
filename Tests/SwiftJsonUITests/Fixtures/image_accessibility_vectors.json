@@ -155,6 +155,16 @@
       "name": "a long press under a bound userInteractionEnabled still operates: the gate opens at run time",
       "layout": { "type": "View", "child": [ { "type": "Image", "id": "bound_hold", "src": "bound_hold", "onLongPress": "@{onHold}", "userInteractionEnabled": "@{isActive}" } ] },
       "roles": { "bound_hold": "control" }
+    },
+    {
+      "name": "an AsyncImage with no alt that operates a tap is a control: an AsyncImage is drawn as a NetworkImage (type_synonyms.json)",
+      "layout": { "type": "View", "child": [ { "type": "AsyncImage", "id": "async_tap", "url": "https://example.invalid/x.png", "onClick": "@{onOpen}" } ] },
+      "roles": { "async_tap": "control" }
+    },
+    {
+      "name": "a NetworkImageView with an alt is labelled: a NetworkImageView is drawn as a NetworkImage",
+      "layout": { "type": "View", "child": [ { "type": "NetworkImageView", "id": "labelled_view", "url": "https://example.invalid/x.png", "alt": "Logo" } ] },
+      "roles": { "labelled_view": "label" }
     }
   ]
 }

@@ -130,3 +130,20 @@ public enum TypeSynonyms {
         lock.unlock()
     }
 }
+
+#if DEBUG
+extension TypeSynonyms {
+    /// The type a node spelled `type` is drawn as — what classifies a node by
+    /// its type asks this, so that it agrees with DynamicComponentBuilder: an
+    /// app's own component as written (CustomComponentRegistry, asked first
+    /// there too); else its synonym's target, then a declared alias
+    /// section's canonical one (JsonUIComponentAliases). jsonui-cli's
+    /// shared/core/type_synonyms.rb `drawn_type` is the same rule for the
+    /// codegen. A list to compare it with holds drawn types only.
+    public static func drawnType(_ type: String) -> String {
+        if CustomComponentRegistry.shared.adapter(for: type) != nil { return type }
+        let drawn = drawnAs(type)
+        return JsonUIComponentAliases.canonical(for: drawn) ?? drawn
+    }
+}
+#endif
