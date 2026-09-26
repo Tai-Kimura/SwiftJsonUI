@@ -64,6 +64,13 @@ public struct CommonAttributes {
         public static let declaredSpellings: [String] = ["visible", "invisible", "gone"]
     }
 
+    public enum Gravity {
+        /// The spellings each value of `gravity` is declared as — it holds
+        /// one or a list of them, so it has no enum type of its own —
+        /// case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "bottom", "centerVertical", "left", "right", "centerHorizontal", "center"]
+    }
+
     /// Canonical attribute names declared for this component (public metadata contract).
     public static let declaredAttributes: Set<String> = [
         "alert",

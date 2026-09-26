@@ -57,6 +57,13 @@ public struct ViewAttributes {
         public static let declaredSpellings: [String] = ["horizontal", "vertical"]
     }
 
+    public enum SafeAreaInsetPositions {
+        /// The spellings each value of `safeAreaInsetPositions` is declared as — it holds
+        /// one or a list of them, so it has no enum type of its own —
+        /// case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "bottom", "leading", "trailing", "vertical", "all"]
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "child",
