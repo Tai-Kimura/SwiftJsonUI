@@ -17,7 +17,10 @@
 //              static-valued-controls-do-not-change-on-a-users-tap
 //
 //  `-dspGroup inputs` lays out the TextField, the TextView and the SelectBox
-//  by selectedValue and by date instead of the choice controls.
+//  by selectedValue and by date instead of the choice controls. `-dspGroup
+//  bound` with the codegen form: four SelectBoxes sjui build emits bound to
+//  the data (BoundSelectsCodegenPaste), the data the model buttons move —
+//  ticket selectbox-selected-item-binding-is-read-once.
 //
 //  Buttons outside the dynamic tree: `dsp_unrelated` changes a key no control
 //  reads (a Label in the tree shows it, so the test sees the new data
@@ -32,6 +35,15 @@ import SwiftJsonUI
 final class DynamicStateProbeData: ObservableObject {
     @Published var unrelated = 0
     @Published var values: [String: Any] = DynamicStateProbeView.declared
+    /// The `bound` screen's codegen data (BoundSelectsCodegenPaste).
+    @Published var bound = BoundSelectsData()
+
+    func setBound(chosen: Bool) {
+        bound.sbiSel = chosen ? "qq" : "pp"
+        bound.sbvSel = chosen ? "qq" : "pp"
+        bound.sbdDate = chosen ? "2026-01-03" : "2026-01-02"
+        bound.sbIdx = chosen ? 1 : 0
+    }
 }
 
 struct DynamicStateProbeView: View {
@@ -130,15 +142,16 @@ struct DynamicStateProbeView: View {
 
     private var readout: String {
         let values = data.values.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
-        return "form=\(form) unrelated=\(data.unrelated) values[\(values)]"
+        let b = data.bound
+        return "form=\(form) unrelated=\(data.unrelated) values[\(values)] bound[sbiSel=\(b.sbiSel),sbvSel=\(b.sbvSel),sbdDate=\(b.sbdDate),sbIdx=\(b.sbIdx)]"
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 8) {
                 Button("unrel") { data.unrelated += 1 }.accessibilityIdentifier("dsp_unrelated")
-                Button("vmC") { data.values = Self.chosen }.accessibilityIdentifier("dsp_vm_chosen")
-                Button("vmD") { data.values = Self.declared }.accessibilityIdentifier("dsp_vm_declared")
+                Button("vmC") { data.values = Self.chosen; data.setBound(chosen: true) }.accessibilityIdentifier("dsp_vm_chosen")
+                Button("vmD") { data.values = Self.declared; data.setBound(chosen: false) }.accessibilityIdentifier("dsp_vm_declared")
                 Text("ready").accessibilityIdentifier("dsp_ready")
             }
             Text(readout).font(.system(size: 8)).accessibilityIdentifier("dsp_readout")
@@ -146,7 +159,13 @@ struct DynamicStateProbeView: View {
                 // What sjui build emits for the static layout (the static form's
                 // controls, less the Label), pasted — StaticControlsCodegenPaste.
                 Text("u\(data.unrelated)")
-                if group == "inputs" { StaticInputsCodegenPaste() } else { StaticControlsCodegenPaste() }
+                if group == "bound" {
+                    BoundSelectsCodegenPaste(data: $data.bound)
+                } else if group == "inputs" {
+                    StaticInputsCodegenPaste()
+                } else {
+                    StaticControlsCodegenPaste()
+                }
             } else if let layout = dynamicLayout {
                 // DynamicView, as a screen renders: it holds the screen-wide
                 // state (a group of single Radios' selection).

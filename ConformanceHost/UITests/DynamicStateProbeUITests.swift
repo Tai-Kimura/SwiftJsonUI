@@ -26,6 +26,9 @@ final class DynamicStateProbeUITests: XCTestCase {
     static let groups = [
         "controls": ["sw", "tg", "cb", "rv", "rg", "seg", "tab", "sl", "sb", "sbi"],
         "inputs": ["tf", "tv", "sbv", "sbd", "sln"],
+        // SelectBoxes bound to the data by selectedItem / selectedValue /
+        // selectedDate / selectedIndex (codegen form only).
+        "bound": ["sbi", "sbv", "sbd", "sb"],
     ]
 
     struct Crop { let width: Int; let height: Int; let bytes: [UInt8] }
@@ -48,6 +51,9 @@ final class DynamicStateProbeUITests: XCTestCase {
     // MARK: - One form
 
     private func run(_ form: String, _ group: String) {
+        // The bound screen is sjui build's output only; the dynamic path's bound
+        // SelectBoxes are on the other two screens' plain / binding forms.
+        if group == "bound" && form != "codegen" { return }
         app = XCUIApplication()
         app.launchArguments = ["-dynamicStateProbe", form, "-dspGroup", group]
         app.launch()
@@ -55,7 +61,7 @@ final class DynamicStateProbeUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts["dsp_decode_failed"].exists, "\(form): the dynamic layout did not decode")
         XCTAssertTrue(app.staticTexts["u0"].waitForExistence(timeout: 5), "\(form): the dynamic tree shows the data")
         sleep(1)
-        let bound = form == "plain" || form == "binding"
+        let bound = form == "plain" || form == "binding" || group == "bound"
         let controls = Self.groups[group] ?? []
         self.group = group
 
@@ -71,7 +77,18 @@ final class DynamicStateProbeUITests: XCTestCase {
         }
         choose()
         let chosen = read()
-        print("DSP \(group) \(form) readout_chosen=\(app.staticTexts["dsp_readout"].label)")
+        let readoutChosen = app.staticTexts["dsp_readout"].label
+        print("DSP \(group) \(form) readout_chosen=\(readoutChosen)")
+        // Written back: where the model holds a two-way binding, the user's
+        // choice reaches it (ticket selectbox-selected-item-binding-is-read-once).
+        if form == "binding" || group == "bound" {
+            let model = modelValues(readoutChosen, group == "bound" ? "bound" : "values")
+            for id in controls {
+                guard let key = Self.modelKey[group == "bound" ? "bound:\(id)" : id], let declaredValue = Self.modelDeclared[key] else { continue }
+                print("DSP \(group) \(form) \(id) model_after_the_choice \(key)=\(model[key] ?? "-")")
+                XCTAssertNotEqual(model[key], declaredValue, "\(group) \(form) \(id): the user's choice reaches the model (\(key))")
+            }
+        }
 
         app.buttons["dsp_unrelated"].tap()
         XCTAssertTrue(app.staticTexts["u1"].waitForExistence(timeout: 5), "\(form): the unrelated change reached the dynamic tree")
@@ -123,6 +140,29 @@ final class DynamicStateProbeUITests: XCTestCase {
         app.terminate()
     }
 
+    /// The model's key for each control (the binding form's `values`, the bound
+    /// screen's `bound`) and its declared value as the readout prints it.
+    static let modelKey: [String: String] = [
+        "sw": "sw_on", "tg": "tg_on", "cb": "cb_on", "rv": "rv_sel", "rg": "grp", "seg": "seg_sel", "tab": "tab_sel",
+        "sl": "sl_val", "sb": "sb_idx", "sbi": "sbi_sel", "tf": "tf_text", "tv": "tv_text", "sbv": "sbv_sel", "sbd": "sbd_date",
+        "bound:sbi": "sbiSel", "bound:sbv": "sbvSel", "bound:sbd": "sbdDate", "bound:sb": "sbIdx",
+    ]
+    static let modelDeclared: [String: String] = [
+        "sw_on": "false", "tg_on": "false", "cb_on": "false", "rv_sel": "ra", "grp": "", "seg_sel": "0", "tab_sel": "0",
+        "sl_val": "0.2", "sb_idx": "0", "sbi_sel": "pp", "tf_text": "t0", "tv_text": "v0", "sbv_sel": "pp", "sbd_date": "2026-01-02",
+        "sbiSel": "pp", "sbvSel": "pp", "sbdDate": "2026-01-02", "sbIdx": "0",
+    ]
+
+    /// `key=value` pairs inside `section[...]` of the readout.
+    private func modelValues(_ readout: String, _ section: String) -> [String: String] {
+        guard let start = readout.range(of: "\(section)[")?.upperBound,
+              let end = readout[start...].firstIndex(of: "]") else { return [:] }
+        return Dictionary(readout[start..<end].split(separator: ",").compactMap { part -> (String, String)? in
+            let kv = part.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
+            return kv.count == 2 ? (String(kv[0]), String(kv[1])) : nil
+        }, uniquingKeysWith: { a, _ in a })
+    }
+
     // MARK: - Choosing
 
     private func element(_ id: String) -> XCUIElement {
@@ -131,6 +171,7 @@ final class DynamicStateProbeUITests: XCTestCase {
 
     private func choose() {
         if group == "inputs" { chooseInputs(); return }
+        if group == "bound" { chooseBound(); return }
         app.switches["sw"].tap()
         app.switches["tg"].tap()
         element("cb").tap()
@@ -189,6 +230,30 @@ final class DynamicStateProbeUITests: XCTestCase {
         sleep(1)
     }
 
+    /// The bound SelectBoxes: qq in the three lists, the 3rd in the date.
+    private func chooseBound() {
+        for id in ["sbi", "sbv", "sb"] {
+            element(id).tap()
+            let wheel = app.pickerWheels.firstMatch
+            if wheel.waitForExistence(timeout: 5) {
+                wheel.adjust(toPickerWheelValue: "qq")
+                app.buttons["Done"].tap()
+            } else {
+                XCTFail("\(id): the picker did not open")
+            }
+            sleep(1)
+        }
+        element("sbd").tap()
+        let day = app.pickerWheels.element(boundBy: 1)
+        if day.waitForExistence(timeout: 5) {
+            day.adjust(toPickerWheelValue: "3")
+            app.buttons["Done"].tap()
+        } else {
+            XCTFail("sbd: the date picker did not open")
+        }
+        sleep(1)
+    }
+
     /// A Radio row's tap is on its glyph, not its text.
     private func radioGlyph(_ item: String) -> XCUICoordinate {
         let text = app.staticTexts[item].frame
@@ -199,8 +264,8 @@ final class DynamicStateProbeUITests: XCTestCase {
     // MARK: - Reading
 
     private func frames() -> [String: CGRect] {
-        if group == "inputs" {
-            return Dictionary(uniqueKeysWithValues: (Self.groups["inputs"] ?? []).map { ($0, element($0).frame) })
+        if group == "inputs" || group == "bound" {
+            return Dictionary(uniqueKeysWithValues: (Self.groups[group] ?? []).map { ($0, element($0).frame) })
         }
         let window = app.windows.firstMatch.frame
         let ra = app.staticTexts["ra"].frame, rb = app.staticTexts["rb"].frame
@@ -226,8 +291,8 @@ final class DynamicStateProbeUITests: XCTestCase {
         var reading = Reading()
         let shot = XCUIScreen.main.screenshot().image
         for (id, frame) in frames() { reading.crops[id] = crop(shot, frame) }
-        if group == "inputs" {
-            for id in Self.groups["inputs"] ?? [] {
+        if group == "inputs" || group == "bound" {
+            for id in Self.groups[group] ?? [] {
                 let e = element(id)
                 reading.a11y[id] = "\(e.value ?? "nil")|\(e.label)"
             }
