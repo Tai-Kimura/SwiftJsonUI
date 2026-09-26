@@ -9,7 +9,8 @@
 //  viewId and the item — each over an item binding (…i), an index binding
 //  (…x) and nothing bound (…n); a date picker's `(String)` and
 //  `(String, String)`; and two boxes without an id, whose viewId is the drawn
-//  type and the position (`selectBox_0_11`, `selectBox_0_12`). NOT part of the
+//  type and the position (`selectBox_0_11`, `selectBox_0_12`); last, a date
+//  picker whose handler takes an index, which neither path calls. NOT part of the
 //  conformance suite. Launch with `-pickArityProbe` and `-paPath
 //  <dynamic|codegen>`: DynamicView over the layout, or what sjui build emits
 //  for it (PickArityCodegenPaste). Every call is logged with its arguments.
@@ -31,14 +32,14 @@ struct PickArityProbeView: View {
     @State private var wired = false
     private let path = OnClickProbeView.arg("-paPath", "dynamic")
 
-    static let layout = #"{"type":"View","orientation":"vertical","spacing":3,"width":"matchParent","data":[{"name":"pSi","class":"((String) -> Void)?"},{"name":"pSx","class":"((String) -> Void)?"},{"name":"pSn","class":"((String) -> Void)?"},{"name":"pIi","class":"((String, Int) -> Void)?"},{"name":"pIx","class":"((String, Int) -> Void)?"},{"name":"pIn","class":"((String, Int) -> Void)?"},{"name":"pNi","class":"((String, String) -> Void)?"},{"name":"pNx","class":"((String, String) -> Void)?"},{"name":"pNn","class":"((String, String) -> Void)?"},{"name":"dS","class":"((String) -> Void)?"},{"name":"dN","class":"((String, String) -> Void)?"},{"name":"aI","class":"((String, Int) -> Void)?"},{"name":"aN","class":"((String, String) -> Void)?"},{"name":"selS","class":"String","defaultValue":""},{"name":"idxS","class":"Int","defaultValue":0},{"name":"selI","class":"String","defaultValue":""},{"name":"idxI","class":"Int","defaultValue":0},{"name":"selN","class":"String","defaultValue":""},{"name":"idxN","class":"Int","defaultValue":0},{"name":"dayS","class":"String","defaultValue":"2026-01-02"},{"name":"dayN","class":"String","defaultValue":"2026-01-02"}],"child":[{"type":"SelectBox","width":"matchParent","height":36,"id":"sbSi","items":["Si1","Si2"],"onValueChange":"@{pSi}","selectedItem":"@{selS}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbSx","items":["Sx1","Sx2"],"onValueChange":"@{pSx}","selectedIndex":"@{idxS}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbSn","items":["Sn1","Sn2"],"onValueChange":"@{pSn}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbIi","items":["Ii1","Ii2"],"onValueChange":"@{pIi}","selectedItem":"@{selI}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbIx","items":["Ix1","Ix2"],"onValueChange":"@{pIx}","selectedIndex":"@{idxI}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbIn","items":["In1","In2"],"onValueChange":"@{pIn}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbNi","items":["Ni1","Ni2"],"onValueChange":"@{pNi}","selectedItem":"@{selN}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbNx","items":["Nx1","Nx2"],"onValueChange":"@{pNx}","selectedIndex":"@{idxN}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbNn","items":["Nn1","Nn2"],"onValueChange":"@{pNn}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbDS","selectItemType":"Date","datePickerMode":"date","dateStringFormat":"yyyy-MM-dd","selectedDate":"@{dayS}","onValueChange":"@{dS}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbDN","selectItemType":"Date","datePickerMode":"date","dateStringFormat":"yyyy-MM-dd","selectedDate":"@{dayN}","onValueChange":"@{dN}"},{"type":"SelectBox","width":"matchParent","height":36,"items":["aI1","aI2"],"selectedIndex":0,"onValueChange":"@{aI}"},{"type":"SelectBox","width":"matchParent","height":36,"items":["aN1","aN2"],"selectedIndex":0,"onValueChange":"@{aN}"}]}"#
+    static let layout = #"{"type":"View","orientation":"vertical","spacing":3,"width":"matchParent","data":[{"name":"pSi","class":"((String) -> Void)?"},{"name":"pSx","class":"((String) -> Void)?"},{"name":"pSn","class":"((String) -> Void)?"},{"name":"pIi","class":"((String, Int) -> Void)?"},{"name":"pIx","class":"((String, Int) -> Void)?"},{"name":"pIn","class":"((String, Int) -> Void)?"},{"name":"pNi","class":"((String, String) -> Void)?"},{"name":"pNx","class":"((String, String) -> Void)?"},{"name":"pNn","class":"((String, String) -> Void)?"},{"name":"dS","class":"((String) -> Void)?"},{"name":"dN","class":"((String, String) -> Void)?"},{"name":"aI","class":"((String, Int) -> Void)?"},{"name":"aN","class":"((String, String) -> Void)?"},{"name":"dI","class":"((String, Int) -> Void)?"},{"name":"dayI","class":"String","defaultValue":"2026-01-02"},{"name":"selS","class":"String","defaultValue":""},{"name":"idxS","class":"Int","defaultValue":0},{"name":"selI","class":"String","defaultValue":""},{"name":"idxI","class":"Int","defaultValue":0},{"name":"selN","class":"String","defaultValue":""},{"name":"idxN","class":"Int","defaultValue":0},{"name":"dayS","class":"String","defaultValue":"2026-01-02"},{"name":"dayN","class":"String","defaultValue":"2026-01-02"}],"child":[{"type":"SelectBox","width":"matchParent","height":36,"id":"sbSi","items":["Si1","Si2"],"onValueChange":"@{pSi}","selectedItem":"@{selS}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbSx","items":["Sx1","Sx2"],"onValueChange":"@{pSx}","selectedIndex":"@{idxS}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbSn","items":["Sn1","Sn2"],"onValueChange":"@{pSn}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbIi","items":["Ii1","Ii2"],"onValueChange":"@{pIi}","selectedItem":"@{selI}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbIx","items":["Ix1","Ix2"],"onValueChange":"@{pIx}","selectedIndex":"@{idxI}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbIn","items":["In1","In2"],"onValueChange":"@{pIn}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbNi","items":["Ni1","Ni2"],"onValueChange":"@{pNi}","selectedItem":"@{selN}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbNx","items":["Nx1","Nx2"],"onValueChange":"@{pNx}","selectedIndex":"@{idxN}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbNn","items":["Nn1","Nn2"],"onValueChange":"@{pNn}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbDS","selectItemType":"Date","datePickerMode":"date","dateStringFormat":"yyyy-MM-dd","selectedDate":"@{dayS}","onValueChange":"@{dS}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbDN","selectItemType":"Date","datePickerMode":"date","dateStringFormat":"yyyy-MM-dd","selectedDate":"@{dayN}","onValueChange":"@{dN}"},{"type":"SelectBox","width":"matchParent","height":36,"items":["aI1","aI2"],"selectedIndex":0,"onValueChange":"@{aI}"},{"type":"SelectBox","width":"matchParent","height":36,"items":["aN1","aN2"],"selectedIndex":0,"onValueChange":"@{aN}"},{"type":"SelectBox","width":"matchParent","height":36,"id":"sbDI","selectItemType":"Date","datePickerMode":"date","dateStringFormat":"yyyy-MM-dd","selectedDate":"@{dayI}","onValueChange":"@{dI}"}]}"#
 
     private var layout: DynamicComponent? {
         try? JSONDecoder().decode(DynamicComponent.self, from: Data(Self.layout.utf8))
     }
 
     static let takesTheItem = ["pSi", "pSx", "pSn", "dS"]
-    static let takesTheIndex = ["pIi", "pIx", "pIn", "aI"]
+    static let takesTheIndex = ["pIi", "pIx", "pIn", "aI", "dI"]
     static let takesTheItemNamed = ["pNi", "pNx", "pNn", "dN", "aN"]
 
     /// Each handler with the closure type the layout declares for it, logging
@@ -57,6 +58,7 @@ struct PickArityProbeView: View {
         out["idxN"] = $dyn.idxN
         out["dayS"] = $dyn.dayS
         out["dayN"] = $dyn.dayN
+        out["dayI"] = $dyn.dayI
         return out
     }
 
@@ -72,6 +74,7 @@ struct PickArityProbeView: View {
         data.pIx = { l.record("pIx(\($0),\($1))") }
         data.pIn = { l.record("pIn(\($0),\($1))") }
         data.aI = { l.record("aI(\($0),\($1))") }
+        data.dI = { l.record("dI(\($0),\($1))") }
         data.pNi = { l.record("pNi(\($0),\($1))") }
         data.pNx = { l.record("pNx(\($0),\($1))") }
         data.pNn = { l.record("pNn(\($0),\($1))") }
