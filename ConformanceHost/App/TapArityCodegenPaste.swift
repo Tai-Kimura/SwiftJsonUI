@@ -8,6 +8,15 @@
 //  struct, the view-local state, the body and its sections, pasted unchanged.
 //  For ticket control-onclick-is-called-differently-on-every-path.
 //
+//  The last row, a ProgressBar the app registers (0_16), comes from sjui_tools
+//  of jsonui-cli support/kjui-type-synonym-canon edd494e6 with
+//  triage/lifecycle-spellings 38e9d38b merged in, and a probe converter that
+//  maps ProgressBar to `ProbeProgressBar()` with the common modifiers
+//  (`add_line 'ProbeProgressBar()'` then `apply_modifiers`). What is applied
+//  here is the difference between that build's output for the layout without
+//  the row and with it. The same build emits the first sixteen rows as they
+//  are pasted.
+//
 
 import SwiftUI
 import SwiftJsonUI
@@ -44,6 +53,7 @@ struct TapArityData {
     var txt6: String = "press pS"
     var txt7: String = "appear aS"
     var txt8: String = "gone dS"
+    var pbS: ((String) -> Void)? = nil
 
     // Update properties from dictionary
     mutating func update(dictionary: [String: Any]) {
@@ -197,6 +207,11 @@ struct TapArityData {
                 self.txt8 = stringValue
             }
         }
+        if let value = dictionary["pbS"] {
+            if let typedValue = value as? ((String) -> Void)? {
+                self.pbS = typedValue
+            }
+        }
     }
 
     // Convert properties to dictionary for Dynamic mode
@@ -274,6 +289,9 @@ struct TapArityData {
         dict["txt6"] = txt6
         dict["txt7"] = txt7
         dict["txt8"] = txt8
+        if let value = pbS {
+            dict["pbS"] = value
+        }
         
         return dict
     }
@@ -385,6 +403,9 @@ struct TapArityData {
             get: { dataBinding.wrappedValue.txt8 },
             set: { dataBinding.wrappedValue.txt8 = $0 }
         )
+        if let pbS = pbS {
+            dict["pbS"] = pbS
+        }
         
         return dict
     }
@@ -628,6 +649,13 @@ struct TapArityCodegenPaste: View {
                 }
                     .frame(maxWidth: .infinity, alignment: .topLeading)
             }
+                ProbeProgressBar()
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                    .background(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                    .onAppear {
+                            data.pbS?("progressBar_0_16")
+                        }
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }

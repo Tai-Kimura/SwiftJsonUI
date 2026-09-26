@@ -39,7 +39,11 @@ public enum ImageAccessibility {
     }
 
     /// Image, its type aliases (component_metadata.json) and NetworkImage.
-    static let imageTypes: Set<String> = ["image", "circleimage", "circleimageview", "imageview", "img", "networkimage"]
+    /// The types an image is drawn as (downcased). A node is an image when
+    /// the type it is drawn as (TypeSynonyms.drawnType) is one of them: Img,
+    /// ImageView, AsyncImage, NetworkImageView, CircleImageView and every
+    /// other spelling the table gives them.
+    static let imageTypes: Set<String> = ["image", "circleimage", "networkimage"]
 
     /// The canonical spelling first, then the declared aliases.
     public static let altKeys = ["alt", "accessibilityLabel", "contentDescription"]
@@ -52,7 +56,7 @@ public enum ImageAccessibility {
     public static let textKeys = ["text", "hint", "placeholder", "label", "prompt"]
 
     static func isImage(_ node: [String: Any]) -> Bool {
-        (node["type"] as? String).map { imageTypes.contains($0.lowercased()) } ?? false
+        (node["type"] as? String).map { imageTypes.contains(TypeSynonyms.drawnType($0).lowercased()) } ?? false
     }
 
     /// Whether a node operates something a screen-reader user can activate —

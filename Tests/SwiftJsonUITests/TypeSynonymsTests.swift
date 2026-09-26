@@ -17,17 +17,19 @@ final class TypeSynonymsTests: XCTestCase {
         let root = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
         let synonyms = try XCTUnwrap(root["synonyms"] as? [String: [String: Any]])
         XCTAssertGreaterThanOrEqual(synonyms.count, 40)
-        XCTAssertEqual(Set(synonyms.keys.map { $0.lowercased() }), Set(TypeSynonyms.entries.keys))
+        XCTAssertEqual(Set(synonyms.keys), Set(TypeSynonyms.entries.keys))
         for (spelling, value) in synonyms {
-            let entry = try XCTUnwrap(TypeSynonyms.entries[spelling.lowercased()])
+            let entry = try XCTUnwrap(TypeSynonyms.entries[spelling])
             XCTAssertEqual(entry.canonical, value["canonical"] as? String, spelling)
             XCTAssertEqual(entry.renderAs, value["render_as"] as? String, spelling)
         }
     }
 
-    func testASynonymIsDrawnAsItsTargetWhateverItsCase() {
+    /// Type names are their SSoT spellings, case-sensitive (jsonui-cli
+    /// 1.9.0): a synonym in another case is not one.
+    func testASynonymIsDrawnAsItsTargetAsWritten() {
         XCTAssertEqual(TypeSynonyms.drawnAs("ProgressBar"), "Progress")
-        XCTAssertEqual(TypeSynonyms.drawnAs("progressbar"), "Progress")
+        XCTAssertEqual(TypeSynonyms.drawnAs("progressbar"), "progressbar")
         // render_as: drawn by the converter it names, not the canonical one
         XCTAssertEqual(TypeSynonyms.drawnAs("CircleImageView"), "CircleImage")
         XCTAssertEqual(TypeSynonyms.drawnAs("Label"), "Label")
@@ -39,7 +41,7 @@ final class TypeSynonymsTests: XCTestCase {
         XCTAssertEqual(drawn["type"] as? String, "View")
         XCTAssertEqual(drawn["orientation"] as? String, "horizontal")
         XCTAssertEqual(drawn["id"] as? String, "h")
-        XCTAssertEqual(TypeSynonyms.canonicalize(["type": "column"])?["orientation"] as? String, "vertical")
+        XCTAssertEqual(TypeSynonyms.canonicalize(["type": "Column"])?["orientation"] as? String, "vertical")
         // ZStack / Box mean a View without orientation: nothing is added
         XCTAssertNil(TypeSynonyms.canonicalize(["type": "ZStack"])?["orientation"])
         XCTAssertEqual(TypeSynonyms.canonicalize(["type": "CircleImageView"])?["type"] as? String, "CircleImage")

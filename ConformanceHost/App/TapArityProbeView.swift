@@ -13,7 +13,10 @@
 //  <dynamic|codegen>`: DynamicView over the layout, or what sjui build emits
 //  for it (TapArityCodegenPaste). `ta_hide` hides the rows with onDisappear.
 //  Last, onAppear / onDisappear spelled `@{x}` and `x:` — the one name `x` on
-//  every path — each `(String)` and `()`.
+//  every path — each `(String)` and `()`. Then a ProgressBar the app draws
+//  itself (registered: ProbeProgressBarAdapter here, a converter for the
+//  codegen), whose onAppear is handed the type as written: `progressBar_0_16`
+//  (the built-in reading would be `progress_0_16`).
 //
 
 import SwiftUI
@@ -27,13 +30,32 @@ final class TapArityLog: ObservableObject {
     func record(_ call: String) { calls.append(call) }
 }
 
+/// The app's own ProgressBar: what the codegen paste draws for it, and what
+/// the Dynamic path's adapter draws — with the standard modifiers, events
+/// among them, as a generated adapter applies them.
+struct ProbeProgressBar: View {
+    var body: some View { Rectangle().fill(Color.gray.opacity(0.3)) }
+}
+
+struct ProbeProgressBarAdapter: CustomComponentAdapter {
+    var componentType: String { "ProgressBar" }
+    func buildView(component: DynamicComponent, data: [String: Any], viewId: String?, parentOrientation: String?) -> AnyView {
+        DynamicModifierHelper.applyStandardModifiers(AnyView(ProbeProgressBar()), component: component, data: data)
+    }
+}
+
 struct TapArityProbeView: View {
     @ObservedObject private var log = TapArityLog.shared
     @State private var data = TapArityProbeView.wired()
     @State private var shown = "visible"
     private let path = OnClickProbeView.arg("-taPath", "dynamic")
 
-    static let layout = ##"{"type":"View","orientation":"vertical","spacing":4,"width":"matchParent","data":[{"name":"tS","class":"((String) -> Void)?"},{"name":"iS","class":"((String) -> Void)?"},{"name":"lS","class":"((String) -> Void)?"},{"name":"sS","class":"((String) -> Void)?"},{"name":"bS","class":"((String) -> Void)?"},{"name":"wS","class":"((String) -> Void)?"},{"name":"pS","class":"((String) -> Void)?"},{"name":"aS","class":"((String) -> Void)?"},{"name":"dS","class":"((String) -> Void)?"},{"name":"aB","class":"((String) -> Void)?"},{"name":"aC","class":"((String) -> Void)?"},{"name":"dB","class":"((String) -> Void)?"},{"name":"dC","class":"((String) -> Void)?"},{"name":"t0","class":"(() -> Void)?"},{"name":"a0","class":"(() -> Void)?"},{"name":"a0b","class":"(() -> Void)?"},{"name":"a0c","class":"(() -> Void)?"},{"name":"d0","class":"(() -> Void)?"},{"name":"d0b","class":"(() -> Void)?"},{"name":"d0c","class":"(() -> Void)?"},{"name":"shown","class":"String","defaultValue":"visible"},{"name":"txt0","class":"String","defaultValue":"tap tS"},{"name":"txt1","class":"String","defaultValue":"tap t0"},{"name":"txt2","class":"String","defaultValue":"img iS"},{"name":"txt3","class":"String","defaultValue":"tap lS"},{"name":"txt4","class":"String","defaultValue":"tap sS"},{"name":"txt5","class":"String","defaultValue":"tap bS"},{"name":"txt6","class":"String","defaultValue":"press pS"},{"name":"txt7","class":"String","defaultValue":"appear aS"},{"name":"txt8","class":"String","defaultValue":"gone dS"}],"child":[{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt0}","fontSize":12}],"onClick":"@{tS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt1}","fontSize":12}],"onClick":"@{t0}"},{"type":"Image","srcName":"probe_none","width":60,"height":30,"background":"#C8C8FF","alt":"@{txt2}","onClick":"@{iS}"},{"type":"Label","text":"@{txt3}","fontSize":12,"height":30,"onClick":"@{lS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt4}","fontSize":12}],"onclick":"sS"},{"type":"Button","text":"@{txt5}","height":34,"onClick":"@{bS}"},{"type":"Switch","isOn":false,"onClick":"@{wS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt6}","fontSize":12}],"onLongPress":"@{pS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt7}","fontSize":12}],"onAppear":"aS"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt8}","fontSize":12}],"onDisappear":"dS","visibility":"@{shown}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"@{aB}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"aC:"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"a0"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"@{a0b}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"a0c:"},{"type":"View","orientation":"vertical","width":"matchParent","visibility":"@{shown}","child":[{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"@{dB}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"dC:"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"d0"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"@{d0b}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"d0c:"}]}]}"##
+    init() {
+        // This launch only (-tapArityProbe): the app draws ProgressBar itself.
+        CustomComponentRegistry.shared.register(ProbeProgressBarAdapter())
+    }
+
+    static let layout = ##"{"type":"View","orientation":"vertical","spacing":4,"width":"matchParent","data":[{"name":"tS","class":"((String) -> Void)?"},{"name":"iS","class":"((String) -> Void)?"},{"name":"lS","class":"((String) -> Void)?"},{"name":"sS","class":"((String) -> Void)?"},{"name":"bS","class":"((String) -> Void)?"},{"name":"wS","class":"((String) -> Void)?"},{"name":"pS","class":"((String) -> Void)?"},{"name":"aS","class":"((String) -> Void)?"},{"name":"dS","class":"((String) -> Void)?"},{"name":"aB","class":"((String) -> Void)?"},{"name":"aC","class":"((String) -> Void)?"},{"name":"dB","class":"((String) -> Void)?"},{"name":"dC","class":"((String) -> Void)?"},{"name":"t0","class":"(() -> Void)?"},{"name":"a0","class":"(() -> Void)?"},{"name":"a0b","class":"(() -> Void)?"},{"name":"a0c","class":"(() -> Void)?"},{"name":"d0","class":"(() -> Void)?"},{"name":"d0b","class":"(() -> Void)?"},{"name":"d0c","class":"(() -> Void)?"},{"name":"shown","class":"String","defaultValue":"visible"},{"name":"txt0","class":"String","defaultValue":"tap tS"},{"name":"txt1","class":"String","defaultValue":"tap t0"},{"name":"txt2","class":"String","defaultValue":"img iS"},{"name":"txt3","class":"String","defaultValue":"tap lS"},{"name":"txt4","class":"String","defaultValue":"tap sS"},{"name":"txt5","class":"String","defaultValue":"tap bS"},{"name":"txt6","class":"String","defaultValue":"press pS"},{"name":"txt7","class":"String","defaultValue":"appear aS"},{"name":"txt8","class":"String","defaultValue":"gone dS"},{"name":"pbS","class":"((String) -> Void)?"}],"child":[{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt0}","fontSize":12}],"onClick":"@{tS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt1}","fontSize":12}],"onClick":"@{t0}"},{"type":"Image","srcName":"probe_none","width":60,"height":30,"background":"#C8C8FF","alt":"@{txt2}","onClick":"@{iS}"},{"type":"Label","text":"@{txt3}","fontSize":12,"height":30,"onClick":"@{lS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt4}","fontSize":12}],"onclick":"sS"},{"type":"Button","text":"@{txt5}","height":34,"onClick":"@{bS}"},{"type":"Switch","isOn":false,"onClick":"@{wS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt6}","fontSize":12}],"onLongPress":"@{pS}"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt7}","fontSize":12}],"onAppear":"aS"},{"type":"View","width":"matchParent","height":34,"background":"#E4E4E4","child":[{"type":"Label","text":"@{txt8}","fontSize":12}],"onDisappear":"dS","visibility":"@{shown}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"@{aB}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"aC:"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"a0"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"@{a0b}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"a0c:"},{"type":"View","orientation":"vertical","width":"matchParent","visibility":"@{shown}","child":[{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"@{dB}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"dC:"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"d0"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"@{d0b}"},{"type":"View","width":"matchParent","height":8,"background":"#F0F0F0","onDisappear":"d0c:"}]},{"type":"ProgressBar","width":"matchParent","height":8,"background":"#F0F0F0","onAppear":"pbS"}]}"##
 
     private var layout: DynamicComponent? {
         try? JSONDecoder().decode(DynamicComponent.self, from: Data(Self.layout.utf8))
@@ -42,7 +64,7 @@ struct TapArityProbeView: View {
     /// The words the layout binds its texts to (seeded by `defaultValue`).
     static let texts: [String: String] = ["txt0": "tap tS", "txt1": "tap t0", "txt2": "img iS", "txt3": "tap lS", "txt4": "tap sS", "txt5": "tap bS", "txt6": "press pS", "txt7": "appear aS", "txt8": "gone dS"]
 
-    static let takesTheViewId = ["tS", "iS", "lS", "sS", "bS", "wS", "pS", "aS", "dS", "aB", "aC", "dB", "dC"]
+    static let takesTheViewId = ["tS", "iS", "lS", "sS", "bS", "wS", "pS", "aS", "dS", "aB", "aC", "dB", "dC", "pbS"]
     static let takesNothing = ["t0", "a0", "a0b", "a0c", "d0", "d0b", "d0c"]
 
     private var dynamicData: [String: Any] {
@@ -78,6 +100,7 @@ struct TapArityProbeView: View {
         data.d0 = { l.record("d0()") }
         data.d0b = { l.record("d0b()") }
         data.d0c = { l.record("d0c()") }
+        data.pbS = { l.record("pbS(\($0))") }
         return data
     }
 

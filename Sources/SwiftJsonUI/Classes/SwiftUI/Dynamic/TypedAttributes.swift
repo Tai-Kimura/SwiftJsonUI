@@ -153,28 +153,26 @@ public enum JsonUITypedAttributesRegistry {
 
     /// Undeclared keys the converters still honor (legacy / extension
     /// keys — see `DynamicComponent.rawAttribute`). Mirrors the
-    /// allowlist in scripts/check_converter_raw_reads.sh.
+    /// allowlist in scripts/check_converter_raw_reads.sh. Keyed by the
+    /// declared section (downcased), as `metadata(forType:)` looks a type
+    /// up: a synonym spelling reads its section's row. The rows for Gradient,
+    /// ActivityIndicator, Scroll, SegmentedControl, Table, List and Picker
+    /// were copies of their section's (Table's and List's `listStyle`, and
+    /// Picker's `selectedIndex`, are declared on the section).
     public static let consumedUndeclaredKeys: [String: Set<String>] = [
         "checkbox": ["fontStyle", "toggleStyle", "action", "onValueChanged"],
         "check": ["fontStyle", "toggleStyle", "action", "onValueChanged"],
         "gradientview": ["colors", "startPoint", "endPoint"],
-        "gradient": ["colors", "startPoint", "endPoint"],
         "image": ["onSrc"],
         "indicator": ["animating"],
-        "activityindicator": ["animating"],
         "scrollview": ["defaultScrollAnchor"],
-        "scroll": ["defaultScrollAnchor"],
         "segment": ["selectedTabIndex", "backgroundColor", "selectedSegmentTintColor"],
-        "segmentedcontrol": ["selectedTabIndex", "backgroundColor", "selectedSegmentTintColor"],
         // onItemAppear IS in the definitions but is a callback type the
         // extraction generator skips (function-valued) — treat as
         // consumed-raw so the audit stays quiet.
         "collection": ["hideSeparator", "cellWidth", "cellHeight", "defaultScrollAnchor", "onItemAppear"],
-        "table": ["hideSeparator", "cellWidth", "cellHeight", "listStyle", "defaultScrollAnchor", "onItemAppear"],
-        "list": ["hideSeparator", "cellWidth", "cellHeight", "listStyle", "defaultScrollAnchor", "onItemAppear"],
         "slider": ["range"],
         "radio": ["selectedValue"],
-        "picker": ["selectedIndex"],
         "toggle": ["toggleStyle"],
         "switch": ["toggleStyle"]
     ]
@@ -190,7 +188,7 @@ public enum JsonUITypedAttributesRegistry {
     public static func metadata(
         forType type: String
     ) -> (declared: Set<String>, aliasMap: [String: String])? {
-        let section = TypeSynonyms.entries[type.lowercased()]?.canonical ?? type
+        let section = TypeSynonyms.entries[type]?.canonical ?? type
         let generated: JsonUIGeneratedAttributes.Type?
         switch section.lowercased() {
         case "label": generated = LabelAttributes.self
@@ -250,7 +248,8 @@ public enum JsonUIAttributeAudit {
               let meta = JsonUITypedAttributesRegistry.metadata(forType: type) else {
             return
         }
-        let allowed = JsonUITypedAttributesRegistry.consumedUndeclaredKeys[type.lowercased()] ?? []
+        let section = TypeSynonyms.entries[type]?.canonical ?? type
+        let allowed = JsonUITypedAttributesRegistry.consumedUndeclaredKeys[section.lowercased()] ?? []
         for key in component.rawData.keys {
             if meta.declared.contains(key) { continue }
             if meta.aliasMap[key] != nil { continue }

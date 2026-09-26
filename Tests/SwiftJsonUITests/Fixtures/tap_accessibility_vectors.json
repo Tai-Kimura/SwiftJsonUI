@@ -1084,6 +1084,53 @@
         "t": "none",
         "h": null
       }
+    },
+    {
+      "name": "a tappable View holding an HStack of text is combined: an HStack is drawn as a View (type_synonyms.json)",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "HStack",
+            "child": [
+              {
+                "type": "Label",
+                "text": "a"
+              },
+              {
+                "type": "Label",
+                "text": "b"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a tappable View holding a Label and an AsyncImage is combined: an AsyncImage is drawn as a NetworkImage",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "text": "a"
+          },
+          {
+            "type": "AsyncImage",
+            "url": "https://example.invalid/x.png"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
     }
   ]
 }

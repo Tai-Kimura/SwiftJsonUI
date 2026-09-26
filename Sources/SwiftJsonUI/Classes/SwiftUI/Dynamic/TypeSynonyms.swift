@@ -79,15 +79,29 @@ public enum TypeSynonyms {
                 throw TableError.malformed("entry `\(spelling)` has no `canonical`")
             }
             let implied = entry.filter { $0.key != "canonical" && $0.key != "render_as" }
-            out[spelling.lowercased()] = Entry(
+            out[spelling] = Entry(
                 canonical: canonical, renderAs: entry["render_as"] as? String, implied: implied)
         }
         return out
     }
 
-    /// The type `type` is drawn as: its synonym's target, or itself.
+    /// The type `type` is drawn as: its synonym's target, or itself. Matched
+    /// as written: type names are their SSoT spellings, case-sensitive
+    /// (jsonui-cli 1.9.0), as the codegen and the dispatch match them.
     public static func drawnAs(_ type: String) -> String {
-        entries[type.lowercased()]?.drawnAs ?? type
+        entries[type]?.drawnAs ?? type
+    }
+
+    /// The spelling `written` means when case is ignored, or nil — what names
+    /// an unknown type offers ("did you mean"). `known` is the types the
+    /// caller draws (its declared types and the app's registered ones); the
+    /// table's synonyms and the declared alias sections are added. nil when
+    /// `written` is itself one of them, or none matches. jsonui-cli's
+    /// TypeSynonyms.case_only_match is the same function for the codegen.
+    public static func caseOnlyMatch(_ written: String, known: [String] = []) -> String? {
+        let pool = known + entries.keys.sorted() + JsonUIComponentAliases.canonical.keys.sorted()
+        if pool.contains(written) { return nil }
+        return pool.first { $0.caseInsensitiveCompare(written) == .orderedSame }
     }
 
     /// The node `raw` as drawn. For a synonym, a copy whose `type` is what it
@@ -96,7 +110,7 @@ public enum TypeSynonyms {
     /// with `orientation: vertical`), the node's value stays and a warning
     /// names both, once per spelling and value. Anything else: nil.
     public static func canonicalize(_ raw: [String: Any]) -> [String: Any]? {
-        guard let type = raw["type"] as? String, let entry = entries[type.lowercased()] else {
+        guard let type = raw["type"] as? String, let entry = entries[type] else {
             return nil
         }
         var drawn = raw
@@ -130,3 +144,21 @@ public enum TypeSynonyms {
         lock.unlock()
     }
 }
+
+#if DEBUG
+extension TypeSynonyms {
+    /// The type a node spelled `type` is drawn as — what classifies a node by
+    /// its type asks this, so that it agrees with DynamicComponentBuilder: an
+    /// app's own component as written (CustomComponentRegistry, asked first
+    /// there too); else its synonym's target, then a declared alias
+    /// section's canonical one (JsonUIComponentAliases), matched as written.
+    /// jsonui-cli's
+    /// shared/core/type_synonyms.rb `drawn_type` is the same rule for the
+    /// codegen. A list to compare it with holds drawn types only.
+    public static func drawnType(_ type: String) -> String {
+        if CustomComponentRegistry.shared.adapter(for: type) != nil { return type }
+        let drawn = drawnAs(type)
+        return JsonUIComponentAliases.canonical[drawn] ?? drawn
+    }
+}
+#endif

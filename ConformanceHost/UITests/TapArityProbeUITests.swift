@@ -7,7 +7,8 @@ import XCTest
 /// the drawn type and the position. A View's, an Image's and a Label's tap, the
 /// onclick selector, a Button, a Switch's onClick from its flip, a long press,
 /// onAppear and onDisappear — these two also spelled `@{x}` and `x:`, the
-/// one name `x`, each `(String)` and `()`.
+/// one name `x`, each `(String)` and `()`. And a ProgressBar the app draws
+/// itself, whose onAppear is handed its type as written.
 ///
 /// Every operation's calls are read from the log: exactly the one expected.
 ///
@@ -54,10 +55,12 @@ final class TapArityProbeUITests: XCTestCase {
         sleep(1)
 
         // onAppear, from the launch — `x`, `@{x}` and `x:` alike, each as
-        // declared: every one called, with nothing else.
+        // declared: every one called, with nothing else. The ProgressBar the
+        // app draws itself is handed the type as written (progressBar_0_16),
+        // not the built-in's (progress_0_16).
         let appeared = calls()
         print("TAPARITY \(path) onAppear calls=\(appeared.joined(separator: "|"))")
-        XCTAssertEqual(Set(appeared), ["aS(view_0_8)", "aB(view_0_10)", "aC(view_0_11)", "a0()", "a0b()", "a0c()"], "\(path) onAppear")
+        XCTAssertEqual(Set(appeared), ["aS(view_0_8)", "aB(view_0_10)", "aC(view_0_11)", "a0()", "a0b()", "a0c()", "pbS(progressBar_0_16)"], "\(path) onAppear")
 
         check(path, "View tap (String)", ["tS(view_0_0)"]) { labelled("tap tS").tap() }
         check(path, "View tap ()", ["t0()"]) { labelled("tap t0").tap() }
