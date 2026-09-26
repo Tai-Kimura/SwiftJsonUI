@@ -184,7 +184,7 @@ public struct DynamicSafeAreaViewContainer: View {
         // here read it, so the declaration was inert on this face
         // (SafeAreaView/direction__bottomtotop, run 31243724782
         // cross-effect: android and web active, ios inert).
-        let direction = component.direction?.lowercased()
+        let direction = DeclaredSpelling.lowered(component.direction, in: SafeAreaViewAttributes.Direction.declaredSpellings)
         let orientation = component.orientation
         if (direction == "bottomtotop" && orientation == "vertical") ||
            (direction == "righttoleft" && orientation == "horizontal") {

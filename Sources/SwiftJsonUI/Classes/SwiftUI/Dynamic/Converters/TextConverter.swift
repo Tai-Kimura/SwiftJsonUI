@@ -115,7 +115,7 @@ public struct TextConverter {
                     // (frame_helper.rb: text_align.to_s.downcase)と同じく
                     // 大小を潰してから見る。以前は完全一致だったので
                     // `textAlign: "Center"` が leading に落ちていた。
-                    switch component.textAlignSpelling(data: data)?.lowercased() {
+                    switch DeclaredSpelling.lowered(component.textAlignSpelling(data: data), in: LabelAttributes.TextAlign.declaredSpellings) {
                     case "center": return .center
                     case "right", "trailing": return .trailing
                     default: return .leading

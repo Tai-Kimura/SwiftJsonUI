@@ -131,7 +131,7 @@ public struct DynamicScrollViewContainer: View {
         // (ScrollView_defaultScrollAnchor__bottom/center parity d=82/96,
         // run 31202080745).
         if #available(iOS 17.0, *) {
-            switch component.enumString(ScrollViewAttributes.self, \.defaultScrollAnchor)?.lowercased() {
+            switch DeclaredSpelling.lowered(component.enumString(ScrollViewAttributes.self, \.defaultScrollAnchor), in: ScrollViewAttributes.DefaultScrollAnchor.declaredSpellings) {
             case "bottom": result = AnyView(result.defaultScrollAnchor(.bottom))
             case "center": result = AnyView(result.defaultScrollAnchor(.center))
             case "top": result = AnyView(result.defaultScrollAnchor(.top))

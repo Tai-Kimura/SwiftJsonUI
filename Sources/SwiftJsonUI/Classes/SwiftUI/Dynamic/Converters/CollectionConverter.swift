@@ -1863,7 +1863,7 @@ public struct CollectionConverter {
     /// 'leftAligned' is an alias spelling of flow (SSoT valueAliases,
     /// 2026-08-03 unification — the generated enum folds it the same way).
     static func isFlowLayout(_ component: DynamicComponent) -> Bool {
-        ["flow", "leftaligned"].contains(component.layout?.lowercased() ?? "")
+        ["flow", "leftaligned"].contains(DeclaredSpelling.lowered(component.layout, in: CollectionAttributes.Layout.declaredSpellings) ?? "")
     }
 
     /// Would this flow Collection hand scrolling to a scrolling ancestor,

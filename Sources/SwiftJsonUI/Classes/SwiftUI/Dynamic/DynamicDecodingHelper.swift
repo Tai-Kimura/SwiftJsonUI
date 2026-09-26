@@ -431,10 +431,10 @@ public struct DynamicDecodingHelper {
 
     /// Convert content mode string to ContentMode
     public static func toContentMode(_ mode: String?) -> ContentMode {
-        switch mode {
-        case "AspectFill", "aspectFill":
+        switch DeclaredSpelling.lowered(mode, in: ImageAttributes.ContentMode.declaredSpellings) {
+        case "aspectfill":
             return .fill
-        case "AspectFit", "aspectFit":
+        case "aspectfit":
             return .fit
         default:
             return .fit
@@ -445,8 +445,11 @@ public struct DynamicDecodingHelper {
     /// draws UNSCALED, aligned inside the declared frame and cropped
     /// (UIKit contentMode positions — 33 cross-effect measured both
     /// mobile platforms dropping them to fit).
-    public static func positionalContentAlignment(_ mode: String?) -> Alignment? {
-        switch mode?.lowercased() {
+    public static func positionalContentAlignment(
+        _ mode: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> Alignment? {
+        switch DeclaredSpelling.lowered(mode, in: spellings) {
         case "center": return .center
         case "top": return .top
         case "bottom": return .bottom
@@ -460,8 +463,11 @@ public struct DynamicDecodingHelper {
     /// shared/core/attribute_semantics.json). SwiftUI's `ContentMode` has no
     /// stretch member — `.resizable()` WITHOUT an `.aspectRatio` modifier is
     /// the spelling, so converters branch on this before `toContentMode`.
-    public static func isStretchContentMode(_ mode: String?) -> Bool {
-        switch mode?.lowercased() {
+    public static func isStretchContentMode(
+        _ mode: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> Bool {
+        switch DeclaredSpelling.lowered(mode, in: spellings) {
         case "fill", "scaletofill":
             return true
         default:
@@ -480,10 +486,10 @@ public struct DynamicDecodingHelper {
 
     /// Convert rendering mode string to Image.TemplateRenderingMode
     public static func toRenderingMode(_ mode: String?) -> Image.TemplateRenderingMode? {
-        switch mode {
-        case "template", "Template":
+        switch DeclaredSpelling.lowered(mode, in: ImageAttributes.RenderingMode.declaredSpellings) {
+        case "template":
             return .template
-        case "original", "Original":
+        case "original":
             return .original
         default:
             return nil
@@ -492,14 +498,14 @@ public struct DynamicDecodingHelper {
 
     /// Convert icon position string to IconLabelView.IconPosition
     public static func toIconPosition(_ position: String?) -> IconLabelView.IconPosition {
-        switch position {
-        case "top", "Top":
+        switch DeclaredSpelling.lowered(position, in: IconLabelAttributes.IconPosition.declaredSpellings) {
+        case "top":
             return .top
-        case "left", "Left":
+        case "left":
             return .left
-        case "right", "Right":
+        case "right":
             return .right
-        case "bottom", "Bottom":
+        case "bottom":
             return .bottom
         default:
             return .left

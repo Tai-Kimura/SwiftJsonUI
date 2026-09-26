@@ -44,7 +44,7 @@ public struct ProgressConverter {
         // whatever the layout wrote. `controlSize` is the size knob a
         // ProgressView actually has (progress_converter.rb:30-43 — 49-B fixed
         // the codegen half of this).
-        switch component.indicatorStyle?.lowercased() {
+        switch DeclaredSpelling.lowered(component.indicatorStyle, in: ProgressAttributes.IndicatorStyle.declaredSpellings) {
         case "large": result = AnyView(result.controlSize(.large))
         case "medium": result = AnyView(result.controlSize(.regular))
         default: break

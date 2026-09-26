@@ -42,11 +42,16 @@ public enum VisualEffectStyle: String, CaseIterable {
     /// for an absent or unrecognised value.
     public static let `default` = VisualEffectStyle.regular
 
-    /// Normalise a declared spelling. Case-insensitive and alias-aware: the
-    /// `system*Material` names are declared `valueAliases` of the appearance
-    /// names in shared/core/attribute_definitions.json.
-    public static func from(_ declared: String?) -> VisualEffectStyle {
-        guard let key = declared?.trimmingCharacters(in: .whitespaces).lowercased(),
+    /// Normalise a declared spelling — as written, case and all (jsonui-cli
+    /// 1.9.0), against the node's declaration (*spellings*: a Blur declares
+    /// Light / Dark / ExtraLight, any other node common's materials).
+    /// Alias-aware: the `system*Material` names are declared `valueAliases`
+    /// of the appearance names in shared/core/attribute_definitions.json.
+    public static func from(
+        _ declared: String?,
+        in spellings: [String] = CommonAttributes.EffectStyle.declaredSpellings
+    ) -> VisualEffectStyle {
+        guard let key = DeclaredSpelling.lowered(declared, in: spellings),
               !key.isEmpty else {
             return .default
         }
@@ -106,8 +111,11 @@ public extension View {
     /// The tint sits ON the material but still BEHIND the content: a Blur's
     /// children are drawn over its effect, never washed by it, which is what
     /// `.background(.ultraThinMaterial)` alone already meant.
-    func jsonUIVisualEffect(_ declared: String?) -> some View {
-        let style = VisualEffectStyle.from(declared)
+    func jsonUIVisualEffect(
+        _ declared: String?,
+        in spellings: [String] = CommonAttributes.EffectStyle.declaredSpellings
+    ) -> some View {
+        let style = VisualEffectStyle.from(declared, in: spellings)
         return self
             .background {
                 ZStack {

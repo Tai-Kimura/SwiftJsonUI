@@ -94,7 +94,7 @@ public struct TextFieldConverter {
                 legacy: nil,
                 data: data
             ) { return secure }
-            return component.input?.lowercased() == "password"
+            return DeclaredSpelling.lowered(component.input, in: TextFieldAttributes.Input.declaredSpellings) == "password"
         }()
 
         // Field construction shared by the bound and local-state paths
@@ -489,7 +489,7 @@ public struct TextFieldConverter {
     // MARK: - Helpers
 
     private static func applyTextFieldStyle(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        guard let borderStyle = component.borderStyle?.lowercased() else { return view }
+        guard let borderStyle = DeclaredSpelling.lowered(component.borderStyle, in: TextFieldAttributes.BorderStyle.declaredSpellings) else { return view }
         switch borderStyle {
         case "roundedrect", "rounded":
             return AnyView(view.textFieldStyle(.roundedBorder))

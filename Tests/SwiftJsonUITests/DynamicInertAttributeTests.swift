@@ -776,7 +776,8 @@ final class DynamicInertAttributeTests: XCTestCase {
     /// DEBUG helper delegates to it.
     func testNetworkImageContentModeFromResolvesTheWholeVocabulary() {
         XCTAssertEqual(NetworkImage.ContentMode.from("fill"), .stretch)
-        XCTAssertEqual(NetworkImage.ContentMode.from("ScaleToFill"), .stretch)
+        // ScaleToFill is Image's; NetworkImage declares it in no case.
+        XCTAssertEqual(NetworkImage.ContentMode.from("ScaleToFill"), .fit)
         XCTAssertEqual(NetworkImage.ContentMode.from("AspectFill"), .fill)
         XCTAssertEqual(NetworkImage.ContentMode.from("AspectFit"), .fit)
         XCTAssertEqual(NetworkImage.ContentMode.from("center"), .center)
@@ -1162,7 +1163,7 @@ final class DynamicInertAttributeTests: XCTestCase {
     /// is why the intent has to be a value rather than a ternary.
     func testContentModeVocabularyCoversEveryDeclaredSpelling() {
         let expected: [String: ImageContentModeIntent] = [
-            "fill": .stretch, "ScaleToFill": .stretch, "scaleToFill": .stretch,
+            "fill": .stretch, "ScaleToFill": .stretch,
             "fit": .fit, "AspectFit": .fit,
             "AspectFill": .aspectFill,
             "top": .positional(.top), "Top": .positional(.top),
@@ -1177,6 +1178,9 @@ final class DynamicInertAttributeTests: XCTestCase {
                 "contentMode '\(spelling)' resolved to the wrong intent"
             )
         }
+        // A spelling declared in no case draws the declared default
+        // (jsonui-cli 1.9.0): `scaleToFill` is not `ScaleToFill`.
+        XCTAssertEqual(ImageContentModeIntent.from("scaleToFill"), .fit)
     }
 
     /// Anything unrecognised falls back to `.fit`, which is what both render

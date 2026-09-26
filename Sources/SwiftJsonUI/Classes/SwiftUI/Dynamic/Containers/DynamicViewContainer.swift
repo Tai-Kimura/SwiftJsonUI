@@ -62,7 +62,7 @@ public struct DynamicViewContainer: View {
     /// `explicitChildSizeWins` is enforced at the read site: only an
     /// undeclared axis fills.
     private func distributionFillData(_ orientation: String) -> [String: Any] {
-        guard component.distribution?.lowercased() == "fill" else { return childData }
+        guard DeclaredSpelling.lowered(component.distribution, in: ViewAttributes.Distribution.declaredSpellings) == "fill" else { return childData }
         var d = childData
         d["__distributionFillOrientation"] = orientation
         return d
@@ -156,7 +156,7 @@ public struct DynamicViewContainer: View {
             // `equalSpacing`, which is the GAP half: both values produced one
             // separator and neither produced equal sizes. Routing it here
             // keeps one sizing implementation instead of two.
-            let fillsEqually = component.distribution?.lowercased() == "fillequally"
+            let fillsEqually = DeclaredSpelling.lowered(component.distribution, in: ViewAttributes.Distribution.declaredSpellings) == "fillequally"
             if (hasWeights || fillsEqually) && (orientation == "horizontal" || orientation == "vertical") {
                 WeightedStackContainer(
                     orientation: orientation!,
@@ -209,7 +209,7 @@ public struct DynamicViewContainer: View {
     @ViewBuilder
     private func hStackContent(children: [DynamicComponent]) -> some View {
         let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
-        let distribution = component.distribution?.lowercased()
+        let distribution = DeclaredSpelling.lowered(component.distribution, in: ViewAttributes.Distribution.declaredSpellings)
         let gravity = component.gravity
         // Spacer gating follows view_converter.rb exactly, and it is NOT
         // uniform: the leading spacer (:217) and the between-children ones
@@ -290,7 +290,7 @@ public struct DynamicViewContainer: View {
     @ViewBuilder
     private func vStackContent(children: [DynamicComponent]) -> some View {
         let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
-        let distribution = component.distribution?.lowercased()
+        let distribution = DeclaredSpelling.lowered(component.distribution, in: ViewAttributes.Distribution.declaredSpellings)
         let gravity = component.gravity
         // Same asymmetry as hStackContent: leading and between-children have
         // no size condition, the trailing one keeps it (view_converter.rb:385).
@@ -422,7 +422,7 @@ public struct DynamicViewContainer: View {
 
     private func getChildren() -> [DynamicComponent] {
         guard let child = component.childComponents else { return [] }
-        let direction = component.direction?.lowercased()
+        let direction = DeclaredSpelling.lowered(component.direction, in: ViewAttributes.Direction.declaredSpellings)
         let filtered = child.filter { $0.isValid || $0.include != nil }
         if direction == "bottomtotop" || direction == "righttoleft" {
             return filtered.reversed()

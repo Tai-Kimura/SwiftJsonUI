@@ -159,15 +159,13 @@ public struct GradientViewConverter {
 
         let direction = component.typedAttributes(GradientViewAttributes.self)
             .gradientDirection?.rawStringValue ?? "Vertical"
-        switch direction {
-        case "Horizontal", "horizontal", "leftToRight":
+        // GradientView declares Vertical / Horizontal / Oblique (View declares
+        // the reversed directions too): a value is its declared spelling.
+        switch DeclaredSpelling.lowered(direction, in: GradientViewAttributes.GradientDirection.declaredSpellings) {
+        case "horizontal":
             return (.leading, .trailing)
-        case "rightToLeft":
-            return (.trailing, .leading)
-        case "Oblique", "diagonal":
+        case "oblique":
             return (.topLeading, .bottomTrailing)
-        case "bottomToTop":
-            return (.bottom, .top)
         default:
             return (.top, .bottom)
         }

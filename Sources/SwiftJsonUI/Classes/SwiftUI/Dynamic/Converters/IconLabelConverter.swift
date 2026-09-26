@@ -175,7 +175,7 @@ public struct IconLabelConverter {
 
     private static func resolveIconPosition(_ position: String?) -> IconLabelView.IconPosition {
         guard let position = position else { return .left }
-        switch position.lowercased() {
+        switch DeclaredSpelling.lowered(position, in: IconLabelAttributes.IconPosition.declaredSpellings) {
         case "top": return .top
         case "right": return .right
         case "bottom": return .bottom

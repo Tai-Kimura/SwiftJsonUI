@@ -142,7 +142,7 @@ public struct SelectBoxConverter {
 
         // selectItemType
         let selectItemType: SelectBoxView.SelectItemType = {
-            if let itemType = component.selectItemType, itemType.lowercased() == "date" {
+            if DeclaredSpelling.lowered(component.selectItemType, in: SelectBoxAttributes.SelectItemType.declaredSpellings) == "date" {
                 return .date
             }
             return .normal
@@ -165,7 +165,7 @@ public struct SelectBoxConverter {
         // datePickerMode
         let datePickerMode: SelectBoxView.DatePickerMode = {
             guard let mode = component.datePickerMode else { return .date }
-            switch mode.lowercased() {
+            switch DeclaredSpelling.lowered(mode, in: SelectBoxAttributes.DatePickerMode.declaredSpellings) {
             case "time": return .time
             case "datetime", "dateandtime": return .dateTime
             default: return .date
@@ -175,7 +175,7 @@ public struct SelectBoxConverter {
         // datePickerStyle
         let datePickerStyle: SelectBoxView.DatePickerStyle = {
             guard let style = component.datePickerStyle else { return .wheel }
-            switch style.lowercased() {
+            switch DeclaredSpelling.lowered(style, in: SelectBoxAttributes.DatePickerStyle.declaredSpellings) {
             case "automatic": return .automatic
             case "compact": return .compact
             case "graphical", "inline": return .graphical

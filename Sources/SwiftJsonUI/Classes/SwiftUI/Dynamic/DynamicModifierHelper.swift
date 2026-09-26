@@ -1437,7 +1437,7 @@ public struct DynamicModifierHelper {
 
         if isTextComponent {
             // Match frame_helper.rb: Label/Text use textAlign for frame alignment
-            switch component.textAlignSpelling()?.lowercased() {
+            switch DeclaredSpelling.lowered(component.textAlignSpelling(), in: LabelAttributes.TextAlign.declaredSpellings) {
             case "center":
                 return bothAxes ? .center : .center
             case "right", "trailing":

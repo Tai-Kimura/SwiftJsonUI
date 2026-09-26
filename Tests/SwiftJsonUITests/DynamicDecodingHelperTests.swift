@@ -171,7 +171,9 @@ final class DynamicDecodingHelperTests: XCTestCase {
 
     func testToContentModeAspectFill() {
         XCTAssertEqual(DynamicDecodingHelper.toContentMode("AspectFill"), .fill)
-        XCTAssertEqual(DynamicDecodingHelper.toContentMode("aspectFill"), .fill)
+        // Declared as AspectFill only: a value is its declared spelling,
+        // case and all (jsonui-cli 1.9.0) — the rest draws the default.
+        XCTAssertEqual(DynamicDecodingHelper.toContentMode("aspectFill"), .fit)
     }
 
     func testToContentModeDefault() {
@@ -183,12 +185,12 @@ final class DynamicDecodingHelperTests: XCTestCase {
 
     func testToRenderingModeTemplate() {
         XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("template"), .template)
-        XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("Template"), .template)
+        XCTAssertNil(DynamicDecodingHelper.toRenderingMode("Template"), "declared in lowercase only")
     }
 
     func testToRenderingModeOriginal() {
         XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("original"), .original)
-        XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("Original"), .original)
+        XCTAssertNil(DynamicDecodingHelper.toRenderingMode("Original"), "declared in lowercase only")
     }
 
     func testToRenderingModeDefault() {

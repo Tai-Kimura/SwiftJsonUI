@@ -16,7 +16,9 @@ final class VisualEffectStyleTests: XCTestCase {
 
     func testDeclaredSpellingsNormalise() {
         XCTAssertEqual(VisualEffectStyle.from("Prominent"), .prominent)
-        XCTAssertEqual(VisualEffectStyle.from("prominent"), .prominent)
+        // Declared as Prominent: a spelling declared in no case is the
+        // default (jsonui-cli 1.9.0).
+        XCTAssertEqual(VisualEffectStyle.from("prominent"), .regular)
         XCTAssertEqual(VisualEffectStyle.from("ExtraLight"), .extraLight)
         XCTAssertEqual(VisualEffectStyle.from("UltraThin"), .ultraThin)
         XCTAssertEqual(VisualEffectStyle.from("Chrome"), .chrome)

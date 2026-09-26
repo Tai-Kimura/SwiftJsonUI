@@ -275,7 +275,7 @@ public struct TextViewConverter {
         // modifier is the one SwiftUI honours. Applying them in this order
         // reproduces that: when a layout declares both, `keyboardType` wins.
         if let raw = component.enumString(TextViewAttributes.self, \.input) {
-            result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw)))
+            result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw, in: TextViewAttributes.Input.declaredSpellings)))
         }
         // ⚠️ `keyboardType` IS A DIFFERENT VOCABULARY FROM `input`, and its
         // assignments are not the ones `input` uses — `number` lands on
@@ -370,7 +370,7 @@ public struct TextViewConverter {
     /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
     /// normalisation is applied so the declared spellings match.
     static func keyboardType(fromKeyboardTypeSpelling value: String) -> UIKeyboardType? {
-        switch value.lowercased().filter({ $0.isLetter && $0.isASCII }) {
+        switch DeclaredSpelling.lowered(value, in: TextViewAttributes.KeyboardType.declaredSpellings)?.filter({ $0.isLetter && $0.isASCII }) {
         case "default": return .default
         case "number", "numberpad", "decimal", "decimalpad": return .decimalPad
         case "numeric", "phone", "phonepad": return .phonePad
