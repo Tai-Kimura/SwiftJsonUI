@@ -256,14 +256,20 @@ public struct DynamicDecodingHelper {
         var horizontal: HorizontalAlignment = .leading
         var vertical: VerticalAlignment = .top
 
+        // Each value by its declared spelling (CommonAttributes.Gravity), case
+        // and all — jsonui-cli 1.9.0. The switch compared the lowercased value
+        // with `centerHorizontal` / `centerVertical`, which a lowercased value
+        // never equals, so those two were dropped here while GravityAxes and
+        // the codegen honour them; `start` / `end` / `center_horizontal` /
+        // `center_vertical` are declared nowhere.
         for value in gravity {
-            switch value.lowercased() {
+            switch DeclaredSpelling.lowered(value, in: CommonAttributes.Gravity.declaredSpellings) {
             // Horizontal
-            case "left", "start":
+            case "left":
                 horizontal = .leading
-            case "right", "end":
+            case "right":
                 horizontal = .trailing
-            case "center_horizontal", "centerHorizontal":
+            case "centerhorizontal":
                 horizontal = .center
 
             // Vertical
@@ -271,7 +277,7 @@ public struct DynamicDecodingHelper {
                 vertical = .top
             case "bottom":
                 vertical = .bottom
-            case "center_vertical", "centerVertical":
+            case "centervertical":
                 vertical = .center
 
             // Combined

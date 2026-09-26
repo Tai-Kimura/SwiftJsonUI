@@ -523,14 +523,17 @@ final class DynamicInertAttributeTests: XCTestCase {
 
     // MARK: - safeAreaInsetPositions (landed with 49-B)
 
-    /// The vocabulary matches base_view_converter.rb SAFE_AREA_EDGES,
-    /// including the left/right spellings it accepts beyond the enum.
+    /// The declared items (ViewAttributes.SafeAreaInsetPositions), as
+    /// base_view_converter.rb SAFE_AREA_EDGES reads them: `left` / `right` /
+    /// `horizontal` are declared nowhere and select no edge (jsonui-cli 1.9.0).
     func testSafeAreaEdgeSetVocabulary() {
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["top"]), .top)
-        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["left"]), .leading)
-        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["right"]), .trailing)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["leading"]), .leading)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["trailing"]), .trailing)
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["vertical"]), .vertical)
-        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["horizontal"]), .horizontal)
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["left"]))
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["right"]))
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["horizontal"]))
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["all"]), .all)
         XCTAssertEqual(
             DynamicModifierHelper.safeAreaEdgeSet(["top", "bottom"]),

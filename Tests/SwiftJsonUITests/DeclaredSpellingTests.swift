@@ -43,4 +43,21 @@ final class DeclaredSpellingTests: XCTestCase {
         XCTAssertEqual(ImageContentModeIntent.from("ScaleToFill"), .stretch)
         XCTAssertEqual(NetworkImage.ContentMode.from("ScaleToFill"), .fit)
     }
+
+    /// gravity and safeAreaInsetPositions hold one or a list of declared
+    /// values; the generator publishes their spellings beside the enums.
+    func testGravityIsReadByItsDeclaredSpellings() {
+        // centerHorizontal centres the horizontal axis; the lowercased
+        // compare against "centerHorizontal" dropped it (to .topLeading).
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["centerHorizontal"]), .top)
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["centerVertical", "right"]), .trailing)
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["RIGHT"]), .topLeading, "declared in no case")
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["end"]), .topLeading, "declared nowhere")
+    }
+
+    func testSafeAreaInsetPositionsReadItsDeclaredItems() {
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["top", "left"]), .top)
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["left", "horizontal"]), "declared nowhere")
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["all"]), .all)
+    }
 }

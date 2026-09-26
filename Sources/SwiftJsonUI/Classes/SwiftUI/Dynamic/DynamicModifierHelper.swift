@@ -738,22 +738,23 @@ public struct DynamicModifierHelper {
     }
 
     /// The `Edge.Set` a declared position list selects, or nil when it selects
-    /// none. Vocabulary matches `base_view_converter.rb` SAFE_AREA_EDGES,
-    /// including the `left`/`right` spellings it accepts beyond the enum.
+    /// none. Each item by its declared spelling
+    /// (ViewAttributes.SafeAreaInsetPositions: top / bottom / leading /
+    /// trailing / vertical / all), as base_view_converter.rb SAFE_AREA_EDGES
+    /// reads it — `left` / `right` / `horizontal` are declared nowhere and
+    /// select no edge (jsonui-cli 1.9.0).
     static func safeAreaEdgeSet(_ positions: [Any]) -> Edge.Set? {
-        let list = positions.compactMap { $0 as? String }.map { $0.lowercased() }
+        let list = positions.compactMap { DeclaredSpelling.lowered($0 as? String, in: ViewAttributes.SafeAreaInsetPositions.declaredSpellings) }
         if list.contains("all") { return .all }
-        if list == ["none"] { return nil }
 
         var edges: Edge.Set = []
         for position in list {
             switch position {
             case "top": edges.insert(.top)
             case "bottom": edges.insert(.bottom)
-            case "leading", "left": edges.insert(.leading)
-            case "trailing", "right": edges.insert(.trailing)
+            case "leading": edges.insert(.leading)
+            case "trailing": edges.insert(.trailing)
             case "vertical": edges.insert(.vertical)
-            case "horizontal": edges.insert(.horizontal)
             default: break
             }
         }
@@ -1483,14 +1484,16 @@ public struct DynamicModifierHelper {
         var h: String? = nil
         var v: String? = nil
         for g in parts {
-            let gl = g.lowercased()
-            switch gl {
-            case "right", "end": h = "trailing"
-            case "left", "start": h = "leading"
-            case "centerhorizontal", "center_horizontal": h = "center"
+            // By its declared spelling (CommonAttributes.Gravity), case and
+            // all — jsonui-cli 1.9.0; `start` / `end` / `center_*` are
+            // declared nowhere.
+            switch DeclaredSpelling.lowered(g, in: CommonAttributes.Gravity.declaredSpellings) {
+            case "right": h = "trailing"
+            case "left": h = "leading"
+            case "centerhorizontal": h = "center"
             case "top": v = "top"
             case "bottom": v = "bottom"
-            case "centervertical", "center_vertical": v = "center"
+            case "centervertical": v = "center"
             case "center":
                 h = "center"
                 v = "center"
