@@ -12,6 +12,7 @@
 //
 
 import XCTest
+import SwiftUI
 @testable import SwiftJsonUI
 
 #if DEBUG
@@ -124,6 +125,27 @@ final class LayoutPathVectorsTests: XCTestCase {
         let normalized = try decoder.decode(DynamicComponent.self, from: Data(json.utf8))
         XCTAssertTrue(JSONLayoutLoader.stamped(normalized).isNormalized, "the normalization is kept")
         XCTAssertFalse(JSONLayoutLoader.stamped(own).isNormalized)
+    }
+
+    private struct RegisteredProbe: CustomComponentAdapter {
+        let componentType: String
+        func buildView(component: DynamicComponent, data: [String: Any], viewId: String?, parentOrientation: String?) -> AnyView {
+            AnyView(EmptyView())
+        }
+    }
+
+    /// A spelling the app registers as its own component (CustomComponentRegistry)
+    /// is drawn by the app as written, so it is named as written: an app's own
+    /// ProgressBar is `progressBar_<path>`, as sjui's codegen names it
+    /// (JsonUIShared::LayoutPath.view_id reads TypeSynonyms.drawn_type, which
+    /// takes the app's spellings first). Unregistered, the same spelling is
+    /// named as the built-in it is drawn as (control).
+    func testASpellingTheAppRegistersIsNamedAsWritten() throws {
+        let node: [String: Any] = ["type": "ProgressBar", LayoutPath.key: "0_16"]
+        XCTAssertEqual(LayoutPath.viewId(of: node), "progress_0_16", "unregistered: the built-in Progress")
+        CustomComponentRegistry.shared.register(RegisteredProbe(componentType: "ProgressBar"))
+        defer { CustomComponentRegistry.shared.reset() }
+        XCTAssertEqual(LayoutPath.viewId(of: node), "progressBar_0_16", "registered: the app's, as written")
     }
 }
 #endif

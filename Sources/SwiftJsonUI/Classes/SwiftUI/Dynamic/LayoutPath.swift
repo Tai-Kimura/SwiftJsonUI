@@ -80,13 +80,16 @@ enum LayoutPath {
         return drawn.prefix(1).lowercased() + drawn.dropFirst() + "_" + path
     }
 
-    /// The type a spelling is drawn as: a section declared as an alias of
-    /// another (`_alias_of`, generated as JsonUIComponentAliases) as that
-    /// section, a synonym as its `render_as` else its `canonical`
-    /// (TypeSynonyms), anything else as written — the rule of the shared
-    /// function, held to it by the vectors' `view_id_cases`.
+    /// The type a spelling is drawn as — TypeSynonyms.drawnType, the rule every
+    /// classifier here reads: a spelling the app registers as its own component
+    /// (CustomComponentRegistry) as written, else a synonym as its `render_as`
+    /// or `canonical`, then a section declared as an alias of another
+    /// (`_alias_of`) as that section. Held to the shared function by the
+    /// vectors' `view_id_cases`. It kept a copy of the rule without the
+    /// registry, so an app's own ProgressBar was named `progress_<path>` here
+    /// and `progressBar_<path>` by sjui's codegen.
     static func drawnType(_ type: String) -> String {
-        JsonUIComponentAliases.canonical(for: type) ?? TypeSynonyms.drawnAs(type)
+        TypeSynonyms.drawnType(type)
     }
 
     /// A component's path, or `0` — a component decoded from a tree nothing
