@@ -4,9 +4,9 @@
 //
 //  Spacer, Space, Divider and Separator are not component types: neither
 //  attribute_definitions.json nor component_metadata.json declares any of
-//  them. sjui codegen sends all four spellings to DefaultConverter — the red
-//  "Unsupported component" Text, the same as any undeclared type; rjui warns
-//  and draws a plain View; KotlinJsonUI's Dynamic has no case for them. The
+//  them. The codegens name all four spellings as unknown types and draw
+//  nothing there (sjui's DefaultConverter, kjui, rjui — 4f's ruling, 1.9.0);
+//  KotlinJsonUI's Dynamic has no case for them. The
 //  Dynamic runtime here was the one face that drew them (a SwiftUI Spacer, a
 //  Divider), so DEBUG showed a screen the release build does not.
 //
@@ -36,7 +36,9 @@ final class UndeclaredSpacerAndDividerTests: XCTestCase {
 
     func testEachSpellingBuildsWhatAnUndeclaredTypeBuilds() throws {
         let undeclared = try built("Bogus")
-        XCTAssertTrue(undeclared.contains("Unknown component type 'Bogus'"),
+        // The box holds the sentence as a String, which `dump` prints with its
+        // quotes escaped (\'), so the control looks for its words, not its bytes.
+        XCTAssertTrue(undeclared.contains("Unknown component type") && undeclared.contains("Bogus"),
                       "control: an undeclared type no longer builds the unknown-type box")
         // Control: a declared type builds something else, so the comparison
         // below can tell two sources apart.

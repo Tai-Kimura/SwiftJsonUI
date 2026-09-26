@@ -355,6 +355,15 @@ public struct DynamicComponentBuilder: View {
     /// names; CircleImage is a type-synonym spelling drawn as Image). The
     /// switch compared `type.lowercased()`, so "switch" was drawn as Switch
     /// on this path alone (4f's ruling, 1.9.0: case-sensitive).
+    /// The spelling an unknown `type` differs from only in case, offered in
+    /// its sentence: TypeSynonyms.caseOnlyMatch over the declared types, the
+    /// synonyms and the alias sections — the one search jsonui-cli's
+    /// validator and codegen ask (4f's ruling). It searched the declared
+    /// types alone, so "hstack" was offered nothing here and "HStack" there.
+    static func spellingCandidate(for type: String) -> String? {
+        TypeSynonyms.caseOnlyMatch(type, known: declaredTypes)
+    }
+
     static let declaredTypes = ["Label", "Button", "TextField", "TextView", "Image", "CircleImage", "NetworkImage",
                                 "View", "SafeAreaView", "ScrollView", "Switch", "CheckBox", "Radio", "Segment",
                                 "SelectBox", "Slider", "Progress", "Indicator", "IconLabel", "Collection", "TabView",
@@ -511,12 +520,13 @@ public struct DynamicComponentBuilder: View {
             default:
                 // The app's registry was asked first, above. A declared type
                 // written in another case is unknown, as in the codegens, and
-                // named with the spelling it may mean (TypeNameSpelling).
-                let _ = TypeNameSpelling.nameOnce(
-                    written: type,
-                    declared: Self.declaredTypes.first { $0.caseInsensitiveCompare(type) == .orderedSame })
+                // named with the spelling it may mean (TypeNameSpelling). The
+                // box (DEBUG: this builder is DEBUG-only) holds the same
+                // sentence; it said "Error: Unknown component type '…'".
+                let candidate = Self.spellingCandidate(for: type)
+                let _ = TypeNameSpelling.nameOnce(written: type, declared: candidate)
                 let _ = Self.unknownTypeHandler?(type)
-                Text("Error: Unknown component type '\(type)'")
+                Text(TypeNameSpelling.sentence(written: type, declared: candidate))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)

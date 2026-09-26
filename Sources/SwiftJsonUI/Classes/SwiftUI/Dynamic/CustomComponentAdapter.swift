@@ -131,6 +131,7 @@ public class CustomComponentRegistry {
     /// both sides, so Dynamic drew a spelling the release build did not.
     public func adapter(for type: String) -> CustomComponentAdapter? {
         if let adapter = adapters[type] { return adapter }
+        // Not TypeSynonyms.caseOnlyMatch: the question is an adapter registered in another case, and that pool adds declared types and synonyms.
         if let near = adapters.keys.first(where: { $0.caseInsensitiveCompare(type) == .orderedSame }) {
             TypeNameSpelling.nameOnce(written: type, declared: near)
         }

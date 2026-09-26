@@ -1,0 +1,1256 @@
+{
+  "_description": "The one sentence a node of a type the tool cannot draw is named with (4f's ruling, jsonui-cli 1.9.0; JsonUIShared::AttributeValidatorCore.unknown_component_type_message, and KotlinJsonUI Dynamic's own constant, held to this table from a byte-identical copy). `known` is the types the tool draws; `written` the node's type as written; `expect` the sentence. Type names are matched as written: a spelling that matches a known type only when case is ignored is offered that type.",
+  "cases": [
+    {
+      "name": "a spelling in another case is offered the declared one",
+      "written": "switch",
+      "known": [
+        "Label",
+        "Switch",
+        "SelectBox"
+      ],
+      "expect": "Unknown component type 'switch' — did you mean 'Switch'? Type names are case-sensitive."
+    },
+    {
+      "name": "every letter's case counts",
+      "written": "SELECTBOX",
+      "known": [
+        "Label",
+        "Switch",
+        "SelectBox"
+      ],
+      "expect": "Unknown component type 'SELECTBOX' — did you mean 'SelectBox'? Type names are case-sensitive."
+    },
+    {
+      "name": "a type no path draws is named alone",
+      "written": "Nope",
+      "known": [
+        "Label",
+        "Switch",
+        "SelectBox"
+      ],
+      "expect": "Unknown component type 'Nope'"
+    },
+    {
+      "name": "a registered type is offered like a declared one",
+      "written": "headerMenu",
+      "known": [
+        "Label",
+        "HeaderMenu"
+      ],
+      "expect": "Unknown component type 'headerMenu' — did you mean 'HeaderMenu'? Type names are case-sensitive."
+    },
+    {
+      "name": "a type known by its definition but drawn by nothing is not offered itself",
+      "written": "DrawerContent",
+      "known": [
+        "Label",
+        "DrawerContent"
+      ],
+      "expect": "Unknown component type 'DrawerContent'"
+    }
+  ],
+  "case_only": {
+    "_description": "Written by kjui_tools/spec/support/unknown_type_case_rows.rb (UnknownTypeCaseRows.write!) from the Ruby validator, not by hand: `known` is its types with no project (the SSoT's sections and the type synonyms), and each row a spelling it does not know — one of them in another case — with the sentence it says. A path compares its own sentence for `written` with `expect`, byte for byte. `not_drawn` is, per platform, the types component_metadata.json declares it does not draw (`platforms.<facet>: false`): a path does not offer them, and its rows naming one are not its words.",
+    "known": [
+      "ActivityIndicator",
+      "AsyncImage",
+      "Blur",
+      "BlurView",
+      "Box",
+      "Button",
+      "Check",
+      "CheckBox",
+      "Checkbox",
+      "CircleImage",
+      "CircleImageView",
+      "CircleView",
+      "Collection",
+      "CollectionView",
+      "Column",
+      "ConstraintLayout",
+      "Container",
+      "DatePicker",
+      "Div",
+      "EditText",
+      "Embed",
+      "FrameLayout",
+      "Gradient",
+      "GradientView",
+      "Grid",
+      "HStack",
+      "IconLabel",
+      "Iframe",
+      "Image",
+      "ImageView",
+      "Img",
+      "Indicator",
+      "Input",
+      "Label",
+      "LazyColumn",
+      "LazyGrid",
+      "LinearLayout",
+      "List",
+      "ListView",
+      "Loading",
+      "MultiLineEditText",
+      "NetworkImage",
+      "NetworkImageView",
+      "Picker",
+      "Progress",
+      "ProgressBar",
+      "Radio",
+      "RadioButton",
+      "RadioGroup",
+      "Range",
+      "RecyclerView",
+      "RelativeLayout",
+      "Row",
+      "SafeAreaView",
+      "Scroll",
+      "ScrollView",
+      "SeekBar",
+      "Segment",
+      "SegmentedControl",
+      "Select",
+      "SelectBox",
+      "Slider",
+      "Spinner",
+      "Switch",
+      "TabGroup",
+      "TabLayout",
+      "TabView",
+      "Table",
+      "TableView",
+      "Text",
+      "TextField",
+      "TextView",
+      "Textarea",
+      "Toggle",
+      "VStack",
+      "View",
+      "Web",
+      "WebView",
+      "ZStack"
+    ],
+    "not_drawn": {
+      "kotlin_dynamic": [],
+      "kotlin_generated": [],
+      "react": [
+        "SafeAreaView"
+      ],
+      "swift_dynamic": [
+        "CircleView"
+      ],
+      "swift_generated": [
+        "CircleView"
+      ]
+    },
+    "rows": [
+      {
+        "written": "ACTIVITYINDICATOR",
+        "expect": "Unknown component type 'ACTIVITYINDICATOR' — did you mean 'ActivityIndicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "ASYNCIMAGE",
+        "expect": "Unknown component type 'ASYNCIMAGE' — did you mean 'AsyncImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "Activityindicator",
+        "expect": "Unknown component type 'Activityindicator' — did you mean 'ActivityIndicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "Asyncimage",
+        "expect": "Unknown component type 'Asyncimage' — did you mean 'AsyncImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "BLUR",
+        "expect": "Unknown component type 'BLUR' — did you mean 'Blur'? Type names are case-sensitive."
+      },
+      {
+        "written": "BLURVIEW",
+        "expect": "Unknown component type 'BLURVIEW' — did you mean 'BlurView'? Type names are case-sensitive."
+      },
+      {
+        "written": "BOX",
+        "expect": "Unknown component type 'BOX' — did you mean 'Box'? Type names are case-sensitive."
+      },
+      {
+        "written": "BUTTON",
+        "expect": "Unknown component type 'BUTTON' — did you mean 'Button'? Type names are case-sensitive."
+      },
+      {
+        "written": "Blurview",
+        "expect": "Unknown component type 'Blurview' — did you mean 'BlurView'? Type names are case-sensitive."
+      },
+      {
+        "written": "CHECK",
+        "expect": "Unknown component type 'CHECK' — did you mean 'Check'? Type names are case-sensitive."
+      },
+      {
+        "written": "CHECKBOX",
+        "expect": "Unknown component type 'CHECKBOX' — did you mean 'CheckBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "CIRCLEIMAGE",
+        "expect": "Unknown component type 'CIRCLEIMAGE' — did you mean 'CircleImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "CIRCLEIMAGEVIEW",
+        "expect": "Unknown component type 'CIRCLEIMAGEVIEW' — did you mean 'CircleImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "CIRCLEVIEW",
+        "expect": "Unknown component type 'CIRCLEVIEW' — did you mean 'CircleView'? Type names are case-sensitive."
+      },
+      {
+        "written": "COLLECTION",
+        "expect": "Unknown component type 'COLLECTION' — did you mean 'Collection'? Type names are case-sensitive."
+      },
+      {
+        "written": "COLLECTIONVIEW",
+        "expect": "Unknown component type 'COLLECTIONVIEW' — did you mean 'CollectionView'? Type names are case-sensitive."
+      },
+      {
+        "written": "COLUMN",
+        "expect": "Unknown component type 'COLUMN' — did you mean 'Column'? Type names are case-sensitive."
+      },
+      {
+        "written": "CONSTRAINTLAYOUT",
+        "expect": "Unknown component type 'CONSTRAINTLAYOUT' — did you mean 'ConstraintLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "CONTAINER",
+        "expect": "Unknown component type 'CONTAINER' — did you mean 'Container'? Type names are case-sensitive."
+      },
+      {
+        "written": "Circleimage",
+        "expect": "Unknown component type 'Circleimage' — did you mean 'CircleImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "Circleimageview",
+        "expect": "Unknown component type 'Circleimageview' — did you mean 'CircleImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Circleview",
+        "expect": "Unknown component type 'Circleview' — did you mean 'CircleView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Collectionview",
+        "expect": "Unknown component type 'Collectionview' — did you mean 'CollectionView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Constraintlayout",
+        "expect": "Unknown component type 'Constraintlayout' — did you mean 'ConstraintLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "DATEPICKER",
+        "expect": "Unknown component type 'DATEPICKER' — did you mean 'DatePicker'? Type names are case-sensitive."
+      },
+      {
+        "written": "DIV",
+        "expect": "Unknown component type 'DIV' — did you mean 'Div'? Type names are case-sensitive."
+      },
+      {
+        "written": "Datepicker",
+        "expect": "Unknown component type 'Datepicker' — did you mean 'DatePicker'? Type names are case-sensitive."
+      },
+      {
+        "written": "EDITTEXT",
+        "expect": "Unknown component type 'EDITTEXT' — did you mean 'EditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "EMBED",
+        "expect": "Unknown component type 'EMBED' — did you mean 'Embed'? Type names are case-sensitive."
+      },
+      {
+        "written": "Edittext",
+        "expect": "Unknown component type 'Edittext' — did you mean 'EditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "FRAMELAYOUT",
+        "expect": "Unknown component type 'FRAMELAYOUT' — did you mean 'FrameLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "Framelayout",
+        "expect": "Unknown component type 'Framelayout' — did you mean 'FrameLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "GRADIENT",
+        "expect": "Unknown component type 'GRADIENT' — did you mean 'Gradient'? Type names are case-sensitive."
+      },
+      {
+        "written": "GRADIENTVIEW",
+        "expect": "Unknown component type 'GRADIENTVIEW' — did you mean 'GradientView'? Type names are case-sensitive."
+      },
+      {
+        "written": "GRID",
+        "expect": "Unknown component type 'GRID' — did you mean 'Grid'? Type names are case-sensitive."
+      },
+      {
+        "written": "Gradientview",
+        "expect": "Unknown component type 'Gradientview' — did you mean 'GradientView'? Type names are case-sensitive."
+      },
+      {
+        "written": "HSTACK",
+        "expect": "Unknown component type 'HSTACK' — did you mean 'HStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "Hstack",
+        "expect": "Unknown component type 'Hstack' — did you mean 'HStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "ICONLABEL",
+        "expect": "Unknown component type 'ICONLABEL' — did you mean 'IconLabel'? Type names are case-sensitive."
+      },
+      {
+        "written": "IFRAME",
+        "expect": "Unknown component type 'IFRAME' — did you mean 'Iframe'? Type names are case-sensitive."
+      },
+      {
+        "written": "IMAGE",
+        "expect": "Unknown component type 'IMAGE' — did you mean 'Image'? Type names are case-sensitive."
+      },
+      {
+        "written": "IMAGEVIEW",
+        "expect": "Unknown component type 'IMAGEVIEW' — did you mean 'ImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "IMG",
+        "expect": "Unknown component type 'IMG' — did you mean 'Img'? Type names are case-sensitive."
+      },
+      {
+        "written": "INDICATOR",
+        "expect": "Unknown component type 'INDICATOR' — did you mean 'Indicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "INPUT",
+        "expect": "Unknown component type 'INPUT' — did you mean 'Input'? Type names are case-sensitive."
+      },
+      {
+        "written": "Iconlabel",
+        "expect": "Unknown component type 'Iconlabel' — did you mean 'IconLabel'? Type names are case-sensitive."
+      },
+      {
+        "written": "Imageview",
+        "expect": "Unknown component type 'Imageview' — did you mean 'ImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "LABEL",
+        "expect": "Unknown component type 'LABEL' — did you mean 'Label'? Type names are case-sensitive."
+      },
+      {
+        "written": "LAZYCOLUMN",
+        "expect": "Unknown component type 'LAZYCOLUMN' — did you mean 'LazyColumn'? Type names are case-sensitive."
+      },
+      {
+        "written": "LAZYGRID",
+        "expect": "Unknown component type 'LAZYGRID' — did you mean 'LazyGrid'? Type names are case-sensitive."
+      },
+      {
+        "written": "LINEARLAYOUT",
+        "expect": "Unknown component type 'LINEARLAYOUT' — did you mean 'LinearLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "LIST",
+        "expect": "Unknown component type 'LIST' — did you mean 'List'? Type names are case-sensitive."
+      },
+      {
+        "written": "LISTVIEW",
+        "expect": "Unknown component type 'LISTVIEW' — did you mean 'ListView'? Type names are case-sensitive."
+      },
+      {
+        "written": "LOADING",
+        "expect": "Unknown component type 'LOADING' — did you mean 'Loading'? Type names are case-sensitive."
+      },
+      {
+        "written": "Lazycolumn",
+        "expect": "Unknown component type 'Lazycolumn' — did you mean 'LazyColumn'? Type names are case-sensitive."
+      },
+      {
+        "written": "Lazygrid",
+        "expect": "Unknown component type 'Lazygrid' — did you mean 'LazyGrid'? Type names are case-sensitive."
+      },
+      {
+        "written": "Linearlayout",
+        "expect": "Unknown component type 'Linearlayout' — did you mean 'LinearLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "Listview",
+        "expect": "Unknown component type 'Listview' — did you mean 'ListView'? Type names are case-sensitive."
+      },
+      {
+        "written": "MULTILINEEDITTEXT",
+        "expect": "Unknown component type 'MULTILINEEDITTEXT' — did you mean 'MultiLineEditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "Multilineedittext",
+        "expect": "Unknown component type 'Multilineedittext' — did you mean 'MultiLineEditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "NETWORKIMAGE",
+        "expect": "Unknown component type 'NETWORKIMAGE' — did you mean 'NetworkImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "NETWORKIMAGEVIEW",
+        "expect": "Unknown component type 'NETWORKIMAGEVIEW' — did you mean 'NetworkImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Networkimage",
+        "expect": "Unknown component type 'Networkimage' — did you mean 'NetworkImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "Networkimageview",
+        "expect": "Unknown component type 'Networkimageview' — did you mean 'NetworkImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "PICKER",
+        "expect": "Unknown component type 'PICKER' — did you mean 'Picker'? Type names are case-sensitive."
+      },
+      {
+        "written": "PROGRESS",
+        "expect": "Unknown component type 'PROGRESS' — did you mean 'Progress'? Type names are case-sensitive."
+      },
+      {
+        "written": "PROGRESSBAR",
+        "expect": "Unknown component type 'PROGRESSBAR' — did you mean 'ProgressBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "Progressbar",
+        "expect": "Unknown component type 'Progressbar' — did you mean 'ProgressBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "RADIO",
+        "expect": "Unknown component type 'RADIO' — did you mean 'Radio'? Type names are case-sensitive."
+      },
+      {
+        "written": "RADIOBUTTON",
+        "expect": "Unknown component type 'RADIOBUTTON' — did you mean 'RadioButton'? Type names are case-sensitive."
+      },
+      {
+        "written": "RADIOGROUP",
+        "expect": "Unknown component type 'RADIOGROUP' — did you mean 'RadioGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "RANGE",
+        "expect": "Unknown component type 'RANGE' — did you mean 'Range'? Type names are case-sensitive."
+      },
+      {
+        "written": "RECYCLERVIEW",
+        "expect": "Unknown component type 'RECYCLERVIEW' — did you mean 'RecyclerView'? Type names are case-sensitive."
+      },
+      {
+        "written": "RELATIVELAYOUT",
+        "expect": "Unknown component type 'RELATIVELAYOUT' — did you mean 'RelativeLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "ROW",
+        "expect": "Unknown component type 'ROW' — did you mean 'Row'? Type names are case-sensitive."
+      },
+      {
+        "written": "Radiobutton",
+        "expect": "Unknown component type 'Radiobutton' — did you mean 'RadioButton'? Type names are case-sensitive."
+      },
+      {
+        "written": "Radiogroup",
+        "expect": "Unknown component type 'Radiogroup' — did you mean 'RadioGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "Recyclerview",
+        "expect": "Unknown component type 'Recyclerview' — did you mean 'RecyclerView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Relativelayout",
+        "expect": "Unknown component type 'Relativelayout' — did you mean 'RelativeLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "SAFEAREAVIEW",
+        "expect": "Unknown component type 'SAFEAREAVIEW' — did you mean 'SafeAreaView'? Type names are case-sensitive."
+      },
+      {
+        "written": "SCROLL",
+        "expect": "Unknown component type 'SCROLL' — did you mean 'Scroll'? Type names are case-sensitive."
+      },
+      {
+        "written": "SCROLLVIEW",
+        "expect": "Unknown component type 'SCROLLVIEW' — did you mean 'ScrollView'? Type names are case-sensitive."
+      },
+      {
+        "written": "SEEKBAR",
+        "expect": "Unknown component type 'SEEKBAR' — did you mean 'SeekBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "SEGMENT",
+        "expect": "Unknown component type 'SEGMENT' — did you mean 'Segment'? Type names are case-sensitive."
+      },
+      {
+        "written": "SEGMENTEDCONTROL",
+        "expect": "Unknown component type 'SEGMENTEDCONTROL' — did you mean 'SegmentedControl'? Type names are case-sensitive."
+      },
+      {
+        "written": "SELECT",
+        "expect": "Unknown component type 'SELECT' — did you mean 'Select'? Type names are case-sensitive."
+      },
+      {
+        "written": "SELECTBOX",
+        "expect": "Unknown component type 'SELECTBOX' — did you mean 'SelectBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "SLIDER",
+        "expect": "Unknown component type 'SLIDER' — did you mean 'Slider'? Type names are case-sensitive."
+      },
+      {
+        "written": "SPINNER",
+        "expect": "Unknown component type 'SPINNER' — did you mean 'Spinner'? Type names are case-sensitive."
+      },
+      {
+        "written": "SWITCH",
+        "expect": "Unknown component type 'SWITCH' — did you mean 'Switch'? Type names are case-sensitive."
+      },
+      {
+        "written": "Safeareaview",
+        "expect": "Unknown component type 'Safeareaview' — did you mean 'SafeAreaView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Scrollview",
+        "expect": "Unknown component type 'Scrollview' — did you mean 'ScrollView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Seekbar",
+        "expect": "Unknown component type 'Seekbar' — did you mean 'SeekBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "Segmentedcontrol",
+        "expect": "Unknown component type 'Segmentedcontrol' — did you mean 'SegmentedControl'? Type names are case-sensitive."
+      },
+      {
+        "written": "Selectbox",
+        "expect": "Unknown component type 'Selectbox' — did you mean 'SelectBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "TABGROUP",
+        "expect": "Unknown component type 'TABGROUP' — did you mean 'TabGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "TABLAYOUT",
+        "expect": "Unknown component type 'TABLAYOUT' — did you mean 'TabLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "TABLE",
+        "expect": "Unknown component type 'TABLE' — did you mean 'Table'? Type names are case-sensitive."
+      },
+      {
+        "written": "TABLEVIEW",
+        "expect": "Unknown component type 'TABLEVIEW' — did you mean 'TableView'? Type names are case-sensitive."
+      },
+      {
+        "written": "TABVIEW",
+        "expect": "Unknown component type 'TABVIEW' — did you mean 'TabView'? Type names are case-sensitive."
+      },
+      {
+        "written": "TEXT",
+        "expect": "Unknown component type 'TEXT' — did you mean 'Text'? Type names are case-sensitive."
+      },
+      {
+        "written": "TEXTAREA",
+        "expect": "Unknown component type 'TEXTAREA' — did you mean 'Textarea'? Type names are case-sensitive."
+      },
+      {
+        "written": "TEXTFIELD",
+        "expect": "Unknown component type 'TEXTFIELD' — did you mean 'TextField'? Type names are case-sensitive."
+      },
+      {
+        "written": "TEXTVIEW",
+        "expect": "Unknown component type 'TEXTVIEW' — did you mean 'TextView'? Type names are case-sensitive."
+      },
+      {
+        "written": "TOGGLE",
+        "expect": "Unknown component type 'TOGGLE' — did you mean 'Toggle'? Type names are case-sensitive."
+      },
+      {
+        "written": "Tabgroup",
+        "expect": "Unknown component type 'Tabgroup' — did you mean 'TabGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "Tablayout",
+        "expect": "Unknown component type 'Tablayout' — did you mean 'TabLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "Tableview",
+        "expect": "Unknown component type 'Tableview' — did you mean 'TableView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Tabview",
+        "expect": "Unknown component type 'Tabview' — did you mean 'TabView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Textfield",
+        "expect": "Unknown component type 'Textfield' — did you mean 'TextField'? Type names are case-sensitive."
+      },
+      {
+        "written": "Textview",
+        "expect": "Unknown component type 'Textview' — did you mean 'TextView'? Type names are case-sensitive."
+      },
+      {
+        "written": "VIEW",
+        "expect": "Unknown component type 'VIEW' — did you mean 'View'? Type names are case-sensitive."
+      },
+      {
+        "written": "VSTACK",
+        "expect": "Unknown component type 'VSTACK' — did you mean 'VStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "Vstack",
+        "expect": "Unknown component type 'Vstack' — did you mean 'VStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "WEB",
+        "expect": "Unknown component type 'WEB' — did you mean 'Web'? Type names are case-sensitive."
+      },
+      {
+        "written": "WEBVIEW",
+        "expect": "Unknown component type 'WEBVIEW' — did you mean 'WebView'? Type names are case-sensitive."
+      },
+      {
+        "written": "Webview",
+        "expect": "Unknown component type 'Webview' — did you mean 'WebView'? Type names are case-sensitive."
+      },
+      {
+        "written": "ZSTACK",
+        "expect": "Unknown component type 'ZSTACK' — did you mean 'ZStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "Zstack",
+        "expect": "Unknown component type 'Zstack' — did you mean 'ZStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "aCTIVITYiNDICATOR",
+        "expect": "Unknown component type 'aCTIVITYiNDICATOR' — did you mean 'ActivityIndicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "aSYNCiMAGE",
+        "expect": "Unknown component type 'aSYNCiMAGE' — did you mean 'AsyncImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "activityindicator",
+        "expect": "Unknown component type 'activityindicator' — did you mean 'ActivityIndicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "asyncimage",
+        "expect": "Unknown component type 'asyncimage' — did you mean 'AsyncImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "bLUR",
+        "expect": "Unknown component type 'bLUR' — did you mean 'Blur'? Type names are case-sensitive."
+      },
+      {
+        "written": "bLURvIEW",
+        "expect": "Unknown component type 'bLURvIEW' — did you mean 'BlurView'? Type names are case-sensitive."
+      },
+      {
+        "written": "bOX",
+        "expect": "Unknown component type 'bOX' — did you mean 'Box'? Type names are case-sensitive."
+      },
+      {
+        "written": "bUTTON",
+        "expect": "Unknown component type 'bUTTON' — did you mean 'Button'? Type names are case-sensitive."
+      },
+      {
+        "written": "blur",
+        "expect": "Unknown component type 'blur' — did you mean 'Blur'? Type names are case-sensitive."
+      },
+      {
+        "written": "blurview",
+        "expect": "Unknown component type 'blurview' — did you mean 'BlurView'? Type names are case-sensitive."
+      },
+      {
+        "written": "box",
+        "expect": "Unknown component type 'box' — did you mean 'Box'? Type names are case-sensitive."
+      },
+      {
+        "written": "button",
+        "expect": "Unknown component type 'button' — did you mean 'Button'? Type names are case-sensitive."
+      },
+      {
+        "written": "cHECK",
+        "expect": "Unknown component type 'cHECK' — did you mean 'Check'? Type names are case-sensitive."
+      },
+      {
+        "written": "cHECKBOX",
+        "expect": "Unknown component type 'cHECKBOX' — did you mean 'CheckBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "cHECKbOX",
+        "expect": "Unknown component type 'cHECKbOX' — did you mean 'CheckBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "cIRCLEiMAGE",
+        "expect": "Unknown component type 'cIRCLEiMAGE' — did you mean 'CircleImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "cIRCLEiMAGEvIEW",
+        "expect": "Unknown component type 'cIRCLEiMAGEvIEW' — did you mean 'CircleImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "cIRCLEvIEW",
+        "expect": "Unknown component type 'cIRCLEvIEW' — did you mean 'CircleView'? Type names are case-sensitive."
+      },
+      {
+        "written": "cOLLECTION",
+        "expect": "Unknown component type 'cOLLECTION' — did you mean 'Collection'? Type names are case-sensitive."
+      },
+      {
+        "written": "cOLLECTIONvIEW",
+        "expect": "Unknown component type 'cOLLECTIONvIEW' — did you mean 'CollectionView'? Type names are case-sensitive."
+      },
+      {
+        "written": "cOLUMN",
+        "expect": "Unknown component type 'cOLUMN' — did you mean 'Column'? Type names are case-sensitive."
+      },
+      {
+        "written": "cONSTRAINTlAYOUT",
+        "expect": "Unknown component type 'cONSTRAINTlAYOUT' — did you mean 'ConstraintLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "cONTAINER",
+        "expect": "Unknown component type 'cONTAINER' — did you mean 'Container'? Type names are case-sensitive."
+      },
+      {
+        "written": "check",
+        "expect": "Unknown component type 'check' — did you mean 'Check'? Type names are case-sensitive."
+      },
+      {
+        "written": "checkbox",
+        "expect": "Unknown component type 'checkbox' — did you mean 'CheckBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "circleimage",
+        "expect": "Unknown component type 'circleimage' — did you mean 'CircleImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "circleimageview",
+        "expect": "Unknown component type 'circleimageview' — did you mean 'CircleImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "circleview",
+        "expect": "Unknown component type 'circleview' — did you mean 'CircleView'? Type names are case-sensitive."
+      },
+      {
+        "written": "collection",
+        "expect": "Unknown component type 'collection' — did you mean 'Collection'? Type names are case-sensitive."
+      },
+      {
+        "written": "collectionview",
+        "expect": "Unknown component type 'collectionview' — did you mean 'CollectionView'? Type names are case-sensitive."
+      },
+      {
+        "written": "column",
+        "expect": "Unknown component type 'column' — did you mean 'Column'? Type names are case-sensitive."
+      },
+      {
+        "written": "constraintlayout",
+        "expect": "Unknown component type 'constraintlayout' — did you mean 'ConstraintLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "container",
+        "expect": "Unknown component type 'container' — did you mean 'Container'? Type names are case-sensitive."
+      },
+      {
+        "written": "dATEpICKER",
+        "expect": "Unknown component type 'dATEpICKER' — did you mean 'DatePicker'? Type names are case-sensitive."
+      },
+      {
+        "written": "dIV",
+        "expect": "Unknown component type 'dIV' — did you mean 'Div'? Type names are case-sensitive."
+      },
+      {
+        "written": "datepicker",
+        "expect": "Unknown component type 'datepicker' — did you mean 'DatePicker'? Type names are case-sensitive."
+      },
+      {
+        "written": "div",
+        "expect": "Unknown component type 'div' — did you mean 'Div'? Type names are case-sensitive."
+      },
+      {
+        "written": "eDITtEXT",
+        "expect": "Unknown component type 'eDITtEXT' — did you mean 'EditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "eMBED",
+        "expect": "Unknown component type 'eMBED' — did you mean 'Embed'? Type names are case-sensitive."
+      },
+      {
+        "written": "edittext",
+        "expect": "Unknown component type 'edittext' — did you mean 'EditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "embed",
+        "expect": "Unknown component type 'embed' — did you mean 'Embed'? Type names are case-sensitive."
+      },
+      {
+        "written": "fRAMElAYOUT",
+        "expect": "Unknown component type 'fRAMElAYOUT' — did you mean 'FrameLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "framelayout",
+        "expect": "Unknown component type 'framelayout' — did you mean 'FrameLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "gRADIENT",
+        "expect": "Unknown component type 'gRADIENT' — did you mean 'Gradient'? Type names are case-sensitive."
+      },
+      {
+        "written": "gRADIENTvIEW",
+        "expect": "Unknown component type 'gRADIENTvIEW' — did you mean 'GradientView'? Type names are case-sensitive."
+      },
+      {
+        "written": "gRID",
+        "expect": "Unknown component type 'gRID' — did you mean 'Grid'? Type names are case-sensitive."
+      },
+      {
+        "written": "gradient",
+        "expect": "Unknown component type 'gradient' — did you mean 'Gradient'? Type names are case-sensitive."
+      },
+      {
+        "written": "gradientview",
+        "expect": "Unknown component type 'gradientview' — did you mean 'GradientView'? Type names are case-sensitive."
+      },
+      {
+        "written": "grid",
+        "expect": "Unknown component type 'grid' — did you mean 'Grid'? Type names are case-sensitive."
+      },
+      {
+        "written": "hsTACK",
+        "expect": "Unknown component type 'hsTACK' — did you mean 'HStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "hstack",
+        "expect": "Unknown component type 'hstack' — did you mean 'HStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "iCONlABEL",
+        "expect": "Unknown component type 'iCONlABEL' — did you mean 'IconLabel'? Type names are case-sensitive."
+      },
+      {
+        "written": "iFRAME",
+        "expect": "Unknown component type 'iFRAME' — did you mean 'Iframe'? Type names are case-sensitive."
+      },
+      {
+        "written": "iMAGE",
+        "expect": "Unknown component type 'iMAGE' — did you mean 'Image'? Type names are case-sensitive."
+      },
+      {
+        "written": "iMAGEvIEW",
+        "expect": "Unknown component type 'iMAGEvIEW' — did you mean 'ImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "iMG",
+        "expect": "Unknown component type 'iMG' — did you mean 'Img'? Type names are case-sensitive."
+      },
+      {
+        "written": "iNDICATOR",
+        "expect": "Unknown component type 'iNDICATOR' — did you mean 'Indicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "iNPUT",
+        "expect": "Unknown component type 'iNPUT' — did you mean 'Input'? Type names are case-sensitive."
+      },
+      {
+        "written": "iconlabel",
+        "expect": "Unknown component type 'iconlabel' — did you mean 'IconLabel'? Type names are case-sensitive."
+      },
+      {
+        "written": "iframe",
+        "expect": "Unknown component type 'iframe' — did you mean 'Iframe'? Type names are case-sensitive."
+      },
+      {
+        "written": "image",
+        "expect": "Unknown component type 'image' — did you mean 'Image'? Type names are case-sensitive."
+      },
+      {
+        "written": "imageview",
+        "expect": "Unknown component type 'imageview' — did you mean 'ImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "img",
+        "expect": "Unknown component type 'img' — did you mean 'Img'? Type names are case-sensitive."
+      },
+      {
+        "written": "indicator",
+        "expect": "Unknown component type 'indicator' — did you mean 'Indicator'? Type names are case-sensitive."
+      },
+      {
+        "written": "input",
+        "expect": "Unknown component type 'input' — did you mean 'Input'? Type names are case-sensitive."
+      },
+      {
+        "written": "lABEL",
+        "expect": "Unknown component type 'lABEL' — did you mean 'Label'? Type names are case-sensitive."
+      },
+      {
+        "written": "lAZYcOLUMN",
+        "expect": "Unknown component type 'lAZYcOLUMN' — did you mean 'LazyColumn'? Type names are case-sensitive."
+      },
+      {
+        "written": "lAZYgRID",
+        "expect": "Unknown component type 'lAZYgRID' — did you mean 'LazyGrid'? Type names are case-sensitive."
+      },
+      {
+        "written": "lINEARlAYOUT",
+        "expect": "Unknown component type 'lINEARlAYOUT' — did you mean 'LinearLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "lIST",
+        "expect": "Unknown component type 'lIST' — did you mean 'List'? Type names are case-sensitive."
+      },
+      {
+        "written": "lISTvIEW",
+        "expect": "Unknown component type 'lISTvIEW' — did you mean 'ListView'? Type names are case-sensitive."
+      },
+      {
+        "written": "lOADING",
+        "expect": "Unknown component type 'lOADING' — did you mean 'Loading'? Type names are case-sensitive."
+      },
+      {
+        "written": "label",
+        "expect": "Unknown component type 'label' — did you mean 'Label'? Type names are case-sensitive."
+      },
+      {
+        "written": "lazycolumn",
+        "expect": "Unknown component type 'lazycolumn' — did you mean 'LazyColumn'? Type names are case-sensitive."
+      },
+      {
+        "written": "lazygrid",
+        "expect": "Unknown component type 'lazygrid' — did you mean 'LazyGrid'? Type names are case-sensitive."
+      },
+      {
+        "written": "linearlayout",
+        "expect": "Unknown component type 'linearlayout' — did you mean 'LinearLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "list",
+        "expect": "Unknown component type 'list' — did you mean 'List'? Type names are case-sensitive."
+      },
+      {
+        "written": "listview",
+        "expect": "Unknown component type 'listview' — did you mean 'ListView'? Type names are case-sensitive."
+      },
+      {
+        "written": "loading",
+        "expect": "Unknown component type 'loading' — did you mean 'Loading'? Type names are case-sensitive."
+      },
+      {
+        "written": "mULTIlINEeDITtEXT",
+        "expect": "Unknown component type 'mULTIlINEeDITtEXT' — did you mean 'MultiLineEditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "multilineedittext",
+        "expect": "Unknown component type 'multilineedittext' — did you mean 'MultiLineEditText'? Type names are case-sensitive."
+      },
+      {
+        "written": "nETWORKiMAGE",
+        "expect": "Unknown component type 'nETWORKiMAGE' — did you mean 'NetworkImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "nETWORKiMAGEvIEW",
+        "expect": "Unknown component type 'nETWORKiMAGEvIEW' — did you mean 'NetworkImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "networkimage",
+        "expect": "Unknown component type 'networkimage' — did you mean 'NetworkImage'? Type names are case-sensitive."
+      },
+      {
+        "written": "networkimageview",
+        "expect": "Unknown component type 'networkimageview' — did you mean 'NetworkImageView'? Type names are case-sensitive."
+      },
+      {
+        "written": "pICKER",
+        "expect": "Unknown component type 'pICKER' — did you mean 'Picker'? Type names are case-sensitive."
+      },
+      {
+        "written": "pROGRESS",
+        "expect": "Unknown component type 'pROGRESS' — did you mean 'Progress'? Type names are case-sensitive."
+      },
+      {
+        "written": "pROGRESSbAR",
+        "expect": "Unknown component type 'pROGRESSbAR' — did you mean 'ProgressBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "picker",
+        "expect": "Unknown component type 'picker' — did you mean 'Picker'? Type names are case-sensitive."
+      },
+      {
+        "written": "progress",
+        "expect": "Unknown component type 'progress' — did you mean 'Progress'? Type names are case-sensitive."
+      },
+      {
+        "written": "progressbar",
+        "expect": "Unknown component type 'progressbar' — did you mean 'ProgressBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "rADIO",
+        "expect": "Unknown component type 'rADIO' — did you mean 'Radio'? Type names are case-sensitive."
+      },
+      {
+        "written": "rADIObUTTON",
+        "expect": "Unknown component type 'rADIObUTTON' — did you mean 'RadioButton'? Type names are case-sensitive."
+      },
+      {
+        "written": "rADIOgROUP",
+        "expect": "Unknown component type 'rADIOgROUP' — did you mean 'RadioGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "rANGE",
+        "expect": "Unknown component type 'rANGE' — did you mean 'Range'? Type names are case-sensitive."
+      },
+      {
+        "written": "rECYCLERvIEW",
+        "expect": "Unknown component type 'rECYCLERvIEW' — did you mean 'RecyclerView'? Type names are case-sensitive."
+      },
+      {
+        "written": "rELATIVElAYOUT",
+        "expect": "Unknown component type 'rELATIVElAYOUT' — did you mean 'RelativeLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "rOW",
+        "expect": "Unknown component type 'rOW' — did you mean 'Row'? Type names are case-sensitive."
+      },
+      {
+        "written": "radio",
+        "expect": "Unknown component type 'radio' — did you mean 'Radio'? Type names are case-sensitive."
+      },
+      {
+        "written": "radiobutton",
+        "expect": "Unknown component type 'radiobutton' — did you mean 'RadioButton'? Type names are case-sensitive."
+      },
+      {
+        "written": "radiogroup",
+        "expect": "Unknown component type 'radiogroup' — did you mean 'RadioGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "range",
+        "expect": "Unknown component type 'range' — did you mean 'Range'? Type names are case-sensitive."
+      },
+      {
+        "written": "recyclerview",
+        "expect": "Unknown component type 'recyclerview' — did you mean 'RecyclerView'? Type names are case-sensitive."
+      },
+      {
+        "written": "relativelayout",
+        "expect": "Unknown component type 'relativelayout' — did you mean 'RelativeLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "row",
+        "expect": "Unknown component type 'row' — did you mean 'Row'? Type names are case-sensitive."
+      },
+      {
+        "written": "sAFEaREAvIEW",
+        "expect": "Unknown component type 'sAFEaREAvIEW' — did you mean 'SafeAreaView'? Type names are case-sensitive."
+      },
+      {
+        "written": "sCROLL",
+        "expect": "Unknown component type 'sCROLL' — did you mean 'Scroll'? Type names are case-sensitive."
+      },
+      {
+        "written": "sCROLLvIEW",
+        "expect": "Unknown component type 'sCROLLvIEW' — did you mean 'ScrollView'? Type names are case-sensitive."
+      },
+      {
+        "written": "sEEKbAR",
+        "expect": "Unknown component type 'sEEKbAR' — did you mean 'SeekBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "sEGMENT",
+        "expect": "Unknown component type 'sEGMENT' — did you mean 'Segment'? Type names are case-sensitive."
+      },
+      {
+        "written": "sEGMENTEDcONTROL",
+        "expect": "Unknown component type 'sEGMENTEDcONTROL' — did you mean 'SegmentedControl'? Type names are case-sensitive."
+      },
+      {
+        "written": "sELECT",
+        "expect": "Unknown component type 'sELECT' — did you mean 'Select'? Type names are case-sensitive."
+      },
+      {
+        "written": "sELECTbOX",
+        "expect": "Unknown component type 'sELECTbOX' — did you mean 'SelectBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "sLIDER",
+        "expect": "Unknown component type 'sLIDER' — did you mean 'Slider'? Type names are case-sensitive."
+      },
+      {
+        "written": "sPINNER",
+        "expect": "Unknown component type 'sPINNER' — did you mean 'Spinner'? Type names are case-sensitive."
+      },
+      {
+        "written": "sWITCH",
+        "expect": "Unknown component type 'sWITCH' — did you mean 'Switch'? Type names are case-sensitive."
+      },
+      {
+        "written": "safeareaview",
+        "expect": "Unknown component type 'safeareaview' — did you mean 'SafeAreaView'? Type names are case-sensitive."
+      },
+      {
+        "written": "scroll",
+        "expect": "Unknown component type 'scroll' — did you mean 'Scroll'? Type names are case-sensitive."
+      },
+      {
+        "written": "scrollview",
+        "expect": "Unknown component type 'scrollview' — did you mean 'ScrollView'? Type names are case-sensitive."
+      },
+      {
+        "written": "seekbar",
+        "expect": "Unknown component type 'seekbar' — did you mean 'SeekBar'? Type names are case-sensitive."
+      },
+      {
+        "written": "segment",
+        "expect": "Unknown component type 'segment' — did you mean 'Segment'? Type names are case-sensitive."
+      },
+      {
+        "written": "segmentedcontrol",
+        "expect": "Unknown component type 'segmentedcontrol' — did you mean 'SegmentedControl'? Type names are case-sensitive."
+      },
+      {
+        "written": "select",
+        "expect": "Unknown component type 'select' — did you mean 'Select'? Type names are case-sensitive."
+      },
+      {
+        "written": "selectbox",
+        "expect": "Unknown component type 'selectbox' — did you mean 'SelectBox'? Type names are case-sensitive."
+      },
+      {
+        "written": "slider",
+        "expect": "Unknown component type 'slider' — did you mean 'Slider'? Type names are case-sensitive."
+      },
+      {
+        "written": "spinner",
+        "expect": "Unknown component type 'spinner' — did you mean 'Spinner'? Type names are case-sensitive."
+      },
+      {
+        "written": "switch",
+        "expect": "Unknown component type 'switch' — did you mean 'Switch'? Type names are case-sensitive."
+      },
+      {
+        "written": "tABLE",
+        "expect": "Unknown component type 'tABLE' — did you mean 'Table'? Type names are case-sensitive."
+      },
+      {
+        "written": "tABLEvIEW",
+        "expect": "Unknown component type 'tABLEvIEW' — did you mean 'TableView'? Type names are case-sensitive."
+      },
+      {
+        "written": "tABgROUP",
+        "expect": "Unknown component type 'tABgROUP' — did you mean 'TabGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "tABlAYOUT",
+        "expect": "Unknown component type 'tABlAYOUT' — did you mean 'TabLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "tABvIEW",
+        "expect": "Unknown component type 'tABvIEW' — did you mean 'TabView'? Type names are case-sensitive."
+      },
+      {
+        "written": "tEXT",
+        "expect": "Unknown component type 'tEXT' — did you mean 'Text'? Type names are case-sensitive."
+      },
+      {
+        "written": "tEXTAREA",
+        "expect": "Unknown component type 'tEXTAREA' — did you mean 'Textarea'? Type names are case-sensitive."
+      },
+      {
+        "written": "tEXTfIELD",
+        "expect": "Unknown component type 'tEXTfIELD' — did you mean 'TextField'? Type names are case-sensitive."
+      },
+      {
+        "written": "tEXTvIEW",
+        "expect": "Unknown component type 'tEXTvIEW' — did you mean 'TextView'? Type names are case-sensitive."
+      },
+      {
+        "written": "tOGGLE",
+        "expect": "Unknown component type 'tOGGLE' — did you mean 'Toggle'? Type names are case-sensitive."
+      },
+      {
+        "written": "tabgroup",
+        "expect": "Unknown component type 'tabgroup' — did you mean 'TabGroup'? Type names are case-sensitive."
+      },
+      {
+        "written": "tablayout",
+        "expect": "Unknown component type 'tablayout' — did you mean 'TabLayout'? Type names are case-sensitive."
+      },
+      {
+        "written": "table",
+        "expect": "Unknown component type 'table' — did you mean 'Table'? Type names are case-sensitive."
+      },
+      {
+        "written": "tableview",
+        "expect": "Unknown component type 'tableview' — did you mean 'TableView'? Type names are case-sensitive."
+      },
+      {
+        "written": "tabview",
+        "expect": "Unknown component type 'tabview' — did you mean 'TabView'? Type names are case-sensitive."
+      },
+      {
+        "written": "text",
+        "expect": "Unknown component type 'text' — did you mean 'Text'? Type names are case-sensitive."
+      },
+      {
+        "written": "textarea",
+        "expect": "Unknown component type 'textarea' — did you mean 'Textarea'? Type names are case-sensitive."
+      },
+      {
+        "written": "textfield",
+        "expect": "Unknown component type 'textfield' — did you mean 'TextField'? Type names are case-sensitive."
+      },
+      {
+        "written": "textview",
+        "expect": "Unknown component type 'textview' — did you mean 'TextView'? Type names are case-sensitive."
+      },
+      {
+        "written": "toggle",
+        "expect": "Unknown component type 'toggle' — did you mean 'Toggle'? Type names are case-sensitive."
+      },
+      {
+        "written": "vIEW",
+        "expect": "Unknown component type 'vIEW' — did you mean 'View'? Type names are case-sensitive."
+      },
+      {
+        "written": "view",
+        "expect": "Unknown component type 'view' — did you mean 'View'? Type names are case-sensitive."
+      },
+      {
+        "written": "vsTACK",
+        "expect": "Unknown component type 'vsTACK' — did you mean 'VStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "vstack",
+        "expect": "Unknown component type 'vstack' — did you mean 'VStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "wEB",
+        "expect": "Unknown component type 'wEB' — did you mean 'Web'? Type names are case-sensitive."
+      },
+      {
+        "written": "wEBvIEW",
+        "expect": "Unknown component type 'wEBvIEW' — did you mean 'WebView'? Type names are case-sensitive."
+      },
+      {
+        "written": "web",
+        "expect": "Unknown component type 'web' — did you mean 'Web'? Type names are case-sensitive."
+      },
+      {
+        "written": "webview",
+        "expect": "Unknown component type 'webview' — did you mean 'WebView'? Type names are case-sensitive."
+      },
+      {
+        "written": "zsTACK",
+        "expect": "Unknown component type 'zsTACK' — did you mean 'ZStack'? Type names are case-sensitive."
+      },
+      {
+        "written": "zstack",
+        "expect": "Unknown component type 'zstack' — did you mean 'ZStack'? Type names are case-sensitive."
+      }
+    ]
+  }
+}
