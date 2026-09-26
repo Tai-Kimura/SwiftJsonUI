@@ -20,11 +20,10 @@ final class StringDefaultVectorTests: XCTestCase {
         return try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
-    private func merged(className: String, defaultValue: Any) throws -> [String: Any] {
-        let node: [String: Any] = [
-            "type": "View",
-            "data": [["name": "probe", "class": className, "defaultValue": defaultValue]],
-        ]
+    private func merged(className: String, defaultValue: Any?) throws -> [String: Any] {
+        var entry: [String: Any] = ["name": "probe", "class": className]
+        entry["defaultValue"] = defaultValue
+        let node: [String: Any] = ["type": "View", "data": [entry]]
         let json = try JSONSerialization.data(withJSONObject: node)
         let component = try JSONDecoder().decode(DynamicComponent.self, from: json)
         return DynamicView.mergeDataDefaults(component: component, externalData: [:])
@@ -75,6 +74,25 @@ final class StringDefaultVectorTests: XCTestCase {
             let got = try merged(className: "String", defaultValue: spelling)["probe"] as? String
             XCTAssertEqual(got.map { Array($0.unicodeScalars) }, Array(text.unicodeScalars),
                            "\(name): \(spelling) read as \(String(describing: got)), want \(text)")
+        }
+    }
+
+    // A String? default reads as a String's, and none stays absent.
+    func testEveryStringOptionalRowReadsAsItsTextOrStaysAbsent() throws {
+        let rows = try XCTUnwrap(try loadVectors()["optionalStrings"] as? [[String: Any]])
+        XCTAssertFalse(rows.isEmpty, "the table has String? rows")
+        for row in rows {
+            let name = row["name"] as? String ?? "?"
+            let spelling = row["spelling"] as? String
+            let text = row["text"] as? String
+            let data = try merged(className: "String?", defaultValue: spelling)
+            if let text = text {
+                let got = data["probe"] as? String
+                XCTAssertEqual(got.map { Array($0.unicodeScalars) }, Array(text.unicodeScalars),
+                               "\(name): \(String(describing: spelling)) read as \(String(describing: got)), want \(text)")
+            } else {
+                XCTAssertNil(data["probe"], "\(name): got \(String(describing: data["probe"])), want no value")
+            }
         }
     }
 
