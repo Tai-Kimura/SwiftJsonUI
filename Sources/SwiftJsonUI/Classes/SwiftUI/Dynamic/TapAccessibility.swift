@@ -73,19 +73,26 @@ enum TapAccessibility {
         return interactive.contains(drawn) || !known.contains(drawn)
     }
 
-    /// The interactive types that hold the operated things rather than being
-    /// one (jsonui-cli shared/core/tap_accessibility.rb STOP_CONTAINER_TYPES).
-    private static let stopContainers: Set<String> = [
-        "tabview", "scrollview", "collection", "table", "tableview", "recyclerview", "web", "embed"
-    ]
+    /// The interactive types, as drawn, that hold the operated things rather
+    /// than being one (jsonui-cli shared/core/tap_accessibility.rb
+    /// STOP_CONTAINER_TYPES, and the vectors' `controls.stop_container_types`).
+    /// A Table, a TableView or a RecyclerView is drawn as a Collection, so the
+    /// drawn type is never one of them.
+    static let stopContainerTypes: [String] = ["Collection", "Embed", "ScrollView", "TabView", "Web"]
+    private static let stopContainers = Set(stopContainerTypes.map { $0.lowercased() })
 
     /// A control a stop holds — operated where it is, not a container
     /// (jsonui-cli shared/core/tap_accessibility.rb `control?`): the stop takes
     /// its operation without a tap on it, a screen reader's activation too
     /// (DynamicModifierHelper.applyHitTesting, JsonUIStoppedControl). Asked of
-    /// the type it is drawn as, as isInteractiveType is.
+    /// the type it is drawn as, as isInteractiveType is. An app's own
+    /// component is none, whatever it spells (4f's ruling, jsonui-cli 1.9.0):
+    /// it carries its own role — and the interactive list holds alias
+    /// spellings as written (Toggle, Table), which a registered adapter draws
+    /// as written.
     static func isControl(_ type: String?) -> Bool {
         guard let type = type else { return false }
+        if CustomComponentRegistry.shared.adapter(for: type) != nil { return false }
         let drawn = TypeSynonyms.drawnType(type).lowercased()
         return interactive.contains(drawn) && !stopContainers.contains(drawn)
     }

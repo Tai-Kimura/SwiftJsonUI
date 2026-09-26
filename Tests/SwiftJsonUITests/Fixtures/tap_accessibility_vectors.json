@@ -64,6 +64,209 @@
     "View",
     "Web"
   ],
+  "controls": {
+    "_description": "Which nodes are controls — shared/core/tap_accessibility.rb `control?`: a declared interactive type, asked of the type the node is drawn as (TypeSynonyms.drawn_type: a synonym's target, an alias's section), that is not a container of operated things (`stop_container_types`, drawn types only); an app's own spelling (`app_types`, the types the app registers as components of its own) is none, whatever it spells. The sjui and kjui codegen and both Dynamic runtimes (TapAccessibility.isControl) answer each case alike.",
+    "stop_container_types": [
+      "Collection",
+      "Embed",
+      "ScrollView",
+      "TabView",
+      "Web"
+    ],
+    "cases": [
+      {
+        "type": "Button",
+        "control": true
+      },
+      {
+        "type": "Switch",
+        "control": true
+      },
+      {
+        "type": "CheckBox",
+        "control": true
+      },
+      {
+        "type": "Radio",
+        "control": true
+      },
+      {
+        "type": "Segment",
+        "control": true
+      },
+      {
+        "type": "Slider",
+        "control": true
+      },
+      {
+        "type": "SelectBox",
+        "control": true
+      },
+      {
+        "type": "TextField",
+        "control": true
+      },
+      {
+        "type": "TextView",
+        "control": true
+      },
+      {
+        "type": "Toggle",
+        "control": true
+      },
+      {
+        "type": "Check",
+        "control": true
+      },
+      {
+        "type": "EditText",
+        "control": true
+      },
+      {
+        "type": "Input",
+        "control": true
+      },
+      {
+        "type": "Checkbox",
+        "control": true
+      },
+      {
+        "type": "Picker",
+        "control": true
+      },
+      {
+        "type": "Spinner",
+        "control": true
+      },
+      {
+        "type": "DatePicker",
+        "control": true
+      },
+      {
+        "type": "SegmentedControl",
+        "control": true
+      },
+      {
+        "type": "RadioButton",
+        "control": true
+      },
+      {
+        "type": "SeekBar",
+        "control": true
+      },
+      {
+        "type": "Textarea",
+        "control": true
+      },
+      {
+        "type": "TabView",
+        "control": false
+      },
+      {
+        "type": "ScrollView",
+        "control": false
+      },
+      {
+        "type": "Scroll",
+        "control": false
+      },
+      {
+        "type": "Collection",
+        "control": false
+      },
+      {
+        "type": "Table",
+        "control": false
+      },
+      {
+        "type": "TableView",
+        "control": false
+      },
+      {
+        "type": "RecyclerView",
+        "control": false
+      },
+      {
+        "type": "List",
+        "control": false
+      },
+      {
+        "type": "Web",
+        "control": false
+      },
+      {
+        "type": "WebView",
+        "control": false
+      },
+      {
+        "type": "Embed",
+        "control": false
+      },
+      {
+        "type": "Label",
+        "control": false
+      },
+      {
+        "type": "Text",
+        "control": false
+      },
+      {
+        "type": "View",
+        "control": false
+      },
+      {
+        "type": "HStack",
+        "control": false
+      },
+      {
+        "type": "Image",
+        "control": false
+      },
+      {
+        "type": "NetworkImage",
+        "control": false
+      },
+      {
+        "type": "MyWidget",
+        "control": false
+      },
+      {
+        "type": "Toggle",
+        "app_types": [
+          "Toggle"
+        ],
+        "control": false
+      },
+      {
+        "type": "Table",
+        "app_types": [
+          "Table"
+        ],
+        "control": false
+      },
+      {
+        "type": "Picker",
+        "app_types": [
+          "Picker"
+        ],
+        "control": false
+      },
+      {
+        "type": "Switch",
+        "app_types": [
+          "Switch"
+        ],
+        "control": false
+      },
+      {
+        "type": "MyWidget",
+        "app_types": [
+          "MyWidget"
+        ],
+        "control": false
+      }
+    ]
+  },
   "cases": [
     {
       "name": "a tappable Label is a button",
@@ -1125,6 +1328,36 @@
           {
             "type": "AsyncImage",
             "url": "https://example.invalid/x.png"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine"
+      }
+    },
+    {
+      "name": "a Label with links inside a node with userInteractionEnabled: false does not count: its links stop with it",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "View",
+            "userInteractionEnabled": false,
+            "child": [
+              {
+                "type": "Label",
+                "id": "k",
+                "text": "see https://example.com",
+                "linkable": true
+              }
+            ]
           }
         ]
       },

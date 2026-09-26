@@ -43,6 +43,24 @@ final class TapAccessibilityVectorsTests: XCTestCase {
         XCTAssertEqual(TapAccessibility.knownTypes.sorted(), try XCTUnwrap(root["known_types"] as? [String]))
     }
 
+    /// Which nodes are controls (`controls`): isControl answers each case as
+    /// jsonui-cli's `control?` does, the app's own spellings registered as the
+    /// case says (an adapter per type, as an app registers its components).
+    func testEveryControlCaseIsAnsweredAsTheTableGives() throws {
+        let controls = try XCTUnwrap(try table()["controls"] as? [String: Any])
+        XCTAssertEqual(TapAccessibility.stopContainerTypes.sorted(), try XCTUnwrap(controls["stop_container_types"] as? [String]))
+        let cases = try XCTUnwrap(controls["cases"] as? [[String: Any]])
+        XCTAssertEqual(Set(cases.compactMap { $0["control"] as? Bool }), [true, false])
+        defer { CustomComponentRegistry.shared.reset() }
+        for c in cases {
+            let type = try XCTUnwrap(c["type"] as? String)
+            let apps = c["app_types"] as? [String] ?? []
+            CustomComponentRegistry.shared.reset()
+            CustomComponentRegistry.shared.registerAll(apps.map { VectorAppComponent(componentType: $0) })
+            XCTAssertEqual(TapAccessibility.isControl(type), c["control"] as? Bool, "\(type), app types \(apps)")
+        }
+    }
+
     func testEveryCaseGetsTheShapesTheTableGives() throws {
         let cases = try XCTUnwrap(try table()["cases"] as? [[String: Any]])
         XCTAssertFalse(cases.isEmpty, "the table has no cases")
@@ -60,6 +78,14 @@ final class TapAccessibilityVectorsTests: XCTestCase {
             }
         }
         XCTAssertEqual(seen, ["button", "combine", "none"])
+    }
+}
+
+/// An app's own component, registered under a spelling a case names.
+private struct VectorAppComponent: CustomComponentAdapter {
+    let componentType: String
+    func buildView(component: DynamicComponent, data: [String: Any], viewId: String?, parentOrientation: String?) -> AnyView {
+        AnyView(EmptyView())
     }
 }
 #endif
