@@ -124,7 +124,21 @@ public struct CollectionConverter {
             }
         }
 
-        guard let dataSource = dataSource, hasSections else {
+        // The legacy shape: no `sections`, and the cells / header / footer
+        // named on the Collection itself. SSoT `/Collection/cellClasses`:
+        // "With `items` and no `sections`, a single cellClass renders every
+        // item" — what sjui's SwiftUI codegen emits for it. This renderer
+        // decoded the three attributes and never read them, and the guard
+        // below returned before any route when `sections` was absent, so a
+        // Collection declared this way drew no cells at all (measured:
+        // CollectionDeclaredCellsTests, 0 of 3 items on every route).
+        // `sections` decide when both are declared, as on the codegen.
+        let legacyCell = hasSections ? nil : singleDeclaredCell(attrs)
+        let legacyHeader = hasSections ? nil : attrs.headerClasses?.first.flatMap(declaredClassName)
+        let legacyFooter = hasSections ? nil : attrs.footerClasses?.first.flatMap(declaredClassName)
+        let drawsSomething = hasSections || legacyCell != nil || legacyHeader != nil || legacyFooter != nil
+
+        guard let dataSource = dataSource, drawsSomething else {
             // Declaration-faithful (2026-08-02 ruling): no declared data
             // source → no items rendered, but the container still carries
             // its declared frame/background — route the empty view through
@@ -141,14 +155,32 @@ public struct CollectionConverter {
             // codegen face drew the chrome, run 31243724782).
             if let declaredStyle = component.enumString(CollectionAttributes.self, \.listStyle) {
                 return DynamicModifierHelper.applyStandardModifiers(
-                    applyListStyle(AnyView(List {}), style: declaredStyle),
+                    applyScrollContainerSafeArea(
+                        applyListStyle(AnyView(List {}), style: declaredStyle),
+                        component: component
+                    ),
                     component: component, data: data
                 )
             }
             return DynamicModifierHelper.applyStandardModifiers(
-                AnyView(Color.clear), component: component, data: data
+                applyScrollContainerSafeArea(AnyView(Color.clear), component: component),
+                component: component, data: data
             )
         }
+
+        // The section configs the cell routes read. With `sections` they are
+        // the declared ones. Without, the declared cell stands in for a
+        // `sections[].cell` on every section of the data source — the
+        // codegen's List and grid routes draw every section with it
+        // (`generate_fallback_foreach`); its horizontal and flow routes read
+        // `sections.first?.cells` only, hence `firstSectionOnly`. The paging
+        // route reads declared `sections` only, on both faces.
+        let cellSections: [[String: Any]] = {
+            if hasSections { return sections }
+            guard let legacyCell else { return [] }
+            return Array(repeating: ["cell": legacyCell], count: dataSource.sections.count)
+        }()
+        let firstSectionOnly: [[String: Any]] = hasSections ? sections : Array(cellSections.prefix(1))
 
         // Resolve onItemAppear callback
         var onItemAppearCallback: ((Int) -> Void)? = nil
@@ -220,14 +252,16 @@ public struct CollectionConverter {
             result = buildNonLazyLayout(
                 component: component,
                 dataSource: dataSource,
-                sections: sections,
+                sections: (isHorizontal || isFlow) ? firstSectionOnly : cellSections,
                 cellIdProperty: cellIdProperty,
                 isHorizontal: isHorizontal,
                 isFlow: isFlow,
                 globalColumns: globalColumns,
                 data: data,
                 viewId: viewId,
-                onItemAppear: onItemAppearCallback
+                onItemAppear: onItemAppearCallback,
+                legacyHeader: legacyHeader,
+                legacyFooter: legacyFooter
             )
             if forcedMode == CollectionStackMode.none {
                 // The deferred flow: a non-scroll container that the declared
@@ -246,6 +280,7 @@ public struct CollectionConverter {
             // Collection/contentInsets__static) — hence skipInsets.
             result = applyCollectionContentInsets(result, component: component)
             result = applyContainerInset(result, component: component)
+            result = applyScrollContainerSafeArea(result, component: component)
             result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
             return result
         }
@@ -254,7 +289,7 @@ public struct CollectionConverter {
             result = buildFlowLayout(
                 component: component,
                 dataSource: dataSource,
-                sections: sections,
+                sections: firstSectionOnly,
                 cellIdProperty: cellIdProperty,
                 scrollTarget: scrollTarget,
                 scrollAnimated: scrollAnimated,
@@ -298,11 +333,14 @@ public struct CollectionConverter {
                 mode: collectionMode
             )
         } else if globalColumns == 1 && !isHorizontal && !columnsIsBinding {
-            // Legacy single column: List
+            // Legacy single column (no `sections` — every sectioned shape
+            // took a branch above): List
             result = buildListLayout(
                 component: component,
                 dataSource: dataSource,
-                sections: sections,
+                cellName: legacyCell,
+                headerName: legacyHeader,
+                footerName: legacyFooter,
                 cellIdProperty: cellIdProperty,
                 data: data,
                 viewId: viewId,
@@ -326,7 +364,7 @@ public struct CollectionConverter {
             result = buildHorizontalLayout(
                 component: component,
                 dataSource: dataSource,
-                sections: sections,
+                sections: firstSectionOnly,
                 cellIdProperty: cellIdProperty,
                 scrollTarget: scrollTarget,
                 scrollAnimated: scrollAnimated,
@@ -345,7 +383,7 @@ public struct CollectionConverter {
             result = buildGridLayout(
                 component: component,
                 dataSource: dataSource,
-                sections: sections,
+                sections: cellSections,
                 cellIdProperty: cellIdProperty,
                 globalColumns: globalColumns,
                 scrollTarget: scrollTarget,
@@ -353,7 +391,9 @@ public struct CollectionConverter {
                 scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
-                onItemAppear: onItemAppearCallback
+                onItemAppear: onItemAppearCallback,
+                legacyHeader: legacyHeader,
+                legacyFooter: legacyFooter
             )
         }
 
@@ -410,6 +450,7 @@ public struct CollectionConverter {
             )
         }
         result = applyContainerInset(result, component: component)
+        result = applyScrollContainerSafeArea(result, component: component)
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data, skipInsets: true)
 
         return result
@@ -512,6 +553,72 @@ public struct CollectionConverter {
             return view
         }
         return AnyView(view.contentMargins(.all, edges, for: .scrollContent))
+    }
+
+    /// `contentInsetAdjustmentBehavior` and `keyboardAvoidance` on the
+    /// Collection's container — sjui's codegen emits them in the same
+    /// component-specific stage as `containerInset`, right after it
+    /// (collection_converter.rb apply_scroll_container_attrs): `never` →
+    /// `.ignoresSafeArea()`, `scrollableAxes` → `.ignoresSafeArea(edges:
+    /// .horizontal)`, the other values are the system behaviour and emit
+    /// nothing; `keyboardAvoidance: false` → `.ignoresSafeArea(.keyboard)`,
+    /// true (the default) is the system behaviour. Only this renderer's
+    /// ScrollView read the first, and nothing here read the second.
+    static func applyScrollContainerSafeArea(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        let attrs = component.typedAttributes(CollectionAttributes.self)
+        var result = view
+        switch attrs.contentInsetAdjustmentBehavior {
+        case "never":
+            result = AnyView(result.ignoresSafeArea())
+        case "scrollableAxes":
+            result = AnyView(result.ignoresSafeArea(edges: .horizontal))
+        default:
+            break
+        }
+        if attrs.keyboardAvoidance == false {
+            result = AnyView(result.ignoresSafeArea(.keyboard))
+        }
+        return result
+    }
+
+    // MARK: - Declared cell / header / footer classes (the legacy shape)
+
+    /// The layout a `cellClasses` / `headerClasses` / `footerClasses` entry
+    /// names: a string, or `{"className": …}` (the codegen's
+    /// `extract_view_name` accepts both). This renderer loads it by name,
+    /// as it loads a `sections[].cell`.
+    static func declaredClassName(_ entry: Any?) -> String? {
+        let name: String?
+        if let string = entry as? String {
+            name = string
+        } else if let dict = entry as? [String: Any] {
+            name = dict["className"] as? String
+        } else {
+            name = nil
+        }
+        guard let name, !name.isEmpty else { return nil }
+        return name
+    }
+
+    /// The one declared cell that draws every item, or nil. Several
+    /// cellClasses with no `sections` say nothing about which item takes
+    /// which; the build refuses that layout (LayoutValidator
+    /// check_collection, level error), so there is no release drawing to
+    /// follow and no cell is guessed here.
+    static func singleDeclaredCell(_ attrs: CollectionAttributes) -> String? {
+        guard let declared = attrs.cellClasses, declared.count == 1 else { return nil }
+        return declaredClassName(declared[0])
+    }
+
+    /// The codegen's apply_header_footer_padding: a legacy header / footer
+    /// sits outside the grid and follows the declared insets' horizontal
+    /// edges only, so it lines up with the grid body.
+    private static func legacyHeaderFooterEdges(component: DynamicComponent) -> EdgeInsets {
+        guard let edges = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
+            ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) else {
+            return EdgeInsets()
+        }
+        return EdgeInsets(top: 0, leading: edges.leading, bottom: 0, trailing: edges.trailing)
     }
 
     // MARK: - Columns Resolution
@@ -819,56 +926,42 @@ public struct CollectionConverter {
         return AnyView(result.clipped())
     }
 
-    /// Legacy single column List
+    /// The legacy single-column List: no `sections`, the cells, header and
+    /// footer named on the Collection (cellClasses / headerClasses /
+    /// footerClasses) — the codegen's legacy List branch. Every section of
+    /// the data source is drawn with the one declared cell
+    /// (`generate_fallback_foreach`); the header and footer are drawn once,
+    /// without data, as the codegen's `Header()` / `Footer()` are. With a
+    /// header the cells sit in a Section under it and a footer takes a
+    /// Section of its own; without one the footer is the last row.
+    ///
+    /// This route was unreachable until the legacy shape was read: every
+    /// Collection without `sections` returned before any route.
     private static func buildListLayout(
         component: DynamicComponent,
         dataSource: CollectionDataSource,
-        sections: [[String: Any]],
+        cellName: String?,
+        headerName: String?,
+        footerName: String?,
         cellIdProperty: String?,
         data: [String: Any],
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
-        // For legacy List, use first section's cells
         // `listStyle` picks the chrome; the generated code reads the same
         // attribute onto SwiftUI's concrete styles, so the hardcoded
         // PlainListStyle here was a parity drift the moment codegen stopped
         // hardcoding its own.
         let listStyle = component.enumString(CollectionAttributes.self, \.listStyle) ?? "plain"
-
-        guard let firstSection = dataSource.sections.first,
-              let cellsData = firstSection.cells,
-              let sectionConfig = sections.first,
-              let cellName = sectionConfig["cell"] as? String else {
-            return applyListStyle(
-                AnyView(
-                    List {
-                        Text("No data")
-                    }
-                ),
-                style: listStyle
-            )
-        }
-
-        let hasHeader = sectionConfig["header"] != nil && firstSection.header != nil
-        let hasFooter = sectionConfig["footer"] != nil && firstSection.footer != nil
         let hideSeparator = component.typedAttributes(CollectionAttributes.self).hideSeparator ?? false
 
-        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
-
-        // The Group is how the generated code forwards `.listRowSeparator` to
-        // every row — the modifier styles ROWS, not the List, so applying it
-        // to the List itself (the old ListSeparatorModifier) never hid
-        // anything.
-        return applyListStyle(AnyView(
-            List {
-                Group {
-                if hasHeader,
-                   let headerName = sectionConfig["header"] as? String,
-                   let headerData = firstSection.header {
-                    Section {
-                        ForEach(items) { cell in
-                            buildCellView(
+        let cells = AnyView(
+            ForEach(0..<dataSource.sections.count, id: \.self) { sectionIndex in
+                if let cellName, let cellsData = dataSource.sections[sectionIndex].cells {
+                    let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                    ForEach(items) { cell in
+                        applyDeclaredCellFrame(
+                            AnyView(buildCellView(
                                 cellClassName: cellName,
                                 cellData: cell.data,
                                 cellIndex: cell.index,
@@ -876,55 +969,44 @@ public struct CollectionConverter {
                                 data: data,
                                 viewId: viewId,
                                 onItemAppear: onItemAppear
-                            )
-                        }
-                    } header: {
-                        buildHeaderView(
-                            headerClassName: headerName,
-                            headerData: headerData.data,
-                            data: data,
-                            viewId: viewId
+                            )),
+                            component: component
                         )
+                        .id(cell.id)
                     }
+                }
+            }
+        )
 
-                    if hasFooter,
-                       let footerName = sectionConfig["footer"] as? String,
-                       let footerData = firstSection.footer {
+        // The Group is how the generated code forwards `.listRowSeparator` to
+        // every row — the modifier styles ROWS, not the List, so applying it
+        // to the List itself (the old ListSeparatorModifier) never hid
+        // anything. The codegen hides row separators on the header-less
+        // shape only, and hides the section separator between the cells'
+        // Section and the footer's.
+        return applyListStyle(AnyView(
+            List {
+                if let headerName {
+                    Section {
+                        cells
+                    } header: {
+                        buildHeaderView(headerClassName: headerName, headerData: [:], data: data, viewId: viewId)
+                    }
+                    .listSectionSeparator(footerName != nil ? .hidden : .automatic)
+                    if let footerName {
                         Section {
-                            buildFooterView(
-                                footerClassName: footerName,
-                                footerData: footerData.data,
-                                data: data,
-                                viewId: viewId
-                            )
+                            buildFooterView(footerClassName: footerName, footerData: [:], data: data, viewId: viewId)
                         }
                     }
                 } else {
-                    ForEach(items) { cell in
-                        buildCellView(
-                            cellClassName: cellName,
-                            cellData: cell.data,
-                            cellIndex: cell.index,
-                            component: component,
-                            data: data,
-                            viewId: viewId,
-                            onItemAppear: onItemAppear
-                        )
+                    Group {
+                        cells
                     }
-
-                    if hasFooter,
-                       let footerName = sectionConfig["footer"] as? String,
-                       let footerData = firstSection.footer {
-                        buildFooterView(
-                            footerClassName: footerName,
-                            footerData: footerData.data,
-                            data: data,
-                            viewId: viewId
-                        )
+                    .listRowSeparator(hideSeparator ? .hidden : .automatic)
+                    if let footerName {
+                        buildFooterView(footerClassName: footerName, footerData: [:], data: data, viewId: viewId)
                     }
                 }
-                }
-                .listRowSeparator(hideSeparator ? .hidden : .automatic)
             }
         ), style: listStyle)
     }
@@ -1110,7 +1192,9 @@ public struct CollectionConverter {
         scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
-        onItemAppear: ((Int) -> Void)? = nil
+        onItemAppear: ((Int) -> Void)? = nil,
+        legacyHeader: String? = nil,
+        legacyFooter: String? = nil
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         // Declaration-faithful: undeclared spacing is 0, matching Compose
@@ -1129,10 +1213,19 @@ public struct CollectionConverter {
         // codegen face's `.padding` on the LazyVGrid). The caller must NOT
         // also pad the ScrollView — see collectionContentEdgeInsets.
         let contentEdges = collectionContentEdgeInsets(component: component)
+        let headerFooterEdges = legacyHeaderFooterEdges(component: component)
 
         return AnyView(
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: showsIndicators) {
+                    // The legacy shape's headerClasses / footerClasses: once,
+                    // without data, above and below the grid inside the
+                    // scroll — the codegen's legacy grid branch. Absent, the
+                    // content is the grid alone, as before.
+                    if let legacyHeader {
+                        buildHeaderView(headerClassName: legacyHeader, headerData: [:], data: data, viewId: viewId)
+                            .padding(headerFooterEdges)
+                    }
                     // spacing nil = the same context default the bare
                     // builder content had; single-section grids (the common
                     // shape) are unaffected either way.
@@ -1198,6 +1291,10 @@ public struct CollectionConverter {
                     }
                     }
                     .padding(contentEdges ?? EdgeInsets())
+                    if let legacyFooter {
+                        buildFooterView(footerClassName: legacyFooter, footerData: [:], data: data, viewId: viewId)
+                            .padding(headerFooterEdges)
+                    }
                 }
                 .ifLet(scrollTarget) { view, target in
                     // Keyed on the value: SwiftUI re-runs this when it
@@ -1281,7 +1378,9 @@ public struct CollectionConverter {
         globalColumns: Int,
         data: [String: Any],
         viewId: String?,
-        onItemAppear: ((Int) -> Void)? = nil
+        onItemAppear: ((Int) -> Void)? = nil,
+        legacyHeader: String? = nil,
+        legacyFooter: String? = nil
     ) -> AnyView {
         let itemSpacing = component.itemSpacing ?? 0
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
@@ -1392,12 +1491,32 @@ public struct CollectionConverter {
                     }
                 }
             )
-        } else {
+        } else if isFlow {
             let vstackAlignment = getVStackAlignment(from: component)
             return AnyView(
                 VStack(alignment: vstackAlignment, spacing: lineSpacing) {
                     ForEach(0..<sectionCount, id: \.self) { sectionIndex in
                         sectionBodies(sectionIndex)
+                    }
+                }
+            )
+        } else {
+            // The single column and the grid: the legacy shape's
+            // headerClasses / footerClasses are drawn once, without data,
+            // before and after the cells — the codegen's non-lazy VStack
+            // (and its non-lazy grid, which emits them as siblings of the
+            // grid). Horizontal and flow have no place for them there.
+            let vstackAlignment = getVStackAlignment(from: component)
+            return AnyView(
+                VStack(alignment: vstackAlignment, spacing: lineSpacing) {
+                    if let legacyHeader {
+                        buildHeaderView(headerClassName: legacyHeader, headerData: [:], data: data, viewId: viewId)
+                    }
+                    ForEach(0..<sectionCount, id: \.self) { sectionIndex in
+                        sectionBodies(sectionIndex)
+                    }
+                    if let legacyFooter {
+                        buildFooterView(footerClassName: legacyFooter, footerData: [:], data: data, viewId: viewId)
                     }
                 }
             )
