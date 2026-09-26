@@ -180,7 +180,6 @@
       }
     },
     "rules": [
-      "Default contentMode is .center for matchParent (Swift)",
       "Supports placeholder/error images via defaultImage"
     ]
   },
@@ -279,7 +278,7 @@
       "Sections support different cell types per section",
       "cellIdProperty extracts unique keys from item data",
       "scrollTo binding enables programmatic scrolling",
-      "lazy (default true) controls virtualization: true uses LazyVStack/LazyColumn/LazyVerticalGrid with internal scroll; false renders eagerly in a plain VStack/Column with NO scroll container (use when nested in an already-scrollable parent). Sticky headers and paging require lazy: true."
+      "lazy (default 'lazy') is the outer container: 'lazy' virtualizes (LazyVStack/LazyColumn/LazyVerticalGrid with internal scroll); 'eager' draws every cell in a scroll container, with no virtualization; 'none' draws them with NO scroll container (use when nested in an already-scrollable parent). Sticky headers and paging require 'lazy'."
     ]
   },
   "Switch": {
@@ -470,7 +469,7 @@
     },
     "rules": [
       "value/bind is two-way binding",
-      "minimumValue/maximumValue define range (default 0-100)",
+      "minimum / maximum define the range (default 0 and 1: with neither set the range is 0 .. 1); minimumValue / minValue and maximumValue / maxValue are alias spellings",
       "step defines discrete steps"
     ]
   },
