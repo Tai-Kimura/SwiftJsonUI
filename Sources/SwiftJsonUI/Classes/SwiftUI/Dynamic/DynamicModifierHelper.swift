@@ -1143,7 +1143,7 @@ public struct DynamicModifierHelper {
     ///
     /// The codegen path localizes the literal spelling through StringManager
     /// (base_view_converter.rb#get_text_with_string_manager); this path
-    /// returned the raw key, so `title: "bottler_title"` surfaced as the key
+    /// returned the raw key, so `title: "profile_title"` surfaced as the key
     /// itself (10.14.2, f8fc559). Extracted from the dialog builder because it
     /// is the ONLY regression device this behaviour can have: the conformance
     /// generator gives the attribute a behavioural skip (a dialog is not on
@@ -1207,7 +1207,7 @@ public struct DynamicModifierHelper {
         // Title/message run through the string table after resolution — the
         // codegen path localizes the literal spelling via StringManager
         // (base_view_converter.rb get_text_with_string_manager); dynamic
-        // returned the raw key, so `title: "bottler_title"` surfaced as the
+        // returned the raw key, so `title: "profile_title"` surfaced as the
         // key itself. Same shape as LabelConverter: resolve, then
         // dynamicLocalized (a non-key string passes through unchanged).
         let title = confirmationDialogText(dialogConfig["title"], data: data) ?? ""
