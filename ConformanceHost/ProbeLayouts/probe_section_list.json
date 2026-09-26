@@ -1,0 +1,76 @@
+{
+  "type": "View",
+  "id": "cg_list_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_list",
+      "width": 200,
+      "height": 200,
+      "background": "#DDDDDD",
+      "items": "@{rows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "header": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "name": "rows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "A0"
+              },
+              {
+                "title": "A1"
+              }
+            ]
+          },
+          {
+            "header": {
+              "title": "H"
+            }
+          },
+          {
+            "cells": [
+              {
+                "title": "B0"
+              },
+              {
+                "title": "B1"
+              },
+              {
+                "title": "B2"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "C0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}
