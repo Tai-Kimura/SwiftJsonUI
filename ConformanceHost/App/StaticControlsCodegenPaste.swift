@@ -2,13 +2,15 @@
 //  StaticControlsCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli rel/v1.8.121 = 24f7fad0) emits
-//  for a layout of controls with static values — the @State declarations and
-//  the generated sections, pasted unchanged — so DynamicStateProbeView's
-//  `codegen` form can tap the codegen path next to the dynamic one (ticket
-//  static-valued-controls-do-not-change-on-a-users-tap). The layout is
-//  DynamicStateProbeView.layout("static"), Toggle written as Switch (the
-//  normalizer's canonical type).
+//  What `sjui build` (sjui_tools of jsonui-cli triage/state-names-by-path a04c876f, on
+//  rel/v1.8.121 = 621d3136) emits for a layout of controls with static values
+//  — the @State declarations and the generated sections, pasted unchanged —
+//  so DynamicStateProbeView's `codegen` form can tap the codegen path next to
+//  the dynamic one (ticket static-valued-controls-do-not-change-on-a-users-
+//  tap). The layout is DynamicStateProbeView.layout("static"), Toggle written
+//  as Switch (the normalizer's canonical type). The Radio group's selection is
+//  declared once, seeded by its checked Radio (ticket
+//  sjui-codegen-state-declarations-collide-by-name): nothing is left out.
 //
 
 import SwiftUI
@@ -20,17 +22,12 @@ struct StaticControlsCodegenPaste: View {
     @State private var cbIsOn: Bool = false
     @State private var selectedRv: String = "ra"
     @State private var selectedGrp: String = "rg1"
-    // sjui emitted a second `@State private var selectedGrp: String = ""` here — one
-    // per Radio of the group, deduplicated as whole lines, so the checked
-    // option's seed and the other's empty one both stay: "invalid redeclaration
-    // of 'selectedGrp'" (measured 2026-09-26, Xcode 26.6). The only line not
-    // pasted unchanged.
     @State private var selectedSeg: Int = 0
     @State private var tabSelection: Int = 0
     @State private var sliderValuesl: Double = 0.2
 
     var body: some View {
-        section0()
+            AnyView(section0())
     }
 
     @ViewBuilder private func section0() -> some View {

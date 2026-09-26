@@ -2,7 +2,7 @@
 //  StateNamesCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli rel/v1.8.121 = 621d3136) emits for
+//  What `sjui build` (sjui_tools of jsonui-cli triage/state-names-by-path a04c876f, on rel/v1.8.121 = 621d3136) emits for
 //  StateNamesProbeView's layout — id-less stateful controls in pairs, two
 //  Radio groups, two Radios over items — the generated Data struct, the
 //  view-local state, the body and its sections, pasted unchanged but for any
@@ -79,16 +79,20 @@ struct StateNamesData {
 
 struct StateNamesCodegenPaste: View {
     @SwiftUI.Binding var data: StateNamesData
-    @State private var toggleIsOn: Bool = false
-    @State private var checkboxIsOn: Bool = false
-    @State private var selectedSegment: Int = 0
-    @State private var sliderValue: Double = 0.2
-    @State private var textFieldText: String = "t"
+    @State private var toggle_0_0IsOn: Bool = false
+    @State private var toggle_0_1IsOn: Bool = false
+    @State private var checkbox_0_2IsOn: Bool = false
+    @State private var checkbox_0_3IsOn: Bool = false
+    @State private var selectedSegment_0_4: Int = 0
+    @State private var selectedSegment_0_5: Int = 0
+    @State private var slider_0_6Value: Double = 0.2
+    @State private var slider_0_7Value: Double = 0.2
+    @State private var textField_0_8Text: String = "t"
+    @State private var textField_0_9Text: String = "t"
     @State private var selectedH: String = ""
-    @State private var selectedRadio: String = "i1"
-    // (a second `@State private var selectedRadio: String = "j1"` here — left out, see the header)
-    @State private var selectedG: String = "radio"
-    // (a second `@State private var selectedG: String = ""` here — left out, see the header)
+    @State private var selectedRadio_0_12: String = "i1"
+    @State private var selectedRadio_0_13: String = "j1"
+    @State private var selectedG: String = "radio_0_14"
 
     var body: some View {
             AnyView(section0())
@@ -96,53 +100,53 @@ struct StateNamesCodegenPaste: View {
 
     @ViewBuilder private func section0() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-                Toggle(isOn: $toggleIsOn) {
+                Toggle(isOn: $toggle_0_0IsOn) {
                     Text("")
                 }
                     .labelsHidden()
-                Toggle(isOn: $toggleIsOn) {
+                Toggle(isOn: $toggle_0_1IsOn) {
                     Text("")
                 }
                     .labelsHidden()
                 CheckBoxView(
-                    isOn: $checkboxIsOn,
+                    isOn: $checkbox_0_2IsOn,
                     label: "c1",
                 )
                 CheckBoxView(
-                    isOn: $checkboxIsOn,
+                    isOn: $checkbox_0_3IsOn,
                     label: "c2",
                 )
-                Picker("", selection: $selectedSegment) {
+                Picker("", selection: $selectedSegment_0_4) {
                     Text("a1".localized()).tag(0)
                     Text("a2".localized()).tag(1)
                 }
                     .pickerStyle(.segmented)
-                Picker("", selection: $selectedSegment) {
+                Picker("", selection: $selectedSegment_0_5) {
                     Text("b1".localized()).tag(0)
                     Text("b2".localized()).tag(1)
                 }
                     .pickerStyle(.segmented)
-                Slider(value: $sliderValue, in: 0...1)
-                Slider(value: $sliderValue, in: 0...1)
-                TextField("", text: $textFieldText)
+                Slider(value: $slider_0_6Value, in: 0...1)
+                Slider(value: $slider_0_7Value, in: 0...1)
+                TextField("", text: $textField_0_8Text)
                     .frame(minHeight: 36, idealHeight: 36, maxHeight: 36)
-                TextField("", text: $textFieldText)
+                TextField("", text: $textField_0_9Text)
                     .frame(minHeight: 36, idealHeight: 36, maxHeight: 36)
                 HStack {
-                    Image(systemName: selectedH == "radio" ? "largecircle.fill.circle" : "circle")
+                    Image(systemName: selectedH == "radio_0_10" ? "largecircle.fill.circle" : "circle")
                         .foregroundColor(.blue)
                         .onTapGesture {
-                        selectedH = "radio"
+                        selectedH = "radio_0_10"
                     }
                     Text("h1")
                 }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("h1")
                 HStack {
-                    Image(systemName: selectedH == "radio" ? "largecircle.fill.circle" : "circle")
+                    Image(systemName: selectedH == "radio_0_11" ? "largecircle.fill.circle" : "circle")
                         .foregroundColor(.blue)
                         .onTapGesture {
-                        selectedH = "radio"
+                        selectedH = "radio_0_11"
                     }
                     Text("h2")
                 }
@@ -150,55 +154,55 @@ struct StateNamesCodegenPaste: View {
                     .accessibilityLabel("h2")
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Image(systemName: selectedRadio == "i1" ? "largecircle.fill.circle" : "circle")
+                        Image(systemName: selectedRadio_0_12 == "i1" ? "largecircle.fill.circle" : "circle")
                             .foregroundColor(.blue)
                             .onTapGesture {
-                            selectedRadio = "i1"
+                            selectedRadio_0_12 = "i1"
                         }
                         Text("i1")
                     }
                     HStack {
-                        Image(systemName: selectedRadio == "i2" ? "largecircle.fill.circle" : "circle")
+                        Image(systemName: selectedRadio_0_12 == "i2" ? "largecircle.fill.circle" : "circle")
                             .foregroundColor(.blue)
                             .onTapGesture {
-                            selectedRadio = "i2"
+                            selectedRadio_0_12 = "i2"
                         }
                         Text("i2")
                     }
                 }
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        Image(systemName: selectedRadio == "j1" ? "largecircle.fill.circle" : "circle")
+                        Image(systemName: selectedRadio_0_13 == "j1" ? "largecircle.fill.circle" : "circle")
                             .foregroundColor(.blue)
                             .onTapGesture {
-                            selectedRadio = "j1"
+                            selectedRadio_0_13 = "j1"
                         }
                         Text("j1")
                     }
                     HStack {
-                        Image(systemName: selectedRadio == "j2" ? "largecircle.fill.circle" : "circle")
+                        Image(systemName: selectedRadio_0_13 == "j2" ? "largecircle.fill.circle" : "circle")
                             .foregroundColor(.blue)
                             .onTapGesture {
-                            selectedRadio = "j2"
+                            selectedRadio_0_13 = "j2"
                         }
                         Text("j2")
                     }
                 }
                 HStack {
-                    Image(systemName: selectedG == "radio" ? "largecircle.fill.circle" : "circle")
+                    Image(systemName: selectedG == "radio_0_14" ? "largecircle.fill.circle" : "circle")
                         .foregroundColor(.blue)
                         .onTapGesture {
-                        selectedG = "radio"
+                        selectedG = "radio_0_14"
                     }
                     Text("g1")
                 }
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel("g1")
                 HStack {
-                    Image(systemName: selectedG == "radio" ? "largecircle.fill.circle" : "circle")
+                    Image(systemName: selectedG == "radio_0_15" ? "largecircle.fill.circle" : "circle")
                         .foregroundColor(.blue)
                         .onTapGesture {
-                        selectedG = "radio"
+                        selectedG = "radio_0_15"
                     }
                     Text("g2")
                 }
