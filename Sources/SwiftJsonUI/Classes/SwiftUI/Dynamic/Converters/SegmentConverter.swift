@@ -75,8 +75,15 @@ public struct SegmentConverter {
             )
         }
         let id = component.id ?? "segment"
+        // onValueChange — or, where none is declared, `valueChange`, the
+        // selector spelling (Segment's own attribute in the definitions, no
+        // platform named). UIKit wires it to .valueChanged, and sjui build,
+        // kjui build and rjui call it where onValueChange is not declared, from
+        // the user's choice; this runtime read it not at all, so a DEBUG build
+        // did not call what the release build called (4f's ruling).
         let handler = component.onValueChangeSpelling()
             .flatMap { DynamicEventHelper.extractPropertyName(from: $0) != nil ? $0 : nil }
+            ?? Self.valueChangeSelector(attrs.valueChange)
 
         // No two-way binding in the data — a literal, no value, or a plain
         // value: the segment holds its own state seeded from it
@@ -106,6 +113,19 @@ public struct SegmentConverter {
 
         return result
     }
+    /// The data's name for a `valueChange` selector: camelCased as the code
+    /// generators name it (`seg_changed` → `segChanged`: sjui's to_camel_case,
+    /// kjui's camelize_selector). Nil for none, a blank one, or a binding —
+    /// that is onValueChange's spelling.
+    static func valueChangeSelector(_ value: String?) -> String? {
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+              DynamicEventHelper.extractPropertyName(from: value) == nil else { return nil }
+        let parts = value.split(separator: "_", omittingEmptySubsequences: false).map(String.init)
+        return parts.dropFirst().reduce(parts[0]) { name, part in
+            name + part.prefix(1).uppercased() + part.dropFirst().lowercased()
+        }
+    }
+
     // MARK: - UISegmentedControl Appearance
 
     /// Configure UISegmentedControl.appearance() colors for segmented Picker.

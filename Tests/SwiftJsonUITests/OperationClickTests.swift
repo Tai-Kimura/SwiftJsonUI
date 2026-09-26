@@ -118,6 +118,20 @@ final class OperationClickTests: XCTestCase {
         XCTAssertEqual(log.count, 3, "the view model's change calls neither")
     }
 
+    /// Segment.valueChange names a method as the code generators name it
+    /// (sjui's to_camel_case, kjui's camelize_selector: the first word as it
+    /// is, each later one capitalized); a binding is onValueChange's spelling,
+    /// and a blank one names nothing.
+    func testAValueChangeSelectorIsNamedAsTheGeneratorsNameIt() {
+        XCTAssertEqual(SegmentConverter.valueChangeSelector("seg_changed"), "segChanged")
+        XCTAssertEqual(SegmentConverter.valueChangeSelector("onSegvuV"), "onSegvuV")
+        XCTAssertEqual(SegmentConverter.valueChangeSelector("foo_BAR_baz"), "fooBarBaz")
+        XCTAssertEqual(SegmentConverter.valueChangeSelector("a__b"), "aB")
+        XCTAssertNil(SegmentConverter.valueChangeSelector("@{changed}"))
+        XCTAssertNil(SegmentConverter.valueChangeSelector("  "))
+        XCTAssertNil(SegmentConverter.valueChangeSelector(nil))
+    }
+
     func testNoHandlerLeavesTheBindingAsItIs() {
         var value = 1
         let base = SwiftUI.Binding(get: { value }, set: { value = $0 })
