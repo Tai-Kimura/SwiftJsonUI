@@ -98,11 +98,68 @@ public struct DynamicEventHelper {
         ) != false
     }
 
+    // MARK: - A control's onClick: from its own operation
+
+    /// Types whose declared onClick is not a tap on the view. A control —
+    /// Switch / Toggle, CheckBox, Radio, Segment, Slider, SelectBox — calls it
+    /// from its own operation (`operationClick`); a text field does not call
+    /// it at all, its tap focuses it. `applyOnClick` attaches nothing to them:
+    /// a tap around a control either never fires (the control's own gesture
+    /// wins) or fires beside the operation, so a CheckBox's check and a group
+    /// Radio's selection called the handler while a Switch's, a Segment's, a
+    /// Slider's and a SelectBox's did not (ticket
+    /// control-onclick-is-called-differently-on-every-path, measured with
+    /// ConformanceHost OnClickProbeUITests). The same list as kjui_tools'
+    /// operation_click_call and the sjui codegen.
+    static let operationClickTypes: Set<String> = [
+        "switch", "toggle", "checkbox", "check", "radio", "segment", "slider", "selectbox",
+        "textfield", "edittext", "input", "textview"
+    ]
+
+    static func callsOnClickFromItsOperation(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type?.lowercased() else { return false }
+        return operationClickTypes.contains(type)
+    }
+
+    /// A control's declared onClick, for its operation to call after its own
+    /// update (and after onValueChange): every handler in declaration order,
+    /// behind `canTap` — the gate on the call, read when the call is made.
+    /// `enabled: false` is the control's own: it stops the operation, and so
+    /// the call. Nil when there is no handler.
+    static func operationClick(_ component: DynamicComponent, data: [String: Any]) -> (() -> Void)? {
+        let handlers = component.effectiveOnClickHandlers
+        guard !handlers.isEmpty else { return nil }
+        return {
+            guard tapGateOpen(component, data: data) else { return }
+            for handler in handlers {
+                DynamicEventHelper.call(handler, data: data)
+            }
+        }
+    }
+
+    /// `binding`, with `click` after each of the control's own writes — the
+    /// user's operation, and not the view model's change, which never goes
+    /// through the control's binding.
+    static func calling<Value>(_ click: (() -> Void)?, after binding: SwiftUI.Binding<Value>) -> SwiftUI.Binding<Value> {
+        guard let click else { return binding }
+        return SwiftUI.Binding(
+            get: { binding.wrappedValue },
+            set: { newValue in
+                binding.wrappedValue = newValue
+                click()
+            }
+        )
+    }
+
     /// Apply onTapGesture if onClick is defined
     /// Matches tool pattern: .onTapGesture { data.onClick?() }
     static func applyOnClick(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         // Skip if component is disabled
         if component.commonBool(\.enabled) == false { return view }
+
+        // A control calls its onClick from its own operation, and a text
+        // field not at all (operationClickTypes): no tap here.
+        if callsOnClickFromItsOperation(component) { return view }
 
         let handlers = component.effectiveOnClickHandlers
         guard !handlers.isEmpty else { return view }

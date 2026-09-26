@@ -112,6 +112,12 @@ public struct RadioConverter {
             return nil
         }()
 
+        // The declared onClick, called from an item's selection after
+        // onValueChange (DynamicEventHelper.operationClick). It was called
+        // from nothing: the tap around the group never fired over the item's
+        // own.
+        let click = DynamicEventHelper.operationClick(component, data: data)
+
         // The group, over whichever selection it moves (the view model's two-way
         // binding, or its own below).
         let build: (SwiftUI.Binding<String>) -> AnyView = { selectionBinding in AnyView(
@@ -140,6 +146,7 @@ public struct RadioConverter {
                                         data: data
                                     )
                                 }
+                                click?()
                             }
                         Text(item.dynamicLocalized())
                     }
@@ -190,6 +197,7 @@ public struct RadioConverter {
             legacy: nil,
             data: data
         ) == true
+        let click = DynamicEventHelper.operationClick(component, data: data)
         // The row, over the group's selection (the view model's two-way binding
         // under the group's name, or the screen's own store below).
         let build: (SwiftUI.Binding<String>) -> AnyView = { groupSelectionBinding in
@@ -209,11 +217,10 @@ public struct RadioConverter {
                 .onTapGesture {
                     groupSelectionBinding.wrappedValue = id
                     // onClick handler. canTap gates the call, not the selection
-                    // above it: that is the radio's own operation, `enabled`'s.
-                    if let onClick = component.commonAny(\.onClick),
-                       DynamicEventHelper.tapGateOpen(component, data: data) {
-                        DynamicEventHelper.call(onClick, data: data)
-                    }
+                    // above it: that is the radio's own operation, `enabled`'s
+                    // (DynamicEventHelper.operationClick — every handler, the
+                    // legacy `onclick` too).
+                    click?()
                 }
                 // One accessibility element for the row whose label is the radio
                 // text — otherwise the SF Symbol image leaks its symbol name
