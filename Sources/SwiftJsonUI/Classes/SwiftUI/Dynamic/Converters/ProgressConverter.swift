@@ -50,19 +50,13 @@ public struct ProgressConverter {
         default: break
         }
 
-        // `style` keeps the shape reading: it is the separate spelling that
-        // carries linear/circular, and is not the same attribute.
-        // `style` IS declared on common with a generated `String?` field —
-        // the allowlist row that froze this read as "SSoT 未宣言" was
-        // wrong. It is a separate spelling from `indicatorStyle`
-        // (linear/circular vs the size vocabulary), not an undeclared key.
-        if let shape = component.typedAttributes(CommonAttributes.self).style {
-            if shape.lowercased() == "linear" {
-                result = AnyView(result.progressViewStyle(LinearProgressViewStyle()))
-            } else {
-                result = AnyView(result.progressViewStyle(CircularProgressViewStyle()))
-            }
-        }
+        // `style` is not read here: it is the style file's name
+        // (common.style — "Style file name (without extension)"), applied by
+        // the style processor, and Progress declares no shape — a
+        // determinate ProgressView is a bar. Reading it as the shape drew any
+        // styled Progress (a style named anything but `linear`) as a spinner
+        // while kjui and rjui drew a bar (jsonui-cli 1.9.0, the same misread
+        // Blur's `style` fallback was).
 
         // progressTintColor -> .tint() — `color` / `tintColor` are the
         // Indicator/UIKit spellings of the same accent; the specific name

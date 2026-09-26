@@ -1051,9 +1051,11 @@ final class DynamicInertAttributeTests: XCTestCase {
         }
     }
 
-    /// `style` is the separate spelling that carries linear/circular, and it
-    /// stays on the shape reading.
-    func testProgressStyleStillCarriesTheShape() throws {
+    /// `style` is the style file's name (common.style), not a shape:
+    /// Progress declares none, and ProgressConverter no longer reads it
+    /// (a styled Progress was drawn as a spinner). It is decoded as written
+    /// and is not the size vocabulary.
+    func testProgressStyleIsTheStyleFileNotTheShape() throws {
         let c = try component("""
         { "type": "Progress", "id": "t", "progress": 0.5, "style": "linear" }
         """)
