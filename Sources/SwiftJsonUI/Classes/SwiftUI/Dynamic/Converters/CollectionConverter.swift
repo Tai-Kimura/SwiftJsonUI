@@ -121,7 +121,23 @@ public struct CollectionConverter {
                     cellIdProperty: cellIdProperty,
                     autoChangeTrackingId: autoChangeTrackingId
                 )
+            } else if !hasSections, let list = data[propertyName] as? [Any], let cell = singleDeclaredCell(attrs) {
+                // Collection.items is a CollectionDataSource or an array
+                // (attribute_definitions.json; 4f ruling, 2026-09-26): with
+                // no `sections`, an array is ONE section of the declared
+                // cell, drawn on the routes a one-section data source takes.
+                // The codegens decide by the layout's data declaration; this
+                // renderer by the value's shape. An array was not a
+                // CollectionDataSource, so it drew no cell (measured on
+                // b314fd2: 0 of 3 on every route).
+                dataSource = Self.oneSection(
+                    of: list, cell: cell,
+                    cellIdProperty: cellIdProperty, autoChangeTrackingId: autoChangeTrackingId
+                )
             }
+        }
+        if !hasSections, let declared = attrs.cellClasses, declared.count > 1 {
+            logSeveralCellClasses(componentId: component.id, count: declared.count)
         }
 
         // The legacy shape: no `sections`, and the cells / header / footer
@@ -624,6 +640,30 @@ public struct CollectionConverter {
         return declaredClassName(declared[0])
     }
 
+    /// An array bound to a class-list Collection's `items`, as one section
+    /// of `cell`. An element is a cell's data: a dictionary as it is, any
+    /// other value by its stored properties (a generated Data struct — what
+    /// the codegen turns into a dictionary with `toDictionary()`); a value
+    /// with no properties draws no cell.
+    static func oneSection(
+        of list: [Any], cell: String, cellIdProperty: String?, autoChangeTrackingId: Bool
+    ) -> CollectionDataSource {
+        var section = CollectionDataSection(cellIdProperty: cellIdProperty, autoChangeTrackingId: autoChangeTrackingId)
+        section.setCells(viewName: cell, data: list.compactMap(cellDictionary))
+        return CollectionDataSource(sections: [section])
+    }
+
+    static func cellDictionary(_ element: Any) -> [String: Any]? {
+        if let dictionary = element as? [String: Any] { return dictionary }
+        let mirror = Mirror(reflecting: element)
+        guard mirror.displayStyle == .struct || mirror.displayStyle == .class else { return nil }
+        var dictionary: [String: Any] = [:]
+        for child in mirror.children {
+            if let label = child.label { dictionary[label] = child.value }
+        }
+        return dictionary.isEmpty ? nil : dictionary
+    }
+
     /// A section's own `columns` as declared (attribute_definitions.json,
     /// Collection.sections.items.properties.columns: number), or nil.
     static func declaredSectionColumns(_ sectionConfig: [String: Any]) -> Int? {
@@ -719,6 +759,21 @@ public struct CollectionConverter {
         let alongScroll = attrs.lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let betweenLanes = component.columnSpacing ?? component.itemSpacing ?? 0
         return (betweenLanes, alongScroll)
+    }
+
+    /// A flow Collection's three gaps (jsonui-cli attribute_semantics.json ->
+    /// collectionSpacing, 4f ruling 2026-09-26): between the cells of a line
+    /// columnSpacing, else itemSpacing; between lines lineSpacing (its alias
+    /// sectionSpacing folds here), else itemSpacing; between the section
+    /// blocks as between lines. Undeclared, each is 0; a declared value is
+    /// drawn as declared, 0 included. Until jsonui-cli 1.9.0 the lazy flow
+    /// drew 8 for an undeclared gap and left the blocks to the ScrollView's
+    /// own stack spacing, and the `lazy: none` flow drew 8 for anything not
+    /// above 0 — a declared 0 included.
+    static func flowSpacing(_ component: DynamicComponent) -> (cells: CGFloat, lines: CGFloat, sections: CGFloat) {
+        let lines = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
+        let cells = component.columnSpacing ?? component.itemSpacing ?? 0
+        return (cells, lines, lines)
     }
 
     /// A section's cells as a horizontal grid of `lanes` rows (LazyHGrid):
@@ -841,6 +896,26 @@ public struct CollectionConverter {
         misconfigLogLock.unlock()
         guard firstTime else { return }
         Logger.log("[CollectionConverter] Collection \(key): autoChangeTrackingId is true but cellIdProperty is missing. Auto cellId generation is disabled; cells fall back to index-based identity.")
+    }
+
+    /// What this renderer has named, in order (read by the tests).
+    static var named: [String] = []
+    static var loggedSeveralCellClassesIds = Set<String>()
+
+    /// Several cellClasses and no `sections`: the build refuses that layout
+    /// (LayoutValidator check_collection, level error, "N cellClasses declared
+    /// without sections"), and this renderer draws no cell for it — said once
+    /// per Collection, since a Dynamic layout does not pass the build. It drew
+    /// nothing and said nothing.
+    private static func logSeveralCellClasses(componentId: String?, count: Int) {
+        let key = componentId ?? "(unnamed)"
+        misconfigLogLock.lock()
+        let firstTime = loggedSeveralCellClassesIds.insert(key).inserted
+        misconfigLogLock.unlock()
+        guard firstTime else { return }
+        let sentence = "[CollectionConverter] Collection (id=\(key)): \(count) cellClasses declared without sections — no cell is drawn. Fix: assign cells via sections[].cell, or declare a single cellClass."
+        named.append(sentence)
+        Logger.log(sentence)
     }
 
     // MARK: - Paging Page Item Helper
@@ -1542,37 +1617,38 @@ public struct CollectionConverter {
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
-        let hSpacing = component.columnSpacing ?? component.itemSpacing ?? 8
-        let vSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 8
+        let gaps = flowSpacing(component)
 
         return AnyView(
             ScrollView(.vertical, showsIndicators: showsIndicators) {
-                ForEach(
-                    0..<min(sections.count, dataSource.sections.count),
-                    id: \.self
-                ) { sectionIndex in
-                    let sectionConfig = sections[sectionIndex]
-                    let sectionData = dataSource.sections[sectionIndex]
+                VStack(spacing: gaps.sections) {
+                    ForEach(
+                        0..<min(sections.count, dataSource.sections.count),
+                        id: \.self
+                    ) { sectionIndex in
+                        let sectionConfig = sections[sectionIndex]
+                        let sectionData = dataSource.sections[sectionIndex]
 
-                    if let cellName = sectionConfig["cell"] as? String,
-                       let cellsData = sectionData.cells {
-                        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
-                        FlowLayout(
-                            alignment: getFlowAlignment(from: component),
-                            horizontalSpacing: hSpacing,
-                            verticalSpacing: vSpacing
-                        ) {
-                            ForEach(items) { cell in
-                                buildCellView(
-                                    cellClassName: cellName,
-                                    cellData: cell.data,
-                                    cellIndex: cell.index,
-                                    component: component,
-                                    data: data,
-                                    viewId: viewId,
-                                    onItemAppear: onItemAppear
-                                )
-                                .id(cell.id)
+                        if let cellName = sectionConfig["cell"] as? String,
+                           let cellsData = sectionData.cells {
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            FlowLayout(
+                                alignment: getFlowAlignment(from: component),
+                                horizontalSpacing: gaps.cells,
+                                verticalSpacing: gaps.lines
+                            ) {
+                                ForEach(items) { cell in
+                                    buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )
+                                    .id(cell.id)
+                                }
                             }
                         }
                     }
@@ -1672,10 +1748,12 @@ public struct CollectionConverter {
                        let cellsData = sectionData.cells {
                         let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
                         if isFlow {
+                            // The declared gaps as declared, 0 included
+                            // (flowSpacing; the blocks are the VStack below).
                             FlowLayout(
                                 alignment: getFlowAlignment(from: component),
-                                horizontalSpacing: columnSpacing > 0 ? columnSpacing : 8,
-                                verticalSpacing: lineSpacing > 0 ? lineSpacing : 8
+                                horizontalSpacing: flowSpacing(component).cells,
+                                verticalSpacing: flowSpacing(component).lines
                             ) {
                                 ForEach(items) { cell in
                                     buildCellView(
@@ -1777,7 +1855,7 @@ public struct CollectionConverter {
         } else if isFlow {
             let vstackAlignment = getVStackAlignment(from: component)
             return AnyView(
-                VStack(alignment: vstackAlignment, spacing: lineSpacing) {
+                VStack(alignment: vstackAlignment, spacing: flowSpacing(component).sections) {
                     ForEach(0..<sectionCount, id: \.self) { sectionIndex in
                         sectionBodies(sectionIndex)
                     }
