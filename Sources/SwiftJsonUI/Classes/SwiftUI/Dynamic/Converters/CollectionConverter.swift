@@ -121,7 +121,23 @@ public struct CollectionConverter {
                     cellIdProperty: cellIdProperty,
                     autoChangeTrackingId: autoChangeTrackingId
                 )
+            } else if !hasSections, let list = data[propertyName] as? [Any], let cell = singleDeclaredCell(attrs) {
+                // Collection.items is a CollectionDataSource or an array
+                // (attribute_definitions.json; 4f ruling, 2026-09-26): with
+                // no `sections`, an array is ONE section of the declared
+                // cell, drawn on the routes a one-section data source takes.
+                // The codegens decide by the layout's data declaration; this
+                // renderer by the value's shape. An array was not a
+                // CollectionDataSource, so it drew no cell (measured on
+                // b314fd2: 0 of 3 on every route).
+                dataSource = Self.oneSection(
+                    of: list, cell: cell,
+                    cellIdProperty: cellIdProperty, autoChangeTrackingId: autoChangeTrackingId
+                )
             }
+        }
+        if !hasSections, let declared = attrs.cellClasses, declared.count > 1 {
+            logSeveralCellClasses(componentId: component.id, count: declared.count)
         }
 
         // The legacy shape: no `sections`, and the cells / header / footer
@@ -624,6 +640,30 @@ public struct CollectionConverter {
         return declaredClassName(declared[0])
     }
 
+    /// An array bound to a class-list Collection's `items`, as one section
+    /// of `cell`. An element is a cell's data: a dictionary as it is, any
+    /// other value by its stored properties (a generated Data struct — what
+    /// the codegen turns into a dictionary with `toDictionary()`); a value
+    /// with no properties draws no cell.
+    static func oneSection(
+        of list: [Any], cell: String, cellIdProperty: String?, autoChangeTrackingId: Bool
+    ) -> CollectionDataSource {
+        var section = CollectionDataSection(cellIdProperty: cellIdProperty, autoChangeTrackingId: autoChangeTrackingId)
+        section.setCells(viewName: cell, data: list.compactMap(cellDictionary))
+        return CollectionDataSource(sections: [section])
+    }
+
+    static func cellDictionary(_ element: Any) -> [String: Any]? {
+        if let dictionary = element as? [String: Any] { return dictionary }
+        let mirror = Mirror(reflecting: element)
+        guard mirror.displayStyle == .struct || mirror.displayStyle == .class else { return nil }
+        var dictionary: [String: Any] = [:]
+        for child in mirror.children {
+            if let label = child.label { dictionary[label] = child.value }
+        }
+        return dictionary.isEmpty ? nil : dictionary
+    }
+
     /// A section's own `columns` as declared (attribute_definitions.json,
     /// Collection.sections.items.properties.columns: number), or nil.
     static func declaredSectionColumns(_ sectionConfig: [String: Any]) -> Int? {
@@ -841,6 +881,26 @@ public struct CollectionConverter {
         misconfigLogLock.unlock()
         guard firstTime else { return }
         Logger.log("[CollectionConverter] Collection \(key): autoChangeTrackingId is true but cellIdProperty is missing. Auto cellId generation is disabled; cells fall back to index-based identity.")
+    }
+
+    /// What this renderer has named, in order (read by the tests).
+    static var named: [String] = []
+    static var loggedSeveralCellClassesIds = Set<String>()
+
+    /// Several cellClasses and no `sections`: the build refuses that layout
+    /// (LayoutValidator check_collection, level error, "N cellClasses declared
+    /// without sections"), and this renderer draws no cell for it — said once
+    /// per Collection, since a Dynamic layout does not pass the build. It drew
+    /// nothing and said nothing.
+    private static func logSeveralCellClasses(componentId: String?, count: Int) {
+        let key = componentId ?? "(unnamed)"
+        misconfigLogLock.lock()
+        let firstTime = loggedSeveralCellClassesIds.insert(key).inserted
+        misconfigLogLock.unlock()
+        guard firstTime else { return }
+        let sentence = "[CollectionConverter] Collection (id=\(key)): \(count) cellClasses declared without sections — no cell is drawn. Fix: assign cells via sections[].cell, or declare a single cellClass."
+        named.append(sentence)
+        Logger.log(sentence)
     }
 
     // MARK: - Paging Page Item Helper

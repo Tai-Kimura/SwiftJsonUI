@@ -210,6 +210,55 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         XCTAssertEqual(try draw(attrs), abc)
     }
 
+    // MARK: - items bound to an array
+
+    // Collection.items is a CollectionDataSource or an array
+    // (attribute_definitions.json; 4f ruling, 2026-09-26). With no `sections`
+    // an array is one section of the declared cell, on the routes a
+    // one-section data source takes; the codegens decide by the layout's data
+    // declaration, this renderer by the value's shape. Measured before the
+    // change (b314fd2): an array drew 0 of 3 on every route.
+
+    private let arrayOfRows: [Any] = [["title": "a"], ["title": "b"], ["title": "c"]]
+
+    func testAnArrayIsOneSectionOnEveryRouteButPaging() throws {
+        let routes = ["", ", \"columns\": 2", ", \"layout\": \"horizontal\"", ", \"layout\": \"flow\"",
+                      ", \"lazy\": \"none\"", ", \"lazy\": \"none\", \"columns\": 2", ", \"lazy\": \"none\", \"layout\": \"horizontal\""]
+        for route in routes {
+            XCTAssertEqual(try draw(items + route, data: ["items": arrayOfRows]), abc, "route\(route)")
+        }
+        XCTAssertEqual(try draw(items + ", \"layout\": \"horizontal\", \"paging\": true", data: ["items": arrayOfRows]), [],
+                       "paging reads declared sections only")
+    }
+
+    /// A generated Data struct's array — what the codegen reads with
+    /// `toDictionary()` — is read by the struct's stored properties.
+    func testAnArrayOfDataStructsIsReadByTheirProperties() throws {
+        struct Row { let title: String }
+        XCTAssertEqual(try draw(items, data: ["items": [Row(title: "a"), Row(title: "b"), Row(title: "c")]]), abc)
+    }
+
+    /// `sections` declared: a list is not a data source for them (the
+    /// sectioned shape reads a CollectionDataSource), so nothing is drawn.
+    func testDeclaredSectionsDoNotReadAnArray() throws {
+        XCTAssertEqual(try draw(items + ", \"sections\": [{\"cell\": \"\(Self.cell)\"}]", data: ["items": arrayOfRows]), [])
+    }
+
+    /// Several cellClasses over an array: no cell, as over a data source —
+    /// and named, once per Collection: a Dynamic layout does not pass the
+    /// build that refuses it. It was drawn as nothing and said nothing.
+    func testSeveralCellClassesOverAnArrayDrawNoCellAndAreNamed() throws {
+        CollectionConverter.named = []
+        CollectionConverter.loggedSeveralCellClassesIds = []
+        let several = ", \"items\": \"@{items}\", \"cellClasses\": [\"\(Self.cell)\", \"\(Self.otherCell)\"]"
+        XCTAssertEqual(try draw(several, data: ["items": arrayOfRows]), [])
+        XCTAssertEqual(try draw(several), [])
+        XCTAssertEqual(CollectionConverter.named, [
+            "[CollectionConverter] Collection (id=c): 2 cellClasses declared without sections — no cell is drawn. " +
+            "Fix: assign cells via sections[].cell, or declare a single cellClass."
+        ])
+    }
+
     // MARK: - headerClasses / footerClasses
 
     private var headed: String {
