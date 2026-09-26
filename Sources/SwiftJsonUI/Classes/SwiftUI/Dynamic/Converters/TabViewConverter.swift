@@ -69,16 +69,13 @@ public struct TabViewConverter {
         // resolver ever saw it. tabBarBackground two lines up had it right.
         let unselectedColor: Color? = DynamicHelpers.resolveColor(attrs.unselectedColor, data: data)
 
-        // Resolve tab-change callback. onValueChange is the canonical
-        // name; onTabChange / onPageChanged are the definitions aliases
-        // (consulted only for raw L0 layouts).
-        var onTabChangeCallback: ((Int) -> Void)? = nil
-        let tabChangeRaw = (attrs.onValueChange?.rawRepresentation as? String)
-            ?? (component.isNormalized ? nil : component.onTabChange)
-        if let onTabChangeRaw = tabChangeRaw,
-           let propName = DynamicEventHelper.extractPropertyName(from: onTabChangeRaw) {
-            onTabChangeCallback = data[propName] as? ((Int) -> Void)
-        }
+        let onTabChangeCallback = tabChangeCallback(component: component, data: data)
+
+        // `enabled` stops the tab items, not the tab view (applyDisabled
+        // leaves a TabView as it is): each tab's content sets the tab bar
+        // items' isEnabled (jsonuiTabItemsEnabled), so the tab shown still
+        // works — the Compose and web forms (4f's ruling, jsonui-cli 1.9.0).
+        let tabsEnabled = DynamicModifierHelper.enabledBinding(component, data: data)
 
         // The tab view, over whichever selection it moves (the view model's
         // two-way binding, or its own below).
@@ -90,6 +87,7 @@ public struct TabViewConverter {
                     tabBarBackground: tabBarBackground,
                     unselectedColor: unselectedColor,
                     onTabChangeCallback: onTabChangeCallback,
+                    tabsEnabled: tabsEnabled,
                     component: component,
                     data: data,
                     viewId: viewId
@@ -114,6 +112,24 @@ public struct TabViewConverter {
     }
 }
 
+extension TabViewConverter {
+    /// The tab-change handler, called with the new index as the data holds it
+    /// (DynamicEventHelper.callWithValue: `(String, Int)` with the viewId
+    /// first, `(Int)` with the index, `()` with nothing) — sjui build calls it
+    /// as its declaration says (get_event_handler_invocation). A handler held
+    /// as anything but `(Int) -> Void` was never called. onValueChange is the
+    /// canonical name; onTabChange / onPageChanged are the definitions
+    /// aliases (consulted only for raw L0 layouts). nil for no handler.
+    static func tabChangeCallback(component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
+        let attrs = component.typedAttributes(TabViewAttributes.self)
+        let raw = (attrs.onValueChange?.rawRepresentation as? String)
+            ?? (component.isNormalized ? nil : component.onTabChange)
+        guard let raw, DynamicEventHelper.extractPropertyName(from: raw) != nil else { return nil }
+        let id = LayoutPath.viewId(of: component)
+        return { DynamicEventHelper.callWithValue(raw, id: id, value: $0, data: data) }
+    }
+}
+
 // MARK: - Tab Item Model
 
 private struct TabItemModel: Identifiable {
@@ -134,6 +150,8 @@ private struct TabViewWrapperView: View {
     let tabBarBackground: Color?
     let unselectedColor: Color?
     let onTabChangeCallback: ((Int) -> Void)?
+    /// `enabled`, for the tab items (nil: not disabled).
+    let tabsEnabled: SwiftUI.Binding<Bool>?
     let component: DynamicComponent
     let data: [String: Any]
     let viewId: String?
@@ -144,6 +162,7 @@ private struct TabViewWrapperView: View {
         tabBarBackground: Color?,
         unselectedColor: Color? = nil,
         onTabChangeCallback: ((Int) -> Void)?,
+        tabsEnabled: SwiftUI.Binding<Bool>? = nil,
         component: DynamicComponent,
         data: [String: Any],
         viewId: String?
@@ -153,6 +172,7 @@ private struct TabViewWrapperView: View {
         self.tabBarBackground = tabBarBackground
         self.unselectedColor = unselectedColor
         self.onTabChangeCallback = onTabChangeCallback
+        self.tabsEnabled = tabsEnabled
         self.component = component
         self.data = data
         self.viewId = viewId
@@ -162,7 +182,7 @@ private struct TabViewWrapperView: View {
         // 1. TabView(selection:) { children.tabItem().badge().tag() }
         TabView(selection: $selectedTab) {
             ForEach(tabItems) { item in
-                tabContent(for: item)
+                tabItemsEnabled(tabContent(for: item))
                     .tabItem { tabItemLabel(for: item) }
                     .applyBadge(item.badge, data: data)
                     .tag(item.id)
@@ -238,6 +258,17 @@ private struct TabViewWrapperView: View {
             } else {
                 Label(item.title.dynamicLocalized(), systemImage: item.icon)
             }
+        }
+    }
+
+    /// Every tab's content sets the tab items' isEnabled — only the one on
+    /// screen is in the window to find the tab bar.
+    @ViewBuilder
+    private func tabItemsEnabled<Content: View>(_ content: Content) -> some View {
+        if let tabsEnabled {
+            content.jsonuiTabItemsEnabled(tabsEnabled.wrappedValue)
+        } else {
+            content
         }
     }
 

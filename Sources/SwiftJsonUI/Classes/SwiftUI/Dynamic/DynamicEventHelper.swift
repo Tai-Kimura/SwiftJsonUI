@@ -334,12 +334,23 @@ public struct DynamicEventHelper {
     /// (common pattern for most components)
     static func applyEvents(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
         var result = view
-        result = applyOnClick(result, component: component, data: data)
-        result = applyOnLongPress(result, component: component, data: data)
-        result = applyOnPan(result, component: component, data: data)
-        result = applyOnPinch(result, component: component, data: data)
+        if !tabViewOperationsShut(component, data: data) {
+            result = applyOnClick(result, component: component, data: data)
+            result = applyOnLongPress(result, component: component, data: data)
+            result = applyOnPan(result, component: component, data: data)
+            result = applyOnPinch(result, component: component, data: data)
+        }
         result = applyLifecycleEvents(result, component: component, data: data)
         return result
+    }
+
+    /// A TabView is not `.disabled` by its `enabled` (applyDisabled: it stops
+    /// the tab items, not what a tab shows), so its own tap and gestures
+    /// follow a bound `enabled` here — a literal false already attaches none
+    /// (each apply reads it). Its lifecycle events are not operations.
+    static func tabViewOperationsShut(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        DynamicModifierHelper.isTabView(component)
+            && DynamicModifierHelper.enabledBinding(component, data: data)?.wrappedValue == false
     }
 }
 
