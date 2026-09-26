@@ -1,0 +1,61 @@
+{
+  "_description": "The positions shared/core/layout_path.rb (JsonUIShared::LayoutPath) stamps — the table the kjui and sjui codegen both run, from byte-identical copies. Each case is a layout; `expect` maps a node's `id` (a label here — the path does not read ids) to its path. `includes`, when present, are the files the layout's `include` entries name, relative to the layouts root: expand them with the codegen's own include expander first, then stamp — the path is taken on the include-expanded tree. `before` / `after` pairs pin what moves a path and what does not.",
+  "cases": [
+    {
+      "name": "root and nested children",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "View", "id": "a", "child": [ { "type": "Label", "id": "a0" }, { "type": "Radio", "id": "a1" } ] },
+        { "type": "Label", "id": "b" }
+      ] },
+      "expect": { "r": "0", "a": "0_0", "a0": "0_0_0", "a1": "0_0_1", "b": "0_1" }
+    },
+    {
+      "name": "a single-object child is index 0",
+      "layout": { "type": "View", "id": "r", "child": { "type": "View", "id": "c", "child": { "type": "Radio", "id": "cc" } } },
+      "expect": { "r": "0", "c": "0_0", "cc": "0_0_0" }
+    },
+    {
+      "name": "child and children on one node count as one list, child first",
+      "layout": { "type": "View", "id": "r", "child": [ { "type": "Label", "id": "x" } ],
+                  "children": [ { "type": "Label", "id": "y" }, { "type": "Radio", "id": "z" } ] },
+      "expect": { "r": "0", "x": "0_0", "y": "0_1", "z": "0_2" }
+    },
+    {
+      "name": "a non-object entry and a data entry each take an index",
+      "layout": { "type": "View", "id": "r", "child": [ "stray", { "data": [] }, { "type": "Radio", "id": "s" } ] },
+      "expect": { "r": "0", "s": "0_2" }
+    },
+    {
+      "name": "an include takes the one index of the root it expands to",
+      "layout": { "type": "View", "id": "r", "child": [ { "include": "part" }, { "type": "Radio", "id": "after" } ] },
+      "includes": { "part": { "type": "View", "id": "p", "child": [ { "type": "Radio", "id": "p0" }, { "type": "Label", "id": "p1" } ] } },
+      "expect": { "r": "0", "p": "0_0", "p0": "0_0_0", "p1": "0_0_1", "after": "0_1" }
+    },
+    {
+      "name": "before: a node and its path",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "View", "id": "a", "child": [ { "type": "Radio", "id": "t" } ] },
+        { "type": "View", "id": "b", "child": [ { "type": "Label", "id": "u" } ] }
+      ] },
+      "expect": { "t": "0_0_0", "u": "0_1_0" }
+    },
+    {
+      "name": "after: a sibling added after an ancestor, and a node added in another subtree, do not move it",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "View", "id": "a", "child": [ { "type": "Radio", "id": "t" }, { "type": "Label", "id": "t2" } ] },
+        { "type": "View", "id": "b", "child": [ { "type": "Label", "id": "new" }, { "type": "Label", "id": "u" } ] },
+        { "type": "Label", "id": "c" }
+      ] },
+      "expect": { "t": "0_0_0", "t2": "0_0_1", "new": "0_1_0", "u": "0_1_1", "c": "0_2" }
+    },
+    {
+      "name": "after: a node inserted before an ancestor moves it",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "Label", "id": "new" },
+        { "type": "View", "id": "a", "child": [ { "type": "Radio", "id": "t" } ] },
+        { "type": "View", "id": "b", "child": [ { "type": "Label", "id": "u" } ] }
+      ] },
+      "expect": { "new": "0_0", "t": "0_1_0", "u": "0_2_0" }
+    }
+  ]
+}

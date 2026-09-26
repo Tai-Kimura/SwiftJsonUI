@@ -52,6 +52,9 @@ public class JSONLayoutLoader {
                 // Expand includes inline with ID prefix support
                 let baseDir = getLayoutFileDirPath()
                 processedJSON = IncludeExpander.shared.processIncludes(processedJSON, baseDir: baseDir)
+                // Each node's position (LayoutPath), on the tree sjui build
+                // stamps: styles merged, includes expanded.
+                processedJSON = LayoutPath.stamp(processedJSON)
 
                 let processedData = try JSONSerialization.data(withJSONObject: processedJSON, options: [])
                 let decoder = JSONDecoder()
@@ -89,6 +92,9 @@ public class JSONLayoutLoader {
                 var processedJSON = StyleProcessor.processStyles(jsonObject)
                 let baseDir = getLayoutFileDirPath()
                 processedJSON = IncludeExpander.shared.processIncludes(processedJSON, baseDir: baseDir)
+                // Each node's position (LayoutPath) — before the responsive
+                // resolution at the view level, so a resolved branch keeps it.
+                processedJSON = LayoutPath.stamp(processedJSON)
 
                 cacheLock.lock()
                 jsonDictCache[name] = processedJSON
@@ -107,7 +113,10 @@ public class JSONLayoutLoader {
     /// decoding; nested components expose `isNormalized`).
     public static func decodeComponent(from json: [String: Any]) -> DynamicComponent? {
         do {
-            var json = json
+            // A tree the loader did not stamp (a caller's own dictionary) is
+            // stamped here, from its root, so an id-less node is named by its
+            // position on this path too (LayoutPath).
+            var json = LayoutPath.isStamped(json) ? json : LayoutPath.stamp(json)
             let normalized = JsonUINormalization.consumeMarker(&json)
             let data = try JSONSerialization.data(withJSONObject: json, options: [])
             let decoder = JSONDecoder()
