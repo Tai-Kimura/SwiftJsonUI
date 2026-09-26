@@ -252,6 +252,16 @@ final class ConformanceStateStore: ObservableObject {
                 viewName: sectionRaw["cell"] as? String ?? "",
                 data: (sectionRaw["cells"] as? [[String: Any]] ?? []).map(materializeNestedCollections)
             )
+            // A section's header / footer data (contract §4, jsonui-cli
+            // 1.9.0): the view is named by the node's own `sections`
+            // declaration, as for the cells. Dropped until then, so no
+            // fixture could draw a header here.
+            if let header = sectionRaw["header"] as? [String: Any] {
+                section.setHeader(viewName: "", data: header)
+            }
+            if let footer = sectionRaw["footer"] as? [String: Any] {
+                section.setFooter(viewName: "", data: footer)
+            }
             source.addSection(section)
         }
         return source

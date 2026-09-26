@@ -694,6 +694,41 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         }
     }
 
+    /// A flow section's declared header and footer are rows of their own —
+    /// the header above the section's wrap, the footer below, at the leading
+    /// edge, spaced as the lines (4f ruling 2026-09-26, round 7). Measured
+    /// frames: section 1 (header, cells a b, footer), section 2 (header h2 —
+    /// the other probe, so it records apart — and cell c), lineSpacing 4.
+    /// Before, the lazy flow drew no header or footer.
+    func testAFlowSectionsHeaderAndFooterAreRowsAroundItsWrap() throws {
+        let source = CollectionDataSource(sections: [
+            CollectionDataSection(
+                header: (viewName: Self.header, data: [:]),
+                cells: (viewName: Self.cell, data: [["title": "a"], ["title": "b"]]),
+                footer: (viewName: Self.footer, data: [:])
+            ),
+            CollectionDataSection(
+                header: (viewName: Self.otherCell, data: ["title": "h2"]),
+                cells: (viewName: Self.cell, data: [["title": "c"]])
+            ),
+        ])
+        let flow = ", \"layout\": \"flow\", \"lineSpacing\": 4, \"items\": \"@{items}\", \"sections\": [" +
+            "{\"cell\": \"\(Self.cell)\", \"header\": \"\(Self.header)\", \"footer\": \"\(Self.footer)\"}, " +
+            "{\"cell\": \"\(Self.cell)\", \"header\": \"\(Self.otherCell)\"}]"
+        for route in ["", ", \"lazy\": \"none\""] {
+            let drawn = try draw(flow + route, data: ["items": source])
+            XCTAssertTrue(drawn.isSuperset(of: ["header", "footer", "other:h2", "cell:a", "cell:b", "cell:c"]), "drawn\(route): \(drawn)")
+            guard let header = Self.frames["header"], let footer = Self.frames["footer"], let h2 = Self.frames["other:h2"] else { continue }
+            let (a, b, c) = (try frame("a"), try frame("b"), try frame("c"))
+            XCTAssertEqual(header.minX, a.minX, accuracy: 0.5, "the header at the leading edge\(route)")
+            XCTAssertEqual(a.minY - header.maxY, 4, accuracy: 0.5, "header, then the wrap, a line apart\(route)")
+            XCTAssertEqual(b.minY, a.minY, accuracy: 0.5, "the cells share their line\(route)")
+            XCTAssertEqual(footer.minY - max(a.maxY, b.maxY), 4, accuracy: 0.5, "the wrap, then the footer\(route)")
+            XCTAssertEqual(h2.minY - footer.maxY, 4, accuracy: 0.5, "section 2's header under section 1's footer\(route)")
+            XCTAssertEqual(c.minY - h2.maxY, 4, accuracy: 0.5, "section 2's wrap under its header\(route)")
+        }
+    }
+
     func testADeclaredFlowGapIsDrawnAsDeclared() throws {
         let cases: [(String, (CGFloat, CGFloat, CGFloat))] = [
             (", \"columnSpacing\": 10, \"lineSpacing\": 4", (10, 4, 4)),
