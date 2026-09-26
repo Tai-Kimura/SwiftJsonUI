@@ -27,6 +27,11 @@
 //  data section's cells. Dynamic drew nothing without a source, and a grid
 //  per data section (measured before the change: both red).
 //
+//  A section's own `columns` (declared: Collection.sections[].columns) is a
+//  grid of them in a 1-column Collection too, on the section stack, the
+//  sectioned List and the `lazy: none` stack, with columnSpacing between
+//  cells and lineSpacing between rows; those routes drew it one cell per row.
+//
 
 import XCTest
 import SwiftUI
@@ -333,6 +338,72 @@ final class CollectionDeclaredCellsTests: XCTestCase {
             XCTAssertTrue(p.bBesideA, "b is not beside a\(route)")
             XCTAssertTrue(p.cUnderA, "c is not under a\(route)")
         }
+    }
+
+    // MARK: - a section's own `columns` in a 1-column Collection
+
+    /// Data sections [a e] and [b c d].
+    private var ownColumnsData: CollectionDataSource {
+        CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "a"], ["title": "e"]])),
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "b"], ["title": "c"], ["title": "d"]])),
+        ])
+    }
+
+    private func frame(_ key: String) throws -> CGRect {
+        try XCTUnwrap(Self.frames["cell:\(key)"], "\(key) not placed")
+    }
+
+    /// A section that declares `columns` (declared: Collection.sections[].columns)
+    /// is a grid of them on every vertical route that draws sections; the
+    /// other section stays one cell per row. Before: b, c, d one per row on
+    /// every route here (the declaration was read on the grid route only,
+    /// which a 1-column Collection never takes).
+    func testASectionsOwnColumnsAreAGridInAOneColumnCollection() throws {
+        let sectioned = ", \"items\": \"@{items}\", \"sections\": [{\"cell\": \"\(Self.cell)\"}, {\"cell\": \"\(Self.cell)\", \"columns\": 2}]"
+        for route in ["", ", \"lazy\": \"eager\"", ", \"listStyle\": \"grouped\"", ", \"lazy\": \"none\""] {
+            _ = try draw(sectioned + route, data: ["items": ownColumnsData])
+            let (a, e, b, c, d) = (try frame("a"), try frame("e"), try frame("b"), try frame("c"), try frame("d"))
+            XCTAssertTrue(abs(c.minY - b.minY) < 1 && c.minX > b.maxX, "c beside b\(route): \(b) \(c)")
+            XCTAssertTrue(abs(d.minX - b.minX) < 1 && d.minY > b.maxY - 1, "d under b\(route): \(b) \(d)")
+            XCTAssertTrue(abs(e.minX - a.minX) < 1 && e.minY > a.maxY - 1, "the other section stays one per row\(route): \(a) \(e)")
+        }
+    }
+
+    /// Spacing in a section grid: columnSpacing between the cells of a row,
+    /// lineSpacing between rows (the SSoT's "Spacing between columns" /
+    /// "Spacing between rows"). Two flexible columns across 320pt put the
+    /// second column (320 + s) / 2 to the right of the first; a 20pt cell
+    /// puts the next row 20 + lineSpacing lower.
+    private func spacing(_ attrs: String) throws -> (column: CGFloat, row: CGFloat) {
+        let data = CollectionDataSource(sections: [
+            CollectionDataSection(cells: (viewName: Self.cell, data: [["title": "b"], ["title": "c"], ["title": "d"]])),
+        ])
+        _ = try draw(", \"items\": \"@{items}\", \"columnSpacing\": 30, \"lineSpacing\": 12" + attrs, data: ["items": data])
+        let (b, c, d) = (try frame("b"), try frame("c"), try frame("d"))
+        return (2 * (c.minX - b.minX) - 320, d.minY - b.minY - 20)
+    }
+
+    func testASectionGridSpacesItsCellsByColumnSpacingAndItsRowsByLineSpacing() throws {
+        let own = ", \"sections\": [{\"cell\": \"\(Self.cell)\", \"columns\": 2}]"
+        for route in ["", ", \"lazy\": \"none\""] {
+            let s = try spacing(own + route)
+            XCTAssertEqual(s.column, 30, accuracy: 1, "between cells\(route)")
+            XCTAssertEqual(s.row, 12, accuracy: 1, "between rows\(route)")
+        }
+    }
+
+    /// The `lazy: none` grid of a columns-2 Collection read itemSpacing
+    /// between its cells, leaving a declared columnSpacing unread; it reads
+    /// columnSpacing now, as the lazy grid does (the control).
+    func testTheNonLazyGridReadsColumnSpacingAsTheLazyGridDoes() throws {
+        let grid = ", \"columns\": 2, \"sections\": [{\"cell\": \"\(Self.cell)\"}]"
+        let nonLazy = try spacing(grid + ", \"lazy\": \"none\"")
+        XCTAssertEqual(nonLazy.column, 30, accuracy: 1)
+        XCTAssertEqual(nonLazy.row, 12, accuracy: 1)
+        let lazy = try spacing(grid)
+        XCTAssertEqual(lazy.column, 30, accuracy: 1, "control: the lazy grid")
+        XCTAssertEqual(lazy.row, 12, accuracy: 1, "control: the lazy grid")
     }
 
     /// Control: declared sections keep a grid per section (b starts a row).

@@ -621,6 +621,70 @@ public struct CollectionConverter {
         return declaredClassName(declared[0])
     }
 
+    /// A section's own `columns` as declared (attribute_definitions.json,
+    /// Collection.sections.items.properties.columns: number), or nil.
+    static func declaredSectionColumns(_ sectionConfig: [String: Any]) -> Int? {
+        switch sectionConfig["columns"] {
+        case let n as Int: return n
+        case let d as Double: return Int(d)
+        case let n as NSNumber: return n.intValue
+        default: return nil
+        }
+    }
+
+    /// The columns a section's own grid has, when the section declares
+    /// `columns` > 1 — on the routes where a 1-column Collection draws its
+    /// sections one cell per row (the section stack, the sectioned List,
+    /// the `lazy: none` stack). The declaration is honoured (4f ruling,
+    /// 2026-09-26): those routes ignored it, so the section was one cell
+    /// per row on iOS and a grid on Android. The other sections stay as
+    /// they are. `itemWeight` has its say, as on the grid route.
+    static func sectionOwnGridColumns(_ sectionConfig: [String: Any], component: DynamicComponent) -> Int? {
+        guard let declared = declaredSectionColumns(sectionConfig), declared > 1 else { return nil }
+        return effectiveGridColumns(component, declared: declared)
+    }
+
+    /// A section's cells as a grid of `columns`: columnSpacing between the
+    /// cells of a row and lineSpacing between rows, each falling back to
+    /// itemSpacing — the SSoT's roles ("Spacing between columns" / "Spacing
+    /// between rows" / "used for both grid spacing and list item spacing")
+    /// and the lazy grid route's reading (buildGridLayout). Cell sizing as
+    /// there.
+    private static func sectionGrid(
+        columns: Int,
+        items: [IdentifiedCellItem],
+        cellName: String,
+        component: DynamicComponent,
+        data: [String: Any],
+        viewId: String?,
+        onItemAppear: ((Int) -> Void)?
+    ) -> AnyView {
+        let attrs = component.typedAttributes(CollectionAttributes.self)
+        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
+        let lineSpacing = attrs.lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
+        let cellWidth = attrs.cellWidth.map { CGFloat($0) }
+        let cellHeight = attrs.cellHeight.map { CGFloat($0) }
+        let gridItemSize: GridItem.Size = cellWidth.map { .fixed($0) } ?? .flexible()
+        let gridColumns = Array(repeating: GridItem(gridItemSize, spacing: columnSpacing), count: columns)
+        return AnyView(
+            LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
+                ForEach(items) { cell in
+                    buildCellView(
+                        cellClassName: cellName,
+                        cellData: cell.data,
+                        cellIndex: cell.index,
+                        component: component,
+                        data: data,
+                        viewId: viewId,
+                        onItemAppear: onItemAppear
+                    )
+                    .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
+                    .id(cell.id)
+                }
+            }
+        )
+    }
+
     /// The codegen's apply_header_footer_padding: a legacy header / footer
     /// sits outside the grid and follows the declared insets' horizontal
     /// edges only, so it lines up with the grid body.
@@ -793,6 +857,19 @@ public struct CollectionConverter {
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            // A section that declares its own `columns` > 1
+                            // is a grid of them (sectionOwnGridColumns).
+                            if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
+                                sectionGrid(
+                                    columns: ownColumns,
+                                    items: items,
+                                    cellName: cellName,
+                                    component: component,
+                                    data: data,
+                                    viewId: viewId,
+                                    onItemAppear: onItemAppear
+                                )
+                            } else {
                             ForEach(items) { cell in
                                 applyDeclaredCellFrame(
                                     AnyView(buildCellView(
@@ -807,6 +884,7 @@ public struct CollectionConverter {
                                     component: component
                                 )
                                 .id(cell.id)
+                            }
                             }
                         }
 
@@ -878,6 +956,19 @@ public struct CollectionConverter {
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
                             let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            // A section that declares its own `columns` > 1
+                            // is a grid of them (sectionOwnGridColumns).
+                            if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
+                                sectionGrid(
+                                    columns: ownColumns,
+                                    items: items,
+                                    cellName: cellName,
+                                    component: component,
+                                    data: data,
+                                    viewId: viewId,
+                                    onItemAppear: onItemAppear
+                                )
+                            } else {
                             ForEach(items) { cell in
                                 applyDeclaredCellFrame(
                                     AnyView(buildCellView(
@@ -892,6 +983,7 @@ public struct CollectionConverter {
                                     component: component
                                 )
                                 .id(cell.id)
+                            }
                             }
                         }
 
@@ -1461,7 +1553,6 @@ public struct CollectionConverter {
         legacyFooter: String? = nil,
         oneGridForAllSections: Bool = false
     ) -> AnyView {
-        let itemSpacing = component.itemSpacing ?? 0
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
         let cellAttrs = component.typedAttributes(CollectionAttributes.self)
@@ -1505,14 +1596,20 @@ public struct CollectionConverter {
                                     .id(cell.id)
                                 }
                             }
-                        } else if !isHorizontal && globalColumns > 1 {
+                        } else if !isHorizontal && (globalColumns > 1 || sectionOwnGridColumns(sectionConfig, component: component) != nil) {
+                            // A grid when the Collection has columns > 1, or
+                            // when this section declares its own (the other
+                            // sections of a 1-column Collection stay one cell
+                            // per row). columnSpacing between cells, as on the
+                            // lazy grid — this read itemSpacing and left a
+                            // declared columnSpacing unread.
                             let sectionColumns = effectiveGridColumns(
                                 component,
-                                declared: sectionConfig["columns"] as? Int ?? globalColumns
+                                declared: declaredSectionColumns(sectionConfig) ?? globalColumns
                             )
                             let gridItemSize: GridItem.Size = cellWidth.map { .fixed($0) } ?? .flexible()
                             let gridColumns = Array(
-                                repeating: GridItem(gridItemSize, spacing: itemSpacing),
+                                repeating: GridItem(gridItemSize, spacing: columnSpacing),
                                 count: sectionColumns
                             )
                             LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
@@ -1598,7 +1695,7 @@ public struct CollectionConverter {
                             sections: sections,
                             cellIdProperty: cellIdProperty,
                             columns: effectiveGridColumns(component, declared: globalColumns),
-                            columnSpacing: itemSpacing,
+                            columnSpacing: columnSpacing,
                             lineSpacing: lineSpacing,
                             cellWidth: cellWidth,
                             cellHeight: cellHeight,
