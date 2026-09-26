@@ -10,7 +10,9 @@
 //
 //  The walk hands each node the nearest tappable above it, the way
 //  DynamicComponentBuilder's ImageTappableMark sets `jsonuiImageTappable` on
-//  everything rendered inside a component with a tap handler.
+//  everything rendered inside a component with a tap handler — and whether a
+//  node around it has `userInteractionEnabled: false`, the way the builder
+//  marks what it builds under `jsonuiInteractionStopped`.
 //
 
 import XCTest
@@ -20,13 +22,15 @@ import SwiftUI
 #if DEBUG
 final class ImageAccessibilityVectorsTests: XCTestCase {
 
-    private func roles(_ node: [String: Any], nearest: [String: Any]?, into out: inout [String: String]) {
+    private func roles(_ node: [String: Any], nearest: [String: Any]?, stopped: Bool = false,
+                       into out: inout [String: String]) {
         if ImageAccessibility.isImage(node), let id = node["id"] as? String {
-            out[id] = ImageAccessibility.role(node, nearestTappable: nearest).rawValue
+            out[id] = ImageAccessibility.role(node, nearestTappable: nearest, stopped: stopped).rawValue
         }
-        let inner = ImageAccessibility.isTappable(node) ? node : nearest
+        let inner = ImageAccessibility.isTappable(node, stopped: stopped) ? node : nearest
+        let innerStopped = stopped || TapAccessibility.stops(node: node)
         for child in ImageAccessibility.children(node) {
-            roles(child, nearest: inner, into: &out)
+            roles(child, nearest: inner, stopped: innerStopped, into: &out)
         }
     }
 

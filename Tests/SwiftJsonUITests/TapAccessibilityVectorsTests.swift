@@ -25,12 +25,15 @@ final class TapAccessibilityVectorsTests: XCTestCase {
         return try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
     }
 
-    private func shapes(_ component: DynamicComponent, into out: inout [String: String?]) {
+    /// Each component inside one with `userInteractionEnabled: false` marked
+    /// as DynamicComponentBuilder marks it (`markedStopped`).
+    private func shapes(_ decoded: DynamicComponent, stopped: Bool = false, into out: inout [String: String?]) {
+        let component = stopped ? decoded.markedStopped() : decoded
         if let id = component.id {
             out[id] = TapAccessibility.shape(of: component)?.rawValue
         }
         for child in component.childComponents ?? [] {
-            shapes(child, into: &out)
+            shapes(child, stopped: stopped || TapAccessibility.stops(decoded), into: &out)
         }
     }
 

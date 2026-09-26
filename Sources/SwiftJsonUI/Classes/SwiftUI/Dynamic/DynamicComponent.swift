@@ -23,6 +23,11 @@ public struct DynamicComponent: Decodable {
     /// component via `JSONDecoder.userInfo`.
     public let isNormalized: Bool
 
+    /// Inside a component whose `userInteractionEnabled` is false, or a
+    /// binding resolving false: its tap is none (TapAccessibility).
+    /// DynamicComponentBuilder sets it; it is not decoded.
+    var interactionStoppedAround = false
+
     /// Check if this is a valid component (has type)
     public var isValid: Bool {
         return type != nil && !type!.isEmpty

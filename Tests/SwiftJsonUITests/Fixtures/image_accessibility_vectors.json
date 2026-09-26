@@ -120,6 +120,26 @@
       "name": "a blank or disabled long press is no action",
       "layout": { "type": "View", "child": [ { "type": "Image", "id": "blank_hold", "src": "blank_hold", "onLongPress": "   " }, { "type": "Image", "id": "disabled_hold", "src": "disabled_hold", "onLongPress": "@{onHold}", "enabled": false } ] },
       "roles": { "blank_hold": "decorative", "disabled_hold": "decorative" }
+    },
+    {
+      "name": "a tap stopped by userInteractionEnabled: false is no tap, on the image and inside a node with it",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "stopped_tap", "src": "stopped_tap", "onClick": "@{onOpen}", "userInteractionEnabled": false }, { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "Image", "id": "in_stopped", "src": "in_stopped", "onClick": "@{onOpen}" } ] } ] },
+      "roles": { "stopped_tap": "decorative", "in_stopped": "decorative" }
+    },
+    {
+      "name": "a tappable inside a node with userInteractionEnabled: false is not the image's control",
+      "layout": { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "View", "onClick": "@{onOpen}", "child": [ { "type": "Image", "id": "under_stopped", "src": "under_stopped" } ] } ] },
+      "roles": { "under_stopped": "decorative" }
+    },
+    {
+      "name": "the tappable around a node with userInteractionEnabled: false is still the image's control",
+      "layout": { "type": "View", "onClick": "@{onOpen}", "child": [ { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "Image", "id": "past_stopped", "src": "past_stopped" } ] } ] },
+      "roles": { "past_stopped": "control" }
+    },
+    {
+      "name": "a bound userInteractionEnabled still taps: the gate opens at run time",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "bound_stop", "src": "bound_stop", "onClick": "@{onOpen}", "userInteractionEnabled": "@{isActive}" } ] },
+      "roles": { "bound_stop": "control" }
     }
   ]
 }

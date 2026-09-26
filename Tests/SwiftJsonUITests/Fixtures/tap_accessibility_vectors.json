@@ -1,5 +1,5 @@
 {
-  "_description": "The tap shapes shared/core/tap_accessibility.rb assigns — the table the sjui and kjui codegen and the SwiftJsonUI / KotlinJsonUI Dynamic runtimes all run (the libraries from byte-identical copies). `shapes` maps an id to button / combine / none, or null for a node that is not a tappable. `interactive_types` and `known_types` are component_metadata.json's `interactive` declaration with its aliases, pinned to it by sjui_tools/spec/core/tap_accessibility_spec.rb.",
+  "_description": "The tap shapes shared/core/tap_accessibility.rb assigns — the table the sjui and kjui codegen and the SwiftJsonUI / KotlinJsonUI Dynamic runtimes all run (the libraries from byte-identical copies). `shapes` maps an id to button / combine / none, or null for a node that is not a tappable. A node with `userInteractionEnabled: false`, and every node inside it, is no tappable (as `canTap: false`); a bound one keeps its shape, and the emitters gate the tap and its trait on the binding. `interactive_types` and `known_types` are component_metadata.json's `interactive` declaration with its aliases, pinned to it by sjui_tools/spec/core/tap_accessibility_spec.rb.",
   "interactive_types": [
     "Button",
     "Check",
@@ -750,6 +750,256 @@
       "shapes": {
         "t": "combine",
         "h": null
+      }
+    },
+    {
+      "name": "userInteractionEnabled: false is no tap, as canTap: false is",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "userInteractionEnabled": false,
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "a View with userInteractionEnabled: false and a tap is no tap",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "userInteractionEnabled": false,
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "t": null
+      }
+    },
+    {
+      "name": "what is inside a node with userInteractionEnabled: false is no tap, however deep",
+      "layout": {
+        "type": "View",
+        "id": "v",
+        "userInteractionEnabled": false,
+        "child": [
+          {
+            "type": "Image",
+            "id": "i",
+            "src": "icon",
+            "alt": "Open",
+            "onClick": "@{onOpen}"
+          },
+          {
+            "type": "View",
+            "id": "w",
+            "child": [
+              {
+                "type": "Label",
+                "id": "d",
+                "text": "More",
+                "onclick": "openMore"
+              }
+            ]
+          },
+          {
+            "type": "View",
+            "id": "r",
+            "onClick": "@{onRow}",
+            "child": [
+              {
+                "type": "Label",
+                "id": "rl",
+                "text": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "v": null,
+        "i": null,
+        "w": null,
+        "d": null,
+        "r": null
+      }
+    },
+    {
+      "name": "a tap beside a node with userInteractionEnabled: false keeps its shape",
+      "layout": {
+        "type": "View",
+        "id": "p",
+        "child": [
+          {
+            "type": "View",
+            "id": "v",
+            "userInteractionEnabled": false,
+            "child": [
+              {
+                "type": "Label",
+                "id": "a",
+                "text": "x",
+                "onClick": "@{onA}"
+              }
+            ]
+          },
+          {
+            "type": "Label",
+            "id": "b",
+            "text": "y",
+            "onClick": "@{onB}"
+          },
+          {
+            "type": "View",
+            "id": "c",
+            "onClick": "@{onC}",
+            "child": [
+              {
+                "type": "Label",
+                "id": "cl",
+                "text": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "a": null,
+        "b": "button",
+        "c": "combine"
+      }
+    },
+    {
+      "name": "userInteractionEnabled: true is a tap as before",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Open",
+        "userInteractionEnabled": true,
+        "onClick": "@{onOpen}"
+      },
+      "shapes": {
+        "t": "button"
+      }
+    },
+    {
+      "name": "a tap inside a node with userInteractionEnabled: false does not stop its tappable being one button",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "View",
+            "userInteractionEnabled": false,
+            "child": [
+              {
+                "type": "Label",
+                "id": "c",
+                "text": "More",
+                "onClick": "@{onMore}"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine",
+        "c": null
+      }
+    },
+    {
+      "name": "a control inside a node with userInteractionEnabled: false still counts: its type is a control",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "View",
+            "id": "v",
+            "userInteractionEnabled": false,
+            "child": [
+              {
+                "type": "Switch",
+                "id": "s"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none"
+      }
+    },
+    {
+      "name": "a bound userInteractionEnabled keeps the shape: the emitters gate the tap and its trait on the binding",
+      "layout": {
+        "type": "View",
+        "id": "v",
+        "userInteractionEnabled": "@{isActive}",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          }
+        ]
+      },
+      "shapes": {
+        "v": "combine"
+      }
+    },
+    {
+      "name": "what is inside a bound userInteractionEnabled keeps its shape: the emitters gate it on the binding too",
+      "layout": {
+        "type": "View",
+        "id": "v",
+        "userInteractionEnabled": "@{isActive}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "a",
+            "text": "x",
+            "onClick": "@{onA}"
+          },
+          {
+            "type": "View",
+            "id": "c",
+            "onClick": "@{onC}",
+            "child": [
+              {
+                "type": "Label",
+                "id": "cl",
+                "text": "x"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "v": null,
+        "a": "button",
+        "c": "combine"
       }
     }
   ]
