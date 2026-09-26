@@ -82,7 +82,8 @@ final class OnClickProbeUITests: XCTestCase {
 
     /// Each control over a value of its own (…u) and bound to the data (…b),
     /// and a bound date.
-    private let valued = ["swu", "swb", "cbu", "cbb", "rvu", "rvb", "segu", "segb", "slu", "slb", "sbu", "sbb", "sbd"]
+    private let valued = ["swu", "swb", "cbu", "cbb", "rvu", "rvb", "segu", "segb", "slu", "slb", "sbu", "sbb", "sbd",
+                          "segvu", "segvb", "segwu", "segwb"]
 
     private func runV(_ path: String) {
         gate = "V"
@@ -107,6 +108,9 @@ final class OnClickProbeUITests: XCTestCase {
             let want = c.hasPrefix("sl") ? own.range(of: "^v+c$", options: .regularExpression) != nil : own == "vc"
             XCTAssertTrue(want, "\(path) V \(c): onValueChange, then onClick — got \(own)")
         }
+        // Beside a declared onValueChange, a Segment's valueChange stands down.
+        let stoodDown = operated.filter { $0.hasSuffix("X") }
+        XCTAssertEqual(stoodDown, [], "\(path) V: valueChange is not called where onValueChange is declared")
 
         element("oc_vm").tap()
         sleep(2)
@@ -130,6 +134,7 @@ final class OnClickProbeUITests: XCTestCase {
         radioGlyph(app.staticTexts["bb"].frame).tap()
         app.buttons["uy"].tap()
         app.buttons["by"].tap()
+        for item in ["p2", "q2", "r2", "s2"] { app.buttons[item].tap() }
         app.sliders["sluV"].adjust(toNormalizedSliderPosition: 0.8)
         app.sliders["slbV"].adjust(toNormalizedSliderPosition: 0.8)
         for (id, item) in [("sbuV", "uq"), ("sbbV", "bq")] {

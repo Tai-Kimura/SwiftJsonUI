@@ -2,7 +2,7 @@
 //  OnClickCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli triage/control-onclick 75b7bba6, on rel/v1.8.121 = 19f1328e) emits for
+//  What `sjui build` (sjui_tools of jsonui-cli triage/control-onclick df223c03, on rel/v1.8.121 = 19f1328e) emits for
 //  OnClickProbeView's three layouts — the controls with an onClick, under no
 //  gate, `canTap: false` and `enabled: false` — the generated Data structs, the
 //  view-local state, the body and its sections, pasted unchanged but for one
@@ -1028,6 +1028,18 @@ struct OnClickVData {
     var onSbbC: (() -> Void)? = nil
     var onSbdV: (() -> Void)? = nil
     var onSbdC: (() -> Void)? = nil
+    var onSegvuC: (() -> Void)? = nil
+    var onSegvuV: (() -> Void)? = nil
+    var onSegvbC: (() -> Void)? = nil
+    var onSegvbV: (() -> Void)? = nil
+    var onSegwuV: (() -> Void)? = nil
+    var onSegwuC: (() -> Void)? = nil
+    var onSegwuX: (() -> Void)? = nil
+    var onSegwbV: (() -> Void)? = nil
+    var onSegwbC: (() -> Void)? = nil
+    var onSegwbX: (() -> Void)? = nil
+    var segvbIdx: Int = 0
+    var segwbIdx: Int = 0
     var swbOn: Bool = false
     var cbbOn: Bool = false
     var rvbSel: String = "ba".localized()
@@ -1169,6 +1181,66 @@ struct OnClickVData {
                 self.onSbdC = typedValue
             }
         }
+        if let value = dictionary["onSegvuC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegvuC = typedValue
+            }
+        }
+        if let value = dictionary["onSegvuV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegvuV = typedValue
+            }
+        }
+        if let value = dictionary["onSegvbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegvbC = typedValue
+            }
+        }
+        if let value = dictionary["onSegvbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegvbV = typedValue
+            }
+        }
+        if let value = dictionary["onSegwuV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegwuV = typedValue
+            }
+        }
+        if let value = dictionary["onSegwuC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegwuC = typedValue
+            }
+        }
+        if let value = dictionary["onSegwuX"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegwuX = typedValue
+            }
+        }
+        if let value = dictionary["onSegwbV"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegwbV = typedValue
+            }
+        }
+        if let value = dictionary["onSegwbC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegwbC = typedValue
+            }
+        }
+        if let value = dictionary["onSegwbX"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSegwbX = typedValue
+            }
+        }
+        if let value = dictionary["segvbIdx"] {
+            if let intValue = value as? Int {
+                self.segvbIdx = intValue
+            }
+        }
+        if let value = dictionary["segwbIdx"] {
+            if let intValue = value as? Int {
+                self.segwbIdx = intValue
+            }
+        }
         if let value = dictionary["swbOn"] {
             if let boolValue = value as? Bool {
                 self.swbOn = boolValue
@@ -1294,6 +1366,38 @@ struct OnClickVData {
         if let value = onSbdC {
             dict["onSbdC"] = value
         }
+        if let value = onSegvuC {
+            dict["onSegvuC"] = value
+        }
+        if let value = onSegvuV {
+            dict["onSegvuV"] = value
+        }
+        if let value = onSegvbC {
+            dict["onSegvbC"] = value
+        }
+        if let value = onSegvbV {
+            dict["onSegvbV"] = value
+        }
+        if let value = onSegwuV {
+            dict["onSegwuV"] = value
+        }
+        if let value = onSegwuC {
+            dict["onSegwuC"] = value
+        }
+        if let value = onSegwuX {
+            dict["onSegwuX"] = value
+        }
+        if let value = onSegwbV {
+            dict["onSegwbV"] = value
+        }
+        if let value = onSegwbC {
+            dict["onSegwbC"] = value
+        }
+        if let value = onSegwbX {
+            dict["onSegwbX"] = value
+        }
+        dict["segvbIdx"] = segvbIdx
+        dict["segwbIdx"] = segwbIdx
         dict["swbOn"] = swbOn
         dict["cbbOn"] = cbbOn
         dict["rvbSel"] = rvbSel
@@ -1391,6 +1495,44 @@ struct OnClickVData {
         if let onSbdC = onSbdC {
             dict["onSbdC"] = onSbdC
         }
+        if let onSegvuC = onSegvuC {
+            dict["onSegvuC"] = onSegvuC
+        }
+        if let onSegvuV = onSegvuV {
+            dict["onSegvuV"] = onSegvuV
+        }
+        if let onSegvbC = onSegvbC {
+            dict["onSegvbC"] = onSegvbC
+        }
+        if let onSegvbV = onSegvbV {
+            dict["onSegvbV"] = onSegvbV
+        }
+        if let onSegwuV = onSegwuV {
+            dict["onSegwuV"] = onSegwuV
+        }
+        if let onSegwuC = onSegwuC {
+            dict["onSegwuC"] = onSegwuC
+        }
+        if let onSegwuX = onSegwuX {
+            dict["onSegwuX"] = onSegwuX
+        }
+        if let onSegwbV = onSegwbV {
+            dict["onSegwbV"] = onSegwbV
+        }
+        if let onSegwbC = onSegwbC {
+            dict["onSegwbC"] = onSegwbC
+        }
+        if let onSegwbX = onSegwbX {
+            dict["onSegwbX"] = onSegwbX
+        }
+        dict["segvbIdx"] = SwiftUI.Binding<Int>(
+            get: { dataBinding.wrappedValue.segvbIdx },
+            set: { dataBinding.wrappedValue.segvbIdx = $0 }
+        )
+        dict["segwbIdx"] = SwiftUI.Binding<Int>(
+            get: { dataBinding.wrappedValue.segwbIdx },
+            set: { dataBinding.wrappedValue.segwbIdx = $0 }
+        )
         dict["swbOn"] = SwiftUI.Binding<Bool>(
             get: { dataBinding.wrappedValue.swbOn },
             set: { dataBinding.wrappedValue.swbOn = $0 }
@@ -1436,6 +1578,8 @@ struct OnClickVCodegenPaste: View {
     @State private var selectedRvuv: String = "ua"
     @State private var selectedSeguv: Int = 0
     @State private var sliderValuesluV: Double = 0.2
+    @State private var selectedSegvuv: Int = 0
+    @State private var selectedSegwuv: Int = 0
 
     var body: some View {
             AnyView(section0())
@@ -1559,6 +1703,30 @@ struct OnClickVCodegenPaste: View {
                 )
                     .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                     .accessibilityIdentifier("sbdV")
+                Picker("", selection: SwiftUI.Binding(get: { $selectedSegvuv.wrappedValue }, set: { newValue in let changed = newValue != $selectedSegvuv.wrappedValue; $selectedSegvuv.wrappedValue = newValue; if changed { data.onSegvuV?() }; data.onSegvuC?() })) {
+                    Text("p1".localized()).tag(0)
+                    Text("p2".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("segvuV")
+                Picker("", selection: SwiftUI.Binding(get: { $data.segvbIdx.wrappedValue }, set: { newValue in let changed = newValue != $data.segvbIdx.wrappedValue; $data.segvbIdx.wrappedValue = newValue; if changed { data.onSegvbV?() }; data.onSegvbC?() })) {
+                    Text("q1".localized()).tag(0)
+                    Text("q2".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("segvbV")
+                Picker("", selection: SwiftUI.Binding(get: { $selectedSegwuv.wrappedValue }, set: { newValue in let changed = newValue != $selectedSegwuv.wrappedValue; $selectedSegwuv.wrappedValue = newValue; if changed { data.onSegwuV?() }; data.onSegwuC?() })) {
+                    Text("r1".localized()).tag(0)
+                    Text("r2".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("segwuV")
+                Picker("", selection: SwiftUI.Binding(get: { $data.segwbIdx.wrappedValue }, set: { newValue in let changed = newValue != $data.segwbIdx.wrappedValue; $data.segwbIdx.wrappedValue = newValue; if changed { data.onSegwbV?() }; data.onSegwbC?() })) {
+                    Text("s1".localized()).tag(0)
+                    Text("s2".localized()).tag(1)
+                }
+                    .pickerStyle(.segmented)
+                    .accessibilityIdentifier("segwbV")
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }
