@@ -27,6 +27,7 @@ struct OnClickNData {
     var onSbN: (() -> Void)? = nil
     var onTfN: (() -> Void)? = nil
     var onTvN: (() -> Void)? = nil
+    var onSwlN: (() -> Void)? = nil
     var selectedRadiogroup: String = ""
     var selectedGrpn: String = ""
     var tfNIsFocused: Bool = false
@@ -82,6 +83,11 @@ struct OnClickNData {
         if let value = dictionary["onTvN"] {
             if let typedValue = value as? (() -> Void)? {
                 self.onTvN = typedValue
+            }
+        }
+        if let value = dictionary["onSwlN"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwlN = typedValue
             }
         }
         if let value = dictionary["selectedRadiogroup"] {
@@ -141,6 +147,9 @@ struct OnClickNData {
         if let value = onTvN {
             dict["onTvN"] = value
         }
+        if let value = onSwlN {
+            dict["onSwlN"] = value
+        }
         dict["selectedRadiogroup"] = selectedRadiogroup
         dict["selectedGrpn"] = selectedGrpn
         dict["tfNIsFocused"] = tfNIsFocused
@@ -186,6 +195,9 @@ struct OnClickNData {
         if let onTvN = onTvN {
             dict["onTvN"] = onTvN
         }
+        if let onSwlN = onSwlN {
+            dict["onSwlN"] = onSwlN
+        }
         dict["selectedRadiogroup"] = SwiftUI.Binding<String>(
             get: { dataBinding.wrappedValue.selectedRadiogroup },
             set: { dataBinding.wrappedValue.selectedRadiogroup = $0 }
@@ -220,6 +232,7 @@ struct OnClickNCodegenPaste: View {
     @State private var tfNText: String = "t0"
     @FocusState private var tfNIsFocused: Bool
     @State private var tvNText: String = "v0"
+    @State private var swlNIsOn: Bool = false
 
     var body: some View {
             AnyView(section0())
@@ -341,6 +354,14 @@ struct OnClickNCodegenPaste: View {
                 )
                     .frame(minHeight: 50, idealHeight: 50, maxHeight: 50)
                     .accessibilityIdentifier("tvN")
+                Toggle(isOn: $swlNIsOn) {
+                    Text("swl label")
+                }
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                            data.onSwlN?()
+                        }
+                    .accessibilityIdentifier("swlN")
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }
@@ -358,6 +379,7 @@ struct OnClickCData {
     var onSbC: (() -> Void)? = nil
     var onTfC: (() -> Void)? = nil
     var onTvC: (() -> Void)? = nil
+    var onSwlC: (() -> Void)? = nil
     var selectedRadiogroup: String = ""
     var selectedGrpc: String = ""
     var tfCIsFocused: Bool = false
@@ -413,6 +435,11 @@ struct OnClickCData {
         if let value = dictionary["onTvC"] {
             if let typedValue = value as? (() -> Void)? {
                 self.onTvC = typedValue
+            }
+        }
+        if let value = dictionary["onSwlC"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwlC = typedValue
             }
         }
         if let value = dictionary["selectedRadiogroup"] {
@@ -472,6 +499,9 @@ struct OnClickCData {
         if let value = onTvC {
             dict["onTvC"] = value
         }
+        if let value = onSwlC {
+            dict["onSwlC"] = value
+        }
         dict["selectedRadiogroup"] = selectedRadiogroup
         dict["selectedGrpc"] = selectedGrpc
         dict["tfCIsFocused"] = tfCIsFocused
@@ -517,6 +547,9 @@ struct OnClickCData {
         if let onTvC = onTvC {
             dict["onTvC"] = onTvC
         }
+        if let onSwlC = onSwlC {
+            dict["onSwlC"] = onSwlC
+        }
         dict["selectedRadiogroup"] = SwiftUI.Binding<String>(
             get: { dataBinding.wrappedValue.selectedRadiogroup },
             set: { dataBinding.wrappedValue.selectedRadiogroup = $0 }
@@ -551,6 +584,7 @@ struct OnClickCCodegenPaste: View {
     @State private var tfCText: String = "t0"
     @FocusState private var tfCIsFocused: Bool
     @State private var tvCText: String = "v0"
+    @State private var swlCIsOn: Bool = false
 
     var body: some View {
             VStack(alignment: .leading, spacing: 6) {
@@ -637,6 +671,10 @@ struct OnClickCCodegenPaste: View {
                     )
                         .frame(minHeight: 50, idealHeight: 50, maxHeight: 50)
                         .accessibilityIdentifier("tvC")
+                    Toggle(isOn: $swlCIsOn) {
+                        Text("swl label")
+                    }
+                        .accessibilityIdentifier("swlC")
             }
                 .frame(maxWidth: .infinity, alignment: .topLeading)
     }
@@ -654,6 +692,7 @@ struct OnClickEData {
     var onSbE: (() -> Void)? = nil
     var onTfE: (() -> Void)? = nil
     var onTvE: (() -> Void)? = nil
+    var onSwlE: (() -> Void)? = nil
     var selectedRadiogroup: String = ""
     var selectedGrpe: String = ""
     var tfEIsFocused: Bool = false
@@ -709,6 +748,11 @@ struct OnClickEData {
         if let value = dictionary["onTvE"] {
             if let typedValue = value as? (() -> Void)? {
                 self.onTvE = typedValue
+            }
+        }
+        if let value = dictionary["onSwlE"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onSwlE = typedValue
             }
         }
         if let value = dictionary["selectedRadiogroup"] {
@@ -768,6 +812,9 @@ struct OnClickEData {
         if let value = onTvE {
             dict["onTvE"] = value
         }
+        if let value = onSwlE {
+            dict["onSwlE"] = value
+        }
         dict["selectedRadiogroup"] = selectedRadiogroup
         dict["selectedGrpe"] = selectedGrpe
         dict["tfEIsFocused"] = tfEIsFocused
@@ -813,6 +860,9 @@ struct OnClickEData {
         if let onTvE = onTvE {
             dict["onTvE"] = onTvE
         }
+        if let onSwlE = onSwlE {
+            dict["onSwlE"] = onSwlE
+        }
         dict["selectedRadiogroup"] = SwiftUI.Binding<String>(
             get: { dataBinding.wrappedValue.selectedRadiogroup },
             set: { dataBinding.wrappedValue.selectedRadiogroup = $0 }
@@ -847,6 +897,7 @@ struct OnClickECodegenPaste: View {
     @State private var tfEText: String = "t0"
     @FocusState private var tfEIsFocused: Bool
     @State private var tvEText: String = "v0"
+    @State private var swlEIsOn: Bool = false
 
     var body: some View {
             AnyView(section0())
@@ -965,6 +1016,12 @@ struct OnClickECodegenPaste: View {
                     .frame(minHeight: 50, idealHeight: 50, maxHeight: 50)
                     .disabled(true)
                     .accessibilityIdentifier("tvE")
+                    .disabled(true)
+                Toggle(isOn: $swlEIsOn) {
+                    Text("swl label")
+                }
+                    .disabled(true)
+                    .accessibilityIdentifier("swlE")
                     .disabled(true)
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)

@@ -20,7 +20,7 @@ final class OnClickProbeUITests: XCTestCase {
     private var app: XCUIApplication!
     private var gate = "N"
 
-    private let controls = ["sw", "cb", "rv", "rgb", "seg", "sl", "sb", "tf", "tv"]
+    private let controls = ["sw", "cb", "rv", "rgb", "seg", "sl", "sb", "tf", "tv", "swl"]
     /// Controls whose operation the ruling says calls onClick.
     private let calling: Set<String> = ["sw", "cb", "rv", "rgb", "seg", "sl", "sb"]
 
@@ -64,9 +64,13 @@ final class OnClickProbeUITests: XCTestCase {
             let calls = counts[handler] ?? 0
             let moved = before[c] != after[c]
             print("ONCLICK \(path) \(gate) \(c) calls=\(calls) operated=\(moved) type=\(types[c] ?? "?") \(before[c] ?? "-") -> \(after[c] ?? "-")")
-            let want = gate == "N" && calling.contains(c) ? 1 : 0
+            // The labelled switch is tapped on its label, which is not the
+            // switch: whatever the platform makes of that tap, a call follows
+            // an operation and nothing else — a plain tap around the control
+            // is the only thing that calls it without a flip.
+            let want = c == "swl" ? (gate == "N" && moved ? 1 : 0) : (gate == "N" && calling.contains(c) ? 1 : 0)
             XCTAssertEqual(calls, want, "\(path) \(gate) \(c): onClick calls")
-            if ["sw", "cb", "rv", "rgb", "seg", "sl", "sb"].contains(c) {
+            if ["sw", "cb", "rv", "rgb", "seg", "sl", "sb"].contains(c) || (c == "swl" && gate == "E") {
                 XCTAssertEqual(moved, gate != "E", "\(path) \(gate) \(c): the operation \(gate == "E" ? "is stopped" : "happens")")
             }
         }
@@ -76,6 +80,12 @@ final class OnClickProbeUITests: XCTestCase {
     // MARK: - Operating
 
     private func operate() {
+        // First: the labelled switch sits below the text inputs, which the
+        // keyboard covers once they are tapped. Its element is the whole row;
+        // the tap lands on its middle, between the label and the switch.
+        let swl = element(id("swl"))
+        print("ONCLICK swl frame=\(swl.frame) sw frame=\(element(id("sw")).frame)")
+        swl.tap()
         element(id("sw")).tap()
         element(id("cb")).tap()
         radioGlyph(app.staticTexts["rb"].frame).tap()
@@ -109,6 +119,7 @@ final class OnClickProbeUITests: XCTestCase {
         sleep(1)
         var out: [String: String] = [:]
         out["sw"] = "\(element(id("sw")).value ?? "nil")"
+        out["swl"] = "\(element(id("swl")).value ?? "nil")"
         out["seg"] = app.buttons["sy"].isSelected ? "sy" : "sx"
         out["sl"] = "\(app.sliders[id("sl")].value ?? "nil")"
         out["sb"] = element(id("sb")).label
