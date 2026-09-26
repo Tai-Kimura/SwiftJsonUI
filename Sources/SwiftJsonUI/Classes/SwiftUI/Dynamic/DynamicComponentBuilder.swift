@@ -296,12 +296,17 @@ public struct DynamicComponentBuilder: View {
                 .cornerRadius(6)
                 .onAppear { Logger.debug("[CustomComponentAdapter] \(refusal)") }
         } else {
-            adapter.buildView(
+            // The adapter applies the common stages (applyStandardModifiers);
+            // one that does not is named once per type (AppComponentStages).
+            let _ = AppComponentStages.begin()
+            let built = adapter.buildView(
                 component: component,
                 data: data,
                 viewId: viewId,
                 parentOrientation: parentOrientation
             )
+            let _ = AppComponentStages.end(for: component)
+            built
         }
     }
 

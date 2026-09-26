@@ -1422,6 +1422,8 @@ public struct DynamicModifierHelper {
     ]
 
     public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false, skipBackground: Bool = false) -> AnyView {
+        // An app component's adapter applied them (AppComponentStages).
+        AppComponentStages.markApplied()
         let skips = Skips(padding: skipPadding, insets: skipInsets, background: skipBackground)
         return standardOrder
             .filter { $0.appliesWhen(skips) }
