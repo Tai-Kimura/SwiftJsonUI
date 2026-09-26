@@ -474,14 +474,56 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         XCTAssertEqual(ci.minX - ai.minX - 40, 20, accuracy: 1, "itemSpacing along the scroll axis")
     }
 
-    /// Control: one lane keeps the single-lane stack and its spacing as
-    /// before (columnSpacing, else itemSpacing, else lineSpacing, between
-    /// cells) — the discriminator can tell one lane from two.
-    func testOneLaneIsTheStackAsBefore() throws {
-        try horizontal([["a", "b"]], attrs: ", \"layout\": \"horizontal\", \"columnSpacing\": 30, \"lineSpacing\": 12")
-        let (a, b) = (try frame("a"), try frame("b"))
-        XCTAssertTrue(abs(b.minY - a.minY) < 1, "b beside a: \(a) \(b)")
-        XCTAssertEqual(b.minX - a.maxX, 30, accuracy: 1)
+    /// One rule for every horizontal Collection, a single lane included
+    /// (4f ruling, 2026-09-26): along the scroll axis lineSpacing, else
+    /// itemSpacing, else 0 — so columnSpacing alone spaces nothing along it.
+    /// The single-lane stack read columnSpacing, else itemSpacing, else
+    /// lineSpacing (measured before: 30 where lineSpacing said 12).
+    func testOneLaneSpacesTheScrollAxisByTheSameRule() throws {
+        for route in [", \"layout\": \"horizontal\"", ", \"horizontalScroll\": true",
+                      ", \"layout\": \"horizontal\", \"lazy\": \"eager\"", ", \"layout\": \"horizontal\", \"lazy\": \"none\""] {
+            func gap(_ spacing: String) throws -> CGFloat {
+                try horizontal([["a", "b"]], attrs: route + spacing)
+                let (a, b) = (try frame("a"), try frame("b"))
+                XCTAssertEqual(b.minY, a.minY, accuracy: 1, "one lane\(route)")
+                return b.minX - a.maxX
+            }
+            XCTAssertEqual(try gap(", \"columnSpacing\": 30, \"lineSpacing\": 12"), 12, accuracy: 1, "lineSpacing wins\(route)")
+            XCTAssertEqual(try gap(", \"columnSpacing\": 30"), 0, accuracy: 1, "columnSpacing is not along the axis\(route)")
+            XCTAssertEqual(try gap(", \"itemSpacing\": 20"), 20, accuracy: 1, "itemSpacing stands in\(route)")
+            XCTAssertEqual(try gap(", \"lineSpacing\": 8"), 8, accuracy: 1, "lineSpacing alone (the faces' carousels)\(route)")
+        }
+    }
+
+    /// Between pages, too: the page wrapper is built with the rule's value
+    /// (read from what the converter builds — a page is full width, so its
+    /// padding moves no cell).
+    func testPagingSpacesItsPagesByTheSameRule() throws {
+        func pageSpacing(_ spacing: String) throws -> CGFloat? {
+            let json = "{\"type\": \"Collection\", \"id\": \"c\", \"items\": \"@{items}\", \"layout\": \"horizontal\", \"paging\": true, \"sections\": [{\"cell\": \"\(Self.cell)\"}]\(spacing)}"
+            let component = try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+            var found: CGFloat?
+            func walk(_ value: Any, _ depth: Int) {
+                guard found == nil, depth < 200 else { return }
+                if value is DynamicComponent || value is [String: Any] { return }
+                let mirror = Mirror(reflecting: value)
+                if String(describing: type(of: value)).hasSuffix("PagingCollectionWrapperView") {
+                    found = mirror.children.first { $0.label == "itemSpacing" }?.value as? CGFloat
+                    return
+                }
+                for child in mirror.children { walk(child.value, depth + 1) }
+                var superMirror = mirror.superclassMirror
+                while let m = superMirror {
+                    for child in m.children { walk(child.value, depth + 1) }
+                    superMirror = m.superclassMirror
+                }
+            }
+            walk(CollectionConverter.convert(component: component, data: ["items": dataSource()]), 0)
+            return found
+        }
+        XCTAssertEqual(try pageSpacing(", \"columnSpacing\": 30, \"lineSpacing\": 12"), 12)
+        XCTAssertEqual(try pageSpacing(", \"columnSpacing\": 30"), 0)
+        XCTAssertEqual(try pageSpacing(", \"itemSpacing\": 8"), 8, "the face's paging carousel")
     }
 
     /// Control: declared sections keep a grid per section (b starts a row).
