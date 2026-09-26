@@ -1,0 +1,584 @@
+{
+  "type": "View",
+  "id": "cg_route2_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Button",
+      "id": "cg_route_go_class",
+      "text": "cg class go 6",
+      "onClick": "@{onClassIndex}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_class",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{classRows}",
+      "cellClasses": [
+        "conformance_cell"
+      ],
+      "scrollTo": "@{classIndex}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_class_key",
+      "text": "cg class go k3",
+      "onClick": "@{onClassKey}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_class_key",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{classKeyed}",
+      "cellClasses": [
+        "conformance_cell"
+      ],
+      "cellIdProperty": "key",
+      "scrollTo": "@{classKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_pager",
+      "text": "cg pager go 6",
+      "onClick": "@{onPagerIndex}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_pager",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{ruleRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "paging": true,
+      "scrollTo": "@{pagerIndex}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_pager_key",
+      "text": "cg pager go k3",
+      "onClick": "@{onPagerKey}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_pager_key",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{ruleKeyed}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "paging": true,
+      "cellIdProperty": "key",
+      "scrollTo": "@{pagerKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_cellid",
+      "text": "cg cellid go c3",
+      "onClick": "@{onCellIdKey}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_cellid",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{ruleCellIds}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "scrollTo": "@{cellIdKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    }
+  ],
+  "data": [
+    {
+      "name": "classRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "A0"
+              },
+              {
+                "title": "A1"
+              },
+              {
+                "title": "A2"
+              },
+              {
+                "title": "A3"
+              },
+              {
+                "title": "A4"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "B0"
+              },
+              {
+                "title": "B1"
+              },
+              {
+                "title": "B2"
+              },
+              {
+                "title": "B3"
+              },
+              {
+                "title": "B4"
+              },
+              {
+                "title": "B5"
+              },
+              {
+                "title": "B6"
+              },
+              {
+                "title": "B7"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "classKeyed",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "a0",
+                "key": "k0"
+              },
+              {
+                "title": "a1",
+                "key": "k1"
+              },
+              {
+                "title": "a2",
+                "key": "k2"
+              },
+              {
+                "title": "a3",
+                "key": "k3"
+              },
+              {
+                "title": "a4",
+                "key": "k4"
+              },
+              {
+                "title": "a5",
+                "key": "k5"
+              },
+              {
+                "title": "a6",
+                "key": "k6"
+              },
+              {
+                "title": "a7",
+                "key": "k7"
+              },
+              {
+                "title": "a8",
+                "key": "k8"
+              },
+              {
+                "title": "a9",
+                "key": "k9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "b0",
+                "key": "k3"
+              },
+              {
+                "title": "b1",
+                "key": "x1"
+              },
+              {
+                "title": "b2",
+                "key": "x2"
+              },
+              {
+                "title": "b3",
+                "key": "x3"
+              },
+              {
+                "title": "b4",
+                "key": "x4"
+              },
+              {
+                "title": "b5",
+                "key": "x5"
+              },
+              {
+                "title": "b6",
+                "key": "x6"
+              },
+              {
+                "title": "b7",
+                "key": "x7"
+              },
+              {
+                "title": "b8",
+                "key": "x8"
+              },
+              {
+                "title": "b9",
+                "key": "x9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ruleRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "header": {
+              "title": "H0"
+            },
+            "cells": [
+              {
+                "title": "A0"
+              },
+              {
+                "title": "A1"
+              },
+              {
+                "title": "A2"
+              },
+              {
+                "title": "A3"
+              },
+              {
+                "title": "A4"
+              }
+            ],
+            "footer": {
+              "title": "F0"
+            }
+          },
+          {
+            "header": {
+              "title": "H1"
+            },
+            "cells": [
+              {
+                "title": "B0"
+              },
+              {
+                "title": "B1"
+              },
+              {
+                "title": "B2"
+              },
+              {
+                "title": "B3"
+              },
+              {
+                "title": "B4"
+              },
+              {
+                "title": "B5"
+              },
+              {
+                "title": "B6"
+              },
+              {
+                "title": "B7"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ruleKeyed",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "a0",
+                "key": "k0"
+              },
+              {
+                "title": "a1",
+                "key": "k1"
+              },
+              {
+                "title": "a2",
+                "key": "k2"
+              },
+              {
+                "title": "a3",
+                "key": "k3"
+              },
+              {
+                "title": "a4",
+                "key": "k4"
+              },
+              {
+                "title": "a5",
+                "key": "k5"
+              },
+              {
+                "title": "a6",
+                "key": "k6"
+              },
+              {
+                "title": "a7",
+                "key": "k7"
+              },
+              {
+                "title": "a8",
+                "key": "k8"
+              },
+              {
+                "title": "a9",
+                "key": "k9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "b0",
+                "key": "k3"
+              },
+              {
+                "title": "b1",
+                "key": "x1"
+              },
+              {
+                "title": "b2",
+                "key": "x2"
+              },
+              {
+                "title": "b3",
+                "key": "x3"
+              },
+              {
+                "title": "b4",
+                "key": "x4"
+              },
+              {
+                "title": "b5",
+                "key": "x5"
+              },
+              {
+                "title": "b6",
+                "key": "x6"
+              },
+              {
+                "title": "b7",
+                "key": "x7"
+              },
+              {
+                "title": "b8",
+                "key": "x8"
+              },
+              {
+                "title": "b9",
+                "key": "x9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ruleCellIds",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "a0",
+                "cellId": "c0"
+              },
+              {
+                "title": "a1",
+                "cellId": "c1"
+              },
+              {
+                "title": "a2",
+                "cellId": "c2"
+              },
+              {
+                "title": "a3",
+                "cellId": "c3"
+              },
+              {
+                "title": "a4",
+                "cellId": "c4"
+              },
+              {
+                "title": "a5",
+                "cellId": "c5"
+              },
+              {
+                "title": "a6",
+                "cellId": "c6"
+              },
+              {
+                "title": "a7",
+                "cellId": "c7"
+              },
+              {
+                "title": "a8",
+                "cellId": "c8"
+              },
+              {
+                "title": "a9",
+                "cellId": "c9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "b0",
+                "cellId": "c3"
+              },
+              {
+                "title": "b1",
+                "cellId": "y1"
+              },
+              {
+                "title": "b2",
+                "cellId": "y2"
+              },
+              {
+                "title": "b3",
+                "cellId": "y3"
+              },
+              {
+                "title": "b4",
+                "cellId": "y4"
+              },
+              {
+                "title": "b5",
+                "cellId": "y5"
+              },
+              {
+                "title": "b6",
+                "cellId": "y6"
+              },
+              {
+                "title": "b7",
+                "cellId": "y7"
+              },
+              {
+                "title": "b8",
+                "cellId": "y8"
+              },
+              {
+                "title": "b9",
+                "cellId": "y9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "classIndex",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "classKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "pagerIndex",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "pagerKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "cellIdKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "onClassIndex",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onClassKey",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onPagerIndex",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onPagerKey",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onCellIdKey",
+      "class": "() -> Void"
+    }
+  ]
+}

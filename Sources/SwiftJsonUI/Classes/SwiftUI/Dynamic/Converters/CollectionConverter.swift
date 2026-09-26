@@ -237,13 +237,16 @@ public struct CollectionConverter {
                   let propName = DynamicBindingResolver.inner(of: raw) else { return nil }
             let value = DynamicBindingResolver.lookupRaw(path: propName, in: data)
             guard let value else { return nil }
-            // cellIdProperty decides which spelling the layout is sending.
-            if cellIdProperty?.isEmpty == false {
-                guard let id = DynamicBindingResolver.unwrap(value) as? String else { return nil }
-                return .cellId(id)
-            }
-            guard let index = DynamicBindingResolver.unwrap(value) as? Int else { return nil }
-            return .index(index)
+            // The value says what it names (the SSoT's Collection.scrollTo): a
+            // String is a key — a cell's cellId, else its cellIdProperty value
+            // (scrollID(for:…)) — an Int a cell counted across the sections,
+            // whatever cellIdProperty says; anything else scrolls nowhere.
+            // Until jsonui-cli 1.9.0 cellIdProperty decided: with none a
+            // String was dropped, so a cellId was never matched.
+            let unwrapped = DynamicBindingResolver.unwrap(value)
+            if let key = unwrapped as? String { return .cellId(key) }
+            if let index = unwrapped as? Int { return .index(index) }
+            return nil
         }()
         let scrollAnimated = component.typedAttributes(CollectionAttributes.self).scrollAnimated ?? true
 
@@ -374,6 +377,10 @@ public struct CollectionConverter {
                 headerName: legacyHeader,
                 footerName: legacyFooter,
                 cellIdProperty: cellIdProperty,
+                sections: cellSections,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
+                scrollAnchorPoint: scrollAnchorPoint,
                 data: data,
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
@@ -385,6 +392,8 @@ public struct CollectionConverter {
                 dataSource: dataSource,
                 sections: firstSectionOnly,
                 cellIdProperty: cellIdProperty,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
                 data: data,
                 viewId: viewId,
                 onItemAppear: onItemAppearCallback
@@ -1021,9 +1030,14 @@ public struct CollectionConverter {
             guard let cellName = sectionConfig["cell"] as? String,
                   let cellsData = sectionData.cells else { continue }
             for (index, cellData) in cellsData.data.enumerated() {
+                // A page's identity: its key, qualified by its section after
+                // the first (cellScrollID) — two sections may share a key, and
+                // two pages with one id left the TabView unable to turn to the
+                // second or, measured, to the first (jsonui-cli 1.9.0: a
+                // scrollTo naming a shared key stayed on page 0).
                 let cellId: String
                 if let prop = cellIdProperty, let id = cellData[prop] as? String {
-                    cellId = id
+                    cellId = cellScrollID(section: sectionIndex, cellID: id)
                 } else {
                     cellId = "s\(sectionIndex)_\(index)"
                 }
@@ -1281,6 +1295,10 @@ public struct CollectionConverter {
         headerName: String?,
         footerName: String?,
         cellIdProperty: String?,
+        sections: [[String: Any]],
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
+        scrollAnchorPoint: UnitPoint,
         data: [String: Any],
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
@@ -1309,7 +1327,7 @@ public struct CollectionConverter {
                             )),
                             component: component
                         )
-                        .id(cell.id)
+                        .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                     }
                 }
             }
@@ -1321,7 +1339,12 @@ public struct CollectionConverter {
         // anything. The codegen hides row separators on the header-less
         // shape only, and hides the section separator between the cells'
         // Section and the footer's.
-        return applyListStyle(AnyView(
+        // A scrollTo reaches the cells by their scroll ids — every data
+        // section's (`sections`, the class-list shape's one per data section)
+        // — as on the other lists; until jsonui-cli 1.9.0 this route had no
+        // ScrollViewReader and a scrollTo drew nothing.
+        return AnyView(ScrollViewReader { scrollProxy in
+            scrollOnChange(applyListStyle(AnyView(
             List {
                 if let headerName {
                     Section {
@@ -1345,7 +1368,9 @@ public struct CollectionConverter {
                     }
                 }
             }
-        ), style: listStyle)
+        ), style: listStyle), target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+            cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+        })
     }
 
     /// Declared `listStyle` -> SwiftUI list chrome, the same mapping the
@@ -1476,6 +1501,8 @@ public struct CollectionConverter {
         dataSource: CollectionDataSource,
         sections: [[String: Any]],
         cellIdProperty: String?,
+        scrollTarget: CollectionScrollTarget?,
+        scrollAnimated: Bool,
         data: [String: Any],
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
@@ -1520,6 +1547,9 @@ public struct CollectionConverter {
                 pageItems: pageItems,
                 itemSpacing: itemSpacing,
                 currentPageBinding: currentPageBinding,
+                scrollTarget: scrollTarget,
+                scrollAnimated: scrollAnimated,
+                cellIdProperty: cellIdProperty,
                 onPageChangedCallback: onPageChangedCallback,
                 onItemAppearCallback: onItemAppear,
                 component: component,
@@ -2247,6 +2277,9 @@ private struct PagingCollectionWrapperView: View {
     let pageItems: [PagingPageItem]
     let itemSpacing: CGFloat
     let currentPageBinding: SwiftUI.Binding<Int>?
+    let scrollTarget: CollectionScrollTarget?
+    let scrollAnimated: Bool
+    let cellIdProperty: String?
     let onPageChangedCallback: ((Int) -> Void)?
     let onItemAppearCallback: ((Int) -> Void)?
     let component: DynamicComponent
@@ -2290,6 +2323,30 @@ private struct PagingCollectionWrapperView: View {
         .tabViewStyle(.page(indexDisplayMode: .never))
         .onChange(of: effectiveSelection.wrappedValue) { _, newValue in
             onPageChangedCallback?(newValue)
+        }
+        // A scrollTo turns to the page the value names — its CHANGE, as on
+        // every route (CollectionConverter.scrollOnChange): an Int is the
+        // page, the cells counted across the drawn sections; a String the
+        // first page whose key (its cellId, else its cellIdProperty value) it
+        // is; none, no turn. Until jsonui-cli 1.9.0 the pager drew no scrollTo.
+        .onChange(of: scrollTarget) { _, newTarget in
+            guard let newTarget, let page = page(for: newTarget) else { return }
+            if scrollAnimated {
+                withAnimation { effectiveSelection.wrappedValue = page }
+            } else {
+                effectiveSelection.wrappedValue = page
+            }
+        }
+    }
+
+    private func page(for target: CollectionScrollTarget) -> Int? {
+        switch target {
+        case .index(let index):
+            return pageItems.first { $0.index == index }?.index
+        case .cellId(let key):
+            return pageItems.first { page in
+                ((page.data["cellId"] as? String) ?? cellIdProperty.flatMap { page.data[$0] as? String }) == key
+            }?.index
         }
     }
 }

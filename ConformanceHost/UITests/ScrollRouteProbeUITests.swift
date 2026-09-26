@@ -109,6 +109,58 @@ final class ScrollRouteProbeUITests: XCTestCase {
         report(lines, "SPR")
     }
 
+    /// The pager's page on screen: of `labels`, the ones whose view sits
+    /// inside `frame` and can be hit.
+    private func onPage(_ frame: XCUIElement, among labels: [String]) -> [String] {
+        labels.filter { label in
+            let e = frame.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+            return e.exists && e.isHittable && frame.frame.contains(CGPoint(x: e.frame.midX, y: e.frame.midY))
+        }
+    }
+
+    private func runSecond(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        let classLabels = (0..<5).map { "A\($0)" } + (0..<8).map { "B\($0)" }
+        let cellIdLabels = (0..<10).map { "a\($0)" } + (0..<10).map { "b\($0)" }
+
+        let list = element(app, "\(p)_route_class")
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no class-list List")
+        app.buttons["\(p) class go 6"].tap()
+        sleep(1)
+        check("\(p)_route_class after 6", list, labels: classLabels, target: "B1", slack: 24, lines: &lines)
+        app.buttons["\(p) class go k3"].tap()
+        sleep(1)
+        check("\(p)_route_class_key after k3", element(app, "\(p)_route_class_key"), labels: keyLabels, target: "a3", slack: 24, lines: &lines)
+
+        for (go, id, want, labels) in [("\(p) pager go 6", "\(p)_route_pager", "B1", classLabels),
+                                        ("\(p) pager go k3", "\(p)_route_pager_key", "a3", keyLabels)] {
+            let pager = element(app, id)
+            XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no \(id)")
+            let before = onPage(pager, among: labels)
+            app.buttons[go].tap()
+            sleep(2)
+            let after = onPage(pager, among: labels)
+            lines.append("\(id): page before \(before), after \(go.split(separator: " ").last ?? ""): \(after)")
+            XCTAssertEqual(after, [want], "\(id): the page on screen is not \(want)'s")
+        }
+
+        let cellId = element(app, "\(p)_route_cellid")
+        app.buttons["\(p) cellid go c3"].tap()
+        sleep(1)
+        check("\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
+        report(lines, "SPR2")
+    }
+
+    func testTheClassListPagerAndCellIdRoutesDynamic() throws {
+        runSecond(prefix: "dyn", argument: "-scrollRouteProbe2")
+    }
+
+    func testTheClassListPagerAndCellIdRoutesGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runSecond(prefix: "cg", argument: "-scrollRouteProbe2Codegen")
+    }
+
     func testTheDynamicRoutesScrollOnAChange() throws {
         run(prefix: "dyn", argument: "-scrollRouteProbe", dynamic: true)
     }

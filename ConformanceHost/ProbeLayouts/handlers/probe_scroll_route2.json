@@ -1,0 +1,37 @@
+[
+  {
+    "name": "onClassIndex",
+    "set": {
+      "var": "classIndex",
+      "value": 6
+    }
+  },
+  {
+    "name": "onClassKey",
+    "set": {
+      "var": "classKey",
+      "value": "k3"
+    }
+  },
+  {
+    "name": "onPagerIndex",
+    "set": {
+      "var": "pagerIndex",
+      "value": 6
+    }
+  },
+  {
+    "name": "onPagerKey",
+    "set": {
+      "var": "pagerKey",
+      "value": "k3"
+    }
+  },
+  {
+    "name": "onCellIdKey",
+    "set": {
+      "var": "cellIdKey",
+      "value": "c3"
+    }
+  }
+]
