@@ -57,6 +57,21 @@ final class NoValueHandlerCallTests: XCTestCase {
         XCTAssertEqual(click(try switchNode(#","onclick":["bare","named"]"#)), ["bare()", "named(switch_0_1)"])
     }
 
+    /// `x`, `@{x}` and `x:` (UIKit's sender mark) are the one name `x` —
+    /// what onAppear / onDisappear and every other handler is looked up by
+    /// (4f's ruling, 1.9.0). `x:` was looked up with its colon.
+    func testTheThreeSpellingsAreOneName() {
+        for spelling in ["named", "@{named}", "named:"] {
+            XCTAssertEqual(DynamicEventHelper.handlerName(from: spelling), "named", spelling)
+        }
+        XCTAssertNil(DynamicEventHelper.handlerName(from: ":"))
+        XCTAssertNil(DynamicEventHelper.handlerName(from: "@{}"))
+        calls = []
+        DynamicEventHelper.callWithId("named:", id: "view_0_1", data: data())
+        DynamicEventHelper.callWithId("bare:", id: "view_0_1", data: data())
+        XCTAssertEqual(calls, ["named(view_0_1)", "bare()"])
+    }
+
     func testAHandlerTakingAValueIsNotCalled() throws {
         XCTAssertEqual(click(try switchNode(#","onClick":"@{valued}""#)), [])
     }

@@ -2,7 +2,7 @@
 //  TapArityCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli triage/date-selectbox-index 5c4ea47d) emits for
+//  What `sjui build` (sjui_tools of jsonui-cli triage/lifecycle-spellings 80b1df75) emits for
 //  TapArityProbeView's layout — a tap, a long press, onAppear and onDisappear
 //  on every port, their handlers declared `(String)` — the generated Data
 //  struct, the view-local state, the body and its sections, pasted unchanged.
@@ -23,7 +23,17 @@ struct TapArityData {
     var pS: ((String) -> Void)? = nil
     var aS: ((String) -> Void)? = nil
     var dS: ((String) -> Void)? = nil
+    var aB: ((String) -> Void)? = nil
+    var aC: ((String) -> Void)? = nil
+    var dB: ((String) -> Void)? = nil
+    var dC: ((String) -> Void)? = nil
     var t0: (() -> Void)? = nil
+    var a0: (() -> Void)? = nil
+    var a0b: (() -> Void)? = nil
+    var a0c: (() -> Void)? = nil
+    var d0: (() -> Void)? = nil
+    var d0b: (() -> Void)? = nil
+    var d0c: (() -> Void)? = nil
     var shown: String = "visible".localized()
     var txt0: String = "tap tS"
     var txt1: String = "tap t0"
@@ -82,9 +92,59 @@ struct TapArityData {
                 self.dS = typedValue
             }
         }
+        if let value = dictionary["aB"] {
+            if let typedValue = value as? ((String) -> Void)? {
+                self.aB = typedValue
+            }
+        }
+        if let value = dictionary["aC"] {
+            if let typedValue = value as? ((String) -> Void)? {
+                self.aC = typedValue
+            }
+        }
+        if let value = dictionary["dB"] {
+            if let typedValue = value as? ((String) -> Void)? {
+                self.dB = typedValue
+            }
+        }
+        if let value = dictionary["dC"] {
+            if let typedValue = value as? ((String) -> Void)? {
+                self.dC = typedValue
+            }
+        }
         if let value = dictionary["t0"] {
             if let typedValue = value as? (() -> Void)? {
                 self.t0 = typedValue
+            }
+        }
+        if let value = dictionary["a0"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.a0 = typedValue
+            }
+        }
+        if let value = dictionary["a0b"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.a0b = typedValue
+            }
+        }
+        if let value = dictionary["a0c"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.a0c = typedValue
+            }
+        }
+        if let value = dictionary["d0"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.d0 = typedValue
+            }
+        }
+        if let value = dictionary["d0b"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.d0b = typedValue
+            }
+        }
+        if let value = dictionary["d0c"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.d0c = typedValue
             }
         }
         if let value = dictionary["shown"] {
@@ -171,8 +231,38 @@ struct TapArityData {
         if let value = dS {
             dict["dS"] = value
         }
+        if let value = aB {
+            dict["aB"] = value
+        }
+        if let value = aC {
+            dict["aC"] = value
+        }
+        if let value = dB {
+            dict["dB"] = value
+        }
+        if let value = dC {
+            dict["dC"] = value
+        }
         if let value = t0 {
             dict["t0"] = value
+        }
+        if let value = a0 {
+            dict["a0"] = value
+        }
+        if let value = a0b {
+            dict["a0b"] = value
+        }
+        if let value = a0c {
+            dict["a0c"] = value
+        }
+        if let value = d0 {
+            dict["d0"] = value
+        }
+        if let value = d0b {
+            dict["d0b"] = value
+        }
+        if let value = d0c {
+            dict["d0c"] = value
         }
         dict["shown"] = shown
         dict["txt0"] = txt0
@@ -222,8 +312,38 @@ struct TapArityData {
         if let dS = dS {
             dict["dS"] = dS
         }
+        if let aB = aB {
+            dict["aB"] = aB
+        }
+        if let aC = aC {
+            dict["aC"] = aC
+        }
+        if let dB = dB {
+            dict["dB"] = dB
+        }
+        if let dC = dC {
+            dict["dC"] = dC
+        }
         if let t0 = t0 {
             dict["t0"] = t0
+        }
+        if let a0 = a0 {
+            dict["a0"] = a0
+        }
+        if let a0b = a0b {
+            dict["a0b"] = a0b
+        }
+        if let a0c = a0c {
+            dict["a0c"] = a0c
+        }
+        if let d0 = d0 {
+            dict["d0"] = d0
+        }
+        if let d0b = d0b {
+            dict["d0b"] = d0b
+        }
+        if let d0c = d0c {
+            dict["d0c"] = d0c
         }
         dict["shown"] = SwiftUI.Binding<String>(
             get: { dataBinding.wrappedValue.shown },
@@ -432,6 +552,81 @@ struct TapArityCodegenPaste: View {
                     .onDisappear {
                             data.dS?("view_0_9")
                         }
+            }
+                Rectangle()
+                    .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                    .onAppear {
+                            data.aB?("view_0_10")
+                        }
+                Rectangle()
+                    .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                    .onAppear {
+                            data.aC?("view_0_11")
+                        }
+                Rectangle()
+                    .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                    .onAppear {
+                            data.a0?()
+                        }
+                Rectangle()
+                    .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                    .onAppear {
+                            data.a0b?()
+                        }
+                Rectangle()
+                    .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                    .onAppear {
+                            data.a0c?()
+                        }
+            VisibilityWrapper(data.shown) {
+                VStack(alignment: .leading, spacing: 0) {
+                        Rectangle()
+                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                            .onDisappear {
+                                            data.dB?("view_0_15_0")
+                                        }
+                        Rectangle()
+                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                            .onDisappear {
+                                            data.dC?("view_0_15_1")
+                                        }
+                        Rectangle()
+                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                            .onDisappear {
+                                            data.d0?()
+                                        }
+                        Rectangle()
+                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                            .onDisappear {
+                                            data.d0b?()
+                                        }
+                        Rectangle()
+                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "white") ?? Color.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: 8, idealHeight: 8, maxHeight: 8)
+                            .onDisappear {
+                                            data.d0c?()
+                                        }
+                }
+                    .frame(maxWidth: .infinity, alignment: .topLeading)
             }
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
