@@ -74,7 +74,9 @@ public struct SegmentConverter {
                 }
             )
         }
-        let id = component.id ?? "segment"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `segment` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
         // onValueChange — or, where none is declared, `valueChange`, the
         // selector spelling (Segment's own attribute in the definitions, no
         // platform named). UIKit wires it to .valueChanged, and sjui build,

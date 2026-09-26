@@ -66,7 +66,9 @@ public struct TextFieldConverter {
             }
             return raw.dynamicLocalized()
         }()
-        let id = component.id ?? "textField"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `textField` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
 
         // Placeholder styling (hintColor / placeholderColor / hintFont /
         // hintFontSize). Empty when the layout declared none, in which case

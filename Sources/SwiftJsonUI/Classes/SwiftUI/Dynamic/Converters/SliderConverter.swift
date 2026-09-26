@@ -109,7 +109,9 @@ public struct SliderConverter {
         // onValueChange handler (onValueChanged alias resolved inside
         // the generated extraction, L0 only)
         let handler = attrs.onValueChange?.rawRepresentation as? String
-        let id = component.id ?? "slider"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `slider` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
 
         // No two-way binding in the data — a literal, no value (the minimum),
         // or a plain value: the slider holds its own state seeded from it

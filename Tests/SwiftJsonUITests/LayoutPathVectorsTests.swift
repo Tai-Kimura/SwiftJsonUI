@@ -59,6 +59,36 @@ final class LayoutPathVectorsTests: XCTestCase {
         print("LayoutPath vectors: \(cases.count) cases, \(checked) nodes")
     }
 
+    /// The viewId rows of the shared table (`view_id_cases`): nodes named by
+    /// `_label`, each read after stamping — the id, else the drawn type with
+    /// its first letter lowercased and the position.
+    func testEveryViewIdCase() throws {
+        let table = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: TestFixtures.loadJSON(named: "layout_path_vectors")) as? [String: Any])
+        let cases = try XCTUnwrap(table["view_id_cases"] as? [[String: Any]])
+        XCTAssertGreaterThan(cases.count, 0)
+        var checked = 0
+        for testCase in cases {
+            let name = testCase["name"] as? String ?? "?"
+            let layout = try XCTUnwrap(testCase["layout"] as? [String: Any], name)
+            var found: [String: String] = [:]
+            func walk(_ node: Any) {
+                guard let dict = node as? [String: Any] else { return }
+                if let label = dict["_label"] as? String { found[label] = LayoutPath.viewId(of: dict) }
+                for field in ["child", "children"] {
+                    if let list = dict[field] as? [Any] { list.forEach(walk) } else if let one = dict[field] { walk(one) }
+                }
+            }
+            walk(LayoutPath.stamp(layout))
+            let expect = try XCTUnwrap(testCase["expect"] as? [String: String], name)
+            for (label, viewId) in expect {
+                XCTAssertEqual(found[label], viewId, "\(name): \(label)")
+                checked += 1
+            }
+        }
+        print("LayoutPath viewId vectors: \(cases.count) cases, \(checked) nodes")
+    }
+
     /// JSONLayoutLoader.decodeComponent stamps a tree nobody stamped — a
     /// caller's own dictionary — so an id-less Radio gets its position there
     /// too; a tree the loader stamped keeps its paths.

@@ -32,7 +32,9 @@ public struct SelectBoxConverter {
         data: [String: Any]
     ) -> AnyView {
         let attrs = component.typedAttributes(SelectBoxAttributes.self)
-        let id = component.id ?? "selectBox"
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `selectBox` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
 
         // --- 1. Build SelectBoxView ---
 
