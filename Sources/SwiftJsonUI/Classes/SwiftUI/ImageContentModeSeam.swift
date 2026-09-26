@@ -32,10 +32,15 @@ public enum ImageContentModeIntent: Equatable {
     /// `top` / `bottom` / `left` / `right` / `center` — unscaled and aligned.
     case positional(Alignment)
 
-    /// Resolves a declared spelling. Returns `.fit` for anything unrecognised,
-    /// which is what both render paths already fall back to.
+    /// Resolves a declared spelling. No spelling — and one this table does
+    /// not know — resolves to the declared default, `.fit`
+    /// (attribute_semantics.json `semantics.image.defaultContentMode`;
+    /// ImageContentModeDefaultTests reads the value). `fit` has a case of its
+    /// own so the default is not what makes it `.fit`: a changed default
+    /// then shows as `from(nil) != from("fit")` instead of moving both.
     public static func from(_ spelling: String?) -> ImageContentModeIntent {
         switch (spelling ?? "").lowercased() {
+        case "fit", "aspectfit": return .fit
         case "fill", "scaletofill": return .stretch
         case "aspectfill": return .aspectFill
         case "top": return .positional(.top)
@@ -56,12 +61,13 @@ public extension NetworkImage.ContentMode {
     /// Exists because the compile-time map cannot see a `@{...}` value:
     /// the converter's `map_content_mode_enum` fell through to `.fit`,
     /// freezing the binding to a constant (C1/bound-frozen,
-    /// NetworkImage.contentMode [ios]). `.fit` for anything unrecognised —
-    /// the same default both render paths already used.
+    /// NetworkImage.contentMode [ios]). No spelling, or one this table does
+    /// not know: the declared default, `.fit` (as on Image, above); `fit`
+    /// has a case of its own for the same reason.
     static func from(_ spelling: String?) -> NetworkImage.ContentMode {
         switch spelling ?? "" {
         case "AspectFill", "aspectFill": return .fill
-        case "AspectFit", "aspectFit": return .fit
+        case "fit", "Fit", "AspectFit", "aspectFit": return .fit
         case "center", "Center": return .center
         case "top", "Top": return .top
         case "bottom", "Bottom": return .bottom

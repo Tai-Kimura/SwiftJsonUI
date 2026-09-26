@@ -147,6 +147,10 @@ jobs:
                "shared/core/component_metadata.json"),
               ("Tests/SwiftJsonUITests/Fixtures/layout_path_vectors.json",
                "shared/core/layout_path_vectors.json"),
+              # The declared image default (semantics.image.defaultContentMode)
+              # ImageContentModeDefaultTests binds the no-contentMode drawing to.
+              ("Tests/SwiftJsonUITests/Fixtures/attribute_semantics.json",
+               "shared/core/attribute_semantics.json"),
               # Not a fixture: the table Dynamic draws type synonyms with
               # (TypeSynonyms), shipped in the package's resource bundle.
               ("Sources/SwiftJsonUI/Resources/type_synonyms.json",

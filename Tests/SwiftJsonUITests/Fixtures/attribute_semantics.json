@@ -1,0 +1,383 @@
+{
+  "version": 1,
+  "title": "JsonUI attribute semantics — observable cross-platform contract",
+  "notes": "Hand-authored canonical rulings (semantic-drift track 33, established 2026-08-03). Each adjudicated attribute-semantics ruling is declared ONCE here; the 'observable' block states the cross-platform effect expectation that `jui conformance gate --cross-effect` verifies mechanically against every platform's control-diff verdicts (expectation values: 'uniformly-inert' = the fixture must render identically to its control on every in-scope platform; 'uniformly-active' = it must differ on every in-scope platform). Toolchain code comments must POINT here instead of restating the rule — comment canon rots (the border ruling reversed direction twice within 48 hours while living as comments in three toolchains). Canonical choices are design decisions, not majority votes of existing implementations. Add one entry per ruling as the cross-effect adjudication queue is consumed.",
+  "semantics": {
+    "border": {
+      "widthAlone": "no-draw",
+      "styleAlone": "no-draw",
+      "ruling": "A border is drawn only when BOTH borderWidth and borderColor are declared; borderWidth alone renders nothing on every platform — there is no default border color (2026-08-03 user ruling; supersedes the transient gray-default direction of d2c8628, unified across toolchains in 3e87b96). borderColor alone renders nothing for the same reason — the pair is what requests a border, and neither half requests one on its own (measured 2026-08-04, plan 34 re-measure: 0 px against the control on all three platforms; the android codegen does emit on the attribute's PRESENCE, which is a codegen-stage fact plan 41 tracks, not a rendered difference). borderStyle alone likewise renders nothing: it styles a border the width+color pair requests, it never summons one (2026-08-03 user ruling #2). NOTE: TextField.borderStyle is a DIFFERENT attribute (UIKit text-field chrome: roundedRect/line/bezel/none) and is outside this entry. The `__*_with_border` fixtures are the paired variants (borderStyle declared ALONGSIDE borderWidth + borderColor) that plan 49 added once three lanes had implemented the attribute with nothing measuring it — the lone-style fixtures above stay inert and keep testing the AND rule. `solid_with_border` is inert for a different reason from the lone ones: solid is the declared default of borderStyle, so stating it explicitly draws the same picture as omitting it (codegen_effect calls this class `value-is-default`). dashed/dotted are the two that must differ from the control. If the 3PF measurement comes back split rather than uniform, the honest record is a per-platform map like skinIdioms uses, not a forced uniform verdict: plan 34 caught ios emitting identical text for solid and dashed (C2/presence-only), and B/C/A implemented the three platforms separately in this wave. MEASURED 2026-08-05 (conformance-mobile run 30950551601 @ 5aada98), and the split the paragraph above anticipated is what happened: dashed and dotted are active on android and web and INERT on ios — the three borderStyle values render pixel-identical to each other and to the control on ios, which is the same symptom plan 34 recorded at the codegen stage (sjui emitting the same text for solid and dashed, C2/presence-only). They are therefore recorded as per-platform maps, not forced to a uniform verdict. This records today's reality; it does not bless it. If ios is supposed to draw a dashed border, the entry moves to uniformly-active once it does. solid_with_border stays uniformly-inert on all three because solid is borderStyle's declared default. RESOLVED 2026-08-05 on run 30990560599: ios draws both dashed and dotted, so the per-platform split is folded back to uniformly-active. The gap was never in sjui's codegen — that emitted StrokeStyle from dc35e82 — but in the SwiftUI dynamic renderer's applyBorder, which stroked with lineWidth only and so drew every style as solid. Recorded because the shape recurs: a codegen and a dynamic path disagreeing looks exactly like a platform not implementing an attribute.",
+      "observable": {
+        "common/borderWidth__static": "uniformly-active",
+        "common/borderColor__static": "uniformly-active",
+        "common/borderStyle__solid": "uniformly-inert",
+        "common/borderStyle__dashed": "uniformly-inert",
+        "common/borderStyle__dotted": "uniformly-inert",
+        "common/borderStyle__solid_with_border": "uniformly-inert",
+        "common/borderStyle__dashed_with_border": "uniformly-active",
+        "common/borderStyle__dotted_with_border": "uniformly-active"
+      },
+      "observableNote": "MEASURED 2026-08-08 (run 31243724782 + local-env): uniformly active — the divergence this entry recorded was fixed in-wave (ios Blur bridge / ios highlighted swap / ios distribution fill / ios loadingImage via pending.invalid / border emit on all faces)."
+    },
+    "highlight": {
+      "highlightedAlone": "no-draw",
+      "highlightBackgroundAlone": "no-draw",
+      "ruling": "The highlighted appearance is drawn only when BOTH `highlighted` and a highlight colour are declared — the same pair-required shape as `border`, and ruled the same way. `highlighted: true` alone swaps the background to a colour that was never given, so nothing changes; `highlightBackground` alone names a colour for a state the view is never in. Every codegen already treats them as a pair (kjui modifier_builder.rb:490 combines highlight_cond with highlight_bg; sjui apply_highlighted_to_bag does the same), so a single-attribute fixture measures the absence of the companion rather than the converter. Established by measurement, not assumption: plan 41's paired probe carried View.highlighted as its one PROVISIONAL entry, and giving it `highlightBackground` made the ios/C0 and android/C0 findings disappear — the converters were correct and the fixture was missing the other half. This entry retires that PROVISIONAL: the pairing is now derived from the ledger like every other family (2026-08-05, plan 49-E, on plan 41's evidence). MEASURED 2026-08-05 (same run): web is active — A routed the highlight background through an inline style instead of a losing Tailwind class — while ios and android are still inert, so the verdict is recorded per platform. NOTE for anyone tidying this block: `common/highlightBackground__static` carries no control in the generated fixture set, so it is never compared and its verdict here is not checked against anything. It must NOT be deleted regardless — companions.py derives the pairing from this topic's `observable` KEYS, and a topic with fewer than two members stops producing companions at all. Same permanent-unverifiable note as networkImage's loadingImage applies to `common/highlightBackground__static`: rules.py scopes it to the paired form, so the bare fixture has no control and the entry can never be checked at the render stage. It stays because companions.py derives the View.highlighted pairing from these keys — deleting it would stop the pairing, not just the check. MEASURED 2026-08-06 on run 31068716186: android is now active (152,960 px) — the highlighted+highlightBackground pair landed on android; ios remains inert.",
+      "observable": {
+        "View/highlighted__true": "uniformly-active",
+        "common/highlightBackground__static": "uniformly-inert"
+      },
+      "observableNote": "MEASURED 2026-08-08 (run 31243724782 + local-env): uniformly active — the divergence this entry recorded was fixed in-wave (ios Blur bridge / ios highlighted swap / ios distribution fill / ios loadingImage via pending.invalid / border emit on all faces)."
+    },
+    "image": {
+      "defaultContentMode": "fit",
+      "fill": "stretch",
+      "ruling": "2026-08-03 user rulings: (a) the default contentMode is fit on every platform — web's implicit cover default was drift (fixed in rjui, 22d96b4); (b) fill is the stretch (scaleToFill synonym) — AspectFill is the crop. All three platforms now implement the full mapping including the positional modes (unscaled + aligned + cropped; sjui/kjui/SwiftJsonUI/KotlinJsonUI, 33 wave). Observables: fit-valued fixtures equal the default rendering (uniformly inert); fill/scaleToFill differ from it everywhere (uniformly active). Verified on the 33 round-3 measurement. REGRESSION on run 30990560599, recorded as measured and NOT as a semantics change: fill and scaleToFill went inert on ios between round 3 (44,640 px against the control) and round 4 (0 px), while the fixture declaration and the control image are byte-identical across the two runs — so the picture moved, not the probe. SwiftJsonUI fe74662 rewrote ImageViewConverter's declaredSize guard from `component.width/height` to `component.declaredWidth/declaredHeight`, and the stretch is applied through that size; it landed after round 3 and is in round 4. This entry is expected to fall back to uniformly-active once that is fixed — it is a progress meter, not a ruling that ios stretches differently. RESOLVED 2026-08-06 on run 31068716186 (SwiftJsonUI checkout 8b4c1b3): ios draws the stretch again — 44,640 px against the control, the exact round-3 magnitude — so both fill and scaleToFill fold back to uniformly-active, as the round-5 prediction registered. The per-platform split lived for exactly one round, which is what a progress meter is for.",
+      "observable": {
+        "Image/contentMode__fit": "uniformly-inert",
+        "Image/contentMode__aspectfit": "uniformly-inert",
+        "NetworkImage/contentMode__fit": "uniformly-inert",
+        "NetworkImage/contentMode__aspectfit": "uniformly-inert",
+        "Image/contentMode__fill": "uniformly-active"
+      }
+    },
+    "textView": {
+      "flexibleHeight": "declared height is the growth floor",
+      "ruling": "2026-08-03 user ruling (31 handoff): with flexible enabled, the declared height is the floor the view GROWS from — it never shrinks below it to follow smaller content. android's behavior is canonical; ios (both paths) shrank with content and must adopt the floor formula min = minHeight ?? height ?? default (landed in the 33 wave: SwiftJsonUI dynamic + sjui codegen, floor formula min = minHeight ?? height). web measures 'has effect' — verify it matches floor semantics before recording it anywhere. No activeness observable: at fixture content size a correct floor renders identically to the control (that is WHY the android control_diff entry was removed in e78af64); the mechanical check belongs to the geometry probe (systematic-detection optimization track).",
+      "observable": {}
+    },
+    "size": {
+      "maxBoundsClampFill": "matchParent is clamped by maxWidth/maxHeight",
+      "ruling": "2026-08-03 user ruling (31 handoff): matchParent + maxWidth/maxHeight resolves to min(parent extent, bound) — the bound clamps the fill. Generated code is canonical (kjui emits the constraint before the fill since 847fb56); KJUI dynamic ordered fillMaxWidth before widthIn, ignoring the bound entirely — reordered in the 33 wave (bounds precede a fill, stay after an explicit size). The composite clamp fixtures below are the observable: a clamping platform renders visibly narrower/shorter than its filled control (active); ignoring the bound renders identically (inert). Companion precedence (2026-08-03 campaign adjudication): an EXPLICIT numeric dimension pins the constraints and its bound stays inert (kjui codegen 847fb56, ios 35efc2b, rjui skips max-* under an explicit size); bounds in turn clamp a FILL. Order: explicit > bounds > fill. 2026-08-07 (plan 51-E), the wrap-bound family D asked for as the companion to maxBoundsClampFill. `width: wrapContent` says size to the content and `maxWidth` declares a MAXIMUM, not a target, so the two compose in only one way: the content sizes itself, the bound caps it, and content that would exceed the cap REFLOWS inside it rather than overflowing or stretching the box out to the bound. A short string under `maxWidth: 150` therefore stays narrow — the bound is not an ideal size, which is the half that only existed as a comment in sjui frame_helper.rb until now. ios already emits the canonical shape (`.frame(maxWidth: 150).fixedSize(horizontal: false, vertical: true)`), android `wrapContentWidth().widthIn(max=150)` and web `w-fit max-w-[150px]` agree. Note for fixture authors, from D's measurement: the generic maxWidth sweep cannot see this axis at all — a 40pt child in a 200pt box does not move by one pixel — so the observable needs REFLOWABLE text, which is why common/maxWidth__wrap is bespoke in bounds_fixtures.py.",
+      "observable": {
+        "common/maxWidth__fill_clamp": "uniformly-active",
+        "common/maxHeight__fill_clamp": "uniformly-active",
+        "common/maxWidth__wrap": "uniformly-active"
+      },
+      "explicitOverBounds": "an explicit numeric dimension wins over its min/max bound",
+      "wrapBoundReflow": "a wrapContent axis with a max bound reflows the content INSIDE the bound; the bound never becomes the ideal size"
+    },
+    "networkImage": {
+      "noSrc": "defaultImage",
+      "ruling": "2026-08-03 user ruling: with no src, NetworkImage displays defaultImage; while loading it displays the first of hint/placeholder/loadingImage; on error it displays errorImage, falling back to defaultImage. Implemented on all platforms in the 33 wave (KotlinJsonUI defaultImage read + Coil fallback chain; ios placeholder no longer collapses over defaultImage; rjui defaultImage prop + template state machine). State-image fixtures use the DISTINCT conformance_sample_alt asset, so a hijacked no-src state renders visibly — the uniformly-inert observables verify the chain end-to-end. MEASURED 2026-08-05 (same run): placeholder is now active on all three — the conformance host never completes a network load, so the loading state persists and the placeholder is what the fixture shows; inert was the wrong expectation for it and the contract is updated. errorImage and loadingImage are active on android and inert on ios (they are out of scope on web), recorded per platform. OPEN QUESTION, deliberately not resolved by this entry: under the ruling above a state image should only appear in its own state, so android rendering a difference for errorImage — when the fixture never errors — reads like android showing a state image it should not, i.e. a defect rather than a contract. Recorded as measured because the gate cannot be satisfied by a ledger reason, but the android/ios split here needs adjudicating by the lanes that own those runtimes before it is treated as intended. NOTE on loadingImage's entry: rules.py deliberately gives that fixture no control (an in-flight image has no duration, so the loading face cannot be photographed however the fixture is shaped), which means the contract here is PERMANENTLY unverifiable at the render stage and will show up every run under \"could not be verified\". It is kept because the codegen probe still measures the spelling on both mobile converters — the entry states what the platforms should do, and the render stage simply is not the instrument that can check it. MEASURED 2026-08-06 on run 31068716186: the android/ios pair REVERSED — errorImage is now active on ios (631 px: ios draws the error face) and inert on android (0 px), and placeholder went inert on android in the same run. ios moving to active is the OPEN QUESTION's suspected defect being adjudicated by implementation; android going dark on BOTH state images at once reads as an android-side regression of the state-image chain, assigned to G+C (2026-08-06). placeholder's contract records the split as a progress meter and returns to uniformly-active when the android chain is fixed; errorImage's contract is deliberately left at its pre-run-5 value so the gate keeps a standing violation pointing at the open investigation — a contract edit would file the regression as intended. RESOLVED 2026-08-06 on run 31080217407: G's decisive-network interceptor made the error state deterministic, and errorImage measures ACTIVE on both mobile platforms (web stays out of scope) — the deliberately-stale contract folds to uniformly-active and the standing violation retires. placeholder's android:inert row REMAINS measured reality on run 6 and is consistent with the same interceptor: a load that now completes deterministically ends the loading state, so the loading face never shows on android — whether ios/web should match that is G+C's open half of #19, and the placeholder row stays a meter until they rule.",
+      "observable": {
+        "NetworkImage/placeholder__static": {
+          "ios": "active",
+          "android": "inert",
+          "web": "active"
+        },
+        "NetworkImage/hint__static": "uniformly-inert",
+        "NetworkImage/errorImage__static": "uniformly-active",
+        "NetworkImage/loadingImage__static": "uniformly-active"
+      },
+      "observableNote": "MEASURED 2026-08-08 (run 31243724782 + local-env): uniformly active — the divergence this entry recorded was fixed in-wave (ios Blur bridge / ios highlighted swap / ios distribution fill / ios loadingImage via pending.invalid / border emit on all faces)."
+    },
+    "margins": {
+      "offsetModel": "ZStack/overlay child margins are full-margin offsets; an explicit center declaration disables that axis margin; margins arrays and start/endMargin apply as padding",
+      "ruling": "2026-08-03 campaign adjudication (31/33 rounds, measured bbox evidence in the 33 geometry diagnosis table): an overlay (ZStack) child offsets by the FULL margin on each declared edge; declaring centerInParent/centerHorizontal/centerVertical disables the margin on the centered axis; the margins array and the RTL start/endMargin spellings resolve as padding-equivalent insets. Divergent rows are ledgered per-fixture with their measured deltas; the mechanical closure is the geometry probe (systematic-detection optimization track, de-scoped from the completion gate). No activeness observable: position deltas are invisible to fixture-vs-control activeness when every platform moves.",
+      "observable": {}
+    },
+    "gravityDefaults": {
+      "defaultGravity": "top|start",
+      "ruling": "2026-08-03 campaign adjudication: the default content gravity is top|start on every container (CollectionStack pins Top; SafeAreaView spacer layouts anchor start). A platform centering by default is the deviant. No activeness observable — default-vs-default renders identically; the geometry probe closes it mechanically. 2026-08-07 (plan 51-E), Wave 2 carry-over: what happens to the axis a single-value gravity does NOT name. Ruled from the declaration alone, as the semantics rule requires, not from any platform's behaviour. common.gravity declares an enum of SINGLE-AXIS values (top, bottom, left, right, centerVertical, centerHorizontal) alongside an array type whose whole purpose is naming both axes at once. If a single-axis value left the other axis undefined, then `gravity: \"left\"` would have no defined rendering at all, and a declaration cannot leave its own enum values meaningless — so each axis resolves independently, and the axis that is not named takes the default already ruled above (top | start). It does NOT inherit the parent's gravity and it is not \"unset\". CONSEQUENCE, stated because it looks like a bug when measured: in LTR, `gravity: \"left\"` and `gravity: \"top\"` both resolve to (start, top) and are therefore observationally IDENTICAL. The Wave 2 note that ios draws `left` and `top` the same picture is the contract being honoured, not a defect; a fixture that expects those two to differ is testing something the SSoT never promised. Whether a given fixture can see the horizontal axis at all is a separate, real question — a child that fills the container's width makes it unobservable (D's lane). 2026-08-07 (plan 51-E), B's follow-up measurement: sjui emits `alignment: .topLeading` for every NAMED form (`left|top`, `left`, `top`) but drops the `alignment:` argument entirely when gravity is omitted, so SwiftUI falls to `.center` (51-B-progress). That is the deviation this ruling already named — \"a platform centering by default is the deviant\" — and the argument is the same one that settled the unspecified axis: if a partially specified gravity fills the unnamed axis with the default, then an omitted gravity fills BOTH axes with it. Any other reading makes omitting gravity mean something different from naming the default explicitly, which no declaration says. So the omitted form must also emit topLeading. NOTE FOR ROLLOUT, not for the canon: every View in every project that does not declare gravity goes through this line, so the fix wants a 3PF measurement and a fixture that can actually see it (a fixed-size container whose child does not stretch — with a stretching child the Spacer construction is identical in all four forms and the difference is unobservable). Sequencing is the orchestrator's; the canon is not in doubt.",
+      "observable": {},
+      "unspecifiedAxis": "falls to the container default for that axis (top vertically, start horizontally) — never \"unset\", never inherited from the parent",
+      "omittedEntirely": "same as the default: top | start. Omitting gravity must render identically to naming the default explicitly",
+      "leafOwnFrameChannel": {
+        "default": "center",
+        "ruling": "2026-08-08 adjudication (gravity leaf-scope hotfix, v1.5.2/10.15.1): the container default above scopes to CONTAINERS — nodes whose content the framework itself lays out. A childless node's own-frame content (a fit image's bitmap inside its declared box, a custom component's internals, a text block smaller than its fixed box) is a SEPARATE channel whose default is Center: Compose's Image/extension alignment default, which kjui never overrides, and the position the android face measurably draws a shrunken autoShrink line in its fixed box. ios converged in SwiftJsonUI 245d059+4d41bf9 (codegen gravity_to_frame_alignment leaf scope; dynamic fixed-frame text drop). A DECLARED gravity or textAlign still applies to any node — this entry names only the omitted-spelling default. Implementations were aligned BEFORE this text landed; the entry records the ruling the code already obeys."
+      }
+    },
+    "shadow": {
+      "stringPipe": "five-field strict",
+      "ruling": "2026-08-03 campaign adjudication (31 wave, unified in 3e87b96/ca65fb6): the shadow string pipe format is exactly five fields (color|offsetX|offsetY|blur|opacity); any other count renders NOTHING on every platform — no partial parsing, no platform default. The conformance fixtures ship the valid five-field pipe; a malformed-count probe belongs to the validator, not the render layer.",
+      "observable": {}
+    },
+    "gradient": {
+      "defaultDirection": "vertical",
+      "ruling": "2026-08-03 campaign adjudication (31 gradient family): the default gradient direction is vertical (top to bottom) on every platform; an explicit \"vertical\" therefore equals the default rendering.",
+      "observable": {
+        "GradientView/gradientDirection__vertical": "uniformly-inert"
+      }
+    },
+    "skinIdioms": {
+      "demarcation": "control chrome may differ per platform; the DIFFERENCE ITSELF is contract-pinned",
+      "ruling": "2026-08-03 campaign adjudication: platform-owned control chrome is a legitimate difference, but only in its adjudicated SHAPE — the observable pins each accepted divergence as an expected-difference pattern, so both disappearing and mutating fail the gate. Members: Blur effectStyle (android material variants differ visibly, ios materials render alike on flat surfaces per the 31 saturation analysis, web CSS blur is single-variant), TextField.borderStyle (UIKit field chrome — each platform draws its own; web renders none for the UIKit-only bezel variants), TabView.showLabels WAS a member on the strength of a `__true` measurement — the DEFAULT value — and left the topic on 2026-08-05 when run 30990560599 measured both values on all three: `true` is inert everywhere (it is the default, so declaring it draws what omitting it draws) and `false` is active everywhere (ios 1491 px, android 8427, web 3019), with the two values distinguishable on every platform. There is no ios-only divergence to pin, so the entry moves to `__false` as a plain uniformly-active fact and the attribute is no longer a skin idiom. The original reading came from comparing the default value against its control, which cannot show what a non-default value does. The tabview glyph-source family is the codegen-side counterpart, pinned permanently in codegen_parity.json (2026-08-03 user ruling).",
+      "observable": {
+        "Blur/effectStyle__extralight": "uniformly-active",
+        "Blur/effectStyle__light": "uniformly-active",
+        "TextField/borderStyle__bezel": {
+          "ios": "inert",
+          "android": "active",
+          "web": "inert"
+        },
+        "TextField/borderStyle__bezel_2": {
+          "ios": "inert",
+          "android": "active",
+          "web": "inert"
+        },
+        "TextField/borderStyle__line": {
+          "ios": "inert",
+          "android": "active",
+          "web": "active"
+        },
+        "TextField/borderStyle__line_2": {
+          "ios": "inert",
+          "android": "active",
+          "web": "active"
+        },
+        "TextField/borderStyle__roundedrect": {
+          "ios": "active",
+          "android": "active",
+          "web": "inert"
+        },
+        "TextField/borderStyle__roundedrect_2": {
+          "ios": "active",
+          "android": "active",
+          "web": "inert"
+        },
+        "TabView/showLabels__false": "uniformly-active"
+      },
+      "observableNote": "MEASURED 2026-08-08 (run 31243724782 + local-env): uniformly active — the divergence this entry recorded was fixed in-wave (ios Blur bridge / ios highlighted swap / ios distribution fill / ios loadingImage via pending.invalid / border emit on all faces)."
+    },
+    "progressValue": {
+      "canonical": "progress",
+      "legacy": "value",
+      "undeclaredDefault": "0 (empty bar) on a determinate ProgressView; kjui renders indeterminate chrome when nothing is declared",
+      "ruling": "2026-08-04 campaign adjudication (closing the last unreviewed cross-effect row): `progress` is the canonical determinate value attribute (declared 0..1 in attribute_definitions); `value` is the undeclared legacy runtime spelling every reader keeps as fallback, canonical-first. Undeclared progress must NOT default to a nonzero fill — ios (dynamic + sjui codegen) defaulted to 0.5, which made the control half-full and the progress:0.5 fixture measured inert; android (both paths) read only the legacy `value` and ignored the canonical attribute entirely. Fixed canonical-first on every path (SwiftJsonUI ProgressConverter, sjui progress_converter.rb, KotlinJsonUI DynamicProgressComponent, kjui progress_component.rb, rjui progress_converter.rb). The observable pins the repair: a half-full bar must differ from its undeclared control on every platform.",
+      "observable": {
+        "Progress/progress__static": "uniformly-active"
+      }
+    },
+    "segmentLabelColors": {
+      "roleModel": "fontColor is the unselected label, selectedFontColor the selected one (falling back to fontColor), tintColor the SELECTED segment's accent — drawn as a background fill on ios/web and as the TabRow indicator on Compose",
+      "ruling": "2026-08-04 orchestrator adjudication (38, consumer field report): a Segment whose selected background is a brand colour had no way to declare a readable label — web hardcoded the unselected label and treated fontColor as the SELECTED label's fallback, so the name and the role were twisted, and neither spelling was declared for Segment at all. fontColor and selectedFontColor are now declared for Segment on every platform (the IconLabel.selectedFontColor precedent) and carry the roles above: rjui emits the unselected class from fontColor, sjui writes both UISegmentedControl title attributes (.normal and .selected), kjui fills contentColor / selectedContentColor. The swift-only normalColor and selectedColor keep resolving behind the new spellings — they are in live consumer use — and selectedBackground was dropped instead of declared: tintColor already means the selected background and a second spelling for it earns nothing. No activeness observable: the fixtures would need a selected-vs-unselected pair to separate the two roles, which the current single-value shape cannot express.",
+      "tintColorAlignment": "2026-08-04 orchestrator adjudication (42): android used to feed tintColor into the selected LABEL colour, so one declaration painted different things per platform — it now feeds the indicator, which is Compose's selected-state accent (its default is Configuration.Segment.defaultSelectedBackgroundColor). The rendering SHAPE stays platform-native: a filled segment on ios/web, a TabRow indicator on Compose; TabRow has no per-segment background and containerColor is the whole row. Measured before the change: of the two consumer screens declaring Segment colours, the only android one resolved its label colour from selectedColor (which precedes tintColor in the old chain), so no shipped screen changes colour — the missing accent simply appears. indicatorColor was an undeclared second spelling for the same slot and its read was dropped; normalColor / selectedColor became declared aliases of fontColor / selectedFontColor, so every converter reads canonical names only.",
+      "observable": {}
+    },
+    "boundSize": {
+      "readBy": "The three emitters carry unitModel in their output strings: sjui_tools/lib/swiftui/views/frame_helper.rb (points), kjui_tools/lib/compose/helpers/modifier_builder.rb process_dimension (.dp), rjui_tools/lib/react/converters/base_converter.rb (px template literal); pinned by sjui_tools/spec/swiftui/views/frame_helper_spec.rb, kjui_tools/spec/compose/helpers/modifier_builder_spec.rb and rjui_tools/spec/react/converters/base_converter_spec.rb. `observable` is {} — the contract measures nothing for this topic. Declared 2026-09-10.",
+      "unitModel": "a bound size attribute carries a runtime number in layout units: dp on android, points on ios, px on web",
+      "ruling": "2026-08-04 orchestrator adjudication (36, consumer field report): all six size attributes (width, height, minWidth, maxWidth, minHeight, maxHeight) declare \"binding\" in attribute_definitions, so a bound value MUST be honoured on every platform. kjui resolves it to `.height(data.v.dp)` (process_dimension) and sjui to `.frame(height: data.v)` (frame_helper is_binding?); rjui dropped it silently because the value reached the Tailwind arbitrary-value mapper, which returns '' for any string that is not a CSS unit — the declaration produced no class and no inline style, and jui build stayed warning-free. rjui now routes a bound dimension to the inline style as a px template literal, and treats it as an EXPLICIT size for the shrink and explicit-over-bounds rules above. No activeness observable: a bound fixture renders whatever the host viewmodel supplies, so fixture-vs-control cannot separate honouring from ignoring.",
+      "observable": {},
+      "observableNote": "Empty by design, not by omission: a bound size renders whatever the host view-model supplies, so a fixture-vs-control comparison cannot separate honouring the binding from ignoring it (see ruling). The emitted strings stand in — the specs named in readBy pin points / .dp / px per face. Declared 2026-09-10."
+    },
+    "distribution": {
+      "sizeValues": [
+        "fill",
+        "fillEqually"
+      ],
+      "gapValues": [
+        "equalSpacing",
+        "equalCentering"
+      ],
+      "spacingWins": "an explicit spacing pins the gap; distribution still governs size",
+      "ruling": "2026-08-05 (plan 49-E), raised by F/G and measured across all three toolchains. The vocabulary is UIStackView's, and its four values split into TWO KINDS that the current implementations conflate: `fill` and `fillEqually` distribute SIZE among the children, while `equalSpacing` and `equalCentering` distribute the FREE SPACE between them. fill = children grow to consume the axis, leaving no free space (proportional to their content size); fillEqually = every child gets the SAME size regardless of content; equalSpacing = equal gaps between adjacent children, with no leading or trailing gap; equalCentering = equal centre-to-centre distances. CONSEQUENCE, and this is the part every platform gets wrong today: the two size values are NOT an arrangement. They are `Modifier.weight(1f)` on each child in Compose, `.frame(maxWidth: .infinity)` (or equal weights) in SwiftUI, and `flex-1` in CSS — not Arrangement.* and not justify-content. Mapping `fill` to SpaceBetween/justify-between is precisely backwards: fill means there is no free space left to distribute. MEASURED STATE 2026-08-05 — all three disagree with the canon AND with each other, and each collapses a DIFFERENT pair of values into one output, so no fixture comparing two declared values can tell them apart: android (kjui container_component.rb:129-140) sends fillEqually and equalCentering both to Arrangement.SpaceEvenly; web (rjui view_converter.rb:184-195) sends the same pair both to justify-evenly; ios (sjui view_converter.rb:217,367,383) synthesises identical Spacer sets for equalSpacing and equalCentering, and gives fillEqually between-only spacers, which is space-between rather than equal sizes. `fill` emits nothing on ios (correct by accident) and a space-between arrangement on the other two (wrong). WHY NO GATE CAUGHT IT: --inert-complete asks whether a fixture differs from its CONTROL. Two declared values that both differ from the control but are identical to EACH OTHER pass that check, and android parity passes too because codegen and dynamic collapse them the same way. A value-vs-value comparison is the missing instrument — this is the 'both wrong in the same direction reads as green' shape. SPACING PRECEDENCE: `spacing` and `distribution` are not mutually exclusive and the current Compose behaviour (spacing != null wins outright, distribution never read) is wrong for the size values. An explicit `spacing` pins the GAP, so it overrides the gap that equalSpacing/equalCentering would compute; it says nothing about size, so fill/fillEqually still apply underneath it. Same shape as the size topic's explicit > bounds > fill ordering: the more specific declaration wins the axis it speaks about, and only that axis. No observable entries yet: the fixtures that would prove this need to compare two declared VALUES against each other rather than each against the control, which the current generator does not emit. That instrument is the follow-up this ruling asks for. PER-VALUE MAPPING added 2026-08-05 after A implemented the ruling on web (jsonui-cli 651403e) — recorded so B and C match that choice instead of re-deriving it, which is how the three drifted apart in the first place. The `perValueMapping` block above is the table; the two decisions worth calling out are that the SIZE values are carried to the CHILDREN (a per-child flex/weight instruction, not a container arrangement) and that equalCentering maps to SpaceAround / justify-around rather than SpaceEvenly — SpaceEvenly equalises the GAPS, which is equalSpacing's job, and collapsing the two is precisely the conflation this ruling exists to undo. web landed first and is the reference implementation; ios (sjui view_converter.rb, still synthesising Spacers for both gap values) and android (kjui container_component.rb:129, still mapping four values onto two Arrangements) are outstanding. CHILD SIZE PRECEDENCE, ruled 2026-08-05 after G measured android and found `fill` leaving 60dp unconsumed: an EXPLICIT width/height on the child wins over the size half of distribution, so `fill` and `fillEqually` do not override a declared child size. This is not a new principle — the `size` topic's 2026-08-03 campaign adjudication already ordered explicit > bounds > fill, and distribution's size half IS a fill instruction on the child's axis, so it sits at the bottom of that order like any other. It is also what `spacingWins` says one line up: the more specific declaration wins the axis it speaks about. CONSEQUENCE for the measurement, and the reason this had to be ruled rather than implemented: a fixture whose children declare `width: 40` cannot demonstrate `fill` at all — the 60dp G measured is the correct outcome, not a defect. The fixture has to omit the child dimension on the distribution axis for the attribute to have anything to do. That makes it the fourth case of a fixture shape hiding the attribute it is supposed to measure (after SafeAreaView's matchParent, alignTop/LeftOfView off-screen, and SelectBox with nothing to decorate). android's current implementation is correct as it stands; no three-platform change follows from this. FIRST VALUE-VS-VALUE MEASUREMENT 2026-08-05, on run 30972192150's artifacts once D's fixtures (0035321) and H's --value-discrimination gate (f54d3d5) existed, with control_diff.ignore_bands applied. It confirms the collapse this ruling was written from, platform by platform and by measurement rather than by reading converters: ios draws equalSpacing and equalCentering pixel-identically, android and web draw fillEqually and equalCentering pixel-identically. Three platforms, two different collapsed pairs, nobody agreeing — recorded in `collapsedPairs` so the fix can be checked off per platform. `fill` is ALSO inert against its control on ios while active on android and web, which is not a contradiction of explicitChildSizeWins: the fixture's children carry an explicit width, so no platform should be moving them, and the two that do are moving the TRACK rather than the child. The entry is per-platform for that reason and must not be flattened to uniformly-inert until the fixture drops the child width — at which point fill becomes measurable and this entry gets re-measured, not edited. RE-MEASURED on run 30990560599 after D removed the child width from the size-half fixtures (661bfba). web now distinguishes all four values — A's implementation is the first to satisfy the ruling end to end, and `collapsedPairs` loses its web row. ios still collapses equalSpacing with equalCentering and android now collapses fill with fillEqually (it had been fillEqually with equalCentering): the pair moved because the fixture changed, so android's remaining defect is in the SIZE half, where fill and fillEqually must differ — fill grows children from their content, fillEqually makes them equal regardless of it. `fill` stays inert on ios: with the child width gone the fixture can finally demonstrate it, and ios does not. Run 31068716186 (2026-08-06) measured android fill != fillEqually with both active against the control — C's 27b9b13 (codegen) and G's c7d2dfb (DistributionFillRow) closed the SIZE-half collapse, so the android collapsedPairs row is deleted BY MEASUREMENT, not by edit. The ios pair (equalSpacing == equalCentering) persists: run-5 geometry shows identical child positions and a 32 px gap for both values. Run 31080217407 (2026-08-06) measured ios distinguishing equalSpacing from equalCentering — B (b57e327/3dc3795) and F (e8f99c7) implemented the pinned iosGapConstruction, and the geometry is exactly the canon's: equalCentering shifts the first child right by the half-gap edge spacer (box_a 154 -> 168 px) while every child keeps its declared size (118 px). collapsedPairs is now EMPTY — all three platforms distinguish all four values, which is the state this ruling was written to reach. The empty map stays as the healthy-state marker, same convention as companions.py's emptied PROVISIONAL.",
+      "observable": {
+        "View/distribution__fill": "uniformly-active",
+        "View/distribution__fillequally": "uniformly-active",
+        "View/distribution__equalspacing": "uniformly-active",
+        "View/distribution__equalcentering": "uniformly-active"
+      },
+      "perValueMapping": {
+        "fill": {
+          "swiftui": ".frame(maxWidth/maxHeight: .infinity) on each child",
+          "compose": "grow from content — NOT expressible with Modifier.weight (weight(1f) IS fillEqually, the run-4 0px collapse; weight(1f, fill=false) packs by content and is inert). Dedicated measurement pass DistributionFillRow/Column in the base KotlinJsonUI library (c7d2dfb): content size plus an equal split of the leftover, one policy shared by the kjui codegen emit and the dynamic renderer. Device-verified: all 6 value pairs pairwise distinct, explicit child size never grown, spacing gaps pinned",
+          "web": "grow on each child"
+        },
+        "fillEqually": {
+          "swiftui": "equal frames on each child",
+          "compose": "Modifier.weight(1f) with a zero base on each child",
+          "web": "flex-1 min-w-0 min-h-0 on each child"
+        },
+        "equalSpacing": {
+          "swiftui": "Spacer between children only, flush ends (see iosGapConstruction)",
+          "compose": "Arrangement.SpaceBetween",
+          "web": "justify-between"
+        },
+        "equalCentering": {
+          "swiftui": "one Spacer at each end, two between each pair — the count ratio makes the ends half (see iosGapConstruction)",
+          "compose": "Arrangement.SpaceAround",
+          "web": "justify-around"
+        }
+      },
+      "iosGapConstruction": {
+        "equalSpacing": "[child] Spacer [child] Spacer [child] — between-children only, ends flush (justify-between)",
+        "equalCentering": "Spacer [child] Spacer Spacer [child] Spacer Spacer [child] Spacer — ONE spacer at each end, TWO between each pair; free space splits into 2(n-1)+2 equal units, so each end gap is exactly half a between gap (justify-around)",
+        "spacerMinLength": "every synthesised Spacer MUST be Spacer(minLength: 0) — SwiftUI's default minLength pollutes the computed gaps",
+        "spacingWins": "an explicit `spacing` pins the gap and suppresses this synthesis, same as the topic-level spacingWins",
+        "gravityStandsDown": "a declared gap distribution OWNS the free space on its axis: the gravity packing spacers (e.g. the leading spacer right-gravity emits) are NOT emitted alongside it — one extra packing spacer breaks the count ratio and drags equalSpacing toward equalCentering (F, e8f99c7, decision 1)",
+        "edgeSpacerGate": "equalCentering's edge spacers are suppressed ONLY on a wrapContent axis (declared size nil): with no free space a Spacer would expand the container and swallow the trailing padding (the measured round-3 bug). A FIXED numeric size has free space for the ratio and KEEPS its edge spacers — the older widthExpands gate (matchParent/-1/.infinity) was too narrow for it (F, e8f99c7, decision 2)",
+        "note": "Pinned 2026-08-06 (E's proposal, orchestrator-approved: implement this release, B codegen + F dynamic) so the two ios paths emit ONE counting instead of deriving Spacer arithmetic twice — two paths growing children separately is exactly what collapsed distribution's SIZE half before c7d2dfb. Spacer counting suffices because HStack/VStack split free space equally among unconstrained Spacers: the 1:2 end:between count ratio IS space-around's half-gap. No custom Layout, no measurement pass. Acceptance is already wired: when this lands, run 6 must delete collapsedPairs' ios row and turn the two value_discrimination receiving rows stale. Regression-test discipline from F's landing: a partial reversion (between 2->1 only) builds an equal-three-spacer structure the first sample points slipped past — pin BOTH sides of the computed boundary (55 in the 300pt fixture) so partial and full reversion both fail."
+      },
+      "explicitChildSizeWins": "an explicit child width/height beats distribution's size half — size topic's explicit > bounds > fill",
+      "collapsedPairs": {},
+      "observableNote": "MEASURED 2026-08-08 (run 31243724782 + local-env): uniformly active — the divergence this entry recorded was fixed in-wave (ios Blur bridge / ios highlighted swap / ios distribution fill / ios loadingImage via pending.invalid / border emit on all faces)."
+    },
+    "trackColors": {
+      "sliderTrack": "trackTintColor is the UNFILLED track; progressTintColor is the filled one",
+      "switchTrack": "trackTintColor is the OFF track; onTintColor overrides it while on",
+      "notTheView": "neither paints the view's background",
+      "ruling": "2026-08-06 (plan 49-E), asked for by A after ios parity showed three implementations doing three different things. Ruled from the ones that already agree rather than from the name: Compose and web BOTH read trackTintColor as the unfilled Slider track (kjui slider_component.rb:102, rjui slider_converter.rb:85 -> ::-webkit-slider-runnable-track) and BOTH read it as the OFF Switch track with onTintColor winning while on (kjui switch_component.rb:99, rjui switch_converter.rb:30). sjui's SwiftUI Slider says the same thing in its comment. So: Slider = the unfilled side only, the filled side is progressTintColor, and tintColor stays the accent that colours the thumb and the active track when nothing more specific is declared. Switch = the OFF track, and onTintColor is not an alias of it but the state that overrides it. The view's BACKGROUND is wrong on both, and that is what the codegen emits — `.background(color)` paints the whole control, so a declared track colour swallows the component. It is also why the two ios parity findings exist: dynamic reaches the track, codegen reaches the view. RECORDED HERE BECAUSE IT WAS ALREADY CITED: kjui and rjui both carry comments pointing at `slider.trackColors` / `switch.trackColors` in this file, and neither entry existed — the ruling was referenced by three converters and written down nowhere, which is why three implementations could drift while each believed it was following the canon. IOS CONSTRAINT, measured on run 30990560599 and recorded 2026-08-06 after A implemented the ruling: SwiftUI's Toggle exposes no surface for the OFF track, so both ios paths degrade to .tint(), which is visible only while the switch is ON. The fixture declares no isOn and photographs the OFF state, so ios renders identically to its control (0 px) while android and web paint the OFF track (6788 / 909 px) — a platform constraint of the skinIdioms family (platform-owned control chrome), NOT implementation drift and NOT a progress meter: unlike the per-platform entries that fall when a fix lands, this split is expected to persist until Apple exposes the surface. Recorded here rather than in skinIdioms so the ruling and its one platform exception stay on the same page; recorded here rather than in inert_audit because the verdict is attributed, not unexplained. Slider's entry is uniformly-active by the same run's measurement (3067 / 14442 / 16236 px): the unfilled slider track IS paintable on ios.",
+      "observable": {
+        "Slider/trackTintColor__static": "uniformly-active",
+        "Switch/trackTintColor__static": {
+          "ios": "inert",
+          "android": "active",
+          "web": "active"
+        }
+      },
+      "iosSwitchConstraint": "SwiftUI's Toggle has no paintable OFF-track surface; both ios paths degrade to .tint(), visible only while ON"
+    },
+    "fontProvider": {
+      "ruling": "Configuration.Font.fontProvider is the app's typeface-policy injection point, and the presence of `fontFamily` must NOT change whether it is consulted: every font resolution routes through the provider as FontSpec(family:, weight:, size:), family nil included. A path that bypasses the provider when family is absent makes the same attribute on the same screen pass or skip the app's policy depending on mode — the checked/unchecked shape this wave kept finding. The codegen path is the conforming side; SwiftJsonUI's dynamic path (DynamicDecodingHelper.fontFromComponent) is being aligned to it with a regression test (F, plan 49). A provider that ignores family nil sees no change; one that returns a custom face was silently falling back to the system font on dynamic — either way the contract converges on: the typeface does not depend on mode. Preserving a consumer's current look is not a reason to keep the bypass (canonical semantics win). 2026-08-06 ruling. 2026-08-07 (plan 51-E), raised by G: android's codegen default provider (Configuration.defaultResolved) declares that it deliberately DISCARDS generic family names such as serif, while ios and web resolve them. The default provider must resolve them. `fontFamily` is declared as a family NAME with no enumeration and no carve-out, so a generic name is an ordinary value of the attribute, and every platform has real typefaces behind those names. The ruling above already fixed that a provider must always be CONSULTED; this fixes the other half — the DEFAULT provider must not silently narrow the attribute's value space. An app that wants to ignore generic families can still do it by injecting its own provider, which is what the injection point is for; the default is not the place to encode that policy, because it makes the same layout render a different typeface on android with nothing in the layout saying so. Owner: C (android codegen) and G (dynamic, in step).",
+      "contract": "family presence must not gate provider consultation — every implementer, current or future, routes every FontSpec through fontProvider",
+      "genericFamilies": "the default provider MUST resolve generic family names (serif, sans-serif, monospace, ...) — dropping them is not a policy decision the default gets to make"
+    },
+    "textDecoration": {
+      "attributes": [
+        "Label.underline",
+        "Label.strikethrough",
+        "partialAttributes[].underline"
+      ],
+      "faces": {
+        "boolean": "true draws the line; false draws nothing",
+        "object": "draws the line DESCRIBED by the object — never less than the boolean face draws",
+        "lineStyleNone": "lineStyle: \"None\" is the one object value that draws NOTHING; it is exactly equivalent to false"
+      },
+      "unstyledDefaults": {
+        "color": "the text's own colour — `color` declares no `default`, so it MODIFIES the line rather than bringing it into existence, and an absent colour means 'do not modify'",
+        "lineStyle": "Single",
+        "lineOffset": "no baseline adjustment; declared on underline only — strikethrough has no lineOffset and must not invent one"
+      },
+      "ruling": "2026-08-07 (plan 51-E §3), written so the implementation lanes have an expected value to match; presence was repaired in 10.14.1 and the STYLE content is what remains. The contract is derived from the declaration: underline/strikethrough declare boolean|object, and the object face's properties (lineStyle, color, lineOffset) carry no `default`, which by the SSoT's own convention makes them MODIFIERS of a line that the attribute's presence already brought into existence. Two consequences are load-bearing. FIRST, the object face must never render LESS than the boolean face: `underline: {...}` is a more specific request than `underline: true`, so a platform that cannot yet honour lineStyle or color must still draw the plain Single line in the text colour. Rendering nothing is always wrong. SECOND, `lineStyle: \"None\"` is the sole exception and means no line at all — identical output to `false`. MEASURED STATE, 2026-08-07, so nobody re-derives it: sjui text_style_helper.rb:130-135 (line_decoration?) and kjui text_component.rb:455 (decoration_on?) both implement exactly this None rule and then draw a plain line, ignoring colour and lineOffset. rjui label_converter.rb:371 is a bare truthiness test (`classes << 'underline' if attributes['underline']`), so on web a Hash is always truthy and `{lineStyle: \"None\"}` DRAWS A LINE — probed directly through the converter, not read: true / {Single} / {None} / {color:#FF0000} all emit the same `underline` class. That is a defect owned by A. kjui's DYNAMIC renderer drops the object face entirely (cross_effect Label/underline__styled, Label/strikethrough__styled: android inert, ios and web active), which violates the never-less-than-boolean rule and is owned by G. Double and Thick are declared but no face distinguishes them from Single today; they stay declared because the enum is the contract, and the gap belongs in the coverage ledger rather than being papered over by deleting the values. 2026-08-07 addendum (plan 51-E), F reporting after the SwiftUI halves were aligned: SJUILabel.swift:448 (the UIKit face) still falls `lineStyle: \"None\"` through to .single, so one library now answers the same spelling two ways. THE CONTRACT BINDS UIKIT. `Label.underline` and `Label.strikethrough` declare no `mode` key, so they apply to every mode, and UIKit is not frozen — nothing in SwiftJsonUI declares it so, and the SSoT carries 93 uikit-mode attribute declarations against swiftui's 30. Narrowing the ruling to swiftui would state something the declaration does not. So it is a defect owned by F, correctly filed as not urgent: conformance never renders it.",
+      "observable": {},
+      "modeIndependent": "the contract binds every mode, uikit included — Label.underline/strikethrough declare no `mode` key"
+    },
+    "backgroundFill": {
+      "attributes": [
+        "common.background",
+        "View.gradient",
+        "GradientView.gradient"
+      ],
+      "precedence": "gradient wins; background is the fallback fill, not a layer underneath it",
+      "ruling": "2026-08-07 (plan 51-E), raised by B with both ios paths measured. `background` and `gradient` fill the SAME surface, and the SSoT declares no precedence between them. Ruled: a declared gradient WINS, and background is what fills the surface when no gradient is declared or the face cannot produce one. Two grounds, both internal. FIRST, `gradient` is the more specific statement about the fill — an array of stops against a single colour — and this SSoT has already ruled that a more specific request must never render less than the general one (see textDecoration, where the object face may not draw less than the boolean). SECOND, the alternative readings do not survive their own consequences: if background won, then declaring a gradient on a view that also has a background — the ordinary case — would make the gradient silently inert, which is precisely the ios defect B is holding open; and a LAYERED reading (background painted, gradient composited over it) would require an alpha/compositing model that neither declaration mentions, and would make `background` visible-but-covered, i.e. unobservable and untestable. One surface, one fill, most specific wins. MEASURED STATE 2026-08-07: ios currently renders a THIRD answer — the declared gradient is always invisible, on both the codegen and dynamic paths (B: MODIFIER_ORDER puts :background adjacent to :gradient for views with children, and a childless View becomes `Rectangle().fill(background)` and never reaches the order table at all). Both paths are B's and F's to close, together. The other two faces do not contradict this ruling because they do not implement this attribute pair: `View.gradient` is declared `platform: swift`, kjui reads `gradient` only in GradientView and in the FROZEN xml drawable path, and rjui expresses a gradient through the `background` string itself (CSS gradient syntax, base_converter.rb:180). GradientView is unaffected — there the gradient is the component's whole purpose.",
+      "observable": {}
+    },
+    "selectBoxDate": {
+      "attributes": [
+        "SelectBox.selectedDate",
+        "SelectBox.selectItemType",
+        "SelectBox.prompt"
+      ],
+      "closedFaceWithNoSelection": "the prompt / hint / placeholder — never a fabricated date",
+      "ruling": "2026-08-07 (plan 51-E), raised by F with B's measurement agreeing: with `selectItemType: Date` and no `selectedDate`, ios shows an empty closed face while android and web show the current date/time. IOS IS CANON. `selectedDate` declares NO `default`, and by this SSoT's convention that makes it a modifier rather than an attribute that brings a value into existence — its absence means no initial selection has been stated, not 'today'. SelectBox already declares prompt / hint / placeholder, which is the mechanism for \"nothing chosen yet\", so the closed face has something correct to show and does not need to invent one. Two consequences make the android/web behaviour actively wrong rather than merely different: it is unobservable (a caller cannot distinguish 'no selection' from 'the user picked today'), and `selectedDate` is declared two-way, so seeding it writes today's date back into the viewmodel on first render without the user ever opening the picker — a default that silently manufactures data. Owners: C (android) and A (web).",
+      "observable": {}
+    },
+    "clipToBounds": {
+      "default": false,
+      "ruling": "2026-08-07 (plan 51-E), from E2's measurement: web does not clip by default, android does. Declared `default: false`. Two internal grounds, neither a head count. FIRST, `shadow` is a common attribute and a clipping parent destroys a child's shadow; a default that silently disables another common attribute contradicts the declaration that offers it. SECOND, the SSoT gives this concept exactly one spelling, the opt-in `clipToBounds`, and on a platform that already clips, declaring `clipToBounds: true` is INERT — an attribute you cannot observe declaring. Making false the default is what gives the attribute something to say on every platform: absent means no clip, `true` means clip. android is the deviant and the change is C's and G's; as with gravity, the canon is not in doubt but the rollout wants a measurement, since every container in every android project goes through this default.",
+      "observable": {},
+      "governsHitTesting": "yes — clipping removes the overflow from hit testing as well as from drawing; see attribute_semantics.json -> offset.overflowHitTesting"
+    },
+    "indicatorStopped": {
+      "attributes": [
+        "Indicator.animating",
+        "Indicator.hidesWhenStopped"
+      ],
+      "falseFace": "the stopped indicator is BOTH drawn and laid out",
+      "trueFace": "the stopped indicator collapses out of the layout entirely",
+      "ruling": "2026-08-07 (plan 51-E), raised by F before implementing: on the false face ios codegen keeps an `opacity(0)` spinner while dynamic emits EmptyView. BOTH ARE WRONG, in different directions, and the declaration already says so — Indicator.animating states that hidesWhenStopped 'decides whether the stopped indicator keeps its space or collapses out of the layout'. So `true` collapses it and `false` keeps it, which makes dynamic's EmptyView an implementation of the TRUE face on the false branch. codegen gets the space right and the visibility wrong: an attribute named hidesWhenStopped set to false cannot hide anything, and opacity(0) is hiding. The false face is a stopped indicator that is drawn AND occupies its space. CONSISTENT WITH the Wave 2 effect ledger, which removed hidesWhenStopped as spinner phase noise: that note is about MEASURABILITY, not about the contract. Where a platform cannot render a genuinely stopped spinner the fixture stays phase-noisy and effect-excluded; the ledger entry stands and does not license drawing nothing.",
+      "observable": {}
+    },
+    "effectStyle": {
+      "attributes": [
+        "common.effectStyle"
+      ],
+      "scope": "all three platforms, and not only on Blur — the declaration is on `common`",
+      "spellingCanon": "the nine bare names are canonical; the five system* spellings are declared valueAliases and the normalizer folds them",
+      "iosMaterialTable": {
+        "ultraThin": {
+          "material": ".ultraThinMaterial"
+        },
+        "thin": {
+          "material": ".thinMaterial"
+        },
+        "regular": {
+          "material": ".regularMaterial"
+        },
+        "thick": {
+          "material": ".thickMaterial"
+        },
+        "chrome": {
+          "material": ".bar"
+        },
+        "light": {
+          "material": ".thinMaterial",
+          "tint": "white 0.25",
+          "colorScheme": ".light"
+        },
+        "extraLight": {
+          "material": ".ultraThinMaterial",
+          "tint": "white 0.45",
+          "colorScheme": ".light"
+        },
+        "dark": {
+          "material": ".regularMaterial",
+          "tint": "black 0.40",
+          "colorScheme": ".dark"
+        },
+        "prominent": {
+          "material": ".thickMaterial",
+          "tint": "white 0.20"
+        }
+      },
+      "tintLayer": "above the material, BELOW the content — a Blur's children must not be washed by the tint",
+      "ruling": "2026-08-07 (plan 51-E). Three questions at once, from B (scope), F (the ios table) and E2 (spelling). SCOPE: three platforms, and not only on Blur. The attribute is declared on `common`, android and web apply it there, and only ios restricts it — so ios is the deviant, not the declaration. This intersects the inert_audit single-platform-scope family: those rows are ios gaps, not evidence for narrowing the scope. SPELLING: the nine bare names are canonical and the five system* spellings are already declared as `valueAliases`, so the normalizer folds them and no implementation needs to know both sets. E2's seven connected rows follow that fold. IOS TABLE: pinned above, from F's implementation in VisualEffectStyle.swift, which is adopted as canon. SwiftUI offers only five Material steps against nine spellings, so a naive mapping would collapse prominent/thick, light/thin, extraLight/ultraThin and dark/regular into four identical pictures and MANUFACTURE value_discrimination collapsedPairs — the table separates the colliding spellings with a tint instead. The tint sits above the material and below the content, which is the layer order `.background(.ultraThinMaterial)` already meant. The table lives in the LIBRARY once and both ios paths call it (F's VisualEffectStyle, B replacing the hardcoded `.ultraThinMaterial` at blur_converter.rb:65 with an emit that calls it) — the same single-table shape kjui took for DistributionFillRow, because two paths growing their own copy always desync. NOT ASSERTED HERE: that the nine render as nine distinct pixel sets. F declined to claim distinctness unmeasured and that is right; `chrome` (.bar) and `thick` are the closest pair. If the next ios run reports a collapsedPair, the fix is a tint on chrome, not a retreat from the table.",
+      "observable": {}
+    },
+    "autoShrink": {
+      "attributes": [
+        "Label.autoShrink",
+        "Label.minimumScaleFactor"
+      ],
+      "requiresBoundedAxis": "autoShrink is a no-op on an unbounded axis — there is nothing to shrink into",
+      "ruling": "2026-08-07 (plan 51-E), raised by A: web shrinks only until the text fits its box, while ios applies the shrink even under wrapContent (an adjustsFontSizeToFitWidth-shaped reading). WEB IS CANON. Shrinking is defined relative to a constraint, and `width: wrapContent` is declared to mean size-to-content — an axis that grows to whatever the text needs and therefore presents nothing to shrink into. Under ios's reading `autoShrink` changes the picture on a box that was never too small, which makes minimumScaleFactor a font-size multiplier rather than a floor, and that is not what either attribute declares (`minimumScaleFactor` declares min 0 / max 1 as a FLOOR for the shrink). So: autoShrink is active only on a bounded axis (an explicit size, matchParent, or a max bound), and is a no-op under wrapContent. Owner: B and F (both ios halves). Not urgent — no lane is blocked on it — but it is a canon question with an answer, not a next-Wave ledger row.",
+      "observable": {}
+    },
+    "collectionSeparators": {
+      "attributes": [
+        "Collection.hideSeparator",
+        "Collection.listStyle"
+      ],
+      "noOpWhereNoSeparators": "a container that draws no separators satisfies hideSeparator vacuously — that is a no-op by contract, not an unimplemented gap",
+      "orthogonality": "listStyle picks the chrome, hideSeparator hides the separators; neither overrides the other",
+      "ruling": "2026-08-07 (plan 51-E), raised by B: the ios probe path is CollectionStackView, not SwiftUI's List, and a container that is not a list has no separators to hide — so what should `hideSeparator` draw there? NOTHING, and that is the contract, not a gap. 'Hide the separators' is vacuously satisfied where there are none. The scope is deliberately NOT narrowed: the axis here is the container's rendered SHAPE (Collection's own `layout`, `columns` and `orientation` decide whether it is list-shaped), and `platform` / `mode` cannot express that — narrowing by platform would say something false. More importantly, 'implement it' must NOT mean 'switch the container to a List': an attribute that reshapes the thing it modifies is the defect family this wave exists to remove. hideSeparator modifies a list; it does not create one. MEASUREMENT CONSEQUENCE, so the ledgers do not mis-file it: the fixture must use a list-shaped Collection to observe this at all. Inert on a non-list container is the CONTRACT being honoured, and the coverage rows for both attributes are `runtime-only` (ios dynamic implements them; no codegen face does) rather than `unimplemented`. listStyle: enumerated here from the only implementation that reads it (SwiftJsonUI TableConverter.applyListStyle) as plain / grouped / insetGrouped / sidebar with plain the default — B was right that a bare string could not be validated or discriminated, and B should not replace the hardcoded PlainListStyle() until the vocabulary exists, which it now does. THE TWO ARE ORTHOGONAL. TableConverter.swift:45-49 currently lets `hideSeparator: true` win and forces .plain, which makes a declared `listStyle: \"grouped\"` silently inert whenever separators are hidden — the same silently-inert-declaration shape again. `.listRowSeparator(.hidden)` applies to any list style, so there is no need to force plain. Owner: F.",
+      "observable": {}
+    },
+    "offset": {
+      "attributes": [
+        "common.offsetX",
+        "common.offsetY"
+      ],
+      "layoutInvariance": "measurement and sibling placement are unchanged — the layout is computed first",
+      "interactiveRegion": "moves WITH the view: an offset control is tappable where it is drawn",
+      "androidPrimitive": "Modifier.absoluteOffset — NOT graphicsLayer { translationX/Y }, and not the RTL-mirroring Modifier.offset",
+      "ruling": "2026-08-07 (plan 51-E), asked by C and G as a one-line confirmation. It is not one line, because the declaration as I wrote it does not decide the question and I should say so rather than rubber-stamp it. C and G read 'paint-time translation' in the offsetX description as naming the Compose DRAW phase. That phrase was my shorthand for layout invariance, not a phase specification, and BOTH candidate primitives satisfy what the description actually says: Modifier.offset changes placement without changing measurement, so siblings do not move and the occupied space is unchanged, exactly as graphicsLayer does. The description has been reworded so the next reader does not have to re-derive that. THE DISCRIMINATOR the declaration was silent on is the INTERACTIVE REGION. A draw-phase translation leaves the touch target at the un-offset position, so the view is drawn in one place and tappable in another. Ruled: the interactive region moves with the view. The ground is internal — `onClick`, `onLongPress` and `canTap` are COMMON attributes that apply to every view, so an offset that decouples them from the drawn position silently breaks another common declaration, which is the same reason clipToBounds does not default to clipping (it would silently break `shadow`). A secondary reason: graphicsLayer forces a render layer and pulls in shadow/alpha/clip compositing side effects that a purely positional attribute has no business requesting. So the android primitive is Modifier.absoluteOffset, not graphicsLayer. ABSOLUTE and not plain Modifier.offset because this SSoT already separates the absolute axis vocabulary from the RTL-aware one — leftMargin/rightMargin against startMargin/endMargin — and `offsetX` is spelled on the X axis, so it must not mirror under RTL. NOT YET MEASURED, and stated as a request rather than a claim: that SwiftUI's .offset carries hit testing with it. The ruling is a design decision either way, but if ios turns out to strand the touch target then ios is the deviant and B/F own it — I am not asserting compliance I have not seen. B / F: please measure. 2026-08-07 addendum, F asking about the part of an offset view that escapes its parent, and rightly separating it from the primitive question above — SwiftUI hit-tests only inside the parent frame, which is a different mechanism from which modifier does the offsetting. Ruled, and it needs no new principle because two declarations already decide it: `clipToBounds` defaults to FALSE, so the overflow is DRAWN, and the ruling above says an offset control is tappable where it is drawn. Therefore the overflow is tappable. Hit testing follows CLIPPING, not the parent's frame, which leaves `clipToBounds` as the single control over both: declared true, the overflow is clipped and is then neither drawn nor tappable; left at its default, it is both. The alternative — drawn but not tappable — is precisely the draw/tap mismatch the offset ruling exists to forbid, so accepting it for the overflow would contradict the same contract one level out. SwiftUI's frame-bounded hit testing is therefore the deviation. It is real work rather than a flag (contentShape / an enlarged hit region), so if ios turns out not to be able to honour it, the honest outcome is a ledger row saying ios cannot — NOT a quiet divergence, and not a weakening of the contract for the other two. NOT MEASURED: android and web overflow hit testing. F supplied the ios half only. C / G / A: please measure yours before anyone implements, so the fix is aimed at the faces that actually deviate.",
+      "observable": {},
+      "overflowHitTesting": "hit testing follows CLIPPING, not the parent frame: an unclipped overflow is drawn and therefore tappable; a clipped one is neither"
+    },
+    "sliderRange": {
+      "attributes": [
+        "Slider.minimum",
+        "Slider.maximum",
+        "Slider.range",
+        "Slider.value",
+        "Slider.step"
+      ],
+      "defaultRange": "0 .. 1",
+      "ruling": "2026-08-07 (plan 51-E), raised by E2 with all three converters measured: none of them had a declared default to read, so each invented one — sjui `max || 1`, kjui and rjui `max || 100`. A layout writing `value: 0.5` therefore sits mid-track on ios and at half a percent on android and web. IOS IS CANON: the default range is 0 .. 1. The ground is this SSoT's own convention for a unitless value on a track, not a head count. `Progress.progress` declares `min: 0, max: 1` and `common.opacity` declares `min: 0, max: 1`; Progress is the Slider's closest sibling — a number along a track — and 100 would make Slider the only such attribute in the SSoT that is not normalised. It also keeps the round-trip coherent: `Slider.value` is declared two-way, so under a 0..100 default the control writes 0..100 back into a viewmodel whose author was writing 0..1. Declared as `default` on minimum and maximum so no converter has to invent it again; `range` is the [min, max] shorthand, so its absence means [0, 1] too. CONSEQUENCE FOR WEB, so that fixing the range does not break the control: `Slider.step` is declared platform:react with no default, and E2 measured web rounding 0.5 up to 1 under the old 0..100 range. With a 0..1 range an implicit step of 1 collapses the slider to two positions, so the web default step must be continuous (HTML `step=\"any\"`) unless the layout declares one. Owner: A for the step, A and C for the range.",
+      "observable": {}
+    }
+  }
+}
