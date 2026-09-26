@@ -143,6 +143,8 @@ jobs:
                "shared/core/string_default_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/swiftui_modifier_order.json",
                "sjui_tools/lib/swiftui/views/modifier_order.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/component_metadata.json",
+               "shared/core/component_metadata.json"),
               # Not a fixture: the table Dynamic draws type synonyms with
               # (TypeSynonyms), shipped in the package's resource bundle.
               ("Sources/SwiftJsonUI/Resources/type_synonyms.json",

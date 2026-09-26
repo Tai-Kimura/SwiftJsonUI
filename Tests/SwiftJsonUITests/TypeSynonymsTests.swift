@@ -65,4 +65,20 @@ final class TypeSynonymsTests: XCTestCase {
         XCTAssertThrowsError(try TypeSynonyms.parse(Data(#"{"nothing": {}}"#.utf8)))
         XCTAssertThrowsError(try TypeSynonyms.parse(Data(#"{"synonyms": {"X": {}}}"#.utf8)))
     }
+
+    /// The attribute audit reads a synonym's section — its `canonical` — for
+    /// every entry of the table: a CircleImage is checked against Image's
+    /// attributes (the registry mapped it to NetworkImage's), a ProgressBar
+    /// against Progress's.
+    func testASynonymIsAuditedAgainstItsCanonicalSection() throws {
+        XCTAssertEqual(
+            JsonUITypedAttributesRegistry.metadata(forType: "CircleImage")?.declared,
+            ImageAttributes.declaredAttributes)
+        for (spelling, entry) in TypeSynonyms.entries {
+            let meta = JsonUITypedAttributesRegistry.metadata(forType: spelling)
+            let section = JsonUITypedAttributesRegistry.metadata(forType: entry.canonical)
+            XCTAssertNotNil(section, "\(entry.canonical) has no generated table")
+            XCTAssertEqual(meta?.declared, section?.declared, spelling)
+        }
+    }
 }

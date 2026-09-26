@@ -309,6 +309,12 @@ public struct DynamicComponentBuilder: View {
         }
     }
 
+    /// Called with the type of every node drawn as an unknown type (the red
+    /// box) — a type neither declared nor a synonym, or one the declaration
+    /// does not draw on this face (component_metadata.json `swift_dynamic`).
+    /// Tests count them; nothing in the library sets it.
+    public static var unknownTypeHandler: ((String) -> Void)?
+
     /// `component` as drawn: a type-synonym spelling rewritten by
     /// TypeSynonyms (its type, and the attributes the spelling means), decoded
     /// again from its raw data. Anything else is `component` itself.
@@ -447,6 +453,7 @@ public struct DynamicComponentBuilder: View {
             // Default/Unknown
             default:
                 // The app's registry was asked first, above.
+                let _ = Self.unknownTypeHandler?(type)
                 Text("Error: Unknown component type '\(type)'")
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)

@@ -177,42 +177,48 @@ public enum JsonUITypedAttributesRegistry {
         "switch": ["toggleStyle"]
     ]
 
-    /// Generated metadata for a builder-routed type spelling, or nil
-    /// for types without a definitions section (Spacer, Divider,
-    /// Picker, custom components).
+    /// Generated metadata for a type spelling, or nil for types without a
+    /// definitions section (Spacer, Divider, custom components).
+    ///
+    /// A type-synonym spelling is looked up by the section it validates
+    /// against — TypeSynonyms' `canonical`, not the type it is drawn as: a
+    /// CircleImage draws as CircleImage and validates as Image. The cases
+    /// below are declared sections only; they held synonym spellings of
+    /// their own, and mapped circleimage to NetworkImage.
     public static func metadata(
         forType type: String
     ) -> (declared: Set<String>, aliasMap: [String: String])? {
+        let section = TypeSynonyms.entries[type.lowercased()]?.canonical ?? type
         let generated: JsonUIGeneratedAttributes.Type?
-        switch type.lowercased() {
-        case "text", "label": generated = LabelAttributes.self
+        switch section.lowercased() {
+        case "label": generated = LabelAttributes.self
         case "button": generated = ButtonAttributes.self
         case "textfield": generated = TextFieldAttributes.self
         case "edittext": generated = EditTextAttributes.self
         case "input": generated = InputAttributes.self
         case "textview": generated = TextViewAttributes.self
         case "image": generated = ImageAttributes.self
-        case "networkimage", "circleimage": generated = NetworkImageAttributes.self
+        case "networkimage": generated = NetworkImageAttributes.self
         case "view": generated = ViewAttributes.self
         case "safeareaview": generated = SafeAreaViewAttributes.self
-        case "scrollview", "scroll": generated = ScrollViewAttributes.self
+        case "scrollview": generated = ScrollViewAttributes.self
         case "toggle": generated = ToggleAttributes.self
         case "switch": generated = SwitchAttributes.self
         case "checkbox": generated = CheckBoxAttributes.self
         case "check": generated = CheckAttributes.self
         case "radio": generated = RadioAttributes.self
-        case "segment", "segmentedcontrol": generated = SegmentAttributes.self
+        case "segment": generated = SegmentAttributes.self
         case "selectbox": generated = SelectBoxAttributes.self
         case "slider": generated = SliderAttributes.self
-        case "progress", "progressbar": generated = ProgressAttributes.self
-        case "indicator", "activityindicator": generated = IndicatorAttributes.self
+        case "progress": generated = ProgressAttributes.self
+        case "indicator": generated = IndicatorAttributes.self
         case "iconlabel": generated = IconLabelAttributes.self
-        case "collection", "table", "list": generated = CollectionAttributes.self
+        case "collection": generated = CollectionAttributes.self
         case "tabview": generated = TabViewAttributes.self
         case "embed": generated = EmbedAttributes.self
-        case "web", "webview": generated = WebAttributes.self
-        case "gradientview", "gradient": generated = GradientViewAttributes.self
-        case "blur", "blurview": generated = BlurAttributes.self
+        case "web": generated = WebAttributes.self
+        case "gradientview": generated = GradientViewAttributes.self
+        case "blur": generated = BlurAttributes.self
         case "circleview": generated = CircleViewAttributes.self
         default: generated = nil
         }
