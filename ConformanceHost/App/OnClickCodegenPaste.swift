@@ -2,7 +2,7 @@
 //  OnClickCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli rel/v1.8.121 = 2f654ab3) emits for
+//  What `sjui build` (sjui_tools of jsonui-cli triage/control-onclick 89ae1184, on rel/v1.8.121 = 19f1328e) emits for
 //  OnClickProbeView's three layouts — the controls with an onClick, under no
 //  gate, `canTap: false` and `enabled: false` — the generated Data structs, the
 //  view-local state, the body and its sections, pasted unchanged but for one
@@ -235,135 +235,102 @@ struct OnClickNCodegenPaste: View {
     @State private var swlNIsOn: Bool = false
 
     var body: some View {
-            AnyView(section0())
-    }
-
-    @ViewBuilder private func section0() -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-                Toggle(isOn: $swNIsOn) {
-                    Text("")
-                }
-                    .labelsHidden()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onSwN?()
+            VStack(alignment: .leading, spacing: 6) {
+                    Toggle(isOn: SwiftUI.Binding(get: { $swNIsOn.wrappedValue }, set: { $swNIsOn.wrappedValue = $0; data.onSwN?() })) {
+                        Text("")
+                    }
+                        .labelsHidden()
+                        .accessibilityIdentifier("swN")
+                    CheckBoxView(
+                        isOn: $cbNIsOn,
+                        label: "cbl",
+                        onValueChanged: { newValue in data.onCbN?() }
+                    )
+                        .accessibilityIdentifier("cbN")
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Image(systemName: selectedRvn == "ra" ? "largecircle.fill.circle" : "circle")
+                                .foregroundColor(.blue)
+                                .onTapGesture {
+                                selectedRvn = "ra"
+                                data.onRvN?()
+                            }
+                            Text("ra")
                         }
-                    .accessibilityIdentifier("swN")
-                CheckBoxView(
-                    isOn: $cbNIsOn,
-                    label: "cbl",
-                    onValueChanged: { newValue in data.onCbN?() }
-                )
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onCbN?()
+                        HStack {
+                            Image(systemName: selectedRvn == "rb" ? "largecircle.fill.circle" : "circle")
+                                .foregroundColor(.blue)
+                                .onTapGesture {
+                                selectedRvn = "rb"
+                                data.onRvN?()
+                            }
+                            Text("rb")
                         }
-                    .accessibilityIdentifier("cbN")
-                VStack(alignment: .leading, spacing: 8) {
+                    }
+                        .accessibilityIdentifier("rvN")
                     HStack {
-                        Image(systemName: selectedRvn == "ra" ? "largecircle.fill.circle" : "circle")
+                        Image(systemName: selectedGrpn == "rgaN" ? "largecircle.fill.circle" : "circle")
                             .foregroundColor(.blue)
                             .onTapGesture {
-                            selectedRvn = "ra"
-                        }
-                        Text("ra")
-                    }
-                    HStack {
-                        Image(systemName: selectedRvn == "rb" ? "largecircle.fill.circle" : "circle")
-                            .foregroundColor(.blue)
-                            .onTapGesture {
-                            selectedRvn = "rb"
-                        }
-                        Text("rb")
-                    }
-                }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onRvN?()
-                        }
-                    .accessibilityIdentifier("rvN")
-                HStack {
-                    Image(systemName: selectedGrpn == "rgaN" ? "largecircle.fill.circle" : "circle")
-                        .foregroundColor(.blue)
-                        .onTapGesture {
-                        selectedGrpn = "rgaN"
-                        data.onRgaN?()
-                    }
-                    Text("rg1")
-                }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("rg1")
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                            selectedGrpn = "rgaN"
                             data.onRgaN?()
                         }
-                    .accessibilityIdentifier("rgaN")
-                HStack {
-                    Image(systemName: selectedGrpn == "rgbN" ? "largecircle.fill.circle" : "circle")
-                        .foregroundColor(.blue)
-                        .onTapGesture {
-                        selectedGrpn = "rgbN"
-                        data.onRgbN?()
+                        Text("rg1")
                     }
-                    Text("rg2")
-                }
-                    .accessibilityElement(children: .ignore)
-                    .accessibilityLabel("rg2")
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("rg1")
+                        .accessibilityIdentifier("rgaN")
+                    HStack {
+                        Image(systemName: selectedGrpn == "rgbN" ? "largecircle.fill.circle" : "circle")
+                            .foregroundColor(.blue)
+                            .onTapGesture {
+                            selectedGrpn = "rgbN"
                             data.onRgbN?()
                         }
-                    .accessibilityIdentifier("rgbN")
-                Picker("", selection: $selectedSegn) {
-                    Text("sx".localized()).tag(0)
-                    Text("sy".localized()).tag(1)
-                }
-                    .pickerStyle(.segmented)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onSegN?()
-                        }
-                    .accessibilityIdentifier("segN")
-                Slider(value: $sliderValueslN, in: 0...1)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onSlN?()
-                        }
-                    .accessibilityIdentifier("slN")
-                SelectBoxView(
-                    id: "sbN",
-                    selectItemType: .normal,
-                    items: ["pp", "qq"],
-                    selectedIndex: 0,
-                )
-                    .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
-                    .accessibilityIdentifier("sbN")
-                TextField("", text: $tfNText)
-                    .focused($tfNIsFocused)
-                    .onChange(of: data.tfNIsFocused) { _, newValue in
-                    tfNIsFocused = newValue
-                }
-                    .onChange(of: tfNIsFocused) { _, newValue in
-                    data.tfNIsFocused = newValue
-                }
-                    .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
-                    .accessibilityIdentifier("tfN")
-                TextViewWithPlaceholder(
-                    text: $tvNText,
-                    isFocused: $data.tvNIsFocused
-                )
-                    .frame(minHeight: 50, idealHeight: 50, maxHeight: 50)
-                    .accessibilityIdentifier("tvN")
-                Toggle(isOn: $swlNIsOn) {
-                    Text("swl label")
-                }
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onSwlN?()
-                        }
-                    .accessibilityIdentifier("swlN")
-        }
-            .frame(maxWidth: .infinity, alignment: .topLeading)
+                        Text("rg2")
+                    }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel("rg2")
+                        .accessibilityIdentifier("rgbN")
+                    Picker("", selection: SwiftUI.Binding(get: { $selectedSegn.wrappedValue }, set: { $selectedSegn.wrappedValue = $0; data.onSegN?() })) {
+                        Text("sx".localized()).tag(0)
+                        Text("sy".localized()).tag(1)
+                    }
+                        .pickerStyle(.segmented)
+                        .accessibilityIdentifier("segN")
+                    Slider(value: $sliderValueslN, in: 0...1, onEditingChanged: { editing in if !editing { data.onSlN?() } })
+                        .accessibilityIdentifier("slN")
+                    SelectBoxView(
+                        id: "sbN",
+                        selectItemType: .normal,
+                        items: ["pp", "qq"],
+                        selectedIndex: 0,
+                        onValueChange: { _ in data.onSbN?() }
+                    )
+                        .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
+                        .accessibilityIdentifier("sbN")
+                    TextField("", text: $tfNText)
+                        .focused($tfNIsFocused)
+                        .onChange(of: data.tfNIsFocused) { _, newValue in
+                        tfNIsFocused = newValue
+                    }
+                        .onChange(of: tfNIsFocused) { _, newValue in
+                        data.tfNIsFocused = newValue
+                    }
+                        .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
+                        .accessibilityIdentifier("tfN")
+                    TextViewWithPlaceholder(
+                        text: $tvNText,
+                        isFocused: $data.tvNIsFocused
+                    )
+                        .frame(minHeight: 50, idealHeight: 50, maxHeight: 50)
+                        .accessibilityIdentifier("tvN")
+                    Toggle(isOn: SwiftUI.Binding(get: { $swlNIsOn.wrappedValue }, set: { $swlNIsOn.wrappedValue = $0; data.onSwlN?() })) {
+                        Text("swl label")
+                    }
+                        .accessibilityIdentifier("swlN")
+            }
+                .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
 
@@ -905,7 +872,7 @@ struct OnClickECodegenPaste: View {
 
     @ViewBuilder private func section0() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-                Toggle(isOn: $swEIsOn) {
+                Toggle(isOn: SwiftUI.Binding(get: { $swEIsOn.wrappedValue }, set: { $swEIsOn.wrappedValue = $0; data.onSwE?() })) {
                     Text("")
                 }
                     .labelsHidden()
@@ -927,6 +894,7 @@ struct OnClickECodegenPaste: View {
                             .foregroundColor(.blue)
                             .onTapGesture {
                             selectedRve = "ra"
+                            data.onRvE?()
                         }
                         Text("ra")
                     }
@@ -935,6 +903,7 @@ struct OnClickECodegenPaste: View {
                             .foregroundColor(.blue)
                             .onTapGesture {
                             selectedRve = "rb"
+                            data.onRvE?()
                         }
                         Text("rb")
                     }
@@ -976,7 +945,7 @@ struct OnClickECodegenPaste: View {
                     .disabled(true)
                     .accessibilityIdentifier("rgbE")
                     .disabled(true)
-                Picker("", selection: $selectedSege) {
+                Picker("", selection: SwiftUI.Binding(get: { $selectedSege.wrappedValue }, set: { $selectedSege.wrappedValue = $0; data.onSegE?() })) {
                     Text("sx".localized()).tag(0)
                     Text("sy".localized()).tag(1)
                 }
@@ -984,7 +953,7 @@ struct OnClickECodegenPaste: View {
                     .disabled(true)
                     .accessibilityIdentifier("segE")
                     .disabled(true)
-                Slider(value: $sliderValueslE, in: 0...1)
+                Slider(value: $sliderValueslE, in: 0...1, onEditingChanged: { editing in if !editing { data.onSlE?() } })
                     .disabled(true)
                     .disabled(true)
                     .accessibilityIdentifier("slE")
@@ -994,9 +963,12 @@ struct OnClickECodegenPaste: View {
                     selectItemType: .normal,
                     items: ["pp", "qq"],
                     selectedIndex: 0,
+                    onValueChange: { _ in data.onSbE?() }
                 )
                     .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
+                    .disabled(true)
                     .accessibilityIdentifier("sbE")
+                    .disabled(true)
                 TextField("", text: $tfEText)
                     .focused($tfEIsFocused)
                     .onChange(of: data.tfEIsFocused) { _, newValue in
@@ -1017,7 +989,7 @@ struct OnClickECodegenPaste: View {
                     .disabled(true)
                     .accessibilityIdentifier("tvE")
                     .disabled(true)
-                Toggle(isOn: $swlEIsOn) {
+                Toggle(isOn: SwiftUI.Binding(get: { $swlEIsOn.wrappedValue }, set: { $swlEIsOn.wrappedValue = $0; data.onSwlE?() })) {
                     Text("swl label")
                 }
                     .disabled(true)
