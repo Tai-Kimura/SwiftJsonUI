@@ -55,6 +55,9 @@ public class JSONLayoutLoader {
                 // Each node's position (LayoutPath), on the tree sjui build
                 // stamps: styles merged, includes expanded.
                 processedJSON = LayoutPath.stamp(processedJSON)
+                // `bind` folded on the tree drawn (BindFold). This path has
+                // no responsive branch (DynamicView takes it only then).
+                processedJSON = BindFold.fold(processedJSON)
 
                 let processedData = try JSONSerialization.data(withJSONObject: processedJSON, options: [])
                 let decoder = JSONDecoder()
@@ -121,7 +124,7 @@ public class JSONLayoutLoader {
     static func stamped(_ component: DynamicComponent) -> DynamicComponent {
         guard !LayoutPath.isStamped(component.rawData) else { return component }
         do {
-            let data = try JSONSerialization.data(withJSONObject: LayoutPath.stamp(component.rawData), options: [])
+            let data = try JSONSerialization.data(withJSONObject: BindFold.fold(LayoutPath.stamp(component.rawData)), options: [])
             let decoder = JSONDecoder()
             JsonUINormalization.apply(to: decoder, normalized: component.isNormalized)
             return try decoder.decode(DynamicComponent.self, from: data)
@@ -137,6 +140,9 @@ public class JSONLayoutLoader {
             // stamped here, from its root, so an id-less node is named by its
             // position on this path too (LayoutPath).
             var json = LayoutPath.isStamped(json) ? json : LayoutPath.stamp(json)
+            // `bind` folded on the tree drawn, its responsive branch resolved
+            // by the caller (BindFold).
+            json = BindFold.fold(json)
             let normalized = JsonUINormalization.consumeMarker(&json)
             let data = try JSONSerialization.data(withJSONObject: json, options: [])
             let decoder = JSONDecoder()
