@@ -21,7 +21,7 @@ final class StateNamesProbeUITests: XCTestCase {
             throw XCTSkip("state names probe: run with the guard lifted, as the other probes are")
         }
         continueAfterFailure = true
-        let paths = (ProcessInfo.processInfo.environment["STATE_NAMES_PATHS"] ?? "dynamic,codegen").split(separator: ",").map(String.init)
+        let paths = (ProcessInfo.processInfo.environment["STATE_NAMES_PATHS"] ?? "dynamic,component,codegen").split(separator: ",").map(String.init)
         for path in paths { run(path) }
     }
 
