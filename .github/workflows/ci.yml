@@ -147,6 +147,13 @@ jobs:
                "shared/core/component_metadata.json"),
               ("Tests/SwiftJsonUITests/Fixtures/layout_path_vectors.json",
                "shared/core/layout_path_vectors.json"),
+              # The bind fold's cases (BindFoldTests), run by every path.
+              ("Tests/SwiftJsonUITests/Fixtures/bind_fold_vectors.json",
+               "shared/core/bind_fold_vectors.json"),
+              # The unknown-type sentence, the Ruby validator's own words for
+              # every known type in another case (TypeNameCaseVectorsTests).
+              ("Tests/SwiftJsonUITests/Fixtures/unknown_component_type_vectors.json",
+               "shared/core/unknown_component_type_vectors.json"),
               # The declared image default (semantics.image.defaultContentMode)
               # ImageContentModeDefaultTests binds the no-contentMode drawing to.
               ("Tests/SwiftJsonUITests/Fixtures/attribute_semantics.json",

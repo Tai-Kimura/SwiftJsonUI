@@ -35,6 +35,12 @@ public struct DynamicComponentBuilder: View {
         stoppedAround ? source.markedStopped() : source
     }
 
+    /// Draws `component` as it is. A layout starts at an entry that resolves
+    /// its styles, includes and responsive overrides and stamps it —
+    /// `DynamicView(jsonName:)`, `DynamicView(component:)`, or
+    /// `JSONLayoutLoader.decodeComponent(from:)` on a dictionary already
+    /// through them; this is for a node of a tree that did (a custom
+    /// adapter's children).
     public init(component: DynamicComponent, data: [String: Any], viewId: String? = nil, isWeightedChild: Bool = false, parentOrientation: String? = nil) {
         self.source = component
         self.data = data
@@ -317,6 +323,7 @@ public struct DynamicComponentBuilder: View {
         // component (typo, or a definitions gap) — they will never be
         // applied by the converter.
         let _ = JsonUIAttributeAudit.audit(component: component)
+        let _ = UnresolvedStages.nameOnce(component)
         if component.include != nil {
             IncludeConverter.convert(component: component, data: data, viewId: viewId)
         } else if let type = component.type, let adapter = CustomComponentRegistry.shared.adapter(for: type) {
@@ -343,6 +350,24 @@ public struct DynamicComponentBuilder: View {
     /// does not draw on this face (component_metadata.json `swift_dynamic`).
     /// Tests count them; nothing in the library sets it.
     public static var unknownTypeHandler: ((String) -> Void)?
+
+    /// The types declaredComponent draws, as spelled (the SSoT's section
+    /// names; CircleImage is a type-synonym spelling drawn as Image). The
+    /// switch compared `type.lowercased()`, so "switch" was drawn as Switch
+    /// on this path alone (4f's ruling, 1.9.0: case-sensitive).
+    /// The spelling an unknown `type` differs from only in case, offered in
+    /// its sentence: TypeSynonyms.caseOnlyMatch over the declared types, the
+    /// synonyms and the alias sections — the one search jsonui-cli's
+    /// validator and codegen ask (4f's ruling). It searched the declared
+    /// types alone, so "hstack" was offered nothing here and "HStack" there.
+    static func spellingCandidate(for type: String) -> String? {
+        TypeSynonyms.caseOnlyMatch(type, known: declaredTypes)
+    }
+
+    static let declaredTypes = ["Label", "Button", "TextField", "TextView", "Image", "CircleImage", "NetworkImage",
+                                "View", "SafeAreaView", "ScrollView", "Switch", "CheckBox", "Radio", "Segment",
+                                "SelectBox", "Slider", "Progress", "Indicator", "IconLabel", "Collection", "TabView",
+                                "Embed", "Web", "GradientView", "Blur"]
 
     /// `component` as drawn: a type-synonym spelling rewritten by
     /// TypeSynonyms (its type, and the attributes the spelling means), decoded
@@ -381,39 +406,39 @@ public struct DynamicComponentBuilder: View {
     @ViewBuilder
     private func declaredComponent(_ component: DynamicComponent) -> some View {
         if let type = component.type {
-            switch type.lowercased() {
+            switch type {
             // Text components
-            case "label":
+            case "Label":
                 LabelConverter.convert(component: component, data: data, parentOrientation: parentOrientation)
 
-            case "button":
+            case "Button":
                 ButtonConverter.convert(component: component, data: data, parentOrientation: parentOrientation)
 
             // EditText / Input are component-name aliases of TextField
             // (attribute_definitions.json `_alias_of`)
-            case "textfield":
+            case "TextField":
                 TextFieldConverter.convert(component: component, data: data)
 
-            case "textview":
+            case "TextView":
                 TextViewConverter.convert(component: component, data: data)
 
             // Image components. CircleImage / CircleImageView are Image
             // synonyms drawn as CircleImage (`render_as`), which
             // ImageViewConverter clips to a circle.
-            case "image", "circleimage":
+            case "Image", "CircleImage":
                 ImageViewConverter.convert(component: component, data: data)
 
-            case "networkimage":
+            case "NetworkImage":
                 NetworkImageConverter.convert(component: component, data: data)
 
             // Container components
-            case "view":
+            case "View":
                 DynamicViewContainer(component: component, data: data, viewId: viewId)
 
-            case "safeareaview":
+            case "SafeAreaView":
                 DynamicSafeAreaViewContainer(component: component, data: data, viewId: viewId)
 
-            case "scrollview":
+            case "ScrollView":
                 DynamicScrollViewContainer(component: component, data: data, viewId: viewId)
 
             // No case for Spacer / Space / Divider / Separator. None of them is
@@ -425,51 +450,51 @@ public struct DynamicComponentBuilder: View {
             // `default:` below with every other undeclared type.
 
             // Selection components
-            case "switch":
+            case "Switch":
                 ToggleConverter.convert(component: component, data: data)
 
-            case "checkbox":
+            case "CheckBox":
                 CheckboxConverter.convert(component: component, data: data)
 
-            case "radio":
+            case "Radio":
                 RadioConverter.convert(component: component, data: data)
 
-            case "segment":
+            case "Segment":
                 SegmentConverter.convert(component: component, data: data)
 
-            case "selectbox":
+            case "SelectBox":
                 SelectBoxConverter.convert(component: component, data: data)
 
-            case "slider":
+            case "Slider":
                 SliderConverter.convert(component: component, data: data)
 
-            case "progress":
+            case "Progress":
                 ProgressConverter.convert(component: component, data: data)
 
-            case "indicator":
+            case "Indicator":
                 IndicatorConverter.convert(component: component, data: data)
 
             // Complex components
-            case "iconlabel":
+            case "IconLabel":
                 IconLabelConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "collection":
+            case "Collection":
                 CollectionConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "tabview":
+            case "TabView":
                 TabViewConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "embed":
+            case "Embed":
                 EmbedConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "web":
+            case "Web":
                 WebConverter.convert(component: component, data: data)
 
             // Special effects
-            case "gradientview":
+            case "GradientView":
                 GradientViewConverter.convert(component: component, data: data, viewId: viewId)
 
-            case "blur":
+            case "Blur":
                 BlurConverter.convert(component: component, data: data, viewId: viewId)
 
             // Synthetic node for a child whose decode threw (see
@@ -493,9 +518,15 @@ public struct DynamicComponentBuilder: View {
 
             // Default/Unknown
             default:
-                // The app's registry was asked first, above.
+                // The app's registry was asked first, above. A declared type
+                // written in another case is unknown, as in the codegens, and
+                // named with the spelling it may mean (TypeNameSpelling). The
+                // box (DEBUG: this builder is DEBUG-only) holds the same
+                // sentence; it said "Error: Unknown component type '…'".
+                let candidate = Self.spellingCandidate(for: type)
+                let _ = TypeNameSpelling.nameOnce(written: type, declared: candidate)
                 let _ = Self.unknownTypeHandler?(type)
-                Text("Error: Unknown component type '\(type)'")
+                Text(TypeNameSpelling.sentence(written: type, declared: candidate))
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(.white)
                     .padding(.horizontal, 12)
@@ -506,6 +537,44 @@ public struct DynamicComponentBuilder: View {
         }
     }
 }
+/// A node drawn with a stage not run on it — a `style` not applied, a
+/// `responsive` block not resolved, an `include` not expanded — named once
+/// per stage in DEBUG (4f's ruling on the entries that skip stages, 1.9.0).
+/// The symptom, not the entry: the entries stamp and resolve, but a node a
+/// stage does not walk to arrives the same way, and so does a style whose
+/// file is missing.
+enum UnresolvedStages {
+    /// Hook for tests / apps; defaults to Logger.debug.
+    static var warningHandler: ((String) -> Void)?
+    /// The stages named already, this process (tests reset it).
+    static var reported = Set<String>()
+    private static let lock = NSLock()
+
+    static func sentence(key: String, type: String) -> String {
+        "'\(type)' is drawn with '\(key)' unresolved — it did not come through an entry that resolves it "
+            + "(DynamicView(jsonName:), DynamicView(component:)), or its style file is missing"
+    }
+
+    static func unresolved(_ component: DynamicComponent) -> [String] {
+        var keys: [String] = []
+        if component.rawData["style"] is String { keys.append("style") }
+        if component.rawData["responsive"] != nil { keys.append("responsive") }
+        if component.include != nil { keys.append("include") }
+        return keys
+    }
+
+    static func nameOnce(_ component: DynamicComponent) {
+        for key in unresolved(component) {
+            lock.lock()
+            let first = reported.insert(key).inserted
+            lock.unlock()
+            guard first else { continue }
+            let message = sentence(key: key, type: component.type ?? "include")
+            if let warningHandler { warningHandler(message) } else { Logger.debug(message) }
+        }
+    }
+}
+
 // MARK: - Force re-evaluation when data dictionary changes
 extension DynamicComponentBuilder: Equatable {
     public static func == (lhs: DynamicComponentBuilder, rhs: DynamicComponentBuilder) -> Bool { false }

@@ -1994,8 +1994,10 @@ public struct CollectionConverter {
         stackMode(component, data: data) != .none && !isHorizontal(component)
     }
 
+    // fileprivate, not private: PagingCollectionWrapperView (below, a type of
+    // its own) draws its pages through it too.
     @ViewBuilder
-    private static func buildCellView(
+    fileprivate static func buildCellView(
         cellClassName: String,
         cellData: [String: Any],
         cellIndex: Int = 0,
@@ -2180,17 +2182,26 @@ private struct PagingCollectionWrapperView: View {
     var body: some View {
         TabView(selection: effectiveSelection) {
             ForEach(pageItems) { page in
-                let jsonFileName = CollectionConverter.resolveJsonFileName(from: page.cellClassName)
-                DynamicView(
-                    jsonName: jsonFileName,
-                    viewId: page.cellClassName,
-                    data: page.data
+                // Through the one cell builder, as every other route draws its
+                // cells: it gives the page its `{collectionId}_item_{index}`
+                // address (a `.contain` element, so the cell's own children
+                // keep theirs) and calls onItemAppear with the page's index.
+                // The pager drew DynamicView directly and so had no address at
+                // all — `pager_item_N` found nothing on any page (4f ruling
+                // 2026-09-26, round 8). `page.index` is the page's place among
+                // all the pages, across the sections, as sjui's page tag and
+                // KotlinJsonUI's pager address count.
+                CollectionConverter.buildCellView(
+                    cellClassName: page.cellClassName,
+                    cellData: page.data,
+                    cellIndex: page.index,
+                    component: component,
+                    data: data,
+                    viewId: viewId,
+                    onItemAppear: onItemAppearCallback
                 )
                 .padding(.horizontal, itemSpacing > 0 ? itemSpacing / 2 : 0)
                 .tag(page.index)
-                .onAppear {
-                    onItemAppearCallback?(page.index)
-                }
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))

@@ -29,12 +29,17 @@ public struct DynamicView: View {
         self.directComponent = nil
     }
 
+    /// A component the app decoded itself goes through the stages the loader
+    /// runs — styles, includes, the responsive overrides for this view's
+    /// size classes — and is stamped (JSONLayoutLoader.prepared), so it is
+    /// drawn as `DynamicView(jsonName:)` draws the same layout. It was only
+    /// stamped, and its styles and responsive overrides were skipped.
     public init(component: DynamicComponent, viewId: String? = nil, data: [String: Any] = [:]) {
         self.jsonName = nil
-        // A component the app decoded itself has no positions: stamped here,
-        // as the loader stamps, so its id-less nodes are named alike on every
-        // entry (JSONLayoutLoader.stamped).
-        self.directComponent = JSONLayoutLoader.stamped(component)
+        // Stamped here when nothing is left to resolve; otherwise in body,
+        // where the size classes are known (rootComponent).
+        self.directComponent = JSONLayoutLoader.hasUnresolvedStages(component.rawData)
+            ? component : JSONLayoutLoader.stamped(component)
         self.data = data
         self.viewId = viewId ?? "component"
     }
@@ -45,7 +50,8 @@ public struct DynamicView: View {
     /// DynamicComponent, so individual converters remain unaware of responsive logic.
     private var rootComponent: DynamicComponent? {
         if let component = directComponent {
-            return component
+            return JSONLayoutLoader.prepared(
+                component, horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass)
         }
         if let baseName = jsonName {
             // Responsive variant files (home@regular.json): swap the whole

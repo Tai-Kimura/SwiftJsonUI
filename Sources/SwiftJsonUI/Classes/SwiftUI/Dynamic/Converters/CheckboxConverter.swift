@@ -25,10 +25,11 @@ public struct CheckboxConverter {
         let id = LayoutPath.viewId(of: component)
         let attrs = component.typedAttributes(CheckBoxAttributes.self)
 
-        // Resolve isOn binding: check isOn, checked, bind
+        // Resolve isOn binding: check isOn, then checked. A `bind` reaches
+        // here folded into isOn (BindFold, at load): read last here, a bound
+        // `bind` beside a literal `isOn: false` drew the binding.
         let isOnExpr: String? = attrs.isOn?.bindingString
             ?? attrs.checked?.bindingString
-            ?? attrs.common.bind?.bindingString
 
         let isOnBinding = DynamicBindingHelper.bool(
             isOnExpr,

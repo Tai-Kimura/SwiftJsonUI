@@ -213,6 +213,10 @@ struct ConformanceRootView: View {
                 LinkTapProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-dynamicStateProbe") {
                 DynamicStateProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-bindFoldProbe") {
+                BindFoldProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-pagingAddressProbe") {
+                PagingAddressProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
