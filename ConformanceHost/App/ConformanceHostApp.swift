@@ -209,6 +209,8 @@ struct ConformanceRootView: View {
                 PickArityProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-dynamicStateProbe") {
                 DynamicStateProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-pressedBackgroundProbe") {
+                PressedBackgroundProbeView()
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
