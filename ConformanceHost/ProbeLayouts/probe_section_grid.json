@@ -1,0 +1,73 @@
+{
+  "type": "View",
+  "id": "cg_grid_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_rule_grid",
+      "width": 200,
+      "height": 200,
+      "background": "#DDDDDD",
+      "items": "@{gridRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell",
+          "header": "conformance_cell",
+          "footer": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell",
+          "header": "conformance_cell"
+        }
+      ],
+      "columns": 2,
+      "lineSpacing": 4,
+      "columnSpacing": 10
+    }
+  ],
+  "data": [
+    {
+      "name": "gridRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "header": {
+              "title": "H0"
+            },
+            "cells": [
+              {
+                "title": "A0"
+              },
+              {
+                "title": "A1"
+              },
+              {
+                "title": "A2"
+              }
+            ],
+            "footer": {
+              "title": "F0"
+            }
+          },
+          {
+            "header": {
+              "title": "H1"
+            },
+            "cells": [
+              {
+                "title": "B0"
+              },
+              {
+                "title": "B1"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

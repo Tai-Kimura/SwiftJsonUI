@@ -697,6 +697,7 @@ public struct CollectionConverter {
     /// there.
     private static func sectionGrid(
         columns: Int,
+        section: Int = 0,
         items: [IdentifiedCellItem],
         cellName: String,
         component: DynamicComponent,
@@ -724,7 +725,7 @@ public struct CollectionConverter {
                         onItemAppear: onItemAppear
                     )
                     .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
-                    .id(cell.id)
+                    .id(cellScrollID(section: section, cellID: cell.id))
                 }
             }
         )
@@ -784,6 +785,7 @@ public struct CollectionConverter {
     /// starting a new column.
     private static func sectionHGrid(
         lanes: Int,
+        section: Int = 0,
         items: [IdentifiedCellItem],
         cellName: String,
         component: DynamicComponent,
@@ -808,7 +810,7 @@ public struct CollectionConverter {
                         )),
                         component: component
                     )
-                    .id(cell.id)
+                    .id(cellScrollID(section: section, cellID: cell.id))
                 }
             }
         )
@@ -920,6 +922,53 @@ public struct CollectionConverter {
         Logger.log(sentence)
     }
 
+    // MARK: - Scroll Target
+
+    /// The `.id` a cell carries as a scroll target on the routes a scrollTo
+    /// reaches: its own id in section 0, "<section>:<id>" in a later one.
+    /// Two sections' cells may share an id — a key, or "\(index)" with no
+    /// cellIdProperty — and a scroll target has to be one view (4f round 10).
+    static func cellScrollID(section: Int, cellID: String) -> String {
+        section == 0 ? cellID : "\(section):\(cellID)"
+    }
+
+    /// The scroll id of the cell a scrollTo names (4f ruling 2026-09-27;
+    /// jsonui-cli 1.9.0, the SSoT's Collection.scrollTo): `.index(n)` is a
+    /// cell counted across the drawn sections in section order — a header
+    /// or a footer is not a cell; `.cellId(key)` is the first cell, in
+    /// section order, whose key (its "cellId", else its cellIdProperty
+    /// value) it is. nil when no cell answers. `sections` is the route's
+    /// (declared sections, or the class-list shape's one per data section);
+    /// a section is drawn when it names a cell and its data has cells.
+    ///
+    /// Until jsonui-cli 1.9.0 the value went to ScrollViewProxy as it was:
+    /// an Int against String cell ids named no cell (but the section of
+    /// that number, the outer ForEach's id), and a key two sections share
+    /// named whichever view SwiftUI found.
+    static func scrollID(
+        for target: CollectionScrollTarget,
+        sections: [[String: Any]],
+        dataSource: CollectionDataSource,
+        cellIdProperty: String?
+    ) -> String? {
+        var place = 0
+        for sectionIndex in 0..<min(sections.count, dataSource.sections.count) {
+            guard sections[sectionIndex]["cell"] is String,
+                  let cells = dataSource.sections[sectionIndex].cells else { continue }
+            for item in identifiedItems(from: cells.data, cellIdProperty: cellIdProperty) {
+                switch target {
+                case .index(let index):
+                    if place == index { return cellScrollID(section: sectionIndex, cellID: item.id) }
+                case .cellId(let key):
+                    let own = (item.data["cellId"] as? String) ?? cellIdProperty.flatMap { item.data[$0] as? String }
+                    if own == key { return cellScrollID(section: sectionIndex, cellID: item.id) }
+                }
+                place += 1
+            }
+        }
+        return nil
+    }
+
     // MARK: - Paging Page Item Helper
 
     /// Flatten all cells from all sections into a single array of page items for paging layout.
@@ -1011,6 +1060,7 @@ public struct CollectionConverter {
                             if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
                                 sectionGrid(
                                     columns: ownColumns,
+                                    section: sectionIndex,
                                     items: items,
                                     cellName: cellName,
                                     component: component,
@@ -1032,7 +1082,7 @@ public struct CollectionConverter {
                                     )),
                                     component: component
                                 )
-                                .id(cell.id)
+                                .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                             }
                             }
                         }
@@ -1054,10 +1104,13 @@ public struct CollectionConverter {
                     // changes, the same shape as Compose's LaunchedEffect and
                     // web's useEffect on the same property.
                     view.onChange(of: target) { _, newTarget in
+                        // The cell the value names, by its scroll id
+                        // (scrollID(for:…)); none, no scroll.
+                        guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty) else { return }
                         if scrollAnimated {
-                            withAnimation { newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint) }
+                            withAnimation { scrollProxy.scrollTo(id, anchor: scrollAnchorPoint) }
                         } else {
-                            newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint)
+                            scrollProxy.scrollTo(id, anchor: scrollAnchorPoint)
                         }
                     }
                 }
@@ -1339,6 +1392,7 @@ public struct CollectionConverter {
                             if let lanes = horizontalLanes(sectionConfig, globalColumns: globalColumns, columnsIsBinding: columnsIsBinding) {
                                 sectionHGrid(
                                     lanes: lanes,
+                                    section: sectionIndex,
                                     items: items,
                                     cellName: cellName,
                                     component: component,
@@ -1360,7 +1414,7 @@ public struct CollectionConverter {
                                     )),
                                     component: component
                                 )
-                                .id(cell.id)
+                                .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                             }
                             }
                         }
@@ -1381,10 +1435,13 @@ public struct CollectionConverter {
                     // changes, the same shape as Compose's LaunchedEffect and
                     // web's useEffect on the same property.
                     view.onChange(of: target) { _, newTarget in
+                        // The cell the value names, by its scroll id
+                        // (scrollID(for:…)); none, no scroll.
+                        guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty) else { return }
                         if scrollAnimated {
-                            withAnimation { newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint) }
+                            withAnimation { scrollProxy.scrollTo(id, anchor: scrollAnchorPoint) }
                         } else {
-                            newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint)
+                            scrollProxy.scrollTo(id, anchor: scrollAnchorPoint)
                         }
                     }
                 }
@@ -1492,12 +1549,23 @@ public struct CollectionConverter {
         return AnyView(
             ScrollViewReader { scrollProxy in
                 ScrollView(.vertical, showsIndicators: showsIndicators) {
+                    // The scroll's content is a column at the leading edge,
+                    // its rows — a header, a grid, a footer — spaced as the
+                    // grid's rows (collectionSpacing: lineSpacing, else
+                    // itemSpacing, else 0), a header or footer a full-width
+                    // row with the view at its start: sjui's grid, kjui's
+                    // full-span items and the web's rows (4f ruling
+                    // 2026-09-27, round 10). Until jsonui-cli 1.9.0 the
+                    // ScrollView's implicit stack and a `VStack(spacing:
+                    // nil)` centred them, the system's spacing between.
+                    VStack(alignment: .leading, spacing: lineSpacing) {
                     // The legacy shape's headerClasses / footerClasses: once,
                     // without data, above and below the grid inside the
                     // scroll — the codegen's legacy grid branch. Absent, the
                     // content is the grid alone, as before.
                     if let legacyHeader {
                         buildHeaderView(headerClassName: legacyHeader, headerData: [:], data: data, viewId: viewId)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(headerFooterEdges)
                     }
                     Group {
@@ -1517,10 +1585,7 @@ public struct CollectionConverter {
                             onItemAppear: onItemAppear
                         )
                     } else {
-                    // spacing nil = the same context default the bare
-                    // builder content had; single-section grids (the common
-                    // shape) are unaffected either way.
-                    VStack(spacing: nil) {
+                    VStack(alignment: .leading, spacing: lineSpacing) {
                     ForEach(
                         0..<min(sections.count, dataSource.sections.count),
                         id: \.self
@@ -1541,6 +1606,7 @@ public struct CollectionConverter {
                                 data: data,
                                 viewId: viewId
                             )
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
                         // Grid of cells
@@ -1564,7 +1630,7 @@ public struct CollectionConverter {
                                         onItemAppear: onItemAppear
                                     )
                                     .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
-                                    .id(cell.id)
+                                    .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                                 }
                             }
                         }
@@ -1578,6 +1644,7 @@ public struct CollectionConverter {
                                 data: data,
                                 viewId: viewId
                             )
+                            .frame(maxWidth: .infinity, alignment: .leading)
                         }
                     }
                     }
@@ -1586,7 +1653,9 @@ public struct CollectionConverter {
                     .padding(contentEdges ?? EdgeInsets())
                     if let legacyFooter {
                         buildFooterView(footerClassName: legacyFooter, footerData: [:], data: data, viewId: viewId)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(headerFooterEdges)
+                    }
                     }
                 }
                 .ifLet(scrollTarget) { view, target in
@@ -1594,10 +1663,13 @@ public struct CollectionConverter {
                     // changes, the same shape as Compose's LaunchedEffect and
                     // web's useEffect on the same property.
                     view.onChange(of: target) { _, newTarget in
+                        // The cell the value names, by its scroll id
+                        // (scrollID(for:…)); none, no scroll.
+                        guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty) else { return }
                         if scrollAnimated {
-                            withAnimation { newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint) }
+                            withAnimation { scrollProxy.scrollTo(id, anchor: scrollAnchorPoint) }
                         } else {
-                            newTarget.scroll(with: scrollProxy, anchor: scrollAnchorPoint)
+                            scrollProxy.scrollTo(id, anchor: scrollAnchorPoint)
                         }
                     }
                 }
@@ -1714,7 +1786,7 @@ public struct CollectionConverter {
                                 onItemAppear: onItemAppear
                             )
                             .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
-                            .id(cell.id)
+                            .id(cellScrollID(section: sectionIndex, cellID: cell.id))
                         }
                     }
                 }

@@ -25,9 +25,11 @@ public enum CollectionScrollTarget: Equatable {
     /// Scroll to the item at this index.
     case index(Int)
 
-    /// Applies the scroll. Both cases carry a value SwiftUI's ScrollViewProxy
-    /// can address directly, so the split is only about which one the layout
-    /// declared.
+    /// Scrolls to the value as it is. The Dynamic Collection does not call
+    /// this since jsonui-cli 1.9.0: it resolves the value to the cell it names
+    /// (an index counted across the sections, a key's first cell in section
+    /// order — CollectionConverter.scrollID(for:…)) and scrolls to that
+    /// cell's id. Kept for callers of the public API.
     public func scroll(with proxy: ScrollViewProxy, anchor: UnitPoint) {
         switch self {
         case .cellId(let id):

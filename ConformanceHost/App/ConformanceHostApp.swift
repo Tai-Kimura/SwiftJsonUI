@@ -219,6 +219,10 @@ struct ConformanceRootView: View {
                 PagingAddressProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-sectionScrollProbe") {
                 SectionScrollProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-scrollRuleProbe") {
+                ScrollRuleProbeView(grid: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-sectionGridProbe") {
+                ScrollRuleProbeView(grid: true)
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()

@@ -1,0 +1,16 @@
+[
+  {
+    "name": "onRuleIndex",
+    "set": {
+      "var": "ruleIndex",
+      "value": 6
+    }
+  },
+  {
+    "name": "onRuleKey",
+    "set": {
+      "var": "ruleKey",
+      "value": "k3"
+    }
+  }
+]
