@@ -6,10 +6,10 @@
 //  Matches toggle_converter.rb behavior and modifier order.
 //
 //  Modifier order (matches toggle_converter.rb):
-//    1. Toggle(isOn:) { Text(...) with font/color modifiers }
+//    1. Toggle(isOn:) { Text(...) with font/color modifiers } — the flip
+//       writes the value, then calls onValueChange, then onClick
 //    2. .toggleStyle() (if toggleStyle set)
-//    3. .onChange() (onValueChange)
-//    4. applyStandardModifiers()
+//    3. applyStandardModifiers()
 //
 
 import SwiftUI
@@ -164,22 +164,16 @@ public struct ToggleConverter {
         }
 
         if let bound = boundBinding {
-            result = buildToggle(bound)
-
-            // onValueChange handler - observe the bound var for changes
-            if let onValueChange = handlerExpr,
-               DynamicEventHelper.handlerName(from: onValueChange) != nil {
-                result = AnyView(
-                    result.onChange(of: bound.wrappedValue) { _, newValue in
-                        DynamicEventHelper.callWithValue(
-                            onValueChange,
-                            id: id,
-                            value: newValue,
-                            data: data
-                        )
-                    }
-                )
-            }
+            // onValueChange from the flip, after the bound value is written
+            // and before onClick (DynamicEventHelper.reporting) — not from the
+            // view model's own writes, which an `.onChange(of:)` here reported
+            // too, on the next update and so after the call.
+            let report: ((Bool) -> Void)? = handlerExpr
+                .flatMap { DynamicEventHelper.handlerName(from: $0) != nil ? $0 : nil }
+                .map { onValueChange in
+                    { newValue in DynamicEventHelper.callWithValue(onValueChange, id: id, value: newValue, data: data) }
+                }
+            result = buildToggle(DynamicEventHelper.reporting(report, after: bound))
         } else {
             // Unbound: local state; onValueChange fires from the binding set
             result = AnyView(

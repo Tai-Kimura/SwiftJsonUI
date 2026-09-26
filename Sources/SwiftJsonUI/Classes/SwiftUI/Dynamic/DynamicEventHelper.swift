@@ -137,6 +137,29 @@ public struct DynamicEventHelper {
         }
     }
 
+    /// `binding`, with `onValueChange` after each of the control's own writes
+    /// that changes the value — the user's operation. A view model's change
+    /// never goes through the control's binding, so it reports nothing
+    /// (4f's ruling: the control's update, then onValueChange, then onClick,
+    /// all from the user's operation; kjui and KotlinJsonUI's Dynamic call it
+    /// from the operation only). The bound paths observed the value with
+    /// `.onChange(of:)`, which ran on the next update — after the call — and
+    /// for the view model's writes as well.
+    static func reporting<Value: Equatable>(
+        _ onValueChange: ((Value) -> Void)?,
+        after binding: SwiftUI.Binding<Value>
+    ) -> SwiftUI.Binding<Value> {
+        guard let onValueChange else { return binding }
+        return SwiftUI.Binding(
+            get: { binding.wrappedValue },
+            set: { newValue in
+                let changed = newValue != binding.wrappedValue
+                binding.wrappedValue = newValue
+                if changed { onValueChange(newValue) }
+            }
+        )
+    }
+
     /// `binding`, with `click` after each of the control's own writes — the
     /// user's operation, and not the view model's change, which never goes
     /// through the control's binding.

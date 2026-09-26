@@ -2,17 +2,13 @@
 //  OnClickCodegenPaste.swift
 //  ConformanceHost
 //
-//  What `sjui build` (sjui_tools of jsonui-cli triage/control-onclick 89ae1184, on rel/v1.8.121 = 19f1328e) emits for
+//  What `sjui build` (sjui_tools of jsonui-cli triage/control-onclick 75b7bba6, on rel/v1.8.121 = 19f1328e) emits for
 //  OnClickProbeView's three layouts — the controls with an onClick, under no
 //  gate, `canTap: false` and `enabled: false` — the generated Data structs, the
 //  view-local state, the body and its sections, pasted unchanged but for one
 //  line each: sjui declares a Radio group's `@State` once per Radio, and the
 //  checked one's seed and the other's "" do not compile together (ticket
 //  sjui-codegen-state-declarations-collide-by-name) — the second is left out.
-//  And gate V's three unbound Switch / Segment / Slider observers: they read
-//  `data.swuVIsOn`, `data.selectedSeguv`, `data.sliderValuesluV`, which the
-//  Data struct does not have (the state is the view's own), and do not
-//  compile — each is left out where it was, with a note.
 //  For ticket control-onclick-is-called-differently-on-every-path.
 //
 
@@ -240,7 +236,7 @@ struct OnClickNCodegenPaste: View {
 
     var body: some View {
             VStack(alignment: .leading, spacing: 6) {
-                    Toggle(isOn: SwiftUI.Binding(get: { $swNIsOn.wrappedValue }, set: { $swNIsOn.wrappedValue = $0; data.onSwN?() })) {
+                    Toggle(isOn: SwiftUI.Binding(get: { $swNIsOn.wrappedValue }, set: { newValue in $swNIsOn.wrappedValue = newValue; data.onSwN?() })) {
                         Text("")
                     }
                         .labelsHidden()
@@ -296,7 +292,7 @@ struct OnClickNCodegenPaste: View {
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel("rg2")
                         .accessibilityIdentifier("rgbN")
-                    Picker("", selection: SwiftUI.Binding(get: { $selectedSegn.wrappedValue }, set: { $selectedSegn.wrappedValue = $0; data.onSegN?() })) {
+                    Picker("", selection: SwiftUI.Binding(get: { $selectedSegn.wrappedValue }, set: { newValue in $selectedSegn.wrappedValue = newValue; data.onSegN?() })) {
                         Text("sx".localized()).tag(0)
                         Text("sy".localized()).tag(1)
                     }
@@ -309,7 +305,7 @@ struct OnClickNCodegenPaste: View {
                         selectItemType: .normal,
                         items: ["pp", "qq"],
                         selectedIndex: 0,
-                        onValueChange: { _ in data.onSbN?() }
+                        onValueChange: { newValue in data.onSbN?() }
                     )
                         .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                         .accessibilityIdentifier("sbN")
@@ -329,7 +325,7 @@ struct OnClickNCodegenPaste: View {
                     )
                         .frame(minHeight: 50, idealHeight: 50, maxHeight: 50)
                         .accessibilityIdentifier("tvN")
-                    Toggle(isOn: SwiftUI.Binding(get: { $swlNIsOn.wrappedValue }, set: { $swlNIsOn.wrappedValue = $0; data.onSwlN?() })) {
+                    Toggle(isOn: SwiftUI.Binding(get: { $swlNIsOn.wrappedValue }, set: { newValue in $swlNIsOn.wrappedValue = newValue; data.onSwlN?() })) {
                         Text("swl label")
                     }
                         .accessibilityIdentifier("swlN")
@@ -876,7 +872,7 @@ struct OnClickECodegenPaste: View {
 
     @ViewBuilder private func section0() -> some View {
         VStack(alignment: .leading, spacing: 6) {
-                Toggle(isOn: SwiftUI.Binding(get: { $swEIsOn.wrappedValue }, set: { $swEIsOn.wrappedValue = $0; data.onSwE?() })) {
+                Toggle(isOn: SwiftUI.Binding(get: { $swEIsOn.wrappedValue }, set: { newValue in $swEIsOn.wrappedValue = newValue; data.onSwE?() })) {
                     Text("")
                 }
                     .labelsHidden()
@@ -949,7 +945,7 @@ struct OnClickECodegenPaste: View {
                     .disabled(true)
                     .accessibilityIdentifier("rgbE")
                     .disabled(true)
-                Picker("", selection: SwiftUI.Binding(get: { $selectedSege.wrappedValue }, set: { $selectedSege.wrappedValue = $0; data.onSegE?() })) {
+                Picker("", selection: SwiftUI.Binding(get: { $selectedSege.wrappedValue }, set: { newValue in $selectedSege.wrappedValue = newValue; data.onSegE?() })) {
                     Text("sx".localized()).tag(0)
                     Text("sy".localized()).tag(1)
                 }
@@ -967,7 +963,7 @@ struct OnClickECodegenPaste: View {
                     selectItemType: .normal,
                     items: ["pp", "qq"],
                     selectedIndex: 0,
-                    onValueChange: { _ in data.onSbE?() }
+                    onValueChange: { newValue in data.onSbE?() }
                 )
                     .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                     .disabled(true)
@@ -993,7 +989,7 @@ struct OnClickECodegenPaste: View {
                     .disabled(true)
                     .accessibilityIdentifier("tvE")
                     .disabled(true)
-                Toggle(isOn: SwiftUI.Binding(get: { $swlEIsOn.wrappedValue }, set: { $swlEIsOn.wrappedValue = $0; data.onSwlE?() })) {
+                Toggle(isOn: SwiftUI.Binding(get: { $swlEIsOn.wrappedValue }, set: { newValue in $swlEIsOn.wrappedValue = newValue; data.onSwlE?() })) {
                     Text("swl label")
                 }
                     .disabled(true)
@@ -1447,19 +1443,15 @@ struct OnClickVCodegenPaste: View {
 
     @ViewBuilder private func section0() -> some View {
         VStack(alignment: .leading, spacing: 4) {
-                Toggle(isOn: SwiftUI.Binding(get: { $swuVIsOn.wrappedValue }, set: { $swuVIsOn.wrappedValue = $0; data.onSwuC?() })) {
+                Toggle(isOn: SwiftUI.Binding(get: { $swuVIsOn.wrappedValue }, set: { newValue in let changed = newValue != $swuVIsOn.wrappedValue; $swuVIsOn.wrappedValue = newValue; if changed { data.onSwuV?() }; data.onSwuC?() })) {
                     Text("")
                 }
                     .labelsHidden()
-                    // (`.onChange(of: data.swuVIsOn)` here — left out: OnClickVData has no swuVIsOn; it does not compile)
                     .accessibilityIdentifier("swuV")
-                Toggle(isOn: SwiftUI.Binding(get: { $data.swbOn.wrappedValue }, set: { $data.swbOn.wrappedValue = $0; data.onSwbC?() })) {
+                Toggle(isOn: SwiftUI.Binding(get: { $data.swbOn.wrappedValue }, set: { newValue in let changed = newValue != $data.swbOn.wrappedValue; $data.swbOn.wrappedValue = newValue; if changed { data.onSwbV?() }; data.onSwbC?() })) {
                     Text("")
                 }
                     .labelsHidden()
-                    .onChange(of: data.swbOn) { _, newValue in
-                    data.onSwbV?()
-                }
                     .accessibilityIdentifier("swbV")
                 CheckBoxView(
                     isOn: $cbuVIsOn,
@@ -1519,36 +1511,28 @@ struct OnClickVCodegenPaste: View {
                     }
                 }
                     .accessibilityIdentifier("rvbV")
-                Picker("", selection: SwiftUI.Binding(get: { $selectedSeguv.wrappedValue }, set: { $selectedSeguv.wrappedValue = $0; data.onSeguC?() })) {
+                Picker("", selection: SwiftUI.Binding(get: { $selectedSeguv.wrappedValue }, set: { newValue in let changed = newValue != $selectedSeguv.wrappedValue; $selectedSeguv.wrappedValue = newValue; if changed { data.onSeguV?() }; data.onSeguC?() })) {
                     Text("ux".localized()).tag(0)
                     Text("uy".localized()).tag(1)
                 }
                     .pickerStyle(.segmented)
-                    // (`.onChange(of: data.selectedSeguv)` here — left out: OnClickVData has no selectedSeguv; it does not compile)
                     .accessibilityIdentifier("seguV")
-                Picker("", selection: SwiftUI.Binding(get: { $data.segbIdx.wrappedValue }, set: { $data.segbIdx.wrappedValue = $0; data.onSegbC?() })) {
+                Picker("", selection: SwiftUI.Binding(get: { $data.segbIdx.wrappedValue }, set: { newValue in let changed = newValue != $data.segbIdx.wrappedValue; $data.segbIdx.wrappedValue = newValue; if changed { data.onSegbV?() }; data.onSegbC?() })) {
                     Text("bx".localized()).tag(0)
                     Text("by".localized()).tag(1)
                 }
                     .pickerStyle(.segmented)
-                    .onChange(of: data.segbIdx) { _, newValue in
-                    data.onSegbV?()
-                }
                     .accessibilityIdentifier("segbV")
-                Slider(value: $sliderValuesluV, in: 0...1, onEditingChanged: { editing in if !editing { data.onSluC?() } })
-                    // (`.onChange(of: data.sliderValuesluV)` here — left out: OnClickVData has no sliderValuesluV; it does not compile)
+                Slider(value: SwiftUI.Binding(get: { $sliderValuesluV.wrappedValue }, set: { newValue in let changed = newValue != $sliderValuesluV.wrappedValue; $sliderValuesluV.wrappedValue = newValue; if changed { data.onSluV?() } }), in: 0...1, onEditingChanged: { editing in if !editing { data.onSluC?() } })
                     .accessibilityIdentifier("sluV")
-                Slider(value: $data.slbVal, in: 0...1, onEditingChanged: { editing in if !editing { data.onSlbC?() } })
-                    .onChange(of: data.slbVal) { _, newValue in
-                    data.onSlbV?()
-                }
+                Slider(value: SwiftUI.Binding(get: { $data.slbVal.wrappedValue }, set: { newValue in let changed = newValue != $data.slbVal.wrappedValue; $data.slbVal.wrappedValue = newValue; if changed { data.onSlbV?() } }), in: 0...1, onEditingChanged: { editing in if !editing { data.onSlbC?() } })
                     .accessibilityIdentifier("slbV")
                 SelectBoxView(
                     id: "sbuV",
                     selectItemType: .normal,
                     items: ["up", "uq"],
                     selectedIndex: 0,
-                    onValueChange: { _ in data.onSbuC?() }
+                    onValueChange: { newValue in data.onSbuV?(); data.onSbuC?() }
                 )
                     .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
                     .accessibilityIdentifier("sbuV")
@@ -1557,12 +1541,9 @@ struct OnClickVCodegenPaste: View {
                     selectItemType: .normal,
                     items: ["bp", "bq"],
                     selectedIndexBinding: $data.sbbIdx,
-                    onValueChange: { _ in data.onSbbC?() }
+                    onValueChange: { newValue in data.onSbbV?(); data.onSbbC?() }
                 )
                     .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
-                    .onChange(of: data.sbbIdx) { _, newValue in
-                            data.onSbbV?()
-                        }
                     .accessibilityIdentifier("sbbV")
                 SelectBoxView(
                     id: "sbdV",
@@ -1577,9 +1558,6 @@ struct OnClickVCodegenPaste: View {
                     }
                 )
                     .frame(minHeight: 40, idealHeight: 40, maxHeight: 40)
-                    .onChange(of: data.sbdDate) { _, newValue in
-                            data.onSbdV?()
-                        }
                     .accessibilityIdentifier("sbdV")
         }
             .frame(maxWidth: .infinity, alignment: .topLeading)
