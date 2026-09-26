@@ -329,7 +329,8 @@ public struct LabelConverter {
                 recognised = true
             }
             if let align = dict["textAlign"] as? String {
-                switch DeclaredSpelling.lowered(align, in: LabelAttributes.TextAlign.declaredSpellings) {
+                // The highlight's own declaration (Left / Right / Center).
+                switch DeclaredSpelling.lowered(align, in: LabelAttributes.HighlightAttributes.TextAlign.declaredSpellings) {
                 case "left": highlight.textAlignment = .leading
                 case "center": highlight.textAlignment = .center
                 case "right": highlight.textAlignment = .trailing
@@ -453,7 +454,7 @@ public struct LabelConverter {
         case nil: return false
         case let b as Bool: return b
         case let m as [String: Any]:
-            return !((m["lineStyle"] as? String)?.caseInsensitiveCompare("none") == .orderedSame)
+            return DeclaredSpelling.lowered(m["lineStyle"] as? String, in: LabelAttributes.Underline.LineStyle.declaredSpellings) != "none"
         case let a as [Any]: return !a.isEmpty
         default: return false
         }

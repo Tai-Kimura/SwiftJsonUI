@@ -16,7 +16,8 @@ final class SJUIGlassTests: XCTestCase {
     /// nothing on the other would make the same JSON mean two things.
     func testIdentityMeansApplyNothing() {
         XCTAssertTrue(SJUIGlass.isIdentity("identity"))
-        XCTAssertTrue(SJUIGlass.isIdentity("IDENTITY"))
+        // As written (jsonui-cli 1.9.0): `IDENTITY` is declared in no case.
+        XCTAssertFalse(SJUIGlass.isIdentity("IDENTITY"))
         XCTAssertFalse(SJUIGlass.isIdentity("regular"))
         XCTAssertFalse(SJUIGlass.isIdentity("clear"))
         XCTAssertFalse(SJUIGlass.isIdentity(nil))
@@ -25,7 +26,8 @@ final class SJUIGlassTests: XCTestCase {
     func testTheRoundedRadiusIsReadFromTheSpelling() {
         XCTAssertEqual(SJUIGlass.roundedRadius(from: "rounded(12)"), 12)
         XCTAssertEqual(SJUIGlass.roundedRadius(from: "rounded(0)"), 0)
-        XCTAssertEqual(SJUIGlass.roundedRadius(from: "Rounded(4.5)"), 4.5)
+        XCTAssertEqual(SJUIGlass.roundedRadius(from: "rounded(4.5)"), 4.5)
+        XCTAssertNil(SJUIGlass.roundedRadius(from: "Rounded(4.5)"), "the form is declared rounded(N), as written")
         XCTAssertNil(SJUIGlass.roundedRadius(from: "rounded"), "no number means no radius, not zero")
         XCTAssertNil(SJUIGlass.roundedRadius(from: "capsule"))
         XCTAssertNil(SJUIGlass.roundedRadius(from: nil))
@@ -40,7 +42,8 @@ final class SJUIGlassTests: XCTestCase {
     func testUnknownShapeSpellingsAreReportable() {
         XCTAssertTrue(SJUIGlass.isKnown(shape: nil))
         XCTAssertTrue(SJUIGlass.isKnown(shape: "capsule"))
-        XCTAssertTrue(SJUIGlass.isKnown(shape: "CIRCLE"))
+        XCTAssertTrue(SJUIGlass.isKnown(shape: "circle"))
+        XCTAssertFalse(SJUIGlass.isKnown(shape: "CIRCLE"), "declared in no case")
         XCTAssertTrue(SJUIGlass.isKnown(shape: "rect"))
         XCTAssertTrue(SJUIGlass.isKnown(shape: "rounded(12)"))
         XCTAssertFalse(SJUIGlass.isKnown(shape: "elipse"), "a typo must be reportable, not silently defaulted")
@@ -163,7 +166,11 @@ final class SJUIGlassTests: XCTestCase {
         XCTAssertTrue(SJUIGlass.plan(style: "clear", tint: nil, interactive: nil, shape: nil).clear)
         XCTAssertFalse(SJUIGlass.plan(style: "regular", tint: nil, interactive: nil, shape: nil).clear)
         XCTAssertTrue(SJUIGlass.plan(style: nil, tint: Color.red, interactive: nil, shape: nil).hasTint)
-        XCTAssertEqual(SJUIGlass.plan(style: nil, tint: nil, interactive: nil, shape: "CAPSULE").shape, "capsule")
+        // glass.shape is read as written (jsonui-cli 1.9.0): `CAPSULE` is a
+        // spelling declared in no case — not known, not normalised.
+        XCTAssertEqual(SJUIGlass.plan(style: nil, tint: nil, interactive: nil, shape: "CAPSULE").shape, "CAPSULE")
+        XCTAssertFalse(SJUIGlass.isKnown(shape: "CAPSULE"))
+        XCTAssertTrue(SJUIGlass.isKnown(shape: "capsule"))
     }
 
     /// What these arms do NOT cover, and what would.

@@ -520,7 +520,7 @@ open class SJUILabel: UILabel {
                 highlightParagraphStyle.lineHeightMultiple = highlightMultiple
             }
             if let highlightAlignment = highlightAttr["textAlign"].string {
-                switch DeclaredSpelling.lowered(highlightAlignment, in: LabelAttributes.TextAlign.declaredSpellings) {
+                switch DeclaredSpelling.lowered(highlightAlignment, in: LabelAttributes.HighlightAttributes.TextAlign.declaredSpellings) {
                 case "left":
                     highlightParagraphStyle.alignment = .left
                 case "right":
