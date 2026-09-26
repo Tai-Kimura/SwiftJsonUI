@@ -1001,6 +1001,89 @@
         "a": "button",
         "c": "combine"
       }
+    },
+    {
+      "name": "a long press under userInteractionEnabled: false does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "h",
+            "src": "icon",
+            "onLongPress": "@{onHold}",
+            "userInteractionEnabled": false
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine",
+        "h": null
+      }
+    },
+    {
+      "name": "a long press inside a node with userInteractionEnabled: false does not count",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "View",
+            "userInteractionEnabled": false,
+            "child": [
+              {
+                "type": "Image",
+                "id": "h",
+                "src": "icon",
+                "onLongPress": "@{onHold}"
+              }
+            ]
+          }
+        ]
+      },
+      "shapes": {
+        "t": "combine",
+        "h": null
+      }
+    },
+    {
+      "name": "a long press under a bound userInteractionEnabled still counts: the gate opens at run time",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onOpen}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "x"
+          },
+          {
+            "type": "Image",
+            "id": "h",
+            "src": "icon",
+            "onLongPress": "@{onHold}",
+            "userInteractionEnabled": "@{isActive}"
+          }
+        ]
+      },
+      "shapes": {
+        "t": "none",
+        "h": null
+      }
     }
   ]
 }

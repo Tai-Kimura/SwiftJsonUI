@@ -62,7 +62,7 @@ public enum ImageAccessibility {
     /// `stopped`: a node around it has `userInteractionEnabled: false`, so its
     /// tap is none (TapAccessibility), as its own `false` makes it none.
     static func isTappable(_ node: [String: Any], stopped: Bool = false) -> Bool {
-        TapAccessibility.isTappable(node: node, stopped: stopped) || TapAccessibility.hasLongPress(node: node)
+        TapAccessibility.isTappable(node: node, stopped: stopped) || TapAccessibility.hasLongPress(node: node, stopped: stopped)
     }
 
     /// The image's alt as written, or nil when it declares none (JSON null counts as none).

@@ -140,6 +140,21 @@
       "name": "a bound userInteractionEnabled still taps: the gate opens at run time",
       "layout": { "type": "View", "child": [ { "type": "Image", "id": "bound_stop", "src": "bound_stop", "onClick": "@{onOpen}", "userInteractionEnabled": "@{isActive}" } ] },
       "roles": { "bound_stop": "control" }
+    },
+    {
+      "name": "a long press stopped by userInteractionEnabled: false is no action, on the image and inside a node with it",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "stopped_hold", "src": "stopped_hold", "onLongPress": "@{onHold}", "userInteractionEnabled": false }, { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "Image", "id": "hold_in_stopped", "src": "hold_in_stopped", "onLongPress": "@{onHold}" } ] } ] },
+      "roles": { "stopped_hold": "decorative", "hold_in_stopped": "decorative" }
+    },
+    {
+      "name": "a long press inside a node with userInteractionEnabled: false is not the image's control",
+      "layout": { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "View", "onLongPress": "@{onHold}", "child": [ { "type": "Image", "id": "under_stopped_hold", "src": "under_stopped_hold" } ] } ] },
+      "roles": { "under_stopped_hold": "decorative" }
+    },
+    {
+      "name": "a long press under a bound userInteractionEnabled still operates: the gate opens at run time",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "bound_hold", "src": "bound_hold", "onLongPress": "@{onHold}", "userInteractionEnabled": "@{isActive}" } ] },
+      "roles": { "bound_hold": "control" }
     }
   ]
 }

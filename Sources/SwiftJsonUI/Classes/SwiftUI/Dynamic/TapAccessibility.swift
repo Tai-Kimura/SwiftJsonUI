@@ -132,12 +132,15 @@ enum TapAccessibility {
     /// whose only handler is a long press is not a tap: nothing to call a
     /// button. `canTap` without onClick has no handler either.
     /// `stopped`: a component around it has `userInteractionEnabled: false`,
-    /// so its own tap is none (its type still says whether it is a control).
+    /// so its own tap and long press are none (its type still says whether it
+    /// is a control).
     static func isOperable(_ component: DynamicComponent, stopped: Bool = false) -> Bool {
         if isInteractiveType(component.type) || (!stopped && isTappable(component)) || isLinkedText(component) { return true }
         // A long press is a handler too (`handlerValues`): an empty or blank
         // one names no method. `!= nil` counted `""` (tap_accessibility_vectors
-        // "an empty long press inside does not count").
+        // "an empty long press inside does not count"). The flag stops it as
+        // it stops a tap, on the component or around it.
+        if stopped || stops(component) || component.interactionStoppedAround { return false }
         return component.commonBool(\.enabled) != false
             && !handlerValues(component.commonAny(\.onLongPress)).isEmpty
     }
@@ -153,9 +156,12 @@ enum TapAccessibility {
     }
 
     /// A long press on a layout node as written: a handler, `enabled` not
-    /// false (`canTap` gates the tap, not the long press).
-    static func hasLongPress(node: [String: Any]) -> Bool {
-        node["enabled"] as? Bool != false && !handlerValues(node["onLongPress"]).isEmpty
+    /// false (`canTap` gates the tap, not the long press), and
+    /// `userInteractionEnabled` not false on it or on a node around it
+    /// (`stopped`), as for a tap. A bound flag still presses.
+    static func hasLongPress(node: [String: Any], stopped: Bool = false) -> Bool {
+        if stopped || stops(node: node) { return false }
+        return node["enabled"] as? Bool != false && !handlerValues(node["onLongPress"]).isEmpty
     }
 
     static func holdsAControl(_ component: DynamicComponent, stopped: Bool = false) -> Bool {
@@ -205,21 +211,6 @@ enum TapAccessibility {
         default:
             return view
         }
-    }
-}
-
-private struct InteractionStoppedKey: EnvironmentKey {
-    static var defaultValue: Bool { false }
-}
-
-public extension EnvironmentValues {
-    /// True inside a component whose `userInteractionEnabled` is false or a
-    /// binding resolving false (TapAccessibility): DynamicComponentBuilder
-    /// sets it around what such a component renders and marks each component
-    /// built under it (`interactionStoppedAround`).
-    var jsonuiInteractionStopped: Bool {
-        get { self[InteractionStoppedKey.self] }
-        set { self[InteractionStoppedKey.self] = newValue }
     }
 }
 
