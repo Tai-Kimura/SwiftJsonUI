@@ -32,6 +32,10 @@
 //  sectioned List and the `lazy: none` stack, with columnSpacing between
 //  cells and lineSpacing between rows; those routes drew it one cell per row.
 //
+//  On a horizontal Collection `columns` is its lanes (a LazyHGrid per
+//  section block), spaced along the scroll axis by lineSpacing and between
+//  lanes by columnSpacing; it was one lane whatever `columns` said.
+//
 
 import XCTest
 import SwiftUI
@@ -404,6 +408,80 @@ final class CollectionDeclaredCellsTests: XCTestCase {
         let lazy = try spacing(grid)
         XCTAssertEqual(lazy.column, 30, accuracy: 1, "control: the lazy grid")
         XCTAssertEqual(lazy.row, 12, accuracy: 1, "control: the lazy grid")
+    }
+
+    // MARK: - horizontal: `columns` is the number of lanes
+
+    private func horizontal(_ sections: [[String]], attrs: String, sectionColumns: [Int?]? = nil) throws {
+        let configs = sections.indices.map { i -> String in
+            if let c = sectionColumns?[i] { return "{\"cell\": \"\(Self.cell)\", \"columns\": \(c)}" }
+            return "{\"cell\": \"\(Self.cell)\"}"
+        }
+        let source = CollectionDataSource(sections: sections.map { titles in
+            CollectionDataSection(cells: (viewName: Self.cell, data: titles.map { ["title": $0] }))
+        })
+        _ = try draw(", \"items\": \"@{items}\", \"sections\": [\(configs.joined(separator: ", "))]" + attrs,
+                     data: ["items": source])
+    }
+
+    /// 4f ruling (2026-09-26): `columns` on a horizontal Collection is its
+    /// lanes (LazyHGrid rows), cells filling a column top to bottom and then
+    /// the next — Android's LazyHorizontalGrid order. Before: one lane
+    /// whatever `columns` said (b beside a).
+    func testHorizontalColumnsAreLanesFilledColumnByColumn() throws {
+        for route in [", \"layout\": \"horizontal\"", ", \"horizontalScroll\": true",
+                      ", \"layout\": \"horizontal\", \"lazy\": \"eager\"", ", \"layout\": \"horizontal\", \"lazy\": \"none\""] {
+            try horizontal([["a", "b", "c"]], attrs: ", \"columns\": 2" + route)
+            let (a, b, c) = (try frame("a"), try frame("b"), try frame("c"))
+            XCTAssertTrue(abs(b.minX - a.minX) < 1 && b.minY > a.maxY, "b under a\(route): \(a) \(b)")
+            XCTAssertTrue(abs(c.minY - a.minY) < 1 && c.minX > a.maxX - 1, "c starts the next column\(route): \(a) \(c)")
+        }
+    }
+
+    /// (Cells 40pt wide with no spacing touch: "beside" is `minX > maxX - 1`.)
+    ///
+    /// A section's own `columns` is its block's lanes, and each section is a
+    /// block starting a new column: in a 2-lane Collection, [a] then [b c]
+    /// puts b at the top of a new column, c under it.
+    func testEachSectionIsABlockOfItsOwnLanes() throws {
+        try horizontal([["a"], ["b", "c"]], attrs: ", \"layout\": \"horizontal\", \"columns\": 2")
+        var (a, b, c) = (try frame("a"), try frame("b"), try frame("c"))
+        XCTAssertTrue(abs(b.minY - a.minY) < 1 && b.minX > a.maxX - 1, "b starts a new column: \(a) \(b)")
+        XCTAssertTrue(abs(c.minX - b.minX) < 1 && c.minY > b.maxY, "c under b: \(b) \(c)")
+        // A 1-lane Collection whose second section declares 2 lanes.
+        try horizontal([["a"], ["b", "c"]], attrs: ", \"layout\": \"horizontal\"", sectionColumns: [nil, 2])
+        (a, b, c) = (try frame("a"), try frame("b"), try frame("c"))
+        XCTAssertTrue(b.minX > a.maxX - 1, "the block follows a: \(a) \(b)")
+        XCTAssertTrue(abs(c.minX - b.minX) < 1 && c.minY > b.maxY, "c under b in the 2-lane block: \(b) \(c)")
+    }
+
+    /// The rule: along the scroll axis, lineSpacing (else itemSpacing)
+    /// between successive columns of cells; between lanes, columnSpacing
+    /// (else itemSpacing). The 40pt-wide cell puts the next column 40 +
+    /// alongScroll to the right; two equal lanes put b (H + betweenLanes) / 2
+    /// under a, so betweenLanes is twice the change against betweenLanes 0.
+    func testAHorizontalGridSpacesTheScrollAxisByLineSpacingAndTheLanesByColumnSpacing() throws {
+        let base = ", \"layout\": \"horizontal\", \"columns\": 2"
+        try horizontal([["a", "b", "c"]], attrs: base + ", \"lineSpacing\": 12, \"columnSpacing\": 30")
+        let (a, b, c) = (try frame("a"), try frame("b"), try frame("c"))
+        try horizontal([["a", "b", "c"]], attrs: base + ", \"lineSpacing\": 12")
+        let (a0, b0) = (try frame("a"), try frame("b"))
+        XCTAssertEqual(c.minX - a.minX - 40, 12, accuracy: 1, "along the scroll axis: lineSpacing")
+        XCTAssertEqual(2 * ((b.minY - a.minY) - (b0.minY - a0.minY)), 30, accuracy: 1, "between lanes: columnSpacing")
+        // itemSpacing stands in for either.
+        try horizontal([["a", "b", "c"]], attrs: base + ", \"itemSpacing\": 20")
+        let (ai, ci) = (try frame("a"), try frame("c"))
+        XCTAssertEqual(ci.minX - ai.minX - 40, 20, accuracy: 1, "itemSpacing along the scroll axis")
+    }
+
+    /// Control: one lane keeps the single-lane stack and its spacing as
+    /// before (columnSpacing, else itemSpacing, else lineSpacing, between
+    /// cells) — the discriminator can tell one lane from two.
+    func testOneLaneIsTheStackAsBefore() throws {
+        try horizontal([["a", "b"]], attrs: ", \"layout\": \"horizontal\", \"columnSpacing\": 30, \"lineSpacing\": 12")
+        let (a, b) = (try frame("a"), try frame("b"))
+        XCTAssertTrue(abs(b.minY - a.minY) < 1, "b beside a: \(a) \(b)")
+        XCTAssertEqual(b.minX - a.maxX, 30, accuracy: 1)
     }
 
     /// Control: declared sections keep a grid per section (b starts a row).
