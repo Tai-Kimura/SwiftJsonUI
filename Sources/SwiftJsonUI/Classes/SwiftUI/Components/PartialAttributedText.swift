@@ -57,8 +57,22 @@ public struct PartialAttributedText: View {
     let lineLimit: Int?
     let textAlignment: TextAlignment
     let linkable: Bool
+    /// `false`: the links draw and do nothing — no `.link` on a range with an
+    /// onClick or on a detected URL / phone number, so neither a touch nor
+    /// VoiceOver reaches them. `userInteractionEnabled: false` on the Label or
+    /// on a view around it stops its links as it stops every tap (the tap
+    /// rule, jsonui-cli shared/core/tap_accessibility.rb; sjui build passes it
+    /// from jsonui-cli 1.9.0). Inside a stop handed down at run time
+    /// (`jsonuiInteractionStopped` — Dynamic's stopping nodes, a cell or an
+    /// Embed's screen under one) they stop too, whatever is passed.
+    let linksEnabled: Bool
     let highlightAttributes: TextHighlightAttributes?
     let isHighlighted: Bool
+
+    @Environment(\.jsonuiInteractionStopped) private var stoppedAround
+
+    /// Whether the links operate: passed enabled, and no stop handed down.
+    var linksOperate: Bool { linksEnabled && !stoppedAround }
 
     public init(
         _ text: String,
@@ -75,6 +89,7 @@ public struct PartialAttributedText: View {
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
         linkable: Bool = false,
+        linksEnabled: Bool = true,
         highlightAttributes: TextHighlightAttributes? = nil,
         isHighlighted: Bool = false
     ) {
@@ -92,6 +107,7 @@ public struct PartialAttributedText: View {
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
+        self.linksEnabled = linksEnabled
         self.highlightAttributes = highlightAttributes
         self.isHighlighted = isHighlighted
     }
@@ -111,6 +127,7 @@ public struct PartialAttributedText: View {
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
         linkable: Bool = false,
+        linksEnabled: Bool = true,
         highlightAttributes: TextHighlightAttributes? = nil,
         isHighlighted: Bool = false
     ) {
@@ -128,6 +145,7 @@ public struct PartialAttributedText: View {
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
+        self.linksEnabled = linksEnabled
         self.highlightAttributes = highlightAttributes
         self.isHighlighted = isHighlighted
     }
@@ -148,6 +166,7 @@ public struct PartialAttributedText: View {
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
         linkable: Bool = false,
+        linksEnabled: Bool = true,
         highlightAttributes: TextHighlightAttributes? = nil,
         isHighlighted: Bool = false
     ) {
@@ -167,6 +186,7 @@ public struct PartialAttributedText: View {
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
+        self.linksEnabled = linksEnabled
         self.highlightAttributes = highlightAttributes
         self.isHighlighted = isHighlighted
     }
@@ -308,7 +328,7 @@ public struct PartialAttributedText: View {
         }
     }
 
-    private func createAttributedStringWithMapping() -> (attributedString: AttributedString, urlMapping: [String: PartialAttribute]) {
+    func createAttributedStringWithMapping() -> (attributedString: AttributedString, urlMapping: [String: PartialAttribute]) {
         var attributedString = AttributedString(text)
         var urlMapping: [String: PartialAttribute] = [:]
 
@@ -389,8 +409,8 @@ public struct PartialAttributedText: View {
                 attributedString[range].backgroundColor = bgColor
             }
 
-            // Handle onclick as link
-            if partial.onClick != nil {
+            // Handle onclick as link (not while the links are stopped)
+            if partial.onClick != nil && linksOperate {
                 // Generate a unique ID for this onClick action
                 let actionId = UUID().uuidString
                 // Store the mapping for this onClick
@@ -447,7 +467,7 @@ public struct PartialAttributedText: View {
                        let attrEndIndex = AttributedString.Index(endIndex, within: attributedString),
                        attrStartIndex < attrEndIndex {
                         let attrRange = attrStartIndex..<attrEndIndex
-                        attributedString[attrRange].link = url
+                        if linksOperate { attributedString[attrRange].link = url }
                         attributedString[attrRange].underlineStyle = .single
                     }
                 }
