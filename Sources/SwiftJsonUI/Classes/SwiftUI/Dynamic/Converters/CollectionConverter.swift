@@ -702,7 +702,9 @@ public struct CollectionConverter {
         return (columnsIsBinding && own == nil) ? 1 : nil
     }
 
-    /// Spacing in a horizontal grid. The SSoT describes lineSpacing as
+    /// Spacing on a horizontal Collection — every one, a single lane
+    /// included, its stack, its lanes and its pages (4f ruling, 2026-09-26).
+    /// The SSoT describes lineSpacing as
     /// "Spacing between rows" and columnSpacing as "Spacing between columns"
     /// in a vertical grid's words; they were declared from UIKit's flow
     /// layout (SJUICollectionView: lineSpacing -> minimumLineSpacing,
@@ -1217,7 +1219,10 @@ public struct CollectionConverter {
         columnsIsBinding: Bool = false
     ) -> AnyView {
         let showsIndicators = component.showsHorizontalScrollIndicator ?? true
-        let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? 0
+        // Along the scroll axis: lineSpacing, else itemSpacing (the one rule
+        // for every horizontal Collection — horizontalGridSpacing). This
+        // read columnSpacing, else itemSpacing, else lineSpacing.
+        let alongScroll = horizontalGridSpacing(component).alongScroll
         let insetHorizontal = component.insetHorizontal ?? 0
         let hstackAlignment = getHStackAlignment(from: component)
 
@@ -1227,7 +1232,7 @@ public struct CollectionConverter {
                     mode: mode,
                     axis: .horizontal,
                     verticalAlignment: hstackAlignment,
-                    spacing: columnSpacing,
+                    spacing: alongScroll,
                     showsIndicators: showsIndicators,
                     insetLeading: CGFloat(insetHorizontal),
                     insetTrailing: CGFloat(insetHorizontal)
@@ -1327,7 +1332,9 @@ public struct CollectionConverter {
             dataSource: dataSource,
             cellIdProperty: cellIdProperty
         )
-        let itemSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
+        // Between pages, along the scroll axis: the horizontal rule
+        // (horizontalGridSpacing). This read columnSpacing, else itemSpacing.
+        let itemSpacing = horizontalGridSpacing(component).alongScroll
 
         // Resolve currentPage binding
         let currentPageRaw = component.typedAttributes(CollectionAttributes.self)
@@ -1759,7 +1766,9 @@ public struct CollectionConverter {
         if isHorizontal {
             let hstackAlignment = getHStackAlignment(from: component)
             return AnyView(
-                HStack(alignment: hstackAlignment, spacing: columnSpacing) {
+                // Along the scroll axis: the horizontal rule
+                // (horizontalGridSpacing); this read columnSpacing.
+                HStack(alignment: hstackAlignment, spacing: horizontalGridSpacing(component).alongScroll) {
                     ForEach(0..<sectionCount, id: \.self) { sectionIndex in
                         sectionBodies(sectionIndex)
                     }
