@@ -352,19 +352,18 @@ public struct LabelConverter {
 
     // MARK: - PartialAttributes builder
 
-    /// A range's handler name, from either declared spelling: `onClick` (a
-    /// binding, the canonical one) first, then `onclick` (a selector, its
-    /// alias) — also when onClick is written but is not a binding. A blank
-    /// value is none. 4f ruling, jsonui-cli 1.9.0: every path reads both, as
-    /// the normalizer folds the alias; this path took `onclick` first.
+    /// A range's handler name, from either declared spelling: `onClick` (the
+    /// canonical one) first, then `onclick` (its alias), each a binding or
+    /// the method's name. From jsonui-cli 1.9.0 the normalizer folds
+    /// `onclick` into `onClick`, and `jui build` distributes the folded (L1)
+    /// layouts, so a name arrives in onClick. A value that names no method,
+    /// or is neither a binding nor a name (`"@{a} b"`), passes to the next
+    /// spelling (jsonui-cli shared/core/tap_accessibility.rb `range_handler`).
     static func partialHandlerName(_ dict: [String: Any]) -> String? {
-        let blank: (String) -> Bool = { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-        if let onClick = dict["onClick"] as? String,
-           let name = DynamicEventHelper.extractPropertyName(from: onClick), !blank(name) {
-            return name
-        }
-        if let onclick = dict["onclick"] as? String, !blank(onclick), !onclick.contains("@{") {
-            return onclick
+        for key in ["onClick", "onclick"] {
+            guard let value = dict[key] as? String, TapAccessibility.namesAMethod(value) else { continue }
+            if let name = DynamicEventHelper.extractPropertyName(from: value) { return name }
+            if !value.hasPrefix("@{") { return value }
         }
         return nil
     }
