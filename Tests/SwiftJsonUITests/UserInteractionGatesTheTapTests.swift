@@ -66,6 +66,24 @@ final class UserInteractionGatesTheTapTests: XCTestCase {
         XCTAssertEqual(ImageAccessibility.role(image, nearestTappable: nil), .control)
     }
 
+    /// A Label's links are none under a stop (the Linkable Label ticket): the
+    /// mark from a stop around it — a cell drawn under one — takes them, as
+    /// the rule's `stopped` does for a node inside the same layout, and so
+    /// does the Label's own flag, asked with no stop around (holdsAControl
+    /// folds a child's flag into `stopped` before it asks, so the vectors do
+    /// not reach that clause). A binding is the gate's to decide at run time.
+    func testALinkedLabelMarkedAsInsideAStopOperatesNothing() throws {
+        func linked(_ extra: [String: Any] = [:]) throws -> DynamicComponent {
+            var json: [String: Any] = ["type": "Label", "id": "k", "text": "see https://example.com", "linkable": true]
+            json.merge(extra) { _, new in new }
+            return try XCTUnwrap(JSONLayoutLoader.decodeComponent(from: json))
+        }
+        XCTAssertTrue(TapAccessibility.isOperable(try linked()))
+        XCTAssertFalse(TapAccessibility.isOperable(try linked().markedStopped()))
+        XCTAssertFalse(TapAccessibility.isOperable(try linked(["userInteractionEnabled": false])))
+        XCTAssertTrue(TapAccessibility.isOperable(try linked(["userInteractionEnabled": "@{u}"])))
+    }
+
     func testCanTapAndTheFlagAreBothGates() throws {
         XCTAssertFalse(DynamicEventHelper.tapGateOpen(try label(["canTap": false, "userInteractionEnabled": true]), data: [:]))
         XCTAssertFalse(DynamicEventHelper.tapGateOpen(try label(["canTap": true, "userInteractionEnabled": false]), data: [:]))

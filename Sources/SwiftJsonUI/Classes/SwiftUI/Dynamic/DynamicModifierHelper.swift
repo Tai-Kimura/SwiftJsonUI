@@ -938,19 +938,22 @@ public struct DynamicModifierHelper {
         component: DynamicComponent,
         data: [String: Any] = [:]
     ) -> AnyView {
-        // boolean|binding — the hand-decoded slot is nil for `@{expr}`, so a
-        // bound `userInteractionEnabled: false` never disabled hit testing.
-        if DynamicHelpers.resolveBool(
+        stopsHitTesting(component, data: data) ? AnyView(view.allowsHitTesting(false)) : view
+    }
+
+    /// `userInteractionEnabled` false, or a binding resolving false — the
+    /// hand-decoded slot was nil for `@{expr}`, so a bound false never
+    /// disabled hit testing. touchDisabledState is not read: it is UIKit's
+    /// hit-test mode (SJUIView — none / onlyMe / viewsWithoutTouchEnabled /
+    /// viewsWithoutInList), SwiftUI has no peer, and any value of it, "none"
+    /// too, stopped the whole view here until jsonui-cli 1.9.0 (onlyMe keeps
+    /// the subviews tappable on UIKit). The build names it (a WARNING).
+    static func stopsHitTesting(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        DynamicHelpers.resolveBool(
             component.typedAttributes(CommonAttributes.self).userInteractionEnabled,
             legacy: nil,
             data: data
-        ) == false {
-            return AnyView(view.allowsHitTesting(false))
-        }
-        if component.typedAttributes(CommonAttributes.self).touchDisabledState != nil {
-            return AnyView(view.allowsHitTesting(false))
-        }
-        return view
+        ) == false
     }
 
     // MARK: - 17. Accessibility Identifier
@@ -1381,7 +1384,7 @@ public struct DynamicModifierHelper {
         Stage("events") { v, c, d in
             DynamicEventHelper.applyEvents(v, component: c, data: d)
         },
-        // userInteractionEnabled / touchDisabledState stop the whole view, so
+        // userInteractionEnabled stops the whole view, so
         // hit testing wraps the view's own gestures: attached outside it, a
         // View's onClick, onLongPress and a Label's tap still ran under
         // `userInteractionEnabled: false` (measured, ConformanceHost

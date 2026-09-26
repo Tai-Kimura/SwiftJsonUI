@@ -243,7 +243,7 @@ public struct ButtonConverter {
         // the Button's own tap action working.
         result = DynamicEventHelper.applyOnLongPress(result, component: component, data: data)
 
-        // userInteractionEnabled / touchDisabledState, outside the button's
+        // userInteractionEnabled, outside the button's
         // own tap and long press (the standard chain's hitTesting stage, which
         // this hand-built chain did not run)
         result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)

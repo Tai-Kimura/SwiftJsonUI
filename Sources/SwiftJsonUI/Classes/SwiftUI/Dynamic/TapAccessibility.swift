@@ -135,7 +135,11 @@ enum TapAccessibility {
     /// so its own tap and long press are none (its type still says whether it
     /// is a control).
     static func isOperable(_ component: DynamicComponent, stopped: Bool = false) -> Bool {
-        if isInteractiveType(component.type) || (!stopped && isTappable(component)) || isLinkedText(component) { return true }
+        let stoppedHere = stopped || stops(component) || component.interactionStoppedAround
+        // Links too: a stopped Label's link spans do not open (the Linkable
+        // Label ticket), so they are not operable under the flag.
+        if isInteractiveType(component.type) || (!stopped && isTappable(component))
+            || (!stoppedHere && isLinkedText(component)) { return true }
         // A long press is a handler too (`handlerValues`): an empty or blank
         // one names no method. `!= nil` counted `""` (tap_accessibility_vectors
         // "an empty long press inside does not count"). The flag stops it as
