@@ -677,6 +677,23 @@ final class CollectionDeclaredCellsTests: XCTestCase {
     /// A declared gap is drawn as declared: columnSpacing between cells,
     /// lineSpacing between lines and blocks, itemSpacing the fallback for
     /// both — and a declared 0 is 0 (the `lazy: none` flow drew 8 for it).
+    /// sectionSpacing is lineSpacing's alias (SSoT `aliases`), as a layout
+    /// that has not been normalised may spell it: alone it is lineSpacing —
+    /// the lines and the section blocks; with lineSpacing, the canonical
+    /// lineSpacing wins (4f ruling 2026-09-26, round 6; the typed attribute
+    /// reads the canonical key first — this pins it, as sjui codegen now
+    /// reads it too).
+    func testSectionSpacingIsLineSpacingsAlias() throws {
+        for route in ["", ", \"lazy\": \"none\""] {
+            let alone = try flowGaps(", \"sectionSpacing\": 12" + route)
+            XCTAssertEqual(alone.lines, 12, accuracy: 0.5, "the alias alone: the lines\(route)")
+            XCTAssertEqual(alone.sections, 12, accuracy: 0.5, "the alias alone: the blocks\(route)")
+            let both = try flowGaps(", \"sectionSpacing\": 12, \"lineSpacing\": 4" + route)
+            XCTAssertEqual(both.lines, 4, accuracy: 0.5, "both: the lines\(route)")
+            XCTAssertEqual(both.sections, 4, accuracy: 0.5, "both: the blocks\(route)")
+        }
+    }
+
     func testADeclaredFlowGapIsDrawnAsDeclared() throws {
         let cases: [(String, (CGFloat, CGFloat, CGFloat))] = [
             (", \"columnSpacing\": 10, \"lineSpacing\": 4", (10, 4, 4)),
