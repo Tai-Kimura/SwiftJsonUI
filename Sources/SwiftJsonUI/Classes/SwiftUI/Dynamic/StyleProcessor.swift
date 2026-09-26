@@ -37,8 +37,14 @@ public class StyleProcessor {
             }
         }
         
-        // Process child components recursively
-        if let child = json["child"] {
+        // Process child components recursively — the merged node's, so a
+        // child the style brings has its own style applied too, as every
+        // other path does (sjui / kjui codegen, rjui, KotlinJsonUI Dynamic;
+        // 4f's ruling, 1.9.0). The node as written was walked: a style's
+        // child kept its `style` unapplied, and a second pass — an entry that
+        // runs the stages again — applied it, so the stages were not
+        // idempotent.
+        if let child = result["child"] {
             if let childArray = child as? [[String: Any]] {
                 result["child"] = childArray.map { processStyles($0) }
             } else if let childDict = child as? [String: Any] {
@@ -47,7 +53,7 @@ public class StyleProcessor {
         }
         
         // Process children array (for components like TabView)
-        if let children = json["children"] as? [[String: Any]] {
+        if let children = result["children"] as? [[String: Any]] {
             result["children"] = children.map { processStyles($0) }
         }
         

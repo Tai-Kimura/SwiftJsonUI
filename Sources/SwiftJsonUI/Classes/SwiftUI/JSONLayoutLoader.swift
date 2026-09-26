@@ -134,6 +134,57 @@ public class JSONLayoutLoader {
         }
     }
 
+    /// A component the app decoded itself, through the stages the loader
+    /// runs on a dictionary before it decodes — styles, includes, the
+    /// responsive overrides for the given size classes — then stamped
+    /// (LayoutPath), as every other entry is. A tree with no style, include
+    /// or responsive block left is only stamped (`stamped`). It was only
+    /// stamped whatever it held: styles, includes and responsive overrides
+    /// were skipped, silently, on this entry alone (4f's ruling on the
+    /// entries that skip stages, 1.9.0). The stages are idempotent
+    /// (EntryPipelineIdempotenceTests), so a tree the app already styled —
+    /// ConformanceHost's FixtureLoader — comes out as it went in.
+    static func prepared(
+        _ component: DynamicComponent,
+        horizontalSizeClass: UserInterfaceSizeClass?,
+        verticalSizeClass: UserInterfaceSizeClass?
+    ) -> DynamicComponent {
+        guard hasUnresolvedStages(component.rawData) else { return stamped(component) }
+        var json = StyleProcessor.processStyles(component.rawData)
+        json = IncludeExpander.shared.processIncludes(json, baseDir: getLayoutFileDirPath())
+        if ResponsiveResolver.jsonContainsResponsive(json) {
+            json = ResponsiveResolver(horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass)
+                .resolveTree(json)
+        }
+        if !LayoutPath.isStamped(json) { json = LayoutPath.stamp(json) }
+        let normalized = JsonUINormalization.consumeMarker(&json) || component.isNormalized
+        do {
+            let data = try JSONSerialization.data(withJSONObject: json, options: [])
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: normalized)
+            return try decoder.decode(DynamicComponent.self, from: data)
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Could not prepare a component handed over decoded: \(error)")
+            return stamped(component)
+        }
+    }
+
+    /// A `style`, an `include` or a `responsive` block anywhere the stages
+    /// walk (child / children, and a TabView's tabs for responsive).
+    static func hasUnresolvedStages(_ node: [String: Any]) -> Bool {
+        if node["style"] is String || node["include"] != nil || node["responsive"] != nil { return true }
+        for field in ["child", "children"] {
+            if let list = node[field] as? [[String: Any]], list.contains(where: hasUnresolvedStages) { return true }
+            if let one = node[field] as? [String: Any], hasUnresolvedStages(one) { return true }
+        }
+        return ResponsiveResolver.jsonContainsResponsive(node)
+    }
+
+    /// Decode a dictionary as the loader's entries do: stamped (LayoutPath)
+    /// if it is not already. Start here — or from `DynamicView(jsonName:)` —
+    /// with a dictionary of your own: styles, includes and responsive
+    /// overrides are resolved by the caller first (as FixtureLoader and
+    /// `DynamicView.rootComponent` do), or by `DynamicView(component:)`.
     public static func decodeComponent(from json: [String: Any]) -> DynamicComponent? {
         do {
             // A tree the loader did not stamp (a caller's own dictionary) is
