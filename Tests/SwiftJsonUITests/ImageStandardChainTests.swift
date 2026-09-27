@@ -56,7 +56,19 @@ final class ImageStandardChainTests: XCTestCase {
 
     /// Stages whose attribute adds no line to a View's dump: the two dialogs
     /// (the same skip class the conformance generator gives them).
-    private static let notVisibleInDump: Set<String> = ["confirmationDialog", "alert"]
+    private static let notVisibleInDump: Set<String> = {
+        var names: Set<String> = ["confirmationDialog", "alert"]
+        // Built by a Swift below 6.2 (Xcode 16.4, the iOS 18 CI leg), the glass
+        // stage is the view itself — SJUIGlass.swift's sjuiGlassEffect compiles
+        // to `self` there — so a View's dump cannot show it (run 36333649302,
+        // 2026-09-28). Built by 6.2 it shows even on iOS 18.6, where the
+        // #available branch is not taken (measured on an iOS 18.6 simulator
+        // with Xcode 26.6), so the exemption follows the compiler only.
+        #if !compiler(>=6.2)
+        names.insert("glass")
+        #endif
+        return names
+    }()
 
     private static let types = ["Image", "CircleImage", "NetworkImage"]
 

@@ -145,6 +145,24 @@
       "owner": "—",
       "plan": "恒久例外",
       "reason": "属性ではなく JSONLayoutLoader が刻印する位置(jsonui-cli shared/core/layout_path.rb と同じ規則)。id の無い Radio の値に使う(ticket sjui-codegen-state-declarations-collide-by-name)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "style",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性の値として読んでいない。UnresolvedStages.unresolved が、入口で解決されるはずの `style` が解決されないまま描画に来たかを検出して警告を出すための読み（解決済みなら生データに残らない）。型つき抽出には解決前のキーが無い。"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "responsive",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性の値として読んでいない。UnresolvedStages.unresolved が、入口で解決されるはずの `responsive` が解決されないまま描画に来たかを検出して警告を出すための読み（解決済みなら生データに残らない）。型つき抽出には解決前のキーが無い。"
     }
   ]
 }
