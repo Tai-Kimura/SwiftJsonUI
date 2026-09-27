@@ -269,6 +269,10 @@ struct ConformanceRootView: View {
                 LabelVerticalProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-labelVerticalProbeCodegen") {
                 LabelVerticalProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-insetsRoutesProbe") {
+                InsetsOrderProbeView(codegen: false, routes: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-insetsRoutesProbeCodegen") {
+                InsetsOrderProbeView(codegen: true, routes: true)
             } else if ProcessInfo.processInfo.arguments.contains("-insetsOrderProbe") {
                 InsetsOrderProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-insetsOrderProbeCodegen") {

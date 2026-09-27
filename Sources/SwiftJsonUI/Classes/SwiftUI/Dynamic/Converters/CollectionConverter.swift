@@ -339,6 +339,7 @@ public struct CollectionConverter {
             // List (Collection_hideSeparator/listStyle families, d≈94, runs
             // 31202080745 → 31234163967 unchanged).
             isListRoute = true
+            contentCarriesInsets = true
             result = buildSectionedListLayout(
                 component: component,
                 dataSource: dataSource,
@@ -373,6 +374,7 @@ public struct CollectionConverter {
             // Legacy single column (no `sections` — every sectioned shape
             // took a branch above): List
             isListRoute = true
+            contentCarriesInsets = true
             result = buildListLayout(
                 component: component,
                 dataSource: dataSource,
@@ -389,7 +391,9 @@ public struct CollectionConverter {
                 onItemAppear: onItemAppearCallback
             )
         } else if isHorizontal && component.paging == true {
-            // Paging horizontal: TabView with page style
+            // Paging horizontal: TabView with page style. Its pages pad their
+            // cells with the insets (PagingCollectionWrapperView.pageInsets).
+            contentCarriesInsets = true
             result = buildPagingHorizontalLayout(
                 component: component,
                 dataSource: dataSource,
@@ -512,7 +516,10 @@ public struct CollectionConverter {
         // the Collection's scroll"). Padding the route from outside shrank
         // the scroll: a 300-wide Collection with insets [0, 0, 0, 30] was a
         // 270-wide scroll 30pt in (measured, until SwiftJsonUI 10.29.0).
-        // The List and pager routes keep the outer padding.
+        // The List routes pad their rows with safe-area padding
+        // (applyListContentInsets) and the pager every page's cell
+        // (pageInsets): until SwiftJsonUI 10.29.0 both were padded from
+        // outside here too.
         if !gridCarriesContentInsets && !contentCarriesInsets {
             result = applyCollectionContentInsets(
                 result, component: component,
@@ -1257,7 +1264,7 @@ public struct CollectionConverter {
         // CollectionStackView route); until jsonui-cli 1.9.0 this route had no
         // ScrollViewReader and a scrollTo drew nothing.
         return AnyView(ScrollViewReader { scrollProxy in
-            scrollOnChange(applyListStyle(AnyView(
+            scrollOnChange(applyListContentInsets(applyListStyle(AnyView(
             List {
                 Group {
                     ForEach(
@@ -1324,7 +1331,7 @@ public struct CollectionConverter {
                 }
                 .listRowSeparator(hideSeparator ? .hidden : .automatic)
             }
-        ), style: listStyle), target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
+        ), style: listStyle), component: component), target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
             cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
         })
     }
@@ -1417,7 +1424,7 @@ public struct CollectionConverter {
         // anything. The codegen hides row separators on the header-less
         // shape only, and hides the section separator between the cells'
         // Section and the footer's.
-        let list = applyListStyle(AnyView(
+        let list = applyListContentInsets(applyListStyle(AnyView(
             List {
                 if let headerName {
                     Section {
@@ -1441,7 +1448,7 @@ public struct CollectionConverter {
                     }
                 }
             }
-        ), style: listStyle)
+        ), style: listStyle), component: component)
 
         // A scrollTo reaches the cells by their scroll ids — every data
         // section's (`sections`, the class-list shape's one per data section)
@@ -1470,6 +1477,20 @@ public struct CollectionConverter {
         default:
             return AnyView(view.listStyle(.plain))
         }
+    }
+
+    /// A List's content insets: the Collection's insets with insetHorizontal
+    /// / insetVertical (collectionContentEdgeInsets), as safe-area padding on
+    /// the List — its rows are laid out that far in from each edge, inside
+    /// the List's scroll, which stays the Collection's size, and on top of
+    /// the safe area and the List's own row insets (the SSoT's
+    /// Collection.insets: added, no precedence). sjui codegen's
+    /// apply_list_content_insets emits the same. Until SwiftJsonUI 10.29.0
+    /// the insets padded the List from outside, and the scroll was narrower
+    /// than the Collection. A List without insets is returned as it is.
+    private static func applyListContentInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let edges = collectionContentEdgeInsets(component: component) else { return view }
+        return AnyView(view.safeAreaPadding(edges))
     }
 
     /// Horizontal: CollectionStackView(axis: .horizontal) wraps the cell ForEach.
@@ -1630,6 +1651,7 @@ public struct CollectionConverter {
             PagingCollectionWrapperView(
                 pageItems: pageItems,
                 itemSpacing: itemSpacing,
+                pageInsets: collectionContentEdgeInsets(component: component),
                 currentPageBinding: currentPageBinding,
                 scrollTarget: scrollTarget,
                 scrollAnimated: scrollAnimated,
@@ -2392,6 +2414,13 @@ struct CollectionCellItem: Identifiable {
 private struct PagingCollectionWrapperView: View {
     let pageItems: [PagingPageItem]
     let itemSpacing: CGFloat
+    /// The Collection's insets (with insetHorizontal / insetVertical) around
+    /// the cell on every page: a page is the pager's size, so this is the
+    /// padding around the cells inside the pager's scroll (the SSoT's
+    /// Collection.insets). Until SwiftJsonUI 10.29.0 they padded the TabView
+    /// from outside and it turned its pages in a narrower scroll. sjui
+    /// codegen's add_paging_cell pads the same.
+    let pageInsets: EdgeInsets?
     let currentPageBinding: SwiftUI.Binding<Int>?
     let scrollTarget: CollectionScrollTarget?
     let scrollAnimated: Bool
@@ -2432,6 +2461,7 @@ private struct PagingCollectionWrapperView: View {
                     viewId: viewId,
                     onItemAppear: onItemAppearCallback
                 )
+                .padding(pageInsets ?? EdgeInsets())
                 .padding(.horizontal, itemSpacing > 0 ? itemSpacing / 2 : 0)
                 .tag(page.index)
             }
