@@ -10,6 +10,10 @@
 //    sections have;
 //  - a Collection drawn with scrollTo 6 stays at its top;
 //  - (Dynamic) a value sent where the Collection had none scrolls too.
+//  The third page (4f round 14): with cellIdProperty, an Int scrollTo lands
+//  b2 on a sectioned list, the class-list List and a pager; and a key is the
+//  first cell's — "3" lands g1 over g3, which has no key; "k", which three
+//  cells have (two in one section), lands g6 each time.
 //  The Dynamic half always; the generated half in the codegen host only.
 //  NOT opt-in.
 //
@@ -150,6 +154,47 @@ final class ScrollRouteProbeUITests: XCTestCase {
         sleep(1)
         check("\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
         report(lines, "SPR2")
+    }
+
+    private func runThird(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        for (route, slack) in [("list", CGFloat(10)), ("class", CGFloat(24))] {
+            let list = element(app, "\(p)_route_int_\(route)")
+            XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no int \(route)")
+            app.buttons["\(p) int \(route) go 12"].tap()
+            sleep(1)
+            check("\(p)_route_int_\(route) after 12", list, labels: keyLabels, target: "b2", slack: slack, lines: &lines)
+        }
+        let pager = element(app, "\(p)_route_int_pager")
+        XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no int pager")
+        let before = onPage(pager, among: keyLabels)
+        app.buttons["\(p) int pager go 12"].tap()
+        sleep(2)
+        let after = onPage(pager, among: keyLabels)
+        lines.append("\(p)_route_int_pager: page before \(before), after 12: \(after)")
+        XCTAssertEqual(after, ["b2"], "\(p)_route_int_pager: the page on screen is not b2's")
+
+        let dup = element(app, "\(p)_route_dup")
+        XCTAssertTrue(dup.waitForExistence(timeout: 5), "\(p): no dup list")
+        let dupLabels = (0..<10).map { "g\($0)" } + (0..<10).map { "h\($0)" }
+        for (value, want) in [("3", "g1"), ("k", "g6"), ("w5", "h5"), ("k", "g6")] {
+            app.buttons["\(p) dup go \(value)"].tap()
+            sleep(1)
+            let landed = top(of: dup, among: dupLabels)
+            lines.append("\(p)_route_dup after \(value): nearest \(landed.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
+            XCTAssertEqual(landed?.label, want, "\(p)_route_dup: after \"\(value)\" the top is not \(want)")
+        }
+        report(lines, "SPR3")
+    }
+
+    func testAnIntWithCellIdPropertyAndADuplicateKeyDynamic() throws {
+        runThird(prefix: "dyn", argument: "-scrollRouteProbe3")
+    }
+
+    func testAnIntWithCellIdPropertyAndADuplicateKeyGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runThird(prefix: "cg", argument: "-scrollRouteProbe3Codegen")
     }
 
     func testTheClassListPagerAndCellIdRoutesDynamic() throws {

@@ -34,9 +34,27 @@
 //  - `*_route_cellid`: two sections, NO cellIdProperty, cells carrying a
 //    `cellId` (c0…c9, then c3, y1…y9); "go c3" names a3 — the first section's.
 //
-//  The generated half: ProbeLayouts/probe_scroll_route.json and
-//  probe_scroll_route2.json (handlers: ProbeLayouts/handlers/), built by
-//  scripts/generate_codegen_host.rb.
+//  The third page (`-scrollRouteProbe3` / `-scrollRouteProbe3Codegen`, 4f
+//  round 14): what a value names is its declared class's, and no two cells
+//  share an id —
+//  - `*_route_int_list` / `*_route_int_class` / `*_route_int_pager`: two
+//    sections with cellIdProperty `key` (a0…a9 keyed k0…k9, b0…b9 keyed k3,
+//    x1…x9) — a sectioned list, the class-list List, a pager — and an INT
+//    scrollTo: "go 12" names b2, the thirteenth cell. Until jsonui-cli 1.9.0
+//    sjui read every value on a Collection with cellIdProperty as a key: the
+//    class-list List and the pager did not compile, the list scrolled
+//    nowhere;
+//  - `*_route_dup`: cellIdProperty `key`, a String; g0…g9 keyed z0…z9 but g1
+//    keyed "3", g3 with no key and g6 and g8 both keyed "k"; h0…h9 keyed
+//    w0…w9 but h2 keyed "k". "go 3" names g1 (g3 has no key), "go k" g6 (the
+//    first of the three), "go w5" h5, and "go k" again g6. Until then two
+//    cells of one section with one key were one id (sjui codegen and the
+//    Dynamic renderer), and in the Dynamic renderer g1 and g3 were one id,
+//    "3" — which view a scroll reached was SwiftUI's choice.
+//
+//  The generated half: ProbeLayouts/probe_scroll_route.json,
+//  probe_scroll_route2.json and probe_scroll_route3.json (handlers:
+//  ProbeLayouts/handlers/), built by scripts/generate_codegen_host.rb.
 //
 
 import SwiftUI
@@ -45,6 +63,7 @@ import SwiftJsonUI
 struct ScrollRouteProbeView: View {
     let codegen: Bool
     var second = false
+    var third = false
 
     static func layout(_ id: String, rows: String, target: String, extra: String) -> String {
         let sections = rows == "ruleRows"
@@ -63,6 +82,26 @@ struct ScrollRouteProbeView: View {
     @State private var pagerIndex = 0
     @State private var pagerKey = ""
     @State private var cellIdKey = ""
+    @State private var intList = 0
+    @State private var intClass = 0
+    @State private var intPager = 0
+    @State private var dupKey = ""
+
+    /// g0…g9 keyed z0…z9 but g1 keyed "3", g3 with no key, g6 and g8 keyed
+    /// "k"; h0…h9 keyed w0…w9 but h2 keyed "k".
+    static var dupRows: CollectionDataSource {
+        func keys(_ prefix: String, _ keys: [String?]) -> [[String: Any]] {
+            keys.enumerated().map { i, key in key.map { ["title": "\(prefix)\(i)", "key": $0] } ?? ["title": "\(prefix)\(i)"] }
+        }
+        var g: [String?] = (0..<10).map { "z\($0)" }
+        g[1] = "3"; g[3] = nil; g[6] = "k"; g[8] = "k"
+        var h: [String?] = (0..<10).map { "w\($0)" }
+        h[2] = "k"
+        return CollectionDataSource(sections: [
+            ScrollRuleProbeView.section(cells: keys("g", g)),
+            ScrollRuleProbeView.section(cells: keys("h", h))
+        ])
+    }
 
     /// ruleRows / ruleKeyed with no header or footer: the class-list shape's
     /// data sections, and a pager's pages.
@@ -110,10 +149,31 @@ struct ScrollRouteProbeView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(codegen ? "scroll route probe (codegen)" : "scroll route probe").accessibilityIdentifier("sp_ready")
             if codegen {
-                if let generated = CodegenFixtureRegistry.probeView(named: second ? "probe_scroll_route2" : "probe_scroll_route") {
+                if let generated = CodegenFixtureRegistry.probeView(named: third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
                     Text("codegen routes").accessibilityIdentifier("sp_codegen")
                     generated
                 }
+            } else if third {
+                HStack {
+                    Button("dyn int list go 12") { intList = 12 }
+                    Button("dyn int class go 12") { intClass = 12 }
+                    Button("dyn int pager go 12") { intPager = 12 }
+                }
+                .font(.system(size: 9))
+                HStack {
+                    Button("dyn dup go k") { dupKey = "k" }
+                    Button("dyn dup go 3") { dupKey = "3" }
+                    Button("dyn dup go w5") { dupKey = "w5" }
+                }
+                .font(.system(size: 9))
+                dynamic(Self.twoSections("dyn_route_int_list", extra: #""cellIdProperty": "key", "#),
+                        data: ["rows": Self.bare(keyed), "t": intList], frame: "dyn_route_int_list")
+                dynamic(Self.classList("dyn_route_int_class", extra: #""cellIdProperty": "key", "#),
+                        data: ["rows": Self.bare(keyed), "t": intClass], frame: "dyn_route_int_class")
+                dynamic(Self.twoSections("dyn_route_int_pager", extra: #""layout": "horizontal", "paging": true, "cellIdProperty": "key", "#),
+                        data: ["rows": Self.bare(keyed), "t": intPager], frame: "dyn_route_int_pager")
+                dynamic(Self.twoSections("dyn_route_dup", extra: #""cellIdProperty": "key", "#),
+                        data: ["rows": Self.dupRows, "t": dupKey], frame: "dyn_route_dup")
             } else if second {
                 HStack {
                     Button("dyn class go 6") { classIndex = 6 }

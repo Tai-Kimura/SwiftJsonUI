@@ -1,0 +1,359 @@
+{
+  "type": "View",
+  "id": "cg_route3_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Button",
+      "id": "cg_route_go_int_list",
+      "text": "cg int list go 12",
+      "onClick": "@{onIntList}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_int_list",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{keyedRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "key",
+      "scrollTo": "@{intList}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_int_class",
+      "text": "cg int class go 12",
+      "onClick": "@{onIntClass}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_int_class",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{keyedRows}",
+      "cellClasses": [
+        "conformance_cell"
+      ],
+      "cellIdProperty": "key",
+      "scrollTo": "@{intClass}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_int_pager",
+      "text": "cg int pager go 12",
+      "onClick": "@{onIntPager}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_int_pager",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{keyedRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "paging": true,
+      "cellIdProperty": "key",
+      "scrollTo": "@{intPager}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_dup_k",
+      "text": "cg dup go k",
+      "onClick": "@{onDupK}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_dup_3",
+      "text": "cg dup go 3",
+      "onClick": "@{onDup3}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_dup_w5",
+      "text": "cg dup go w5",
+      "onClick": "@{onDupW5}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_dup",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{dupRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "key",
+      "scrollTo": "@{dupKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    }
+  ],
+  "data": [
+    {
+      "name": "keyedRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "a0",
+                "key": "k0"
+              },
+              {
+                "title": "a1",
+                "key": "k1"
+              },
+              {
+                "title": "a2",
+                "key": "k2"
+              },
+              {
+                "title": "a3",
+                "key": "k3"
+              },
+              {
+                "title": "a4",
+                "key": "k4"
+              },
+              {
+                "title": "a5",
+                "key": "k5"
+              },
+              {
+                "title": "a6",
+                "key": "k6"
+              },
+              {
+                "title": "a7",
+                "key": "k7"
+              },
+              {
+                "title": "a8",
+                "key": "k8"
+              },
+              {
+                "title": "a9",
+                "key": "k9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "b0",
+                "key": "k3"
+              },
+              {
+                "title": "b1",
+                "key": "x1"
+              },
+              {
+                "title": "b2",
+                "key": "x2"
+              },
+              {
+                "title": "b3",
+                "key": "x3"
+              },
+              {
+                "title": "b4",
+                "key": "x4"
+              },
+              {
+                "title": "b5",
+                "key": "x5"
+              },
+              {
+                "title": "b6",
+                "key": "x6"
+              },
+              {
+                "title": "b7",
+                "key": "x7"
+              },
+              {
+                "title": "b8",
+                "key": "x8"
+              },
+              {
+                "title": "b9",
+                "key": "x9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dupRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "g0",
+                "key": "z0"
+              },
+              {
+                "title": "g1",
+                "key": "3"
+              },
+              {
+                "title": "g2",
+                "key": "z2"
+              },
+              {
+                "title": "g3"
+              },
+              {
+                "title": "g4",
+                "key": "z4"
+              },
+              {
+                "title": "g5",
+                "key": "z5"
+              },
+              {
+                "title": "g6",
+                "key": "k"
+              },
+              {
+                "title": "g7",
+                "key": "z7"
+              },
+              {
+                "title": "g8",
+                "key": "k"
+              },
+              {
+                "title": "g9",
+                "key": "z9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "h0",
+                "key": "w0"
+              },
+              {
+                "title": "h1",
+                "key": "w1"
+              },
+              {
+                "title": "h2",
+                "key": "k"
+              },
+              {
+                "title": "h3",
+                "key": "w3"
+              },
+              {
+                "title": "h4",
+                "key": "w4"
+              },
+              {
+                "title": "h5",
+                "key": "w5"
+              },
+              {
+                "title": "h6",
+                "key": "w6"
+              },
+              {
+                "title": "h7",
+                "key": "w7"
+              },
+              {
+                "title": "h8",
+                "key": "w8"
+              },
+              {
+                "title": "h9",
+                "key": "w9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "intList",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "intClass",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "intPager",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "dupKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "onIntList",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onIntClass",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onIntPager",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onDupK",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onDup3",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onDupW5",
+      "class": "() -> Void"
+    }
+  ]
+}

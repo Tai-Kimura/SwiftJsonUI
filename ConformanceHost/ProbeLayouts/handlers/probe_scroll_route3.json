@@ -1,0 +1,44 @@
+[
+  {
+    "name": "onIntList",
+    "set": {
+      "var": "intList",
+      "value": 12
+    }
+  },
+  {
+    "name": "onIntClass",
+    "set": {
+      "var": "intClass",
+      "value": 12
+    }
+  },
+  {
+    "name": "onIntPager",
+    "set": {
+      "var": "intPager",
+      "value": 12
+    }
+  },
+  {
+    "name": "onDupK",
+    "set": {
+      "var": "dupKey",
+      "value": "k"
+    }
+  },
+  {
+    "name": "onDup3",
+    "set": {
+      "var": "dupKey",
+      "value": "3"
+    }
+  },
+  {
+    "name": "onDupW5",
+    "set": {
+      "var": "dupKey",
+      "value": "w5"
+    }
+  }
+]

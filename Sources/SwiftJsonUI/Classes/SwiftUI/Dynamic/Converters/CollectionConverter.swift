@@ -709,8 +709,7 @@ public struct CollectionConverter {
     /// there.
     private static func sectionGrid(
         columns: Int,
-        section: Int = 0,
-        items: [IdentifiedCellItem],
+        items: [CollectionCellItem],
         cellName: String,
         component: DynamicComponent,
         data: [String: Any],
@@ -737,7 +736,7 @@ public struct CollectionConverter {
                         onItemAppear: onItemAppear
                     )
                     .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
-                    .id(cellScrollID(section: section, cellID: cell.id))
+                    .id(cell.id)
                 }
             }
         )
@@ -797,8 +796,7 @@ public struct CollectionConverter {
     /// starting a new column.
     private static func sectionHGrid(
         lanes: Int,
-        section: Int = 0,
-        items: [IdentifiedCellItem],
+        items: [CollectionCellItem],
         cellName: String,
         component: DynamicComponent,
         data: [String: Any],
@@ -822,7 +820,7 @@ public struct CollectionConverter {
                         )),
                         component: component
                     )
-                    .id(cellScrollID(section: section, cellID: cell.id))
+                    .id(cell.id)
                 }
             }
         )
@@ -877,27 +875,39 @@ public struct CollectionConverter {
 
     // MARK: - Cell Identity Helper
 
-    /// Create IdentifiedCellItem array from cell data, matching generated code's identity pattern.
-    /// Uses cellIdProperty (e.g., "cellId") from cell data for stable identity.
-    /// Falls back to index-based identity if cellIdProperty is not available.
+    /// A cell's key: its `"cellId"` — autoChangeTrackingId's enriched one
+    /// when the dataSource was `reconfigured(autoChangeTrackingId: true)` —
+    /// else its cellIdProperty value; nil for a cell with neither.
+    static func cellKey(_ data: [String: Any], cellIdProperty: String?) -> String? {
+        (data["cellId"] as? String) ?? cellIdProperty.flatMap { data[$0] as? String }
+    }
+
+    /// A section's cells, each with its id — the cell loop's identity and its
+    /// scroll target at once (4f ruling 2026-09-27, round 14): its key,
+    /// qualified by its section (CollectionCellItem.Key), when no earlier cell
+    /// of the section has that key; else its place, IndexPath(item:section:).
+    /// A cell with no key is its place, which no String equals; a later cell
+    /// with a key already taken is its place too, so no two cells share an id
+    /// and the first with a key is the one a scrollTo reaches
+    /// (scrollID(for:…)) — by construction, not by SwiftUI's choice. The key
+    /// keeps a cell's identity where its place moves.
     ///
-    /// When the dataSource was `reconfigured(autoChangeTrackingId: true)`, each
-    /// dict already has a `"cellId"` key — prefer it so ForEach identity matches
-    /// the enriched primary + hash.
-    private static func identifiedItems(
+    /// Until jsonui-cli 1.9.0 the id was a String — the key, else
+    /// "\(index)" — with "<section>:" before the `.id` after section 0: a
+    /// cell with no key at 3 and a cell keyed "3" in one section were one id,
+    /// as two cells of one section with one key were, and which of them a
+    /// scroll reached was SwiftUI's choice.
+    static func identifiedItems(
         from cellsData: [[String: Any]],
-        cellIdProperty: String?
-    ) -> [IdentifiedCellItem] {
-        cellsData.enumerated().map { index, data in
-            let cellId: String
-            if let enriched = data["cellId"] as? String {
-                cellId = enriched
-            } else if let prop = cellIdProperty, let id = data[prop] as? String {
-                cellId = id
-            } else {
-                cellId = "\(index)"
+        cellIdProperty: String?,
+        section: Int
+    ) -> [CollectionCellItem] {
+        var seen = Set<String>()
+        return cellsData.enumerated().map { index, data in
+            if let key = cellKey(data, cellIdProperty: cellIdProperty), seen.insert(key).inserted {
+                return CollectionCellItem(id: AnyHashable(CollectionCellItem.Key(section: section, key: key)), index: index, data: data)
             }
-            return IdentifiedCellItem(id: cellId, index: index, data: data)
+            return CollectionCellItem(id: AnyHashable(IndexPath(item: index, section: section)), index: index, data: data)
         }
     }
 
@@ -936,22 +946,15 @@ public struct CollectionConverter {
 
     // MARK: - Scroll Target
 
-    /// The `.id` a cell carries as a scroll target on the routes a scrollTo
-    /// reaches: its own id in section 0, "<section>:<id>" in a later one.
-    /// Two sections' cells may share an id — a key, or "\(index)" with no
-    /// cellIdProperty — and a scroll target has to be one view (4f round 10).
-    static func cellScrollID(section: Int, cellID: String) -> String {
-        section == 0 ? cellID : "\(section):\(cellID)"
-    }
-
-    /// The scroll id of the cell a scrollTo names (4f ruling 2026-09-27;
-    /// jsonui-cli 1.9.0, the SSoT's Collection.scrollTo): `.index(n)` is a
-    /// cell counted across the drawn sections in section order — a header
-    /// or a footer is not a cell; `.cellId(key)` is the first cell, in
-    /// section order, whose key (its "cellId", else its cellIdProperty
-    /// value) it is. nil when no cell answers. `sections` is the route's
-    /// (declared sections, or the class-list shape's one per data section);
-    /// a section is drawn when it names a cell and its data has cells.
+    /// The id of the cell a scrollTo names (4f ruling 2026-09-27; jsonui-cli
+    /// 1.9.0, the SSoT's Collection.scrollTo): `.index(n)` is a cell counted
+    /// across the drawn sections in section order — a header or a footer is
+    /// not a cell; `.cellId(key)` is the first cell, in section order, whose
+    /// key (its "cellId", else its cellIdProperty value) it is. nil when no
+    /// cell answers. The id is the cell's own (identifiedItems), which no
+    /// other cell has. `sections` is the route's (declared sections, or the
+    /// class-list shape's one per data section); a section is drawn when it
+    /// names a cell and its data has cells.
     ///
     /// Until jsonui-cli 1.9.0 the value went to ScrollViewProxy as it was:
     /// an Int against String cell ids named no cell (but the section of
@@ -962,18 +965,17 @@ public struct CollectionConverter {
         sections: [[String: Any]],
         dataSource: CollectionDataSource,
         cellIdProperty: String?
-    ) -> String? {
+    ) -> AnyHashable? {
         var place = 0
         for sectionIndex in 0..<min(sections.count, dataSource.sections.count) {
             guard sections[sectionIndex]["cell"] is String,
                   let cells = dataSource.sections[sectionIndex].cells else { continue }
-            for item in identifiedItems(from: cells.data, cellIdProperty: cellIdProperty) {
+            for item in identifiedItems(from: cells.data, cellIdProperty: cellIdProperty, section: sectionIndex) {
                 switch target {
                 case .index(let index):
-                    if place == index { return cellScrollID(section: sectionIndex, cellID: item.id) }
+                    if place == index { return item.id }
                 case .cellId(let key):
-                    let own = (item.data["cellId"] as? String) ?? cellIdProperty.flatMap { item.data[$0] as? String }
-                    if own == key { return cellScrollID(section: sectionIndex, cellID: item.id) }
+                    if cellKey(item.data, cellIdProperty: cellIdProperty) == key { return item.id }
                 }
                 place += 1
             }
@@ -1029,23 +1031,20 @@ public struct CollectionConverter {
             let sectionData = dataSource.sections[sectionIndex]
             guard let cellName = sectionConfig["cell"] as? String,
                   let cellsData = sectionData.cells else { continue }
-            for (index, cellData) in cellsData.data.enumerated() {
-                // A page's identity: its key, qualified by its section after
-                // the first (cellScrollID) — two sections may share a key, and
-                // two pages with one id left the TabView unable to turn to the
-                // second or, measured, to the first (jsonui-cli 1.9.0: a
-                // scrollTo naming a shared key stayed on page 0).
-                let cellId: String
-                if let prop = cellIdProperty, let id = cellData[prop] as? String {
-                    cellId = cellScrollID(section: sectionIndex, cellID: id)
-                } else {
-                    cellId = "s\(sectionIndex)_\(index)"
-                }
+            // A page's identity: its cell's id (identifiedItems) — its key
+            // qualified by its section, else its place. Two pages with one id
+            // left the TabView unable to turn to the second or, measured, to
+            // the first (jsonui-cli 1.9.0: a scrollTo naming a shared key
+            // stayed on page 0); until 1.9.0 (round 14) a String id could
+            // still repeat — a key "1:k" in section 0 and "k" in section 1,
+            // a key "s1_0" and section 1's first cell with no key, two cells
+            // of one section with one key.
+            for item in identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex) {
                 pages.append(PagingPageItem(
-                    id: cellId,
+                    id: item.id,
                     index: pages.count,
                     cellClassName: cellName,
-                    data: cellData
+                    data: item.data
                 ))
             }
         }
@@ -1103,13 +1102,12 @@ public struct CollectionConverter {
                         // Cells
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                             // A section that declares its own `columns` > 1
                             // is a grid of them (sectionOwnGridColumns).
                             if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
                                 sectionGrid(
                                     columns: ownColumns,
-                                    section: sectionIndex,
                                     items: items,
                                     cellName: cellName,
                                     component: component,
@@ -1131,7 +1129,7 @@ public struct CollectionConverter {
                                     )),
                                     component: component
                                 )
-                                .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                                .id(cell.id)
                             }
                             }
                         }
@@ -1200,13 +1198,12 @@ public struct CollectionConverter {
 
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                             // A section that declares its own `columns` > 1
                             // is a grid of them (sectionOwnGridColumns).
                             if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
                                 sectionGrid(
                                     columns: ownColumns,
-                                    section: sectionIndex,
                                     items: items,
                                     cellName: cellName,
                                     component: component,
@@ -1228,7 +1225,7 @@ public struct CollectionConverter {
                                     )),
                                     component: component
                                 )
-                                .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                                .id(cell.id)
                             }
                             }
                         }
@@ -1313,7 +1310,7 @@ public struct CollectionConverter {
         let cells = AnyView(
             ForEach(0..<dataSource.sections.count, id: \.self) { sectionIndex in
                 if let cellName, let cellsData = dataSource.sections[sectionIndex].cells {
-                    let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                    let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                     ForEach(items) { cell in
                         applyDeclaredCellFrame(
                             AnyView(buildCellView(
@@ -1327,7 +1324,7 @@ public struct CollectionConverter {
                             )),
                             component: component
                         )
-                        .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                        .id(cell.id)
                     }
                 }
             }
@@ -1448,13 +1445,12 @@ public struct CollectionConverter {
 
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                             // `columns` on a horizontal Collection is its lanes
                             // (horizontalLanes); one lane keeps the stack.
                             if let lanes = horizontalLanes(sectionConfig, globalColumns: globalColumns, columnsIsBinding: columnsIsBinding) {
                                 sectionHGrid(
                                     lanes: lanes,
-                                    section: sectionIndex,
                                     items: items,
                                     cellName: cellName,
                                     component: component,
@@ -1476,7 +1472,7 @@ public struct CollectionConverter {
                                     )),
                                     component: component
                                 )
-                                .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                                .id(cell.id)
                             }
                             }
                         }
@@ -1671,7 +1667,7 @@ public struct CollectionConverter {
                                 repeating: GridItem(gridItemSize, spacing: itemSpacing),
                                 count: sectionColumns
                             )
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                             LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
                                 ForEach(items) { cell in
                                     buildCellView(
@@ -1684,7 +1680,7 @@ public struct CollectionConverter {
                                         onItemAppear: onItemAppear
                                     )
                                     .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
-                                    .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                                    .id(cell.id)
                                 }
                             }
                         }
@@ -1759,7 +1755,7 @@ public struct CollectionConverter {
 
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                             FlowLayout(
                                 alignment: getFlowAlignment(from: component),
                                 horizontalSpacing: gaps.cells,
@@ -1775,7 +1771,7 @@ public struct CollectionConverter {
                                         viewId: viewId,
                                         onItemAppear: onItemAppear
                                     )
-                                    .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                                    .id(cell.id)
                                 }
                             }
                         }
@@ -1821,7 +1817,7 @@ public struct CollectionConverter {
                 ForEach(0..<sectionCount, id: \.self) { sectionIndex in
                     if let cellName = sections[sectionIndex]["cell"] as? String,
                        let cellsData = dataSource.sections[sectionIndex].cells {
-                        ForEach(identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)) { cell in
+                        ForEach(identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)) { cell in
                             buildCellView(
                                 cellClassName: cellName,
                                 cellData: cell.data,
@@ -1832,7 +1828,7 @@ public struct CollectionConverter {
                                 onItemAppear: onItemAppear
                             )
                             .frame(maxWidth: cellWidth ?? .infinity, minHeight: cellHeight, maxHeight: cellHeight)
-                            .id(cellScrollID(section: sectionIndex, cellID: cell.id))
+                            .id(cell.id)
                         }
                     }
                 }
@@ -1885,7 +1881,7 @@ public struct CollectionConverter {
 
                     if let cellName = sectionConfig["cell"] as? String,
                        let cellsData = sectionData.cells {
-                        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty)
+                        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
                         if isFlow {
                             // The declared gaps as declared, 0 included
                             // (flowSpacing; the blocks are the VStack below).
@@ -2267,9 +2263,28 @@ public struct CollectionConverter {
 /// Represents a single page in a paging horizontal collection.
 /// Each page carries the cell class name and cell data needed to render the cell view.
 private struct PagingPageItem: Identifiable {
-    let id: String
+    let id: AnyHashable
     let index: Int
     let cellClassName: String
+    let data: [String: Any]
+}
+
+// MARK: - Cell Item
+
+/// A Dynamic Collection's cell: its data, its place in its section, and its
+/// id — its loop identity and its scroll target (CollectionConverter
+/// .identifiedItems). The generated code's IdentifiedCellItem has a String id;
+/// this one's is a key qualified by its section or a place, neither of which
+/// a String equals.
+struct CollectionCellItem: Identifiable {
+    /// A cell's key in its section.
+    struct Key: Hashable {
+        let section: Int
+        let key: String
+    }
+
+    let id: AnyHashable
+    let index: Int
     let data: [String: Any]
 }
 

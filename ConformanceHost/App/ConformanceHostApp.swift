@@ -233,6 +233,10 @@ struct ConformanceRootView: View {
                 ScrollRouteProbeView(codegen: false, second: true)
             } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe2Codegen") {
                 ScrollRouteProbeView(codegen: true, second: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe3") {
+                ScrollRouteProbeView(codegen: false, third: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe3Codegen") {
+                ScrollRouteProbeView(codegen: true, third: true)
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
