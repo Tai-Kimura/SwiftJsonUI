@@ -24,7 +24,8 @@
 //  and the class-list shape with repeated keys — every cell drawn once, in
 //  order. The seventh: on a horizontal Collection scrollAnchor top / center /
 //  bottom lands the target's leading edge / middle / trailing edge at the
-//  viewport's.
+//  viewport's. The eighth: defaultScrollAnchor top / center / bottom starts a
+//  horizontal Collection at its leading edge / middle / trailing edge.
 //  The Dynamic half always; the generated half in the codegen host only.
 //  NOT opt-in.
 //
@@ -288,6 +289,45 @@ final class ScrollRouteProbeUITests: XCTestCase {
             XCTAssertEqual(got, want, accuracy: 2, "\(p)_hanchor_\(anchor): a5's \(edge) edge is not at the viewport's")
         }
         report(lines, "SPR7")
+    }
+
+    private func runEighth(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        XCTAssertTrue(element(app, "\(p)_hstart_top").waitForExistence(timeout: 5), "\(p): no horizontal list")
+        sleep(1)
+        for anchor in ["top", "center", "bottom"] {
+            let frame = element(app, "\(p)_hstart_\(anchor)").frame
+            // The cells on screen, by their address: the content's leading
+            // edge and its width follow from two neighbours' places.
+            let seen = (0..<10).compactMap { i -> (Int, CGRect)? in
+                let e = element(app, "\(p)_hstart_\(anchor)_item_\(i)")
+                return e.exists && e.frame.intersects(frame) ? (i, e.frame) : nil
+            }
+            guard let first = seen.first, seen.count >= 2 else {
+                lines.append("\(p)_hstart_\(anchor): fewer than two cells on screen")
+                XCTFail("\(p)_hstart_\(anchor): fewer than two cells on screen")
+                continue
+            }
+            let pitch = seen[1].1.minX - first.1.minX
+            let width = first.1.width
+            let start = first.1.minX - pitch * CGFloat(first.0)
+            let end = start + pitch * 9 + width
+            let (edge, want, got): (String, CGFloat, CGFloat) = anchor == "top" ? ("leading", frame.minX, start)
+                : anchor == "center" ? ("middle", frame.midX, (start + end) / 2) : ("trailing", frame.maxX, end)
+            lines.append("\(p)_hstart_\(anchor): content x \(Int(start - frame.minX))…\(Int(end - frame.minX)) in 0…\(Int(frame.width)); \(edge) off by \(Int(got - want))")
+            XCTAssertEqual(got, want, accuracy: 2, "\(p)_hstart_\(anchor): the content's \(edge) is not at the viewport's")
+        }
+        report(lines, "SPR8")
+    }
+
+    func testAHorizontalDefaultAnchorIsAlongTheScrollAxisDynamic() throws {
+        runEighth(prefix: "dyn", argument: "-scrollRouteProbe8")
+    }
+
+    func testAHorizontalDefaultAnchorIsAlongTheScrollAxisGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runEighth(prefix: "cg", argument: "-scrollRouteProbe8Codegen")
     }
 
     func testAHorizontalAnchorIsAlongTheScrollAxisDynamic() throws {

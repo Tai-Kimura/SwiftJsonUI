@@ -466,14 +466,7 @@ public struct CollectionConverter {
         }
         if let anchorStr = resolvedDefaultScrollAnchor {
             if #available(iOS 17.0, *) {
-                let anchor: UnitPoint
-                switch anchorStr {
-                case "top": anchor = .top
-                case "center": anchor = .center
-                case "bottom": anchor = .bottom
-                default: anchor = .top
-                }
-                result = AnyView(result.defaultScrollAnchor(anchor))
+                result = AnyView(result.defaultScrollAnchor(Self.defaultScrollAnchorPoint(anchorStr, horizontal: isHorizontal)))
             }
         }
 
@@ -952,6 +945,21 @@ public struct CollectionConverter {
         case "top": return horizontal ? .leading : .top
         case "center": return .center
         default: return horizontal ? .trailing : .bottom
+        }
+    }
+
+    /// Where a Collection starts, along its scroll axis (the SSoT's
+    /// Collection.defaultScrollAnchor): top / center / bottom, `.top`
+    /// otherwise; on a horizontal Collection `.leading` / `.center` /
+    /// `.trailing` (4f ruling 2026-09-27), as scrollAnchorPoint. Until
+    /// jsonui-cli 1.9.0 it was `.top` / `.center` / `.bottom` there too, whose
+    /// x is 0.5: a horizontal Collection started at its middle whatever the
+    /// anchor said.
+    static func defaultScrollAnchorPoint(_ anchor: String, horizontal: Bool) -> UnitPoint {
+        switch anchor {
+        case "center": return .center
+        case "bottom": return horizontal ? .trailing : .bottom
+        default: return horizontal ? .leading : .top
         }
     }
 

@@ -101,6 +101,17 @@ final class CollectionScrollTargetResolutionTests: XCTestCase {
         XCTAssertEqual(CollectionConverter.scrollAnchorPoint(nil, horizontal: false), .bottom)
     }
 
+    /// defaultScrollAnchor likewise: where a horizontal Collection starts.
+    func testAHorizontalDefaultAnchorIsAlongTheScrollAxis() {
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("top", horizontal: true), .leading)
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("center", horizontal: true), .center)
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("bottom", horizontal: true), .trailing)
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("other", horizontal: true), .leading)
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("top", horizontal: false), .top)
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("bottom", horizontal: false), .bottom)
+        XCTAssertEqual(CollectionConverter.defaultScrollAnchorPoint("other", horizontal: false), .top)
+    }
+
     func testTheCellsIDsAreDistinctAcrossSections() {
         let a = CollectionConverter.identifiedItems(from: [["key": "k3"]], cellIdProperty: "key", section: 0)
         let b = CollectionConverter.identifiedItems(from: [["key": "k3"]], cellIdProperty: "key", section: 1)
