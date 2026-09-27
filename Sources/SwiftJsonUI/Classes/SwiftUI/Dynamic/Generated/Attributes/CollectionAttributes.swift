@@ -11,18 +11,27 @@ public struct CollectionAttributes {
         case top = "top"
         case center = "center"
         case bottom = "bottom"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "center", "bottom"]
     }
 
     public enum Layout: String {
         case vertical = "vertical"
         case horizontal = "horizontal"
         case flow = "flow"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["vertical", "horizontal", "flow", "Flow", "LeftAligned", "leftAligned"]
     }
 
     public enum Lazy: String {
         case `lazy` = "lazy"
         case eager = "eager"
         case none = "none"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["lazy", "eager", "none"]
     }
 
     public enum ListStyle: String {
@@ -30,17 +39,26 @@ public struct CollectionAttributes {
         case grouped = "grouped"
         case insetGrouped = "insetGrouped"
         case sidebar = "sidebar"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["plain", "grouped", "insetGrouped", "sidebar"]
     }
 
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["horizontal", "vertical"]
     }
 
     public enum ScrollAnchor: String {
         case top = "top"
         case center = "center"
         case bottom = "bottom"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "center", "bottom"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -152,7 +170,7 @@ public struct CollectionAttributes {
     /// Header class definitions
     public let headerClasses: [Any]?
 
-    /// Hide the row separators a list draws between cells. A NO-OP where the container draws no separators (a grid-shaped Collection has none) — that is the contract, not an unimplemented gap, and it does not license switching the container to a List. Full ruling in attribute_semantics.json -> collectionSeparators.
+    /// Hide the row separators a list draws between cells. A NO-OP where the container draws no separators (a grid-shaped Collection has none) — that is the contract, not an unimplemented gap, and it does not license switching the container to a List. No CODEGEN face reads it, so the coverage row is runtime-only. Full ruling in attribute_semantics.json -> collectionSeparators.
     public let hideSeparator: Bool?
 
     /// Enable horizontal scroll
@@ -173,8 +191,8 @@ public struct CollectionAttributes {
     /// Item sizing weight
     public let itemWeight: Double?
 
-    /// Data source binding
-    public let items: AttrValue<[Any]>?
+    /// Data source binding (@{…}). A binding only: the array form was declared and drawn by no platform (codegen or Dynamic) and used by no face, so it was taken out on 2026-09-26; a literal array is named by the validator.
+    public let items: AttrValue<Any>?
 
     /// Enable keyboard avoidance
     public let keyboardAvoidance: Bool?
@@ -188,7 +206,7 @@ public struct CollectionAttributes {
     /// Spacing between rows. `sectionSpacing` folds here (sjui collection_converter.rb:799,960 read `sectionSpacing || lineSpacing || 8`). [aliases: sectionSpacing]
     public let lineSpacing: Double?
 
-    /// Which list chrome the collection is drawn with: plain (the default), grouped, insetGrouped or sidebar; an unrecognised value falls back to plain. ORTHOGONAL to hideSeparator — that one hides the separators, this one picks the chrome, and neither overrides the other. Full ruling in attribute_semantics.json -> collectionSeparators. [default: plain]
+    /// Which list chrome the collection is drawn with. Enumerated from the only implementation that reads it (SwiftJsonUI TableConverter.applyListStyle); an unrecognised value falls back to plain. ORTHOGONAL to hideSeparator — that one hides the separators, this one picks the chrome, and neither overrides the other. No CODEGEN face reads it, so the coverage row is runtime-only: sjui collection_converter.rb:213 hardcodes PlainListStyle instead. Full ruling in attribute_semantics.json -> collectionSeparators. [default: plain]
     public let listStyle: AttrEnum<ListStyle>?
 
     /// Called with the cell index (Int) when a cell appears on screen. Use for pagination by checking index against total count in ViewModel. Declared `binding` because that is what a layout actually carries: the author writes `@{handlerName}`, a STRING, and every reader matches it as one (kjui collection_component.rb:364 `json_data['onItemAppear'].match(/@\{([^}]+)\}/)`, and the binding validators infer `((Int) -> Unit)?` from that spelling). It was `type: "callback"` — the only callback-typed attribute in the whole SSoT — and attr-codegen skips that type as "function-valued, not extractable from JSON". True of a function; not true of the `@{...}` string a JSON layout can hold, so the attribute had no row in any generated table and no platform could read it typed (2026-08-05, plan 49-E, raised by A).
@@ -221,10 +239,10 @@ public struct CollectionAttributes {
     /// Section-based configuration
     public let sections: [Any]?
 
-    /// Set target as data source
+    /// Set target as data source (UIKit: SJUICollectionView reads it; the SwiftUI paths have no data source to set)
     public let setTargetAsDataSource: Bool?
 
-    /// Set target as delegate
+    /// Set target as delegate (UIKit: SJUICollectionView reads it; the SwiftUI paths have no delegate to set)
     public let setTargetAsDelegate: Bool?
 
     /// Show horizontal indicator
@@ -259,7 +277,7 @@ public struct CollectionAttributes {
         self.insets = AttrCoerce.any(AttrCoerce.lookup(json, "insets"))
         self.itemSpacing = AttrCoerce.number(AttrCoerce.lookup(json, "itemSpacing"))
         self.itemWeight = AttrCoerce.number(AttrCoerce.lookup(json, "itemWeight"))
-        self.items = AttrCoerce.attrValue(AttrCoerce.lookup(json, "items"), AttrCoerce.array)
+        self.items = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "items"))
         self.keyboardAvoidance = AttrCoerce.boolean(AttrCoerce.lookup(json, "keyboardAvoidance"))
         self.layout = Self.parseLayout(AttrCoerce.lookup(json, "layout"))
         self.`lazy` = AttrCoerce.attrValue(AttrCoerce.lookup(json, "lazy"), { Self.parseLazy($0) })
@@ -284,84 +302,90 @@ public struct CollectionAttributes {
     private static func parseDefaultScrollAnchor(_ raw: Any?) -> AttrEnum<DefaultScrollAnchor>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "top": return .known(DefaultScrollAnchor.top)
             case "center": return .known(DefaultScrollAnchor.center)
             case "bottom": return .known(DefaultScrollAnchor.bottom)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Collection.defaultScrollAnchor: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in DefaultScrollAnchor.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.defaultScrollAnchor: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseLayout(_ raw: Any?) -> AttrEnum<Layout>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "vertical": return .known(Layout.vertical)
             case "horizontal": return .known(Layout.horizontal)
-            case "flow", "leftaligned": return .known(Layout.flow)
+            case "flow", "Flow", "LeftAligned", "leftAligned": return .known(Layout.flow)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Collection.layout: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Layout.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.layout: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseLazy(_ raw: Any?) -> AttrEnum<Lazy>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "lazy": return .known(Lazy.`lazy`)
             case "eager": return .known(Lazy.eager)
             case "none": return .known(Lazy.none)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Collection.lazy: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Lazy.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.lazy: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseListStyle(_ raw: Any?) -> AttrEnum<ListStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "plain": return .known(ListStyle.plain)
             case "grouped": return .known(ListStyle.grouped)
-            case "insetgrouped": return .known(ListStyle.insetGrouped)
+            case "insetGrouped": return .known(ListStyle.insetGrouped)
             case "sidebar": return .known(ListStyle.sidebar)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Collection.listStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ListStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.listStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "horizontal": return .known(Orientation.horizontal)
             case "vertical": return .known(Orientation.vertical)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Collection.orientation: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Orientation.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.orientation: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseScrollAnchor(_ raw: Any?) -> AttrEnum<ScrollAnchor>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "top": return .known(ScrollAnchor.top)
             case "center": return .known(ScrollAnchor.center)
             case "bottom": return .known(ScrollAnchor.bottom)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Collection.scrollAnchor: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ScrollAnchor.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.scrollAnchor: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

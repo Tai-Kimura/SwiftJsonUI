@@ -168,7 +168,7 @@ public struct SelectBoxConverter {
         // datePickerMode
         let datePickerMode: SelectBoxView.DatePickerMode = {
             guard let mode = component.datePickerMode else { return .date }
-            switch mode.lowercased() {
+            switch DeclaredSpelling.lowered(mode, in: SelectBoxAttributes.DatePickerMode.declaredSpellings) {
             case "time": return .time
             case "datetime", "dateandtime": return .dateTime
             default: return .date
@@ -178,7 +178,7 @@ public struct SelectBoxConverter {
         // datePickerStyle
         let datePickerStyle: SelectBoxView.DatePickerStyle = {
             guard let style = component.datePickerStyle else { return .wheel }
-            switch style.lowercased() {
+            switch DeclaredSpelling.lowered(style, in: SelectBoxAttributes.DatePickerStyle.declaredSpellings) {
             case "automatic": return .automatic
             case "compact": return .compact
             case "graphical", "inline": return .graphical
@@ -355,6 +355,12 @@ public struct SelectBoxConverter {
         // either: `enabled: false` still opened the picker and took a pick
         // (ConformanceHost OnClickProbeUITests, both paths).
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
 
         // --- 7. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)

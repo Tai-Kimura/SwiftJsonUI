@@ -153,7 +153,10 @@ public struct RadioConverter {
                                 }
                                 click?()
                             }
-                        Text(item.dynamicLocalized())
+                        // fontSize / fontColor are declared on Radio; the
+                        // options' labels drew neither (the title and a single
+                        // radio's label read them) — the codegen draws them too.
+                        buildLabelText(text: item, font: titleFont, color: titleColor)
                     }
                 }
             }

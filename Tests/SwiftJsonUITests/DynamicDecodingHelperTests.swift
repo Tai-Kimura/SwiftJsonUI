@@ -131,15 +131,17 @@ final class DynamicDecodingHelperTests: XCTestCase {
         XCTAssertEqual(result, .bottomLeading)
     }
 
-    func testGravityToAlignmentStart() {
-        // Unspecified vertical axis defaults to top
+    // gravity is read by its declared spellings (CommonAttributes.Gravity),
+    // case and all (jsonui-cli 1.9.0): `start` / `end` are declared nowhere
+    // and draw the default, as the validator names them.
+    func testGravityToAlignmentStartIsTheDefault() {
         let result = DynamicDecodingHelper.gravityToAlignment(["start"])
         XCTAssertEqual(result, .topLeading)
     }
 
-    func testGravityToAlignmentEnd() {
-        let result = DynamicDecodingHelper.gravityToAlignment(["end"])
-        XCTAssertEqual(result, .topTrailing)
+    func testGravityToAlignmentEndIsTheDefault() {
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["end"]), .topLeading)
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["right"]), .topTrailing)
     }
 
     func testGravityToAlignmentNil() {
@@ -153,13 +155,15 @@ final class DynamicDecodingHelperTests: XCTestCase {
     }
 
     func testGravityToAlignmentCenterHorizontal() {
-        let result = DynamicDecodingHelper.gravityToAlignment(["top", "center_horizontal"])
+        let result = DynamicDecodingHelper.gravityToAlignment(["top", "centerHorizontal"])
         XCTAssertEqual(result, .top)
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["top", "center_horizontal"]), .topLeading, "declared nowhere")
     }
 
     func testGravityToAlignmentCenterVertical() {
-        let result = DynamicDecodingHelper.gravityToAlignment(["center_vertical", "left"])
+        let result = DynamicDecodingHelper.gravityToAlignment(["centerVertical", "left"])
         XCTAssertEqual(result, .leading)
+        XCTAssertEqual(DynamicDecodingHelper.gravityToAlignment(["center_vertical", "left"]), .topLeading, "declared nowhere")
     }
 
     // MARK: - Content Mode Tests
@@ -171,7 +175,9 @@ final class DynamicDecodingHelperTests: XCTestCase {
 
     func testToContentModeAspectFill() {
         XCTAssertEqual(DynamicDecodingHelper.toContentMode("AspectFill"), .fill)
-        XCTAssertEqual(DynamicDecodingHelper.toContentMode("aspectFill"), .fill)
+        // Declared as AspectFill only: a value is its declared spelling,
+        // case and all (jsonui-cli 1.9.0) — the rest draws the default.
+        XCTAssertEqual(DynamicDecodingHelper.toContentMode("aspectFill"), .fit)
     }
 
     func testToContentModeDefault() {
@@ -183,12 +189,12 @@ final class DynamicDecodingHelperTests: XCTestCase {
 
     func testToRenderingModeTemplate() {
         XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("template"), .template)
-        XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("Template"), .template)
+        XCTAssertNil(DynamicDecodingHelper.toRenderingMode("Template"), "declared in lowercase only")
     }
 
     func testToRenderingModeOriginal() {
         XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("original"), .original)
-        XCTAssertEqual(DynamicDecodingHelper.toRenderingMode("Original"), .original)
+        XCTAssertNil(DynamicDecodingHelper.toRenderingMode("Original"), "declared in lowercase only")
     }
 
     func testToRenderingModeDefault() {

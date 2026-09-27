@@ -275,7 +275,7 @@ public struct TextViewConverter {
         // modifier is the one SwiftUI honours. Applying them in this order
         // reproduces that: when a layout declares both, `keyboardType` wins.
         if let raw = component.enumString(TextViewAttributes.self, \.input) {
-            result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw)))
+            result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw, in: TextViewAttributes.Input.declaredSpellings)))
         }
         // ⚠️ `keyboardType` IS A DIFFERENT VOCABULARY FROM `input`, and its
         // assignments are not the ones `input` uses — `number` lands on
@@ -337,6 +337,12 @@ public struct TextViewConverter {
         // hitTesting stage, which this hand-built chain did not run)
         result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
+
         // --- 7. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
@@ -370,7 +376,7 @@ public struct TextViewConverter {
     /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
     /// normalisation is applied so the declared spellings match.
     static func keyboardType(fromKeyboardTypeSpelling value: String) -> UIKeyboardType? {
-        switch value.lowercased().filter({ $0.isLetter && $0.isASCII }) {
+        switch DeclaredSpelling.lowered(value, in: TextViewAttributes.KeyboardType.declaredSpellings)?.filter({ $0.isLetter && $0.isASCII }) {
         case "default": return .default
         case "number", "numberpad", "decimal", "decimalpad": return .decimalPad
         case "numeric", "phone", "phonepad": return .phonePad

@@ -12,33 +12,51 @@ public struct ScrollViewAttributes {
         case always = "always"
         case automatic = "automatic"
         case scrollableAxes = "scrollableAxes"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["never", "always", "automatic", "scrollableAxes"]
     }
 
     public enum DefaultScrollAnchor: String {
         case top = "top"
         case center = "center"
         case bottom = "bottom"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "center", "bottom"]
     }
 
     public enum KeyboardDismissMode: String {
         case none = "none"
         case onDrag = "onDrag"
         case interactive = "interactive"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["none", "onDrag", "interactive"]
     }
 
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["horizontal", "vertical"]
     }
 
     public enum ScrollBehavior: String {
         case auto = "auto"
         case smooth = "smooth"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["auto", "smooth"]
     }
 
     public enum ScrollMode: String {
         case inner = "inner"
         case window = "window"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["inner", "window"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -184,82 +202,88 @@ public struct ScrollViewAttributes {
     private static func parseContentInsetAdjustmentBehavior(_ raw: Any?) -> AttrEnum<ContentInsetAdjustmentBehavior>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "never": return .known(ContentInsetAdjustmentBehavior.never)
             case "always": return .known(ContentInsetAdjustmentBehavior.always)
             case "automatic": return .known(ContentInsetAdjustmentBehavior.automatic)
-            case "scrollableaxes": return .known(ContentInsetAdjustmentBehavior.scrollableAxes)
+            case "scrollableAxes": return .known(ContentInsetAdjustmentBehavior.scrollableAxes)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("ScrollView.contentInsetAdjustmentBehavior: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ContentInsetAdjustmentBehavior.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("ScrollView.contentInsetAdjustmentBehavior: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseDefaultScrollAnchor(_ raw: Any?) -> AttrEnum<DefaultScrollAnchor>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "top": return .known(DefaultScrollAnchor.top)
             case "center": return .known(DefaultScrollAnchor.center)
             case "bottom": return .known(DefaultScrollAnchor.bottom)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("ScrollView.defaultScrollAnchor: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in DefaultScrollAnchor.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("ScrollView.defaultScrollAnchor: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseKeyboardDismissMode(_ raw: Any?) -> AttrEnum<KeyboardDismissMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "none": return .known(KeyboardDismissMode.none)
-            case "ondrag": return .known(KeyboardDismissMode.onDrag)
+            case "onDrag": return .known(KeyboardDismissMode.onDrag)
             case "interactive": return .known(KeyboardDismissMode.interactive)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("ScrollView.keyboardDismissMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in KeyboardDismissMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("ScrollView.keyboardDismissMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "horizontal": return .known(Orientation.horizontal)
             case "vertical": return .known(Orientation.vertical)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("ScrollView.orientation: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Orientation.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("ScrollView.orientation: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseScrollBehavior(_ raw: Any?) -> AttrEnum<ScrollBehavior>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "auto": return .known(ScrollBehavior.auto)
             case "smooth": return .known(ScrollBehavior.smooth)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("ScrollView.scrollBehavior: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ScrollBehavior.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("ScrollView.scrollBehavior: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseScrollMode(_ raw: Any?) -> AttrEnum<ScrollMode>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "inner": return .known(ScrollMode.inner)
             case "window": return .known(ScrollMode.window)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("ScrollView.scrollMode: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ScrollMode.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("ScrollView.scrollMode: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

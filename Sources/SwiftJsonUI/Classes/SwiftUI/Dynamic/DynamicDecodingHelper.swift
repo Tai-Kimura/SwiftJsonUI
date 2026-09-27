@@ -273,14 +273,20 @@ public struct DynamicDecodingHelper {
         var horizontal: HorizontalAlignment = .leading
         var vertical: VerticalAlignment = .top
 
+        // Each value by its declared spelling (CommonAttributes.Gravity), case
+        // and all — jsonui-cli 1.9.0. The switch compared the lowercased value
+        // with `centerHorizontal` / `centerVertical`, which a lowercased value
+        // never equals, so those two were dropped here while GravityAxes and
+        // the codegen honour them; `start` / `end` / `center_horizontal` /
+        // `center_vertical` are declared nowhere.
         for value in gravity {
-            switch value.lowercased() {
+            switch DeclaredSpelling.lowered(value, in: CommonAttributes.Gravity.declaredSpellings) {
             // Horizontal
-            case "left", "start":
+            case "left":
                 horizontal = .leading
-            case "right", "end":
+            case "right":
                 horizontal = .trailing
-            case "center_horizontal", "centerHorizontal":
+            case "centerhorizontal":
                 horizontal = .center
 
             // Vertical
@@ -288,7 +294,7 @@ public struct DynamicDecodingHelper {
                 vertical = .top
             case "bottom":
                 vertical = .bottom
-            case "center_vertical", "centerVertical":
+            case "centervertical":
                 vertical = .center
 
             // Combined
@@ -448,10 +454,10 @@ public struct DynamicDecodingHelper {
 
     /// Convert content mode string to ContentMode
     public static func toContentMode(_ mode: String?) -> ContentMode {
-        switch mode {
-        case "AspectFill", "aspectFill":
+        switch DeclaredSpelling.lowered(mode, in: ImageAttributes.ContentMode.declaredSpellings) {
+        case "aspectfill":
             return .fill
-        case "AspectFit", "aspectFit":
+        case "aspectfit":
             return .fit
         default:
             return .fit
@@ -462,8 +468,11 @@ public struct DynamicDecodingHelper {
     /// draws UNSCALED, aligned inside the declared frame and cropped
     /// (UIKit contentMode positions — 33 cross-effect measured both
     /// mobile platforms dropping them to fit).
-    public static func positionalContentAlignment(_ mode: String?) -> Alignment? {
-        switch mode?.lowercased() {
+    public static func positionalContentAlignment(
+        _ mode: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> Alignment? {
+        switch DeclaredSpelling.lowered(mode, in: spellings) {
         case "center": return .center
         case "top": return .top
         case "bottom": return .bottom
@@ -477,8 +486,11 @@ public struct DynamicDecodingHelper {
     /// shared/core/attribute_semantics.json). SwiftUI's `ContentMode` has no
     /// stretch member — `.resizable()` WITHOUT an `.aspectRatio` modifier is
     /// the spelling, so converters branch on this before `toContentMode`.
-    public static func isStretchContentMode(_ mode: String?) -> Bool {
-        switch mode?.lowercased() {
+    public static func isStretchContentMode(
+        _ mode: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> Bool {
+        switch DeclaredSpelling.lowered(mode, in: spellings) {
         case "fill", "scaletofill":
             return true
         default:
@@ -497,10 +509,10 @@ public struct DynamicDecodingHelper {
 
     /// Convert rendering mode string to Image.TemplateRenderingMode
     public static func toRenderingMode(_ mode: String?) -> Image.TemplateRenderingMode? {
-        switch mode {
-        case "template", "Template":
+        switch DeclaredSpelling.lowered(mode, in: ImageAttributes.RenderingMode.declaredSpellings) {
+        case "template":
             return .template
-        case "original", "Original":
+        case "original":
             return .original
         default:
             return nil
@@ -509,14 +521,14 @@ public struct DynamicDecodingHelper {
 
     /// Convert icon position string to IconLabelView.IconPosition
     public static func toIconPosition(_ position: String?) -> IconLabelView.IconPosition {
-        switch position {
-        case "top", "Top":
+        switch DeclaredSpelling.lowered(position, in: IconLabelAttributes.IconPosition.declaredSpellings) {
+        case "top":
             return .top
-        case "left", "Left":
+        case "left":
             return .left
-        case "right", "Right":
+        case "right":
             return .right
-        case "bottom", "Bottom":
+        case "bottom":
             return .bottom
         default:
             return .left

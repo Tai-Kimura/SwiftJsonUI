@@ -14,6 +14,9 @@ public struct ViewAttributes {
         case leftToRight = "leftToRight"
         case rightToLeft = "rightToLeft"
         case none = "none"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["topToBottom", "bottomToTop", "leftToRight", "rightToLeft", "none"]
     }
 
     public enum Distribution: String {
@@ -21,12 +24,18 @@ public struct ViewAttributes {
         case fillEqually = "fillEqually"
         case equalSpacing = "equalSpacing"
         case equalCentering = "equalCentering"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["fill", "fillEqually", "equalSpacing", "equalCentering"]
     }
 
     public enum FlexWrap: String {
         case nowrap = "nowrap"
         case wrap = "wrap"
         case wrapReverse = "wrap-reverse"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["nowrap", "wrap", "wrap-reverse"]
     }
 
     public enum GradientDirection: String {
@@ -35,11 +44,24 @@ public struct ViewAttributes {
         case oblique = "Oblique"
         case rightToLeft = "RightToLeft"
         case bottomToTop = "BottomToTop"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Vertical", "Horizontal", "Oblique", "LeftToRight", "TopToBottom", "Diagonal", "RightToLeft", "BottomToTop"]
     }
 
     public enum Orientation: String {
         case horizontal = "horizontal"
         case vertical = "vertical"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["horizontal", "vertical"]
+    }
+
+    public enum SafeAreaInsetPositions {
+        /// The spellings each value of `safeAreaInsetPositions` is declared as — it holds
+        /// one or a list of them, so it has no enum type of its own —
+        /// case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "bottom", "leading", "trailing", "vertical", "all"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -160,74 +182,79 @@ public struct ViewAttributes {
     private static func parseDirection(_ raw: Any?) -> AttrEnum<Direction>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "toptobottom": return .known(Direction.topToBottom)
-            case "bottomtotop": return .known(Direction.bottomToTop)
-            case "lefttoright": return .known(Direction.leftToRight)
-            case "righttoleft": return .known(Direction.rightToLeft)
+            switch s {
+            case "topToBottom": return .known(Direction.topToBottom)
+            case "bottomToTop": return .known(Direction.bottomToTop)
+            case "leftToRight": return .known(Direction.leftToRight)
+            case "rightToLeft": return .known(Direction.rightToLeft)
             case "none": return .known(Direction.none)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("View.direction: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Direction.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("View.direction: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseDistribution(_ raw: Any?) -> AttrEnum<Distribution>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "fill": return .known(Distribution.fill)
-            case "fillequally": return .known(Distribution.fillEqually)
-            case "equalspacing": return .known(Distribution.equalSpacing)
-            case "equalcentering": return .known(Distribution.equalCentering)
+            case "fillEqually": return .known(Distribution.fillEqually)
+            case "equalSpacing": return .known(Distribution.equalSpacing)
+            case "equalCentering": return .known(Distribution.equalCentering)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("View.distribution: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Distribution.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("View.distribution: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseFlexWrap(_ raw: Any?) -> AttrEnum<FlexWrap>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "nowrap": return .known(FlexWrap.nowrap)
             case "wrap": return .known(FlexWrap.wrap)
             case "wrap-reverse": return .known(FlexWrap.wrapReverse)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("View.flexWrap: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in FlexWrap.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("View.flexWrap: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseGradientDirection(_ raw: Any?) -> AttrEnum<GradientDirection>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "vertical", "toptobottom": return .known(GradientDirection.vertical)
-            case "horizontal", "lefttoright": return .known(GradientDirection.horizontal)
-            case "oblique", "diagonal": return .known(GradientDirection.oblique)
-            case "righttoleft": return .known(GradientDirection.rightToLeft)
-            case "bottomtotop": return .known(GradientDirection.bottomToTop)
+            switch s {
+            case "Vertical", "TopToBottom": return .known(GradientDirection.vertical)
+            case "Horizontal", "LeftToRight": return .known(GradientDirection.horizontal)
+            case "Oblique", "Diagonal": return .known(GradientDirection.oblique)
+            case "RightToLeft": return .known(GradientDirection.rightToLeft)
+            case "BottomToTop": return .known(GradientDirection.bottomToTop)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("View.gradientDirection: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in GradientDirection.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("View.gradientDirection: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "horizontal": return .known(Orientation.horizontal)
             case "vertical": return .known(Orientation.vertical)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("View.orientation: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Orientation.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("View.orientation: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

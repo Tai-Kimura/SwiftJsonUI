@@ -280,6 +280,12 @@ public struct LabelConverter {
         // userInteractionEnabled, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
         result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
+
         // --- 14. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
@@ -327,7 +333,8 @@ public struct LabelConverter {
                 recognised = true
             }
             if let align = dict["textAlign"] as? String {
-                switch align.lowercased() {
+                // The highlight's own declaration (Left / Right / Center).
+                switch DeclaredSpelling.lowered(align, in: LabelAttributes.HighlightAttributes.TextAlign.declaredSpellings) {
                 case "left": highlight.textAlignment = .leading
                 case "center": highlight.textAlignment = .center
                 case "right": highlight.textAlignment = .trailing
@@ -472,7 +479,7 @@ public struct LabelConverter {
         case nil: return false
         case let b as Bool: return b
         case let m as [String: Any]:
-            return !((m["lineStyle"] as? String)?.caseInsensitiveCompare("none") == .orderedSame)
+            return DeclaredSpelling.lowered(m["lineStyle"] as? String, in: LabelAttributes.Underline.LineStyle.declaredSpellings) != "none"
         case let a as [Any]: return !a.isEmpty
         default: return false
         }

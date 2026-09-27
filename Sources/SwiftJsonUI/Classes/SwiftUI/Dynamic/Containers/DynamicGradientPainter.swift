@@ -64,8 +64,11 @@ enum DynamicGradientPainter {
     /// The declared `gradientDirection` vocabulary, in full. `RightToLeft`
     /// and `BottomToTop` are canonical values, NOT aliases — reversed
     /// directions, matched by the codegen face (modifier_helper.rb).
-    static func gradientEndpoints(_ declared: String?) -> (UnitPoint, UnitPoint) {
-        switch declared?.lowercased() {
+    static func gradientEndpoints(
+        _ declared: String?,
+        in spellings: [String] = ViewAttributes.GradientDirection.declaredSpellings
+    ) -> (UnitPoint, UnitPoint) {
+        switch DeclaredSpelling.lowered(declared, in: spellings) {
         case "horizontal", "lefttoright": return (.leading, .trailing)
         case "oblique", "diagonal": return (.topLeading, .bottomTrailing)
         case "righttoleft": return (.trailing, .leading)

@@ -107,7 +107,7 @@ public struct IndicatorConverter {
     }
 
     private static func applyProgressViewStyle(_ view: AnyView, style: String) -> AnyView {
-        switch style.lowercased() {
+        switch DeclaredSpelling.lowered(style, in: IndicatorAttributes.IndicatorStyle.declaredSpellings) {
         case "linear":
             return AnyView(view.progressViewStyle(LinearProgressViewStyle()))
         default:
@@ -116,7 +116,7 @@ public struct IndicatorConverter {
     }
 
     private static func scaleForStyle(_ style: String) -> CGFloat {
-        switch style.lowercased() {
+        switch DeclaredSpelling.lowered(style, in: IndicatorAttributes.IndicatorStyle.declaredSpellings) {
         case "large":
             return 1.5
         case "small":

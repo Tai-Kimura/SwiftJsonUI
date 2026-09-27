@@ -14,12 +14,18 @@ public struct InputAttributes {
         case words = "words"
         case sentences = "sentences"
         case allCharacters = "allCharacters"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["none", "words", "sentences", "allCharacters", "characters"]
     }
 
     public enum AutocorrectionType: String {
         case `default` = "default"
         case yes = "yes"
         case no = "no"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["default", "yes", "no", "on", "off", "true", "false"]
     }
 
     public enum BorderStyle: String {
@@ -27,6 +33,9 @@ public struct InputAttributes {
         case line = "line"
         case bezel = "bezel"
         case roundedRect = "roundedRect"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["none", "line", "bezel", "roundedRect", "RoundedRect", "Line", "Bezel"]
     }
 
     public enum ContentType: String {
@@ -44,6 +53,9 @@ public struct InputAttributes {
         case country = "country"
         case creditCardNumber = "creditCardNumber"
         case uRL = "URL"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["username", "password", "newPassword", "oneTimeCode", "email", "emailAddress", "name", "givenName", "familyName", "telephoneNumber", "tel", "phone", "streetAddress", "postalCode", "country", "creditCardNumber", "URL"]
     }
 
     public enum Input: String {
@@ -60,6 +72,9 @@ public struct InputAttributes {
         case date = "date"
         case time = "time"
         case datetime = "datetime"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["default", "alphabet", "allphabet", "email", "number", "phone", "url", "password", "decimal", "signedDecimal", "date", "time", "datetime"]
     }
 
     public enum InputType: String {
@@ -70,6 +85,9 @@ public struct InputAttributes {
         case email = "email"
         case password = "password"
         case multiline = "multiline"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["text", "number", "numberDecimal", "phone", "email", "password", "multiline", "textEmailAddress", "textPassword"]
     }
 
     public enum ReturnKeyType: String {
@@ -84,12 +102,18 @@ public struct InputAttributes {
         case route = "Route"
         case yahoo = "Yahoo"
         case google = "Google"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Done", "Go", "Next", "Return", "Search", "Send", "Continue", "Join", "Route", "Yahoo", "Google"]
     }
 
     public enum TextAlign: String {
         case left = "Left"
         case center = "Center"
         case right = "Right"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Left", "Center", "Right", "left", "center", "right"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -412,76 +436,80 @@ public struct InputAttributes {
     private static func parseAutocapitalizationType(_ raw: Any?) -> AttrEnum<AutocapitalizationType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "none": return .known(AutocapitalizationType.none)
             case "words": return .known(AutocapitalizationType.words)
             case "sentences": return .known(AutocapitalizationType.sentences)
-            case "allcharacters", "characters": return .known(AutocapitalizationType.allCharacters)
+            case "allCharacters", "characters": return .known(AutocapitalizationType.allCharacters)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.autocapitalizationType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in AutocapitalizationType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.autocapitalizationType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseAutocorrectionType(_ raw: Any?) -> AttrEnum<AutocorrectionType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "default": return .known(AutocorrectionType.`default`)
             case "yes", "on", "true": return .known(AutocorrectionType.yes)
             case "no", "off", "false": return .known(AutocorrectionType.no)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.autocorrectionType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in AutocorrectionType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.autocorrectionType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseBorderStyle(_ raw: Any?) -> AttrEnum<BorderStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "none": return .known(BorderStyle.none)
-            case "line": return .known(BorderStyle.line)
-            case "bezel": return .known(BorderStyle.bezel)
-            case "roundedrect": return .known(BorderStyle.roundedRect)
+            case "line", "Line": return .known(BorderStyle.line)
+            case "bezel", "Bezel": return .known(BorderStyle.bezel)
+            case "roundedRect", "RoundedRect": return .known(BorderStyle.roundedRect)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.borderStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in BorderStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.borderStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseContentType(_ raw: Any?) -> AttrEnum<ContentType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "username": return .known(ContentType.username)
             case "password": return .known(ContentType.password)
-            case "newpassword": return .known(ContentType.newPassword)
-            case "onetimecode": return .known(ContentType.oneTimeCode)
-            case "email", "emailaddress": return .known(ContentType.email)
+            case "newPassword": return .known(ContentType.newPassword)
+            case "oneTimeCode": return .known(ContentType.oneTimeCode)
+            case "email", "emailAddress": return .known(ContentType.email)
             case "name": return .known(ContentType.name)
-            case "givenname": return .known(ContentType.givenName)
-            case "familyname": return .known(ContentType.familyName)
-            case "telephonenumber", "tel", "phone": return .known(ContentType.telephoneNumber)
-            case "streetaddress": return .known(ContentType.streetAddress)
-            case "postalcode": return .known(ContentType.postalCode)
+            case "givenName": return .known(ContentType.givenName)
+            case "familyName": return .known(ContentType.familyName)
+            case "telephoneNumber", "tel", "phone": return .known(ContentType.telephoneNumber)
+            case "streetAddress": return .known(ContentType.streetAddress)
+            case "postalCode": return .known(ContentType.postalCode)
             case "country": return .known(ContentType.country)
-            case "creditcardnumber": return .known(ContentType.creditCardNumber)
-            case "url": return .known(ContentType.uRL)
+            case "creditCardNumber": return .known(ContentType.creditCardNumber)
+            case "URL": return .known(ContentType.uRL)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.contentType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ContentType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.contentType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseInput(_ raw: Any?) -> AttrEnum<Input>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "default": return .known(Input.`default`)
             case "alphabet": return .known(Input.alphabet)
             case "allphabet": return .known(Input.allphabet)
@@ -491,68 +519,72 @@ public struct InputAttributes {
             case "url": return .known(Input.url)
             case "password": return .known(Input.password)
             case "decimal": return .known(Input.decimal)
-            case "signeddecimal": return .known(Input.signedDecimal)
+            case "signedDecimal": return .known(Input.signedDecimal)
             case "date": return .known(Input.date)
             case "time": return .known(Input.time)
             case "datetime": return .known(Input.datetime)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.input: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Input.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.input: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseInputType(_ raw: Any?) -> AttrEnum<InputType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "text": return .known(InputType.text)
             case "number": return .known(InputType.number)
-            case "numberdecimal": return .known(InputType.numberDecimal)
+            case "numberDecimal": return .known(InputType.numberDecimal)
             case "phone": return .known(InputType.phone)
-            case "email", "textemailaddress": return .known(InputType.email)
-            case "password", "textpassword": return .known(InputType.password)
+            case "email", "textEmailAddress": return .known(InputType.email)
+            case "password", "textPassword": return .known(InputType.password)
             case "multiline": return .known(InputType.multiline)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.inputType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in InputType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.inputType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseReturnKeyType(_ raw: Any?) -> AttrEnum<ReturnKeyType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "done": return .known(ReturnKeyType.done)
-            case "go": return .known(ReturnKeyType.go)
-            case "next": return .known(ReturnKeyType.next)
-            case "return": return .known(ReturnKeyType.`return`)
-            case "search": return .known(ReturnKeyType.search)
-            case "send": return .known(ReturnKeyType.send)
-            case "continue": return .known(ReturnKeyType.`continue`)
-            case "join": return .known(ReturnKeyType.join)
-            case "route": return .known(ReturnKeyType.route)
-            case "yahoo": return .known(ReturnKeyType.yahoo)
-            case "google": return .known(ReturnKeyType.google)
+            switch s {
+            case "Done": return .known(ReturnKeyType.done)
+            case "Go": return .known(ReturnKeyType.go)
+            case "Next": return .known(ReturnKeyType.next)
+            case "Return": return .known(ReturnKeyType.`return`)
+            case "Search": return .known(ReturnKeyType.search)
+            case "Send": return .known(ReturnKeyType.send)
+            case "Continue": return .known(ReturnKeyType.`continue`)
+            case "Join": return .known(ReturnKeyType.join)
+            case "Route": return .known(ReturnKeyType.route)
+            case "Yahoo": return .known(ReturnKeyType.yahoo)
+            case "Google": return .known(ReturnKeyType.google)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.returnKeyType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ReturnKeyType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.returnKeyType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseTextAlign(_ raw: Any?) -> AttrEnum<TextAlign>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "left": return .known(TextAlign.left)
-            case "center": return .known(TextAlign.center)
-            case "right": return .known(TextAlign.right)
+            switch s {
+            case "Left", "left": return .known(TextAlign.left)
+            case "Center", "center": return .known(TextAlign.center)
+            case "Right", "right": return .known(TextAlign.right)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Input.textAlign: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in TextAlign.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Input.textAlign: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

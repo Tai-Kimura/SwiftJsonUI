@@ -523,14 +523,17 @@ final class DynamicInertAttributeTests: XCTestCase {
 
     // MARK: - safeAreaInsetPositions (landed with 49-B)
 
-    /// The vocabulary matches base_view_converter.rb SAFE_AREA_EDGES,
-    /// including the left/right spellings it accepts beyond the enum.
+    /// The declared items (ViewAttributes.SafeAreaInsetPositions), as
+    /// base_view_converter.rb SAFE_AREA_EDGES reads them: `left` / `right` /
+    /// `horizontal` are declared nowhere and select no edge (jsonui-cli 1.9.0).
     func testSafeAreaEdgeSetVocabulary() {
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["top"]), .top)
-        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["left"]), .leading)
-        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["right"]), .trailing)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["leading"]), .leading)
+        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["trailing"]), .trailing)
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["vertical"]), .vertical)
-        XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["horizontal"]), .horizontal)
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["left"]))
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["right"]))
+        XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["horizontal"]))
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["all"]), .all)
         XCTAssertEqual(
             DynamicModifierHelper.safeAreaEdgeSet(["top", "bottom"]),
@@ -776,7 +779,8 @@ final class DynamicInertAttributeTests: XCTestCase {
     /// DEBUG helper delegates to it.
     func testNetworkImageContentModeFromResolvesTheWholeVocabulary() {
         XCTAssertEqual(NetworkImage.ContentMode.from("fill"), .stretch)
-        XCTAssertEqual(NetworkImage.ContentMode.from("ScaleToFill"), .stretch)
+        // ScaleToFill is Image's; NetworkImage declares it in no case.
+        XCTAssertEqual(NetworkImage.ContentMode.from("ScaleToFill"), .fit)
         XCTAssertEqual(NetworkImage.ContentMode.from("AspectFill"), .fill)
         XCTAssertEqual(NetworkImage.ContentMode.from("AspectFit"), .fit)
         XCTAssertEqual(NetworkImage.ContentMode.from("center"), .center)
@@ -1050,9 +1054,11 @@ final class DynamicInertAttributeTests: XCTestCase {
         }
     }
 
-    /// `style` is the separate spelling that carries linear/circular, and it
-    /// stays on the shape reading.
-    func testProgressStyleStillCarriesTheShape() throws {
+    /// `style` is the style file's name (common.style), not a shape:
+    /// Progress declares none, and ProgressConverter no longer reads it
+    /// (a styled Progress was drawn as a spinner). It is decoded as written
+    /// and is not the size vocabulary.
+    func testProgressStyleIsTheStyleFileNotTheShape() throws {
         let c = try component("""
         { "type": "Progress", "id": "t", "progress": 0.5, "style": "linear" }
         """)
@@ -1162,7 +1168,7 @@ final class DynamicInertAttributeTests: XCTestCase {
     /// is why the intent has to be a value rather than a ternary.
     func testContentModeVocabularyCoversEveryDeclaredSpelling() {
         let expected: [String: ImageContentModeIntent] = [
-            "fill": .stretch, "ScaleToFill": .stretch, "scaleToFill": .stretch,
+            "fill": .stretch, "ScaleToFill": .stretch,
             "fit": .fit, "AspectFit": .fit,
             "AspectFill": .aspectFill,
             "top": .positional(.top), "Top": .positional(.top),
@@ -1177,6 +1183,9 @@ final class DynamicInertAttributeTests: XCTestCase {
                 "contentMode '\(spelling)' resolved to the wrong intent"
             )
         }
+        // A spelling declared in no case draws the declared default
+        // (jsonui-cli 1.9.0): `scaleToFill` is not `ScaleToFill`.
+        XCTAssertEqual(ImageContentModeIntent.from("scaleToFill"), .fit)
     }
 
     /// Anything unrecognised falls back to `.fit`, which is what both render

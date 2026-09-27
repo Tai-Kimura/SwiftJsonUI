@@ -421,7 +421,7 @@ open class SJUILabel: UILabel {
             }
         }
         if let alignment = attr["textAlign"].string {
-            switch alignment.lowercased() {
+            switch DeclaredSpelling.lowered(alignment, in: LabelAttributes.TextAlign.declaredSpellings) {
             case "left":
                 paragraphStyle.alignment = .left
                 l.textAlignment = .left
@@ -520,7 +520,7 @@ open class SJUILabel: UILabel {
                 highlightParagraphStyle.lineHeightMultiple = highlightMultiple
             }
             if let highlightAlignment = highlightAttr["textAlign"].string {
-                switch highlightAlignment.lowercased() {
+                switch DeclaredSpelling.lowered(highlightAlignment, in: LabelAttributes.HighlightAttributes.TextAlign.declaredSpellings) {
                 case "left":
                     highlightParagraphStyle.alignment = .left
                 case "right":

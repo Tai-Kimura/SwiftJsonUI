@@ -35,7 +35,10 @@ public struct TextDecoration: Equatable {
         case single, double, thick, none
 
         public static func from(_ declared: String?) -> LineStyle {
-            switch declared?.lowercased() {
+            // By its declared spelling (Label.underline / .strikethrough
+            // .lineStyle: Single / Double / Thick / None), case and all —
+            // jsonui-cli 1.9.0; anything else is the default, a single line.
+            switch DeclaredSpelling.lowered(declared, in: LabelAttributes.Underline.LineStyle.declaredSpellings) {
             case "double": return .double
             case "thick": return .thick
             case "none": return .none

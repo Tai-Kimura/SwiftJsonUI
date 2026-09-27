@@ -198,26 +198,42 @@ public struct DynamicEventHelper {
         )
     }
 
-    /// Apply onTapGesture if onClick is defined
-    /// Matches tool pattern: .onTapGesture { data.onClick?() }
-    static func applyOnClick(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+    /// Whether `applyOnClick` attaches a tap to this component.
+    static func attachesTap(_ component: DynamicComponent, data: [String: Any]) -> Bool {
         // Skip if component is disabled
-        if component.commonBool(\.enabled) == false { return view }
+        if component.commonBool(\.enabled) == false { return false }
 
         // A control calls its onClick from its own operation, and a text
         // field not at all (operationClickTypes): no tap here.
-        if callsOnClickFromItsOperation(component) { return view }
+        if callsOnClickFromItsOperation(component) { return false }
 
-        let handlers = component.effectiveOnClickHandlers
-        guard !handlers.isEmpty else { return view }
+        guard !component.effectiveOnClickHandlers.isEmpty else { return false }
 
         // common.canTap is the SwiftUI tap gate (attribute_definitions.json;
         // on UIKit it is the pressed state instead): false, or a binding that
         // resolves false, shuts the tap and leaves the view as it is. It used
         // to be ignored here, so `canTap: false` still tapped.
-        if !tapGateOpen(component, data: data) { return view }
+        return tapGateOpen(component, data: data)
+    }
 
-        let tapped = AnyView(
+    /// tapBackground — the background while pressed (jsonui-cli 1.9.0) — of a
+    /// node this helper attaches a tap to; nil for a node without one (a
+    /// Button draws its own). The background slot (`applyBackground`) and the
+    /// tap (`applyOnClick`) both ask this, so a node that draws a pressed
+    /// colour is exactly a node that tracks its press.
+    static func pressedBackgroundColor(_ component: DynamicComponent, data: [String: Any]) -> Color? {
+        guard attachesTap(component, data: data),
+              let raw = component.commonString(\.tapBackground) else { return nil }
+        return DynamicHelpers.getColor(raw, data: data)
+    }
+
+    /// Apply onTapGesture if onClick is defined
+    /// Matches tool pattern: .onTapGesture { data.onClick?() }
+    static func applyOnClick(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        guard attachesTap(component, data: data) else { return view }
+        let handlers = component.effectiveOnClickHandlers
+
+        var tapped = AnyView(
             view
                 .contentShape(Rectangle())
                 .onTapGesture {
@@ -228,6 +244,11 @@ public struct DynamicEventHelper {
                     }
                 }
         )
+        // The press, for the pressed colour the background slot draws
+        // (PressedBackground.swift). After the tap gesture, so the tap fires.
+        if pressedBackgroundColor(component, data: data) != nil {
+            tapped = AnyView(tapped.tracksPress())
+        }
         // What VoiceOver is told about the tap (TapAccessibility): a button,
         // one button made of its content, or nothing where it holds a control.
         return TapAccessibility.apply(tapped, component: component)

@@ -69,7 +69,7 @@ public struct BlurConverter {
         // rows. `VisualEffectStyle` is the one table both ios paths read.
         let attrs = component.typedAttributes(BlurAttributes.self)
         let styleRaw = attrs.effectStyle?.rawStringValue
-        result = AnyView(result.jsonUIVisualEffect(styleRaw))
+        result = AnyView(result.jsonUIVisualEffect(styleRaw, in: BlurAttributes.EffectStyle.declaredSpellings))
 
         // --- 4. applyStandardModifiers() ---
         result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)

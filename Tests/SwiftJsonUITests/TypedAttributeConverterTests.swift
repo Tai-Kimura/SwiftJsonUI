@@ -134,10 +134,14 @@ final class TypedAttributeConverterTests: XCTestCase {
         _ = WebConverter.convert(component: c, data: [:])
     }
 
-    func testBlurConverterEffectStyleLenientEnum() throws {
+    /// The generated parse takes the declared spelling only, case and all
+    /// (jsonui-cli 1.9.0): `dark` is kept as an unknown spelling, and named.
+    func testBlurConverterEffectStyleTakesTheDeclaredSpelling() throws {
+        let declared = try component(["type": "Blur", "effectStyle": "Dark"])
+        XCTAssertEqual(declared.typedAttributes(BlurAttributes.self).effectStyle?.rawStringValue, "Dark")
         let c = try component(["type": "Blur", "effectStyle": "dark"])
         let attrs = c.typedAttributes(BlurAttributes.self)
-        XCTAssertEqual(attrs.effectStyle?.rawStringValue, "Dark") // ci-matched
+        XCTAssertEqual(attrs.effectStyle?.rawStringValue, "dark")
         _ = BlurConverter.convert(component: c, data: [:], viewId: nil)
     }
 

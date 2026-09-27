@@ -95,7 +95,9 @@ public enum SJUIGlass {
     /// "declared, but apply nothing". Resolving it to a member would be inventing one;
     /// it is answered here as "no effect" instead.
     public static func isIdentity(_ style: String?) -> Bool {
-        style?.lowercased() == "identity"
+        // As written: glass.style is declared regular / clear / identity, case
+        // and all (jsonui-cli 1.9.0).
+        DeclaredSpelling.lowered(style, in: CommonAttributes.Glass.Style.declaredSpellings) == "identity"
     }
 
     /// Which shapes the generator can write statically. `capsule` and `circle` depend
@@ -119,7 +121,7 @@ public enum SJUIGlass {
     public static func isStaticallyResolvable(shape: String?) -> Bool {
         guard isKnown(shape: shape) else { return false }
 
-        switch shape?.lowercased() {
+        switch shape {
         case nil, "rect": return true
         case let s? where s.hasPrefix("rounded"): return true
         default: return false
@@ -128,7 +130,7 @@ public enum SJUIGlass {
 
     /// The corner radius inside `rounded(N)`, or nil when the spelling carries none.
     public static func roundedRadius(from shape: String?) -> CGFloat? {
-        guard let shape = shape?.lowercased(), shape.hasPrefix("rounded") else { return nil }
+        guard let shape = shape, shape.hasPrefix("rounded") else { return nil }
         guard let open = shape.firstIndex(of: "("), let close = shape.firstIndex(of: ")"), open < close else { return nil }
         return Double(shape[shape.index(after: open)..<close]).map { CGFloat($0) }
     }
@@ -197,10 +199,10 @@ public enum SJUIGlass {
 
     public static func plan(style: String?, tint: Color?, interactive: Bool?, shape: String?) -> Plan {
         Plan(applyEffect: !isIdentity(style),
-             clear: style?.lowercased() == "clear",
+             clear: DeclaredSpelling.lowered(style, in: CommonAttributes.Glass.Style.declaredSpellings) == "clear",
              hasTint: tint != nil,
              interactive: interactive,
-             shape: shape?.lowercased())
+             shape: shape)
     }
 
     #if compiler(>=6.2) // names `Glass`
@@ -239,17 +241,19 @@ public enum SJUIGlass {
     /// Anything outside this set is not silently accepted: `resolvedShape` still
     /// answers with the SDK default so a typo cannot crash a screen, but `isKnown`
     /// lets the generator reject it while the spelling is still visible statically.
-    static let knownShapeSpellings = ["capsule", "circle", "rect"]
+    /// glass.shape's declared spellings (CommonAttributes.Glass.Shape), as
+    /// written — case and all (jsonui-cli 1.9.0) — and the `rounded(N)` form.
+    static let knownShapeSpellings = CommonAttributes.Glass.Shape.declaredSpellings
 
     public static func isKnown(shape: String?) -> Bool {
-        guard let shape = shape?.lowercased() else { return true }
+        guard let shape = shape else { return true }
         return knownShapeSpellings.contains(shape) || shape.hasPrefix("rounded")
     }
 
     #if compiler(>=6.2) // names `DefaultGlassEffectShape`
     @available(iOS 26.0, *)
     static func resolvedShape(_ shape: String?) -> AnyShape {
-        switch shape?.lowercased() {
+        switch shape {
         case "capsule": return AnyShape(Capsule())
         case "circle": return AnyShape(Circle())
         case "rect": return AnyShape(Rectangle())

@@ -11,6 +11,9 @@ public struct SwitchAttributes {
     public enum LabelPosition: String {
         case leading = "leading"
         case trailing = "trailing"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["leading", "trailing"]
     }
 
     public enum ToggleStyle: String {
@@ -18,6 +21,9 @@ public struct SwitchAttributes {
         case button = "button"
         case checkbox = "checkbox"
         case `default` = "default"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["switch", "button", "checkbox", "default"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -135,20 +141,21 @@ public struct SwitchAttributes {
     private static func parseLabelPosition(_ raw: Any?) -> AttrEnum<LabelPosition>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "leading": return .known(LabelPosition.leading)
             case "trailing": return .known(LabelPosition.trailing)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Switch.labelPosition: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in LabelPosition.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Switch.labelPosition: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseToggleStyle(_ raw: Any?) -> AttrEnum<ToggleStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "switch": return .known(ToggleStyle.`switch`)
             case "button": return .known(ToggleStyle.button)
             case "checkbox": return .known(ToggleStyle.checkbox)
@@ -156,7 +163,8 @@ public struct SwitchAttributes {
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Switch.toggleStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ToggleStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Switch.toggleStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

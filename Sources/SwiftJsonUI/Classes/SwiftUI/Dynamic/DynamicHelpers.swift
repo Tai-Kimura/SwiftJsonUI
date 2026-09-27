@@ -42,26 +42,26 @@ public struct DynamicHelpers {
     /// the date family, so they fall back to .default". Written as cases so a
     /// reader can tell the two kinds of `.default` apart.
     ///
-    /// ⚠️ Six spellings below are accepted here and declared NOWHERE —
-    /// `emailaddress`, `numeric`, `phonenumber`, `decimalpad`, `weburl`,
-    /// `ascii`. That is the `rectangle` shape: vocabulary taken from the
-    /// implementation instead of the declaration. They are KEPT, not removed:
-    /// `rectangle` was measured at 0 uses across consumer layouts before it
-    /// went, and nothing has measured these. Removing them needs that
-    /// measurement first, or it silently changes the keyboard on any layout
-    /// that spells `input` this way.
-    static func keyboardType(forInput input: String?) -> UIKeyboardType {
-        switch input?.lowercased() {
-        case "email", "emailaddress": return .emailAddress
-        case "number", "numeric": return .numberPad
-        case "phone", "phonenumber": return .phonePad
-        case "decimal", "decimalpad": return .decimalPad
+    /// Only the declared spellings are read, case and all (jsonui-cli 1.9.0,
+    /// DeclaredSpelling). The nine this table used to accept beyond the
+    /// declaration — `emailaddress`, `numeric`, `phonenumber`, `decimalpad`,
+    /// `weburl`, `ascii`, `twitter`, `websearch`, `namephonepad` (the last
+    /// three are TextView keyboardType's) — draw the default now, as the
+    /// validator names them. Measured before they went (2026-09-26): 0 of
+    /// 8,814 literal enum values on the nine consumer faces are declared in
+    /// no case, the instrument checked against a layout holding three.
+    static func keyboardType(
+        forInput input: String?,
+        in spellings: [String] = TextFieldAttributes.Input.declaredSpellings
+    ) -> UIKeyboardType {
+        switch DeclaredSpelling.lowered(input, in: spellings) {
+        case "email": return .emailAddress
+        case "number": return .numberPad
+        case "phone": return .phonePad
+        case "decimal": return .decimalPad
         case "signeddecimal": return .numbersAndPunctuation
-        case "alphabet", "allphabet", "ascii": return .asciiCapable
-        case "url", "weburl": return .URL
-        case "twitter": return .twitter
-        case "websearch": return .webSearch
-        case "namephonepad": return .namePhonePad
+        case "alphabet", "allphabet": return .asciiCapable
+        case "url": return .URL
         // Declared, read, and answered `.default` on purpose:
         //   password              — the secure entry is a SecureField, not a keyboard
         //   date / time / datetime — UIKeyboardType has no member for them

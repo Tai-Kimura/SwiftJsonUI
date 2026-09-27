@@ -331,8 +331,12 @@ public struct DynamicModifierHelper {
     /// label_horizontal, the codegen half). Until SwiftJsonUI 10.29.0 a
     /// Label's gravity did not place its text across a frame wider than it.
     public static func labelHorizontal(_ component: DynamicComponent, data: [String: Any] = [:]) -> HorizontalAlignment {
-        if let align = component.textAlignSpelling(data: data)?.lowercased() {
-            switch align {
+        // Each by its declared spelling (DeclaredSpelling), as sjui's
+        // label_horizontal reads them (EnumSpelling.lowered): a textAlign in
+        // no declared spelling is the start; a gravity part in none names
+        // nothing.
+        if let spelling = component.textAlignSpelling(data: data) {
+            switch DeclaredSpelling.lowered(spelling, in: LabelAttributes.TextAlign.declaredSpellings) {
             case "center": return .center
             case "right", "trailing": return .trailing
             default: return .leading
@@ -340,10 +344,16 @@ public struct DynamicModifierHelper {
         }
         // center / centerHorizontal first, then right — the order sjui's
         // label_horizontal and rjui's map_label_gravity read them in.
-        let parts = (component.gravity ?? []).map { $0.lowercased() }
-        if parts.contains("center") || parts.contains("centerhorizontal") || parts.contains("center_horizontal") { return .center }
-        if parts.contains("right") || parts.contains("end") { return .trailing }
+        let parts = gravityNamed(component)
+        if parts.contains("center") || parts.contains("centerhorizontal") { return .center }
+        if parts.contains("right") { return .trailing }
         return .leading
+    }
+
+    /// The gravity parts in a declared spelling, lowercased; a part in none
+    /// is dropped (sjui's `EnumSpelling.lowered(g, 'common', 'gravity')`).
+    static func gravityNamed(_ component: DynamicComponent) -> [String] {
+        (component.gravity ?? []).compactMap { DeclaredSpelling.lowered($0, in: CommonAttributes.Gravity.declaredSpellings) }
     }
 
     /// The lines of a multi-line Label follow the same rule.
@@ -363,7 +373,7 @@ public struct DynamicModifierHelper {
     /// at the centre of a height-only frame whatever the gravity, and at the
     /// top of a frame that sized both axes.
     static func labelVertical(_ component: DynamicComponent) -> VerticalAlignment {
-        let parts = (component.gravity ?? []).map { $0.lowercased() }
+        let parts = gravityNamed(component)
         if parts.contains("top") { return .top }
         if parts.contains("bottom") { return .bottom }
         return .center
@@ -399,6 +409,24 @@ public struct DynamicModifierHelper {
     // MARK: - 5. Background
 
     public static func applyBackground(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        applyBackground(view, base: backgroundColor(component: component, data: data), component: component, data: data)
+    }
+
+    /// The background slot with `base` as its colour. On a node with a tap
+    /// and a tapBackground the pressed colour replaces it while the node is
+    /// pressed (jsonui-cli 1.9.0; PressedBackground.swift) — applyOnClick
+    /// tracks the press.
+    static func applyBackground(_ view: AnyView, base: Color?, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        if let pressed = DynamicEventHelper.pressedBackgroundColor(component, data: data) {
+            return AnyView(view.pressedBackground(pressed, base: base))
+        }
+        guard let base else { return view }
+        return AnyView(view.background(base))
+    }
+
+    /// The background colour at rest: disabledBackground while disabled,
+    /// else background.
+    static func backgroundColor(component: DynamicComponent, data: [String: Any]) -> Color? {
         // enabled=false + disabledBackground
         // `disabledBackground` is string|binding: the raw String cast read a
         // bound spelling as a literal colour name, which resolves to nothing.
@@ -406,22 +434,14 @@ public struct DynamicModifierHelper {
            let disabledBg = component.typedAttributes(CommonAttributes.self)
                .disabledBackground?.rawRepresentation as? String,
            let color = DynamicHelpers.getColor(disabledBg, data: data) {
-            return AnyView(view.background(color))
+            return color
         }
 
-        guard let background = component.commonString(\.background) else { return view }
+        guard let background = component.commonString(\.background) else { return nil }
 
-        // Check binding — getColor already handles SwiftUI.Binding unwrapping
-        if let color = DynamicHelpers.getColor(background, data: data) {
-            return AnyView(view.background(color))
-        }
-
-        // Try direct color name
-        if let color = DynamicHelpers.getColor(background) {
-            return AnyView(view.background(color))
-        }
-
-        return view
+        // Check binding — getColor already handles SwiftUI.Binding unwrapping,
+        // then the direct color name
+        return DynamicHelpers.getColor(background, data: data) ?? DynamicHelpers.getColor(background)
     }
 
     // MARK: - 5d. Glass (Liquid Glass, iOS 26+)
@@ -844,22 +864,23 @@ public struct DynamicModifierHelper {
     }
 
     /// The `Edge.Set` a declared position list selects, or nil when it selects
-    /// none. Vocabulary matches `base_view_converter.rb` SAFE_AREA_EDGES,
-    /// including the `left`/`right` spellings it accepts beyond the enum.
+    /// none. Each item by its declared spelling
+    /// (ViewAttributes.SafeAreaInsetPositions: top / bottom / leading /
+    /// trailing / vertical / all), as base_view_converter.rb SAFE_AREA_EDGES
+    /// reads it — `left` / `right` / `horizontal` are declared nowhere and
+    /// select no edge (jsonui-cli 1.9.0).
     static func safeAreaEdgeSet(_ positions: [Any]) -> Edge.Set? {
-        let list = positions.compactMap { $0 as? String }.map { $0.lowercased() }
+        let list = positions.compactMap { DeclaredSpelling.lowered($0 as? String, in: ViewAttributes.SafeAreaInsetPositions.declaredSpellings) }
         if list.contains("all") { return .all }
-        if list == ["none"] { return nil }
 
         var edges: Edge.Set = []
         for position in list {
             switch position {
             case "top": edges.insert(.top)
             case "bottom": edges.insert(.bottom)
-            case "leading", "left": edges.insert(.leading)
-            case "trailing", "right": edges.insert(.trailing)
+            case "leading": edges.insert(.leading)
+            case "trailing": edges.insert(.trailing)
             case "vertical": edges.insert(.vertical)
-            case "horizontal": edges.insert(.horizontal)
             default: break
             }
         }
@@ -1502,12 +1523,14 @@ public struct DynamicModifierHelper {
         // highlighted → highlightBackground REPLACES the base background,
         // exactly as UIKit swaps SJUIView's backgroundColor. `.background`
         // layers behind the view, so painting the highlight after the opaque
-        // base hid it entirely.
+        // base hid it entirely. A pressed node's tapBackground replaces
+        // either (applyBackground).
         Stage("background", when: { !$0.background }) { v, c, d in
-            if let highlight = highlightedBackgroundColor(component: c, data: d) {
-                return AnyView(v.background(highlight))
-            }
-            return applyBackground(v, component: c, data: d)
+            applyBackground(
+                v,
+                base: highlightedBackgroundColor(component: c, data: d) ?? backgroundColor(component: c, data: d),
+                component: c, data: d
+            )
         },
         // glass — the Liquid Glass material. Slot fixed on BOTH faces, and
         // the two were written from each other rather than each from the prose:
@@ -1654,14 +1677,16 @@ public struct DynamicModifierHelper {
         var h: String? = nil
         var v: String? = nil
         for g in parts {
-            let gl = g.lowercased()
-            switch gl {
-            case "right", "end": h = "trailing"
-            case "left", "start": h = "leading"
-            case "centerhorizontal", "center_horizontal": h = "center"
+            // By its declared spelling (CommonAttributes.Gravity), case and
+            // all — jsonui-cli 1.9.0; `start` / `end` / `center_*` are
+            // declared nowhere.
+            switch DeclaredSpelling.lowered(g, in: CommonAttributes.Gravity.declaredSpellings) {
+            case "right": h = "trailing"
+            case "left": h = "leading"
+            case "centerhorizontal": h = "center"
             case "top": v = "top"
             case "bottom": v = "bottom"
-            case "centervertical", "center_vertical": v = "center"
+            case "centervertical": v = "center"
             case "center":
                 h = "center"
                 v = "center"

@@ -16,12 +16,18 @@ public struct CommonAttributes {
         case bottomLeading = "bottomLeading"
         case bottom = "bottom"
         case bottomTrailing = "bottomTrailing"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["topLeading", "top", "topTrailing", "leading", "center", "trailing", "bottomLeading", "bottom", "bottomTrailing"]
     }
 
     public enum BorderStyle: String {
         case solid = "solid"
         case dashed = "dashed"
         case dotted = "dotted"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["solid", "dashed", "dotted"]
     }
 
     public enum Distribution: String {
@@ -29,6 +35,9 @@ public struct CommonAttributes {
         case fillEqually = "fillEqually"
         case equalSpacing = "equalSpacing"
         case equalCentering = "equalCentering"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["fill", "fillEqually", "equalSpacing", "equalCentering"]
     }
 
     public enum EffectStyle: String {
@@ -41,6 +50,9 @@ public struct CommonAttributes {
         case thin = "Thin"
         case thick = "Thick"
         case chrome = "Chrome"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Light", "Dark", "ExtraLight", "Regular", "Prominent", "UltraThin", "Thin", "Thick", "Chrome", "systemMaterial", "systemUltraThinMaterial", "systemThinMaterial", "systemThickMaterial", "systemChromeMaterial"]
     }
 
     public enum TouchDisabledState: String {
@@ -54,6 +66,34 @@ public struct CommonAttributes {
         case visible = "visible"
         case invisible = "invisible"
         case gone = "gone"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["visible", "invisible", "gone"]
+    }
+
+    public enum Gravity {
+        /// The spellings each value of `gravity` is declared as — it holds
+        /// one or a list of them, so it has no enum type of its own —
+        /// case-sensitive.
+        public static let declaredSpellings: [String] = ["top", "bottom", "centerVertical", "left", "right", "centerHorizontal", "center"]
+    }
+
+    public enum ConfirmationDialog {
+        public enum TitleVisibility {
+            /// The spellings `confirmationDialog.titleVisibility` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["automatic", "visible", "hidden"]
+        }
+    }
+
+    public enum Glass {
+        public enum Style {
+            /// The spellings `glass.style` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["regular", "clear", "identity"]
+        }
+        public enum Shape {
+            /// The spellings `glass.shape` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["capsule", "circle", "rect"]
+        }
     }
 
     /// Canonical attribute names declared for this component (public metadata contract).
@@ -810,69 +850,73 @@ public struct CommonAttributes {
     private static func parseAlignment(_ raw: Any?) -> AttrEnum<Alignment>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "topleading": return .known(Alignment.topLeading)
+            switch s {
+            case "topLeading": return .known(Alignment.topLeading)
             case "top": return .known(Alignment.top)
-            case "toptrailing": return .known(Alignment.topTrailing)
+            case "topTrailing": return .known(Alignment.topTrailing)
             case "leading": return .known(Alignment.leading)
             case "center": return .known(Alignment.center)
             case "trailing": return .known(Alignment.trailing)
-            case "bottomleading": return .known(Alignment.bottomLeading)
+            case "bottomLeading": return .known(Alignment.bottomLeading)
             case "bottom": return .known(Alignment.bottom)
-            case "bottomtrailing": return .known(Alignment.bottomTrailing)
+            case "bottomTrailing": return .known(Alignment.bottomTrailing)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("common.alignment: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Alignment.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("common.alignment: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseBorderStyle(_ raw: Any?) -> AttrEnum<BorderStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "solid": return .known(BorderStyle.solid)
             case "dashed": return .known(BorderStyle.dashed)
             case "dotted": return .known(BorderStyle.dotted)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("common.borderStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in BorderStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("common.borderStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseDistribution(_ raw: Any?) -> AttrEnum<Distribution>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "fill": return .known(Distribution.fill)
-            case "fillequally": return .known(Distribution.fillEqually)
-            case "equalspacing": return .known(Distribution.equalSpacing)
-            case "equalcentering": return .known(Distribution.equalCentering)
+            case "fillEqually": return .known(Distribution.fillEqually)
+            case "equalSpacing": return .known(Distribution.equalSpacing)
+            case "equalCentering": return .known(Distribution.equalCentering)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("common.distribution: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Distribution.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("common.distribution: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseEffectStyle(_ raw: Any?) -> AttrEnum<EffectStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "light": return .known(EffectStyle.light)
-            case "dark": return .known(EffectStyle.dark)
-            case "extralight": return .known(EffectStyle.extraLight)
-            case "regular", "systemmaterial": return .known(EffectStyle.regular)
-            case "prominent": return .known(EffectStyle.prominent)
-            case "ultrathin", "systemultrathinmaterial": return .known(EffectStyle.ultraThin)
-            case "thin", "systemthinmaterial": return .known(EffectStyle.thin)
-            case "thick", "systemthickmaterial": return .known(EffectStyle.thick)
-            case "chrome", "systemchromematerial": return .known(EffectStyle.chrome)
+            switch s {
+            case "Light": return .known(EffectStyle.light)
+            case "Dark": return .known(EffectStyle.dark)
+            case "ExtraLight": return .known(EffectStyle.extraLight)
+            case "Regular", "systemMaterial": return .known(EffectStyle.regular)
+            case "Prominent": return .known(EffectStyle.prominent)
+            case "UltraThin", "systemUltraThinMaterial": return .known(EffectStyle.ultraThin)
+            case "Thin", "systemThinMaterial": return .known(EffectStyle.thin)
+            case "Thick", "systemThickMaterial": return .known(EffectStyle.thick)
+            case "Chrome", "systemChromeMaterial": return .known(EffectStyle.chrome)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("common.effectStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in EffectStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("common.effectStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
@@ -894,14 +938,15 @@ public struct CommonAttributes {
     private static func parseVisibility(_ raw: Any?) -> AttrEnum<Visibility>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "visible": return .known(Visibility.visible)
             case "invisible": return .known(Visibility.invisible)
             case "gone": return .known(Visibility.gone)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("common.visibility: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in Visibility.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("common.visibility: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

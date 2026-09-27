@@ -38,8 +38,11 @@ public enum ImageContentModeIntent: Equatable {
     /// ImageContentModeDefaultTests reads the value). `fit` has a case of its
     /// own so the default is not what makes it `.fit`: a changed default
     /// then shows as `from(nil) != from("fit")` instead of moving both.
-    public static func from(_ spelling: String?) -> ImageContentModeIntent {
-        switch (spelling ?? "").lowercased() {
+    public static func from(
+        _ spelling: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> ImageContentModeIntent {
+        switch DeclaredSpelling.lowered(spelling, in: spellings) ?? "" {
         case "fit", "aspectfit": return .fit
         case "fill", "scaletofill": return .stretch
         case "aspectfill": return .aspectFill
@@ -65,15 +68,15 @@ public extension NetworkImage.ContentMode {
     /// not know: the declared default, `.fit` (as on Image, above); `fit`
     /// has a case of its own for the same reason.
     static func from(_ spelling: String?) -> NetworkImage.ContentMode {
-        switch spelling ?? "" {
-        case "AspectFill", "aspectFill": return .fill
-        case "fit", "Fit", "AspectFit", "aspectFit": return .fit
-        case "center", "Center": return .center
-        case "top", "Top": return .top
-        case "bottom", "Bottom": return .bottom
-        case "left", "Left": return .left
-        case "right", "Right": return .right
-        case "fill", "Fill", "scaleToFill", "ScaleToFill", "scaletofill":
+        switch DeclaredSpelling.lowered(spelling, in: NetworkImageAttributes.ContentMode.declaredSpellings) ?? "" {
+        case "aspectfill": return .fill
+        case "fit", "aspectfit": return .fit
+        case "center": return .center
+        case "top": return .top
+        case "bottom": return .bottom
+        case "left": return .left
+        case "right": return .right
+        case "fill":
             // fill = stretch (canonical image.fill = stretch,
             // shared/core/attribute_semantics.json).
             return .stretch

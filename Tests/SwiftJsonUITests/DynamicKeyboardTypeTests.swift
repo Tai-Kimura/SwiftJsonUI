@@ -98,7 +98,9 @@ final class DynamicKeyboardTypeTests: XCTestCase {
     func testTheTwoVocabulariesDisagreeExactlyWhereCodegenDoes() {
         XCTAssertEqual(DynamicHelpers.keyboardType(forInput: "number"), .numberPad)
         XCTAssertEqual(TextViewConverter.keyboardType(fromKeyboardTypeSpelling: "number"), .decimalPad)
-        XCTAssertEqual(DynamicHelpers.keyboardType(forInput: "numeric"), .numberPad)
+        // `numeric` is TextView keyboardType's; `input` declares it in no
+        // case (jsonui-cli 1.9.0).
+        XCTAssertEqual(DynamicHelpers.keyboardType(forInput: "numeric"), .default)
         XCTAssertEqual(TextViewConverter.keyboardType(fromKeyboardTypeSpelling: "numeric"), .phonePad)
     }
 

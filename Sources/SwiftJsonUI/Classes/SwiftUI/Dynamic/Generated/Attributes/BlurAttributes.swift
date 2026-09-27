@@ -12,6 +12,9 @@ public struct BlurAttributes {
         case light = "Light"
         case dark = "Dark"
         case extraLight = "ExtraLight"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Light", "Dark", "ExtraLight"]
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -62,14 +65,15 @@ public struct BlurAttributes {
     private static func parseEffectStyle(_ raw: Any?) -> AttrEnum<EffectStyle>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "light": return .known(EffectStyle.light)
-            case "dark": return .known(EffectStyle.dark)
-            case "extralight": return .known(EffectStyle.extraLight)
+            switch s {
+            case "Light": return .known(EffectStyle.light)
+            case "Dark": return .known(EffectStyle.dark)
+            case "ExtraLight": return .known(EffectStyle.extraLight)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Blur.effectStyle: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in EffectStyle.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Blur.effectStyle: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

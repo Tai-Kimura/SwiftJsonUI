@@ -12,12 +12,35 @@ public struct ButtonAttributes {
         case button = "button"
         case submit = "submit"
         case reset = "reset"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["button", "submit", "reset"]
     }
 
     public enum TextAlign: String {
         case left = "Left"
         case center = "Center"
         case right = "Right"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["Left", "Center", "Right"]
+    }
+
+    public enum PartialAttributes {
+        public enum LineBreakMode {
+            /// The spellings `partialAttributes.lineBreakMode` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Char", "Clip", "Word", "Head", "Middle", "Tail"]
+        }
+        public enum TextAlign {
+            /// The spellings `partialAttributes.textAlign` is declared as — case-sensitive.
+            public static let declaredSpellings: [String] = ["Left", "Right", "Center"]
+        }
+        public enum Underline {
+            public enum LineStyle {
+                /// The spellings `partialAttributes.underline.lineStyle` is declared as — case-sensitive.
+                public static let declaredSpellings: [String] = ["Single", "Double", "Thick", "None"]
+            }
+        }
     }
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
@@ -124,28 +147,30 @@ public struct ButtonAttributes {
     private static func parseButtonType(_ raw: Any?) -> AttrEnum<ButtonType>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
+            switch s {
             case "button": return .known(ButtonType.button)
             case "submit": return .known(ButtonType.submit)
             case "reset": return .known(ButtonType.reset)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Button.buttonType: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in ButtonType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Button.buttonType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 
     private static func parseTextAlign(_ raw: Any?) -> AttrEnum<TextAlign>? {
         guard let raw = raw, !(raw is NSNull) else { return nil }
         if let s = raw as? String {
-            switch s.lowercased() {
-            case "left": return .known(TextAlign.left)
-            case "center": return .known(TextAlign.center)
-            case "right": return .known(TextAlign.right)
+            switch s {
+            case "Left": return .known(TextAlign.left)
+            case "Center": return .known(TextAlign.center)
+            case "Right": return .known(TextAlign.right)
             default: break
             }
         }
-        AttrCodegenWarnings.emit("Button.textAlign: unknown enum value '\(raw)'")
+        let near = (raw as? String).flatMap { s in TextAlign.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Button.textAlign: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }
