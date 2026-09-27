@@ -6,7 +6,8 @@
 //  values [top, right, bottom, left] — `[0, 0, 0, 30]` puts the first cell
 //  30pt in, `[0, 30, 0, 0]` at the start, vertical and horizontal alike; the
 //  string form; two values [vertical, horizontal]; one value every side; an
-//  unreadable value and three values pad nothing. The Dynamic half always;
+//  unreadable value and three values pad nothing; the insets pad inside the
+//  scroll, which stays the Collection's width. The Dynamic half always;
 //  the generated half in the codegen host only. NOT opt-in.
 //
 
@@ -35,7 +36,9 @@ final class InsetsOrderProbeUITests: XCTestCase {
             ("v_unreadable", 0, 0),
             ("v_three", 0, 0),
             ("h_start30", 30, 0),
-            ("h_end30", 0, 0)
+            ("h_end30", 0, 0),
+            ("v_eager_start30", 30, 0),
+            ("flow_start30", 30, 0)
         ] as [(String, CGFloat, CGFloat)] {
             let box = element(app, "\(p)_io_\(row)_box")
             XCTAssertTrue(box.waitForExistence(timeout: 5), "\(p)_io_\(row) is not drawn")
@@ -44,6 +47,7 @@ final class InsetsOrderProbeUITests: XCTestCase {
             let at = (x: cell.minX - box.frame.minX, y: cell.minY - box.frame.minY)
             lines.append("\(p)_io_\(row): box \(Int(box.frame.width))x\(Int(box.frame.height)), scroll element \(Int(list.width))x\(Int(list.height)) at x=\(Int(list.minX - box.frame.minX)), first cell at x=\(Int(at.x)) y=\(Int(at.y))")
             XCTAssertEqual(at.x, x, accuracy: 1, "\(p)_io_\(row): the first cell is not \(Int(x))pt in")
+            XCTAssertEqual(list.width, box.frame.width, accuracy: 1, "\(p)_io_\(row): the scroll is not the Collection's width (the insets are outside it)")
             XCTAssertEqual(at.y, y, accuracy: 1, "\(p)_io_\(row): the first cell is not \(Int(y))pt down")
         }
         lines.forEach { print("IOP \($0)") }

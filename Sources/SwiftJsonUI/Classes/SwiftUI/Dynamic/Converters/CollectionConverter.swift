@@ -271,6 +271,9 @@ public struct CollectionConverter {
         // True on the grid route: buildGridLayout applies the collection
         // insets to the scroll CONTENT itself.
         var gridCarriesContentInsets = false
+        // True on the routes whose builder pads the content inside the scroll
+        // (buildVerticalSectionLayout, buildHorizontalLayout, buildFlowLayout).
+        var contentCarriesInsets = false
         // The List routes (buildSectionedListLayout, buildListLayout).
         var isListRoute = false
 
@@ -314,6 +317,7 @@ public struct CollectionConverter {
         }
 
         if isFlow {
+            contentCarriesInsets = true
             result = buildFlowLayout(
                 component: component,
                 dataSource: dataSource,
@@ -351,6 +355,7 @@ public struct CollectionConverter {
             // Section-based vertical: CollectionStackView delegates the
             // outer container choice (lazy/eager/none) so the JSON `lazy`
             // value (literal or binding-resolved) becomes a parameter.
+            contentCarriesInsets = true
             result = buildVerticalSectionLayout(
                 component: component,
                 dataSource: dataSource,
@@ -400,6 +405,7 @@ public struct CollectionConverter {
             // Horizontal: CollectionStackView(axis: .horizontal) selects between
             // LazyHStack / HStack / no-scroll based on `lazy`.
             horizontalStackCarriesInsetH = true
+            contentCarriesInsets = true
             result = buildHorizontalLayout(
                 component: component,
                 dataSource: dataSource,
@@ -499,7 +505,15 @@ public struct CollectionConverter {
         // are content padding (see applyCollectionContentInsets), not the
         // container-growing pre-background padding the generic chain applies.
         let _ = Logger.debug("[Collection] id=\(component.id ?? "?") width=\(String(describing: component.declaredWidth)) height=\(String(describing: component.declaredHeight)) widthRaw=\(component.widthRaw ?? "nil") heightRaw=\(component.heightRaw ?? "nil")")
-        if !gridCarriesContentInsets {
+        // The routes that pad their content inside the scroll themselves:
+        // the grid, the vertical and horizontal CollectionStackView (its
+        // `contentInsets`) and the flow — as the codegen emits them and the
+        // SSoT's Collection.insets says ("padding around the cells, inside
+        // the Collection's scroll"). Padding the route from outside shrank
+        // the scroll: a 300-wide Collection with insets [0, 0, 0, 30] was a
+        // 270-wide scroll 30pt in (measured, until SwiftJsonUI 10.29.0).
+        // The List and pager routes keep the outer padding.
+        if !gridCarriesContentInsets && !contentCarriesInsets {
             result = applyCollectionContentInsets(
                 result, component: component,
                 includeInsetHorizontal: !horizontalStackCarriesInsetH
@@ -1145,7 +1159,8 @@ public struct CollectionConverter {
                     axis: .vertical,
                     horizontalAlignment: vstackAlignment,
                     spacing: lineSpacing,
-                    showsIndicators: showsIndicators
+                    showsIndicators: showsIndicators,
+                    contentInsets: collectionContentEdgeInsets(component: component)
                 ) {
                     ForEach(
                         0..<min(sections.count, dataSource.sections.count),
@@ -1491,6 +1506,7 @@ public struct CollectionConverter {
                     showsIndicators: showsIndicators,
                     insetLeading: CGFloat(insetHorizontal),
                     insetTrailing: CGFloat(insetHorizontal),
+                    contentInsets: collectionContentEdgeInsets(component: component, includeInsetHorizontal: false),
                     fillsCrossAxis: fillsHeight(component, data: data)
                 ) {
                     ForEach(
@@ -1851,6 +1867,7 @@ public struct CollectionConverter {
                         }
                     }
                 }
+                .padding(collectionContentEdgeInsets(component: component) ?? EdgeInsets())
             }, target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
                cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
         })
