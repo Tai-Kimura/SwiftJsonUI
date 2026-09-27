@@ -107,6 +107,14 @@ check('emitting an unwirable handler raises rather than emitting a no-op') do
 end
 
 puts
+# --- autoId: a key as autoChangeTrackingId enriches it (a probe's) -----------
+auto = E.host_source('ProbeAuto', [{ 'name' => 'onGo', 'set' => { 'var' => 'target',
+  'autoId' => { 'from' => { 'title' => 'a3', 'key' => 'k3' }, 'primaryKey' => 'key', 'fallbackIndex' => 3 } } }])
+check('autoId -> CellIdGenerator.autoId of the dictionary, in the process') do
+  auto.include?('self?.data.target = CellIdGenerator.autoId(from: ["title": "a3", "key": "k3"], primaryKey: "key", fallbackIndex: 3) }')
+end
+check('autoId -> no literal') { !auto.include?('self?.data.target = "') }
+
 if FAILURES.empty?
   puts "all #{__FILE__.split('/').last} checks passed"
   exit 0

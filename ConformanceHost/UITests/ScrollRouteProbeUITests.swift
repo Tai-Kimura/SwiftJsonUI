@@ -14,6 +14,12 @@
 //  b2 on a sectioned list, the class-list List and a pager; and a key is the
 //  first cell's — "3" lands g1 over g3, which has no key; "k", which three
 //  cells have (two in one section), lands g6 each time.
+//  The fourth page (4f round 15): with autoChangeTrackingId a key is the
+//  enriched cellId on a list, the class-list List and a pager alike — "k3"
+//  names no cell, a3's enriched cellId a3; with no cellIdProperty the
+//  cellIds are keys by the same rule — "c2" lands c2 (not c5, which has it
+//  too), "1:3" nowhere, "e4" d4. The fifth: with cellIdProperty and no
+//  scrollTo, a list whose cells repeat a key draws every cell once, in order.
 //  The Dynamic half always; the generated half in the codegen host only.
 //  NOT opt-in.
 //
@@ -186,6 +192,79 @@ final class ScrollRouteProbeUITests: XCTestCase {
             XCTAssertEqual(landed?.label, want, "\(p)_route_dup: after \"\(value)\" the top is not \(want)")
         }
         report(lines, "SPR3")
+    }
+
+    private func runFourth(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        let list = element(app, "\(p)_route_auto_list")
+        let classList = element(app, "\(p)_route_auto_class")
+        let pager = element(app, "\(p)_route_auto_pager")
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no auto list")
+        app.buttons["\(p) auto go k3"].tap()
+        sleep(2)
+        for (name, frame) in [("list", list), ("class", classList)] {
+            let at = top(of: frame, among: keyLabels)
+            lines.append("\(p)_route_auto_\(name) after k3: nearest \(at.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
+            XCTAssertEqual(at?.label, "a0", "\(p)_route_auto_\(name): the data's own key moved it")
+        }
+        let raw = onPage(pager, among: keyLabels)
+        lines.append("\(p)_route_auto_pager after k3: \(raw)")
+        XCTAssertEqual(raw, ["a0"], "\(p)_route_auto_pager: the data's own key turned it")
+        app.buttons["\(p) auto go k3~"].tap()
+        sleep(2)
+        check("\(p)_route_auto_list after k3~", list, labels: keyLabels, target: "a3", slack: 10, lines: &lines)
+        check("\(p)_route_auto_class after k3~", classList, labels: keyLabels, target: "a3", slack: 24, lines: &lines)
+        let enriched = onPage(pager, among: keyLabels)
+        lines.append("\(p)_route_auto_pager after k3~: \(enriched)")
+        XCTAssertEqual(enriched, ["a3"], "\(p)_route_auto_pager: a3's cellId did not turn it to a3")
+
+        let cellId = element(app, "\(p)_route_cellid2")
+        let labels = (0..<10).map { "c\($0)" } + (0..<10).map { "d\($0)" }
+        for (value, want) in [("c2", "c2"), ("1:3", "c2"), ("e4", "d4"), ("c2", "c2")] {
+            app.buttons["\(p) cellid2 go \(value)"].tap()
+            sleep(1)
+            let landed = top(of: cellId, among: labels)
+            lines.append("\(p)_route_cellid2 after \(value): nearest \(landed.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
+            XCTAssertEqual(landed?.label, want, "\(p)_route_cellid2: after \"\(value)\" the top is not \(want)")
+        }
+        report(lines, "SPR4")
+    }
+
+    private func runFifth(prefix p: String, argument: String) {
+        let app = launch(argument)
+        let list = element(app, "\(p)_route_dup_noscroll")
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no list")
+        var lines: [String] = []
+        var ys: [CGFloat] = []
+        for i in 0..<6 {
+            let matches = list.staticTexts.matching(NSPredicate(format: "label == %@", "n\(i)"))
+            let count = matches.count
+            let y = count > 0 ? matches.firstMatch.frame.minY - list.frame.minY : -1
+            lines.append("\(p)_route_dup_noscroll n\(i): drawn \(count) time(s), y=\(Int(y))")
+            XCTAssertEqual(count, 1, "\(p): n\(i) is drawn \(count) time(s)")
+            ys.append(y)
+        }
+        XCTAssertEqual(ys, ys.sorted(), "\(p): the cells are not in their order")
+        report(lines, "SPR5")
+    }
+
+    func testTheEnrichedKeyAndTheCellIdsAreKeysByOneRuleDynamic() throws {
+        runFourth(prefix: "dyn", argument: "-scrollRouteProbe4")
+    }
+
+    func testTheEnrichedKeyAndTheCellIdsAreKeysByOneRuleGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runFourth(prefix: "cg", argument: "-scrollRouteProbe4Codegen")
+    }
+
+    func testARepeatedKeyWithNoScrollToDrawsEveryCellOnceDynamic() throws {
+        runFifth(prefix: "dyn", argument: "-scrollRouteProbe5")
+    }
+
+    func testARepeatedKeyWithNoScrollToDrawsEveryCellOnceGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runFifth(prefix: "cg", argument: "-scrollRouteProbe5Codegen")
     }
 
     func testAnIntWithCellIdPropertyAndADuplicateKeyDynamic() throws {

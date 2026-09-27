@@ -1,0 +1,60 @@
+{
+  "type": "View",
+  "id": "cg_route5_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_route_dup_noscroll",
+      "width": 200,
+      "height": 200,
+      "background": "#DDDDDD",
+      "items": "@{dupRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "key"
+    }
+  ],
+  "data": [
+    {
+      "name": "dupRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "n0",
+                "key": "p0"
+              },
+              {
+                "title": "n1",
+                "key": "q"
+              },
+              {
+                "title": "n2",
+                "key": "p2"
+              },
+              {
+                "title": "n3",
+                "key": "q"
+              },
+              {
+                "title": "n4",
+                "key": "5"
+              },
+              {
+                "title": "n5"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

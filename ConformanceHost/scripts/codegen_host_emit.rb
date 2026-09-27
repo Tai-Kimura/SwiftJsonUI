@@ -76,8 +76,20 @@ module CodegenHostEmit
     raise ArgumentError, "handler #{handler['name'].inspect} has no `set` operation" unless set
 
     # An integer is an Int literal (a probe's scrollTo index, say); anything
-    # else the string it has always been.
-    value = set['value'].is_a?(Integer) ? set['value'].to_s : swift_string_literal(set['value'].to_s)
+    # else the string it has always been. `autoId` (a probe's): a key as
+    # autoChangeTrackingId enriches it — CellIdGenerator.autoId of the cell's
+    # dictionary (string values), whose hash is launch-scoped, so it can be
+    # known only in the process that draws the cells.
+    value =
+      if (auto = set['autoId'])
+        from = auto['from'].map { |k, v| "#{swift_string_literal(k)}: #{swift_string_literal(v)}" }
+        "CellIdGenerator.autoId(from: [#{from.empty? ? ':' : from.join(', ')}], " \
+          "primaryKey: #{swift_string_literal(auto['primaryKey'])}, fallbackIndex: #{Integer(auto['fallbackIndex'])})"
+      elsif set['value'].is_a?(Integer)
+        set['value'].to_s
+      else
+        swift_string_literal(set['value'].to_s)
+      end
     "        data.#{handler['name']} = { [weak self] in " \
       "self?.data.#{set['var']} = #{value} }"
   end

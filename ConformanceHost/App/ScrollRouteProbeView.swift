@@ -52,8 +52,28 @@
 //    Dynamic renderer), and in the Dynamic renderer g1 and g3 were one id,
 //    "3" — which view a scroll reached was SwiftUI's choice.
 //
+//  The fourth page (`-scrollRouteProbe4` / `-scrollRouteProbe4Codegen`, 4f
+//  round 15):
+//  - `*_route_auto_list` / `*_route_auto_class` / `*_route_auto_pager`: the
+//    keyed two sections with autoChangeTrackingId — a list, the class-list
+//    List, a pager — one String for the three: "go k3" (the data's own key)
+//    names no cell, since a cell's key is its enriched cellId; "go k3~" (a3's
+//    enriched cellId, CellIdGenerator.autoId in this process) names a3.
+//    Until jsonui-cli 1.9.0 sjui's pager and class-list lookups compared the
+//    data's own key: "k3" turned them to a3, and a3's cellId did not;
+//  - `*_route_cellid2`: no cellIdProperty, a String; c0…c9 with cellIds c0…c9
+//    but c5's "c2" too and c7 with none, then d0…d9 with e0…e9. "go c2"
+//    names c2, "go 1:3" no cell, "go e4" d4, "go c2" again c2. Until then
+//    sjui gave c2 and c5 one `.id`, and the second section's loop ids were
+//    "1:<offset>" — "1:3" reached d3.
+//  The fifth page (`-scrollRouteProbe5` / `-scrollRouteProbe5Codegen`):
+//  `*_route_dup_noscroll`, cellIdProperty and no scrollTo — n0…n5 keyed p0,
+//  q, p2, q, "5" and none (its id "\(5)" before round 15): every cell drawn
+//  once, in order. Until then sjui's loop gave n1 and n3 one id, and n4 and
+//  n5 one id.
+//
 //  The generated half: ProbeLayouts/probe_scroll_route.json,
-//  probe_scroll_route2.json and probe_scroll_route3.json (handlers:
+//  probe_scroll_route2.json … probe_scroll_route5.json (handlers:
 //  ProbeLayouts/handlers/), built by scripts/generate_codegen_host.rb.
 //
 
@@ -64,6 +84,8 @@ struct ScrollRouteProbeView: View {
     let codegen: Bool
     var second = false
     var third = false
+    var fourth = false
+    var fifth = false
 
     static func layout(_ id: String, rows: String, target: String, extra: String) -> String {
         let sections = rows == "ruleRows"
@@ -86,6 +108,30 @@ struct ScrollRouteProbeView: View {
     @State private var intClass = 0
     @State private var intPager = 0
     @State private var dupKey = ""
+    @State private var autoKey = ""
+    @State private var cellId2Key = ""
+
+    /// c0…c9 with cellIds c0…c9 but c5's "c2" and c7 with none; d0…d9 with e0…e9.
+    static var cellId2Rows: CollectionDataSource {
+        let first: [String?] = (0..<10).map { $0 == 5 ? "c2" : $0 == 7 ? nil : "c\($0)" }
+        return CollectionDataSource(sections: [
+            ScrollRuleProbeView.section(cells: first.enumerated().map { i, id in id.map { ["title": "c\(i)", "cellId": $0] } ?? ["title": "c\(i)"] }),
+            ScrollRuleProbeView.section(cells: (0..<10).map { ["title": "d\($0)", "cellId": "e\($0)"] })
+        ])
+    }
+
+    /// n0…n5 keyed p0, q, p2, q, "5" and none.
+    static var dupNoScrollRows: CollectionDataSource {
+        let keys: [String?] = ["p0", "q", "p2", "q", "5", nil]
+        return CollectionDataSource(sections: [
+            ScrollRuleProbeView.section(cells: keys.enumerated().map { i, key in key.map { ["title": "n\(i)", "key": $0] } ?? ["title": "n\(i)"] })
+        ])
+    }
+
+    /// a3's cellId as autoChangeTrackingId enriches it, in this process.
+    static var a3Enriched: String {
+        CellIdGenerator.autoId(from: ["title": "a3", "key": "k3"], primaryKey: "key", fallbackIndex: 3)
+    }
 
     /// g0…g9 keyed z0…z9 but g1 keyed "3", g3 with no key, g6 and g8 keyed
     /// "k"; h0…h9 keyed w0…w9 but h2 keyed "k".
@@ -149,10 +195,30 @@ struct ScrollRouteProbeView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(codegen ? "scroll route probe (codegen)" : "scroll route probe").accessibilityIdentifier("sp_ready")
             if codegen {
-                if let generated = CodegenFixtureRegistry.probeView(named: third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
+                if let generated = CodegenFixtureRegistry.probeView(named: fifth ? "probe_scroll_route5" : fourth ? "probe_scroll_route4" : third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
                     Text("codegen routes").accessibilityIdentifier("sp_codegen")
                     generated
                 }
+            } else if fifth {
+                dynamic(##"{"type": "Collection", "id": "dyn_route_dup_noscroll", "width": 200, "height": 200, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}], "cellIdProperty": "key"}"##,
+                        data: ["rows": Self.dupNoScrollRows], frame: "dyn_route_dup_noscroll")
+            } else if fourth {
+                HStack {
+                    Button("dyn auto go k3") { autoKey = "k3" }
+                    Button("dyn auto go k3~") { autoKey = Self.a3Enriched }
+                    Button("dyn cellid2 go c2") { cellId2Key = "c2" }
+                    Button("dyn cellid2 go 1:3") { cellId2Key = "1:3" }
+                    Button("dyn cellid2 go e4") { cellId2Key = "e4" }
+                }
+                .font(.system(size: 9))
+                dynamic(Self.twoSections("dyn_route_auto_list", extra: #""cellIdProperty": "key", "autoChangeTrackingId": true, "#),
+                        data: ["rows": Self.bare(keyed), "t": autoKey], frame: "dyn_route_auto_list")
+                dynamic(Self.classList("dyn_route_auto_class", extra: #""cellIdProperty": "key", "autoChangeTrackingId": true, "#),
+                        data: ["rows": Self.bare(keyed), "t": autoKey], frame: "dyn_route_auto_class")
+                dynamic(Self.twoSections("dyn_route_auto_pager", extra: #""layout": "horizontal", "paging": true, "cellIdProperty": "key", "autoChangeTrackingId": true, "#),
+                        data: ["rows": Self.bare(keyed), "t": autoKey], frame: "dyn_route_auto_pager")
+                dynamic(Self.twoSections("dyn_route_cellid2", extra: ""),
+                        data: ["rows": Self.cellId2Rows, "t": cellId2Key], frame: "dyn_route_cellid2")
             } else if third {
                 HStack {
                     Button("dyn int list go 12") { intList = 12 }
