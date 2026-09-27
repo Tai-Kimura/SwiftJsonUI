@@ -1529,12 +1529,15 @@ public struct DynamicModifierHelper {
         // (4f ruling 2026-09-27) — its frame fell to `.center`, so a
         // `lazy: none` column narrower than a matchParent Collection stood in
         // the middle, where the lazy route's cells start at the leading edge.
+        let hasChildren = !(component.childComponents?.isEmpty ?? true)
+        let isCollection = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "collection" } ?? false
+        let isContainer = hasChildren || isCollection
         if component.gravity?.isEmpty != false {
-            let hasChildren = !(component.childComponents?.isEmpty ?? true)
-            let isCollection = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "collection" } ?? false
-            guard hasChildren || isCollection else { return nil }
+            guard isContainer else { return nil }
         }
-        return gravityToFrameAlignment(component.gravity, bothAxes: bothAxes)
+        // A leaf (text returned above): the axis its gravity does not name
+        // stays centred — see gravityToFrameAlignment(centredCrossAxis:).
+        return gravityToFrameAlignment(component.gravity, bothAxes: bothAxes, centredCrossAxis: !isContainer)
     }
 
     /// Convert gravity array to SwiftUI Alignment (matches frame_helper.rb gravity_to_frame_alignment)
@@ -1549,7 +1552,16 @@ public struct DynamicModifierHelper {
     /// return was what stopped them being reached. Same shape as B's codegen
     /// half (frame_helper.rb, ba5e6d1), landed in the same train so the two
     /// ios paths cannot answer differently.
-    private static func gravityToFrameAlignment(_ gravity: [String]?, bothAxes: Bool) -> Alignment? {
+    ///
+    /// The axis a gravity does not name: a container's is the canon default
+    /// (top | start); a LEAF's (`centredCrossAxis`: a TextField, an Image —
+    /// no children, a Label aside) stays centred. A leaf's partial gravity
+    /// fixes only its own axis: Compose and the web centre a TextField's and a
+    /// Button's text vertically in a 44pt frame whatever the gravity
+    /// (measured 2026-09-27). Until jsonui-cli 1.9.0 a leaf's `left` filled
+    /// the vertical axis with `top`, and a TextField's text sat at the top of
+    /// a 44pt frame (frame_helper.rb#centred_cross_axis?, the codegen half).
+    private static func gravityToFrameAlignment(_ gravity: [String]?, bothAxes: Bool, centredCrossAxis: Bool = false) -> Alignment? {
         let parts = gravity ?? []
 
         var h: String? = nil
@@ -1570,6 +1582,10 @@ public struct DynamicModifierHelper {
             }
         }
 
+        if centredCrossAxis {
+            h = h ?? "center"
+            v = v ?? "center"
+        }
         if bothAxes {
             let ha: HorizontalAlignment = {
                 switch h {

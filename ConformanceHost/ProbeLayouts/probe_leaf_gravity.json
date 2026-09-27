@@ -1,0 +1,138 @@
+{
+  "type": "View",
+  "id": "cg_lg_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 8,
+  "child": [
+    {
+      "data": [
+        {
+          "name": "value",
+          "class": "String",
+          "defaultValue": "Hello"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lg_btn_mw_h_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "id": "cg_lg_btn_mw_h_left_leaf",
+          "width": "matchParent",
+          "gravity": "left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lg_btn_w_h_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "id": "cg_lg_btn_w_h_left_leaf",
+          "width": 200,
+          "gravity": "left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lg_tf_mw_h_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "TextField",
+          "id": "cg_lg_tf_mw_h_left_leaf",
+          "text": "@{value}",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "width": "matchParent",
+          "height": 44,
+          "gravity": "left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lg_tf_w_h_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "TextField",
+          "id": "cg_lg_tf_w_h_left_leaf",
+          "text": "@{value}",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "width": 200,
+          "height": 44,
+          "gravity": "left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lg_btn_mw_h_center",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "id": "cg_lg_btn_mw_h_center_leaf",
+          "width": "matchParent",
+          "gravity": "center"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lg_label_mw_h_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lg_label_mw_h_left_leaf",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "matchParent",
+          "height": 44,
+          "gravity": "left"
+        }
+      ]
+    }
+  ]
+}
