@@ -20,6 +20,9 @@
 //  cellIds are keys by the same rule — "c2" lands c2 (not c5, which has it
 //  too), "1:3" nowhere, "e4" d4. The fifth: with cellIdProperty and no
 //  scrollTo, a list whose cells repeat a key draws every cell once, in order.
+//  The sixth (round 16): a section-0 key "2:x" beside a section-2 key "x",
+//  and the class-list shape with repeated keys — every cell drawn once, in
+//  order.
 //  The Dynamic half always; the generated half in the codegen host only.
 //  NOT opt-in.
 //
@@ -231,22 +234,44 @@ final class ScrollRouteProbeUITests: XCTestCase {
         report(lines, "SPR4")
     }
 
-    private func runFifth(prefix p: String, argument: String) {
-        let app = launch(argument)
-        let list = element(app, "\(p)_route_dup_noscroll")
-        XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no list")
-        var lines: [String] = []
+    /// Every one of `labels` drawn once in `id`'s frame, in that order.
+    private func drawnOnceInOrder(_ app: XCUIApplication, _ id: String, _ labels: [String], lines: inout [String]) {
+        let list = element(app, id)
+        XCTAssertTrue(list.waitForExistence(timeout: 5), "no \(id)")
         var ys: [CGFloat] = []
-        for i in 0..<6 {
-            let matches = list.staticTexts.matching(NSPredicate(format: "label == %@", "n\(i)"))
+        for label in labels {
+            let matches = list.staticTexts.matching(NSPredicate(format: "label == %@", label))
             let count = matches.count
             let y = count > 0 ? matches.firstMatch.frame.minY - list.frame.minY : -1
-            lines.append("\(p)_route_dup_noscroll n\(i): drawn \(count) time(s), y=\(Int(y))")
-            XCTAssertEqual(count, 1, "\(p): n\(i) is drawn \(count) time(s)")
+            lines.append("\(id) \(label): drawn \(count) time(s), y=\(Int(y))")
+            XCTAssertEqual(count, 1, "\(id): \(label) is drawn \(count) time(s)")
             ys.append(y)
         }
-        XCTAssertEqual(ys, ys.sorted(), "\(p): the cells are not in their order")
+        XCTAssertEqual(ys, ys.sorted(), "\(id): the cells are not in their order")
+    }
+
+    private func runFifth(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        drawnOnceInOrder(app, "\(p)_route_dup_noscroll", (0..<6).map { "n\($0)" }, lines: &lines)
         report(lines, "SPR5")
+    }
+
+    private func runSixth(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        drawnOnceInOrder(app, "\(p)_route_spell", ["s0", "s1", "s2", "H1", "t0", "t1"], lines: &lines)
+        drawnOnceInOrder(app, "\(p)_route_class_dup", ["u0", "u1", "u2", "v0", "v1"], lines: &lines)
+        report(lines, "SPR6")
+    }
+
+    func testAKeyCannotSpellAnotherSectionsIdDynamic() throws {
+        runSixth(prefix: "dyn", argument: "-scrollRouteProbe6")
+    }
+
+    func testAKeyCannotSpellAnotherSectionsIdGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runSixth(prefix: "cg", argument: "-scrollRouteProbe6Codegen")
     }
 
     func testTheEnrichedKeyAndTheCellIdsAreKeysByOneRuleDynamic() throws {

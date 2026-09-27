@@ -71,9 +71,19 @@
 //  q, p2, q, "5" and none (its id "\(5)" before round 15): every cell drawn
 //  once, in order. Until then sjui's loop gave n1 and n3 one id, and n4 and
 //  n5 one id.
+//  The sixth page (`-scrollRouteProbe6` / `-scrollRouteProbe6Codegen`, 4f
+//  round 16), cellIdProperty and no scrollTo, every cell drawn once, in
+//  order:
+//  - `*_route_spell`: sections of cells s0…s2 keyed a, "2:x", b; a header
+//    H1; cells t0, t1 keyed x, y. Until jsonui-cli 1.9.0 sjui's ids after
+//    the first section were "<section>:" + the key — section 2's "x" was
+//    section 0's "2:x", one id in two sibling loops;
+//  - `*_route_class_dup`: the class-list shape, u0…u2 keyed k, "2:x", k,
+//    then v0, v1 keyed x, k. Until then sjui's class-list ids were the
+//    offsets, whatever cellIdProperty said.
 //
 //  The generated half: ProbeLayouts/probe_scroll_route.json,
-//  probe_scroll_route2.json … probe_scroll_route5.json (handlers:
+//  probe_scroll_route2.json … probe_scroll_route6.json (handlers:
 //  ProbeLayouts/handlers/), built by scripts/generate_codegen_host.rb.
 //
 
@@ -86,6 +96,7 @@ struct ScrollRouteProbeView: View {
     var third = false
     var fourth = false
     var fifth = false
+    var sixth = false
 
     static func layout(_ id: String, rows: String, target: String, extra: String) -> String {
         let sections = rows == "ruleRows"
@@ -125,6 +136,29 @@ struct ScrollRouteProbeView: View {
         let keys: [String?] = ["p0", "q", "p2", "q", "5", nil]
         return CollectionDataSource(sections: [
             ScrollRuleProbeView.section(cells: keys.enumerated().map { i, key in key.map { ["title": "n\(i)", "key": $0] } ?? ["title": "n\(i)"] })
+        ])
+    }
+
+    static func keyed(_ prefix: String, _ keys: [String]) -> [[String: Any]] {
+        keys.enumerated().map { ["title": "\(prefix)\($0.offset)", "key": $0.element] }
+    }
+
+    /// s0…s2 keyed a, "2:x", b; a header H1; t0, t1 keyed x, y.
+    static var spellRows: CollectionDataSource {
+        var header = CollectionDataSection()
+        header.setHeader(viewName: "", data: ["title": "H1"])
+        return CollectionDataSource(sections: [
+            ScrollRuleProbeView.section(cells: keyed("s", ["a", "2:x", "b"])),
+            header,
+            ScrollRuleProbeView.section(cells: keyed("t", ["x", "y"]))
+        ])
+    }
+
+    /// u0…u2 keyed k, "2:x", k; v0, v1 keyed x, k.
+    static var classDupRows: CollectionDataSource {
+        CollectionDataSource(sections: [
+            ScrollRuleProbeView.section(cells: keyed("u", ["k", "2:x", "k"])),
+            ScrollRuleProbeView.section(cells: keyed("v", ["x", "k"]))
         ])
     }
 
@@ -195,10 +229,15 @@ struct ScrollRouteProbeView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(codegen ? "scroll route probe (codegen)" : "scroll route probe").accessibilityIdentifier("sp_ready")
             if codegen {
-                if let generated = CodegenFixtureRegistry.probeView(named: fifth ? "probe_scroll_route5" : fourth ? "probe_scroll_route4" : third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
+                if let generated = CodegenFixtureRegistry.probeView(named: sixth ? "probe_scroll_route6" : fifth ? "probe_scroll_route5" : fourth ? "probe_scroll_route4" : third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
                     Text("codegen routes").accessibilityIdentifier("sp_codegen")
                     generated
                 }
+            } else if sixth {
+                dynamic(##"{"type": "Collection", "id": "dyn_route_spell", "width": 200, "height": 200, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}, {"header": "conformance_cell"}, {"cell": "conformance_cell"}], "cellIdProperty": "key"}"##,
+                        data: ["rows": Self.spellRows], frame: "dyn_route_spell")
+                dynamic(##"{"type": "Collection", "id": "dyn_route_class_dup", "width": 200, "height": 320, "background": "#DDDDDD", "items": "@{rows}", "cellClasses": ["conformance_cell"], "cellIdProperty": "key"}"##,
+                        data: ["rows": Self.classDupRows], frame: "dyn_route_class_dup")
             } else if fifth {
                 dynamic(##"{"type": "Collection", "id": "dyn_route_dup_noscroll", "width": 200, "height": 200, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}], "cellIdProperty": "key"}"##,
                         data: ["rows": Self.dupNoScrollRows], frame: "dyn_route_dup_noscroll")
