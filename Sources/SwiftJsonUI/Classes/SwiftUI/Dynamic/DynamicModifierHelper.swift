@@ -273,6 +273,23 @@ public struct DynamicModifierHelper {
             result = AnyView((boundsAlignment ?? textVertical).map { result.frame(maxHeight: mh, alignment: $0) } ?? result.frame(maxHeight: mh))
         }
 
+        // A wrapContent axis with a max sizes to its content, capped by the
+        // max (contentFit; the codegen emits the same after its bounds frame
+        // — the user's ruling of 2026-09-27). Until SwiftJsonUI 10.29.0 the
+        // max frame took the width it was offered: a chip with maxWidth 160
+        // and the text "chip" was 160 wide. Not an axis a weighted or
+        // `distribution: fill` parent sizes (applyFrameSize fills it).
+        func parentSizes(_ orientation: String) -> Bool {
+            (data["__isWeightedChild"] as? Bool == true && data["__weightedParentOrientation"] as? String == orientation)
+                || data["__distributionFillOrientation"] as? String == orientation
+        }
+        if resolvedMaxWidth != nil, width == nil, !parentSizes("horizontal") {
+            result = AnyView(result.contentFit(.horizontal))
+        }
+        if resolvedMaxHeight != nil, height == nil, !parentSizes("vertical") {
+            result = AnyView(result.contentFit(.vertical))
+        }
+
         // fixedSize mirrors the codegen (frame_helper.rb apply_frame_constraints):
         // only a component that declares a min/max constraint gets one, and an
         // axis is fixed only when it is wrapContent WITHOUT its own max bound —

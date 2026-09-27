@@ -69,3 +69,17 @@ public struct CollectionContentFit: Layout {
         subviews.first?.place(at: bounds.origin, anchor: .topLeading, proposal: ProposedViewSize(bounds.size))
     }
 }
+
+public extension View {
+    /// Sizes the view to its content along `axis`, capped by what its parent
+    /// offers — the modifier sjui emits after the bounds frame of a
+    /// wrapContent axis with a max (and the Dynamic renderer applies there):
+    /// `.frame(maxWidth:)` takes the width it is offered up to the max, so a
+    /// wrapContent chip with maxWidth 160 and the text "chip" was 160 wide
+    /// where Compose and the web drew it its text's width (the user's ruling,
+    /// 2026-09-27). The frame's ideal size is the content's clamped to the
+    /// max, so a longer text still wraps at the max. SwiftJsonUI 10.29.0.
+    func contentFit(_ axis: Axis) -> some View {
+        CollectionContentFit(axis: axis) { self }
+    }
+}
