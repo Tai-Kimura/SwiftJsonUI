@@ -1,0 +1,178 @@
+{
+  "type": "View",
+  "id": "cg_fa_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "data": [
+        {
+          "name": "rows",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "c0"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_v_mw_h",
+      "background": "#CCE0FF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_fa_v_mw_h_label",
+          "text": "abc",
+          "width": "wrapContent",
+          "height": "wrapContent",
+          "background": "#FFD9A0"
+        }
+      ],
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": 60
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_z_mw_h",
+      "background": "#CCE0FF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_fa_z_mw_h_label",
+          "text": "abc",
+          "width": "wrapContent",
+          "height": "wrapContent",
+          "background": "#FFD9A0"
+        }
+      ],
+      "width": "matchParent",
+      "height": 60
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_v_ww_h",
+      "background": "#CCE0FF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_fa_v_ww_h_label",
+          "text": "abc",
+          "width": "wrapContent",
+          "height": "wrapContent",
+          "background": "#FFD9A0"
+        }
+      ],
+      "orientation": "vertical",
+      "width": "wrapContent",
+      "height": 60
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_v_w_wh",
+      "background": "#CCE0FF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_fa_v_w_wh_label",
+          "text": "abc",
+          "width": "wrapContent",
+          "height": "wrapContent",
+          "background": "#FFD9A0"
+        }
+      ],
+      "orientation": "vertical",
+      "width": 200,
+      "height": "wrapContent"
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_v_w_mh_parent",
+      "orientation": "vertical",
+      "background": "#EEEEEE",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_fa_v_w_mh",
+          "background": "#CCE0FF",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_fa_v_w_mh_label",
+              "text": "abc",
+              "width": "wrapContent",
+              "height": "wrapContent",
+              "background": "#FFD9A0"
+            }
+          ],
+          "orientation": "vertical",
+          "width": 200,
+          "height": "matchParent"
+        }
+      ],
+      "width": "matchParent",
+      "height": 60
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_v_w_h",
+      "background": "#CCE0FF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_fa_v_w_h_label",
+          "text": "abc",
+          "width": "wrapContent",
+          "height": "wrapContent",
+          "background": "#FFD9A0"
+        }
+      ],
+      "orientation": "vertical",
+      "width": 200,
+      "height": 60
+    },
+    {
+      "type": "View",
+      "id": "cg_fa_v_mw_h_gcv",
+      "background": "#CCE0FF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_fa_v_mw_h_gcv_label",
+          "text": "abc",
+          "width": "wrapContent",
+          "height": "wrapContent",
+          "background": "#FFD9A0"
+        }
+      ],
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": 60,
+      "gravity": "centerVertical"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_fa_c_mw_h",
+      "width": "matchParent",
+      "height": 60,
+      "lazy": "none",
+      "background": "#CCE0FF",
+      "items": "@{rows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    }
+  ]
+}

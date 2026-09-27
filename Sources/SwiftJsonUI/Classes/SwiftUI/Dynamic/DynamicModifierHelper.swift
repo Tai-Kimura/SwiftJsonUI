@@ -143,6 +143,15 @@ public struct DynamicModifierHelper {
                 // declared, so a bare width stays at SwiftUI's implicit
                 // center.
                 result = AnyView(result.frame(width: fixedWidth, alignment: alignment))
+            } else if !isTextComponent, let alignment = frameAlignment(for: component, bothAxes: true) {
+                // ONE fixed axis on a container (or a node with a declared
+                // gravity): the content smaller than it at top | start
+                // (gravityDefaults), as Compose and the web put it — the
+                // user's ruling of 2026-09-27; a declared center* gravity
+                // still centres. Until jsonui-cli 1.9.0 this frame had no
+                // alignment and SwiftUI centred the content on that axis
+                // (frame_helper.rb#single_axis_alignment, the codegen half).
+                result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
             } else {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight))
             }
@@ -184,7 +193,14 @@ public struct DynamicModifierHelper {
                 result = AnyView(result.frame(maxWidth: fillMaxWidth))
             }
         } else if isMatchParentHeight {
-            result = AnyView(result.frame(maxHeight: fillMaxHeight))
+            // Filling the height alone: the content at top | start, as the
+            // single fixed axis above.
+            let isText = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
+            if !isText, let alignment = frameAlignment(for: component, bothAxes: true) {
+                result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: alignment))
+            } else {
+                result = AnyView(result.frame(maxHeight: fillMaxHeight))
+            }
         }
 
         return result

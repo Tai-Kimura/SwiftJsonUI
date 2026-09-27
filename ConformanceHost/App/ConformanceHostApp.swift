@@ -253,6 +253,10 @@ struct ConformanceRootView: View {
                 ScrollRouteProbeView(codegen: false, seventh: true)
             } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe7Codegen") {
                 ScrollRouteProbeView(codegen: true, seventh: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbe") {
+                FrameAlignmentProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbeCodegen") {
+                FrameAlignmentProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-collectionFitProbe") {
                 CollectionFitProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-collectionFitProbeCodegen") {
