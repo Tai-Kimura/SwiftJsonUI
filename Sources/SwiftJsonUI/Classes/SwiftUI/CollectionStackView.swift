@@ -55,6 +55,10 @@ public struct CollectionStackView<Content: View>: View {
     let insetLeading: CGFloat
     let insetTrailing: CGFloat
     let contentInsets: EdgeInsets?
+    /// A horizontal Collection whose height is declared (fixed or
+    /// matchParent): its eager row fills that height, as the lazy row's
+    /// LazyHStack does. A wrapContent height keeps the row its cells' height.
+    let fillsCrossAxis: Bool
     @ViewBuilder let content: () -> Content
 
     public init(
@@ -69,6 +73,7 @@ public struct CollectionStackView<Content: View>: View {
         insetLeading: CGFloat = 0,
         insetTrailing: CGFloat = 0,
         contentInsets: EdgeInsets? = nil,
+        fillsCrossAxis: Bool = false,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.mode = mode
@@ -82,6 +87,7 @@ public struct CollectionStackView<Content: View>: View {
         self.insetLeading = insetLeading
         self.insetTrailing = insetTrailing
         self.contentInsets = contentInsets
+        self.fillsCrossAxis = fillsCrossAxis
         self.content = content
     }
 
@@ -113,9 +119,16 @@ public struct CollectionStackView<Content: View>: View {
                     .applyContentInsets(contentInsets)
             }
         case (.eager, .horizontal):
+            // The row fills a declared height, as the lazy row does: a
+            // horizontal ScrollView is as tall as its content, and an HStack
+            // is its cells' height where a LazyHStack takes the height it is
+            // offered — so an eager row in a 40pt frame was 28pt (its cells)
+            // and a lazy one 40 (measured, 4f 2026-09-27, generated and
+            // Dynamic alike). The cells stay at the row's verticalAlignment.
             horizontalScrollContainer {
                 HStack(alignment: verticalAlignment, spacing: spacing) { content() }
                     .applyContentInsets(contentInsets)
+                    .fillingHeight(fillsCrossAxis, alignment: Alignment(horizontal: .leading, vertical: verticalAlignment))
             }
         case (.none, .horizontal):
             HStack(alignment: verticalAlignment, spacing: spacing) { content() }
@@ -151,6 +164,15 @@ public struct CollectionStackView<Content: View>: View {
 }
 
 private extension View {
+    @ViewBuilder
+    func fillingHeight(_ fills: Bool, alignment: Alignment) -> some View {
+        if fills {
+            self.frame(maxHeight: .infinity, alignment: alignment)
+        } else {
+            self
+        }
+    }
+
     @ViewBuilder
     func applyDefaultScrollAnchor(_ anchor: UnitPoint?) -> some View {
         if let anchor = anchor {

@@ -257,6 +257,18 @@ struct ConformanceRootView: View {
                 LeafGravityProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-leafGravityProbeCodegen") {
                 LeafGravityProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-eagerRowFillProbe") {
+                EagerRowFillProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-eagerRowFillProbeCodegen") {
+                EagerRowFillProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbe") {
+                BoundsAlignmentProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbeCodegen") {
+                BoundsAlignmentProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-labelVerticalProbe") {
+                LabelVerticalProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-labelVerticalProbeCodegen") {
+                LabelVerticalProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbe") {
                 FrameAlignmentProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbeCodegen") {

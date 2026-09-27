@@ -1477,7 +1477,8 @@ public struct CollectionConverter {
                     spacing: alongScroll,
                     showsIndicators: showsIndicators,
                     insetLeading: CGFloat(insetHorizontal),
-                    insetTrailing: CGFloat(insetHorizontal)
+                    insetTrailing: CGFloat(insetHorizontal),
+                    fillsCrossAxis: fillsHeight(component, data: data)
                 ) {
                     ForEach(
                         0..<min(sections.count, dataSource.sections.count),
@@ -2100,6 +2101,18 @@ public struct CollectionConverter {
     /// that reads it: `isAccessibilityContainer` needs the same answer, and a
     /// second raw read elsewhere would be a second unlisted violation and a
     /// second chance for the two to disagree about what shape is rendered.
+    /// A horizontal Collection whose height is declared — fixed or
+    /// matchParent, or given to it by a weighted / `distribution: fill`
+    /// vertical parent (applyFrameSize's same three sources): its eager row
+    /// fills that height as the lazy row does (CollectionStackView
+    /// fillsCrossAxis; the codegen half is collection_converter.rb's
+    /// fills_cross_axis?). A wrapContent height keeps the row its cells'.
+    static func fillsHeight(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        if component.declaredHeight != nil { return true }
+        if data["__isWeightedChild"] as? Bool ?? false, data["__weightedParentOrientation"] as? String == "vertical" { return true }
+        return data["__distributionFillOrientation"] as? String == "vertical"
+    }
+
     static func stackMode(_ component: DynamicComponent, data: [String: Any]) -> CollectionStackMode {
         let resolved: Any? = DynamicBindingHelper.resolveValue(
             component.rawAttribute("lazy"),

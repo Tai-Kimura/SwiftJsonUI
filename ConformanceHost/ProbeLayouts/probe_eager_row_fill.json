@@ -1,0 +1,156 @@
+{
+  "type": "View",
+  "id": "cg_er_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 12,
+  "child": [
+    {
+      "data": [
+        {
+          "name": "ten",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "e0"
+                  },
+                  {
+                    "title": "e1"
+                  },
+                  {
+                    "title": "e2"
+                  },
+                  {
+                    "title": "e3"
+                  },
+                  {
+                    "title": "e4"
+                  },
+                  {
+                    "title": "e5"
+                  },
+                  {
+                    "title": "e6"
+                  },
+                  {
+                    "title": "e7"
+                  },
+                  {
+                    "title": "e8"
+                  },
+                  {
+                    "title": "e9"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_er_eager_40_row",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_er_eager_40",
+          "layout": "horizontal",
+          "lazy": "eager",
+          "width": "matchParent",
+          "height": 40,
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_er_eager_fill_row",
+      "orientation": "vertical",
+      "width": 300,
+      "height": 40,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_er_eager_fill",
+          "layout": "horizontal",
+          "lazy": "eager",
+          "width": "matchParent",
+          "height": "matchParent",
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_er_lazy_40_row",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_er_lazy_40",
+          "layout": "horizontal",
+          "lazy": "lazy",
+          "width": "matchParent",
+          "height": 40,
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_er_eager_wrap_row",
+      "orientation": "vertical",
+      "width": 300,
+      "height": 120,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_er_eager_wrap",
+          "layout": "horizontal",
+          "lazy": "eager",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

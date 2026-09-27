@@ -143,6 +143,10 @@ public struct DynamicModifierHelper {
                 // declared, so a bare width stays at SwiftUI's implicit
                 // center.
                 result = AnyView(result.frame(width: fixedWidth, alignment: alignment))
+            } else if isTextComponent, fixedWidth == nil, labelVertical(component) != .center {
+                // A Label of a fixed height: its text at the vertical its
+                // gravity names (labelVertical); centre is SwiftUI's own.
+                result = AnyView(result.frame(height: fixedHeight, alignment: Alignment(horizontal: .center, vertical: labelVertical(component))))
             } else if !isTextComponent, let alignment = frameAlignment(for: component, bothAxes: true) {
                 // ONE fixed axis on a container (or a node with a declared
                 // gravity): the content smaller than it at top | start
@@ -198,6 +202,8 @@ public struct DynamicModifierHelper {
             let isText = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
             if !isText, let alignment = frameAlignment(for: component, bothAxes: true) {
                 result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: alignment))
+            } else if isText, labelVertical(component) != .center {
+                result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: Alignment(horizontal: .center, vertical: labelVertical(component))))
             } else {
                 result = AnyView(result.frame(maxHeight: fillMaxHeight))
             }
@@ -225,12 +231,25 @@ public struct DynamicModifierHelper {
     ) -> AnyView {
         var result = view
         let common = component.typedAttributes(CommonAttributes.self)
+        // Where content smaller than a min / max box sits in it — the codegen's
+        // ResponsiveHelper.inner_frame_alignment: a container's gravity with
+        // the unnamed axis at top | start, and top | start when gravity is
+        // omitted (gravityDefaults); a leaf's declared gravity with the other
+        // axis centred; `.center` for an omitted gravity with a responsive
+        // align / center flag. A Label is not in this (its own text channel).
+        // Until SwiftJsonUI 10.29.0 these frames carried no alignment and
+        // SwiftUI centred the content.
+        let isText = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
+        // A Label: its vertical rule (labelVertical) on a height bound.
+        let textVertical: Alignment? = isText && labelVertical(component) != .center
+            ? Alignment(horizontal: .center, vertical: labelVertical(component)) : nil
+        let boundsAlignment = isText ? nil : constraintFrameAlignment(component, data: data)
 
         if let mw = DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data) {
-            result = AnyView(result.frame(minWidth: mw))
+            result = AnyView(boundsAlignment.map { result.frame(minWidth: mw, alignment: $0) } ?? result.frame(minWidth: mw))
         }
         if let mh = DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data) {
-            result = AnyView(result.frame(minHeight: mh))
+            result = AnyView((boundsAlignment ?? textVertical).map { result.frame(minHeight: mh, alignment: $0) } ?? result.frame(minHeight: mh))
         }
         if let iw = component.idealWidth {
             result = AnyView(result.frame(idealWidth: iw))
@@ -248,10 +267,10 @@ public struct DynamicModifierHelper {
         let resolvedMaxWidth = DynamicHelpers.resolveNumber(common.maxWidth, legacy: nil, data: data)
         let resolvedMaxHeight = DynamicHelpers.resolveNumber(common.maxHeight, legacy: nil, data: data)
         if let mw = resolvedMaxWidth, !isMatchParentWidth {
-            result = AnyView(result.frame(maxWidth: mw))
+            result = AnyView(boundsAlignment.map { result.frame(maxWidth: mw, alignment: $0) } ?? result.frame(maxWidth: mw))
         }
         if let mh = resolvedMaxHeight, !isMatchParentHeight {
-            result = AnyView(result.frame(maxHeight: mh))
+            result = AnyView((boundsAlignment ?? textVertical).map { result.frame(maxHeight: mh, alignment: $0) } ?? result.frame(maxHeight: mh))
         }
 
         // fixedSize mirrors the codegen (frame_helper.rb apply_frame_constraints):
@@ -276,6 +295,35 @@ public struct DynamicModifierHelper {
         }
 
         return result
+    }
+
+    /// The min / max frames' alignment for a node that is not a Label (see
+    /// applyFrameConstraints).
+    static func constraintFrameAlignment(_ component: DynamicComponent, data: [String: Any]) -> Alignment? {
+        if component.gravity?.isEmpty == false {
+            return frameAlignment(for: component, bothAxes: true)
+        }
+        let common = component.typedAttributes(CommonAttributes.self)
+        let flags = [common.centerHorizontal, common.centerInParent, common.alignLeft, common.alignRight,
+                     common.centerVertical, common.alignTop, common.alignBottom]
+        if flags.contains(where: { DynamicHelpers.resolveBool($0, legacy: nil, data: data) == true }) {
+            return .center
+        }
+        return frameAlignment(for: component, bothAxes: true)
+    }
+
+    /// A Label's vertical text position in a box taller than the text: the
+    /// vertical its gravity names (top, bottom, centerVertical / center), else
+    /// centre — the canon's leafOwnFrameChannel default for "a text block
+    /// smaller than its fixed box" (frame_helper.rb#label_vertical, the
+    /// codegen half). Until SwiftJsonUI 10.29.0 the Dynamic renderer put it
+    /// at the centre of a height-only frame whatever the gravity, and at the
+    /// top of a frame that sized both axes.
+    static func labelVertical(_ component: DynamicComponent) -> VerticalAlignment {
+        let parts = (component.gravity ?? []).map { $0.lowercased() }
+        if parts.contains("top") { return .top }
+        if parts.contains("bottom") { return .bottom }
+        return .center
     }
 
     // MARK: - 4. Insets (insets, insetHorizontal, insetVertical)
@@ -1503,15 +1551,16 @@ public struct DynamicModifierHelper {
         let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
 
         if isTextComponent {
-            // Match frame_helper.rb: Label/Text use textAlign for frame alignment
+            // Match frame_helper.rb: Label/Text use textAlign across, and on
+            // both axes the Label's vertical rule (labelVertical) down — until
+            // SwiftUI 10.29.0 it was always the top.
+            let horizontal: HorizontalAlignment
             switch component.textAlignSpelling()?.lowercased() {
-            case "center":
-                return bothAxes ? .center : .center
-            case "right", "trailing":
-                return bothAxes ? .topTrailing : .trailing
-            default:
-                return bothAxes ? .topLeading : .leading
+            case "center": horizontal = .center
+            case "right", "trailing": horizontal = .trailing
+            default: horizontal = .leading
             }
+            return bothAxes ? Alignment(horizontal: horizontal, vertical: labelVertical(component)) : Alignment(horizontal: horizontal, vertical: .center)
         }
 
         // Non-text components: use gravity. An omitted gravity resolves to the
