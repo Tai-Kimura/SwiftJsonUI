@@ -81,9 +81,16 @@
 //  - `*_route_class_dup`: the class-list shape, u0…u2 keyed k, "2:x", k,
 //    then v0, v1 keyed x, k. Until then sjui's class-list ids were the
 //    offsets, whatever cellIdProperty said.
+//  The seventh page (`-scrollRouteProbe7` / `-scrollRouteProbe7Codegen`, 4f
+//  ruling 2026-09-27): three horizontal Collections of a0…a9 (60pt cells),
+//  200pt wide, scrollAnchor top / center / bottom, one Int for the three;
+//  "go 5" lands a5's leading edge at the viewport's leading edge (top), its
+//  middle at the middle (center), its trailing edge at the trailing edge
+//  (bottom). Until jsonui-cli 1.9.0 the three anchors were `.top` /
+//  `.center` / `.bottom`, whose x is 0.5, on a horizontal Collection too.
 //
 //  The generated half: ProbeLayouts/probe_scroll_route.json,
-//  probe_scroll_route2.json … probe_scroll_route6.json (handlers:
+//  probe_scroll_route2.json … probe_scroll_route7.json (handlers:
 //  ProbeLayouts/handlers/), built by scripts/generate_codegen_host.rb.
 //
 
@@ -97,6 +104,8 @@ struct ScrollRouteProbeView: View {
     var fourth = false
     var fifth = false
     var sixth = false
+    var seventh = false
+    @State private var hTarget = 0
 
     static func layout(_ id: String, rows: String, target: String, extra: String) -> String {
         let sections = rows == "ruleRows"
@@ -229,9 +238,16 @@ struct ScrollRouteProbeView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(codegen ? "scroll route probe (codegen)" : "scroll route probe").accessibilityIdentifier("sp_ready")
             if codegen {
-                if let generated = CodegenFixtureRegistry.probeView(named: sixth ? "probe_scroll_route6" : fifth ? "probe_scroll_route5" : fourth ? "probe_scroll_route4" : third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
+                if let generated = CodegenFixtureRegistry.probeView(named: seventh ? "probe_scroll_route7" : sixth ? "probe_scroll_route6" : fifth ? "probe_scroll_route5" : fourth ? "probe_scroll_route4" : third ? "probe_scroll_route3" : second ? "probe_scroll_route2" : "probe_scroll_route") {
                     Text("codegen routes").accessibilityIdentifier("sp_codegen")
                     generated
+                }
+            } else if seventh {
+                Button("dyn h go 5") { hTarget = 5 }
+                let hRows = CollectionDataSource(sections: [ScrollRuleProbeView.section(cells: (0..<10).map { ["title": "a\($0)"] })])
+                ForEach(["top", "center", "bottom"], id: \.self) { anchor in
+                    dynamic(##"{"type": "Collection", "id": "dyn_hanchor_\##(anchor)", "width": 200, "height": 40, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}], "layout": "horizontal", "scrollTo": "@{t}", "scrollAnchor": "\##(anchor)", "scrollAnimated": false}"##,
+                            data: ["rows": hRows, "t": hTarget], frame: "dyn_hanchor_\(anchor)")
                 }
             } else if sixth {
                 dynamic(##"{"type": "Collection", "id": "dyn_route_spell", "width": 200, "height": 200, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}, {"header": "conformance_cell"}, {"cell": "conformance_cell"}], "cellIdProperty": "key"}"##,

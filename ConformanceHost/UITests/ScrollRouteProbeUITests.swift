@@ -22,7 +22,9 @@
 //  scrollTo, a list whose cells repeat a key draws every cell once, in order.
 //  The sixth (round 16): a section-0 key "2:x" beside a section-2 key "x",
 //  and the class-list shape with repeated keys — every cell drawn once, in
-//  order.
+//  order. The seventh: on a horizontal Collection scrollAnchor top / center /
+//  bottom lands the target's leading edge / middle / trailing edge at the
+//  viewport's.
 //  The Dynamic half always; the generated half in the codegen host only.
 //  NOT opt-in.
 //
@@ -263,6 +265,38 @@ final class ScrollRouteProbeUITests: XCTestCase {
         drawnOnceInOrder(app, "\(p)_route_spell", ["s0", "s1", "s2", "H1", "t0", "t1"], lines: &lines)
         drawnOnceInOrder(app, "\(p)_route_class_dup", ["u0", "u1", "u2", "v0", "v1"], lines: &lines)
         report(lines, "SPR6")
+    }
+
+    private func runSeventh(prefix p: String, argument: String) {
+        let app = launch(argument)
+        var lines: [String] = []
+        XCTAssertTrue(element(app, "\(p)_hanchor_top").waitForExistence(timeout: 5), "\(p): no horizontal list")
+        app.buttons["\(p) h go 5"].tap()
+        sleep(1)
+        for anchor in ["top", "center", "bottom"] {
+            let frame = element(app, "\(p)_hanchor_\(anchor)").frame
+            let cell = element(app, "\(p)_hanchor_\(anchor)_item_5")
+            guard cell.exists else {
+                lines.append("\(p)_hanchor_\(anchor): a5 not on screen")
+                XCTFail("\(p)_hanchor_\(anchor): a5 is not on screen")
+                continue
+            }
+            let c = cell.frame
+            let (edge, want, got): (String, CGFloat, CGFloat) = anchor == "top" ? ("leading", frame.minX, c.minX)
+                : anchor == "center" ? ("middle", frame.midX, c.midX) : ("trailing", frame.maxX, c.maxX)
+            lines.append("\(p)_hanchor_\(anchor): a5 x \(Int(c.minX - frame.minX))…\(Int(c.maxX - frame.minX)) in 0…\(Int(frame.width)); \(edge) off by \(Int(got - want))")
+            XCTAssertEqual(got, want, accuracy: 2, "\(p)_hanchor_\(anchor): a5's \(edge) edge is not at the viewport's")
+        }
+        report(lines, "SPR7")
+    }
+
+    func testAHorizontalAnchorIsAlongTheScrollAxisDynamic() throws {
+        runSeventh(prefix: "dyn", argument: "-scrollRouteProbe7")
+    }
+
+    func testAHorizontalAnchorIsAlongTheScrollAxisGenerated() throws {
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
+        runSeventh(prefix: "cg", argument: "-scrollRouteProbe7Codegen")
     }
 
     func testAKeyCannotSpellAnotherSectionsIdDynamic() throws {

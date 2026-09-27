@@ -88,6 +88,19 @@ final class CollectionScrollTargetResolutionTests: XCTestCase {
         XCTAssertNil(id(.cellId("q"), key: "key", sections: withHeaderOnly, source: two))
     }
 
+    /// On a horizontal Collection scrollAnchor is along the horizontal axis:
+    /// top / center / bottom are the leading edge / middle / trailing edge
+    /// (4f ruling 2026-09-27). They were .top / .center / .bottom — x 0.5.
+    func testAHorizontalAnchorIsAlongTheScrollAxis() {
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint("top", horizontal: true), .leading)
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint("center", horizontal: true), .center)
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint("bottom", horizontal: true), .trailing)
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint(nil, horizontal: true), .trailing)
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint("top", horizontal: false), .top)
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint("center", horizontal: false), .center)
+        XCTAssertEqual(CollectionConverter.scrollAnchorPoint(nil, horizontal: false), .bottom)
+    }
+
     func testTheCellsIDsAreDistinctAcrossSections() {
         let a = CollectionConverter.identifiedItems(from: [["key": "k3"]], cellIdProperty: "key", section: 0)
         let b = CollectionConverter.identifiedItems(from: [["key": "k3"]], cellIdProperty: "key", section: 1)

@@ -250,13 +250,7 @@ public struct CollectionConverter {
         }()
         let scrollAnimated = component.typedAttributes(CollectionAttributes.self).scrollAnimated ?? true
 
-        let scrollAnchorPoint: UnitPoint = {
-            switch component.scrollAnchor {
-            case "top": return .top
-            case "center": return .center
-            default: return .bottom
-            }
-        }()
+        let scrollAnchorPoint = Self.scrollAnchorPoint(component.scrollAnchor, horizontal: isHorizontal)
 
         // `lazy` may be a boolean (legacy) or one of "lazy" / "eager" / "none".
         // For binding values we resolve at runtime via DynamicBindingHelper so a
@@ -945,6 +939,21 @@ public struct CollectionConverter {
     }
 
     // MARK: - Scroll Target
+
+    /// Where a scrollTo's target lands along the scroll axis (the SSoT's
+    /// Collection.scrollAnchor): top — its leading edge at the viewport's;
+    /// center — its middle at the middle; bottom, the default — its trailing
+    /// edge at the trailing edge. On a horizontal Collection those are
+    /// `.leading` / `.center` / `.trailing` (4f ruling 2026-09-27). Until
+    /// jsonui-cli 1.9.0 they were `.top` / `.bottom` there too, whose x is
+    /// 0.5: every anchor put the target's middle at the viewport's middle.
+    static func scrollAnchorPoint(_ anchor: String?, horizontal: Bool) -> UnitPoint {
+        switch anchor {
+        case "top": return horizontal ? .leading : .top
+        case "center": return .center
+        default: return horizontal ? .trailing : .bottom
+        }
+    }
 
     /// The id of the cell a scrollTo names (4f ruling 2026-09-27; jsonui-cli
     /// 1.9.0, the SSoT's Collection.scrollTo): `.index(n)` is a cell counted

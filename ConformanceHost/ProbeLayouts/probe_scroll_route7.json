@@ -1,0 +1,119 @@
+{
+  "type": "View",
+  "id": "cg_route7_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Button",
+      "id": "cg_hanchor_go_5",
+      "text": "cg h go 5",
+      "onClick": "@{onHGo}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_hanchor_top",
+      "width": 200,
+      "height": 40,
+      "background": "#DDDDDD",
+      "items": "@{hRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "scrollTo": "@{hTarget}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Collection",
+      "id": "cg_hanchor_center",
+      "width": 200,
+      "height": 40,
+      "background": "#DDDDDD",
+      "items": "@{hRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "scrollTo": "@{hTarget}",
+      "scrollAnchor": "center",
+      "scrollAnimated": false
+    },
+    {
+      "type": "Collection",
+      "id": "cg_hanchor_bottom",
+      "width": 200,
+      "height": 40,
+      "background": "#DDDDDD",
+      "items": "@{hRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "scrollTo": "@{hTarget}",
+      "scrollAnchor": "bottom",
+      "scrollAnimated": false
+    }
+  ],
+  "data": [
+    {
+      "name": "hRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "a0"
+              },
+              {
+                "title": "a1"
+              },
+              {
+                "title": "a2"
+              },
+              {
+                "title": "a3"
+              },
+              {
+                "title": "a4"
+              },
+              {
+                "title": "a5"
+              },
+              {
+                "title": "a6"
+              },
+              {
+                "title": "a7"
+              },
+              {
+                "title": "a8"
+              },
+              {
+                "title": "a9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "hTarget",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "onHGo",
+      "class": "() -> Void"
+    }
+  ]
+}
