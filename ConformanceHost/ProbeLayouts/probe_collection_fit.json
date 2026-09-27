@@ -1,0 +1,251 @@
+{
+  "type": "View",
+  "id": "cg_fit_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "data": [
+        {
+          "name": "rows",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "f0"
+                  },
+                  {
+                    "title": "f1"
+                  },
+                  {
+                    "title": "f2"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "long",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "l0"
+                  },
+                  {
+                    "title": "l1"
+                  },
+                  {
+                    "title": "l2"
+                  },
+                  {
+                    "title": "l3"
+                  },
+                  {
+                    "title": "l4"
+                  },
+                  {
+                    "title": "l5"
+                  },
+                  {
+                    "title": "l6"
+                  },
+                  {
+                    "title": "l7"
+                  },
+                  {
+                    "title": "l8"
+                  },
+                  {
+                    "title": "l9"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "two",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "h0"
+                  },
+                  {
+                    "title": "h1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_fit_box",
+      "orientation": "vertical",
+      "width": 200,
+      "height": 150,
+      "background": "#EEEEEE",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_fit_list",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "id": "cg_fit_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_fit_long_box",
+      "orientation": "vertical",
+      "width": 200,
+      "height": 110,
+      "background": "#EEEEEE",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_fit_long",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "background": "#CCE0FF",
+          "items": "@{long}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "id": "cg_fit_long_after",
+          "text": "long after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "ScrollView",
+      "id": "cg_fit_scroll",
+      "orientation": "vertical",
+      "width": 200,
+      "height": 140,
+      "background": "#EEEEEE",
+      "child": [
+        {
+          "type": "View",
+          "orientation": "vertical",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "child": [
+            {
+              "type": "Collection",
+              "id": "cg_fit_inner",
+              "width": "matchParent",
+              "height": "wrapContent",
+              "background": "#CCE0FF",
+              "items": "@{rows}",
+              "sections": [
+                {
+                  "cell": "conformance_cell"
+                }
+              ]
+            },
+            {
+              "type": "Label",
+              "id": "cg_fit_inner_after",
+              "text": "inner after",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_fit_row",
+      "orientation": "horizontal",
+      "width": 200,
+      "height": 40,
+      "background": "#EEEEEE",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_fit_h",
+          "width": "wrapContent",
+          "height": 40,
+          "background": "#CCE0FF",
+          "items": "@{two}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "layout": "horizontal"
+        },
+        {
+          "type": "Label",
+          "id": "cg_fit_h_after",
+          "text": "h after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "Collection",
+      "id": "cg_fit_eager",
+      "width": 200,
+      "height": 90,
+      "background": "#CCE0FF",
+      "items": "@{rows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "lazy": "eager"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_fit_none",
+      "width": 200,
+      "height": 90,
+      "background": "#CCE0FF",
+      "items": "@{rows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "lazy": "none"
+    }
+  ]
+}

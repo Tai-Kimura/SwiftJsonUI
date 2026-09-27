@@ -93,9 +93,15 @@ public struct CollectionStackView<Content: View>: View {
                     .applyContentInsets(contentInsets)
             }
         case (.eager, .vertical):
+            // The column at the leading edge (its horizontalAlignment), as the
+            // lazy column's cells are: a ScrollView centres content narrower
+            // than itself, so eager cells stood in the middle and lazy ones at
+            // the start (measured, 4f ruling 2026-09-27: the same content does
+            // not move sideways by container mode).
             verticalScrollContainer {
                 VStack(alignment: horizontalAlignment, spacing: spacing) { content() }
                     .applyContentInsets(contentInsets)
+                    .frame(maxWidth: .infinity, alignment: Alignment(horizontal: horizontalAlignment, vertical: .top))
             }
         case (.none, .vertical):
             VStack(alignment: horizontalAlignment, spacing: spacing) { content() }

@@ -271,6 +271,8 @@ public struct CollectionConverter {
         // True on the grid route: buildGridLayout applies the collection
         // insets to the scroll CONTENT itself.
         var gridCarriesContentInsets = false
+        // The List routes (buildSectionedListLayout, buildListLayout).
+        var isListRoute = false
 
         if collectionMode == .none && !(isHorizontal && component.paging == true) {
             result = buildNonLazyLayout(
@@ -332,6 +334,7 @@ public struct CollectionConverter {
             // a declared chrome drew nothing here while codegen drew a real
             // List (Collection_hideSeparator/listStyle families, d≈94, runs
             // 31202080745 → 31234163967 unchanged).
+            isListRoute = true
             result = buildSectionedListLayout(
                 component: component,
                 dataSource: dataSource,
@@ -364,6 +367,7 @@ public struct CollectionConverter {
         } else if globalColumns == 1 && !isHorizontal && !columnsIsBinding {
             // Legacy single column (no `sections` — every sectioned shape
             // took a branch above): List
+            isListRoute = true
             result = buildListLayout(
                 component: component,
                 dataSource: dataSource,
@@ -433,6 +437,19 @@ public struct CollectionConverter {
                 legacyFooter: legacyFooter,
                 oneGridForAllSections: !hasSections
             )
+        }
+
+        // A wrapContent (or undeclared) Collection sizes to its content along
+        // its scroll axis, up to its parent's bound (CollectionContentFit
+        // around the route's scroll container) — 4f ruling 2026-09-27, the
+        // user's "size to content". Not the pager, whose TabView is its
+        // pages, and not a List: a List reports no content height to size
+        // to (measured: CollectionContentFit drew it 0pt tall), so a
+        // wrapContent List still fills its parent.
+        if !(isHorizontal && component.paging == true), !isListRoute,
+           Self.fitsContent(component, horizontal: isHorizontal, data: data) {
+            let container = result
+            result = AnyView(CollectionContentFit(axis: isHorizontal ? .horizontal : .vertical) { container })
         }
 
         // 2. .scrollDisabled(_:) when scrollEnabled == false
@@ -932,6 +949,25 @@ public struct CollectionConverter {
     }
 
     // MARK: - Scroll Target
+
+    /// Whether a scrolling Collection sizes to its content along its scroll
+    /// axis: its size there wrapContent or undeclared, and not the main axis
+    /// of a weighted stack (which fills it). The SSoT's wrapContent is "size
+    /// to content, up to the parent's bound, then scroll", as web and Compose
+    /// draw it; a ScrollView takes every point offered, so until jsonui-cli
+    /// 1.9.0 a wrapContent Collection filled its parent (120 of a 120pt
+    /// parent) and pushed the views after it to the parent's end.
+    static func fitsContent(_ component: DynamicComponent, horizontal: Bool, data: [String: Any]) -> Bool {
+        let raw = horizontal ? component.widthRaw : component.heightRaw
+        let declared = horizontal ? component.declaredWidth : component.declaredHeight
+        let wraps = raw.map { ["wrapcontent", "wrap_content"].contains($0.lowercased()) } ?? (declared == nil)
+        guard wraps else { return false }
+        if data["__isWeightedChild"] as? Bool == true,
+           (data["__weightedParentOrientation"] as? String) == (horizontal ? "horizontal" : "vertical") {
+            return false
+        }
+        return true
+    }
 
     /// Where a scrollTo's target lands along the scroll axis (the SSoT's
     /// Collection.scrollAnchor): top — its leading edge at the viewport's;

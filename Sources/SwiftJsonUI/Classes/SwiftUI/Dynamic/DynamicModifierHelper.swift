@@ -1509,9 +1509,14 @@ public struct DynamicModifierHelper {
         // Image/extension alignment default, which kjui never overrides).
         // Injecting the container default on leaves pinned every fit photo to
         // the top-left on ios only. A DECLARED gravity still applies anywhere.
+        // A Collection lays out its cells, not `child`: it is a container
+        // (4f ruling 2026-09-27) — its frame fell to `.center`, so a
+        // `lazy: none` column narrower than a matchParent Collection stood in
+        // the middle, where the lazy route's cells start at the leading edge.
         if component.gravity?.isEmpty != false {
             let hasChildren = !(component.childComponents?.isEmpty ?? true)
-            guard hasChildren else { return nil }
+            let isCollection = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "collection" } ?? false
+            guard hasChildren || isCollection else { return nil }
         }
         return gravityToFrameAlignment(component.gravity, bothAxes: bothAxes)
     }
