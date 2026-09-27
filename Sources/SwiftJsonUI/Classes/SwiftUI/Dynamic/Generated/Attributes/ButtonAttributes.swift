@@ -102,7 +102,7 @@ public struct ButtonAttributes {
     /// Font weight (e.g., 'bold', 'semibold', '500', 600, or binding) [accepts: string | number]
     public let fontWeight: AttrValue<Any>?
 
-    /// Background when highlighted - hex string or color name from colors.json
+    /// Background while pressed: UIButton's highlighted state, the same colour as tapBackground under its older name. tapBackground wins when both are set. Hex string or color name from colors.json
     public let highlightBackground: String?
 
     /// Highlight color - hex string or color name from colors.json (binding supported) [aliases: hilightColor]
@@ -111,16 +111,16 @@ public struct ButtonAttributes {
     /// Button image - asset name (binding supported)
     public let image: AttrValue<String>?
 
-    /// Partial text styling: apply font/size/color/underline/shadow to a substring selected by 'range' (a [start, end] pair, a text pattern, or a binding), and optionally make it tappable with 'onclick'. This is the supported way to get emphasis or a link inside a Label, since 'text' is plain text and markdown is not interpreted, and it is the portable way to express a cross-reference: the handler navigates (and scrolls to the target) in host code, so the same layout works everywhere, where a URL-based link would only work on web. All three platforms resolve partials at RUNTIME against the resolved string, so a pattern range and a localized or bound 'text' both work. Semantics, identical across platforms and verified against each runtime: an array range is [start, end) with the end exclusive; a string range is the FIRST occurrence and the partial is skipped (not an error) when the pattern is absent; a range that is out of bounds or inverted is skipped; partials apply in declaration order and MERGE where they overlap, later declarations winning per property. Declared from the implementation, which already read it: sjui button_converter.rb:68-129 (plan 51-E).
+    /// Partial text styling: apply font/size/color/underline/shadow to a substring selected by 'range' (a [start, end] pair, a text pattern, or a binding), and optionally make it tappable with 'onClick' (alias 'onclick'). This is the supported way to get emphasis or a link inside a Label, since 'text' is plain text and markdown is not interpreted, and it is the portable way to express a cross-reference: the handler navigates (and scrolls to the target) in host code, so the same layout works everywhere, where a URL-based link would only work on web. All three platforms resolve partials at RUNTIME against the resolved string, so a pattern range and a localized or bound 'text' both work. Semantics, identical across platforms and verified against each runtime: an array range is [start, end) with the end exclusive; a string range is the FIRST occurrence and the partial is skipped (not an error) when the pattern is absent; a range that is out of bounds or inverted is skipped; partials apply in declaration order and MERGE where they overlap, later declarations winning per property. Declared from the implementation, which already read it: sjui button_converter.rb:68-129 (plan 51-E).
     public let partialAttributes: [Any]?
 
-    /// Background when tapped - hex string or color name from colors.json
+    /// Background while pressed. On web it also shows on hover (the web has hover; iOS and Android do not). Hex string or color name from colors.json
     public let tapBackground: String?
 
     /// Button text (can be data binding, supports interpolation)
     public let text: AttrValue<String>?
 
-    /// Text alignment
+    /// Where the button's text sits across it: Left the start, Center the middle, Right the end; default Center. A Button's text is placed horizontally by textAlign alone - its gravity positions its content only on the vertical axis, the one textAlign does not own (4f ruling 2026-09-27: iOS, Compose and the web each put a Button's text in the middle whatever its gravity; iOS drew Left and Right in the middle too until jsonui-cli 1.9.0 / SwiftJsonUI 10.29.0). On Compose the text takes the button's width to be placed when the button has a width of its own (declared, not wrapContent, or a weight) - a wrap-width button is its text's width - on kjui codegen and KotlinJsonUI Dynamic alike (round 17; it sat in the middle whatever textAlign said).
     public let textAlign: AttrEnum<TextAlign>?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —

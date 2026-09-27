@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: e1a85ca2fd42c4615442f9982bafa6183a6c3730 # jsonui-cli commit (rel/v1.8.121 at release-check) that carries alt, the tap vectors, modifier_order.json and every table this release vendors; re-pin to v1.8.121 once it is tagged
+      JSONUI_CLI_MANIFEST_REF: 2d396f3f97f1473ebe4d08e56c4e99032e69bcd3 # jsonui-cli 1.9.0 release commit (release-check) that carries every table and fixture this release vendors; re-pin to v1.9.0 once it is tagged
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest

@@ -530,7 +530,7 @@
     "platforms": {
       "swift_generated": false,
       "swift_dynamic": false,
-      "kotlin_generated": false,
+      "kotlin_generated": true,
       "kotlin_dynamic": true,
       "react": true
     },
@@ -735,7 +735,7 @@
     "platforms": {
       "swift_generated": true,
       "swift_dynamic": true,
-      "kotlin_generated": false,
+      "kotlin_generated": true,
       "kotlin_dynamic": true,
       "react": true
     },
@@ -756,7 +756,7 @@
     "platforms": {
       "swift_generated": true,
       "swift_dynamic": true,
-      "kotlin_generated": false,
+      "kotlin_generated": true,
       "kotlin_dynamic": true,
       "react": true
     },

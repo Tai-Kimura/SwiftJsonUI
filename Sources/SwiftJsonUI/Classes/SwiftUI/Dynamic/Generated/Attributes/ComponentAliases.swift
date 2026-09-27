@@ -17,12 +17,9 @@ public enum JsonUIComponentAliases {
         "Toggle": "Switch",
     ]
 
-    /// The canonical section `type` is an alias of (matched
-    /// case-insensitively, as the dispatch matches types), or nil.
+    /// The canonical section `type` is an alias of, or nil. Matched as
+    /// written: type names are their SSoT spellings, case-sensitive.
     public static func canonical(for type: String) -> String? {
-        lowercased[type.lowercased()]
+        canonical[type]
     }
-
-    private static let lowercased: [String: String] = Dictionary(
-        uniqueKeysWithValues: canonical.map { ($0.key.lowercased(), $0.value) })
 }

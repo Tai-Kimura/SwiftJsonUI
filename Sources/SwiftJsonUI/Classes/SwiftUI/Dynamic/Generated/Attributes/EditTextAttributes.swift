@@ -354,7 +354,7 @@ public struct EditTextAttributes {
     /// Text content (binding for two-way). `value` folds here (sjui textfield_converter.rb:527 reads `text || value || bind`). [aliases: value; binding: two-way]
     public let text: AttrValue<String>?
 
-    /// Text alignment
+    /// Where the field's text sits across it: Left the start, Center the middle, Right the end; default Left (the start). A TextField's text is placed horizontally by textAlign alone - its gravity positions its content only on the vertical axis, the one textAlign does not own (4f ruling 2026-09-27: iOS, Compose and the web each put a TextField's text at the start whatever its gravity).
     public let textAlign: AttrEnum<TextAlign>?
 
     /// Text padding left

@@ -106,7 +106,7 @@ public struct ImageAttributes {
     /// Rendering mode
     public let renderingMode: AttrEnum<RenderingMode>?
 
-    /// Image source name (can be data binding)
+    /// Image source name (can be data binding). On web it is passed to `<img src>` as a path, since web has no asset catalog, so a bare image name belongs in srcName there (rjui warns).
     public let src: AttrValue<String>?
 
     /// Image source name (alias, can be data binding)
