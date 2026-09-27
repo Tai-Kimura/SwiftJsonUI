@@ -8,6 +8,7 @@
 //
 
 import XCTest
+import SwiftUI
 @testable import SwiftJsonUI
 
 final class DeclaredSpellingTests: XCTestCase {
@@ -60,4 +61,38 @@ final class DeclaredSpellingTests: XCTestCase {
         XCTAssertNil(DynamicModifierHelper.safeAreaEdgeSet(["left", "horizontal"]), "declared nowhere")
         XCTAssertEqual(DynamicModifierHelper.safeAreaEdgeSet(["all"]), .all)
     }
+
+    #if DEBUG
+    /// Where a Label's text sits in its frame (DynamicModifierHelper's
+    /// labelHorizontal / labelVertical): textAlign and each gravity part by
+    /// its declared spelling, as sjui's frame_helper.rb label_horizontal /
+    /// label_vertical_named read them (EnumSpelling.lowered). A textAlign in
+    /// no declared spelling is the start, and gravity is not read beside it;
+    /// a gravity part in none names nothing.
+    func testALabelsPlaceInItsFrameReadsDeclaredSpellings() throws {
+        func label(_ json: String) throws -> DynamicComponent {
+            try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+        }
+        let across: [(String, HorizontalAlignment)] = [
+            (#"{"type":"Label","textAlign":"Center"}"#, .center),
+            (#"{"type":"Label","textAlign":"right"}"#, .trailing),
+            (#"{"type":"Label","textAlign":"CENTER","gravity":"centerHorizontal"}"#, .leading),
+            (#"{"type":"Label","gravity":"centerHorizontal"}"#, .center),
+            (#"{"type":"Label","gravity":"right|bottom"}"#, .trailing),
+            (#"{"type":"Label","gravity":"CenterHorizontal"}"#, .leading),
+            (#"{"type":"Label","gravity":"Right"}"#, .leading),
+        ]
+        for (json, expected) in across {
+            XCTAssertEqual(DynamicModifierHelper.labelHorizontal(try label(json)), expected, json)
+        }
+        let down: [(String, VerticalAlignment)] = [
+            (#"{"type":"Label","gravity":"bottom"}"#, .bottom),
+            (#"{"type":"Label","gravity":"Bottom"}"#, .center),
+            (#"{"type":"Label","gravity":"TOP|left"}"#, .center),
+        ]
+        for (json, expected) in down {
+            XCTAssertEqual(DynamicModifierHelper.labelVertical(try label(json)), expected, json)
+        }
+    }
+    #endif
 }
