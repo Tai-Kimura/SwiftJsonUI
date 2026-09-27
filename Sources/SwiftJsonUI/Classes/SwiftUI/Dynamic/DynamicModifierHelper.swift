@@ -331,7 +331,7 @@ public struct DynamicModifierHelper {
     public static func applyInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
         var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
 
-        if let insetInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets) {
+        if let insetInsets = DynamicDecodingHelper.insetsFromAnyCodable(component.insets) {
             top += insetInsets.top
             leading += insetInsets.leading
             bottom += insetInsets.bottom

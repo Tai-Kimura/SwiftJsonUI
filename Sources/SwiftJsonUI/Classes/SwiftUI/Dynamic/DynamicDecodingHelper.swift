@@ -173,6 +173,23 @@ public struct DynamicDecodingHelper {
         return nil
     }
 
+    /// A Collection's `insets` / `contentInsets`: `edgeInsetsFromAnyCodable`,
+    /// and the `|`-separated string form ("8", "8|16", "8|16|8|16"). The SSoT
+    /// names it (Collection.insets, jsonui-cli 1.9.0: "1, 2 or 4 values, an
+    /// array or a string separated by `|`"); until SwiftJsonUI 10.29.0 this
+    /// read it as nothing where the codegen padded by it. A string with a part
+    /// that is not a number pads nothing — a bound `"@{expr}"` stays nil here,
+    /// as before.
+    public static func insetsFromAnyCodable(_ value: AnyCodable?) -> EdgeInsets? {
+        if let string = value?.value as? String {
+            let parts = string.split(separator: "|", omittingEmptySubsequences: false)
+                .map { Double($0.trimmingCharacters(in: .whitespaces)) }
+            guard !parts.isEmpty, parts.allSatisfy({ $0 != nil }) else { return nil }
+            return edgeInsetsFromArray(parts.map { CGFloat($0!) })
+        }
+        return edgeInsetsFromAnyCodable(value)
+    }
+
     // MARK: - Decode-Failure Containment
 
     /// Component type of the synthetic node a failed child decode degrades

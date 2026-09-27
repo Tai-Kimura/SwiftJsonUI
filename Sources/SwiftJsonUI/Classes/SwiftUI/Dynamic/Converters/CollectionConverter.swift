@@ -446,10 +446,18 @@ public struct CollectionConverter {
         // pages, and not a List: a List reports no content height to size
         // to (measured: CollectionContentFit drew it 0pt tall), so a
         // wrapContent List still fills its parent.
-        if !(isHorizontal && component.paging == true), !isListRoute,
-           Self.fitsContent(component, horizontal: isHorizontal, data: data) {
+        //
+        // Across it too, for a horizontal row of wrapContent height: its
+        // cells' height, not the height it is offered (a LazyHStack takes all
+        // of it — 120 of a 120pt parent — where the eager row was its cells'
+        // 28). SwiftJsonUI 10.29.0; the codegen half is
+        // collection_converter.rb's content_fit_across?.
+        let notPager = !(isHorizontal && component.paging == true)
+        let along = notPager && !isListRoute && Self.fitsContent(component, horizontal: isHorizontal, data: data)
+        let across = notPager && !isListRoute && isHorizontal && Self.fitsContent(component, horizontal: false, data: data)
+        if along || across {
             let container = result
-            result = AnyView(CollectionContentFit(axis: isHorizontal ? .horizontal : .vertical) { container })
+            result = AnyView(CollectionContentFit(axis: isHorizontal ? .horizontal : .vertical, along: along, across: across) { container })
         }
 
         // 2. .scrollDisabled(_:) when scrollEnabled == false
@@ -564,8 +572,8 @@ public struct CollectionConverter {
         includeInsetHorizontal: Bool = true
     ) -> EdgeInsets? {
         var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
-        if let edges = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
-            ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) {
+        if let edges = DynamicDecodingHelper.insetsFromAnyCodable(component.insets)
+            ?? DynamicDecodingHelper.insetsFromAnyCodable(component.contentInsets) {
             top += edges.top
             leading += edges.leading
             bottom += edges.bottom
@@ -834,8 +842,8 @@ public struct CollectionConverter {
     /// sits outside the grid and follows the declared insets' horizontal
     /// edges only, so it lines up with the grid body.
     private static func legacyHeaderFooterEdges(component: DynamicComponent) -> EdgeInsets {
-        guard let edges = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets)
-            ?? DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.contentInsets) else {
+        guard let edges = DynamicDecodingHelper.insetsFromAnyCodable(component.insets)
+            ?? DynamicDecodingHelper.insetsFromAnyCodable(component.contentInsets) else {
             return EdgeInsets()
         }
         return EdgeInsets(top: 0, leading: edges.leading, bottom: 0, trailing: edges.trailing)
@@ -964,6 +972,11 @@ public struct CollectionConverter {
         guard wraps else { return false }
         if data["__isWeightedChild"] as? Bool == true,
            (data["__weightedParentOrientation"] as? String) == (horizontal ? "horizontal" : "vertical") {
+            return false
+        }
+        // `distribution: fill` gives an undeclared axis the parent's size
+        // (applyFrameSize; the codegen makes that axis matchParent).
+        if (data["__distributionFillOrientation"] as? String) == (horizontal ? "horizontal" : "vertical") {
             return false
         }
         return true

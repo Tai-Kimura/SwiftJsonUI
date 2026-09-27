@@ -1,0 +1,196 @@
+{
+  "type": "View",
+  "id": "cg_rc_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 8,
+  "child": [
+    {
+      "data": [
+        {
+          "name": "ten",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "r0"
+                  },
+                  {
+                    "title": "r1"
+                  },
+                  {
+                    "title": "r2"
+                  },
+                  {
+                    "title": "r3"
+                  },
+                  {
+                    "title": "r4"
+                  },
+                  {
+                    "title": "r5"
+                  },
+                  {
+                    "title": "r6"
+                  },
+                  {
+                    "title": "r7"
+                  },
+                  {
+                    "title": "r8"
+                  },
+                  {
+                    "title": "r9"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "name": "two",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "t0"
+                  },
+                  {
+                    "title": "t1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_rc_lazy_wrap_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": 120,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_rc_lazy_wrap",
+          "layout": "horizontal",
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "width": "matchParent"
+        },
+        {
+          "type": "Label",
+          "id": "cg_rc_lazy_wrap_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_rc_lazy_wrap_both_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": 120,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_rc_lazy_wrap_both",
+          "layout": "horizontal",
+          "background": "#CCE0FF",
+          "items": "@{two}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "width": "wrapContent"
+        },
+        {
+          "type": "Label",
+          "id": "cg_rc_lazy_wrap_both_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_rc_eager_wrap_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": 120,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_rc_eager_wrap",
+          "layout": "horizontal",
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "width": "matchParent",
+          "lazy": "eager"
+        },
+        {
+          "type": "Label",
+          "id": "cg_rc_eager_wrap_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_rc_lazy_40_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": 120,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_rc_lazy_40",
+          "layout": "horizontal",
+          "background": "#CCE0FF",
+          "items": "@{ten}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "width": "matchParent",
+          "height": 40
+        },
+        {
+          "type": "Label",
+          "id": "cg_rc_lazy_40_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    }
+  ]
+}

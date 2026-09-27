@@ -55,6 +55,12 @@ public struct StateAwareButtonView: View {
     /// Icon tint (`tintColor`). nil draws the asset as authored — a template
     /// rendering mode would flatten a multi-colour asset to a single colour.
     let imageTint: Color?
+    /// Where the label sits across the button (`textAlign`): the SSoT places
+    /// a Button's text horizontally by textAlign alone, default centre; its
+    /// gravity positions it vertically only (4f ruling 2026-09-27). Until
+    /// SwiftJsonUI 10.29.0 the label stood in the middle whatever textAlign
+    /// said.
+    let textAlignment: HorizontalAlignment
 
     /// Gap between the icon and the label, matching the other platforms'
     /// button converters.
@@ -85,7 +91,8 @@ public struct StateAwareButtonView: View {
         width: CGFloat? = nil,
         height: CGFloat? = nil,
         image: String? = nil,
-        imageTint: Color? = nil
+        imageTint: Color? = nil,
+        textAlignment: HorizontalAlignment = .center
     ) {
         self.text = text
         self.partialAttributes = partialAttributes
@@ -108,6 +115,7 @@ public struct StateAwareButtonView: View {
         self.height = height
         self.image = image
         self.imageTint = imageTint
+        self.textAlignment = textAlignment
     }
 
     /// Convenience initializer for backward compatibility with string fontWeight
@@ -132,7 +140,8 @@ public struct StateAwareButtonView: View {
         width: CGFloat? = nil,
         height: CGFloat? = nil,
         image: String? = nil,
-        imageTint: Color? = nil
+        imageTint: Color? = nil,
+        textAlignment: HorizontalAlignment = .center
     ) {
         self.init(
             text: text,
@@ -155,7 +164,8 @@ public struct StateAwareButtonView: View {
             width: width,
             height: height,
             image: image,
-            imageTint: imageTint
+            imageTint: imageTint,
+            textAlignment: textAlignment
         )
     }
     
@@ -227,6 +237,7 @@ public struct StateAwareButtonView: View {
             fontFamily: fontFamily,
             fontColor: textColor
         )
+        .modifier(ButtonTextLineAlignment(alignment: textAlignment))
     }
 
     public var body: some View {
@@ -239,7 +250,8 @@ public struct StateAwareButtonView: View {
                 maxWidth: width == nil ? nil : (width == -1 ? .infinity : width),
                 minHeight: nil,
                 idealHeight: nil,
-                maxHeight: height == nil ? nil : (height == -1 ? .infinity : height)
+                maxHeight: height == nil ? nil : (height == -1 ? .infinity : height),
+                alignment: Alignment(horizontal: textAlignment, vertical: .center)
             )
             // Apply fixed height if specified (not -1/infinity)
             .frame(height: (height != nil && height != -1) ? height : nil)
@@ -270,5 +282,22 @@ public struct StateAwareButtonView: View {
         // isEnabled stayed true for disabled buttons). Applying it last also
         // disables the wrapping gestures themselves.
         .disabled(!isEnabled)
+    }
+}
+
+/// A multi-line label's lines follow textAlignment when it is the start or
+/// the end; the centre leaves the environment's multilineTextAlignment as it
+/// was (a caller's `.multilineTextAlignment` still reaches the Text).
+private struct ButtonTextLineAlignment: ViewModifier {
+    let alignment: HorizontalAlignment
+
+    func body(content: Content) -> some View {
+        if alignment == .leading {
+            content.multilineTextAlignment(.leading)
+        } else if alignment == .trailing {
+            content.multilineTextAlignment(.trailing)
+        } else {
+            content
+        }
     }
 }

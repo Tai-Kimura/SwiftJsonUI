@@ -269,6 +269,18 @@ struct ConformanceRootView: View {
                 LabelVerticalProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-labelVerticalProbeCodegen") {
                 LabelVerticalProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-insetsOrderProbe") {
+                InsetsOrderProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-insetsOrderProbeCodegen") {
+                InsetsOrderProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-buttonTextAlignProbe") {
+                ButtonTextAlignProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-buttonTextAlignProbeCodegen") {
+                ButtonTextAlignProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-rowCrossFitProbe") {
+                RowCrossFitProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-rowCrossFitProbeCodegen") {
+                RowCrossFitProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbe") {
                 FrameAlignmentProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbeCodegen") {

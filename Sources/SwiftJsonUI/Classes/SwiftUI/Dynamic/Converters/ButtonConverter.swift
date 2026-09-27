@@ -203,7 +203,8 @@ public struct ButtonConverter {
                 width: buttonWidth,
                 height: buttonHeight,
                 image: hasImage ? image : nil,
-                imageTint: imageTint
+                imageTint: imageTint,
+                textAlignment: buttonTextAlignment(component)
             )
         )
 
@@ -317,4 +318,20 @@ public struct ButtonConverter {
         }
     }
 }
+
+extension ButtonConverter {
+    /// Where a Button's text sits across it: `textAlign` (Left / Center /
+    /// Right, any case), default the centre — the SSoT places a Button's text
+    /// horizontally by textAlign alone (4f ruling 2026-09-27). Until
+    /// SwiftJsonUI 10.29.0 the Dynamic renderer did not read it, and the text
+    /// stood in the middle whatever it said.
+    static func buttonTextAlignment(_ component: DynamicComponent) -> HorizontalAlignment {
+        switch component.textAlignSpelling()?.lowercased() {
+        case "left", "start", "leading": return .leading
+        case "right", "end", "trailing": return .trailing
+        default: return .center
+        }
+    }
+}
+
 #endif // DEBUG

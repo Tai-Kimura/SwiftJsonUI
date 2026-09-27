@@ -24,25 +24,45 @@ import SwiftUI
 
 public struct CollectionContentFit: Layout {
     public let axis: Axis
+    /// Size to the content along `axis` (the scroll axis).
+    public let along: Bool
+    /// Size to the content across `axis` too: a horizontal row of
+    /// wrapContent height is its cells' height, not the height it is offered
+    /// — a LazyHStack takes all of it, so until SwiftJsonUI 10.29.0 such a
+    /// row filled its parent (120 of a 120pt parent; the eager row, an
+    /// HStack, was its cells' 28). As `along`, capped by the parent's bound.
+    public let across: Bool
 
-    public init(axis: Axis) {
+    public init(axis: Axis, along: Bool = true, across: Bool = false) {
         self.axis = axis
+        self.along = along
+        self.across = across
     }
 
     public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         guard let view = subviews.first else { return .zero }
         switch axis {
         case .vertical:
-            let content = view.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil)).height
-            let height = proposal.height.map { min(content, $0) } ?? content
-            let width = view.sizeThatFits(ProposedViewSize(width: proposal.width, height: height)).width
-            return CGSize(width: width, height: height)
+            let height: CGFloat? = along
+                ? capped(view.sizeThatFits(ProposedViewSize(width: proposal.width, height: nil)).height, by: proposal.height)
+                : proposal.height
+            let width = across
+                ? capped(view.sizeThatFits(ProposedViewSize(width: nil, height: height)).width, by: proposal.width)
+                : view.sizeThatFits(ProposedViewSize(width: proposal.width, height: height)).width
+            return CGSize(width: width, height: height ?? view.sizeThatFits(ProposedViewSize(width: width, height: nil)).height)
         case .horizontal:
-            let content = view.sizeThatFits(ProposedViewSize(width: nil, height: proposal.height)).width
-            let width = proposal.width.map { min(content, $0) } ?? content
-            let height = view.sizeThatFits(ProposedViewSize(width: width, height: proposal.height)).height
-            return CGSize(width: width, height: height)
+            let width: CGFloat? = along
+                ? capped(view.sizeThatFits(ProposedViewSize(width: nil, height: proposal.height)).width, by: proposal.width)
+                : proposal.width
+            let height = across
+                ? capped(view.sizeThatFits(ProposedViewSize(width: width, height: nil)).height, by: proposal.height)
+                : view.sizeThatFits(ProposedViewSize(width: width, height: proposal.height)).height
+            return CGSize(width: width ?? view.sizeThatFits(ProposedViewSize(width: nil, height: height)).width, height: height)
         }
+    }
+
+    private func capped(_ content: CGFloat, by bound: CGFloat?) -> CGFloat {
+        bound.map { min(content, $0) } ?? content
     }
 
     public func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {

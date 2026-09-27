@@ -375,7 +375,7 @@ public struct DynamicHelpers {
 
         // Apply insets if present (additive) - skip if skipInsetPadding is true
         if !skipInsetPadding {
-            if let insetInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.insets) {
+            if let insetInsets = DynamicDecodingHelper.insetsFromAnyCodable(component.insets) {
                 resultPadding.top += insetInsets.top
                 resultPadding.leading += insetInsets.leading
                 resultPadding.bottom += insetInsets.bottom
