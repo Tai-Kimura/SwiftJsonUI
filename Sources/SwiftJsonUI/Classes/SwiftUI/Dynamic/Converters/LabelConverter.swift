@@ -120,7 +120,9 @@ public struct LabelConverter {
         let hasLineLimit = resolvedLines != nil || component.autoShrink == true
 
         // textAlignment
-        let textAlignment = DynamicHelpers.getTextAlignment(from: component)
+        // The lines follow the Label rule (textAlign, else gravity's
+        // horizontal part, else the start).
+        let textAlignment = DynamicModifierHelper.labelTextAlignment(component, data: data)
 
         // linkable
         let linkable = DynamicHelpers.resolveBool(
@@ -203,13 +205,9 @@ public struct LabelConverter {
                 ?? component.rawAttribute("parent_orientation") as? String
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
-                let frameAlignment: Alignment = {
-                    switch component.textAlignSpelling(data: data)?.lowercased() {
-                    case "center": return .center
-                    case "right", "trailing": return .trailing
-                    default: return .leading
-                    }
-                }()
+                // By the Label rule: textAlign, else gravity's horizontal
+                // part, else the start (DynamicModifierHelper.labelHorizontal).
+                let frameAlignment = Alignment(horizontal: DynamicModifierHelper.labelHorizontal(component, data: data), vertical: .center)
                 result = AnyView(result.frame(maxWidth: CGFloat.infinity, alignment: frameAlignment))
             } else if effectiveOrientation == "vertical" {
                 result = AnyView(result.frame(maxHeight: CGFloat.infinity))

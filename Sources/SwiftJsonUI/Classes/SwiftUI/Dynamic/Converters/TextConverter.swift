@@ -46,7 +46,9 @@ public struct TextConverter {
         let textColor = DynamicHelpers.getColor(
             component.string(LabelAttributes.self, \.fontColor), data: data
         ) ?? .primary
-        let alignment = DynamicHelpers.getTextAlignment(from: component)
+        // The lines follow the Label rule (textAlign, else gravity's
+        // horizontal part, else the start).
+        let alignment = DynamicModifierHelper.labelTextAlignment(component, data: data)
 
         // --- 1. Text view with font, color, alignment ---
         var result: AnyView
@@ -110,17 +112,9 @@ public struct TextConverter {
             let effectiveOrientation = parentOrientation
             if effectiveOrientation == "horizontal" {
                 // Map textAlign to frame alignment
-                let frameAlignment: Alignment = {
-                    // canonical spelling は "Center" / "Right"。codegen
-                    // (frame_helper.rb: text_align.to_s.downcase)と同じく
-                    // 大小を潰してから見る。以前は完全一致だったので
-                    // `textAlign: "Center"` が leading に落ちていた。
-                    switch component.textAlignSpelling(data: data)?.lowercased() {
-                    case "center": return .center
-                    case "right", "trailing": return .trailing
-                    default: return .leading
-                    }
-                }()
+                // By the Label rule: textAlign, else gravity's horizontal
+                // part, else the start (DynamicModifierHelper.labelHorizontal).
+                let frameAlignment = Alignment(horizontal: DynamicModifierHelper.labelHorizontal(component, data: data), vertical: .center)
                 result = AnyView(result.frame(maxWidth: .infinity, alignment: frameAlignment))
             } else if effectiveOrientation == "vertical" {
                 result = AnyView(result.frame(maxHeight: .infinity))

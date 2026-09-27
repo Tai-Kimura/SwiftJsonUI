@@ -281,6 +281,10 @@ struct ConformanceRootView: View {
                 RowCrossFitProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-rowCrossFitProbeCodegen") {
                 RowCrossFitProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-labelHorizontalProbe") {
+                LabelHorizontalProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-labelHorizontalProbeCodegen") {
+                LabelHorizontalProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-wrapMaxProbe") {
                 WrapMaxProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-wrapMaxProbeCodegen") {

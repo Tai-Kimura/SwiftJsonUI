@@ -122,26 +122,21 @@ public struct DynamicModifierHelper {
             // frame larger than its content honors gravity (matches frame_helper.rb:
             // .frame(width:, height:, alignment: gravity_to_frame_alignment)).
             let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
-            let hasDeclaredTextFrameAlign = isTextComponent &&
-                (component.textAlignSpelling() != nil || component.gravity != nil)
-            // Text with NEITHER textAlign NOR gravity declared drops the
-            // alignment argument on a fully fixed frame: the codegen emits
-            // this frame through gravity_to_frame_alignment (not the label
-            // path), whose leaf scope yields nil — SwiftUI then centers the
-            // content, which is where the android face draws a shrunken line
-            // in the same box (Label/minimumScaleFactor, autoShrink control).
-            // Declared spellings keep the text mapping below.
+            // A Label's text by the Label rule whatever it declares
+            // (labelHorizontal, labelVertical): with neither textAlign nor
+            // gravity it is at the start and in the middle. Until SwiftJsonUI
+            // 10.29.0 that case took no alignment and SwiftUI drew the text in
+            // the middle of a fixed width (the SSoT's Label.textAlign, 4f
+            // ruling 2026-09-27; frame_helper.rb's Label branches).
             if fixedWidth != nil && fixedHeight != nil,
-               !isTextComponent || hasDeclaredTextFrameAlign,
                let alignment = frameAlignment(for: component, bothAxes: true) {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
-            } else if fixedWidth != nil, fixedHeight == nil, hasDeclaredTextFrameAlign,
+            } else if fixedWidth != nil, fixedHeight == nil, isTextComponent,
                       let alignment = frameAlignment(for: component, bothAxes: false) {
-                // Fixed width + wrapContent height on a text component honors
-                // declared textAlign / gravity — frame_helper.rb's width-only
-                // branch emits the alignment only when one of them is
-                // declared, so a bare width stays at SwiftUI's implicit
-                // center.
+                // Fixed width + wrapContent height on a Label: the text at
+                // the Label rule's horizontal (textAlign, else gravity's
+                // horizontal part, else start) — frame_helper.rb's width-only
+                // branch, which emits it for every Label.
                 result = AnyView(result.frame(width: fixedWidth, alignment: alignment))
             } else if isTextComponent, fixedWidth == nil, labelVertical(component) != .center {
                 // A Label of a fixed height: its text at the vertical its
@@ -327,6 +322,37 @@ public struct DynamicModifierHelper {
             return .center
         }
         return frameAlignment(for: component, bothAxes: true)
+    }
+
+    /// Where a Label's text sits across its frame: textAlign's position,
+    /// else the horizontal its gravity names (left / right /
+    /// centerHorizontal, center), else the start — the SSoT's
+    /// Label.textAlign (4f ruling 2026-09-27; frame_helper.rb's
+    /// label_horizontal, the codegen half). Until SwiftJsonUI 10.29.0 a
+    /// Label's gravity did not place its text across a frame wider than it.
+    public static func labelHorizontal(_ component: DynamicComponent, data: [String: Any] = [:]) -> HorizontalAlignment {
+        if let align = component.textAlignSpelling(data: data)?.lowercased() {
+            switch align {
+            case "center": return .center
+            case "right", "trailing": return .trailing
+            default: return .leading
+            }
+        }
+        // center / centerHorizontal first, then right — the order sjui's
+        // label_horizontal and rjui's map_label_gravity read them in.
+        let parts = (component.gravity ?? []).map { $0.lowercased() }
+        if parts.contains("center") || parts.contains("centerhorizontal") || parts.contains("center_horizontal") { return .center }
+        if parts.contains("right") || parts.contains("end") { return .trailing }
+        return .leading
+    }
+
+    /// The lines of a multi-line Label follow the same rule.
+    public static func labelTextAlignment(_ component: DynamicComponent, data: [String: Any] = [:]) -> TextAlignment {
+        switch labelHorizontal(component, data: data) {
+        case .center: return .center
+        case .trailing: return .trailing
+        default: return .leading
+        }
     }
 
     /// A Label's vertical text position in a box taller than the text: the
@@ -1571,12 +1597,7 @@ public struct DynamicModifierHelper {
             // Match frame_helper.rb: Label/Text use textAlign across, and on
             // both axes the Label's vertical rule (labelVertical) down — until
             // SwiftUI 10.29.0 it was always the top.
-            let horizontal: HorizontalAlignment
-            switch component.textAlignSpelling()?.lowercased() {
-            case "center": horizontal = .center
-            case "right", "trailing": horizontal = .trailing
-            default: horizontal = .leading
-            }
+            let horizontal = labelHorizontal(component)
             return bothAxes ? Alignment(horizontal: horizontal, vertical: labelVertical(component)) : Alignment(horizontal: horizontal, vertical: .center)
         }
 
