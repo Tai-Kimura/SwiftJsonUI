@@ -146,7 +146,7 @@ public struct CollectionAttributes {
     /// Spacing between columns (on a horizontal Collection, between lanes). Undeclared: itemSpacing, else 0 on every route, flow included (attribute_semantics.json -> collectionSpacing).
     public let columnSpacing: Double?
 
-    /// Number of columns. Literal int -> static GridCells.Fixed(N) / Array(repeating: ..., count: N). Binding @{prop} -> runtime-resolved data.prop; the Collection always renders on the multi-column grid path (LazyVerticalGrid / LazyHorizontalGrid on Android, LazyVGrid / LazyHGrid on iOS) even when the binding resolves to 1, so the grid layout stays stable across runtime column changes.
+    /// Number of columns. Literal int -> static GridCells.Fixed(N) / Array(repeating: ..., count: N). Binding @{prop} -> runtime-resolved data.prop; the Collection always renders on the multi-column grid path (LazyVerticalGrid / LazyHorizontalGrid on Android, LazyVGrid / LazyHGrid on iOS) even when the binding resolves to 1, so the grid layout stays stable across runtime column changes. On a horizontal Collection `columns` is the number of lanes (jsonui-cli 1.9.0; until then every horizontal route drew one lane), and a section's own `columns` is that section block's lanes. A paging Collection draws no lanes: paging is not a lane route, whatever `columns` says.
     public let columns: AttrValue<Double>?
 
     /// Container-level insets applied outside of individual cells.

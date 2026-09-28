@@ -116,7 +116,7 @@ public struct SelectBoxAttributes {
     /// Color scheme for native date picker icon visibility (set 'dark' for dark backgrounds)
     public let colorScheme: AttrEnum<ColorScheme>?
 
-    /// Date picker mode. datetime is a declared synonym of dateAndTime and the normalizer folds it: sjui and rjui accept both spellings (selectbox_converter.rb case arms; rjui downcases), but KotlinJsonUI's DateSelectBox matches "dateAndTime" literally and datetime would silently fall to the date-only branch — so the UIKit spelling is canonical, same reasoning as gradientDirection's capitalised canon.
+    /// Date picker mode. datetime is a declared synonym of dateAndTime and the normalizer folds it: sjui and rjui accept both spellings as declared, case and all (sjui matches them literally in selectbox_converter.rb's case arms; rjui's select_box_converter.rb takes a value only when it is a declared spelling, through EnumSpelling.lowered, and lowercases it just for its own case arms), but KotlinJsonUI's DateSelectBox matches "dateAndTime" literally and datetime would silently fall to the date-only branch — so the UIKit spelling is canonical, same reasoning as gradientDirection's capitalised canon.
     public let datePickerMode: AttrEnum<DatePickerMode>?
 
     /// Date picker style
