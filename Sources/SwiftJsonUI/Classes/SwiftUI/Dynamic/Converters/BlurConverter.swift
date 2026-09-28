@@ -55,7 +55,11 @@ public struct BlurConverter {
 
         // --- 2/3. Visual effect (material + tint + colour scheme) ---
         //
-        // `effectStyle` is the declared attribute, matched case-insensitively.
+        // `effectStyle` is the declared attribute, judged on Blur's own
+        // declaration (Light / Dark / ExtraLight) in its declared spelling,
+        // case and all (`in: BlurAttributes.EffectStyle.declaredSpellings`);
+        // any other value — common's Thick, Chrome, ... included — draws the
+        // default. sjui codegen judges it the same way.
         //
         // `common.style` used to be consulted first. That is the STYLE FILE
         // name, not an appearance, so a Blur inside a styled screen had its
