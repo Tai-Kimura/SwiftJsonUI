@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: a8f2cdc6fa98bf6a1c7fa9763307c59be69a325c # jsonui-cli PR #2 head (1.9.2 candidate); re-pin to v1.9.2 once that tag exists
+      JSONUI_CLI_MANIFEST_REF: v1.9.2 # jsonui-cli release tag; its manifest and SSoT are byte-identical to a8f2cdc6's (the PR #2 head these tables were vendored from)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
