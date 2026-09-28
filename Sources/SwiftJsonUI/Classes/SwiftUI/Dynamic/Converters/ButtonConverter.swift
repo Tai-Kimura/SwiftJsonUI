@@ -327,14 +327,23 @@ public struct ButtonConverter {
 
 extension ButtonConverter {
     /// Where a Button's text sits across it: `textAlign` (Left / Center /
-    /// Right, any case), default the centre — the SSoT places a Button's text
+    /// Right), default the centre — the SSoT places a Button's text
     /// horizontally by textAlign alone (4f ruling 2026-09-27). Until
     /// SwiftJsonUI 10.29.0 the Dynamic renderer did not read it, and the text
     /// stood in the middle whatever it said.
+    ///
+    /// Read on BUTTON's declaration, case and all (jsonui-cli 822e5efe, as
+    /// sjui's button_text_alignment and kjui read it): Button declares
+    /// Left / Center / Right only, so `left`, `LEFT`, `start`, `leading`,
+    /// `end`, `trailing` are undeclared and draw the default, the centre.
+    /// Not through `textAlignSpelling()`, which reads LabelAttributes first —
+    /// Label declares the lower case too, so a Button's `left` parsed as
+    /// declared by Label's declaration. Ticket
+    /// sjui-button-textalign-read-case-insensitively.
     static func buttonTextAlignment(_ component: DynamicComponent) -> HorizontalAlignment {
-        switch component.textAlignSpelling()?.lowercased() {
-        case "left", "start", "leading": return .leading
-        case "right", "end", "trailing": return .trailing
+        switch component.typedAttributes(ButtonAttributes.self).textAlign {
+        case .known(.left)?: return .leading
+        case .known(.right)?: return .trailing
         default: return .center
         }
     }
