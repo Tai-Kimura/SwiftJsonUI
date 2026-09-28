@@ -20,7 +20,14 @@ final class TypeSynonymsDrawTests: XCTestCase {
         "TextView": #", "text": "t""#,
         "Image": #", "srcName": "probe_missing""#,
         "CircleImage": ##", "srcName": "probe_missing", "background": "#3366CC""##,
-        "NetworkImage": #", "url": "https://example.invalid/x.png""#,
+        // No url: a NetworkImage with one draws whatever its load has
+        // reached at the moment of the render (in flight, or failed and
+        // remembered process-wide by SwiftUIImageCache), so the spelling and
+        // the type could be drawn in different states of the same load —
+        // AsyncImage "differed" from NetworkImage on an iOS 18 run for that
+        // reason alone. With no url nothing is loaded: the no-src branch
+        // draws the same picture every time, on its background.
+        "NetworkImage": ##", "background": "#3366CC""##,
         "SelectBox": #", "items": ["a", "b"]"#,
         "CheckBox": "",
         "Radio": #", "text": "r""#,

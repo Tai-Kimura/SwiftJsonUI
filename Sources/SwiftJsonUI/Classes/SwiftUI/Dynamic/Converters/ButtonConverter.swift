@@ -328,7 +328,7 @@ public struct ButtonConverter {
 extension ButtonConverter {
     /// Where a Button's text sits across it: `textAlign` (Left / Center /
     /// Right), default the centre — the SSoT places a Button's text
-    /// horizontally by textAlign alone (4f ruling 2026-09-27). Until
+    /// horizontally by textAlign alone (ruling 2026-09-27). Until
     /// SwiftJsonUI 10.29.0 the Dynamic renderer did not read it, and the text
     /// stood in the middle whatever it said.
     ///
