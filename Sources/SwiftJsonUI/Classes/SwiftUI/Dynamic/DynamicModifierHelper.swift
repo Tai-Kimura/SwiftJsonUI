@@ -534,6 +534,45 @@ public struct DynamicModifierHelper {
                                             shape: call.shape))
     }
 
+    // MARK: - 5e. effectStyle material (non-Blur nodes)
+
+    /// The spelling `common.effectStyle` draws on this node, or nil when it
+    /// draws nothing here.
+    ///
+    /// The attribute is declared on `common`, and android and web draw a
+    /// non-Blur node's material; this runtime read it only in BlurConverter,
+    /// so a View drew its control for every value. A Blur is left to its own
+    /// declaration (Light / Dark / ExtraLight), which BlurConverter applies
+    /// before `applyStandardModifiers` — reading it here too would draw it
+    /// twice. sjui codegen answers the same (`effect_style_line`).
+    ///
+    /// Returns `.some(nil)` for a declared value that is no spelling at all
+    /// (a binding): the material is still drawn, at the default — codegen
+    /// emits `.jsonUIVisualEffect(nil)` for it, and web draws Regular.
+    static func effectStyleSpelling(_ component: DynamicComponent) -> String?? {
+        guard let declared = component.typedAttributes(CommonAttributes.self).effectStyle else { return nil }
+        if let type = component.type, TypeSynonyms.drawnType(type).lowercased() == "blur" { return nil }
+        let spelling = declared.rawStringValue
+        if let raw = spelling, raw.hasPrefix("@{") { return .some(nil) }
+        return .some(spelling)
+    }
+
+    /// `common.effectStyle` on a non-Blur node: the declared material behind
+    /// the content, through the ONE library table (`jsonUIVisualEffect` /
+    /// `VisualEffectStyle`) BlurConverter calls — judged against common's
+    /// declaration, `Regular` for anything undeclared.
+    public static func applyEffectStyle(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let spelling = effectStyleSpelling(component) else { return view }
+        return AnyView(view.jsonUIVisualEffect(spelling))
+    }
+
+    /// The `glass` stage's body: the node's materials, in codegen's order for
+    /// the :glass slot — the effectStyle material first, then Liquid Glass
+    /// over it (`base_view_converter.rb#apply_glass`).
+    static func applyMaterials(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        applyGlass(applyEffectStyle(view, component: component), component: component, data: data)
+    }
+
     // MARK: - 6. Corner Radius
 
     public static func applyCornerRadius(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
@@ -1544,7 +1583,12 @@ public struct DynamicModifierHelper {
         // already painted the background"; it says nothing about whether the
         // caller applied glass, and folding glass into it would silently drop
         // a declared attribute for every leaf that paints its own fill.
-        Stage("glass") { v, c, d in applyGlass(v, component: c, data: d) },
+        //
+        // The effectStyle material shares the slot, ahead of glass: codegen
+        // registers both in :glass (material first), so a new stage would
+        // need a codegen slot of its own (modifier_order.json) for no change
+        // in where it lands.
+        Stage("glass") { v, c, d in applyMaterials(v, component: c, data: d) },
         Stage("cornerRadius") { v, c, d in applyCornerRadius(v, component: c, data: d) },
         Stage("border") { v, c, d in applyBorder(v, component: c, data: d) },
         Stage("shadow") { v, c, _ in applyShadow(v, component: c) },
