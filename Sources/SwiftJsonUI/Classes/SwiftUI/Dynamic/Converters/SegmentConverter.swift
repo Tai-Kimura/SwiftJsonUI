@@ -115,13 +115,17 @@ public struct SegmentConverter {
 
         return result
     }
-    /// The data's name for a `valueChange` selector: camelCased as the code
-    /// generators name it (`seg_changed` → `segChanged`: sjui's to_camel_case,
-    /// kjui's camelize_selector). Nil for none, a blank one, or a binding —
-    /// that is onValueChange's spelling.
+    /// The handler a `valueChange` names: a binding as written (`@{h}` — the
+    /// attribute is declared "string", so the binding and the bare name are
+    /// both its spellings; the binding was refused as "onValueChange's" and,
+    /// with no onValueChange, called nothing: jsonui-cli ticket
+    /// sjui-segment-valuechange-binding-is-never-called), or a selector
+    /// camelCased as the code generators name it (`seg_changed` →
+    /// `segChanged`: sjui's to_camel_case, kjui's camelize_selector). Nil for
+    /// none or a blank one.
     static func valueChangeSelector(_ value: String?) -> String? {
-        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-              DynamicEventHelper.extractPropertyName(from: value) == nil else { return nil }
+        guard let value, !value.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return nil }
+        if DynamicEventHelper.extractPropertyName(from: value) != nil { return value }
         let parts = value.split(separator: "_", omittingEmptySubsequences: false).map(String.init)
         return parts.dropFirst().reduce(parts[0]) { name, part in
             name + part.prefix(1).uppercased() + part.dropFirst().lowercased()

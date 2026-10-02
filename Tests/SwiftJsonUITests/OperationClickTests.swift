@@ -120,14 +120,16 @@ final class OperationClickTests: XCTestCase {
 
     /// Segment.valueChange names a method as the code generators name it
     /// (sjui's to_camel_case, kjui's camelize_selector: the first word as it
-    /// is, each later one capitalized); a binding is onValueChange's spelling,
-    /// and a blank one names nothing.
+    /// is, each later one capitalized); a binding is returned as written (the
+    /// handler it names), and a blank one names nothing.
     func testAValueChangeSelectorIsNamedAsTheGeneratorsNameIt() {
         XCTAssertEqual(SegmentConverter.valueChangeSelector("seg_changed"), "segChanged")
         XCTAssertEqual(SegmentConverter.valueChangeSelector("onSegvuV"), "onSegvuV")
         XCTAssertEqual(SegmentConverter.valueChangeSelector("foo_BAR_baz"), "fooBarBaz")
         XCTAssertEqual(SegmentConverter.valueChangeSelector("a__b"), "aB")
-        XCTAssertNil(SegmentConverter.valueChangeSelector("@{changed}"))
+        // A binding is valueChange's own spelling too (declared "string"); it
+        // was nil here, so with no onValueChange the segment called nothing.
+        XCTAssertEqual(SegmentConverter.valueChangeSelector("@{changed}"), "@{changed}")
         XCTAssertNil(SegmentConverter.valueChangeSelector("  "))
         XCTAssertNil(SegmentConverter.valueChangeSelector(nil))
     }

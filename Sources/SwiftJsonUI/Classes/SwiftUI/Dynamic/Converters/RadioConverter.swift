@@ -224,6 +224,13 @@ public struct RadioConverter {
                 .contentShape(Rectangle())
                 .onTapGesture {
                     groupSelectionBinding.wrappedValue = id
+                    // onValueChange, with this radio's value — the value just
+                    // written, as the items form passes its item. The group
+                    // form wrote the selection and called nothing (jsonui-cli
+                    // ticket sjui-radio-group-form-never-calls-onvaluechange).
+                    if let onValueChange = component.onValueChangeSpelling() {
+                        DynamicEventHelper.callWithValue(onValueChange, id: id, value: id, data: data)
+                    }
                     // onClick handler. canTap gates the call, not the selection
                     // above it: that is the radio's own operation, `enabled`'s
                     // (DynamicEventHelper.operationClick — every handler, the
