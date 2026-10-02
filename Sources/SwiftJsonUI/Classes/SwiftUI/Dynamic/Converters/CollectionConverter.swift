@@ -1614,6 +1614,28 @@ public struct CollectionConverter {
         return data[name] as? ((Int) -> Void)
     }
 
+    /// A pager's selection moving from `old` to `new` over `pageCount` pages:
+    /// the page to write back, and the page the page-change callback is told.
+    /// A page outside the pages is clamped — the pager shows the last (or
+    /// first) page, the clamped page is written back once, and the callback
+    /// is told the clamped page only when it differs from the page shown
+    /// before, never the out-of-range value; the write-back's own change (from
+    /// the out-of-range value) is not a page change. Until 10.29.2 a bound
+    /// currentPage of 10 on three pages left page 0 shown, the binding at 10
+    /// and the callback told 10 (measured on the iOS simulator; jsonui-cli
+    /// ticket sjui-dynamic-pager-does-not-write-back-a-clamped-page), as
+    /// jsonui-cli 1.9.6's generated pager now clamps too.
+    static func pageChange(from old: Int, to new: Int, pageCount: Int) -> (writeBack: Int?, report: Int?) {
+        let lastPage = max(pageCount - 1, 0)
+        let clamped = min(max(new, 0), lastPage)
+        let wasShown = (0...lastPage).contains(old)
+        if clamped != new {
+            return (clamped, wasShown && old != clamped ? clamped : nil)
+        }
+        guard wasShown else { return (nil, nil) }
+        return (nil, old != new ? new : nil)
+    }
+
     /// Paging horizontal: TabView with .page style
     /// Flattens all cells from all sections into pages.
     /// Supports currentPage binding and onPageChanged callback.
@@ -2472,8 +2494,10 @@ private struct PagingCollectionWrapperView: View {
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
-        .onChange(of: effectiveSelection.wrappedValue) { _, newValue in
-            onPageChangedCallback?(newValue)
+        .onChange(of: effectiveSelection.wrappedValue) { oldValue, newValue in
+            let change = CollectionConverter.pageChange(from: oldValue, to: newValue, pageCount: pageItems.count)
+            if let page = change.writeBack { effectiveSelection.wrappedValue = page }
+            if let page = change.report { onPageChangedCallback?(page) }
         }
         // A scrollTo turns to the page the value names — its CHANGE, as on
         // every route (CollectionConverter.scrollOnChange): an Int is the
