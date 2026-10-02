@@ -209,12 +209,7 @@ public struct CollectionConverter {
         }()
         let firstSectionOnly: [[String: Any]] = hasSections ? sections : Array(cellSections.prefix(1))
 
-        // Resolve onItemAppear callback
-        var onItemAppearCallback: ((Int) -> Void)? = nil
-        if let onItemAppearRaw = component.string(CollectionAttributes.self, \.onItemAppear),
-           let propName = DynamicEventHelper.extractPropertyName(from: onItemAppearRaw) {
-            onItemAppearCallback = data[propName] as? ((Int) -> Void)
-        }
+        let onItemAppearCallback = itemAppearCallback(component: component, data: data)
 
         // Resolve the programmatic scroll request.
         //
@@ -1598,6 +1593,27 @@ public struct CollectionConverter {
         )
     }
 
+    /// The cell-appear callback (`onItemAppear`). Declared with a "string"
+    /// type, so the binding `@{name}` and the bare name both name the data's
+    /// closure (DynamicEventHelper.handlerName). Until 10.29.2 the bare name
+    /// was dropped, as jsonui-cli's generators dropped it until 1.9.6
+    /// (ticket bare-event-handler-is-dropped-without-a-warning).
+    static func itemAppearCallback(component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
+        guard let raw = component.string(CollectionAttributes.self, \.onItemAppear),
+              let name = DynamicEventHelper.handlerName(from: raw) else { return nil }
+        return data[name] as? ((Int) -> Void)
+    }
+
+    /// A pager's page-change callback: onValueChange, the canonical name
+    /// (onValueChanged / onPageChanged are the definitions aliases, resolved
+    /// inside the generated extraction for raw L0 layouts). Declared with a
+    /// "string" type: the binding or the bare name, as onItemAppear.
+    static func pageChangeCallback(component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
+        guard let raw = component.typedAttributes(CollectionAttributes.self).onValueChange?.rawRepresentation as? String,
+              let name = DynamicEventHelper.handlerName(from: raw) else { return nil }
+        return data[name] as? ((Int) -> Void)
+    }
+
     /// Paging horizontal: TabView with .page style
     /// Flattens all cells from all sections into pages.
     /// Supports currentPage binding and onPageChanged callback.
@@ -1634,18 +1650,7 @@ public struct CollectionConverter {
             return nil
         }()
 
-        // Resolve page-change callback. onValueChange is the canonical
-        // name; onValueChanged / onPageChanged are the definitions
-        // aliases (consulted only for raw L0 layouts).
-        var onPageChangedCallback: ((Int) -> Void)? = nil
-        // onValueChanged / onPageChanged aliases are resolved inside the
-        // generated extraction (raw L0 layouts only)
-        let pageChangedRaw = component.typedAttributes(CollectionAttributes.self)
-            .onValueChange?.rawRepresentation as? String
-        if let pageChangedRaw = pageChangedRaw,
-           let propName = DynamicEventHelper.extractPropertyName(from: pageChangedRaw) {
-            onPageChangedCallback = data[propName] as? ((Int) -> Void)
-        }
+        let onPageChangedCallback = pageChangeCallback(component: component, data: data)
 
         return AnyView(
             PagingCollectionWrapperView(

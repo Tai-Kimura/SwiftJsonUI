@@ -124,7 +124,9 @@ extension TabViewConverter {
         let attrs = component.typedAttributes(TabViewAttributes.self)
         let raw = (attrs.onValueChange?.rawRepresentation as? String)
             ?? (component.isNormalized ? nil : component.onTabChange)
-        guard let raw, DynamicEventHelper.extractPropertyName(from: raw) != nil else { return nil }
+        // The binding or the bare name: onValueChange is declared with a
+        // "string" type (until 10.29.2 a bare name was dropped here).
+        guard let raw, DynamicEventHelper.handlerName(from: raw) != nil else { return nil }
         let id = LayoutPath.viewId(of: component)
         return { DynamicEventHelper.callWithValue(raw, id: id, value: $0, data: data) }
     }
