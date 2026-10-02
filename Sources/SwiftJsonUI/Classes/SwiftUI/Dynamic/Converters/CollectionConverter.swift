@@ -1599,9 +1599,8 @@ public struct CollectionConverter {
     /// was dropped, as jsonui-cli's generators dropped it until 1.9.6
     /// (ticket bare-event-handler-is-dropped-without-a-warning).
     static func itemAppearCallback(component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
-        guard let raw = component.string(CollectionAttributes.self, \.onItemAppear),
-              let name = DynamicEventHelper.handlerName(from: raw) else { return nil }
-        return data[name] as? ((Int) -> Void)
+        guard let raw = component.string(CollectionAttributes.self, \.onItemAppear) else { return nil }
+        return indexCallback(raw, component: component, data: data)
     }
 
     /// A pager's page-change callback: onValueChange, the canonical name
@@ -1609,9 +1608,26 @@ public struct CollectionConverter {
     /// inside the generated extraction for raw L0 layouts). Declared with a
     /// "string" type: the binding or the bare name, as onItemAppear.
     static func pageChangeCallback(component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
-        guard let raw = component.typedAttributes(CollectionAttributes.self).onValueChange?.rawRepresentation as? String,
-              let name = DynamicEventHelper.handlerName(from: raw) else { return nil }
-        return data[name] as? ((Int) -> Void)
+        guard let raw = component.typedAttributes(CollectionAttributes.self).onValueChange?.rawRepresentation as? String else {
+            return nil
+        }
+        return indexCallback(raw, component: component, data: data)
+    }
+
+    /// The index handler a layout names, called as the closure the data holds
+    /// asks — `(String, Int)` with the viewId, `(Int)`, or `()`
+    /// (DynamicEventHelper.callWithValue, the shape every other value handler
+    /// is called in), or nil when the data holds none of them. Until 10.29.2
+    /// only `(Int) -> Void` was tried, so a handler declared `() -> Void` —
+    /// a normal shape — was silently not called on Dynamic while the
+    /// generated code called it (ticket
+    /// sjui-dynamic-textfield-and-collection-handlers-are-not-called).
+    static func indexCallback(_ raw: String, component: DynamicComponent, data: [String: Any]) -> ((Int) -> Void)? {
+        guard let name = DynamicEventHelper.handlerName(from: raw) else { return nil }
+        let held = data[name]
+        guard held is (String, Int) -> Void || held is (Int) -> Void || held is () -> Void else { return nil }
+        let viewId = LayoutPath.viewId(of: component)
+        return { index in DynamicEventHelper.callWithValue(raw, id: viewId, value: index, data: data) }
     }
 
     /// A pager's selection moving from `old` to `new` over `pageCount` pages:

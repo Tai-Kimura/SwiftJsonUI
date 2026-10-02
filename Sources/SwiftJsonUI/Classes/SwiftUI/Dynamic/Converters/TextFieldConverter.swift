@@ -137,6 +137,17 @@ public struct TextFieldConverter {
                 }
                 // Apply all modifiers in textfield_converter.rb order
                 built = applyAllModifiers(built, component: component, data: data)
+                // onSubmit and the focus handlers. The id'd field passes them
+                // to FocusableTextField; this one has no focus state of its
+                // own, so DynamicFocusReporter holds one when a focus handler
+                // is declared (sjui codegen does the same for an id-less
+                // field with focus handlers).
+                if let submit = submitAction(component: component, data: data) {
+                    built = AnyView(built.onSubmit { submit() })
+                }
+                if let focusChange = focusChangeAction(component: component, data: data) {
+                    built = AnyView(built.modifier(DynamicFocusReporter(onChange: focusChange)))
+                }
             }
 
             // --- 12. .onChange (onTextChange) ---
@@ -164,6 +175,40 @@ public struct TextFieldConverter {
         // sjui-dynamic-plain-bound-controls-do-not-follow-the-view-model); a
         // new value from the view model replaces the edit.
         return AnyView(DynamicLocalState(initial: textBinding.wrappedValue, content: build))
+    }
+
+    /// The layout's onSubmit, called as the closure the data holds asks —
+    /// `(String) -> Void` with the viewId, `() -> Void` with nothing
+    /// (DynamicEventHelper.callWithId, the rule for a handler that takes no
+    /// value; sjui codegen's get_event_handler_invocation). Nil when the
+    /// layout names none. Until 10.29.2 Dynamic never called it: the id'd
+    /// field's FocusableTextField was built without an onSubmitAction and the
+    /// id-less one had no `.onSubmit` (ticket
+    /// sjui-dynamic-textfield-and-collection-handlers-are-not-called).
+    static func submitAction(component: DynamicComponent, data: [String: Any]) -> (() -> Void)? {
+        let raw = component.typedAttributes(TextFieldAttributes.self).onSubmit
+        guard DynamicEventHelper.handlerName(from: raw) != nil else { return nil }
+        let viewId = LayoutPath.viewId(of: component)
+        return { DynamicEventHelper.callWithId(raw, id: viewId, data: data) }
+    }
+
+    /// The focus handlers: onFocus and onBeginEditing when the field gains
+    /// focus, onBlur and onEndEditing when it loses it — the web / UIKit names
+    /// for the same two moments, each called if declared, in that order, as
+    /// sjui codegen calls them (`.onChange(of: <id>IsFocused)`). Called as a
+    /// no-value handler (callWithId). Nil when the layout names none. Until
+    /// 10.29.2 Dynamic read none of the four.
+    static func focusChangeAction(component: DynamicComponent, data: [String: Any]) -> ((Bool) -> Void)? {
+        let attrs = component.typedAttributes(TextFieldAttributes.self)
+        let gained = [attrs.onFocus, attrs.onBeginEditing].filter { DynamicEventHelper.handlerName(from: $0) != nil }
+        let lost = [attrs.onBlur, attrs.onEndEditing].filter { DynamicEventHelper.handlerName(from: $0) != nil }
+        guard !gained.isEmpty || !lost.isEmpty else { return nil }
+        let viewId = LayoutPath.viewId(of: component)
+        return { focused in
+            for raw in focused ? gained : lost {
+                DynamicEventHelper.callWithId(raw, id: viewId, data: data)
+            }
+        }
     }
 
     /// Placeholder styling declared by the layout.
@@ -251,7 +296,9 @@ public struct TextFieldConverter {
                 submitLabel: getSubmitLabel(from: component.returnKeyType),
                 textAlignment: DynamicHelpers.getTextAlignment(from: component),
                 nextFocusId: nextFocusId,
-                clearButtonMode: clearButtonMode(from: attrs)
+                onSubmitAction: submitAction(component: component, data: data),
+                clearButtonMode: clearButtonMode(from: attrs),
+                onFocusChange: focusChangeAction(component: component, data: data)
             )
         )
 
@@ -570,6 +617,19 @@ public struct TextFieldConverter {
         }
     }
 
+}
+
+/// Holds a focus state for a field that has none of its own (an id-less
+/// TextField), to tell its focus handlers when it gains or loses focus.
+struct DynamicFocusReporter: ViewModifier {
+    let onChange: (Bool) -> Void
+    @FocusState private var focused: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .focused($focused)
+            .onChange(of: focused) { _, value in onChange(value) }
+    }
 }
 
 /// Coerce a JSON-parsed numeric value to `CGFloat?` across Int / Double /

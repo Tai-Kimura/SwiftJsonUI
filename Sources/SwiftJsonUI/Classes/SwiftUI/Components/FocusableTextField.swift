@@ -19,6 +19,9 @@ public struct FocusableTextField: View {
     let textAlignment: TextAlignment
     let nextFocusId: String?
     let onSubmitAction: (() -> Void)?
+    /// Told when the field gains (true) or loses (false) focus — where a
+    /// layout's onFocus / onBeginEditing and onBlur / onEndEditing are called.
+    let onFocusChange: ((Bool) -> Void)?
     /// `clearButtonMode`. Applied here rather than by the caller because
     /// `whileEditing` / `unlessEditing` need the focus state this view owns.
     let clearButtonMode: TextFieldClearButtonMode?
@@ -35,7 +38,8 @@ public struct FocusableTextField: View {
         textAlignment: TextAlignment = .leading,
         nextFocusId: String? = nil,
         onSubmitAction: (() -> Void)? = nil,
-        clearButtonMode: TextFieldClearButtonMode? = nil
+        clearButtonMode: TextFieldClearButtonMode? = nil,
+        onFocusChange: ((Bool) -> Void)? = nil
     ) {
         self.placeholder = placeholder
         self._text = text
@@ -47,6 +51,7 @@ public struct FocusableTextField: View {
         self.nextFocusId = nextFocusId
         self.onSubmitAction = onSubmitAction
         self.clearButtonMode = clearButtonMode
+        self.onFocusChange = onFocusChange
     }
 
     public var body: some View {
@@ -68,6 +73,9 @@ public struct FocusableTextField: View {
                 FocusManager.shared.requestFocus(fieldId: nextId)
             }
             onSubmitAction?()
+        }
+        .onChange(of: isFocused) { _, focused in
+            onFocusChange?(focused)
         }
         .onReceive(FocusManager.shared.focusRequestPublisher) { requestedId in
             if requestedId == fieldId {
