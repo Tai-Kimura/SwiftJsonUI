@@ -30,6 +30,7 @@
 
 require 'fileutils'
 require 'json'
+require 'set'
 require_relative 'codegen_host_emit'
 require_relative 'codegen_build_dir'
 
@@ -325,8 +326,10 @@ unless ok
 end
 
 # Copy build outputs into the (gitignored) in-tree staging so the generated
-# xcodeproj references stable repo-relative paths.
-%w[View Data ResourceManager].each do |dir|
+# xcodeproj references stable repo-relative paths. ViewModel holds what
+# sjui build scaffolds for a cell layout from jsonui-cli 1.9.6 (the cell
+# View it writes calls <Cell>ViewModel); an older sjui leaves it absent.
+%w[View Data ViewModel ResourceManager].each do |dir|
   src = File.join(build_dir, dir)
   FileUtils.cp_r(src, File.join(staging, dir)) if File.directory?(src)
 end
@@ -356,8 +359,9 @@ entries.each_with_index do |fixture, i|
   next unless has_view
 
   generated += 1
+  layout_data = JSON.parse(File.read(File.join(conformance_dir, fixture['layout'])))['data']
   hosts << CodegenHostEmit.host_source(
-    name, (fixture['state'] || {})['handlers']
+    name, CodegenHostEmit.with_arity((fixture['state'] || {})['handlers'], layout_data)
   )
   cases << "        case #{fixture['id'].inspect}: return AnyView(#{name}Host())"
 end
@@ -408,8 +412,23 @@ lines.concat(hosts)
 # the standard minimal shape: map the cell dictionary through
 # Data.update(dictionary:), hand a Binding to the generated view. Equatable
 # is required — the collection call site chains .equatable().
+#
+# From jsonui-cli 1.9.6 sjui build scaffolds that wrapper itself when no
+# Swift file declares it (sjui-build-does-not-scaffold-cell-views-for-hand-
+# written-cell-layouts), so a staging built by it already has
+# View/<Cell>/<Cell>View.swift; synthesizing a second one made every
+# codegen run fail with "invalid redeclaration of 'ConformanceCellView'"
+# (measured 2026-10-03). The wrapper is written only where the build did
+# not declare one, so the pinned (older) and newer sjui both stage.
+declared_in_staging = Dir.glob(File.join(staging, '**', '*.swift')).flat_map do |path|
+  File.read(path).scan(/^\s*(?:public\s+)?struct\s+([A-Za-z_][A-Za-z0-9_]*)\b/).flatten
+end.to_set
 cell_companions.each do |companion|
   pascal = File.basename(companion).sub(/\.layout\.json\z/, '').split('_').map(&:capitalize).join
+  if declared_in_staging.include?("#{pascal}View")
+    puts "[codegen-host] #{pascal}View declared by sjui build; not synthesized"
+    next
+  end
   lines << ''
   lines << <<~SWIFT
     struct #{pascal}View: View, Equatable {

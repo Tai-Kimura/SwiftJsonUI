@@ -24,10 +24,11 @@ app_sources = Dir[File.join(host_dir, 'App', '**', '*.swift')].sort
 uitest_sources = Dir[File.join(host_dir, 'UITests', '**', '*.swift')].sort
 
 # Codegen host sources (scripts/generate_codegen_host.rb output, gitignored):
-# sjui-generated views/data/resource managers + the fixture registry. When
+# sjui-generated views/data/resource managers (and, from jsonui-cli 1.9.6,
+# the cell view models sjui build scaffolds) + the fixture registry. When
 # present they replace the compile-time default registry stub — exactly one
 # CodegenFixtureRegistry must exist per build.
-codegen_sources = %w[View Data ResourceManager]
+codegen_sources = %w[View Data ViewModel ResourceManager]
   .flat_map { |dir| Dir[File.join(host_dir, 'CodegenStaging', dir, '**', '*.swift')] }
   .push(File.join(host_dir, 'CodegenStaging', 'CodegenFixtureRegistry.swift'))
   .select { |f| File.file?(f) }

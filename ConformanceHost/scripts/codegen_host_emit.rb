@@ -90,8 +90,33 @@ module CodegenHostEmit
       else
         swift_string_literal(set['value'].to_s)
       end
-    "        data.#{handler['name']} = { [weak self] in " \
+    # The payload is ignored (INTERACTIVE_HOST_CONTRACT §2), but the closure
+    # still has to take as many parameters as the handler's declared type:
+    # `{ in }` cannot be stored in a `((String) -> Void)?`.
+    params = Array.new(Integer(handler['arity'] || 0), '_').join(', ')
+    "        data.#{handler['name']} = { [weak self] #{params.empty? ? '' : "#{params} "}in " \
       "self?.data.#{set['var']} = #{value} }"
+  end
+
+  # How many parameters a declared handler class takes: `() -> Void` 0,
+  # `(String) -> Void` 1, `(String, Any) -> Void` 2 (top-level commas only).
+  def handler_arity(klass)
+    inner = klass.to_s[/\A\s*\((.*)\)\s*->/m, 1]
+    return 0 if inner.nil? || inner.strip.empty?
+
+    depth = 0
+    inner.each_char.count do |c|
+      depth += 1 if '([<'.include?(c)
+      depth -= 1 if ')]>'.include?(c)
+      c == ',' && depth.zero?
+    end + 1
+  end
+
+  # `handlers` with each one's arity, read from the layout's `data` section
+  # (the manifest's `state.handlers` does not carry the declared type).
+  def with_arity(handlers, layout_data)
+    classes = Array(layout_data).to_h { |d| [d['name'], d['class']] }
+    Array(handlers).map { |h| h.merge('arity' => handler_arity(classes[h['name']])) }
   end
 
   # True when the fixture's handlers can all be wired here.
