@@ -37,8 +37,13 @@ public struct IncludeConverter {
             }
         }
 
-        // Process @{} bindings in merged data
-        var processedData: [String: Any] = [:]
+        // The included layout reads the including layout's data as it is,
+        // with the maps over it (ruling 2026-10-02; jsonui-cli
+        // shared/core/include_data_map.rb — KotlinJsonUI's
+        // DynamicIncludeComponent reads it so). Until 10.29.2 it read the
+        // maps alone. (IncludeExpander expands an include before a view is
+        // built, so this path draws only an include it could not expand.)
+        var processedData: [String: Any] = data
         for (key, value) in mergedData {
             if let stringValue = value as? String {
                 if let inner = DynamicBindingResolver.inner(of: stringValue) {

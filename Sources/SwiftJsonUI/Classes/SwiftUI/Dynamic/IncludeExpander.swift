@@ -113,12 +113,16 @@ public class IncludeExpander {
                     continue
                 }
                 if key == "data" || key == "shared_data" {
-                    // Merge data/shared_data arrays
-                    if let existingArray = merged[key] as? [[String: Any]],
-                       let newArray = value as? [[String: Any]] {
+                    // An array is declarations, merged into the included
+                    // layout's. An object is a map (read below), not
+                    // declarations: until 10.29.2 it was written over the
+                    // included layout's own data array, which then declared
+                    // nothing.
+                    guard let newArray = value as? [[String: Any]] else { continue }
+                    if let existingArray = merged[key] as? [[String: Any]] {
                         merged[key] = existingArray + newArray
                     } else {
-                        merged[key] = value
+                        merged[key] = newArray
                     }
                 } else {
                     // Override other properties
@@ -128,6 +132,17 @@ public class IncludeExpander {
 
             // Apply ID prefix and recursively process
             json = applyIdPrefix(merged, prefix: newPrefix)
+            // The include node's maps over the including layout's data —
+            // shared_data, then data (jsonui-cli shared/core/include_data_map.rb;
+            // ruling 2026-10-02). Read off the include node as written: its
+            // values are bindings in the including layout's scope, not this
+            // include's. Until 10.29.2 an object map was not read.
+            let map = includeDataMap(jsonData)
+            if !map.isEmpty, let mapped = applyIncludeDataMap(json, map: map, spelled: { name in
+                newPrefix != nil ? self.combineWithPrefix(newPrefix, name) : name
+            }) as? [String: Any] {
+                json = mapped
+            }
             json = processIncludes(json, baseDir: baseDir, idPrefix: newPrefix)
 
             // Debug: Log expanded JSON
@@ -211,6 +226,74 @@ public class IncludeExpander {
     }
 
     /// Transform @{variableName} to @{prefixVariableName} in all string values
+    /// The include node's object maps, merged: shared_data first, then data.
+    func includeDataMap(_ includeNode: [String: Any]) -> [String: Any] {
+        var merged: [String: Any] = [:]
+        for key in ["shared_data", "data"] {
+            if let map = includeNode[key] as? [String: Any] {
+                for (name, value) in map { merged[name] = value }
+            }
+        }
+        return merged
+    }
+
+    /// Every `@{name}` whose name is a map key reads the map's value: a
+    /// whole-string binding takes the value as it is (a Bool stays a Bool),
+    /// one inside a longer string takes a binding as written and a literal as
+    /// its text. `spelled` turns a map key into the name the expanded tree
+    /// binds (the include's prefix is already on every binding). Declarations
+    /// (an array `data`) are not bindings; dotted names are never a key.
+    func applyIncludeDataMap(_ data: Any, map: [String: Any], spelled: (String) -> String) -> Any {
+        if map.isEmpty { return data }
+        var byName: [String: Any] = [:]
+        for (key, value) in map { byName[spelled(key)] = value }
+        return rewriteMapped(data, byName: byName)
+    }
+
+    private func rewriteMapped(_ data: Any, byName: [String: Any]) -> Any {
+        if let dict = data as? [String: Any] {
+            var result: [String: Any] = [:]
+            for (key, value) in dict {
+                result[key] = (key == "data" && value is [Any]) ? value : rewriteMapped(value, byName: byName)
+            }
+            return result
+        } else if let array = data as? [Any] {
+            return array.map { rewriteMapped($0, byName: byName) }
+        } else if let str = data as? String {
+            guard let regex = try? NSRegularExpression(pattern: #"@\{([^}]+)\}"#) else { return str }
+            let range = NSRange(str.startIndex..., in: str)
+            let matches = regex.matches(in: str, range: range)
+            if matches.count == 1, matches[0].range == range,
+               let nameRange = Range(matches[0].range(at: 1), in: str),
+               let value = byName[String(str[nameRange])] {
+                return value
+            }
+            var result = str
+            for match in matches.reversed() {
+                guard let nameRange = Range(match.range(at: 1), in: str),
+                      let fullRange = Range(match.range, in: str),
+                      let value = byName[String(str[nameRange])] else { continue }
+                result = result.replacingCharacters(in: fullRange, with: Self.literalText(value))
+            }
+            return result
+        }
+        return data
+    }
+
+    /// A map value inside a longer string: a string as written, a Bool as
+    /// `true` / `false` (JSONSerialization's Bools are NSNumbers — told apart
+    /// by their CF type, not `as? Bool`, which also takes 0 and 1), a number
+    /// as its text, null as nothing.
+    static func literalText(_ value: Any) -> String {
+        if let string = value as? String { return string }
+        if value is NSNull { return "" }
+        if let number = value as? NSNumber {
+            if CFGetTypeID(number) == CFBooleanGetTypeID() { return number.boolValue ? "true" : "false" }
+            return number.stringValue
+        }
+        return "\(value)"
+    }
+
     func transformBindings(_ data: Any, prefix: String) -> Any {
         if let dict = data as? [String: Any] {
             var result: [String: Any] = [:]
