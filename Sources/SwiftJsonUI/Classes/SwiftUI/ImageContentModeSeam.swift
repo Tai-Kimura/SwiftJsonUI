@@ -104,7 +104,17 @@ public extension Image {
         case .fit:
             self.resizable().aspectRatio(contentMode: .fit)
         case .aspectFill:
-            self.resizable().aspectRatio(contentMode: .fill)
+            // AspectFill is the crop. With a declared size the crop is made
+            // here, as the positional cases make theirs; without one the
+            // caller crops against the frame it is given (ImageViewConverter
+            // step 3c), since a wrapContent axis must keep the image's size.
+            if let size {
+                self.resizable().aspectRatio(contentMode: .fill)
+                    .frame(width: size.width, height: size.height)
+                    .clipped()
+            } else {
+                self.resizable().aspectRatio(contentMode: .fill)
+            }
         case .positional(let alignment):
             if let size {
                 self.frame(width: size.width, height: size.height, alignment: alignment)

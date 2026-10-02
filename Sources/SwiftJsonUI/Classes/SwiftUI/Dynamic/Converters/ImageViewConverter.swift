@@ -122,6 +122,30 @@ public struct ImageViewConverter {
             )
         }
 
+        // --- 3c. Inside the frame ---
+        // AspectFill is the crop (attribute_semantics.json image.ruling), but
+        // SwiftUI's `.fill` is fill-and-overflow, and a positional mode with
+        // no declared size draws the image unscaled and whole: both were
+        // drawn past the frame, over the neighbours (jsonui-cli ticket
+        // sjui-aspectfill-image-is-not-cropped-to-its-frame; measured on the
+        // ConformanceHost aspect-fill probe). On each axis the layout sizes,
+        // the image takes the offered size instead of its own, and what is
+        // drawn past it is clipped. A wrapContent axis keeps the image's size.
+        if let alignment = Self.cropAlignment(contentModeIntent, hasDeclaredSize: declaredSize != nil) {
+            let sizedWidth = component.declaredWidth != nil
+            let sizedHeight = component.declaredHeight != nil
+            if sizedWidth || sizedHeight {
+                let image = result
+                result = AnyView(
+                    image
+                        .frame(minWidth: sizedWidth ? 0 : nil, maxWidth: sizedWidth ? .infinity : nil,
+                               minHeight: sizedHeight ? 0 : nil, maxHeight: sizedHeight ? .infinity : nil,
+                               alignment: alignment)
+                        .clipped()
+                )
+            }
+        }
+
         // --- 4. .clipShape(Circle()) for CircleImage (CircleImageView arrives
         // as CircleImage: TypeSynonyms `render_as`) ---
         if component.type?.lowercased() == "circleimage" {
@@ -165,6 +189,18 @@ public struct ImageViewConverter {
     /// and the String cast is nil for EVERY literal spelling, while a
     /// binding — whose rawRepresentation IS `"@{expr}"` — keeps working.
     /// All fifteen literal fixtures went inert on ios; the bound one did not.
+    /// Where an image that would be drawn past its frame is placed before
+    /// it is cropped: AspectFill centred; a positional mode with no declared
+    /// size (the seam crops one that has a size) at its own alignment. Nil
+    /// for the modes that stay inside their frame.
+    static func cropAlignment(_ intent: ImageContentModeIntent, hasDeclaredSize: Bool) -> Alignment? {
+        switch intent {
+        case .aspectFill: return .center
+        case .positional(let alignment): return hasDeclaredSize ? nil : alignment
+        case .fit, .stretch: return nil
+        }
+    }
+
     static func contentModeIntent(
         for component: DynamicComponent,
         data: [String: Any]
