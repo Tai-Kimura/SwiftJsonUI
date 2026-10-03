@@ -293,8 +293,7 @@ public struct SelectBoxView: View {
             // Initialize selectedDate and dateText from initial value
             if let initialDate = initialSelectedDate {
                 selectedDate = initialDate
-                let formatter = DateFormatter()
-                formatter.dateFormat = dateStringFormat
+                let formatter = AppLanguageDateFormat.formatter(dateStringFormat)
                 dateText = formatter.string(from: initialDate)
             }
         }
@@ -314,8 +313,7 @@ public struct SelectBoxView: View {
         .onChange(of: initialSelectedDate) { _, newDate in
             if let newDate {
                 selectedDate = newDate
-                let formatter = DateFormatter()
-                formatter.dateFormat = dateStringFormat
+                let formatter = AppLanguageDateFormat.formatter(dateStringFormat)
                 dateText = formatter.string(from: newDate)
             } else {
                 dateText = ""
@@ -456,8 +454,7 @@ public struct SelectBoxView: View {
                         .labelsHidden()
                         .accessibilityIdentifier("sjui_x7q_datePicker")
                         .onChange(of: selectedDate) { _, newValue in
-                            let formatter = DateFormatter()
-                            formatter.dateFormat = dateStringFormat
+                            let formatter = AppLanguageDateFormat.formatter(dateStringFormat)
                             dateText = formatter.string(from: newValue)
                             onValueChange?(dateText)
                         }

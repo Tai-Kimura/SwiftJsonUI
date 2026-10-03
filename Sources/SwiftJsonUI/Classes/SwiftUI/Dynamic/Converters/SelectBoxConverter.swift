@@ -190,8 +190,10 @@ public struct SelectBoxConverter {
         let dateStringFormat = component.dateStringFormat ?? "yyyy-MM-dd"
 
         // minimumDate / maximumDate / selectedDate
-        let dateFormatter = DateFormatter()
-        dateFormatter.dateFormat = "yyyy-MM-dd"
+        // The fixed internal shape, read the same on every device (a device
+        // on the Japanese calendar used to read "2026-10-04" as the imperial
+        // year 2026).
+        let dateFormatter = AppLanguageDateFormat.posixFormatter("yyyy-MM-dd")
         // All three are string|binding: interpolate before parsing, or a
         // bound date reaches DateFormatter as the literal "@{expr}".
         func parseDate(_ attr: AttrValue<String>?) -> Date? {
