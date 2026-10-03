@@ -43,7 +43,7 @@
       }
     },
     "rules": [
-      "text attribute supports interpolation with @{binding} syntax",
+      "text is a literal or one binding (@{name}); a value that mixes literal text with a binding is the binding-mixed-text warning",
       "partialAttributes allows styling ranges within text",
       "linkable enables auto-detection of URLs",
       "Frame alignment must be .leading for textAlign to work correctly (Swift)"
