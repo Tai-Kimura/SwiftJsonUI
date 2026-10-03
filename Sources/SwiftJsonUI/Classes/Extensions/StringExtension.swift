@@ -103,7 +103,15 @@ public extension String {
         return t
     }
     
+    /// Reads a date string the way the SelectBox writes it since 10.29.5 —
+    /// the app's language on the Gregorian calendar (AppLanguageDateFormat) —
+    /// and, failing that, the way it was written before: the device locale.
+    /// Generated code reads a SelectBox's bound value back through here, so
+    /// both sides must agree on the locale.
     func toDate(format: String = "yyyy/MM/dd HH:mm:ss") -> Date? {
+        if let date = AppLanguageDateFormat.formatter(format).date(from: self) {
+            return date
+        }
         let formatter = DateFormatter()
         formatter.dateFormat = format
         return formatter.date(from: self)
