@@ -1101,7 +1101,8 @@ public struct CollectionConverter {
 
     /// Flatten all cells from all sections into a single array of page items for paging layout.
     /// Each item carries its cellClassName (from the section config) and cellData.
-    private static func flattenedPageItems(
+    // Internal, not private: DynamicPagerPageIdentityTests reads the ids.
+    static func flattenedPageItems(
         sections: [[String: Any]],
         dataSource: CollectionDataSource,
         cellIdProperty: String?
@@ -1113,17 +1114,21 @@ public struct CollectionConverter {
             let sectionData = dataSource.sections[sectionIndex]
             guard let cellName = sectionConfig["cell"] as? String,
                   let cellsData = sectionData.cells else { continue }
-            // A page's identity: its cell's id (identifiedItems) — its key
-            // qualified by its section, else its place. Two pages with one id
-            // left the TabView unable to turn to the second or, measured, to
-            // the first (jsonui-cli 1.9.0: a scrollTo naming a shared key
-            // stayed on page 0); until 1.9.0 (round 14) a String id could
-            // still repeat — a key "1:k" in section 0 and "k" in section 1,
-            // a key "s1_0" and section 1's first cell with no key, two cells
-            // of one section with one key.
+            // A page's identity is its place among all the pages — never its
+            // key. With autoChangeTrackingId the key is the enriched cellId,
+            // which changes with the cell's content: a page whose id changed
+            // during a swipe, even off screen, was removed and re-inserted
+            // and the paging TabView ended between two pages (jsonui-cli
+            // ticket sjui-paging-collection-uses-change-tracking-cellid-as-
+            // page-identity-and-stops-mid-swipe). KotlinJsonUI's pager is
+            // positional, and so are sjui's generated pages from jsonui-cli
+            // 1.9.10. A place is also never shared, which a key could be
+            // (until 1.9.0 two pages with one id left the TabView unable to
+            // turn to one of them). A scrollTo matches the page's data
+            // (page(for:)), not its id.
             for item in identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex) {
                 pages.append(PagingPageItem(
-                    id: item.id,
+                    id: AnyHashable(pages.count),
                     index: pages.count,
                     cellClassName: cellName,
                     data: item.data
@@ -2423,7 +2428,7 @@ public struct CollectionConverter {
 
 /// Represents a single page in a paging horizontal collection.
 /// Each page carries the cell class name and cell data needed to render the cell view.
-private struct PagingPageItem: Identifiable {
+struct PagingPageItem: Identifiable {
     let id: AnyHashable
     let index: Int
     let cellClassName: String
