@@ -117,7 +117,7 @@ public struct ButtonAttributes {
     /// Background while pressed. On web it also shows on hover (the web has hover; iOS and Android do not). Hex string or color name from colors.json
     public let tapBackground: String?
 
-    /// Button text (can be data binding, supports interpolation)
+    /// Button text: a literal, or one data binding (`@{title}`). A value that mixes literal text with a binding is a build warning, binding-mixed-text — compose the string in the ViewModel and bind it as one value (until jsonui-cli 1.9.6 this read "supports interpolation").
     public let text: AttrValue<String>?
 
     /// Where the button's text sits across it: Left the start, Center the middle, Right the end; default Center. A Button's text is placed horizontally by textAlign alone - its gravity positions its content only on the vertical axis, the one textAlign does not own (4f ruling 2026-09-27: iOS, Compose and the web each put a Button's text in the middle whatever its gravity; iOS drew Left and Right in the middle too until jsonui-cli 1.9.0 / SwiftJsonUI 10.29.0). On Compose the text takes the button's width to be placed when the button has a width of its own (declared, not wrapContent, or a weight) - a wrap-width button is its text's width - on kjui codegen and KotlinJsonUI Dynamic alike (round 17; it sat in the middle whatever textAlign said).

@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v1.9.2 # jsonui-cli release tag; its manifest and SSoT are byte-identical to a8f2cdc6's (the PR #2 head these tables were vendored from)
+      JSONUI_CLI_MANIFEST_REF: v1.9.6 # jsonui-cli release tag the attr tables and test fixtures were re-vendored from (SwiftJsonUI 10.29.2)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest

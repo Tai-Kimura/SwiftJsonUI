@@ -212,7 +212,7 @@ public struct CollectionAttributes {
     /// Called with the cell index (Int) when a cell appears on screen. Use for pagination by checking index against total count in ViewModel. Declared `binding` because that is what a layout actually carries: the author writes `@{handlerName}`, a STRING, and every reader matches it as one (kjui collection_component.rb:364 `json_data['onItemAppear'].match(/@\{([^}]+)\}/)`, and the binding validators infer `((Int) -> Unit)?` from that spelling). It was `type: "callback"` — the only callback-typed attribute in the whole SSoT — and attr-codegen skips that type as "function-valued, not extractable from JSON". True of a function; not true of the `@{...}` string a JSON layout can hold, so the attribute had no row in any generated table and no platform could read it typed (2026-08-05, plan 49-E, raised by A).
     public let onItemAppear: AttrValue<String>?
 
-    /// Collection page/selection change handler. Canonical; prefer over onPageChanged. [aliases: onValueChanged, onPageChanged; binding: one-way]
+    /// Collection page/selection change handler. Canonical; prefer over onPageChanged. Called when the page changes — by a swipe, a scrollTo or a currentPage write — with the new page; not called when the pager first appears (ruling 2026-10-02). [aliases: onValueChanged, onPageChanged; binding: one-way]
     public let onValueChange: AttrValue<String>?
 
     /// Scroll orientation (horizontal or vertical)

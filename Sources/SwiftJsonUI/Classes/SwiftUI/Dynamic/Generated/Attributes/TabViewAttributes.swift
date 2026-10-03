@@ -44,7 +44,7 @@ public struct TabViewAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
-    /// Tab/page selection change handler. Canonical; prefer over onTabChange/onPageChanged. [aliases: onTabChange, onPageChanged; binding: one-way]
+    /// Tab/page selection change handler. Canonical; prefer over onTabChange/onPageChanged. Called when the selected tab changes — by a tap on another tab or a selectedIndex write — with the new index; not called when the TabView first appears, nor when the selected tab is tapped again (ruling 2026-10-02). [aliases: onTabChange, onPageChanged; binding: one-way]
     public let onValueChange: AttrValue<String>?
 
     /// Currently selected tab index (binding for two-way) [aliases: selectedTabIndex; binding: two-way]
