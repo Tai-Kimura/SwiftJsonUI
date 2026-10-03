@@ -142,6 +142,9 @@ public struct ImageViewConverter {
                                minHeight: sizedHeight ? 0 : nil, maxHeight: sizedHeight ? .infinity : nil,
                                alignment: alignment)
                         .clipped()
+                        // Drawing only is clipped; the hit shape is the frame
+                        // (sjui-aspectfill-image-takes-touches-outside-its-frame).
+                        .contentShape(Rectangle())
                 )
             }
         }

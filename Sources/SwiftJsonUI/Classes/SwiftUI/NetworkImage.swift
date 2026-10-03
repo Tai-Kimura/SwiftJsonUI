@@ -353,6 +353,7 @@ public struct NetworkImage: View {
                 .renderingMode(renderingMode)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: alignment)
                 .clipped()
+                .contentShape(Rectangle())
         } else if let mode = contentModeToSwiftUI(), mode == .fill {
             // AspectFill is the crop: SwiftUI's `.fill` alone is fill-and-
             // overflow, drawn past the frame over the neighbours (jsonui-cli
@@ -364,6 +365,9 @@ public struct NetworkImage: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
                 .clipped()
+                // Drawing only is clipped; the hit shape is the frame
+                // (sjui-aspectfill-image-takes-touches-outside-its-frame).
+                .contentShape(Rectangle())
         } else if let mode = contentModeToSwiftUI() {
             img
                 .resizable()

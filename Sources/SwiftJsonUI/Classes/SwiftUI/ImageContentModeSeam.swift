@@ -112,6 +112,7 @@ public extension Image {
                 self.resizable().aspectRatio(contentMode: .fill)
                     .frame(width: size.width, height: size.height)
                     .clipped()
+                    .contentShape(Rectangle())
             } else {
                 self.resizable().aspectRatio(contentMode: .fill)
             }
@@ -119,6 +120,9 @@ public extension Image {
             if let size {
                 self.frame(width: size.width, height: size.height, alignment: alignment)
                     .clipped()
+                    // Drawing only is clipped; the hit shape is the frame
+                    // (sjui-aspectfill-image-takes-touches-outside-its-frame).
+                    .contentShape(Rectangle())
             } else {
                 self
             }

@@ -295,6 +295,10 @@ struct ConformanceRootView: View {
                 WrapMaxProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-wrapMaxProbeCodegen") {
                 WrapMaxProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-aspectFillHitProbe") {
+                AspectFillHitProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-aspectFillHitProbeCodegen") {
+                AspectFillHitProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-aspectFillProbe") {
                 AspectFillProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-aspectFillProbeCodegen") {
