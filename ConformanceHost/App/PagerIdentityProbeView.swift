@@ -13,8 +13,8 @@
 //  consumer's book screen). PagerIdentityProbeUITests swipes with a mid-way
 //  release and reads whether the pager settled on a page. On the Dynamic
 //  renderer and — in the codegen host — as sjui generates it
-//  (ProbeLayouts/probe_pager_identity.json; this view holds the generated
-//  view's data, as an app's ViewModel does). NOT part of the conformance
+//  (ProbeLayouts/probe_pager_identity.json; PagerIdentityCodegenHalf, compiled
+//  only in the codegen host). NOT part of the conformance
 //  suite; launch with `-pagerIdentityProbe` or `-pagerIdentityProbeCodegen`.
 //
 
@@ -28,7 +28,6 @@ struct PagerIdentityProbeView: View {
 
     @State private var version = 0
     @State private var page = 0
-    @State private var cgData = ProbePagerIdentityData()
 
     /// p0…p4; the page two ahead of `page` carries `version` in its title.
     static func rows(version: Int, page: Int) -> CollectionDataSource {
@@ -45,14 +44,8 @@ struct PagerIdentityProbeView: View {
             Text(codegen ? "pager identity probe (codegen)" : "pager identity probe").accessibilityIdentifier("pid_ready")
             Text("version \(version)").accessibilityIdentifier("pid_version")
             if codegen {
-                ProbePagerIdentityGeneratedView(data: $cgData)
-                    .onAppear {
-                        cgData.rows = Self.rows(version: 0, page: 0)
-                        cgData.onPageChanged = { newPage in
-                            version += 1
-                            cgData.rows = Self.rows(version: version, page: newPage)
-                        }
-                    }
+                // CodegenOnly/ in the codegen host; a stub in the dynamic-only one.
+                PagerIdentityCodegenHalf(version: $version)
             } else if let component = try? JSONDecoder().decode(DynamicComponent.self, from: Data(Self.layout.utf8)) {
                 DynamicComponentBuilder(component: component, data: [
                     "rows": Self.rows(version: version, page: page),

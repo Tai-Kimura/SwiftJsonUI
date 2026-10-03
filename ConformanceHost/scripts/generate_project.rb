@@ -33,9 +33,23 @@ codegen_sources = %w[View Data ViewModel ResourceManager]
   .push(File.join(host_dir, 'CodegenStaging', 'CodegenFixtureRegistry.swift'))
   .select { |f| File.file?(f) }
   .sort
+# Host files that name generated types (CodegenOnly/<Name>.swift) go in with
+# the staging sources, each replacing its App/ default (<Name>Default.swift),
+# so the dynamic-only build compiles the default and never the generated name
+# (10.29.5's PagerIdentityProbeView named ProbePagerIdentityData in App/ and
+# the dynamic-only host stopped compiling).
+codegen_only = Dir[File.join(host_dir, 'CodegenOnly', '**', '*.swift')].sort
+codegen_only.each do |file|
+  default = "#{File.basename(file, '.swift')}Default.swift"
+  next if app_sources.any? { |f| File.basename(f) == default }
+
+  abort "error: #{File.basename(file)} has no App/#{default}; the dynamic-only host would not compile"
+end
 if codegen_sources.any? { |f| f.end_with?('CodegenFixtureRegistry.swift') }
   app_sources.reject! { |f| f.end_with?('CodegenFixtureRegistryDefault.swift') }
-  app_sources += codegen_sources
+  defaults = codegen_only.map { |file| "#{File.basename(file, '.swift')}Default.swift" }
+  app_sources.reject! { |f| defaults.include?(File.basename(f)) }
+  app_sources += codegen_sources + codegen_only
 else
   codegen_sources = []
 end
