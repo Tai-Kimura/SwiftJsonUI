@@ -54,7 +54,19 @@ public enum CellIdGenerator {
         return "\(primary)_\(encoded)"
     }
 
-    private static func combine(hasher: inout Hasher, value: Any) {
+    /// Hashes `value` by its content, deterministically within a process, for
+    /// every kind of value a cell dictionary can hold. Through 10.29.4 the
+    /// fallback was `String(describing:)`, which prints the dictionaries
+    /// inside a struct (a `CollectionDataSource`'s cells) in per-instance
+    /// order: equal content hashed differently on each rebuild, so the cell
+    /// was rebuilt and a ScrollView in it reset (jsonui-cli ticket
+    /// sjui-cellid-autoid-hash-is-nondeterministic-for-nested-collection-
+    /// data). The description is never hashed now.
+    private static func combine(hasher: inout Hasher, value: Any, depth: Int = 0) {
+        guard depth < maxDepth else {
+            hasher.combine("<depth>")
+            return
+        }
         switch value {
         case let v as String: hasher.combine(v)
         case let v as Int: hasher.combine(v)
@@ -62,17 +74,71 @@ public enum CellIdGenerator {
         case let v as Double: hasher.combine(v)
         case let v as Bool: hasher.combine(v)
         case let v as [Any]:
-            for item in v { combine(hasher: &hasher, value: item) }
+            for item in v { combine(hasher: &hasher, value: item, depth: depth + 1) }
         case let v as [String: Any]:
             for key in v.keys.sorted() {
                 hasher.combine(key)
-                combine(hasher: &hasher, value: v[key]!)
+                combine(hasher: &hasher, value: v[key]!, depth: depth + 1)
             }
+        case let v as [AnyHashable: Any]:
+            // Keys that are not Strings have no order to sort by: each entry
+            // is hashed on its own and the results are summed, which does not
+            // depend on the dictionary's iteration order.
+            var sum = 0
+            for (key, item) in v {
+                var entry = Hasher()
+                entry.combine(key)
+                combine(hasher: &entry, value: item, depth: depth + 1)
+                sum &+= entry.finalize()
+            }
+            hasher.combine(v.count)
+            hasher.combine(sum)
         default:
-            if !isIgnorable(value) {
-                hasher.combine(String(describing: value))
+            if isIgnorable(value) { return }
+            let mirror = Mirror(reflecting: value)
+            if mirror.displayStyle == .optional {
+                if let wrapped = mirror.children.first?.value {
+                    hasher.combine(true)
+                    combine(hasher: &hasher, value: wrapped, depth: depth + 1)
+                } else {
+                    hasher.combine(false)
+                }
+            } else if let v = value as? AnyHashable {
+                // Hashable values hash by their own content: Float, CGFloat,
+                // Date, URL, UUID, Decimal, Set, Hashable enums and structs.
+                hasher.combine(v)
+            } else if !mirror.children.isEmpty {
+                // Any other struct, enum payload, tuple or class (a
+                // CollectionDataSource and its sections): its stored values,
+                // in declaration order.
+                hasher.combine(String(reflecting: type(of: value)))
+                for child in mirror.children {
+                    hasher.combine(child.label ?? "")
+                    combine(hasher: &hasher, value: child.value, depth: depth + 1)
+                }
+            } else {
+                // Neither Hashable nor made of stored values: there is no
+                // content to read. The type stands for it — a change inside
+                // such a value is not tracked, and the log says which type.
+                let name = String(reflecting: type(of: value))
+                hasher.combine(name)
+                reportOpaque(name)
             }
         }
+    }
+
+    /// Deep enough for a nested CollectionDataSource; a reference cycle stops
+    /// here instead of recursing forever.
+    private static let maxDepth = 32
+
+    private static var reportedOpaqueTypes = Set<String>()
+    private static let reportLock = NSLock()
+
+    private static func reportOpaque(_ name: String) {
+        reportLock.lock()
+        defer { reportLock.unlock() }
+        guard reportedOpaqueTypes.insert(name).inserted else { return }
+        Logger.log("[CellIdGenerator] \(name) has no content to hash (not Hashable, no stored values): a change inside it does not change the cell's id. Make it Hashable or conform it to CellIdHashIgnorable.")
     }
 
     private static func isIgnorable(_ value: Any) -> Bool {
