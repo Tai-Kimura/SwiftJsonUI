@@ -61,6 +61,7 @@ public struct SegmentConverter {
                 Picker("", selection: DynamicEventHelper.calling(click, after: selection)) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         Text(item.dynamicLocalized()).tag(index)
+                            .modifier(SegmentTabIdentifier(id: tabIdentifier(component, index: index)))
                     }
                 }
                 .pickerStyle(.segmented)
@@ -171,4 +172,28 @@ public struct SegmentConverter {
         }
     }
 }
+
+extension SegmentConverter {
+    /// `<id>_tab_<n>` for a segment: the id every driver's selectTab looks
+    /// for, and the one sjui codegen and rjui give each segment. Nil without
+    /// an id, as the Segment then has no identifier of its own. The segments
+    /// were id-less until 10.29.3, so a Segment could not be selected from a
+    /// UI test on iOS (jsonui-cli ticket
+    /// jui-segment-tabs-carry-no-tab-ids-so-selecttab-cannot-reach-them).
+    /// Measured 2026-10-03 (iOS 26.5 simulator, Xcode 26.6): an identifier
+    /// on a segment's Text reaches XCUITest as that segment's button, and a
+    /// tap on it selects the segment.
+    static func tabIdentifier(_ component: DynamicComponent, index: Int) -> String? {
+        component.id.map { "\($0)_tab_\(index)" }
+    }
+}
+
+/// The segment's identifier when there is one; nothing otherwise.
+struct SegmentTabIdentifier: ViewModifier {
+    let id: String?
+    func body(content: Content) -> some View {
+        if let id { content.accessibilityIdentifier(id) } else { content }
+    }
+}
+
 #endif // DEBUG
