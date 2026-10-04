@@ -1,0 +1,87 @@
+{
+  "type": "View",
+  "id": "cg_cdr_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_cdr_cellid",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_cellid}",
+      "cellIdProperty": "cellId",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    },
+    {
+      "type": "Collection",
+      "id": "cg_cdr_key",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_key}",
+      "cellIdProperty": "key",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    },
+    {
+      "type": "Collection",
+      "id": "cg_cdr_tracked",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_tracked}",
+      "cellIdProperty": "cellId",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "autoChangeTrackingId": true
+    }
+  ],
+  "data": [
+    {
+      "name": "rows_cellid",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "rows_key",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "rows_tracked",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    }
+  ]
+}
