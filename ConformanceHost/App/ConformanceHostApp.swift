@@ -299,6 +299,10 @@ struct ConformanceRootView: View {
                 AspectFillHitProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-aspectFillHitProbeCodegen") {
                 AspectFillHitProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-buttonPaddingProbe") {
+                ButtonPaddingProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-buttonPaddingProbeCodegen") {
+                ButtonPaddingProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-cellDataRefreshProbe") {
                 CellDataRefreshProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-cellDataRefreshProbeCodegen") {
