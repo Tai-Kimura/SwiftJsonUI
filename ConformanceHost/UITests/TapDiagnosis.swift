@@ -30,11 +30,18 @@ enum TapDiagnosis {
 
     /// Writes app.screenshot() to `artifacts/ios/<name>.png` under the staging
     /// directory (collect_results.sh uploads it) and returns that relative path.
+    /// It makes the directory itself: run_conformance.sh creates only the
+    /// staging root, ConformanceUITests makes `artifacts/ios` when its suite
+    /// starts, and XCTest runs classes by name — a probe class sorting before
+    /// "ConformanceUITests" called this before the directory existed and the
+    /// write failed (NSCocoaErrorDomain 4, measured by support lane 1).
     @discardableResult
     static func screenshot(named name: String, app: XCUIApplication) throws -> String {
         let screenshot = app.screenshot()
         let relative = "artifacts/ios/\(name).png"
         let url = stagingDir.appendingPathComponent(relative)
+        try FileManager.default.createDirectory(
+            at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
         try screenshot.pngRepresentation.write(to: url, options: .atomic)
         return relative
     }
