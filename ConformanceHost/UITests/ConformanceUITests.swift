@@ -535,6 +535,12 @@ final class ConformanceUITests: XCTestCase {
 
                 if step.action == "tap", let id = step.id {
                     lastTap = (step, elementState(id, in: app), Date().timeIntervalSince(fixtureStart))
+                    // One line per tap, read by jsonui-cli's record step into a
+                    // distribution: how soon after the fixture was shown each
+                    // tap lands. A number to look at, not a wait.
+                    if let tap = lastTap {
+                        print("TAP_TIMING \(fixture.id) \(id) +\(String(format: "%.3f", tap.at))s \(tap.before)")
+                    }
                 }
 
                 do {
