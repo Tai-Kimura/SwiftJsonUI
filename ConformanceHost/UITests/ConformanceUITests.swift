@@ -502,6 +502,13 @@ final class ConformanceUITests: XCTestCase {
         let actionExecutor = XCUITestActionExecutor(platform: "ios")
         let assertionExecutor = XCUITestAssertionExecutor()
         var screenshotPath: String? = nil
+        // The last tap of this fixture and what XCTest said about its target
+        // just before it — so an assertion that fails after a tap names
+        // itself (ticket ios-dynamic-interactive-fixture-tap-not-delivered-
+        // intermittently: twice a post-tap assert saw the pre-tap value, and
+        // the run kept nothing but "Expected X, Actual 'ready'").
+        let fixtureStart = Date()
+        var lastTap: (step: TestStep, before: String, at: TimeInterval)? = nil
 
         for testCase in screenTest.cases {
             if testCase.skip == true { continue }
@@ -526,6 +533,10 @@ final class ConformanceUITests: XCTestCase {
                 suppressIssues = true
                 defer { suppressIssues = false }
 
+                if step.action == "tap", let id = step.id {
+                    lastTap = (step, elementState(id, in: app), Date().timeIntervalSince(fixtureStart))
+                }
+
                 do {
                     if step.isAction {
                         try actionExecutor.execute(step: step, in: app)
@@ -536,21 +547,71 @@ final class ConformanceUITests: XCTestCase {
                     suppressIssues = false
                     return FixtureResult(
                         id: fixture.id, status: "error",
-                        detail: stepLabel(step) + ": " + shortError(error),
+                        detail: stepLabel(step) + ": " + shortError(error)
+                            + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
+                                               app: app, actions: actionExecutor, asserts: assertionExecutor),
                         screenshot: screenshotPath)
                 }
                 suppressIssues = false
 
                 if !capturedIssues.isEmpty {
+                    let issues = capturedIssues.joined(separator: " | ")
                     return FixtureResult(
                         id: fixture.id, status: "fail",
-                        detail: stepLabel(step) + ": " + capturedIssues.joined(separator: " | "),
+                        detail: stepLabel(step) + ": " + issues
+                            + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
+                                               app: app, actions: actionExecutor, asserts: assertionExecutor),
                         screenshot: screenshotPath)
                 }
             }
         }
 
         return FixtureResult(id: fixture.id, status: "pass", detail: "", screenshot: screenshotPath)
+    }
+
+    /// `exists / hittable / frame` of the first element with this identifier.
+    private func elementState(_ id: String, in app: XCUIApplication) -> String {
+        let element = app.descendants(matching: .any).matching(identifier: id).firstMatch
+        guard element.exists else { return "exists=false" }
+        return "exists=true hittable=\(element.isHittable) frame=\(element.frame)"
+    }
+
+    /// Only for an ASSERTION that fails after a tap in the same fixture: what
+    /// the tapped element looked like before the tap and now, a screenshot,
+    /// and whether a SECOND tap makes the same assertion pass. A second tap
+    /// that fires separates "the touch was not delivered" (timing, the
+    /// screen still settling) from "the handler is not wired" (it would not
+    /// fire either). The verdict stays the first attempt's — the second tap
+    /// is a measurement, never a retry that turns the fixture green.
+    private func postTapDiagnosis(
+        after lastTap: (step: TestStep, before: String, at: TimeInterval)?,
+        failed step: TestStep, fixture: ConformanceManifest.Fixture, app: XCUIApplication,
+        actions: XCUITestActionExecutor, asserts: XCUITestAssertionExecutor
+    ) -> String {
+        guard step.isAssertion, let tap = lastTap, let id = tap.step.id else { return "" }
+        var parts = ["after tap(\(id)) at +\(String(format: "%.2f", tap.at))s",
+                     "before: \(tap.before)",
+                     "now: \(elementState(id, in: app))",
+                     "app: \(app.state.rawValue)"]
+        let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))__post_tap_failure"
+        if let path = try? captureScreenshot(named: shot, app: app) {
+            parts.append("screenshot: \(path)")
+        }
+        capturedIssues = []
+        suppressIssues = true
+        var second: String
+        do {
+            try actions.execute(step: tap.step, in: app)
+            try asserts.execute(step: step, in: app)
+            second = capturedIssues.isEmpty ? "a second tap made it pass (touch not delivered)"
+                                            : "a second tap did not either: \(capturedIssues.joined(separator: " | "))"
+        } catch {
+            second = "a second tap did not either: \(shortError(error))"
+        }
+        suppressIssues = false
+        capturedIssues = []
+        parts.append(second)
+        return " — [post-tap] " + parts.joined(separator: "; ")
     }
 
     private func stepLabel(_ step: TestStep) -> String {
