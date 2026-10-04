@@ -179,11 +179,7 @@ final class ConformanceUITests: XCTestCase {
             .filter { !$0.isEmpty }
     }
 
-    private var stagingDir: URL {
-        let path = ProcessInfo.processInfo.environment["CONFORMANCE_STAGING_DIR"]
-            ?? "/tmp/jsonui-conformance-ios"
-        return URL(fileURLWithPath: path)
-    }
+    private var stagingDir: URL { TapDiagnosis.stagingDir }
 
     // Issue capturing: driver assertions use XCTAssert*, which records
     // XCTIssues instead of throwing. While a fixture step runs we suppress
@@ -577,9 +573,7 @@ final class ConformanceUITests: XCTestCase {
 
     /// `exists / hittable / frame` of the first element with this identifier.
     private func elementState(_ id: String, in app: XCUIApplication) -> String {
-        let element = app.descendants(matching: .any).matching(identifier: id).firstMatch
-        guard element.exists else { return "exists=false" }
-        return "exists=true hittable=\(element.isHittable) frame=\(element.frame)"
+        TapDiagnosis.elementState(id, in: app)
     }
 
     /// Only for an ASSERTION that fails after a tap in the same fixture: what
@@ -605,15 +599,14 @@ final class ConformanceUITests: XCTestCase {
         }
         capturedIssues = []
         suppressIssues = true
-        var second: String
-        do {
-            try actions.execute(step: tap.step, in: app)
-            try asserts.execute(step: step, in: app)
-            second = capturedIssues.isEmpty ? "a second tap made it pass (touch not delivered)"
-                                            : "a second tap did not either: \(capturedIssues.joined(separator: " | "))"
-        } catch {
-            second = "a second tap did not either: \(shortError(error))"
-        }
+        // The fixture's assertion is the check: a fixture tap sets a value
+        // (idempotent), so the same expectation judges the second tap.
+        let second = TapDiagnosis.secondTap(
+            { try actions.execute(step: tap.step, in: app) },
+            effectShows: {
+                try asserts.execute(step: step, in: app)
+                return capturedIssues.isEmpty ? nil : capturedIssues.joined(separator: " | ")
+            })
         suppressIssues = false
         capturedIssues = []
         parts.append(second)
@@ -631,8 +624,7 @@ final class ConformanceUITests: XCTestCase {
     }
 
     private func shortError(_ error: Error) -> String {
-        let description = (error as? LocalizedError)?.errorDescription ?? String(describing: error)
-        return description.replacingOccurrences(of: "\n", with: " ")
+        TapDiagnosis.shortError(error)
     }
 
     // MARK: Artifacts / results IO
@@ -648,11 +640,7 @@ final class ConformanceUITests: XCTestCase {
 
     /// Returns the artifact path relative to the conformance dir.
     private func captureScreenshot(named name: String, app: XCUIApplication) throws -> String {
-        let screenshot = app.screenshot()
-        let relative = "artifacts/ios/\(name).png"
-        let url = stagingDir.appendingPathComponent(relative)
-        try screenshot.pngRepresentation.write(to: url, options: .atomic)
-        return relative
+        try TapDiagnosis.screenshot(named: name, app: app)
     }
 
     private func writeResults(_ results: [FixtureResult], manifestHash: String,
