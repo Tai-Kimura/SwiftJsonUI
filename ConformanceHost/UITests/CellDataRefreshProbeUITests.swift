@@ -4,7 +4,8 @@ import XCTest
 /// changes shows the new data. Taps bump twice and reads every cell's title
 /// in both Collections — cellIdProperty "cellId" (the consumer's shape) and
 /// cellIdProperty "key" (no "cellId" in the data: the control) and
-/// cellIdProperty "cellId" with autoChangeTrackingId (the enriched route). Prints every
+/// cellIdProperty "cellId" with autoChangeTrackingId (the enriched route) and
+/// no cellIdProperty with no key in the data (the unkeyed route). Prints every
 /// reading, so a red names which list kept which title.
 ///
 /// Measured 2026-10-04 (iOS 26.5, Xcode 26.6), cells showing the new title
@@ -14,6 +15,10 @@ import XCTest
 /// fixed-android-updates) 6 of 6 on all three, and (A) 0 of 6 again with
 /// that rewrite removed. The Dynamic half: 18 of 18 on (A) and (B) before the
 /// change — DynamicView draws the data it is handed.
+///
+/// (D), no cellIdProperty and no key in the data, measured 2026-10-04 (the
+/// same tools): 6 of 6 on the generated half with jsonui-cli v1.9.10 and with
+/// v1.9.11, and 6 of 6 on the Dynamic half; (C) on the Dynamic half 6 of 6.
 final class CellDataRefreshProbeUITests: XCTestCase {
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
@@ -29,11 +34,11 @@ final class CellDataRefreshProbeUITests: XCTestCase {
                 app.buttons["cdr_bump"].tap()
                 sleep(1)
             }
-            for prefix in ["A", "K", "T"] {
+            for prefix in ["A", "K", "T", "N"] {
                 for i in 0..<3 {
                     let want = "\(prefix)\(i) v\(version)"
                     let shown = app.staticTexts[want].waitForExistence(timeout: version == 0 ? 10 : 2)
-                    print("[CellDataRefresh] \(argument) version \(version) \(["A": "cellIdProperty cellId", "K": "cellIdProperty key", "T": "cellIdProperty cellId + autoChangeTrackingId"][prefix]!) cell \(i): \(want) \(shown ? "shown" : "NOT SHOWN")")
+                    print("[CellDataRefresh] \(argument) version \(version) \(["A": "cellIdProperty cellId", "K": "cellIdProperty key", "T": "cellIdProperty cellId + autoChangeTrackingId", "N": "no cellIdProperty"][prefix]!) cell \(i): \(want) \(shown ? "shown" : "NOT SHOWN")")
                     if !shown { stale.append(want) }
                 }
             }

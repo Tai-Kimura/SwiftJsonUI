@@ -20,6 +20,7 @@ struct CellDataRefreshCodegenHalf: View {
         data.rows_cellid = CellDataRefreshProbeView.rows(prefix: "A", keyName: "cellId", version: version)
         data.rows_key = CellDataRefreshProbeView.rows(prefix: "K", keyName: "key", version: version)
         data.rows_tracked = CellDataRefreshProbeView.rows(prefix: "T", keyName: "cellId", version: version)
+        data.rows_none = CellDataRefreshProbeView.rows(prefix: "N", keyName: nil, version: version)
     }
 
     var body: some View {

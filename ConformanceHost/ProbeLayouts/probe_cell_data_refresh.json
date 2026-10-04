@@ -12,12 +12,12 @@
       "width": "matchParent",
       "height": 150,
       "items": "@{rows_cellid}",
-      "cellIdProperty": "cellId",
       "sections": [
         {
           "cell": "conformance_cell"
         }
-      ]
+      ],
+      "cellIdProperty": "cellId"
     },
     {
       "type": "Collection",
@@ -26,12 +26,12 @@
       "width": "matchParent",
       "height": 150,
       "items": "@{rows_key}",
-      "cellIdProperty": "key",
       "sections": [
         {
           "cell": "conformance_cell"
         }
-      ]
+      ],
+      "cellIdProperty": "key"
     },
     {
       "type": "Collection",
@@ -40,13 +40,26 @@
       "width": "matchParent",
       "height": 150,
       "items": "@{rows_tracked}",
-      "cellIdProperty": "cellId",
       "sections": [
         {
           "cell": "conformance_cell"
         }
       ],
+      "cellIdProperty": "cellId",
       "autoChangeTrackingId": true
+    },
+    {
+      "type": "Collection",
+      "id": "cg_cdr_none",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_none}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ]
     }
   ],
   "data": [
@@ -74,6 +87,17 @@
     },
     {
       "name": "rows_tracked",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "rows_none",
       "class": "CollectionDataSource",
       "defaultValue": {
         "sections": [
