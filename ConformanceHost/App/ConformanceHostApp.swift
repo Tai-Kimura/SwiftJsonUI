@@ -419,6 +419,17 @@ struct FixtureScreen: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityIdentifier("conformance_current_\(FixtureLoader.markerSafe(fixtureId))")
         }
+        // The canvas's top-left corner, the other end of the fixture's frame:
+        // a matchParent root fills the canvas, so the two markers are the
+        // root's frame. The element that carries the layout's `root` id
+        // cannot say it — SwiftUI reports it as the box around its children
+        // (ConformanceUITests.recordFrames). Invisible, 1x1, its own element.
+        .overlay(alignment: .topLeading) {
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("conformance_origin")
+        }
     }
 }
 

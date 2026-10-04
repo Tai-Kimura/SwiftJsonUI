@@ -87,6 +87,15 @@ struct FixtureResult: Encodable {
     let status: String
     let detail: String
     let screenshot: String?
+    /// `artifacts/ios/<screenshot name>.frames.json` (RESULTS_SCHEMA.md,
+    /// `frames`): where each element carrying an id was drawn, relative to
+    /// the root, for `jui conformance gate --frame-parity`. Absent when the
+    /// fixture took no screenshot or the record could not be written.
+    var frames: String? = nil
+    /// Why a screenshot has no frames record (`root-not-fill`,
+    /// `canvas-marker-missing`, `error: <reason>`), never beside `frames`:
+    /// the gate counts it as a reason of its own, apart from a missing file.
+    var framesUnrecorded: String? = nil
 }
 
 /// 🔻 A RUN-LEVEL CENSUS OF THE WEB LOAD-MARKER PATH, BECAUSE THE WAIT'S OWN
@@ -498,6 +507,8 @@ final class ConformanceUITests: XCTestCase {
         let actionExecutor = XCUITestActionExecutor(platform: "ios")
         let assertionExecutor = XCUITestAssertionExecutor()
         var screenshotPath: String? = nil
+        var framesPath: String? = nil
+        var framesUnrecorded: String? = nil
         // The last tap of this fixture and what XCTest said about its target
         // just before it — so an assertion that fails after a tap names
         // itself (ticket ios-dynamic-interactive-fixture-tap-not-delivered-
@@ -522,6 +533,7 @@ final class ConformanceUITests: XCTestCase {
                 if step.action == "screenshot", let name = step.name {
                     do {
                         screenshotPath = try captureScreenshot(named: name, app: app)
+                        (framesPath, framesUnrecorded) = recordFrames(named: name, fixture: fixture, app: app)
                     } catch {
                         return FixtureResult(
                             id: fixture.id, status: "error",
@@ -570,7 +582,7 @@ final class ConformanceUITests: XCTestCase {
                         detail: stepLabel(step) + ": " + shortError(error)
                             + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
                                                app: app, actions: actionExecutor, asserts: assertionExecutor),
-                        screenshot: screenshotPath)
+                        screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
                 }
                 suppressIssues = false
 
@@ -581,12 +593,12 @@ final class ConformanceUITests: XCTestCase {
                         detail: stepLabel(step) + ": " + issues
                             + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
                                                app: app, actions: actionExecutor, asserts: assertionExecutor),
-                        screenshot: screenshotPath)
+                        screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
                 }
             }
         }
 
-        return FixtureResult(id: fixture.id, status: "pass", detail: "", screenshot: screenshotPath)
+        return FixtureResult(id: fixture.id, status: "pass", detail: "", screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
     }
 
     /// `exists / hittable / frame` of the first element with this identifier.
@@ -659,6 +671,69 @@ final class ConformanceUITests: XCTestCase {
     /// Returns the artifact path relative to the conformance dir.
     private func captureScreenshot(named name: String, app: XCUIApplication) throws -> String {
         try TapDiagnosis.screenshot(named: name, app: app)
+    }
+
+    /// Writes `artifacts/ios/<name>.frames.json` beside the screenshot — every
+    /// element carrying an id the layout declares, relative to the root, one
+    /// query per id (the driver's FrameRecorder; jsonui-cli conformance
+    /// frames.schema.json) — and returns that relative path.
+    ///
+    /// The root's frame is the canvas, read from the host's two corner
+    /// markers (conformance_origin, conformance_current_<id>): the element
+    /// carrying the `root` id reports the box around its children, not its
+    /// frame. The canvas is the root only when the root fills it, so a root
+    /// that is not matchParent on both axes (4 of 1131 fixtures on 2026-10-05,
+    /// sized and centred by the canvas) is not recorded. The host's own
+    /// markers are not layout ids and are left out.
+    ///
+    /// A record that cannot be made leaves the fixture's verdict alone. Its
+    /// reason goes in results[].framesUnrecorded (`root-not-fill`,
+    /// `canvas-marker-missing`, `error: <reason>`), which the gate counts as
+    /// its own not-compared reason, and is printed as
+    /// `FRAMES_UNRECORDED <fixture> <reason>`.
+    private func recordFrames(named name: String, fixture: ConformanceManifest.Fixture,
+                              app: XCUIApplication) -> (path: String?, unrecorded: String?) {
+        func unrecorded(_ reason: String) -> (path: String?, unrecorded: String?) {
+            print("FRAMES_UNRECORDED \(fixture.id) \(reason)")
+            return (nil, reason)
+        }
+        do {
+            let layout = try JSONSerialization.jsonObject(
+                with: loadBundledData(relativePath: "fixtures/\(fixture.id).layout.json")) as? [String: Any]
+            guard layout?["width"] as? String == "matchParent", layout?["height"] as? String == "matchParent" else {
+                return unrecorded("root-not-fill")
+            }
+            // One query per id the layout declares (and the two markers), never
+            // a hierarchy snapshot: a snapshot drew the home indicator into
+            // the next screenshot (FrameRecorder.elements(of:ids:)).
+            var declared: [String] = []
+            func collect(_ node: Any?) {
+                if let object = node as? [String: Any] {
+                    if let id = object["id"] as? String { declared.append(id) }
+                    object.values.forEach(collect)
+                } else if let array = node as? [Any] {
+                    array.forEach(collect)
+                }
+            }
+            collect(layout)
+            let marker = "conformance_current_\(fixture.id.replacingOccurrences(of: "/", with: "_"))"
+            let all = FrameRecorder.elements(of: app, ids: declared + ["conformance_origin", marker])
+            guard let origin = all.first(where: { $0.id == "conformance_origin" })?.frame,
+                  let corner = all.first(where: { $0.id == marker })?.frame else {
+                return unrecorded("canvas-marker-missing")
+            }
+            let canvas = CGRect(x: origin.minX, y: origin.minY,
+                                width: corner.maxX - origin.minX, height: corner.maxY - origin.minY)
+            let record = try FrameRecorder.record(
+                fixture: fixture.id, elements: all.filter { !$0.id.hasPrefix("conformance_") }, rootFrame: canvas)
+            let relative = "artifacts/ios/\(name).frames.json"
+            let url = TapDiagnosis.stagingDir.appendingPathComponent(relative)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FrameRecorder.encode(record).write(to: url, options: .atomic)
+            return (relative, nil)
+        } catch {
+            return unrecorded("error: \(shortError(error))")
+        }
     }
 
     private func writeResults(_ results: [FixtureResult], manifestHash: String,
