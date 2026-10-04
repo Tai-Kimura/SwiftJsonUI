@@ -448,18 +448,24 @@ struct RelativePositionLayout: Layout {
             case .alignRight:
                 let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
                 x = anchorPos.x + safeAnchorWidth / 2 - safeChildWidth / 2 - child.margins.trailing
+            // The four FACING links meet the box the anchor DRAWS.
+            // `localPositions` already holds that box — the anchor's own
+            // margin was applied when it was placed — so the anchor's margin
+            // is not applied again here. Doing so put a 50-high target at
+            // y -50 against an anchor drawn at 120 (topMargin 120), where
+            // Android and web draw 70 (ticket
+            // sjui-relative-facing-link-measures-the-anchor-with-its-margin;
+            // KotlinJsonUI 2.43.4 fixed the same shape).
             case .above:
-                let anchorTopMargin = anchorChild?.margins.top ?? 0
                 let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
-                let anchorTopY = anchorPos.y - safeAnchorHeight / 2 - anchorTopMargin
+                let anchorTopY = anchorPos.y - safeAnchorHeight / 2
                 // Child's bottom edge should be at anchor's top - child's bottom margin
                 bottomEdge = anchorTopY - child.margins.bottom
-                y = anchorPos.y - safeAnchorHeight / 2 - safeChildHeight / 2 - anchorTopMargin - child.margins.bottom
+                y = anchorTopY - safeChildHeight / 2 - child.margins.bottom
             case .below:
-                let anchorBottomMargin = anchorChild?.margins.bottom ?? 0
                 let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
                 // Calculate anchor's bottom edge in absolute coordinates (relative to container center)
-                let anchorBottomY = anchorPos.y + safeAnchorHeight / 2 + anchorBottomMargin
+                let anchorBottomY = anchorPos.y + safeAnchorHeight / 2
                 // Child's top edge should be at anchor's bottom + child's top margin
                 let childTopY = anchorBottomY + child.margins.top
                 // Store the top edge position for later matchParent calculation
@@ -467,19 +473,17 @@ struct RelativePositionLayout: Layout {
                 // Child center is at child's top + half of child's height (will be recalculated after matchParent)
                 y = childTopY + safeChildHeight / 2
             case .leftOf:
-                let anchorLeftMargin = anchorChild?.margins.leading ?? 0
                 let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
-                let anchorLeftX = anchorPos.x - safeAnchorWidth / 2 - anchorLeftMargin
+                let anchorLeftX = anchorPos.x - safeAnchorWidth / 2
                 // Child's right edge should be at anchor's left - child's right margin
                 rightEdge = anchorLeftX - child.margins.trailing
-                x = anchorPos.x - safeAnchorWidth / 2 - safeChildWidth / 2 - anchorLeftMargin - child.margins.trailing
+                x = anchorLeftX - safeChildWidth / 2 - child.margins.trailing
             case .rightOf:
-                let anchorRightMargin = anchorChild?.margins.trailing ?? 0
                 let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
-                let anchorRightX = anchorPos.x + safeAnchorWidth / 2 + anchorRightMargin
+                let anchorRightX = anchorPos.x + safeAnchorWidth / 2
                 // Child's left edge should be at anchor's right + child's left margin
                 leftEdge = anchorRightX + child.margins.leading
-                x = anchorPos.x + safeAnchorWidth / 2 + safeChildWidth / 2 + anchorRightMargin + child.margins.leading
+                x = anchorRightX + safeChildWidth / 2 + child.margins.leading
             case .centerVertical:
                 let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
                 y = anchorPos.y
