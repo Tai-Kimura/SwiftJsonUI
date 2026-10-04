@@ -505,6 +505,12 @@ final class ConformanceUITests: XCTestCase {
         // the run kept nothing but "Expected X, Actual 'ready'").
         let fixtureStart = Date()
         var lastTap: (step: TestStep, before: String, at: TimeInterval)? = nil
+        // When the last action (a step that can change the screen) began, and
+        // how many taps this fixture has made: a second or third tap of a
+        // multi-step fixture is late from the marker by the steps before it
+        // (Embed's pop after a push), not because the tap was slow.
+        var lastActionStart = fixtureStart
+        var tapCount = 0
 
         for testCase in screenTest.cases {
             if testCase.skip == true { continue }
@@ -530,13 +536,25 @@ final class ConformanceUITests: XCTestCase {
                 defer { suppressIssues = false }
 
                 if step.action == "tap", let id = step.id {
-                    lastTap = (step, elementState(id, in: app), Date().timeIntervalSince(fixtureStart))
+                    let now = Date()
+                    tapCount += 1
+                    lastTap = (step, elementState(id, in: app), now.timeIntervalSince(fixtureStart))
                     // One line per tap, read by jsonui-cli's record step into a
                     // distribution: how soon after the fixture was shown each
-                    // tap lands. A number to look at, not a wait.
+                    // tap lands (+marker), how soon after the last action that
+                    // could change the screen (prev=, the marker for the first
+                    // tap), and which tap of the fixture it is (n=). A number
+                    // to look at, not a wait.
                     if let tap = lastTap {
-                        print("TAP_TIMING \(fixture.id) \(id) +\(String(format: "%.3f", tap.at))s \(tap.before)")
+                        let prev = now.timeIntervalSince(lastActionStart)
+                        print("TAP_TIMING \(fixture.id) \(id) +\(String(format: "%.3f", tap.at))s "
+                              + "prev=+\(String(format: "%.3f", prev))s n=\(tapCount) \(tap.before)")
                     }
+                }
+                // A wait or a read does not change the screen, so it does not
+                // restart the clock.
+                if step.isAction, !["waitFor", "waitForAny", "wait", "readText"].contains(step.action ?? "") {
+                    lastActionStart = Date()
                 }
 
                 do {
