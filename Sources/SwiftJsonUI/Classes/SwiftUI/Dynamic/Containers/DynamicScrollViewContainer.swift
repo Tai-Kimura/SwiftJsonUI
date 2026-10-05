@@ -179,7 +179,7 @@ public struct DynamicScrollViewContainer: View {
                 }
                 Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .environment(\.jsonuiScrollingAncestor, true)
         } else {
             VStack(alignment: .leading, spacing: 0) {
@@ -193,7 +193,12 @@ public struct DynamicScrollViewContainer: View {
                 }
                 Spacer(minLength: 0)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // At the stack's top | start: without an alignment the frame
+            // centred the stack, so a 150-wide child of a 200-wide ScrollView
+            // drew at x 25 where Android and web drew 0 (frame-parity,
+            // 2026-10-05; gravityDefaults top|start). sjui codegen:
+            // scrollview_converter.rb, the same frame.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             // Everything inside a ScrollView sits under a scrolling ancestor
             // — the fact a wrapping flow Collection below needs to hand its
             // scrolling up (ScrollingAncestorContext). Either axis, as the
