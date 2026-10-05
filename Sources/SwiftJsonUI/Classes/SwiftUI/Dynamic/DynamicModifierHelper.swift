@@ -1691,7 +1691,9 @@ public struct DynamicModifierHelper {
         }
         // A leaf (text returned above): the axis its gravity does not name
         // stays centred — see gravityToFrameAlignment(centredCrossAxis:).
-        return gravityToFrameAlignment(component.gravity, bothAxes: bothAxes, centredCrossAxis: !isContainer)
+        let alignment = gravityToFrameAlignment(component.gravity, bothAxes: bothAxes, centredCrossAxis: !isContainer)
+        guard isContainer, let alignment else { return alignment }
+        return DirectionStart.alignment(alignment, component: component)
     }
 
     /// Convert gravity array to SwiftUI Alignment (matches frame_helper.rb gravity_to_frame_alignment)

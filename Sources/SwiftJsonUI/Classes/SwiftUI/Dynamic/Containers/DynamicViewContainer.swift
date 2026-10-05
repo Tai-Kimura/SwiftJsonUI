@@ -246,9 +246,11 @@ public struct DynamicViewContainer: View {
         let widthIsWrapContent = component.declaredWidth == nil
 
         HStack(alignment: getVerticalAlignmentFromGravity(), spacing: spacingValue) {
-            // Leading edge spacer: equalCentering's half-gap, or right-gravity packing
+            // Leading edge spacer: equalCentering's half-gap, or right-gravity
+            // packing — or a rightToLeft row with no horizontal gravity, which
+            // starts at the right edge (DirectionStart).
             if distribution == "equalcentering" ||
-                (!distributesGaps && extractHorizontalFromGravity(gravity) == "right") {
+                (!distributesGaps && (extractHorizontalFromGravity(gravity) == "right" || DirectionStart.edge(of: component) == "right")) {
                 Spacer(minLength: 0)
             }
 
@@ -280,7 +282,7 @@ public struct DynamicViewContainer: View {
                     Spacer(minLength: 0)
                 }
             } else if widthExpands && !distributesGaps &&
-                extractHorizontalFromGravity(gravity) == "left" {
+                extractHorizontalFromGravity(gravity) == "left" && DirectionStart.edge(of: component) == nil {
                 Spacer(minLength: 0)
             }
         }
@@ -304,9 +306,11 @@ public struct DynamicViewContainer: View {
         let heightIsWrapContent = component.declaredHeight == nil
 
         VStack(alignment: getHorizontalAlignmentFromGravity(), spacing: spacingValue) {
-            // Leading edge spacer: equalCentering's half-gap, or bottom-gravity packing
+            // Leading edge spacer: equalCentering's half-gap, or bottom-gravity
+            // packing — or a bottomToTop column with no vertical gravity, which
+            // starts at the bottom edge (DirectionStart).
             if distribution == "equalcentering" ||
-                (!distributesGaps && extractVerticalFromGravity(gravity) == "bottom") {
+                (!distributesGaps && (extractVerticalFromGravity(gravity) == "bottom" || DirectionStart.edge(of: component) == "bottom")) {
                 Spacer(minLength: 0)
             }
 
@@ -338,7 +342,7 @@ public struct DynamicViewContainer: View {
                     Spacer(minLength: 0)
                 }
             } else if heightExpands && !distributesGaps &&
-                extractVerticalFromGravity(gravity) == "top" {
+                extractVerticalFromGravity(gravity) == "top" && DirectionStart.edge(of: component) == nil {
                 Spacer(minLength: 0)
             }
         }
