@@ -18,6 +18,9 @@
 
 import SwiftUI
 
+// Dynamic only, like the containers that read it: DynamicComponent exists
+// under DEBUG alone, and a Release build has no Dynamic to start.
+#if DEBUG
 enum DirectionStart {
     private static let verticalWords: Set<String> = ["top", "center", "bottom", "centerVertical"]
     private static let horizontalWords: Set<String> = ["left", "center", "right", "centerHorizontal", "start", "end"]
@@ -49,3 +52,4 @@ enum DirectionStart {
         }
     }
 }
+#endif // DEBUG
