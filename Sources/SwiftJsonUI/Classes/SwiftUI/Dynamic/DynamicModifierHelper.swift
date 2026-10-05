@@ -1606,12 +1606,14 @@ public struct DynamicModifierHelper {
         Stage("clipped") { v, c, d in applyClipped(v, component: c, data: d) },
         Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
         Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },
-        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
         // Hands the layout box up to the conformance gate's measuring element:
-        // inside the margins, after the offset (JsonUIConformanceFrame.swift). Makes
+        // inside the offset and the margins (JsonUIConformanceFrame.swift). Inside
+        // the offset because .offset moves the drawing, not the layout bounds:
+        // after it, the anchor read an offsetY 8 view at y = 0. Makes
         // nothing unless a conformance host sets jsonuiConformanceFrameProbe.
         // codegen: modifier_order.json `conformance_frame`, same place.
         Stage("conformanceFrame") { v, c, _ in applyConformanceFrame(v, component: c) },
+        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
         // margins — after the clip, the fade and the offset, as codegen writes
         // them: a clip before them cuts at the view's own edge, not the
         // margin's.

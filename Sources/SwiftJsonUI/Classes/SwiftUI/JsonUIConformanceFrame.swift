@@ -17,7 +17,7 @@
 //  So the gate cannot read the layout box from the element the id is on.
 //
 //  Each id hands its bounds up as an anchor preference, at its place in the
-//  chain: inside the margins, after the offset, the same box Android's
+//  chain: inside the offset and the margins, the same box Android's
 //  testTag tags. The host draws one clear element per anchor, named
 //  `frame:<id>`, at its own top level (`jsonUIConformanceFrames()`). The
 //  elements are not drawn inside the view: there the view's own
