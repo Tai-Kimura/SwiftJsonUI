@@ -911,7 +911,13 @@ public struct DynamicModifierHelper {
         guard let positions = component.typedAttributes(ViewAttributes.self).safeAreaInsetPositions
                 ?? component.typedAttributes(SafeAreaViewAttributes.self).safeAreaInsetPositions,
               let edges = safeAreaEdgeSet(positions) else { return view }
-        return AnyView(view.safeAreaPadding(edges))
+        // Length 0: the safe area's own inset and nothing more. Without a
+        // length SwiftUI adds its default padding (16) on top, so a box that
+        // touches no screen edge moved its content 16 where Android and web
+        // moved it 0 (frame-parity, 2026-10-05; the declaration reserves the
+        // safe area — rjui pads by env(safe-area-inset-*)). sjui codegen:
+        // base_view_converter.rb#apply_safe_area_insets_to_bag.
+        return AnyView(view.safeAreaPadding(edges, 0))
     }
 
     /// The `Edge.Set` a declared position list selects, or nil when it selects

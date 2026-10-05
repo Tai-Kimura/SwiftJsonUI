@@ -311,6 +311,18 @@ public struct TextViewConverter {
 
         // --- 3. Frame modifiers ---
         if flexible {
+            // flexible is about the height. The declared width still applies:
+            // without it a 200-wide flexible TextView took the whole 402 of
+            // its parent, where Android and web drew 200 (frame-parity,
+            // 2026-10-05, TextView/flexible__true). sjui codegen:
+            // textview_converter.rb, same branch.
+            if let width = component.declaredWidth {
+                if width == .infinity {
+                    result = AnyView(result.frame(maxWidth: .infinity))
+                } else if width.isFinite && width >= 0 {
+                    result = AnyView(result.frame(width: width))
+                }
+            }
             // For flexible TextViews, apply minHeight/maxHeight as frame
             if let minH = minHeight, let maxH = maxHeight {
                 result = AnyView(result.frame(minHeight: minH, maxHeight: maxH))
