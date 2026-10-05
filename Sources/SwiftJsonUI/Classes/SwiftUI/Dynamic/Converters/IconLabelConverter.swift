@@ -38,7 +38,8 @@ public struct IconLabelConverter {
         // number|array: a number sizes both edges, [width, height] sizes
         // them separately — the array face was web-only until now.
         let declaredIconSize = component.typedAttributes(IconLabelAttributes.self).iconSize
-        var iconSize: CGFloat = component.iconSize ?? 24
+        // Undeclared stays nil: the icon draws at its image's own size.
+        var iconSize: CGFloat? = component.iconSize
         var iconWidth: CGFloat? = nil
         var iconHeight: CGFloat? = nil
         switch declaredIconSize {

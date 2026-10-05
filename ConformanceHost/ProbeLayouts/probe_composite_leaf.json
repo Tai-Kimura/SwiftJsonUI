@@ -45,6 +45,28 @@
       "iconPosition": "right"
     },
     {
+      "type": "IconLabel",
+      "id": "cg_ils_sample",
+      "text": "Sample",
+      "icon_off": "conformance_sample",
+      "iconPosition": "top"
+    },
+    {
+      "type": "IconLabel",
+      "id": "cg_ils_alt",
+      "text": "Sample",
+      "icon_off": "conformance_sample_alt",
+      "iconPosition": "top"
+    },
+    {
+      "type": "IconLabel",
+      "id": "cg_ils_8",
+      "text": "Sample",
+      "icon_off": "conformance_sample",
+      "iconPosition": "top",
+      "iconSize": 8
+    },
+    {
       "type": "TextView",
       "id": "cg_tv_hint",
       "width": 240,

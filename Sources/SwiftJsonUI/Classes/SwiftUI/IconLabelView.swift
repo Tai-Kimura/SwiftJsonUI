@@ -12,7 +12,10 @@ public struct IconLabelView: View {
     let iconOn: String?
     let iconOff: String?
     let iconPosition: IconPosition
-    let iconSize: CGFloat
+    // nil when the layout declares no `iconSize`: the icon is drawn at its
+    // image's own size (2026-10-05 ruling 7; KotlinJsonUI puts no size
+    // modifier on it either). The fixed 24 drew a 64pt asset at 24.
+    let iconSize: CGFloat?
     // The ARRAY face of `iconSize` ([width, height], declared 51-E) sizes
     // the axes separately; nil falls back to the square `iconSize`.
     let iconWidth: CGFloat?
@@ -42,7 +45,7 @@ public struct IconLabelView: View {
         iconOn: String? = nil,
         iconOff: String? = nil,
         iconPosition: IconPosition = .left,
-        iconSize: CGFloat = 24,
+        iconSize: CGFloat? = nil,
         iconWidth: CGFloat? = nil,
         iconHeight: CGFloat? = nil,
         iconMargin: CGFloat = 5,
@@ -120,18 +123,23 @@ public struct IconLabelView: View {
     private var iconImage: some View {
         if let iconName = isSelected ? iconOn : (iconOff ?? iconOn) {
             if iconName.hasPrefix("system:") {
-                // System icon
+                // System icon. A symbol has no size of its own, so an
+                // undeclared size keeps the 24 it always drew at.
                 Image(systemName: String(iconName.dropFirst(7)))
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: iconWidth ?? iconSize ?? 24, height: iconHeight ?? iconSize ?? 24)
+                    .foregroundColor(isSelected ? selectedFontColor : fontColor)
+            } else if iconWidth != nil || iconHeight != nil || iconSize != nil {
+                // Custom image at the declared size
+                Image(iconName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconWidth ?? iconSize, height: iconHeight ?? iconSize)
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             } else {
-                // Custom image
+                // Custom image, no size declared: the image's own size
                 Image(iconName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: iconWidth ?? iconSize, height: iconHeight ?? iconSize)
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             }
         }
@@ -174,7 +182,7 @@ public struct IconLabelButton: View {
     let iconOn: String?
     let iconOff: String?
     let iconPosition: IconLabelView.IconPosition
-    let iconSize: CGFloat
+    let iconSize: CGFloat?
     let iconWidth: CGFloat?
     let iconHeight: CGFloat?
     let iconMargin: CGFloat
@@ -204,7 +212,7 @@ public struct IconLabelButton: View {
         iconOn: String? = nil,
         iconOff: String? = nil,
         iconPosition: IconLabelView.IconPosition = .left,
-        iconSize: CGFloat = 24,
+        iconSize: CGFloat? = nil,
         iconWidth: CGFloat? = nil,
         iconHeight: CGFloat? = nil,
         iconMargin: CGFloat = 5,

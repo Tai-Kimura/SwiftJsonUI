@@ -35,6 +35,12 @@ struct CompositeLeafIdView: View {
         // IconLabel, the icon on either side.
         ("cl_il_left", ##"{"type": "IconLabel", "id": "cl_il_left", "text": "Sample", "icon_off": "conformance_sample", "iconPosition": "left"}"##),
         ("cl_il_right", ##"{"type": "IconLabel", "id": "cl_il_right", "text": "Sample", "icon_off": "conformance_sample", "iconPosition": "right"}"##),
+        // IconLabel icon size (IconLabelIconSizeUITests): undeclared draws
+        // the image at its own size (sample 64, alt 96); a declared 8 is 8.
+        // Icon on top, so the element's height carries the icon's.
+        ("cl_ils_sample", ##"{"type": "IconLabel", "id": "cl_ils_sample", "text": "Sample", "icon_off": "conformance_sample", "iconPosition": "top"}"##),
+        ("cl_ils_alt", ##"{"type": "IconLabel", "id": "cl_ils_alt", "text": "Sample", "icon_off": "conformance_sample_alt", "iconPosition": "top"}"##),
+        ("cl_ils_8", ##"{"type": "IconLabel", "id": "cl_ils_8", "text": "Sample", "icon_off": "conformance_sample", "iconPosition": "top", "iconSize": 8}"##),
         // TextView, empty, with a hint, and its control with none.
         ("cl_tv_hint", ##"{"type": "TextView", "id": "cl_tv_hint", "width": 240, "height": 80, "hint": "Conformance Hint"}"##),
         ("cl_tv_nohint", ##"{"type": "TextView", "id": "cl_tv_nohint", "width": 240, "height": 80}"##),
