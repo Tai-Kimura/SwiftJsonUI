@@ -252,7 +252,17 @@ public struct PartialAttributedText: View {
         extraLeading ?? lineSpacing
     }
 
+    /// An empty Label is one line high (2026-10-05 user ruling 2): an empty
+    /// Text drew 14 where a line of the default font is 20.33, so an empty
+    /// Label shrank and the views below it moved up. The line is the font's
+    /// own (uiKitFont.lineHeight); the text itself stays empty, so nothing
+    /// reads differently.
     public var body: some View {
+        lines.frame(minHeight: text.isEmpty ? uiKitFont.lineHeight : nil)
+    }
+
+    @ViewBuilder
+    private var lines: some View {
         if !partialAttributes.isEmpty || linkable {
             let result = createAttributedStringWithMapping()
             Text(result.attributedString)
