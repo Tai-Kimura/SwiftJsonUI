@@ -87,22 +87,16 @@ public struct LabelConverter {
             return DynamicHelpers.getColor(attrs.fontColor?.rawRepresentation as? String, data: data)
         }()
 
-        // lineSpacing — UIKit's formula, `(multiple - 1) * fontSize`, with
-        // either operand possibly bound (label_converter.rb
-        // #line_spacing_from_multiple resolves both). Every operand here read
-        // a hand-decoded slot, which is nil for `@{expr}`: a bound multiple
-        // produced no spacing at all, and a bound fontSize silently fell back
-        // to 17 and skewed the arithmetic for a static multiple.
-        let lineSpacing: CGFloat? = {
-            if let multiple = DynamicHelpers.resolveNumber(
-                attrs.lineHeightMultiple, legacy: nil, data: data
-            ) {
-                return (multiple - 1) * (fontSize ?? 17)
-            }
-            return DynamicHelpers.resolveNumber(
-                attrs.lineSpacing, legacy: nil, data: data
-            )
-        }()
+        // lineHeightMultiple goes to the text as it is — the spacing is
+        // (m - 1) x the font's line, which PartialAttributedText measures
+        // from the font in force (ruling B; the first line stays L on iOS). Either may be bound: a hand-decoded slot is
+        // nil for `@{expr}`, and a bound multiple produced no spacing at all.
+        let lineHeightMultiple: CGFloat? = DynamicHelpers.resolveNumber(
+            attrs.lineHeightMultiple, legacy: nil, data: data
+        )
+        let lineSpacing: CGFloat? = lineHeightMultiple != nil ? nil : DynamicHelpers.resolveNumber(
+            attrs.lineSpacing, legacy: nil, data: data
+        )
 
         // lineLimit
         let resolvedLines = DynamicHelpers.resolveNumber(
@@ -160,6 +154,7 @@ public struct LabelConverter {
                 underlineDecoration: component.decorationStyle(\.underline, data: data),
                 strikethroughDecoration: component.decorationStyle(\.strikethrough, data: data),
                 lineSpacing: lineSpacing,
+                lineHeightMultiple: lineHeightMultiple,
                 lineLimit: hasLineLimit ? lineLimit : nil,
                 textAlignment: textAlignment,
                 linkable: linkable,

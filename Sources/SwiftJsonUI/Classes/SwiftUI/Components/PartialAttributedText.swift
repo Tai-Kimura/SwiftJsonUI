@@ -54,6 +54,11 @@ public struct PartialAttributedText: View {
     let underlineDecoration: TextDecoration?
     let strikethroughDecoration: TextDecoration?
     let lineSpacing: CGFloat?
+    /// `lineHeightMultiple`: lines after the first are this multiple of the
+    /// font's own line (ruling B, iOS limit on the first line — see
+    /// effectiveLineHeightMultiple). Wins over `lineSpacing`, as the Label
+    /// converters always let it.
+    let lineHeightMultiple: CGFloat?
     let lineLimit: Int?
     let textAlignment: TextAlignment
     let linkable: Bool
@@ -86,6 +91,7 @@ public struct PartialAttributedText: View {
         underlineDecoration: TextDecoration? = nil,
         strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat? = nil,
+        lineHeightMultiple: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
         linkable: Bool = false,
@@ -104,6 +110,7 @@ public struct PartialAttributedText: View {
         self.underlineDecoration = underlineDecoration
         self.strikethroughDecoration = strikethroughDecoration
         self.lineSpacing = lineSpacing
+        self.lineHeightMultiple = lineHeightMultiple
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
@@ -124,6 +131,7 @@ public struct PartialAttributedText: View {
         underlineDecoration: TextDecoration? = nil,
         strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat? = nil,
+        lineHeightMultiple: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
         linkable: Bool = false,
@@ -142,6 +150,7 @@ public struct PartialAttributedText: View {
         self.underlineDecoration = underlineDecoration
         self.strikethroughDecoration = strikethroughDecoration
         self.lineSpacing = lineSpacing
+        self.lineHeightMultiple = lineHeightMultiple
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
@@ -163,6 +172,7 @@ public struct PartialAttributedText: View {
         underlineDecoration: TextDecoration? = nil,
         strikethroughDecoration: TextDecoration? = nil,
         lineSpacing: CGFloat? = nil,
+        lineHeightMultiple: CGFloat? = nil,
         lineLimit: Int? = nil,
         textAlignment: TextAlignment = .leading,
         linkable: Bool = false,
@@ -183,6 +193,7 @@ public struct PartialAttributedText: View {
         self.underlineDecoration = underlineDecoration
         self.strikethroughDecoration = strikethroughDecoration
         self.lineSpacing = lineSpacing
+        self.lineHeightMultiple = lineHeightMultiple
         self.lineLimit = lineLimit
         self.textAlignment = textAlignment
         self.linkable = linkable
@@ -221,15 +232,24 @@ public struct PartialAttributedText: View {
         activeHighlight?.textAlignment ?? textAlignment
     }
 
-    /// `lineHeightMultiple` is a multiple of the line height; SwiftUI takes the
-    /// extra space between lines. The conversion needs the font size in force,
-    /// which is why it happens here and not in the caller.
+    /// `lineHeightMultiple` is a multiple of the font's line, L (UIFont's
+    /// lineHeight for the font in force): (m - 1) x L between lines, so every
+    /// line after the first is m x L. Before, the base was the font size —
+    /// (m - 1) x 17 where L is 20.33. SwiftUI's Text has no per-line height,
+    /// so the FIRST line stays L: an iOS limit, kept by the 2026-10-05 user
+    /// instruction (SSoT lineHeightMultipleBase), not padded around. A
+    /// multiple under 1 cannot pull SwiftUI lines together and stays at L.
+    private var effectiveLineHeightMultiple: CGFloat? {
+        activeHighlight?.lineHeightMultiple ?? lineHeightMultiple
+    }
+
+    private var extraLeading: CGFloat? {
+        guard let multiple = effectiveLineHeightMultiple else { return nil }
+        return max(0, (multiple - 1) * uiKitFont.lineHeight)
+    }
+
     private var effectiveLineSpacing: CGFloat? {
-        guard let multiple = activeHighlight?.lineHeightMultiple else {
-            return lineSpacing
-        }
-        let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
-        return max(0, (multiple - 1) * size)
+        extraLeading ?? lineSpacing
     }
 
     public var body: some View {
