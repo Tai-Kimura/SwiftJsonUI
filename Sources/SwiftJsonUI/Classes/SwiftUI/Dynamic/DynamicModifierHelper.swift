@@ -306,6 +306,18 @@ public struct DynamicModifierHelper {
             ))
         }
 
+        // A wrapContent container stops at its parent's size (WrapCap; user
+        // ruling 2026-10-05, attribute_semantics wrapContentCap). Not an axis
+        // a max already bounds, nor one a weighted / `distribution: fill`
+        // parent sizes. The codegen emits the same (frame_helper.rb).
+        let hasChildren = !(component.childComponents?.isEmpty ?? true)
+        let isCollection = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "collection" } ?? false
+        if hasChildren || isCollection {
+            let capWidth = width == nil && resolvedMaxWidth == nil && !parentSizes("horizontal")
+            let capHeight = height == nil && resolvedMaxHeight == nil && !parentSizes("vertical")
+            result = AnyView(result.wrapCap(width: capWidth, height: capHeight))
+        }
+
         return result
     }
 
