@@ -218,4 +218,9 @@ set +x
 # could be read, and a diagnostic printed mid-run could not be read at all.
 echo "[conformance] full xcodebuild log: $STAGING/xcodebuild.log (a staging of this run's own is removed when the run succeeds)"
 
+# The home indicator, checked before anything is collected
+# (scripts/home_indicator_gate.sh says why). A non-zero exit stops the run here.
+STAGING="$STAGING" HOST_DIR="$HOST_DIR" DESTINATION="$DESTINATION" DERIVED_DATA="$DERIVED_DATA" \
+SIMULATOR_UDID="${SIMULATOR_UDID:-}" "$HOST_DIR/scripts/home_indicator_gate.sh"
+
 CONFORMANCE_STAGING="$STAGING" HOST_MODE="$HOST_MODE" "$HOST_DIR/scripts/collect_results.sh"
