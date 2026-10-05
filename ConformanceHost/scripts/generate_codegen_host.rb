@@ -276,6 +276,11 @@ File.write(File.join(build_dir, 'sjui.config.json'), JSON.pretty_generate(
   # "fx_0013_sample"-style). The extractor only writes tables that
   # already exist, so seed one and bundle it into the host app.
   'string_files' => ['Resources/Localizable.strings'],
+  # Each id hands its layout box up to the host's `frame:<id>` measuring
+  # element (SwiftJsonUI jsonUIConformanceFrame), which the frames gate
+  # reads. sjui emits `.jsonUIConformanceFrame(id)` only with this key, so
+  # an app's generated code does not carry it.
+  'conformance_frames' => true,
   'swiftui' => { 'output_directory' => 'Generated' }
 ) + "\n")
 FileUtils.mkdir_p(File.join(build_dir, 'Resources'))
