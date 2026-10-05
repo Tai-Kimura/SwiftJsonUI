@@ -62,6 +62,7 @@ public struct LabelConverter {
             : DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data)
         // Resolve font from binding if present (e.g., @{fontProp})
         let resolvedFont: String? = {
+            if showsHint, let hintFont = labelHintFont(attrs) { return hintFont }
             if let expr = attrs.font?.bindingExpression {
                 // Canonical string value context (Binding<String> unwraps)
                 if let fontString = DynamicBindingResolver.resolveString(expression: expr, data: data) {
@@ -91,9 +92,10 @@ public struct LabelConverter {
         // (m - 1) x the font's line, which PartialAttributedText measures
         // from the font in force (ruling B; the first line stays L on iOS). Either may be bound: a hand-decoded slot is
         // nil for `@{expr}`, and a bound multiple produced no spacing at all.
-        let lineHeightMultiple: CGFloat? = DynamicHelpers.resolveNumber(
-            attrs.lineHeightMultiple, legacy: nil, data: data
-        )
+        // A showing hint's own lineHeightMultiple wins, as its size and font
+        // do (labelHintLineHeightMultiple); nothing read it.
+        let lineHeightMultiple: CGFloat? = (showsHint ? labelHintLineHeightMultiple(attrs) : nil)
+            ?? DynamicHelpers.resolveNumber(attrs.lineHeightMultiple, legacy: nil, data: data)
         let lineSpacing: CGFloat? = lineHeightMultiple != nil ? nil : DynamicHelpers.resolveNumber(
             attrs.lineSpacing, legacy: nil, data: data
         )
@@ -516,6 +518,29 @@ public struct LabelConverter {
                 ?? Color(SwiftJsonUIConfiguration.shared.colors.placeholder),
             size: size
         )
+    }
+
+    /// The font the placeholder is drawn in while it shows:
+    /// `hintAttributes.font` (a weight name such as `bold`, or a family),
+    /// read the way the Label's own `font` is. labelHint carried the colour
+    /// and the size only, so `hintAttributes: {font: bold, fontSize: 24}`
+    /// drew a regular-weight hint that fit one line where Android and web
+    /// wrap a bold one onto two (frame-parity Label/hintAttributes__static,
+    /// 2026-10-05). label_converter.rb#label_hint_config reads it the same way.
+    static func labelHintFont(_ attrs: LabelAttributes) -> String? {
+        attrs.hintAttributes?["font"] as? String
+    }
+
+    /// `hintAttributes.lineHeightMultiple`, applied while the hint shows the
+    /// way the Label's own is (ruling B: each line m x the line of the hint's
+    /// size; the iOS first line stays L). Read by nothing on either iOS face,
+    /// so a hint at fontSize 24 with 1.5 kept its plain line.
+    /// label_converter.rb#label_hint_config reads it the same way.
+    static func labelHintLineHeightMultiple(_ attrs: LabelAttributes) -> CGFloat? {
+        let value = attrs.hintAttributes?["lineHeightMultiple"]
+        if let d = value as? Double { return CGFloat(d) }
+        if let i = value as? Int { return CGFloat(i) }
+        return nil
     }
 
     private static func parseEdgeInset(_ edgeInset: AnyCodable) -> EdgeInsets {

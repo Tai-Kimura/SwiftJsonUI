@@ -86,9 +86,11 @@ public struct IndicatorConverter {
             let scale = scaleForStyle(styleStr)
             result = applyProgressViewStyle(result, style: styleStr)
 
-            // 3. scaleEffect (based on style)
+            // 3. scaleEffect (based on style), laid out at the scaled size:
+            // scaleEffect alone kept the unscaled 20 footprint for large and
+            // small alike (ScaledFootprint).
             if scale != 1.0 {
-                result = AnyView(result.scaleEffect(scale))
+                result = AnyView(result.scaledWithFootprint(scale))
             }
         }
 

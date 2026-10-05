@@ -163,6 +163,9 @@ public struct DynamicViewContainer: View {
                     viewId: viewId,
                     implicitWeight: fillsEqually ? 1 : 0
                 )
+            } else if DeclaredSpelling.lowered(component.distribution, in: ViewAttributes.Distribution.declaredSpellings) == "fill"
+                        && (orientation == "horizontal" || orientation == "vertical") {
+                fillStackContent(children: children, horizontal: orientation == "horizontal")
             } else if orientation == "horizontal" {
                 hStackContent(children: children)
             } else if orientation == "vertical" {
@@ -204,6 +207,41 @@ public struct DynamicViewContainer: View {
         } else {
             EmptyView()
         }
+    }
+
+    // MARK: - distribution: fill
+
+    /// `distribution: fill` grows each child from its content
+    /// (DistributionFillLayout). An HStack / VStack of `.frame(maxWidth:
+    /// .infinity)` children split the axis equally whatever their content,
+    /// which is fillEqually. A child declaring a size on the axis is fixed and
+    /// keeps it; the layout reads that from the child.
+    @ViewBuilder
+    private func fillStackContent(children: [DynamicComponent], horizontal: Bool) -> some View {
+        let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
+        let orientation = horizontal ? "horizontal" : "vertical"
+        let crossBias: CGFloat = horizontal
+            ? Self.bias(getVerticalAlignmentFromGravity())
+            : Self.bias(getHorizontalAlignmentFromGravity())
+        DistributionFillLayout(axis: horizontal ? .horizontal : .vertical, spacing: spacingValue, crossBias: crossBias) {
+            ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                DynamicComponentBuilder(
+                    component: child,
+                    data: distributionFillData(orientation),
+                    viewId: viewId,
+                    parentOrientation: orientation
+                )
+            }
+        }
+        .modifier(SafeAreaModifier(component: component))
+    }
+
+    private static func bias(_ alignment: VerticalAlignment) -> CGFloat {
+        alignment == .bottom ? 1 : (alignment == .center ? 0.5 : 0)
+    }
+
+    private static func bias(_ alignment: HorizontalAlignment) -> CGFloat {
+        alignment == .trailing ? 1 : (alignment == .center ? 0.5 : 0)
     }
 
     // MARK: - HStack

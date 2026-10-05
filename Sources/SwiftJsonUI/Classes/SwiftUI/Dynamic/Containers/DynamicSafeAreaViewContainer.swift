@@ -86,9 +86,13 @@ public struct DynamicSafeAreaViewContainer: View {
                 let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
                     component.declaredWidth == .infinity || component.declaredWidth == -1
                 let hGravity = Self.extractHorizontalFromGravity(component.gravity)
+                // rightToLeft with no horizontal gravity starts at the right
+                // edge, as a View does (DirectionStart; user ruling
+                // 2026-10-05). The children were reversed and laid from the left.
+                let startEdge = DirectionStart.edge(of: component)
                 result = AnyView(
                     HStack(alignment: getVerticalAlignment(), spacing: spacingValue) {
-                        if widthExpands && hGravity == "right" {
+                        if widthExpands && (hGravity == "right" || startEdge == "right") {
                             Spacer(minLength: 0)
                         }
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
@@ -99,7 +103,7 @@ public struct DynamicSafeAreaViewContainer: View {
                                 parentOrientation: "horizontal"
                             )
                         }
-                        if widthExpands && hGravity == "left" {
+                        if widthExpands && hGravity == "left" && startEdge == nil {
                             Spacer(minLength: 0)
                         }
                     }
@@ -109,9 +113,14 @@ public struct DynamicSafeAreaViewContainer: View {
                 let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
                     component.declaredHeight == .infinity || component.declaredHeight == -1
                 let vGravity = Self.extractVerticalFromGravity(component.gravity)
+                // bottomToTop with no vertical gravity starts at the bottom
+                // edge, as a View does (DirectionStart): three 40s in a
+                // full-height SafeAreaView sat at 80 / 40 / 0 where Android
+                // and web stack them from the bottom.
+                let startEdge = DirectionStart.edge(of: component)
                 result = AnyView(
                     VStack(alignment: getHorizontalAlignment(), spacing: spacingValue) {
-                        if heightExpands && vGravity == "bottom" {
+                        if heightExpands && (vGravity == "bottom" || startEdge == "bottom") {
                             Spacer(minLength: 0)
                         }
                         ForEach(Array(children.enumerated()), id: \.offset) { _, child in
@@ -122,7 +131,7 @@ public struct DynamicSafeAreaViewContainer: View {
                                 parentOrientation: "vertical"
                             )
                         }
-                        if heightExpands && vGravity == "top" {
+                        if heightExpands && vGravity == "top" && startEdge == nil {
                             Spacer(minLength: 0)
                         }
                     }

@@ -267,6 +267,34 @@ public struct DynamicDecodingHelper {
     }
 
     /// Convert gravity string array to SwiftUI Alignment
+    /// `alignment` is the declared string alternative to `gravity`
+    /// (attribute_definitions common.alignment, "Resolves to SwiftUI
+    /// Alignment / Compose Arrangement+Alignment"), read as the gravity it
+    /// names when a View declares no gravity. Nothing read it on this face:
+    /// a 200 box with `alignment: bottom` kept its children at the top left,
+    /// where Android places them bottom centre (frame-parity common/alignment,
+    /// 2026-10-05). The same table as the kjui codegen
+    /// (container_component.rb ALIGNMENT_GRAVITY) and KotlinJsonUI
+    /// ModifierBuilder.parseAlignmentString.
+    static let alignmentGravity: [String: [String]] = [
+        "topleading": ["top", "left"],
+        "top": ["top", "centerHorizontal"],
+        "toptrailing": ["top", "right"],
+        "leading": ["centerVertical", "left"],
+        "center": ["center"],
+        "trailing": ["centerVertical", "right"],
+        "bottomleading": ["bottom", "left"],
+        "bottom": ["bottom", "centerHorizontal"],
+        "bottomtrailing": ["bottom", "right"]
+    ]
+
+    public static func alignmentAsGravity(_ alignment: String?) -> [String]? {
+        guard let alignment = alignment,
+              let declared = DeclaredSpelling.lowered(alignment, in: CommonAttributes.Alignment.declaredSpellings)
+        else { return nil }
+        return alignmentGravity[declared]
+    }
+
     public static func gravityToAlignment(_ gravity: [String]?) -> Alignment? {
         guard let gravity = gravity, !gravity.isEmpty else { return nil }
 

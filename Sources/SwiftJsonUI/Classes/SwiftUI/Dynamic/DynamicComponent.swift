@@ -500,7 +500,12 @@ public struct DynamicComponent: Decodable {
         }
         
         // Layout properties
+        // A View with no gravity reads a declared `alignment` as the gravity
+        // it names (DynamicDecodingHelper.alignmentAsGravity).
         gravity = DynamicDecodingHelper.decodeGravity(from: container)
+            ?? (type == "View"
+                ? DynamicDecodingHelper.alignmentAsGravity(try? container.decode(String.self, forKey: .alignment))
+                : nil)
         alignment = DynamicDecodingHelper.gravityToAlignment(gravity)
         
         // Relative positioning
