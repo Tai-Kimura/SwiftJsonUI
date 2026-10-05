@@ -705,7 +705,10 @@ final class ConformanceUITests: XCTestCase {
             }
             // One query per id the layout declares (and the two markers), never
             // a hierarchy snapshot: a snapshot drew the home indicator into
-            // the next screenshot (FrameRecorder.elements(of:ids:)).
+            // the next screenshot (FrameRecorder.elements(of:ids:)). Each id
+            // is read from its `frame:<id>` measuring element, the layout box;
+            // an id read from its own element instead is named in `fallbacks`
+            // (FrameRecorder.layoutElements(of:ids:)).
             var declared: [String] = []
             func collect(_ node: Any?) {
                 if let object = node as? [String: Any] {
@@ -717,15 +720,18 @@ final class ConformanceUITests: XCTestCase {
             }
             collect(layout)
             let marker = "conformance_current_\(fixture.id.replacingOccurrences(of: "/", with: "_"))"
-            let all = FrameRecorder.elements(of: app, ids: declared + ["conformance_origin", marker])
-            guard let origin = all.first(where: { $0.id == "conformance_origin" })?.frame,
-                  let corner = all.first(where: { $0.id == marker })?.frame else {
+            let markers = FrameRecorder.elements(of: app, ids: ["conformance_origin", marker])
+            guard let origin = markers.first(where: { $0.id == "conformance_origin" })?.frame,
+                  let corner = markers.first(where: { $0.id == marker })?.frame else {
                 return unrecorded("canvas-marker-missing")
             }
             let canvas = CGRect(x: origin.minX, y: origin.minY,
                                 width: corner.maxX - origin.minX, height: corner.maxY - origin.minY)
+            // The root is the canvas (above), so its own reading is not used.
+            let probed = FrameRecorder.layoutElements(of: app, ids: declared.filter { $0 != "root" })
             let record = try FrameRecorder.record(
-                fixture: fixture.id, elements: all.filter { !$0.id.hasPrefix("conformance_") }, rootFrame: canvas)
+                fixture: fixture.id, elements: probed.elements, rootFrame: canvas,
+                source: FrameRecorder.layoutProbeSource, fallbacks: probed.fallbacks)
             let relative = "artifacts/ios/\(name).frames.json"
             let url = TapDiagnosis.stagingDir.appendingPathComponent(relative)
             try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

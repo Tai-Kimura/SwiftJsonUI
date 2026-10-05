@@ -1293,6 +1293,17 @@ public struct DynamicModifierHelper {
         return certainAccessibilityElementTypes.contains(typeName) ? 1 : 0
     }
 
+    /// Hands the layout box up to the conformance gate's measuring element
+    /// (JsonUIConformanceFrame.swift). Applied just inside the margins: by the
+    /// `conformanceFrame` stage, and by each converter that runs its own chain
+    /// right before its own applyMargins (Label, Text, TextView, TextField,
+    /// SelectBox, Button). Makes nothing unless a conformance host sets
+    /// jsonuiConformanceFrameProbe.
+    public static func applyConformanceFrame(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let id = component.id, component.visibilitySpelling() != "invisible" else { return view }
+        return AnyView(view.jsonUIConformanceFrame(id))
+    }
+
     public static func applyAccessibilityId(_ view: AnyView, component: DynamicComponent) -> AnyView {
         guard let id = component.id else { return view }
         // Statically invisible components must not become accessibility
@@ -1596,6 +1607,11 @@ public struct DynamicModifierHelper {
         Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
         Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },
         Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
+        // Hands the layout box up to the conformance gate's measuring element:
+        // inside the margins, after the offset (JsonUIConformanceFrame.swift). Makes
+        // nothing unless a conformance host sets jsonuiConformanceFrameProbe.
+        // codegen: modifier_order.json `conformance_frame`, same place.
+        Stage("conformanceFrame") { v, c, _ in applyConformanceFrame(v, component: c) },
         // margins — after the clip, the fade and the offset, as codegen writes
         // them: a clip before them cuts at the view's own edge, not the
         // margin's.

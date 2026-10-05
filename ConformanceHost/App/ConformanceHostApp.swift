@@ -409,6 +409,16 @@ struct FixtureScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // The frames gate's measuring elements: every id hands its layout
+        // box up, and a clear `frame:<id>` element is drawn at it here,
+        // behind the fixture so the fixture's own elements stay hittable
+        // (SwiftJsonUI jsonUIConformanceFrame / jsonUIConformanceFrames),
+        // which the reader prefers to the id's own element.
+        // `-noConformanceFrameProbe` launches without them, as an app runs
+        // (ConformanceFrameProbeUITests).
+        .jsonUIConformanceFrames()
+        .environment(\.jsonuiConformanceFrameProbe,
+                     !ProcessInfo.processInfo.arguments.contains("-noConformanceFrameProbe"))
         // Marker for the UITest runner: which fixture is on screen right now.
         // The marker is its own (invisible, 1x1) accessibility element — an
         // identifier on the wrapper itself would not surface as an element and

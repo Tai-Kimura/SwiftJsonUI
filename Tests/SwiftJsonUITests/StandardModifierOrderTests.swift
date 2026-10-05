@@ -56,6 +56,7 @@ final class StandardModifierOrderTests: XCTestCase {
         "opacity",
         "hidden",
         "offset",
+        "conformanceFrame",
         "margins",
         "tint",
         "events",

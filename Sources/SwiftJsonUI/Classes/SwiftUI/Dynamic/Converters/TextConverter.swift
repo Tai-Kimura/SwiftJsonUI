@@ -156,6 +156,8 @@ public struct TextConverter {
         result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
         // --- 11. margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
         // --- 12. opacity ---

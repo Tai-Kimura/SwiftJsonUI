@@ -23,6 +23,7 @@
     "opacity",
     "hidden",
     "offset",
+    "conformance_frame",
     "margin",
     "tint_color",
     "on_click",
