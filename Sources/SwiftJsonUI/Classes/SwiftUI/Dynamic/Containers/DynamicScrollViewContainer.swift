@@ -182,7 +182,15 @@ public struct DynamicScrollViewContainer: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .environment(\.jsonuiScrollingAncestor, true)
         } else {
-            VStack(alignment: .leading, spacing: 0) {
+            // The ScrollView's own content gravity across the scroll
+            // (common.gravity is "Content gravity/alignment";
+            // gravityDefaults top|start), read as a View's is. It was not
+            // read, so a ScrollView declaring centerHorizontal drew a narrow
+            // child at the start where web centred it (2026-10-05). A child's
+            // gravity is the child's content's and does not place the child.
+            // sjui codegen: scrollview_converter.rb, the same alignment.
+            let across = GravityAxes.horizontalAlignment(component.gravity)
+            VStack(alignment: across, spacing: 0) {
                 ForEach(Array(children.enumerated()), id: \.offset) { _, child in
                     DynamicComponentBuilder(
                         component: child,
@@ -193,12 +201,12 @@ public struct DynamicScrollViewContainer: View {
                 }
                 Spacer(minLength: 0)
             }
-            // At the stack's top | start: without an alignment the frame
-            // centred the stack, so a 150-wide child of a 200-wide ScrollView
-            // drew at x 25 where Android and web drew 0 (frame-parity,
-            // 2026-10-05; gravityDefaults top|start). sjui codegen:
-            // scrollview_converter.rb, the same frame.
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            // At the top, across where the stack is aligned: without an
+            // alignment the frame centred the stack, so a 150-wide child of a
+            // 200-wide ScrollView drew at x 25 where Android and web drew 0
+            // (frame-parity, 2026-10-05; gravityDefaults top|start). sjui
+            // codegen: scrollview_converter.rb, the same frame.
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: Alignment(horizontal: across, vertical: .top))
             // Everything inside a ScrollView sits under a scrolling ancestor
             // — the fact a wrapping flow Collection below needs to hand its
             // scrolling up (ScrollingAncestorContext). Either axis, as the
