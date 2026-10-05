@@ -485,19 +485,23 @@ public struct LabelConverter {
     /// Parse edgeInset from AnyCodable (single value, array [top,right,bottom,left], or pipe-separated string)
     /// The Label placeholder: text, and the size/colour it carries.
     ///
-    /// Both keys are required, matching `label_converter.rb#label_hint_config`
-    /// and UIKit's SJUILabel — a bare `hint` with no `hintAttributes` is not a
-    /// placeholder. `placeholder` is the declared alias of `hint`, and the
+    /// A `hint` shows on its own (2026-10-05 user ruling 3): it needed
+    /// `hintAttributes` beside it, as UIKit's SJUILabel did, so a Label with
+    /// only a hint drew nothing. Without a declared colour it is drawn in the
+    /// configuration's placeholder colour (`colors.placeholder`, the system's
+    /// placeholderText by default) — the ruling's light default; it drew in the
+    /// text colour. `placeholder` is the declared alias of `hint`, and the
     /// nested `hintAttributes.fontColor` wins over the flat `hintColor`, which
-    /// is the cascade adjudicated for TextField's hintAttributes.
+    /// is the cascade adjudicated for TextField's hintAttributes. Same rule as
+    /// `label_converter.rb#label_hint_config`.
     static func labelHint(
         component: DynamicComponent,
         attrs: LabelAttributes,
         data: [String: Any]
     ) -> (text: String, color: Color?, size: CGFloat?)? {
-        guard let nested = attrs.hintAttributes,
-              let raw = attrs.hint ?? component.placeholder,
+        guard let raw = attrs.hint ?? component.placeholder,
               !raw.isEmpty else { return nil }
+        let nested = attrs.hintAttributes ?? [:]
 
         let colorSpelling = (nested["fontColor"] as? String)
             ?? (attrs.hintColor?.rawRepresentation as? String)
@@ -506,7 +510,8 @@ public struct LabelConverter {
 
         return (
             text: DynamicHelpers.processText(raw, data: data),
-            color: DynamicHelpers.getColor(colorSpelling, data: data),
+            color: DynamicHelpers.getColor(colorSpelling, data: data)
+                ?? Color(SwiftJsonUIConfiguration.shared.colors.placeholder),
             size: size
         )
     }

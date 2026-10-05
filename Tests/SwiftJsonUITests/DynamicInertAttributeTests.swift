@@ -856,15 +856,16 @@ final class DynamicInertAttributeTests: XCTestCase {
 
     // MARK: - codegen-parity: Label's hint
 
-    /// Both keys are required. A bare `hint` with no `hintAttributes` is not
-    /// a placeholder — the rule label_converter.rb and UIKit's SJUILabel use.
-    func testLabelHintNeedsBothKeys() throws {
+    /// A bare `hint` is a placeholder too (2026-10-05 user ruling 3; until
+    /// then both keys were required, as UIKit's SJUILabel requires them —
+    /// LabelHintWithoutAttributesTests holds the colour).
+    func testLabelHintShowsWithOrWithoutAttributes() throws {
         let bare = try component("""
         { "type": "Label", "id": "t", "hint": "Conformance Hint" }
         """)
-        XCTAssertNil(LabelConverter.labelHint(
+        XCTAssertEqual(LabelConverter.labelHint(
             component: bare, attrs: bare.typedAttributes(LabelAttributes.self), data: [:]
-        ))
+        )?.text, "Conformance Hint")
 
         let both = try component("""
         { "type": "Label", "id": "t", "hint": "Conformance Hint",
