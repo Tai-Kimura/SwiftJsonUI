@@ -5,7 +5,10 @@
 # again.
 #
 # Environment (set by run_conformance.sh): STAGING, HOST_DIR, DESTINATION,
-# DERIVED_DATA, and SIMULATOR_UDID (without it nothing can be taken again).
+# DERIVED_DATA, and SIMULATOR_UDID. The udid is what gets rebooted. When it is
+# empty it is taken from DESTINATION: its `id=`, or, for `name=`, the one
+# booted simulator of that name. Two booted ones of that name (another run's)
+# are not guessed between: nothing is rebooted and the run stops.
 #
 # 🔻 THE HOME INDICATOR, CHECKED BEFORE ANYTHING IS COLLECTED. The baselines
 # never show it, and a screenshot that does differs from its baseline only
@@ -53,7 +56,22 @@ HI_RETAKEN=0
 if [[ "$HI_FOUND" -gt 0 ]]; then
     sed 's/^/HOME_INDICATOR /' "$HI_DIR/found.txt"
     if [[ -z "${SIMULATOR_UDID:-}" ]]; then
-        echo "[home-indicator] screenshots $HI_CHECKED, with the indicator $HI_FOUND, taken again 0 (no simulator udid to reboot)" >&2
+        SIMULATOR_UDID="$(python3 - "$DESTINATION" <<'EOF'
+import json, subprocess, sys
+fields = dict(kv.split("=", 1) for kv in sys.argv[1].split(",") if "=" in kv)
+if fields.get("id"):
+    print(fields["id"]); sys.exit(0)
+name = fields.get("name")
+devices = json.loads(subprocess.run(["xcrun", "simctl", "list", "-j", "devices", "booted"],
+                                    capture_output=True, text=True).stdout or "{}").get("devices", {})
+booted = [d["udid"] for ds in devices.values() for d in ds if d.get("name") == name]
+print(booted[0] if len(booted) == 1 else "")
+EOF
+)"
+        echo "[home-indicator] simulator to reboot, from DESTINATION ($DESTINATION): ${SIMULATOR_UDID:-none (not exactly one booted)}"
+    fi
+    if [[ -z "${SIMULATOR_UDID:-}" ]]; then
+        echo "[home-indicator] screenshots $HI_CHECKED, with the indicator $HI_FOUND, taken again 0 (no simulator to reboot)" >&2
         exit 1
     fi
     xcrun simctl shutdown "$SIMULATOR_UDID" >/dev/null 2>&1 || true
