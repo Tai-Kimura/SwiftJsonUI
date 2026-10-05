@@ -387,6 +387,8 @@ public struct TextFieldConverter {
         )
 
         // --- 21. margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
         // --- 22. opacity ---
@@ -511,6 +513,8 @@ public struct TextFieldConverter {
         )
 
         // --- 21. margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
         // --- 22. opacity ---

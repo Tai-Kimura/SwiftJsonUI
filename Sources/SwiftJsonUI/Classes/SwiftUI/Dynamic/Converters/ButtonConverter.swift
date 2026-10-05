@@ -215,6 +215,8 @@ public struct ButtonConverter {
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
         // --- 4. apply_margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
         // --- 4.5. buttonStyle (common attribute; plain/bordered/borderedProminent/borderless) ---
