@@ -59,8 +59,65 @@ final class VerticalScrollStartEdgeTests: XCTestCase {
         try assertContentAtTheLeadingEdge(AnyView(view), route: "codegen")
     }
 
+    // MARK: - the ScrollView's own gravity, not the child's
+
+    // common.gravity is the CONTENT gravity of the view that declares it: the
+    // ScrollView's own places its content; a child's is the child's
+    // content's and does not place the child. Read from the generators on
+    // 2026-10-05, sjui codegen placed a single child by the child's gravity
+    // and Dynamic read neither; web placed it by the ScrollView's.
+    private func narrowChildLayout(scrollGravity: String?, childGravity: String?) -> String {
+        let scroll = scrollGravity.map { ", \"gravity\": \"\($0)\"" } ?? ""
+        let child = childGravity.map { ", \"gravity\": \"\($0)\"" } ?? ""
+        return """
+        {
+          "type": "View", "id": "root", "width": "matchParent", "height": "matchParent",
+          "child": [
+            { "type": "ScrollView", "id": "target", "width": 200, "height": 200, "background": "#DDDDDD"\(scroll),
+              "child": [ { "type": "View", "id": "box", "width": 40, "height": 40, "background": "#FF0000"\(child) } ] }
+          ]
+        }
+        """
+    }
+
+    @MainActor
+    func testDynamicScrollViewGravityCentresItsContent() throws {
+        let component = try JSONDecoder().decode(DynamicComponent.self,
+                                                 from: narrowChildLayout(scrollGravity: "centerHorizontal", childGravity: nil).data(using: .utf8)!)
+        try assertContent(AnyView(DynamicComponentBuilder(component: component, data: [:], viewId: nil)),
+                          route: "Dynamic", startsAt: 80, width: 40)
+    }
+
+    /// The shape scrollview_converter.rb emits for a vertical ScrollView with
+    /// gravity centerHorizontal.
+    @MainActor
+    func testCodegenScrollViewGravityCentresItsContent() throws {
+        let view = AdvancedKeyboardAvoidingScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .center, spacing: 0) {
+                Rectangle().fill(Color(red: 1, green: 0, blue: 0)).frame(width: 40, height: 40)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        }
+        .frame(width: 200, height: 200)
+        try assertContent(AnyView(view), route: "codegen", startsAt: 80, width: 40)
+    }
+
+    @MainActor
+    func testDynamicChildGravityDoesNotPlaceTheChild() throws {
+        let component = try JSONDecoder().decode(DynamicComponent.self,
+                                                 from: narrowChildLayout(scrollGravity: nil, childGravity: "right").data(using: .utf8)!)
+        try assertContent(AnyView(DynamicComponentBuilder(component: component, data: [:], viewId: nil)),
+                          route: "Dynamic", startsAt: 0, width: 40)
+    }
+
     @MainActor
     private func assertContentAtTheLeadingEdge(_ content: AnyView, route: String) throws {
+        try assertContent(content, route: route, startsAt: 0, width: 150)
+    }
+
+    @MainActor
+    private func assertContent(_ content: AnyView, route: String, startsAt: Int, width: Int) throws {
         // As HorizontalScrollCrossAxisTests: the hosted view's layer tree,
         // rendered, is what draws ScrollView content in this process.
         let host = UIHostingController(rootView: content
@@ -86,8 +143,8 @@ final class VerticalScrollStartEdgeTests: XCTestCase {
         }
         let red = columns(cg, rgb: (255, 0, 0))
         XCTAssertFalse(red.isEmpty, "\(route): the content did not draw at all — the measurement would say nothing")
-        XCTAssertEqual(red.first, 0, "\(route): the content starts at column \(red.first.map(String.init) ?? "none"), want 0")
-        XCTAssertEqual(red.count, 150, "\(route): the content shows \(red.count) columns, want 150")
+        XCTAssertEqual(red.first, startsAt, "\(route): the content starts at column \(red.first.map(String.init) ?? "none"), want \(startsAt)")
+        XCTAssertEqual(red.count, width, "\(route): the content shows \(red.count) columns, want \(width)")
     }
 
     /// The columns (x) holding at least one pixel within ±2 of the RGB.
