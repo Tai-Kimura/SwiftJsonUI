@@ -111,6 +111,53 @@ final class VerticalScrollStartEdgeTests: XCTestCase {
                           route: "Dynamic", startsAt: 0, width: 40)
     }
 
+    // MARK: - the child's own content gravity stays the child's
+
+    // Holds the value b56ea7a4 (jsonui-cli) and fc786c04 left unchanged: the
+    // same before and after them (measured on the layout that raised the
+    // question: a 72 box at x 159 of 390 both ways). Not red before those
+    // changes; it fixes the value. The ScrollView's gravity (right here)
+    // places the ScrollView's content stack; the matchParent child's own
+    // gravity (center) still centres the child's content.
+    private let childContentLayout = """
+    {
+      "type": "View", "id": "root", "width": "matchParent", "height": "matchParent",
+      "child": [
+        { "type": "ScrollView", "id": "target", "width": 200, "height": 200, "background": "#DDDDDD", "gravity": "right",
+          "child": [
+            { "type": "View", "id": "content", "orientation": "vertical", "width": "matchParent", "height": "wrapContent",
+              "gravity": "center",
+              "child": [ { "type": "View", "id": "box", "width": 40, "height": 40, "background": "#FF0000" } ] }
+          ] }
+      ]
+    }
+    """
+
+    @MainActor
+    func testDynamicKeepsAChildsOwnContentGravity() throws {
+        let component = try JSONDecoder().decode(DynamicComponent.self, from: childContentLayout.data(using: .utf8)!)
+        try assertContent(AnyView(DynamicComponentBuilder(component: component, data: [:], viewId: nil)),
+                          route: "Dynamic", startsAt: 80, width: 40)
+    }
+
+    /// The shape scrollview_converter.rb and view_converter.rb emit for it:
+    /// the ScrollView's stack at its gravity, the child's at the child's.
+    @MainActor
+    func testCodegenKeepsAChildsOwnContentGravity() throws {
+        let view = AdvancedKeyboardAvoidingScrollView(.vertical, showsIndicators: true) {
+            VStack(alignment: .trailing, spacing: 0) {
+                VStack(alignment: .center, spacing: 0) {
+                    Rectangle().fill(Color(red: 1, green: 0, blue: 0)).frame(width: 40, height: 40)
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+        }
+        .frame(width: 200, height: 200)
+        try assertContent(AnyView(view), route: "codegen", startsAt: 80, width: 40)
+    }
+
     @MainActor
     private func assertContentAtTheLeadingEdge(_ content: AnyView, route: String) throws {
         try assertContent(content, route: route, startsAt: 0, width: 150)
