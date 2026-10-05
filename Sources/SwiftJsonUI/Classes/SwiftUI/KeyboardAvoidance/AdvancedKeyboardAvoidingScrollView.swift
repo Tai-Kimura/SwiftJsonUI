@@ -49,6 +49,9 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
         }
     }
     
+    /// Scrolls along x only — its cross axis is the height.
+    private var isHorizontalOnly: Bool { axes == .horizontal }
+
     public var body: some View {
         GeometryReader { geometry in
             ScrollViewReader { proxy in
@@ -80,7 +83,17 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                                 .id("selectbox_spacer")
                         }
                     }
-                    .frame(minHeight: geometry.size.height)
+                    .frame(minHeight: isHorizontalOnly ? nil : geometry.size.height)
+                    // A horizontal ScrollView's cross axis is its height, and
+                    // SwiftUI centres content of any other height on it: a
+                    // 600-high content in a 200-high ScrollView drew at
+                    // y -200, and a short one in the middle. The content
+                    // starts at the top (attribute_semantics gravityDefaults:
+                    // top|start on every container; ticket
+                    // sjui-horizontal-scrollview-centres-its-content-on-the-cross-axis):
+                    // laid in a frame exactly the viewport's height, from its
+                    // top edge, a taller content runs past the bottom.
+                    .frame(height: isHorizontalOnly ? geometry.size.height : nil, alignment: .topLeading)
                 }
                 .scrollDismissesKeyboard(scrollDismissMode)
                 // 🚨 THE ONE PLACE `additionalPadding` REACHES THE SCREEN.
