@@ -298,7 +298,11 @@ public struct TextFieldConverter {
                 nextFocusId: nextFocusId,
                 onSubmitAction: submitAction(component: component, data: data),
                 clearButtonMode: clearButtonMode(from: attrs),
-                onFocusChange: focusChangeAction(component: component, data: data)
+                onFocusChange: focusChangeAction(component: component, data: data),
+                // On the field itself, before the clear button and the styled
+                // placeholder go on (LeafAccessibilityIdentifier.swift). An
+                // invisible field takes none, as applyAccessibilityId had it.
+                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : fieldId
             )
         )
 
@@ -405,7 +409,8 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
         // --- 27. accessibilityIdentifier ---
-        result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+        // On the field, inside FocusableTextField: a bare one here would
+        // reach the clear button and the placeholder overlay too.
 
         return result
     }

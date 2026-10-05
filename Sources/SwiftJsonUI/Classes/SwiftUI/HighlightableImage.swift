@@ -34,6 +34,11 @@ public struct HighlightableImage<Base: View, Highlight: View>: View {
             .opacity(isPressed ? 0 : 1)
             .overlay {
                 highlight.opacity(isPressed ? 1 : 0)
+                    // The pressed-state copy is drawn only: as an element it
+                    // took the Image's id too (SwiftUI hands an identifier on
+                    // a non-element to every element inside; ticket
+                    // sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
+                    .accessibilityHidden(true)
             }
             // minimumDistance 0 makes this fire on touch-down rather than
             // after a drag threshold, which is what "while pressed" means.
@@ -44,5 +49,8 @@ public struct HighlightableImage<Base: View, Highlight: View>: View {
                     }
                     .onEnded { _ in isPressed = false }
             )
+            // One element: the base image and its pressed-state copy are one
+            // image to a reader, and the element the id names.
+            .accessibilityElement(children: .combine)
     }
 }

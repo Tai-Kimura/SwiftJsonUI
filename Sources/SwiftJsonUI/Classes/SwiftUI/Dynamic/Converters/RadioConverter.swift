@@ -160,6 +160,16 @@ public struct RadioConverter {
                     }
                 }
             }
+            // The group is ONE element that contains its options. The layout
+            // id goes on a Radio as on a leaf, bare, and SwiftUI hands an
+            // identifier on a non-element to every element inside: the title
+            // and each option's glyph and label all carried the group's id
+            // (ticket sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
+            // `.contain` keeps every option its own element, still selectable;
+            // the group reads as its title. The sjui codegen forms the group
+            // the same way (radio_converter.rb).
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel(text.isEmpty ? "" : text.dynamicLocalized())
         ) }
         if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(selectionExpr, data: data) {
             return build(bound)

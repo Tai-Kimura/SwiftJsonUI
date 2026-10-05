@@ -16,6 +16,9 @@ struct HeightPreferenceKey: PreferenceKey {
 }
 
 public struct TextViewWithPlaceholder: View {
+    /// The layout id, put on the TextEditor itself — not around the hint,
+    /// which would take it too (see View.leafAccessibilityIdentifier).
+    private let accessibilityIdentifier: String?
     @SwiftUI.Binding var text: String
     let hint: String?
     let hintColor: Color
@@ -58,8 +61,10 @@ public struct TextViewWithPlaceholder: View {
         flexible: Bool = false,
         minHeight: CGFloat? = nil,
         maxHeight: CGFloat? = nil,
-        isFocused: SwiftUI.Binding<Bool>? = nil
+        isFocused: SwiftUI.Binding<Bool>? = nil,
+        accessibilityIdentifier: String? = nil
     ) {
+        self.accessibilityIdentifier = accessibilityIdentifier
         self._text = text
         self.externalFocus = isFocused
         self.hint = hint
@@ -127,6 +132,14 @@ public struct TextViewWithPlaceholder: View {
                         trailing: containerInset.trailing
                     ))
                     .allowsHitTesting(false) // タップイベントを通過させる
+                    // Drawn only. The layout id goes on this composite as a
+                    // whole, and SwiftUI hands an identifier on a non-element
+                    // to EVERY element inside: the hint was the second
+                    // element carrying the TextView's id, so a `text` read
+                    // of an empty TextView returned the hint (ticket
+                    // sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
+                    // The TextEditor carries the hint for VoiceOver instead.
+                    .accessibilityHidden(true)
             }
             
             if flexible {
@@ -136,6 +149,7 @@ public struct TextViewWithPlaceholder: View {
                     .font(font)
                     .padding(containerInset)
                     .opacity(0)
+                    .accessibilityHidden(true) // a sizing copy, not content
                     .background(GeometryReader { geometry in
                         Color.clear.preference(key: HeightPreferenceKey.self, value: geometry.size.height)
                     })
@@ -150,6 +164,8 @@ public struct TextViewWithPlaceholder: View {
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
                     .focused($isFocused)
+                    .accessibilityHint(hint ?? "")
+                    .leafAccessibilityIdentifier(accessibilityIdentifier)
                     .padding(EdgeInsets(top: containerInset.top - 8, 
                                       leading: containerInset.leading - 5, 
                                       bottom: containerInset.bottom - 8, 
@@ -163,6 +179,8 @@ public struct TextViewWithPlaceholder: View {
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
                     .focused($isFocused)
+                    .accessibilityHint(hint ?? "")
+                    .leafAccessibilityIdentifier(accessibilityIdentifier)
                     .padding(EdgeInsets(top: containerInset.top - 8, 
                                       leading: containerInset.leading - 5, 
                                       bottom: containerInset.bottom - 8, 

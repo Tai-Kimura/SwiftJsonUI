@@ -25,6 +25,10 @@ public struct FocusableTextField: View {
     /// `clearButtonMode`. Applied here rather than by the caller because
     /// `whileEditing` / `unlessEditing` need the focus state this view owns.
     let clearButtonMode: TextFieldClearButtonMode?
+    /// The layout id, put on the FIELD itself — not around the clear button
+    /// and placeholder overlays, which would each take it too (see
+    /// View.leafAccessibilityIdentifier).
+    let accessibilityIdentifier: String?
 
     @FocusState private var isFocused: Bool
 
@@ -39,7 +43,8 @@ public struct FocusableTextField: View {
         nextFocusId: String? = nil,
         onSubmitAction: (() -> Void)? = nil,
         clearButtonMode: TextFieldClearButtonMode? = nil,
-        onFocusChange: ((Bool) -> Void)? = nil
+        onFocusChange: ((Bool) -> Void)? = nil,
+        accessibilityIdentifier: String? = nil
     ) {
         self.placeholder = placeholder
         self._text = text
@@ -52,6 +57,7 @@ public struct FocusableTextField: View {
         self.onSubmitAction = onSubmitAction
         self.clearButtonMode = clearButtonMode
         self.onFocusChange = onFocusChange
+        self.accessibilityIdentifier = accessibilityIdentifier
     }
 
     public var body: some View {
@@ -59,11 +65,13 @@ public struct FocusableTextField: View {
             if isSecure {
                 SecureField(placeholder, text: $text)
                     .multilineTextAlignment(textAlignment)
+                    .leafAccessibilityIdentifier(accessibilityIdentifier)
             } else {
                 TextField(placeholder, text: $text)
                     .keyboardType(keyboardType)
                     .submitLabel(submitLabel)
                     .multilineTextAlignment(textAlignment)
+                    .leafAccessibilityIdentifier(accessibilityIdentifier)
             }
         }
         .focused($isFocused)

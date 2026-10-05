@@ -244,7 +244,11 @@ public struct TextViewConverter {
                 containerInset: containerInset,
                 flexible: flexible,
                 minHeight: minHeight,
-                maxHeight: maxHeight
+                maxHeight: maxHeight,
+                // On the TextEditor itself, not around the hint
+                // (LeafAccessibilityIdentifier.swift). An invisible view
+                // takes none, as applyAccessibilityId had it.
+                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : component.id
             )
         )
 
@@ -344,7 +348,8 @@ public struct TextViewConverter {
         result = DynamicModifierHelper.applyTint(result, component: component, data: data)
 
         // --- 7. accessibilityIdentifier ---
-        result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+        // On the TextEditor, inside TextViewWithPlaceholder: a bare one here
+        // would reach the hint too.
 
         // --- 8. .disabled (editable / enabled) ---
         // TextField applies this as its final step; TextView never did, so a

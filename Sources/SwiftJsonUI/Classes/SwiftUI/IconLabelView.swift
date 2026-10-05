@@ -100,10 +100,24 @@ public struct IconLabelView: View {
                 }
             }
         }
+        // One element, read as its text. The layout id goes on this
+        // composite as a whole, and SwiftUI hands an identifier on a
+        // non-element to EVERY element inside: the icon Image was a second
+        // element carrying the IconLabel's id, so a `text` read returned the
+        // image's name (ticket
+        // sjui-a-composite-leaf-gives-its-id-to-every-element-inside). The
+        // icon is decorative (iconView); combined, the element's label is the
+        // text and its frame is the whole IconLabel.
+        .accessibilityElement(children: .combine)
     }
     
     @ViewBuilder
     private var iconView: some View {
+        iconImage.accessibilityHidden(true)
+    }
+
+    @ViewBuilder
+    private var iconImage: some View {
         if let iconName = isSelected ? iconOn : (iconOff ?? iconOn) {
             if iconName.hasPrefix("system:") {
                 // System icon

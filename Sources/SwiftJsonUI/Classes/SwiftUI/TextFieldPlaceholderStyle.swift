@@ -81,18 +81,27 @@ private struct StyledPlaceholderModifier: ViewModifier {
     let alignment: Alignment
 
     func body(content: Content) -> some View {
-        content.overlay(alignment: alignment) {
-            if value.wrappedValue.isEmpty {
-                Text(placeholder)
-                    .font(style.font)
-                    // Only the declared color overrides the system default;
-                    // a font-only declaration must not repaint the text.
-                    .foregroundColor(style.color ?? Color(UIColor.placeholderText))
-                    // The overlay sits on top of the field — without this the
-                    // placeholder would swallow the tap that focuses it.
-                    .allowsHitTesting(false)
+        content
+            // The field carries the placeholder for VoiceOver; the overlay is
+            // drawn only. The layout id goes on this composite as a whole,
+            // and SwiftUI hands an identifier on a non-element to every
+            // element inside: a visible placeholder Text was a second element
+            // carrying the TextField's id (ticket
+            // sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
+            .accessibilityHint(placeholder)
+            .overlay(alignment: alignment) {
+                if value.wrappedValue.isEmpty {
+                    Text(placeholder)
+                        .font(style.font)
+                        // Only the declared color overrides the system default;
+                        // a font-only declaration must not repaint the text.
+                        .foregroundColor(style.color ?? Color(UIColor.placeholderText))
+                        // The overlay sits on top of the field — without this the
+                        // placeholder would swallow the tap that focuses it.
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
             }
-        }
     }
 }
 

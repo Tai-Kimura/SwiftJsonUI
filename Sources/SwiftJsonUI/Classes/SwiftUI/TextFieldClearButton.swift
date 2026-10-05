@@ -64,6 +64,17 @@ public struct TextFieldClearButtonModifier: ViewModifier {
     public func body(content: Content) -> some View {
         content
             .padding(.trailing, isVisible ? Self.buttonWidth : 0)
+            // The clear button is the FIELD's action, not an element of its
+            // own. The layout id goes on this composite as a whole, and
+            // SwiftUI hands an identifier on a non-element to every element
+            // inside: the button was a second element carrying the
+            // TextField's id, and the test driver's tap (which ranks buttons
+            // first) pressed it and cleared the text (ticket
+            // sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
+            // VoiceOver reaches it as the field's named action.
+            .accessibilityAction(named: Text(accessibilityLabel)) {
+                if isVisible { text = "" }
+            }
             .overlay(alignment: .trailing) {
                 if isVisible {
                     Button {
@@ -74,7 +85,7 @@ public struct TextFieldClearButtonModifier: ViewModifier {
                     }
                     .buttonStyle(.plain)
                     .frame(width: Self.buttonWidth)
-                    .accessibilityLabel(accessibilityLabel)
+                    .accessibilityHidden(true)
                 }
             }
     }

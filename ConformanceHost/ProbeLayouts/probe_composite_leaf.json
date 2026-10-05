@@ -1,0 +1,80 @@
+{
+  "type": "View",
+  "id": "cg_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 6,
+  "child": [
+    {
+      "type": "TextField",
+      "id": "cg_tf_clear",
+      "width": 240,
+      "height": 40,
+      "text": "Clear me",
+      "clearButtonMode": "always"
+    },
+    {
+      "type": "TextField",
+      "id": "cg_tf_noclear",
+      "width": 240,
+      "height": 40,
+      "text": "Clear me",
+      "clearButtonMode": "never"
+    },
+    {
+      "type": "TextField",
+      "id": "cg_tf_styled",
+      "width": 240,
+      "height": 40,
+      "hint": "Styled hint",
+      "hintColor": "#FF0000"
+    },
+    {
+      "type": "IconLabel",
+      "id": "cg_il_left",
+      "text": "Sample",
+      "icon_off": "conformance_sample",
+      "iconPosition": "left"
+    },
+    {
+      "type": "IconLabel",
+      "id": "cg_il_right",
+      "text": "Sample",
+      "icon_off": "conformance_sample",
+      "iconPosition": "right"
+    },
+    {
+      "type": "TextView",
+      "id": "cg_tv_hint",
+      "width": 240,
+      "height": 80,
+      "hint": "Conformance Hint"
+    },
+    {
+      "type": "TextView",
+      "id": "cg_tv_nohint",
+      "width": 240,
+      "height": 80
+    },
+    {
+      "type": "Radio",
+      "id": "cg_radio_items",
+      "width": 240,
+      "height": "wrapContent",
+      "text": "Pick",
+      "items": [
+        "Alpha",
+        "Beta"
+      ]
+    },
+    {
+      "type": "Image",
+      "id": "cg_image_hl",
+      "width": 140,
+      "height": 80,
+      "src": "conformance_sample",
+      "highlightSrc": "conformance_sample_alt"
+    }
+  ]
+}
