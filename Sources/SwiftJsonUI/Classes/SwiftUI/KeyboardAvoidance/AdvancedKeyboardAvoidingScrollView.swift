@@ -83,7 +83,14 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                                 .id("selectbox_spacer")
                         }
                     }
-                    .frame(minHeight: isHorizontalOnly ? nil : geometry.size.height)
+                    // The content starts at the top of a viewport it does not
+                    // fill (attribute_semantics gravityDefaults: top|start). The
+                    // frame's default alignment is the centre, so a content
+                    // shorter than the viewport that did not stretch itself drew
+                    // in the vertical middle — a consumer's book page put its
+                    // first line ~74pt down once its footer grew (iPhone 17 Pro,
+                    // iOS 27; ticket sjui-vertical-scrollview-centres-a-short-content).
+                    .frame(minHeight: isHorizontalOnly ? nil : geometry.size.height, alignment: .topLeading)
                     // A horizontal ScrollView's cross axis is its height, and
                     // SwiftUI centres content of any other height on it: a
                     // 600-high content in a 200-high ScrollView drew at
