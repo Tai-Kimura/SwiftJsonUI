@@ -1,0 +1,68 @@
+{
+  "type": "View",
+  "id": "cg_cib_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_cib_p_bare",
+      "width": 300,
+      "height": 80,
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_cib_bare",
+          "width": 200,
+          "height": 70,
+          "layout": "flow",
+          "sections": [
+            {
+              "cell": "conformance_cell_inset_bare_single"
+            }
+          ],
+          "items": "@{one}"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_cib_p_id",
+      "width": 300,
+      "height": 80,
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_cib_id",
+          "width": 200,
+          "height": 70,
+          "layout": "flow",
+          "sections": [
+            {
+              "cell": "conformance_cell_inset_single"
+            }
+          ],
+          "items": "@{one}"
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "name": "one",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "c0"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -277,6 +277,10 @@ struct ConformanceRootView: View {
                 IdBoxProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbeCodegen") {
                 IdBoxProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-cellIdBoxProbe") {
+                CellIdBoxProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-cellIdBoxProbeCodegen") {
+                CellIdBoxProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbe") {
                 BoundsAlignmentProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbeCodegen") {
