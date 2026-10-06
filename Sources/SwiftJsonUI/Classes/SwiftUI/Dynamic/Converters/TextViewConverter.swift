@@ -345,6 +345,13 @@ public struct TextViewConverter {
         // --- 5. apply_margins ---
         // The frames gate's measuring element, inside the margins (applyConformanceFrame).
         result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
+        // The offset, at the standard order's place (standardOrder: conformance
+        // frame, offset, margins). This chain does not run
+        // applyStandardModifiers, and until 10.29.7 it had no offset stage, so
+        // offsetX / offsetY moved nothing here while codegen and Android moved
+        // the view (ticket sjui-dynamic-offsetx-is-not-applied-to-label-button-
+        // and-textview).
+        result = DynamicModifierHelper.applyOffset(result, component: component, data: data)
         result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
 
         // --- 6. .opacity / .hidden ---
