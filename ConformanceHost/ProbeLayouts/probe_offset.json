@@ -1,0 +1,202 @@
+{
+  "type": "View",
+  "id": "cg_of_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_of_p_label_off",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Label",
+          "text": "Label",
+          "id": "cg_of_label_off",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00",
+          "offsetX": 5
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_label_no",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Label",
+          "text": "Label",
+          "id": "cg_of_label_no",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_button_off",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Button",
+          "text": "Button",
+          "id": "cg_of_button_off",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00",
+          "offsetX": 5
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_button_no",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Button",
+          "text": "Button",
+          "id": "cg_of_button_no",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_textview_off",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "TextView",
+          "hint": "Text",
+          "id": "cg_of_textview_off",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00",
+          "offsetX": 5
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_textview_no",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "TextView",
+          "hint": "Text",
+          "id": "cg_of_textview_no",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_selectbox_off",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "SelectBox",
+          "hint": "Pick",
+          "items": [
+            "a",
+            "b"
+          ],
+          "id": "cg_of_selectbox_off",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00",
+          "offsetX": 5
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_selectbox_no",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "SelectBox",
+          "hint": "Pick",
+          "items": [
+            "a",
+            "b"
+          ],
+          "id": "cg_of_selectbox_no",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_image_off",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Image",
+          "srcName": "conformance_sample",
+          "id": "cg_of_image_off",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00",
+          "offsetX": 5
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_of_p_image_no",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Image",
+          "srcName": "conformance_sample",
+          "id": "cg_of_image_no",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "background": "#FFDD00"
+        }
+      ]
+    }
+  ]
+}
