@@ -9,7 +9,8 @@
 //  The id must equal the layout box (±0.5), and the layout box, relative to
 //  the parent's layout box, must be (25, 10, 100, 40). The parent is read
 //  from its `frame:` element: a container's own id box is the thing under
-//  test. NOT opt-in.
+//  test. A TextField's id is the input field, inside the padding (an iOS
+//  convention by ruling; compareInputArea). NOT opt-in.
 //
 
 import XCTest
@@ -20,14 +21,30 @@ final class IdBoxProbeUITests: XCTestCase {
     private static let types = ["label", "button", "image", "textfield", "textview", "view", "emptyview", "scrollview"]
 
     /// The id boxes still known to differ, each with the ticket that holds it
-    /// (jsonui-cli docs/bugs). Measured 2026-10-06: TextField (33,19,84,22) on
-    /// both paths; Dynamic TextView (28,10,94,40).
+    /// (jsonui-cli docs/bugs). Measured 2026-10-06: Dynamic TextView
+    /// (28,10,94,40).
     private static func openTicket(_ type: String, prefix: String) -> String? {
         switch (type, prefix) {
-        case ("textfield", _): return "ios-textfield-id-box-excludes-its-padding"
         case ("textview", "dyn"): return "ios-a-textviews-id-box-shrinks-by-its-container-inset"
         default: return nil
         }
+    }
+
+    /// The specimen's padding (IdBoxProbeView).
+    private static let padding: CGFloat = 8
+
+    /// iOS convention, declared in jsonui-cli shared/core/attribute_semantics.json
+    /// `idBox.platformConventions.iosTextFieldInputArea` (user ruling
+    /// 2026-10-06): a TextField's id box is the input field itself, inside
+    /// the padding — the padded box across, and on its line, centred, down.
+    /// So its centre, where a tap aims, is the layout box's.
+    private func compareInputArea(_ i: CGRect, _ l: CGRect, _ what: String) {
+        let inner = l.insetBy(dx: Self.padding, dy: Self.padding)
+        XCTAssertEqual(i.minX, inner.minX, accuracy: 0.5, "\(what): id minX \(i.minX), inside the padding \(inner.minX)")
+        XCTAssertEqual(i.width, inner.width, accuracy: 0.5, "\(what): id width \(i.width), inside the padding \(inner.width)")
+        XCTAssertEqual(i.midY, l.midY, accuracy: 0.5, "\(what): id midY \(i.midY), the box's \(l.midY)")
+        XCTAssertGreaterThan(i.height, 0, "\(what): no height")
+        XCTAssertLessThanOrEqual(i.height, inner.height + 0.5, "\(what): id height \(i.height) is past the padding")
     }
 
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
@@ -63,7 +80,9 @@ final class IdBoxProbeUITests: XCTestCase {
                     XCTAssertEqual(a, b, accuracy: 0.5, "\(p)_ib_\(type): id \(name) \(a), layout \(b)")
                 }
             }
-            if let ticket = Self.openTicket(type, prefix: p) {
+            if type == "textfield" {
+                compareInputArea(i, l, "\(p)_ib_textfield")
+            } else if let ticket = Self.openTicket(type, prefix: p) {
                 // Strict: once the ticket is fixed this goes red, and the
                 // entry has to leave the list.
                 XCTExpectFailure("open: \(ticket)", strict: true) { compare() }
