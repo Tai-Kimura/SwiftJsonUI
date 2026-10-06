@@ -1340,8 +1340,10 @@ public struct DynamicModifierHelper {
             // children, so it is never collapsed into its single child.
             // Only applied where that hazard exists — see
             // accessibilityMergeHazard (device stack-depth budget).
+            // The anchor is already on, inside the offset and the margins
+            // (applyAccessibilityAnchor).
             return AnyView(
-                makeAccessibilityContainer(view, component: component)
+                makeAccessibilityContainer(view, component: component, anchored: false)
                     .accessibilityIdentifier(id)
             )
         }
@@ -1356,19 +1358,45 @@ public struct DynamicModifierHelper {
     /// ancestor takes the scrolling (CollectionConverter): made an element
     /// here first, the chain's bare identifier then lands on it instead of
     /// on its cells.
-    static func makeAccessibilityContainer(_ view: AnyView, component: DynamicComponent) -> AnyView {
-        if accessibilityMergeHazard(component) {
-            return AnyView(
-                view
-                    .overlay(alignment: .topLeading) {
-                        SwiftUI.Color.clear
-                            .frame(width: 0.5, height: 0.5)
-                            .accessibilityElement(children: .ignore)
-                    }
-                    .accessibilityElement(children: .contain)
-            )
+    static func makeAccessibilityContainer(_ view: AnyView, component: DynamicComponent,
+                                           anchored: Bool = true) -> AnyView {
+        if anchored && accessibilityMergeHazard(component) {
+            return AnyView(anchor(view).accessibilityElement(children: .contain))
         }
         return AnyView(view.accessibilityElement(children: .contain))
+    }
+
+    /// The 0.5pt anchor against the single-child merge, at the top-left of
+    /// `view`.
+    static func anchor(_ view: AnyView) -> AnyView {
+        AnyView(view.overlay(alignment: .topLeading) {
+            SwiftUI.Color.clear
+                .frame(width: 0.5, height: 0.5)
+                .accessibilityElement(children: .ignore)
+        })
+    }
+
+    /// Whether this component takes the anchor: a container that will be
+    /// made an accessibility element (applyAccessibilityId), or a tappable
+    /// combined into one button (TapAccessibility), where the single-child
+    /// merge hazard exists.
+    static func takesAccessibilityAnchor(_ component: DynamicComponent) -> Bool {
+        guard accessibilityMergeHazard(component) else { return false }
+        if TapAccessibility.shape(of: component) == .combine { return true }
+        guard component.id != nil, component.visibilitySpelling() != "invisible" else { return false }
+        return isAccessibilityContainer(component)
+    }
+
+    /// The anchor's stage: inside the offset and the margins, the same box
+    /// as the frames gate's (conformanceFrame). A container's id box is the
+    /// union of its anchor and its content, so the anchor marks the layout
+    /// box's corner. Put on with the identifier, outside them, it sat at the
+    /// margin's corner and before the offset: a 100-wide View with offsetX 5
+    /// and leftMargin 20 in a vertical stack read an id box 105 wide from the
+    /// margin (ticket ios-container-id-box-starts-at-the-anchor-before-the-
+    /// offset). codegen: modifier_order.json `accessibility_anchor`, same place.
+    static func applyAccessibilityAnchor(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        takesAccessibilityAnchor(component) ? anchor(view) : view
     }
 
     // MARK: - 18. ConfirmationDialog
@@ -1612,6 +1640,10 @@ public struct DynamicModifierHelper {
         Stage("clipped") { v, c, d in applyClipped(v, component: c, data: d) },
         Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
         Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },
+        // The single-child merge anchor of a container or a combined tap:
+        // here, inside the offset and the margins, so the id box is the
+        // layout box (applyAccessibilityAnchor).
+        Stage("accessibilityAnchor") { v, c, _ in applyAccessibilityAnchor(v, component: c) },
         // Hands the layout box up to the conformance gate's measuring element:
         // inside the offset and the margins (JsonUIConformanceFrame.swift). Inside
         // the offset because .offset moves the drawing, not the layout bounds:

@@ -51,6 +51,7 @@ final class StandardOrderFollowsCodegenTests: XCTestCase {
         "clipped": "clip_to_bounds",
         "offset": "offset",
         "conformanceFrame": "conformance_frame",
+        "accessibilityAnchor": "accessibility_anchor",
         "zIndex": "z_index",
         "hidden": "hidden",
         "disabled": "disabled",

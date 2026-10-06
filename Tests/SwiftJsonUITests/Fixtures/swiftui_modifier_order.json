@@ -22,6 +22,7 @@
     "foreground_color",
     "opacity",
     "hidden",
+    "accessibility_anchor",
     "conformance_frame",
     "offset",
     "margin",

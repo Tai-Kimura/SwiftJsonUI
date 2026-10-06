@@ -240,17 +240,11 @@ enum TapAccessibility {
         case .combine?:
             // The anchor makeAccessibilityContainer uses, for the same
             // single-child merge: with one accessible child, `.combine` took
-            // the child's own identifier away (measured, XCUITest). Before
-            // `.combine`, so the anchor is one of the children it combines.
-            var base = view
-            if DynamicModifierHelper.accessibilityMergeHazard(component) {
-                base = AnyView(view.overlay(alignment: .topLeading) {
-                    SwiftUI.Color.clear
-                        .frame(width: 0.5, height: 0.5)
-                        .accessibilityElement(children: .ignore)
-                })
-            }
-            let combined = base.accessibilityElement(children: .combine).accessibilityAddTraits(.isButton)
+            // the child's own identifier away (measured, XCUITest). It is on
+            // already, from the chain's accessibilityAnchor stage (inside the
+            // offset and the margins), so it is one of the children `.combine`
+            // combines.
+            let combined = view.accessibilityElement(children: .combine).accessibilityAddTraits(.isButton)
             // An id-less combined tap takes its children's identifiers as its
             // own (measured, XCUITest 2026-09-25): one child's id was found
             // twice — on the button and on the child — and two children's
