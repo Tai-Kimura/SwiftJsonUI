@@ -1,0 +1,179 @@
+{
+  "type": "View",
+  "id": "cg_ib_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_ib_p_label",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Label",
+          "text": "Label",
+          "id": "cg_ib_label",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_button",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Button",
+          "text": "Button",
+          "id": "cg_ib_button",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_image",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "Image",
+          "srcName": "conformance_sample",
+          "id": "cg_ib_image",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_textfield",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "TextField",
+          "hint": "Field",
+          "id": "cg_ib_textfield",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_textview",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "TextView",
+          "hint": "Text",
+          "id": "cg_ib_textview",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_view",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "View",
+          "orientation": "vertical",
+          "id": "cg_ib_view",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00",
+          "child": [
+            {
+              "type": "Label",
+              "text": "In"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_emptyview",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_ib_emptyview",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_ib_p_scrollview",
+      "width": 300,
+      "height": 60,
+      "child": [
+        {
+          "type": "ScrollView",
+          "id": "cg_ib_scrollview",
+          "width": 100,
+          "height": 40,
+          "leftMargin": 20,
+          "topMargin": 10,
+          "padding": 8,
+          "offsetX": 5,
+          "background": "#FFDD00",
+          "child": [
+            {
+              "type": "Label",
+              "text": "In"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

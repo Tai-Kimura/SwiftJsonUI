@@ -273,6 +273,10 @@ struct ConformanceRootView: View {
                 OffsetProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-offsetPlacementProbeCodegen") {
                 OffsetProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbe") {
+                IdBoxProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbeCodegen") {
+                IdBoxProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbe") {
                 BoundsAlignmentProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbeCodegen") {
