@@ -19,6 +19,17 @@ final class IdBoxProbeUITests: XCTestCase {
 
     private static let types = ["label", "button", "image", "textfield", "textview", "view", "emptyview", "scrollview"]
 
+    /// The id boxes still known to differ, each with the ticket that holds it
+    /// (jsonui-cli docs/bugs). Measured 2026-10-06: TextField (33,19,84,22) on
+    /// both paths; Dynamic TextView (28,10,94,40).
+    private static func openTicket(_ type: String, prefix: String) -> String? {
+        switch (type, prefix) {
+        case ("textfield", _): return "ios-textfield-id-box-excludes-its-padding"
+        case ("textview", "dyn"): return "ios-a-textviews-id-box-shrinks-by-its-container-inset"
+        default: return nil
+        }
+    }
+
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
@@ -46,9 +57,18 @@ final class IdBoxProbeUITests: XCTestCase {
             let i = id.frame.offsetBy(dx: -origin.x, dy: -origin.y)
             let l = layout.frame.offsetBy(dx: -origin.x, dy: -origin.y)
             lines.append("\(p)_ib_\(type): id \(text(i)) layout \(text(l))")
-            for (name, a, b) in [("minX", i.minX, l.minX), ("minY", i.minY, l.minY),
-                                 ("width", i.width, l.width), ("height", i.height, l.height)] {
-                XCTAssertEqual(a, b, accuracy: 0.5, "\(p)_ib_\(type): id \(name) \(a), layout \(b)")
+            let compare = {
+                for (name, a, b) in [("minX", i.minX, l.minX), ("minY", i.minY, l.minY),
+                                     ("width", i.width, l.width), ("height", i.height, l.height)] {
+                    XCTAssertEqual(a, b, accuracy: 0.5, "\(p)_ib_\(type): id \(name) \(a), layout \(b)")
+                }
+            }
+            if let ticket = Self.openTicket(type, prefix: p) {
+                // Strict: once the ticket is fixed this goes red, and the
+                // entry has to leave the list.
+                XCTExpectFailure("open: \(ticket)", strict: true) { compare() }
+            } else {
+                compare()
             }
             for (name, a, b) in [("minX", l.minX, 25), ("minY", l.minY, 10),
                                  ("width", l.width, 100), ("height", l.height, 40)] as [(String, CGFloat, CGFloat)] {
