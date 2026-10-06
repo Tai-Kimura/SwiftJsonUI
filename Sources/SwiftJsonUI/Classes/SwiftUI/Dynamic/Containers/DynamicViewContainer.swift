@@ -210,9 +210,25 @@ public struct DynamicViewContainer: View {
             }
         } else if hasExplicitSize || hasWeight || gradientColors(component) != nil {
             Color.clear
+        } else if hasMargin {
+            // A box of 0 that its margin can pad. EmptyView lays out nothing
+            // in a stack, so the margin's `.padding` went with it and the
+            // next child sat where the margin should have pushed it: 12pt
+            // too high for a topMargin 12 (ticket ios-an-empty-views-margin-
+            // vanishes-with-it). The margin is outer space and stays (user
+            // ruling 2026-10-07; Android and web). Sized here, not by the
+            // chain: an unsized Color.clear takes all the space offered.
+            Color.clear.frame(width: 0, height: 0)
         } else {
             EmptyView()
         }
+    }
+
+    /// Whether this empty View declares a margin that resolves to non-zero
+    /// (applyMargins pads by the same values).
+    private var hasMargin: Bool {
+        let m = DynamicHelpers.getMargins(from: component, data: data)
+        return m.top != 0 || m.leading != 0 || m.bottom != 0 || m.trailing != 0
     }
 
     // MARK: - distribution: fill
