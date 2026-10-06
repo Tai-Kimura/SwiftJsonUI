@@ -265,6 +265,10 @@ struct ConformanceRootView: View {
                 EagerRowFillProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-eagerRowFillProbeCodegen") {
                 EagerRowFillProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-emptyBackgroundProbe") {
+                EmptyBackgroundProbeView(codegen: false)
+            } else if ProcessInfo.processInfo.arguments.contains("-emptyBackgroundProbeCodegen") {
+                EmptyBackgroundProbeView(codegen: true)
             } else if ProcessInfo.processInfo.arguments.contains("-offsetPlacementProbe") {
                 OffsetProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-offsetPlacementProbeCodegen") {
