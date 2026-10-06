@@ -21,13 +21,11 @@ final class IdBoxProbeUITests: XCTestCase {
     private static let types = ["label", "button", "image", "textfield", "textview", "view", "emptyview", "scrollview"]
 
     /// The id boxes still known to differ, each with the ticket that holds it
-    /// (jsonui-cli docs/bugs). Measured 2026-10-06: Dynamic TextView
-    /// (28,10,94,40).
+    /// (jsonui-cli docs/bugs), run as strict expected failures. None open.
+    /// (The Dynamic TextView's (28,10,94,40), ticket ios-a-textviews-id-box-
+    /// shrinks-by-its-container-inset, is held from SwiftJsonUI 10.29.7.)
     private static func openTicket(_ type: String, prefix: String) -> String? {
-        switch (type, prefix) {
-        case ("textview", "dyn"): return "ios-a-textviews-id-box-shrinks-by-its-container-inset"
-        default: return nil
-        }
+        nil
     }
 
     /// The specimen's padding (IdBoxProbeView).
