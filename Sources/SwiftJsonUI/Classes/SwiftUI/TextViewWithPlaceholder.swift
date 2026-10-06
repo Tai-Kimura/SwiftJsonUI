@@ -166,10 +166,7 @@ public struct TextViewWithPlaceholder: View {
                     .focused($isFocused)
                     .accessibilityHint(hint ?? "")
                     .leafAccessibilityIdentifier(accessibilityIdentifier)
-                    .padding(EdgeInsets(top: containerInset.top - 8, 
-                                      leading: containerInset.leading - 5, 
-                                      bottom: containerInset.bottom - 8, 
-                                      trailing: containerInset.trailing - 5))
+                    .modifier(EditorInset(containerInset: containerInset))
                     .frame(height: calculateHeight())
             } else {
                 // Normal mode: 固定高さ
@@ -181,10 +178,7 @@ public struct TextViewWithPlaceholder: View {
                     .focused($isFocused)
                     .accessibilityHint(hint ?? "")
                     .leafAccessibilityIdentifier(accessibilityIdentifier)
-                    .padding(EdgeInsets(top: containerInset.top - 8, 
-                                      leading: containerInset.leading - 5, 
-                                      bottom: containerInset.bottom - 8, 
-                                      trailing: containerInset.trailing - 5))
+                    .modifier(EditorInset(containerInset: containerInset))
             }
         }
         .if(!flexible && minHeight != nil) { view in
@@ -287,5 +281,46 @@ struct TextViewWithPlaceholder_Previews: PreviewProvider {
             )
         }
         .padding()
+    }
+}
+
+/// The container inset beyond TextEditor's own (8 top and bottom, 5 at the
+/// sides: UITextView's textContainerInset and lineFragmentPadding). It went
+/// on as `.padding` outside the editor, and the editor's frame is the box its
+/// identifier names, so a larger inset shrank the id box: a 100 x 40 TextView
+/// with padding 8 read (28,10,94,40) (ticket ios-a-textviews-id-box-shrinks-
+/// by-its-container-inset; the padding is the element, user ruling
+/// 2026-10-06). The part beyond the default now goes INSIDE the editor, as
+/// its scroll content's margin, so the frame stays the element's box. A part
+/// below the default (an inset smaller than the editor's own) still goes
+/// outside as before: a margin cannot be negative.
+struct EditorInset: ViewModifier {
+    let containerInset: EdgeInsets
+
+    private static let editorDefault = EdgeInsets(top: 8, leading: 5, bottom: 8, trailing: 5)
+
+    private var beyond: EdgeInsets {
+        let d = Self.editorDefault
+        return EdgeInsets(top: max(containerInset.top - d.top, 0),
+                          leading: max(containerInset.leading - d.leading, 0),
+                          bottom: max(containerInset.bottom - d.bottom, 0),
+                          trailing: max(containerInset.trailing - d.trailing, 0))
+    }
+
+    private var below: EdgeInsets {
+        let d = Self.editorDefault
+        return EdgeInsets(top: min(containerInset.top - d.top, 0),
+                          leading: min(containerInset.leading - d.leading, 0),
+                          bottom: min(containerInset.bottom - d.bottom, 0),
+                          trailing: min(containerInset.trailing - d.trailing, 0))
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .contentMargins(.top, beyond.top, for: .scrollContent)
+            .contentMargins(.leading, beyond.leading, for: .scrollContent)
+            .contentMargins(.bottom, beyond.bottom, for: .scrollContent)
+            .contentMargins(.trailing, beyond.trailing, for: .scrollContent)
+            .padding(below)
     }
 }
