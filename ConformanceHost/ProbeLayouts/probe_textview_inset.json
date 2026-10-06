@@ -1,0 +1,46 @@
+{
+  "type": "View",
+  "id": "cg_tvi_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_tvi_p_pad",
+      "width": 300,
+      "height": 80,
+      "child": [
+        {
+          "type": "TextView",
+          "id": "cg_tvi_pad",
+          "text": "WWW",
+          "fontColor": "#000000",
+          "fontSize": 16,
+          "width": 120,
+          "height": 60,
+          "background": "#FFDD00",
+          "padding": 8
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_tvi_p_nopad",
+      "width": 300,
+      "height": 80,
+      "child": [
+        {
+          "type": "TextView",
+          "id": "cg_tvi_nopad",
+          "text": "WWW",
+          "fontColor": "#000000",
+          "fontSize": 16,
+          "width": 120,
+          "height": 60,
+          "background": "#FFDD00"
+        }
+      ]
+    }
+  ]
+}
