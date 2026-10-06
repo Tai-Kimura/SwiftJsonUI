@@ -103,11 +103,17 @@ public struct DynamicViewContainer: View {
         let backgroundPaintedByContent = children.isEmpty
             && component.commonString(\.background) != nil
             && !paintsGradient
+        // The same fill takes no padding: there is no content to inset, and
+        // padding applied outside the Rectangle left it painting only the
+        // inner box — a 100 x 40 empty View with padding 8 painted 84 x 24,
+        // while the padding is the element (user ruling 2026-10-06; ticket
+        // ios-an-empty-view-with-a-background-paints-only-inside-its-padding).
+        // codegen (sjui view_converter) skips it in the same case.
         result = DynamicModifierHelper.applyStandardModifiers(
             result,
             component: component,
             data: data,
-            skipPadding: needsRelativePositioning,
+            skipPadding: needsRelativePositioning || backgroundPaintedByContent,
             skipBackground: backgroundPaintedByContent || paintsGradient
         )
 
