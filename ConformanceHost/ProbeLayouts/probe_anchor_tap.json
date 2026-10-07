@@ -1,0 +1,313 @@
+{
+  "type": "View",
+  "id": "cg_at_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 6,
+  "child": [
+    {
+      "type": "Label",
+      "id": "cg_at_hit",
+      "text": "@{hit}",
+      "width": "wrapContent",
+      "height": "wrapContent"
+    },
+    {
+      "type": "View",
+      "id": "cg_at_card_m",
+      "width": "matchParent",
+      "height": 100,
+      "cornerRadius": 12,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_at_fill_m",
+          "width": "matchParent",
+          "height": "matchParent",
+          "background": "#BBCCDD"
+        },
+        {
+          "type": "View",
+          "id": "cg_at_btn_m",
+          "width": 30,
+          "height": 30,
+          "cornerRadius": 15,
+          "background": "#333333",
+          "gravity": "center",
+          "onClick": "@{onBtn_m}",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_at_icon_m",
+              "text": "x",
+              "fontSize": 14,
+              "fontColor": "#FFFFFF",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "alignTop": true,
+          "alignRight": true,
+          "topMargin": 8,
+          "rightMargin": 8
+        }
+      ],
+      "onClick": "@{onCard_m}"
+    },
+    {
+      "type": "View",
+      "id": "cg_at_card_n",
+      "width": "matchParent",
+      "height": 100,
+      "cornerRadius": 12,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_at_fill_n",
+          "width": "matchParent",
+          "height": "matchParent",
+          "background": "#BBCCDD"
+        },
+        {
+          "type": "View",
+          "id": "cg_at_btn_n",
+          "width": 30,
+          "height": 30,
+          "cornerRadius": 15,
+          "background": "#333333",
+          "gravity": "center",
+          "onClick": "@{onBtn_n}",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_at_icon_n",
+              "text": "x",
+              "fontSize": 14,
+              "fontColor": "#FFFFFF",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "alignTop": true,
+          "alignRight": true
+        }
+      ],
+      "onClick": "@{onCard_n}"
+    },
+    {
+      "type": "View",
+      "id": "cg_at_card_q",
+      "width": "matchParent",
+      "height": 100,
+      "cornerRadius": 12,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_at_fill_q",
+          "width": "matchParent",
+          "height": "matchParent",
+          "background": "#BBCCDD"
+        },
+        {
+          "type": "View",
+          "id": "cg_at_btn_q",
+          "width": 30,
+          "height": 30,
+          "cornerRadius": 15,
+          "background": "#333333",
+          "gravity": "center",
+          "onClick": "@{onBtn_q}",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_at_icon_q",
+              "text": "x",
+              "fontSize": 14,
+              "fontColor": "#FFFFFF",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ],
+          "alignTop": true,
+          "alignRight": true,
+          "topMargin": 8,
+          "rightMargin": 8
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_at_box_s",
+      "width": 300,
+      "height": 40,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_at_btn_s",
+          "width": 30,
+          "height": 30,
+          "cornerRadius": 15,
+          "background": "#333333",
+          "gravity": "center",
+          "onClick": "@{onBtn_s}",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_at_icon_s",
+              "text": "x",
+              "fontSize": 14,
+              "fontColor": "#FFFFFF",
+              "width": "wrapContent",
+              "height": "wrapContent"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_at_btn_g",
+      "orientation": "horizontal",
+      "width": "matchParent",
+      "height": 56,
+      "topMargin": 24,
+      "gravity": "center",
+      "background": "#DDEEFF",
+      "cornerRadius": 4,
+      "onClick": "@{onBtn_g}",
+      "child": [
+        {
+          "type": "Image",
+          "id": "cg_at_icon_g",
+          "srcName": "conformance_sample",
+          "width": 24,
+          "height": 24,
+          "rightMargin": 10
+        },
+        {
+          "type": "Label",
+          "id": "cg_at_label_g",
+          "text": "Sign in",
+          "width": "wrapContent",
+          "height": "wrapContent"
+        }
+      ]
+    },
+    {
+      "type": "ScrollView",
+      "id": "cg_at_scroll_f",
+      "width": "matchParent",
+      "height": 230,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_at_content_f",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "orientation": "vertical",
+          "child": [
+            {
+              "type": "View",
+              "id": "cg_at_card_f",
+              "width": "matchParent",
+              "height": 200,
+              "topMargin": 24,
+              "cornerRadius": 12,
+              "visibility": "@{fVisibility}",
+              "onClick": "@{onCard_f}",
+              "child": [
+                {
+                  "type": "NetworkImage",
+                  "id": "cg_at_image_f",
+                  "width": "matchParent",
+                  "height": "matchParent",
+                  "src": "@{fUrl}",
+                  "contentMode": "AspectFill",
+                  "cornerRadius": 12
+                },
+                {
+                  "type": "View",
+                  "id": "cg_at_btn_f",
+                  "width": 30,
+                  "height": 30,
+                  "cornerRadius": 15,
+                  "background": "#00000080",
+                  "gravity": "center",
+                  "alignTop": true,
+                  "alignRight": true,
+                  "topMargin": 8,
+                  "rightMargin": 8,
+                  "onClick": "@{onBtn_f}",
+                  "child": [
+                    {
+                      "type": "Label",
+                      "id": "cg_at_icon_f",
+                      "width": "wrapContent",
+                      "height": "wrapContent",
+                      "text": "x",
+                      "fontSize": 14,
+                      "fontColor": "#FFFFFF"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "class": "String",
+      "name": "hit",
+      "defaultValue": ""
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onCard_m"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onBtn_m"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onCard_n"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onBtn_n"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onBtn_q"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onBtn_s"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onCard_f"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onBtn_f"
+    },
+    {
+      "class": "String",
+      "name": "fVisibility",
+      "defaultValue": "visible"
+    },
+    {
+      "class": "String?",
+      "name": "fUrl"
+    },
+    {
+      "class": "(() -> Void)?",
+      "name": "onBtn_g"
+    }
+  ]
+}

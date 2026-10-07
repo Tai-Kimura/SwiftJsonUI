@@ -273,6 +273,8 @@ struct ConformanceRootView: View {
                 OffsetProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-offsetPlacementProbeCodegen") {
                 OffsetProbeView(codegen: true)
+            } else if ProcessInfo.processInfo.arguments.contains("-anchorTapProbe") {
+                AnchorTapProbeView(variant: UserDefaults.standard.string(forKey: "atVariant") ?? "dyn")
             } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbe") {
                 IdBoxProbeView(codegen: false)
             } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbeCodegen") {

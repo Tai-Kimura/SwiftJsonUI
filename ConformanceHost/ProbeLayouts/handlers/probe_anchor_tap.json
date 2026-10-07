@@ -1,0 +1,65 @@
+[
+  {
+    "name": "onCard_m",
+    "set": {
+      "var": "hit",
+      "value": "card_m"
+    }
+  },
+  {
+    "name": "onBtn_m",
+    "set": {
+      "var": "hit",
+      "value": "btn_m"
+    }
+  },
+  {
+    "name": "onCard_n",
+    "set": {
+      "var": "hit",
+      "value": "card_n"
+    }
+  },
+  {
+    "name": "onBtn_n",
+    "set": {
+      "var": "hit",
+      "value": "btn_n"
+    }
+  },
+  {
+    "name": "onBtn_q",
+    "set": {
+      "var": "hit",
+      "value": "btn_q"
+    }
+  },
+  {
+    "name": "onBtn_s",
+    "set": {
+      "var": "hit",
+      "value": "btn_s"
+    }
+  },
+  {
+    "name": "onCard_f",
+    "set": {
+      "var": "hit",
+      "value": "card_f"
+    }
+  },
+  {
+    "name": "onBtn_f",
+    "set": {
+      "var": "hit",
+      "value": "btn_f"
+    }
+  },
+  {
+    "name": "onBtn_g",
+    "set": {
+      "var": "hit",
+      "value": "btn_g"
+    }
+  }
+]
