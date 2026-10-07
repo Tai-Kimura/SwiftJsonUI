@@ -80,6 +80,15 @@ public enum ImageAccessibility {
         return nil
     }
 
+    /// The image's alt as written when it is a string, or nil (none, JSON
+    /// null, or a value that is not a string). `alt` reads a number as text
+    /// for what it speaks; sjui's merge-hazard count takes only a string
+    /// (DynamicModifierHelper.imageSurelyAnElement).
+    static func writtenAlt(_ node: [String: Any]) -> String? {
+        guard let key = altKeys.first(where: { node[$0] != nil }) else { return nil }
+        return node[key] as? String
+    }
+
     static func children(_ node: [String: Any]) -> [[String: Any]] {
         ["child", "children"].flatMap { key -> [[String: Any]] in
             if let array = node[key] as? [Any] { return array.compactMap { $0 as? [String: Any] } }

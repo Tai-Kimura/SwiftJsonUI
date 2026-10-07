@@ -1318,10 +1318,9 @@ public struct DynamicModifierHelper {
     /// anything else errs toward the anchor. sjui_tools: BaseViewConverter
     /// #image_surely_an_element?, the same rule.
     static func imageSurelyAnElement(_ child: DynamicComponent) -> Bool {
-        // The alt as written, a string (ImageAccessibility.alt also reads a
-        // number as text; sjui's rule counts only a string).
-        guard let key = ImageAccessibility.altKeys.first(where: { child.rawData[$0] != nil }),
-              let alt = child.rawData[key] as? String else { return false }
+        // Read where every image's alt is read (ImageAccessibility), as a
+        // string only: sjui's rule counts only a string.
+        guard let alt = ImageAccessibility.writtenAlt(child.rawData) else { return false }
         return !alt.isEmpty && !alt.contains("@{")
     }
 
