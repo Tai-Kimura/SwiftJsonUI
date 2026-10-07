@@ -15,24 +15,22 @@
 //  inside the button's frame; the activation point is inside the frame and a
 //  touch there runs the same handler. Then the card's own tap (m) is run as
 //  the control that the card's handler still answers outside the button.
-//  The id box is judged too: the button's own 30 x 30 (row g: its 56 high,
-//  held open by another ticket, openTicket).
-//  The v1.9.17 and v1.9.18 pastes (cg17, cg18) are the measured defect, held
-//  as strict expected failures: if one stops failing, the probe no longer
-//  sees the defect. v1.9.17's tap still reached f's button, but its id read
-//  the card's box; v1.9.18's ran the card's handler.
+//  The id box is judged too — the button's own 30 x 30, the row g's 56
+//  high, the Label h inside its margin (sjui-a-combined-taps-id-box-takes-
+//  its-margin-in). A touch in g's and h's margin, and as far outside s, is
+//  printed, not judged (a touch that close reaches the view on every emit).
+//  The v1.9.17, v1.9.18 and v1.9.19 pastes (cg17, cg18, cg19) are the
+//  measured defects, held as strict expected failures per specimen (run's
+//  `defect`): if one stops failing, the probe no longer sees it, and a
+//  specimen outside `defect` / `alsoMay` must pass. v1.9.17's tap still
+//  reached f's button, but its id read the card's box; v1.9.18's ran the
+//  card's handler; v1.9.19 put every tap after the margin.
 //
 
 import XCTest
 
 final class AnchorTapProbeUITests: XCTestCase {
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
-
-    /// A combined tap's id box takes its margin in: a row with topMargin 24
-    /// and height 56 reads 80 high, on every emit measured (v1.9.17, v1.9.18,
-    /// the fix) and in Dynamic. Its tap still lands inside the row. Not this
-    /// ticket's defect; jsonui-cli docs/bugs holds it.
-    private static let openTicket = "sjui-a-combined-taps-id-box-takes-its-margin-in"
 
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
@@ -83,7 +81,9 @@ final class AnchorTapProbeUITests: XCTestCase {
         return v.count == 2 ? CGPoint(x: v[0], y: v[1]) : nil
     }
 
-    private func run(variant: String, expectDefect: Bool = false) {
+    /// `defect`: the specimens an emit before a fix must fail on (strict), and
+    /// `alsoMay` the ones it may fail on besides; every other specimen passes.
+    private func run(variant: String, defect: Set<String> = [], alsoMay: Set<String> = []) {
         let app = XCUIApplication()
         app.launchArguments = ["-anchorTapProbe", "-atVariant", variant]
         if codegenHost { app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen" }
@@ -91,7 +91,7 @@ final class AnchorTapProbeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["at_ready"].waitForExistence(timeout: 15), "probe did not start")
         let p = variant == "dyn" ? "dyn" : "cg"
         let ax = axReads(app)
-        XCTAssertEqual(ax.count, 7, "\(variant): the walk read \(ax.count) of 6 buttons and at_ready: \(label(app, "at_ax"))")
+        XCTAssertEqual(ax.count, 8, "\(variant): the walk read \(ax.count) of 7 buttons and at_ready: \(label(app, "at_ax"))")
         // The app's points (the touch log, the accessibility reads) are in its
         // window's space; XCUITest's frames are not, on an iPad window. The
         // offset between them, from at_ready read both ways.
@@ -103,15 +103,16 @@ final class AnchorTapProbeUITests: XCTestCase {
         func moved(_ p: CGPoint) -> CGPoint { CGPoint(x: p.x + shift.dx, y: p.y + shift.dy) }
         func moved(_ r: CGRect) -> CGRect { r.offsetBy(dx: shift.dx, dy: shift.dy) }
         var lines: [String] = []
-        var failures: [String] = []
-        // Known and held by a ticket of its own (openTicket), not this one's.
-        var open: [String] = []
-        func judge(_ ok: Bool, _ why: String) { if !ok { failures.append(why) } }
+        // Per specimen, so a contrast paste fails on the specimen its defect is.
+        var failures: [String: [String]] = [:]
+        var k = ""
+        func judge(_ ok: Bool, _ why: String) { if !ok { failures[k, default: []].append(why) } }
 
-        for k in ["m", "n", "q", "s", "f", "g"] {
+        for key in ["m", "n", "q", "s", "f", "g", "h"] {
+            k = key
             let id = "\(p)_at_btn_\(k)"
             let e = element(app, id)
-            guard e.waitForExistence(timeout: 5) else { failures.append("\(id) does not exist"); continue }
+            guard e.waitForExistence(timeout: 5) else { judge(false, "\(id) does not exist"); continue }
             let frame = e.frame
             let hittable = e.isHittable
             // Every element XCUITest finds under the id, as a driver's
@@ -125,14 +126,19 @@ final class AnchorTapProbeUITests: XCTestCase {
             let byTap = hit(app, p, want: "btn_\(k)")
             let landed = touch(app).map(moved)
             var line = "\(variant) \(id): frame \(text(frame)) hittable \(hittable) tap→\(landed.map { String(format: "%.2f,%.2f", $0.x, $0.y) } ?? "none") hit \(byTap) matches \(all.count) [\(seen)]"
-            // The id box is the button's own layout box: 30 x 30, or for the
-            // row g 56 high (its margin outside).
-            let size: CGSize? = k == "g" ? nil : CGSize(width: 30, height: 30)
-            if let size {
-                judge(abs(frame.width - size.width) <= 0.5 && abs(frame.height - size.height) <= 0.5,
+            // The id box is the button's own layout box, its margin outside:
+            // 30 x 30; the row g 56 high; the Label h starting 11 / 12 inside
+            // its parent's box (sjui-a-combined-taps-id-box-takes-its-margin-in).
+            switch k {
+            case "g":
+                judge(abs(frame.height - 56) <= 0.5, "\(id): the id box \(text(frame)) is not the row's 56 high")
+            case "h":
+                let box = element(app, "\(p)_at_box_h").frame
+                judge(abs(frame.minX - box.minX - 11) <= 0.5 && abs(frame.minY - box.minY - 12) <= 0.5,
+                      "\(id): the id box \(text(frame)) does not start 11 / 12 inside its parent \(text(box))")
+            default:
+                judge(abs(frame.width - 30) <= 0.5 && abs(frame.height - 30) <= 0.5,
                       "\(id): the id box \(text(frame)) is not the button's 30 x 30")
-            } else if abs(frame.height - 56) > 0.5 {
-                open.append("\(id): the id box \(text(frame)) is not the row's 56 high")
             }
             judge(byTap == "btn_\(k)", "\(id): the element tap ran '\(byTap)', not btn_\(k)")
             if let landed { judge(frame.insetBy(dx: -0.5, dy: -0.5).contains(landed), "\(id): the tap landed at \(landed), outside the frame \(text(frame))") }
@@ -151,7 +157,33 @@ final class AnchorTapProbeUITests: XCTestCase {
                 element(app, "\(p)_at_card_n").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap()
                 _ = hit(app, p, want: "card_n")
             } else {
-                failures.append("\(id): no accessibility element read in the app")
+                judge(false, "\(id): no accessibility element read in the app")
+            }
+            // Where a touch in the margin lands. Where the margin is comes from
+            // the layout, not from the id box under test: above the row g's
+            // bottom 56, and the top 12 of the Label h's parent.
+            // s has no margin: the same distances outside it are the control
+            // for how far a touch reaches past a view's edge at all.
+            let marginPoint: CGPoint? = {
+                switch k {
+                case "g": return CGPoint(x: frame.midX, y: frame.maxY - 56 - 12)
+                case "h":
+                    let box = element(app, "\(p)_at_box_h").frame
+                    return CGPoint(x: box.minX + 11 + 5, y: box.minY + 6)
+                case "s": return CGPoint(x: frame.maxX + 12, y: frame.midY)
+                default: return nil
+                }
+            }()
+            if let m = marginPoint {
+                let origin = app.coordinate(withNormalizedOffset: .zero)
+                let zero = origin.screenPoint
+                origin.withOffset(CGVector(dx: m.x - zero.x, dy: m.y - zero.y)).tap()
+                RunLoop.current.run(until: Date().addingTimeInterval(0.8))
+                let byMargin = label(app, "\(p)_at_hit")
+                line += String(format: " | outside tap %.1f,%.1f → hit ", m.x, m.y) + byMargin
+                // Printed, not judged: measured on iPhone 17 / iOS 27, a touch
+                // 6 or 12 pt into the margin ran the button on every emit,
+                // before and after the fix, so it does not tell them apart.
             }
             lines.append(line)
         }
@@ -162,32 +194,28 @@ final class AnchorTapProbeUITests: XCTestCase {
         XCTAssertEqual(card, "card_m", "\(variant): the card's own tap ran '\(card)'")
 
         lines.insert("\(variant) shift \(shift.dx),\(shift.dy) app \(text(app.frame))", at: 0)
-        lines.forEach { print("ATP \($0)") }
         let shot = XCTAttachment(screenshot: app.screenshot())
         shot.name = "anchor_tap_\(variant)"
         shot.lifetime = .keepAlways
         add(shot)
 
-        // Strict: once the ticket is fixed this goes red, and the row g check
-        // moves back into the judged ones.
-        if open.isEmpty {
-            XCTFail("\(variant): row g's id box is the row's now — \(Self.openTicket) is fixed; judge it")
-        } else {
-            XCTExpectFailure("open: \(Self.openTicket)", strict: true) {
-                for o in open { XCTFail("\(variant): \(o)") }
-            }
+        let failed = Set(failures.keys)
+        lines.append("\(variant) failed specimens: \(failed.sorted())")
+        lines.forEach { print("ATP \($0)") }
+        // Strict both ways: the defect's specimens must fail (else the probe no
+        // longer sees it), and nothing outside defect + alsoMay may.
+        for s in defect.subtracting(failed).sorted() {
+            XCTFail("\(variant): specimen \(s) passed — the probe no longer sees this emit's defect")
         }
-
-        let report = { for f in failures { XCTFail("\(variant): \(f)") } }
-        if expectDefect {
-            // Strict: the paste of the defect must keep failing.
-            if failures.isEmpty {
-                XCTFail("\(variant): the paste passed — the probe no longer sees the defect")
+        for s in failed.sorted() {
+            let reasons = failures[s] ?? []
+            if defect.contains(s) || alsoMay.contains(s) {
+                XCTExpectFailure("\(variant): specimen \(s), an emit before the fix", strict: true) {
+                    for r in reasons { XCTFail("\(variant): \(r)") }
+                }
             } else {
-                XCTExpectFailure("\(variant): an emit before the fix, the defect of the ticket", strict: true) { report() }
+                for r in reasons { XCTFail("\(variant): \(r)") }
             }
-        } else {
-            report()
         }
     }
 
@@ -202,16 +230,17 @@ final class AnchorTapProbeUITests: XCTestCase {
 
     /// v1.9.17's emit: the tap reached f's button, but its id read the card's box.
     func testTheTapReachesTheButtonPasteV1917() throws {
-        run(variant: "cg17", expectDefect: true)
+        run(variant: "cg17", defect: ["f"], alsoMay: ["g", "h"])
     }
 
     /// v1.9.18's emit: f's id read the card's box and its tap ran the card's handler.
     func testTheTapReachesTheButtonPasteV1918() throws {
-        run(variant: "cg18", expectDefect: true)
+        run(variant: "cg18", defect: ["f"], alsoMay: ["g", "h"])
     }
 
-    /// The fixed emit, pasted (the generated half above is the same emit in the codegen host).
-    func testTheTapReachesTheButtonPasteFixed() throws {
-        run(variant: "cg19")
+    /// v1.9.19's emit: every tap after the margin — the row g's id and both
+    /// taps take the margin in (sjui-a-combined-taps-id-box-takes-its-margin-in).
+    func testTheTapReachesTheButtonPasteV1919() throws {
+        run(variant: "cg19", defect: ["g", "h"])
     }
 }

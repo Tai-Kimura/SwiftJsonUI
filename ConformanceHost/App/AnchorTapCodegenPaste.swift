@@ -3,21 +3,22 @@
 //  ConformanceHost
 //
 //  What `sjui build` emits for ProbeLayouts/probe_anchor_tap.json, from the
-//  sjui_tools of jsonui-cli v1.9.17 (AnchorTapPaste17) and v1.9.18
-//  (AnchorTapPaste18), and with the fix (AnchorTapPaste19), the body's
-//  sections pasted unchanged but for the row g's text, which the build
-//  wrote as a StringManager key this host has no table for; the Data struct
-//  is the one all three emit (identical), renamed. 17 and 18 differ in one place
-//  per tappable View: v1.9.18 writes the 0.5pt accessibility anchor before
-//  `.contentShape(Rectangle()).onTapGesture`, v1.9.17 after it. Kept as the
-//  measured contrast of AnchorTapProbeView (ticket sjui-a-tappable-elements-
-//  anchor-inside-its-tap-target-moves-the-tap-point-off-it).
+//  sjui_tools of jsonui-cli v1.9.17 (AnchorTapPaste17), v1.9.18
+//  (AnchorTapPaste18) and v1.9.19 (AnchorTapPaste19), the body's sections
+//  pasted unchanged but for the row g's text, which the build wrote as a
+//  StringManager key this host has no table for; the Data struct is the one
+//  all three emit (identical), renamed. Kept as the measured contrast of
+//  AnchorTapProbeView:
+//    - 17 and 18 merge f's card into its button (ticket sjui-a-tappable-
+//      elements-anchor-inside-its-tap-target-moves-the-tap-point-off-it;
+//      18 also moves the tap point onto the card);
+//    - 19 writes every tap after the margin, so the tap's receiver and a
+//      combined tap's id take the margin in (ticket sjui-a-combined-taps-id-
+//      box-takes-its-margin-in).
 //
 
 import SwiftUI
 import SwiftJsonUI
-
-
 
 
 struct AnchorTapPasteData {
@@ -34,6 +35,7 @@ struct AnchorTapPasteData {
     var fVisibility: String = "visible".localized()
     var fUrl: String? = nil
     var onBtn_g: (() -> Void)? = nil
+    var onBtn_h: (() -> Void)? = nil
 
     // Update properties from dictionary
     mutating func update(dictionary: [String: Any]) {
@@ -97,6 +99,11 @@ struct AnchorTapPasteData {
                 self.onBtn_g = typedValue
             }
         }
+        if let value = dictionary["onBtn_h"] {
+            if let typedValue = value as? (() -> Void)? {
+                self.onBtn_h = typedValue
+            }
+        }
     }
 
     // Convert properties to dictionary for Dynamic mode
@@ -135,6 +142,9 @@ struct AnchorTapPasteData {
         }
         if let value = onBtn_g {
             dict["onBtn_g"] = value
+        }
+        if let value = onBtn_h {
+            dict["onBtn_h"] = value
         }
         
         return dict
@@ -188,6 +198,9 @@ struct AnchorTapPasteData {
         if let onBtn_g = onBtn_g {
             dict["onBtn_g"] = onBtn_g
         }
+        if let onBtn_h = onBtn_h {
+            dict["onBtn_h"] = onBtn_h
+        }
         
         return dict
     }
@@ -195,6 +208,7 @@ struct AnchorTapPasteData {
 }
 
 // ══ END AUTO-GENERATED — DO NOT APPEND BELOW THIS LINE ══
+
 
 struct AnchorTapPaste17: View {
     @SwiftUI.Binding var data: AnchorTapPasteData
@@ -239,10 +253,10 @@ struct AnchorTapPaste17: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -279,10 +293,10 @@ struct AnchorTapPaste17: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -319,10 +333,10 @@ struct AnchorTapPaste17: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("cg_at_card_q")
@@ -365,6 +379,30 @@ struct AnchorTapPaste17: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("cg_at_btn_g")
+                VStack(alignment: .leading, spacing: 0) {
+                        PartialAttributedText(
+                            "Tap",
+                            textAlignment: .leading
+                        )
+                            .padding(7)
+                            .background(SwiftJsonUIConfiguration.shared.getColor(for: "light_orange") ?? Color.black)
+                            .padding(.top, 12)
+                            .padding(.leading, 11)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                            data.onBtn_h?()
+                                        }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityIdentifier("cg_at_btn_h")
+                }
+                    .frame(width: 300, height: 50, alignment: .topLeading)
+                    .overlay(alignment: .topLeading) {
+                        Color.clear
+                            .frame(width: 0.5, height: 0.5)
+                            .accessibilityElement(children: .ignore)
+                    }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("cg_at_box_h")
                 AdvancedKeyboardAvoidingScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 0) {
                         AnyView(section0_7())
@@ -638,6 +676,7 @@ struct AnchorTapPaste17: View {
             .accessibilityIdentifier("cg_at_btn_f")
     }
 }
+
 
 struct AnchorTapPaste18: View {
     @SwiftUI.Binding var data: AnchorTapPasteData
@@ -682,10 +721,10 @@ struct AnchorTapPaste18: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -722,10 +761,10 @@ struct AnchorTapPaste18: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -762,10 +801,10 @@ struct AnchorTapPaste18: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("cg_at_card_q")
@@ -808,6 +847,30 @@ struct AnchorTapPaste18: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("cg_at_btn_g")
+                VStack(alignment: .leading, spacing: 0) {
+                        PartialAttributedText(
+                            "Tap",
+                            textAlignment: .leading
+                        )
+                            .padding(7)
+                            .background(SwiftJsonUIConfiguration.shared.getColor(for: "light_orange") ?? Color.black)
+                            .padding(.top, 12)
+                            .padding(.leading, 11)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                            data.onBtn_h?()
+                                        }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityIdentifier("cg_at_btn_h")
+                }
+                    .frame(width: 300, height: 50, alignment: .topLeading)
+                    .overlay(alignment: .topLeading) {
+                            Color.clear
+                                .frame(width: 0.5, height: 0.5)
+                                .accessibilityElement(children: .ignore)
+                        }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("cg_at_box_h")
                 AdvancedKeyboardAvoidingScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 0) {
                         AnyView(section0_7())
@@ -1082,6 +1145,7 @@ struct AnchorTapPaste18: View {
     }
 }
 
+
 struct AnchorTapPaste19: View {
     @SwiftUI.Binding var data: AnchorTapPasteData
 
@@ -1125,10 +1189,10 @@ struct AnchorTapPaste19: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -1165,10 +1229,10 @@ struct AnchorTapPaste19: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .contentShape(Rectangle())
                     .onTapGesture {
@@ -1205,10 +1269,10 @@ struct AnchorTapPaste19: View {
                     backgroundColor: nil,
                     parentPadding: EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0),
                     containerWidthMode: .matchParent,
-                    containerHeightMode: .fixed(100)
+                    containerHeightMode: .fixed(90)
                 )
                     .frame(maxWidth: .infinity, alignment: .topLeading)
-                    .frame(minHeight: 100, idealHeight: 100, maxHeight: 100, alignment: .topLeading)
+                    .frame(minHeight: 90, idealHeight: 90, maxHeight: 90, alignment: .topLeading)
                     .cornerRadius(12)
                     .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("cg_at_card_q")
@@ -1256,6 +1320,30 @@ struct AnchorTapPaste19: View {
                     .accessibilityElement(children: .combine)
                     .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("cg_at_btn_g")
+                VStack(alignment: .leading, spacing: 0) {
+                        PartialAttributedText(
+                            "Tap",
+                            textAlignment: .leading
+                        )
+                            .padding(7)
+                            .background(SwiftJsonUIConfiguration.shared.getColor(for: "light_orange") ?? Color.black)
+                            .padding(.top, 12)
+                            .padding(.leading, 11)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                            data.onBtn_h?()
+                                        }
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityIdentifier("cg_at_btn_h")
+                }
+                    .frame(width: 300, height: 50, alignment: .topLeading)
+                    .overlay(alignment: .topLeading) {
+                            Color.clear
+                                .frame(width: 0.5, height: 0.5)
+                                .accessibilityElement(children: .ignore)
+                        }
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("cg_at_box_h")
                 AdvancedKeyboardAvoidingScrollView(.vertical, showsIndicators: true) {
                     VStack(alignment: .leading, spacing: 0) {
                         AnyView(section0_7())

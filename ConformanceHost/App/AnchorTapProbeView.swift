@@ -20,14 +20,17 @@
 //         24, a bound visibility and an onClick, an AspectFill NetworkImage
 //         under the button, the button's background translucent;
 //    - g: a tappable row of a decorative Image and a Label, topMargin 24 —
-//         the shape whose combined element takes the anchor with the fix.
+//         a combined tap with a margin;
+//    - h: a Label with onClick, topMargin 12 / leftMargin 11 / padding 7,
+//         the only child of a 300 x 50 vertical View — a leaf tap with a
+//         margin.
 //  "hit" shows the last handler that ran (btn_m, card_m, ...).
 //
 //  Launch with `-anchorTapProbe` and `-atVariant <v>`:
 //    dyn  — the Dynamic runtime (this library);
 //    cg   — the generated half (codegen host only: CodegenFixtureRegistry);
-//    cg17 / cg18 — what jsonui-cli v1.9.17 / v1.9.18 emit, pasted
-//           (AnchorTapCodegenPaste.swift): the measured contrast.
+//    cg17 / cg18 / cg19 — what jsonui-cli v1.9.17 / v1.9.18 / v1.9.19 emit,
+//           pasted (AnchorTapCodegenPaste.swift): the measured contrast.
 //  NOT part of the conformance suite; its test is AnchorTapProbeUITests.
 //
 //  Two reads besides the tap's effect, both from inside the app:
@@ -49,7 +52,7 @@ final class AnchorTapStore: ObservableObject {
     @Published var hit = ""
 
     init() {
-        let names = ["Card_m", "Btn_m", "Card_n", "Btn_n", "Btn_q", "Btn_s", "Card_f", "Btn_f", "Btn_g"]
+        let names = ["Card_m", "Btn_m", "Card_n", "Btn_n", "Btn_q", "Btn_s", "Card_f", "Btn_f", "Btn_g", "Btn_h"]
         for name in names {
             let value = name.lowercased()
             let call: () -> Void = { [weak self] in
@@ -65,6 +68,7 @@ final class AnchorTapStore: ObservableObject {
             case "Card_f": paste.onCard_f = call
             case "Btn_f": paste.onBtn_f = call
             case "Btn_g": paste.onBtn_g = call
+            case "Btn_h": paste.onBtn_h = call
             default: paste.onBtn_s = call
             }
         }
@@ -82,7 +86,7 @@ final class AnchorTapStore: ObservableObject {
 
     func dynamicData() -> [String: Any] {
         var data: [String: Any] = ["hit": hit, "fVisibility": "visible", "fUrl": Self.sampleImageURL as Any]
-        for name in ["Card_m", "Btn_m", "Card_n", "Btn_n", "Btn_q", "Btn_s", "Card_f", "Btn_f", "Btn_g"] {
+        for name in ["Card_m", "Btn_m", "Card_n", "Btn_n", "Btn_q", "Btn_s", "Card_f", "Btn_f", "Btn_g", "Btn_h"] {
             let value = name.lowercased()
             data["on\(name)"] = { [weak self] in self?.hit = value } as () -> Void
         }
@@ -120,7 +124,7 @@ struct AnchorTapProbeView: View {
     @StateObject private var touches = AnchorTapTouchLog()
     @State private var ax = ""
 
-    static let layout = ##"{"type": "View", "id": "dyn_at_root", "orientation": "vertical", "width": "matchParent", "height": "wrapContent", "spacing": 6, "child": [{"type": "Label", "id": "dyn_at_hit", "text": "@{hit}", "width": "wrapContent", "height": "wrapContent"}, {"type": "View", "id": "dyn_at_card_m", "width": "matchParent", "height": 100, "cornerRadius": 12, "child": [{"type": "View", "id": "dyn_at_fill_m", "width": "matchParent", "height": "matchParent", "background": "#BBCCDD"}, {"type": "View", "id": "dyn_at_btn_m", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_m}", "child": [{"type": "Label", "id": "dyn_at_icon_m", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}], "alignTop": true, "alignRight": true, "topMargin": 8, "rightMargin": 8}], "onClick": "@{onCard_m}"}, {"type": "View", "id": "dyn_at_card_n", "width": "matchParent", "height": 100, "cornerRadius": 12, "child": [{"type": "View", "id": "dyn_at_fill_n", "width": "matchParent", "height": "matchParent", "background": "#BBCCDD"}, {"type": "View", "id": "dyn_at_btn_n", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_n}", "child": [{"type": "Label", "id": "dyn_at_icon_n", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}], "alignTop": true, "alignRight": true}], "onClick": "@{onCard_n}"}, {"type": "View", "id": "dyn_at_card_q", "width": "matchParent", "height": 100, "cornerRadius": 12, "child": [{"type": "View", "id": "dyn_at_fill_q", "width": "matchParent", "height": "matchParent", "background": "#BBCCDD"}, {"type": "View", "id": "dyn_at_btn_q", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_q}", "child": [{"type": "Label", "id": "dyn_at_icon_q", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}], "alignTop": true, "alignRight": true, "topMargin": 8, "rightMargin": 8}]}, {"type": "View", "id": "dyn_at_box_s", "width": 300, "height": 40, "child": [{"type": "View", "id": "dyn_at_btn_s", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_s}", "child": [{"type": "Label", "id": "dyn_at_icon_s", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}]}]}, {"type": "View", "id": "dyn_at_btn_g", "orientation": "horizontal", "width": "matchParent", "height": 56, "topMargin": 24, "gravity": "center", "background": "#DDEEFF", "cornerRadius": 4, "onClick": "@{onBtn_g}", "child": [{"type": "Image", "id": "dyn_at_icon_g", "srcName": "conformance_sample", "width": 24, "height": 24, "rightMargin": 10}, {"type": "Label", "id": "dyn_at_label_g", "text": "Sign in", "width": "wrapContent", "height": "wrapContent"}]}, {"type": "ScrollView", "id": "dyn_at_scroll_f", "width": "matchParent", "height": 230, "child": [{"type": "View", "id": "dyn_at_content_f", "width": "matchParent", "height": "wrapContent", "orientation": "vertical", "child": [{"type": "View", "id": "dyn_at_card_f", "width": "matchParent", "height": 200, "topMargin": 24, "cornerRadius": 12, "visibility": "@{fVisibility}", "onClick": "@{onCard_f}", "child": [{"type": "NetworkImage", "id": "dyn_at_image_f", "width": "matchParent", "height": "matchParent", "src": "@{fUrl}", "contentMode": "AspectFill", "cornerRadius": 12}, {"type": "View", "id": "dyn_at_btn_f", "width": 30, "height": 30, "cornerRadius": 15, "background": "#00000080", "gravity": "center", "alignTop": true, "alignRight": true, "topMargin": 8, "rightMargin": 8, "onClick": "@{onBtn_f}", "child": [{"type": "Label", "id": "dyn_at_icon_f", "width": "wrapContent", "height": "wrapContent", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF"}]}]}]}]}], "data": [{"class": "String", "name": "hit", "defaultValue": ""}, {"class": "(() -> Void)?", "name": "onCard_m"}, {"class": "(() -> Void)?", "name": "onBtn_m"}, {"class": "(() -> Void)?", "name": "onCard_n"}, {"class": "(() -> Void)?", "name": "onBtn_n"}, {"class": "(() -> Void)?", "name": "onBtn_q"}, {"class": "(() -> Void)?", "name": "onBtn_s"}, {"class": "(() -> Void)?", "name": "onCard_f"}, {"class": "(() -> Void)?", "name": "onBtn_f"}, {"class": "String", "name": "fVisibility", "defaultValue": "visible"}, {"class": "String?", "name": "fUrl"}, {"class": "(() -> Void)?", "name": "onBtn_g"}]}"##
+    static let layout = ##"{"type": "View", "id": "dyn_at_root", "orientation": "vertical", "width": "matchParent", "height": "wrapContent", "spacing": 6, "child": [{"type": "Label", "id": "dyn_at_hit", "text": "@{hit}", "width": "wrapContent", "height": "wrapContent"}, {"type": "View", "id": "dyn_at_card_m", "width": "matchParent", "height": 90, "cornerRadius": 12, "child": [{"type": "View", "id": "dyn_at_fill_m", "width": "matchParent", "height": "matchParent", "background": "#BBCCDD"}, {"type": "View", "id": "dyn_at_btn_m", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_m}", "child": [{"type": "Label", "id": "dyn_at_icon_m", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}], "alignTop": true, "alignRight": true, "topMargin": 8, "rightMargin": 8}], "onClick": "@{onCard_m}"}, {"type": "View", "id": "dyn_at_card_n", "width": "matchParent", "height": 90, "cornerRadius": 12, "child": [{"type": "View", "id": "dyn_at_fill_n", "width": "matchParent", "height": "matchParent", "background": "#BBCCDD"}, {"type": "View", "id": "dyn_at_btn_n", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_n}", "child": [{"type": "Label", "id": "dyn_at_icon_n", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}], "alignTop": true, "alignRight": true}], "onClick": "@{onCard_n}"}, {"type": "View", "id": "dyn_at_card_q", "width": "matchParent", "height": 90, "cornerRadius": 12, "child": [{"type": "View", "id": "dyn_at_fill_q", "width": "matchParent", "height": "matchParent", "background": "#BBCCDD"}, {"type": "View", "id": "dyn_at_btn_q", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_q}", "child": [{"type": "Label", "id": "dyn_at_icon_q", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}], "alignTop": true, "alignRight": true, "topMargin": 8, "rightMargin": 8}]}, {"type": "View", "id": "dyn_at_box_s", "width": 300, "height": 40, "child": [{"type": "View", "id": "dyn_at_btn_s", "width": 30, "height": 30, "cornerRadius": 15, "background": "#333333", "gravity": "center", "onClick": "@{onBtn_s}", "child": [{"type": "Label", "id": "dyn_at_icon_s", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF", "width": "wrapContent", "height": "wrapContent"}]}]}, {"type": "View", "id": "dyn_at_btn_g", "orientation": "horizontal", "width": "matchParent", "height": 56, "topMargin": 24, "gravity": "center", "background": "#DDEEFF", "cornerRadius": 4, "onClick": "@{onBtn_g}", "child": [{"type": "Image", "id": "dyn_at_icon_g", "srcName": "conformance_sample", "width": 24, "height": 24, "rightMargin": 10}, {"type": "Label", "id": "dyn_at_label_g", "text": "Sign in", "width": "wrapContent", "height": "wrapContent"}]}, {"type": "View", "id": "dyn_at_box_h", "orientation": "vertical", "width": 300, "height": 50, "child": [{"type": "Label", "id": "dyn_at_btn_h", "text": "Tap", "width": "wrapContent", "height": "wrapContent", "topMargin": 12, "leftMargin": 11, "padding": 7, "background": "#FFDD00", "onClick": "@{onBtn_h}"}]}, {"type": "ScrollView", "id": "dyn_at_scroll_f", "width": "matchParent", "height": 230, "child": [{"type": "View", "id": "dyn_at_content_f", "width": "matchParent", "height": "wrapContent", "orientation": "vertical", "child": [{"type": "View", "id": "dyn_at_card_f", "width": "matchParent", "height": 200, "topMargin": 24, "cornerRadius": 12, "visibility": "@{fVisibility}", "onClick": "@{onCard_f}", "child": [{"type": "NetworkImage", "id": "dyn_at_image_f", "width": "matchParent", "height": "matchParent", "src": "@{fUrl}", "contentMode": "AspectFill", "cornerRadius": 12}, {"type": "View", "id": "dyn_at_btn_f", "width": 30, "height": 30, "cornerRadius": 15, "background": "#00000080", "gravity": "center", "alignTop": true, "alignRight": true, "topMargin": 8, "rightMargin": 8, "onClick": "@{onBtn_f}", "child": [{"type": "Label", "id": "dyn_at_icon_f", "width": "wrapContent", "height": "wrapContent", "text": "x", "fontSize": 14, "fontColor": "#FFFFFF"}]}]}]}]}], "data": [{"class": "String", "name": "hit", "defaultValue": ""}, {"class": "(() -> Void)?", "name": "onCard_m"}, {"class": "(() -> Void)?", "name": "onBtn_m"}, {"class": "(() -> Void)?", "name": "onCard_n"}, {"class": "(() -> Void)?", "name": "onBtn_n"}, {"class": "(() -> Void)?", "name": "onBtn_q"}, {"class": "(() -> Void)?", "name": "onBtn_s"}, {"class": "(() -> Void)?", "name": "onCard_f"}, {"class": "(() -> Void)?", "name": "onBtn_f"}, {"class": "String", "name": "fVisibility", "defaultValue": "visible"}, {"class": "String?", "name": "fUrl"}, {"class": "(() -> Void)?", "name": "onBtn_g"}, {"class": "(() -> Void)?", "name": "onBtn_h"}]}"##
 
     private var prefix: String { variant == "dyn" ? "dyn" : "cg" }
 
@@ -164,7 +168,7 @@ struct AnchorTapProbeView: View {
         let ready = A11yActivator.matches("at_ready", under: window).first { $0.isAccessibilityElement }
         let r = ready?.accessibilityFrame ?? .null
         let reference = String(format: "at_ready=%.2f,%.2f,%.2f,%.2f/0,0/1", r.minX, r.minY, r.width, r.height)
-        return ([reference] + ["m", "n", "q", "s", "f", "g"].map { k -> String in
+        return ([reference] + ["m", "n", "q", "s", "f", "g", "h"].map { k -> String in
             let id = "\(prefix)_at_btn_\(k)"
             let nodes = A11yActivator.matches(id, under: window).filter { $0.isAccessibilityElement }
             guard let node = nodes.first else { return "\(id)=none" }

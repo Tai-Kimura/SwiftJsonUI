@@ -61,5 +61,12 @@
       "var": "hit",
       "value": "btn_g"
     }
+  },
+  {
+    "name": "onBtn_h",
+    "set": {
+      "var": "hit",
+      "value": "btn_h"
+    }
   }
 ]
