@@ -57,11 +57,14 @@ final class StandardModifierOrderTests: XCTestCase {
         "hidden",
         "accessibilityAnchor",
         "conformanceFrame",
+        // The gestures inside the offset and the margins: the tap's receiver
+        // is the id box, margin out (jsonui-cli ticket sjui-a-combined-taps-
+        // id-box-takes-its-margin-in).
+        "events",
+        "hitTesting",
         "offset",
         "margins",
         "tint",
-        "events",
-        "hitTesting",
         "confirmationDialog",
         "alert",
         "safeAreaInsets",

@@ -158,6 +158,15 @@ public struct TextConverter {
         // --- 11. margins ---
         // The frames gate's measuring element, inside the margins (applyConformanceFrame).
         result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
+        // The tap, inside the offset and the margins (standardOrder: events and
+        // hitTesting after conformanceFrame): its receiver is the id box, margin
+        // out (jsonui-cli ticket sjui-a-combined-taps-id-box-takes-its-margin-in).
+        // --- 15. onClick ---
+        result = DynamicEventHelper.applyOnClick(result, component: component, data: data)
+
+        // userInteractionEnabled, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
         // The offset, at the standard order's place (standardOrder: conformance
         // frame, offset, margins). This chain does not run
         // applyStandardModifiers, and until 10.29.7 it had no offset stage, so
@@ -175,12 +184,6 @@ public struct TextConverter {
 
         // --- 14. disabled ---
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
-
-        // --- 15. onClick ---
-        result = DynamicEventHelper.applyOnClick(result, component: component, data: data)
-
-        // userInteractionEnabled, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
-        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
         // --- 16. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)

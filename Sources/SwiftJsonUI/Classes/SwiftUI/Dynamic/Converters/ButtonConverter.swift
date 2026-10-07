@@ -217,6 +217,20 @@ public struct ButtonConverter {
         // --- 4. apply_margins ---
         // The frames gate's measuring element, inside the margins (applyConformanceFrame).
         result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
+        // The tap, inside the offset and the margins (standardOrder: events and
+        // hitTesting after conformanceFrame): its receiver is the id box, margin
+        // out (jsonui-cli ticket sjui-a-combined-taps-id-box-takes-its-margin-in).
+        // --- 4.7. onLongPress (common attribute) ---
+        // Button runs its own modifier bag (no applyStandardModifiers), so the
+        // shared onLongPress gesture is applied here; simultaneousGesture keeps
+        // the Button's own tap action working.
+        result = DynamicEventHelper.applyOnLongPress(result, component: component, data: data)
+
+        // userInteractionEnabled, outside the button's
+        // own tap and long press (the standard chain's hitTesting stage, which
+        // this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
         // The offset, at the standard order's place (standardOrder: conformance
         // frame, offset, margins). This chain does not run
         // applyStandardModifiers, and until 10.29.7 it had no offset stage, so
@@ -246,17 +260,6 @@ public struct ButtonConverter {
             result = DynamicModifierHelper.applyConfirmationDialog(result, component: component, data: data)
             result = DynamicModifierHelper.applyAlert(result, component: component, data: data)
         }
-
-        // --- 4.7. onLongPress (common attribute) ---
-        // Button runs its own modifier bag (no applyStandardModifiers), so the
-        // shared onLongPress gesture is applied here; simultaneousGesture keeps
-        // the Button's own tap action working.
-        result = DynamicEventHelper.applyOnLongPress(result, component: component, data: data)
-
-        // userInteractionEnabled, outside the button's
-        // own tap and long press (the standard chain's hitTesting stage, which
-        // this hand-built chain did not run)
-        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
 
         // tintColor — the accent of the operable parts (a link's colour, the
         // cursor, a control's accent), never the text colour (jsonui-cli

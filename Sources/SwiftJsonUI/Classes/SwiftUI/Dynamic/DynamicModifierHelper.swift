@@ -1676,12 +1676,14 @@ public struct DynamicModifierHelper {
         // nothing unless a conformance host sets jsonuiConformanceFrameProbe.
         // codegen: modifier_order.json `conformance_frame`, same place.
         Stage("conformanceFrame") { v, c, _ in applyConformanceFrame(v, component: c) },
-        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
-        // margins — after the clip, the fade and the offset, as codegen writes
-        // them: a clip before them cuts at the view's own edge, not the
-        // margin's.
-        Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
-        Stage("tint") { v, c, d in applyTint(v, component: c, data: d) },
+        // The gestures, inside the offset and the margins where the anchor and
+        // the conformance frame are: the tap's receiver is the id box (margin
+        // out, padding in, moved by the offset — user ruling 2026-10-06), as
+        // Compose's clickable sits inside the margins. After the margins, the
+        // tap's content shape took the margin in: a tap in it ran the handler,
+        // and a combined tap's id read it (jsonui-cli ticket sjui-a-combined-
+        // taps-id-box-takes-its-margin-in). codegen: modifier_order.json,
+        // on_click … allows_hit_testing after conformance_frame.
         // onClick, onLongPress, onPan, onPinch, onAppear / onDisappear
         Stage("events") { v, c, d in
             DynamicEventHelper.applyEvents(v, component: c, data: d)
@@ -1693,6 +1695,12 @@ public struct DynamicModifierHelper {
         // -interactionGateProbe). codegen's order moved with it
         // (modifier_order.json: allows_hit_testing after on_pinch).
         Stage("hitTesting") { v, c, d in applyHitTesting(v, component: c, data: d) },
+        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
+        // margins — after the clip, the fade and the offset, as codegen writes
+        // them: a clip before them cuts at the view's own edge, not the
+        // margin's.
+        Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
+        Stage("tint") { v, c, d in applyTint(v, component: c, data: d) },
         Stage("confirmationDialog") { v, c, d in
             guard #available(iOS 15.0, *) else { return v }
             return applyConfirmationDialog(v, component: c, data: d)
