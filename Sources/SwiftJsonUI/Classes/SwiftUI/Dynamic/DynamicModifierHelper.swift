@@ -1194,7 +1194,8 @@ public struct DynamicModifierHelper {
     ]
 
     /// Component types guaranteed to surface at least one accessibility
-    /// element of their own when visible (text, controls, images). Types not
+    /// element of their own when visible (text, controls, images — an image
+    /// only with a written alt, imageSurelyAnElement). Types not
     /// listed (Collection, Table, Web, TabView, includes, bare decorative
     /// views…) may yield zero elements at runtime and are conservatively not
     /// counted by `accessibilityMergeHazard`.
@@ -1225,7 +1226,8 @@ public struct DynamicModifierHelper {
     /// BaseViewConverter#accessibility_merge_hazard?: a child contributes
     /// only when it is guaranteed present (no visibility binding /
     /// invisible / gone) and guaranteed to surface accessibility elements —
-    /// a certain element type contributes 1, an id-bearing container
+    /// a certain element type contributes 1 (an image only with a written
+    /// alt, imageSurelyAnElement), an id-bearing container
     /// contributes 1 (it becomes an explicit accessibility container
     /// itself), an id-less plain container contributes its own guaranteed
     /// children (promoted to the grandparent). Uncertainty errs toward
@@ -1296,7 +1298,31 @@ public struct DynamicModifierHelper {
             // enough — the caller only compares against 2)
             return min(guaranteedAccessibleChildCount(child), 2)
         }
+        // An image is an element only while its alt keeps it one
+        // (imageSurelyAnElement).
+        if ImageAccessibility.isImage(child.rawData) { return imageSurelyAnElement(child) ? 1 : 0 }
         return certainAccessibilityElementTypes.contains(typeName) ? 1 : 0
+    }
+
+    /// An image with no alt is decorative and hidden unless it operates a
+    /// control, which depends on the tappables around it (the environment
+    /// ImageAccessibilityModifier reads, not known here); one with alt "", or
+    /// a bound alt that resolves to "", is hidden too (ImageAccessibility).
+    /// Counted as a sure element, it made a container of a hidden image and
+    /// one tappable View read as two children, so the container took no
+    /// anchor and SwiftUI merged it into the View: the View's id read the
+    /// container's box, and from 10.29.7 a tap by that id landed on the box's
+    /// centre, on the container's own onClick (jsonui-cli ticket
+    /// sjui-a-tappable-elements-anchor-inside-its-tap-target-moves-the-tap-
+    /// point-off-it). So only an alt written as a non-empty string counts;
+    /// anything else errs toward the anchor. sjui_tools: BaseViewConverter
+    /// #image_surely_an_element?, the same rule.
+    static func imageSurelyAnElement(_ child: DynamicComponent) -> Bool {
+        // The alt as written, a string (ImageAccessibility.alt also reads a
+        // number as text; sjui's rule counts only a string).
+        guard let key = ImageAccessibility.altKeys.first(where: { child.rawData[$0] != nil }),
+              let alt = child.rawData[key] as? String else { return false }
+        return !alt.isEmpty && !alt.contains("@{")
     }
 
     /// Hands the layout box up to the conformance gate's measuring element

@@ -83,6 +83,49 @@ final class ContainerAccessibilityHazardTests: XCTestCase {
         XCTAssertTrue(DynamicModifierHelper.accessibilityMergeHazard(c))
     }
 
+    /// An image is an element only while its alt keeps it one: with no alt it
+    /// is decorative and hidden (unless the tappables around it make it a
+    /// control), with alt "" hidden, with a bound alt hidden when that is "".
+    /// Counted as sure, a hidden image and one tappable View read as two
+    /// children: the container took no anchor and SwiftUI merged it into the
+    /// View, whose id then read the container's box (jsonui-cli ticket
+    /// sjui-a-tappable-elements-anchor-inside-its-tap-target-moves-the-tap-
+    /// point-off-it). sjui_tools container_accessibility_spec holds the same rows.
+    private func imageAndLabel(_ image: String) throws -> DynamicComponent {
+        try component("""
+        { "type": "View", "id": "root",
+          "child": [ \(image), { "type": "Label", "text": "One" } ] }
+        """)
+    }
+
+    func testAnImageThatMayBeHiddenDoesNotCount() throws {
+        for type in ["Image", "NetworkImage", "CircleImage"] {
+            for extra in ["", #", "alt": """#, #", "alt": "@{photoAlt}""#, #", "accessibilityLabel": "@{photoAlt}""#] {
+                let c = try imageAndLabel(#"{ "type": "\#(type)", "src": "photo"\#(extra) }"#)
+                XCTAssertTrue(DynamicModifierHelper.accessibilityMergeHazard(c), "\(type)\(extra)")
+            }
+        }
+    }
+
+    func testAnImageWithANonEmptyAltCounts() throws {
+        for key in ["alt", "accessibilityLabel", "contentDescription"] {
+            let c = try imageAndLabel(#"{ "type": "NetworkImage", "src": "photo", "\#(key)": "Photo" }"#)
+            XCTAssertFalse(DynamicModifierHelper.accessibilityMergeHazard(c), key)
+        }
+    }
+
+    func testACardOfADecorativeImageAndOneTappableViewIsHazard() throws {
+        let c = try component("""
+        { "type": "View", "id": "card", "width": "matchParent", "height": 200, "onClick": "@{onCard}",
+          "child": [ { "type": "NetworkImage", "id": "photo", "width": "matchParent", "height": "matchParent",
+                       "src": "@{url}", "contentMode": "AspectFill" },
+                     { "type": "View", "id": "remove", "width": 30, "height": 30,
+                       "alignTop": true, "alignRight": true, "onClick": "@{onRemove}",
+                       "child": [ { "type": "Label", "text": "x" } ] } ] }
+        """)
+        XCTAssertTrue(DynamicModifierHelper.accessibilityMergeHazard(c))
+    }
+
     // MARK: - Safe shapes (no anchor; bounded depth cost)
 
     func testTwoGuaranteedElementsIsSafe() throws {
