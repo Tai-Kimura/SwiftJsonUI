@@ -26,6 +26,21 @@ public extension EnvironmentValues {
         get { self[JsonUIInteractionStoppedKey.self] }
         set { self[JsonUIInteractionStoppedKey.self] = newValue }
     }
+
+    /// True inside a control JsonUIStoppedControl holds stopped — its own
+    /// flag, a stop around it the build could see, or one handed down. A
+    /// part of the control that adds an action of its own reads it: a
+    /// TextField's clear button is the field's NAMED accessibility action,
+    /// which the stopped control's treatment does not remove (an empty
+    /// `.accessibilityActions { }` does not either; measured).
+    var jsonuiControlStopped: Bool {
+        get { self[JsonUIControlStoppedKey.self] }
+        set { self[JsonUIControlStoppedKey.self] = newValue }
+    }
+}
+
+private struct JsonUIControlStoppedKey: EnvironmentKey {
+    static var defaultValue: Bool { false }
 }
 
 /// A control a stop holds — a Switch, a Button, a Slider, a text field
@@ -42,7 +57,9 @@ public extension EnvironmentValues {
 /// alternative `.disabled(true)` dims it). Not stopped: the view as it is.
 ///
 /// `items`: a control whose items are elements of their own — a Segment
-/// (a segmented Picker: UIKit's segments). What the modifiers above change is
+/// (a segmented Picker: UIKit's segments), and a Radio with items (one
+/// element that contains its options, whose treatment lands on the group and
+/// not on the options; ticket sjui-dynamic-radio-item-operable-inside-a-stop). What the modifiers above change is
 /// the control's element, and a segment is not one: inside a stop each
 /// segment still read as a button that responds (measured, ConformanceHost
 /// `-a11yActivationProbe -wrappers`, iOS 26.5; a touch was stopped). With
@@ -64,9 +81,12 @@ public struct JsonUIStoppedControl: ViewModifier {
 
     public func body(content: Content) -> some View {
         if (stopped || handedDown) && items {
-            content.accessibilityRepresentation { content.disabled(true) }
+            content
+                .environment(\.jsonuiControlStopped, true)
+                .accessibilityRepresentation { content.disabled(true) }
         } else if stopped || handedDown {
             content
+                .environment(\.jsonuiControlStopped, true)
                 .accessibilityAction { }
                 .accessibilityRemoveTraits([.isButton, .isToggle])
                 .accessibilityRespondsToUserInteraction(false)

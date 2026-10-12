@@ -353,7 +353,7 @@ struct A11yActivationCodegenBody: View {
                             }
                         }
                             .accessibilityElement(children: .contain)
-                            .jsonuiStoppedControl(true)
+                            .jsonuiStoppedControl(true, items: true)
                             .accessibilityIdentifier("cgRadInFalse")
                 }
                     .allowsHitTesting(false)

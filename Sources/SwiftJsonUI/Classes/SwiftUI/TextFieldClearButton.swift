@@ -38,6 +38,9 @@ public struct TextFieldClearButtonModifier: ViewModifier {
     @SwiftUI.Binding private var text: String
     private let isEditing: Bool
     private let accessibilityLabel: String
+    /// A stop holds the field (JsonUIStoppedControl), or one is handed down.
+    @Environment(\.jsonuiControlStopped) private var controlStopped
+    @Environment(\.jsonuiInteractionStopped) private var stoppedAround
 
     public init(
         mode: TextFieldClearButtonMode,
@@ -71,10 +74,16 @@ public struct TextFieldClearButtonModifier: ViewModifier {
             // TextField's id, and the test driver's tap (which ranks buttons
             // first) pressed it and cleared the text (ticket
             // sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
-            // VoiceOver reaches it as the field's named action.
-            .accessibilityAction(named: Text(accessibilityLabel)) {
+            // VoiceOver reaches it as the field's named action — except
+            // while a stop holds the field: the stopped control's treatment
+            // takes the field's own action but not a named one, so the clear
+            // stayed in VoiceOver's actions and emptied a field the layout
+            // stopped (measured, ConformanceHost -a11yActivationProbe
+            // -textFields, both routes; ticket
+            // sjui-dynamic-radio-item-operable-inside-a-stop).
+            .modifier(ClearAction(label: accessibilityLabel, enabled: !(controlStopped || stoppedAround)) {
                 if isVisible { text = "" }
-            }
+            })
             .overlay(alignment: .trailing) {
                 if isVisible {
                     Button {
@@ -110,5 +119,20 @@ public extension View {
                 accessibilityLabel: accessibilityLabel
             )
         )
+    }
+}
+
+/// The clear button's named accessibility action, attached only when enabled.
+private struct ClearAction: ViewModifier {
+    let label: String
+    let enabled: Bool
+    let clear: () -> Void
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content.accessibilityAction(named: Text(label), clear)
+        } else {
+            content
+        }
     }
 }

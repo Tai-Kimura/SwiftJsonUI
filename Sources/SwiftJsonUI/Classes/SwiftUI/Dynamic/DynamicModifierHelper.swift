@@ -1149,11 +1149,24 @@ public struct DynamicModifierHelper {
     /// A control whose items are elements of their own, which the stopped
     /// control's treatment has to reach as the control's representation
     /// (JsonUIStoppedControl `items`): a Segment — a segmented Picker, whose
-    /// segments are UIKit's. A Radio's items are SwiftUI views the treatment
-    /// already reaches (measured, `-a11yActivationProbe -wrappers`).
+    /// segments are UIKit's — and a Radio with items. A Radio group is ONE
+    /// element that contains its options (`.accessibilityElement(children:
+    /// .contain)`, RadioConverter), so the treatment put on it lands on the
+    /// group and not on the options: inside a stop each option still
+    /// responded (measured, ConformanceHost -a11yActivationProbe, iOS 26.5,
+    /// since 9768b01; before it the group was no element and the treatment
+    /// reached every option). Ticket sjui-dynamic-radio-item-operable-inside-a-stop.
+    /// The items test is RadioConverter's own (`items` non-empty).
     static func holdsItemElements(_ component: DynamicComponent) -> Bool {
         guard let type = component.type else { return false }
-        return TypeSynonyms.drawnType(type).lowercased() == "segment"
+        switch TypeSynonyms.drawnType(type).lowercased() {
+        case "segment":
+            return true
+        case "radio":
+            return !(component.stringList(SelectBoxAttributes.self, \.items) ?? []).isEmpty
+        default:
+            return false
+        }
     }
 
     /// `userInteractionEnabled` false, or a binding resolving false — the
