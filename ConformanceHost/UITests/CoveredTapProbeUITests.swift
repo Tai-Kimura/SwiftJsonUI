@@ -21,11 +21,42 @@ import XCTest
 
 final class CoveredTapProbeUITests: XCTestCase {
 
+    /// What the driver writes to stderr while `body` runs. The driver's
+    /// notices (`ActionExecutor.note`) go to this process's standard error
+    /// and nowhere else, so the probe reads them by pointing fd 2 at a pipe
+    /// for the duration of one step.
+    private func capturingStandardError(_ body: () throws -> Void) rethrows -> String {
+        let pipe = Pipe()
+        let saved = dup(STDERR_FILENO)
+        dup2(pipe.fileHandleForWriting.fileDescriptor, STDERR_FILENO)
+        defer {
+            dup2(saved, STDERR_FILENO)
+            close(saved)
+        }
+        try body()
+        fflush(stderr)
+        dup2(saved, STDERR_FILENO)
+        pipe.fileHandleForWriting.closeFile()
+        let text = String(decoding: pipe.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+        FileHandle.standardError.write(Data(text.utf8))  // still visible in the log
+        return text
+    }
+
     private func result(_ app: XCUIApplication) -> String {
         app.staticTexts["covered_probe_result"].label
     }
 
-    func testTapOnACoveredElementReachesTheElementNotTheCover() throws {
+    /// The ruling (jsonui-cli v1.8.24 report §6, driver 1.9.12): a covered
+    /// element's tap goes by coordinate and is NOT refused — that branch is
+    /// right for remote-process UI (a photo picker, an iPad keyboard key),
+    /// and XCUITest publishes no z-order to tell the two apart. What the
+    /// driver owes is to say so: the switch to the frame centre, and the
+    /// other elements at that point. This probe pins that behaviour: the cover
+    /// receives the tap AND both notices are written. Until 2026-10-13 it
+    /// asserted the opposite ("the target receives it"), which the ruling
+    /// decided against, and it never ran in CI (ticket
+    /// conformance-mobile-ios-probe-guards-never-run-in-dispatch).
+    func testACoveredTapGoesToTheCoverAndTheDriverSaysSo() throws {
         guard ProcessInfo.processInfo.environment["COVERED_TAP_PROBE"] == "1" else {
             throw XCTSkip("covered tap probe: run with the guard lifted, as the other probes are")
         }
@@ -65,16 +96,29 @@ final class CoveredTapProbeUITests: XCTestCase {
         XCTAssertEqual(result(app), "tapped: none", "reset did not take")
 
         let executor = XCUITestActionExecutor(platform: "ios")
-        try executor.execute(step: TestStep(action: "tap", id: "covered_target"), in: app)
+        let notices = try capturingStandardError {
+            try executor.execute(step: TestStep(action: "tap", id: "covered_target"), in: app)
+        }
 
         let fired = result(app)
         print("CTAP_PROBE_RESULT \(fired)")
 
+        // Not refused: the coordinate tap goes ahead, and lands on the cover.
         XCTAssertEqual(
-            fired, "tapped: target",
-            "TAP ROUTING: the tap aimed at 'covered_target' was received by \(fired). "
-            + "`.frameCenter` taps the coordinate, so a covered element hands its tap to whatever "
-            + "is drawn on top — 'tapped: cover' is that defect reaching the surface, and it is the "
-            + "same shape as the 1.9.4 fixed-bar case recorded in TapRouting's docstring")
+            fired, "tapped: cover",
+            "TAP ROUTING: the tap aimed at 'covered_target' was received by \(fired). By the ruling "
+            + "the driver taps the frame centre and does not refuse, so the cover drawn there "
+            + "receives it; anything else means the route or the fixture changed")
+
+        // Said so. The fragments are the driver's own text
+        // (jsonui-test-runner-ios ActionExecutor.tapResolvingHittability).
+        XCTAssertTrue(
+            notices.contains("tap 'covered_target': exists but isHittable == false")
+                && notices.contains("tapping the frame center instead of the element"),
+            "the driver did not announce the switch to the frame centre; stderr was: \(notices)")
+        XCTAssertTrue(
+            notices.contains("tap 'covered_target': ⚠️")
+                && notices.contains("other element(s) have that coordinate inside their frame"),
+            "the driver did not name the other elements at the tapped point; stderr was: \(notices)")
     }
 }
