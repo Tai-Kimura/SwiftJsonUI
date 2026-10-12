@@ -88,6 +88,65 @@ final class A11yActivationProbeUITests: XCTestCase {
         }
     }
 
+    /// A TextField a stop holds offers no clear to a screen reader, or one
+    /// that clears nothing (`-textFields`, TextFieldStopRows). The clear
+    /// button is the field's NAMED accessibility action (9768b01), which the
+    /// stopped control's treatment did not remove: the action stayed in
+    /// VoiceOver's actions and emptied the stopped field, Dynamic and codegen
+    /// (ticket sjui-dynamic-radio-item-operable-inside-a-stop). The fields
+    /// with no stop are the instrument's control: there the clear is offered
+    /// and empties the field. The codegen rows are generated
+    /// (ProbeLayouts/probe_a11y_text_fields.json) and exist only in the
+    /// codegen host, where they are required.
+    func testAStoppedTextFieldCannotBeClearedByAScreenReader() throws {
+        guard ProcessInfo.processInfo.environment["A11Y_ACTIVATION_PROBE"] == "1" else {
+            throw XCTSkip("a11y activation probe: run with the guard lifted, as the other probes are")
+        }
+        let codegenHost = ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
+        let app = XCUIApplication()
+        app.launchArguments = ["-a11yActivationProbe", "-textFields"]
+        if codegenHost { app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen" }
+        app.launch()
+        XCTAssertTrue(app.staticTexts["a11y_probe_ready"].waitForExistence(timeout: 15), "probe did not start")
+        XCTAssertFalse(app.staticTexts["a11y_decode_failed"].exists, "the dynamic layout did not decode")
+        let readout = app.staticTexts["a11y_readout"]
+        app.buttons["a11y_run"].tap()
+        let done = expectation(for: NSPredicate(format: "label BEGINSWITH %@", "ran=1 "), evaluatedWith: readout)
+        wait(for: [done], timeout: 60)
+        let text = readout.label
+        print("A11Y_TEXTFIELDS \(text)")
+
+        // name=via/responds/actions/before/after
+        var rows: [String: [String]] = [:]
+        for part in section(text, "act")?.split(separator: ";") ?? [] {
+            let kv = part.split(separator: "=", maxSplits: 1)
+            if kv.count == 2 { rows[String(kv[0])] = kv[1].split(separator: "/", omittingEmptySubsequences: false).map(String.init) }
+        }
+        let sides = codegenHost ? ["dyn", "cg"] : ["dyn"]
+        if !codegenHost {
+            for id in ["cg_tf_plain", "cg_tf_infalse", "cg_tf_selffalse"] {
+                XCTAssertEqual(rows[id]?.first, "none", "\(id): a generated row in the dynamic host")
+            }
+        }
+        for side in sides {
+            let (plain, inFalse, selfFalse) = side == "dyn"
+                ? ("dynTfPlain", "dynTfInFalse", "dynTfSelfFalse")
+                : ("cg_tf_plain", "cg_tf_infalse", "cg_tf_selffalse")
+            guard let p = rows[plain], p.count == 5 else { XCTFail("\(plain): no row in \(text)"); continue }
+            // The control: no stop, the clear is offered and empties the field.
+            XCTAssertTrue(p[2].split(separator: "|").contains("Clear text"), "\(plain): no clear offered (\(p)) — the instrument cannot see it")
+            XCTAssertEqual(p[3], "abc", "\(plain): the field did not start with its text (\(p))")
+            XCTAssertEqual(p[4], "", "\(plain): the clear did not empty the field (\(p)) — the instrument cannot act")
+            for id in [inFalse, selfFalse] {
+                guard let r = rows[id], r.count == 5 else { XCTFail("\(id): no row in \(text)"); continue }
+                XCTAssertNotEqual(r[0], "none", "\(id): not found")
+                let offered = r[2].split(separator: "|").contains("Clear text")
+                XCTAssertTrue(!offered || r[4] == r[3],
+                              "\(id): a stopped field was emptied by its clear action (\(r))")
+            }
+        }
+    }
+
     func testAScreenReaderCannotOperateWhatAStopHolds() throws {
         guard ProcessInfo.processInfo.environment["A11Y_ACTIVATION_PROBE"] == "1" else {
             throw XCTSkip("a11y activation probe: run with the guard lifted, as the other probes are")

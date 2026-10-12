@@ -296,6 +296,7 @@ struct A11yActivationCodegenBody: View {
                         Text("b")
                     }
                 }
+                    .accessibilityElement(children: .contain)
                     .accessibilityIdentifier("cgRadPlain")
                 VStack(alignment: .leading, spacing: 4) {
                         StateAwareButtonView(
@@ -351,6 +352,7 @@ struct A11yActivationCodegenBody: View {
                                 Text("b")
                             }
                         }
+                            .accessibilityElement(children: .contain)
                             .jsonuiStoppedControl(true)
                             .accessibilityIdentifier("cgRadInFalse")
                 }
@@ -696,6 +698,7 @@ struct A11yActivationProbeView: View {
     /// the activation point VoiceOver touches when `returned` is 0.
     private func run() {
         if Self.wrappersOnly { runWrappers(); return }
+        if Self.textFieldsOnly { runTextFields(); return }
         // The wrapper controls with no stop start each run on their first
         // item, so the item a run operates ("b", an unselected glyph) moves
         // the selection again.
@@ -799,6 +802,42 @@ struct A11yActivationProbeView: View {
         step(0)
     }
 
+    /// `-textFields`: for each TextField row, what a screen reader is offered
+    /// and what it does — its named actions, and the value before and after
+    /// performing the clear one when it is there. One entry each:
+    /// `name=via/responds/actions/before/after` (`actions` joined by `|`,
+    /// `-` for none; `after` is `-` when nothing was performed).
+    private func runTextFields() {
+        let phase = data.ran + 1
+        func clean(_ s: String?) -> String {
+            (s ?? "").replacingOccurrences(of: "/", with: "|").replacingOccurrences(of: ";", with: ",")
+                .replacingOccurrences(of: "=", with: ":").replacingOccurrences(of: "]", with: ")")
+        }
+        var entries: [String] = []
+        var pending: [(String, NSObject, String, String, String)] = []
+        for id in TextFieldStopRows.ids {
+            let (found, via, _) = A11yActivator.target(id, scope: nil)
+            guard let element = found else { entries.append("\(id)=\(via)/-/-/-/-"); continue }
+            let actions = element.accessibilityCustomActions ?? []
+            let names = actions.isEmpty ? "-" : actions.map { clean($0.name) }.joined(separator: "|")
+            let before = clean(element.accessibilityValue)
+            let responds = element.accessibilityRespondsToUserInteraction ? "1" : "0"
+            if let clear = actions.first(where: { $0.name == "Clear text" }) {
+                _ = clear.actionHandler?(clear)
+                pending.append((id, element, "\(via)/\(responds)/\(names)", before, ""))
+            } else {
+                entries.append("\(id)=\(via)/\(responds)/\(names)/\(before)/-")
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            for (id, element, head, before, _) in pending {
+                entries.append("\(id)=\(head)/\(before)/\(clean(element.accessibilityValue))")
+            }
+            data.act = entries.joined(separator: ";")
+            data.ran = phase
+        }
+    }
+
     // Lets and one interpolated literal (see InteractionGateProbeView): the
     // counts are live, so the UI test reads what a touch moved as well.
     private var readout: String {
@@ -815,6 +854,8 @@ struct A11yActivationProbeView: View {
     static let candidatesOnly = ProcessInfo.processInfo.arguments.contains("-candidates")
     /// `-wrappers`: the wrapper controls' candidates (WrapperStopCandidates).
     static let wrappersOnly = ProcessInfo.processInfo.arguments.contains("-wrappers")
+    /// `-textFields`: TextFields inside a stop and not (TextFieldStopRows).
+    static let textFieldsOnly = ProcessInfo.processInfo.arguments.contains("-textFields")
 
     @ViewBuilder private var candidatesBlock: some View {
         // not emitted: the candidate fixes, inside a stop as emitted — the
@@ -960,6 +1001,8 @@ struct A11yActivationProbeView: View {
                 .accessibilityIdentifier("a11y_readout")
             if Self.wrappersOnly {
                 WrapperStopCandidates(data: data)
+            } else if Self.textFieldsOnly {
+                TextFieldStopRows()
             } else if Self.candidatesOnly {
                 ScrollView { VStack(alignment: .leading, spacing: 4) { candidatesBlock } }
             } else {
@@ -1105,6 +1148,48 @@ struct ProbeStoppedItems: ViewModifier {
             content.accessibilityRepresentation { content.disabled(true) }
         } else {
             content
+        }
+    }
+}
+
+// MARK: - TextFields inside a stop (`-textFields`)
+
+/// A TextField with a clear button, with no stop, inside
+/// `userInteractionEnabled: false`, and with false of its own — on both
+/// routes. The clear button is the field's NAMED accessibility action, which
+/// the stopped control's treatment did not remove: a screen reader emptied a
+/// field the layout stopped (ticket sjui-dynamic-radio-item-operable-inside-a-stop).
+/// The codegen rows are what sjui generated from
+/// ProbeLayouts/probe_a11y_text_fields.json (codegen host only), put here
+/// with nothing around them — an identifier on the generated view would
+/// replace the ids inside it.
+struct TextFieldStopRows: View {
+    static let dynamicIds = ["dynTfPlain", "dynTfInFalse", "dynTfSelfFalse"]
+    static let codegenIds = ["cg_tf_plain", "cg_tf_infalse", "cg_tf_selffalse"]
+    static let ids = dynamicIds + codegenIds
+
+    static let layout: DynamicComponent? = {
+        let field = { (id: String, extra: String) in
+            ##"{"type": "TextField", "id": "\##(id)", "width": 160, "height": 36, "text": "abc", "clearButtonMode": "always"\##(extra)}"##
+        }
+        let json = #"{"type": "View", "orientation": "vertical", "spacing": 6, "child": ["#
+            + field("dynTfPlain", "") + ", "
+            + #"{"type": "View", "id": "dynTfParFalse", "orientation": "vertical", "userInteractionEnabled": false, "child": ["#
+            + field("dynTfInFalse", "") + "]}, "
+            + field("dynTfSelfFalse", #", "userInteractionEnabled": false"#) + "]}"
+        return try? JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+    }()
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 8) {
+            if let generated = CodegenFixtureRegistry.probeView(named: "probe_a11y_text_fields") {
+                generated
+            }
+            if let layout = Self.layout {
+                DynamicComponentBuilder(component: layout, data: [:])
+            } else {
+                Text("layout did not decode").accessibilityIdentifier("a11y_decode_failed")
+            }
         }
     }
 }
