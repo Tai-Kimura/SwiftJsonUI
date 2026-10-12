@@ -3,8 +3,8 @@
 //  ConformanceHostUITests
 //
 //  Screen-marker measurement (screen-identity track, Phase 0) — NOT part of
-//  the conformance suite. Compiled in only when built with
-//  OTHER_SWIFT_FLAGS='$(inherited) -DSCREEN_MARKER_PROBE'.
+//  the conformance suite. Opt-in, like the other probes:
+//  TEST_RUNNER_SCREEN_MARKER_PROBE=1 in the xcodebuild process environment.
 //
 //  These tests measure two things the canon cannot assume:
 //
@@ -60,16 +60,21 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         return app
     }
 
-    /// Compile-time gate, deliberately not an environment variable:
-    /// `TEST_RUNNER_*` forwarding was measured NOT to reach the runner
-    /// process with this toolchain (only SIMULATOR_* arrives), so an env
-    /// gate would silently skip forever. A command-line build setting always
-    /// reaches the compiler, so this one cannot rot unnoticed — and with the
-    /// flag absent the probe compiles out of the nightly full-scheme run.
+    /// An environment gate, as every other probe's: `SCREEN_MARKER_PROBE`
+    /// set to "1" (`TEST_RUNNER_SCREEN_MARKER_PROBE=1` in the xcodebuild
+    /// process environment). It was a compile-time flag (OTHER_SWIFT_FLAGS)
+    /// because `TEST_RUNNER_*` forwarding was measured not to reach the
+    /// runner process (2026-07). It reaches it now: the image probes and 22
+    /// other env-gated probes ran with it (conformance-mobile run
+    /// 38276352120 and a local run, Xcode 27 RC, 2026-10-13). And the flag
+    /// had a cost the env does not: no dispatch input set it, so these 14
+    /// tests never ran in CI. conformance-mobile now raises every gate of the
+    /// form `["X"] == "1"` it finds in these sources, this one included
+    /// (ticket conformance-mobile-ios-probe-guards-never-run-in-dispatch).
     private func skipUnlessEnabled() throws {
-        #if !SCREEN_MARKER_PROBE
-        throw XCTSkip("screen marker probe: build with OTHER_SWIFT_FLAGS='$(inherited) -DSCREEN_MARKER_PROBE' to run")
-        #endif
+        guard ProcessInfo.processInfo.environment["SCREEN_MARKER_PROBE"] == "1" else {
+            throw XCTSkip("screen marker probe: run with the guard lifted, as the other probes are")
+        }
     }
 
     // MARK: - Shape: does the marker damage the screen it marks?
