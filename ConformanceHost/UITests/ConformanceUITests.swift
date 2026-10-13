@@ -193,6 +193,31 @@ final class ConformanceUITests: XCTestCase {
     /// +20.2s is two fixtures x this timeout, with no build in the delta.
     private let webLoadTimeout: TimeInterval = 10.0
 
+    /// 🔻 THE LOAD MARKER SAYS "LOADED", NOT "DRAWN". It flips on the web
+    /// view's didFinish, and a WKWebView draws in its own process: run
+    /// 38470376663 captured Web/html__static after the marker had flipped
+    /// (waitedThenSettled) and the picture was blank — ink 0, where the codegen
+    /// face drew 533. So before a Web fixture's screenshot the host also waits
+    /// for the web view's region of the screen to be more than one colour,
+    /// reading the screen itself (the same screenshot it is about to take).
+    /// Polled every `webPaintPoll`; at `webPaintTimeout` the capture is taken
+    /// anyway and the result says why (`web_settle: timeout`) — a page that
+    /// never draws is an answer to read, not a hang. The specimen that makes
+    /// the race happen on a fast machine is the host's WebPaintDelaySpecimen
+    /// (CONFORMANCE_WEB_PAINT_DELAY): without this wait it captures a blank
+    /// web view.
+    private let webPaintTimeout: TimeInterval = 10.0
+    private let webPaintPoll: TimeInterval = 0.25
+
+    /// A Web fixture whose correct picture IS one colour — the paint wait
+    /// would run to its timeout on every run. Declared, never derived: an
+    /// absent id means the page must draw. None today (Web/html__static and
+    /// __control/Web both draw).
+    static let webBlankIsCorrect: [String: String] = [:]
+
+    /// How each Web capture's paint wait ended, printed at the end of the run.
+    private var webPaint = (atOnce: 0, waited: 0, timedOut: 0, declaredBlank: 0)
+
     /// Optional filter for debugging: run only fixtures whose id contains one
     /// of these comma-separated substrings
     /// (env CONFORMANCE_FILTER via TEST_RUNNER_CONFORMANCE_FILTER).
@@ -316,6 +341,9 @@ final class ConformanceUITests: XCTestCase {
             + "JSONUI_CONFORMANCE_WEB_MARKERS reached the app and that the "
             + "linked SwiftJsonUI is v10.23.0 or newer.")
 
+        print("[conformance] web paint: drawn at once \(webPaint.atOnce), drawn after waiting \(webPaint.waited), "
+              + "timed out \(webPaint.timedOut), declared blank \(webPaint.declaredBlank)")
+
         let counts = Dictionary(grouping: ordered, by: { $0.status }).mapValues { $0.count }
         print("[conformance] finished: \(counts) webMarkers: "
               + "runnable=\(webMarkerCensus.webFixturesRunnable) "
@@ -429,6 +457,10 @@ final class ConformanceUITests: XCTestCase {
             // fixture lands in `markerAbsent`, and the suite must go red.
             // Permanent rather than a temporary edit, so re-running the control
             // later costs one env var instead of rediscovering how.
+            // The paint-delay specimen (App/WebPaintDelaySpecimen.swift), when the run declares one.
+            if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_WEB_PAINT_DELAY"] {
+                app.launchEnvironment["CONFORMANCE_WEB_PAINT_DELAY"] = delay
+            }
             if ProcessInfo.processInfo.environment["CONFORMANCE_WEB_MARKERS_OFF"] != "1" {
                 app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
             }
@@ -576,6 +608,8 @@ final class ConformanceUITests: XCTestCase {
         // (Embed's pop after a push), not because the tap was slow.
         var lastActionStart = fixtureStart
         var tapCount = 0
+        // `web_settle: timeout …` when a Web capture's paint wait ran out.
+        var settleNote = ""
 
         for testCase in screenTest.cases {
             if testCase.skip == true { continue }
@@ -585,6 +619,9 @@ final class ConformanceUITests: XCTestCase {
                 // Screenshot steps are handled here (the driver only attaches
                 // to the xcresult; conformance needs a stable artifact file).
                 if step.action == "screenshot", let name = step.name {
+                    if fixture.host == "Web" {
+                        settleNote = waitForWebPaint(fixture, app: app)
+                    }
                     do {
                         screenshotPath = try captureScreenshot(named: name, app: app)
                         (framesPath, framesUnrecorded) = recordFrames(named: name, fixture: fixture, app: app)
@@ -652,7 +689,59 @@ final class ConformanceUITests: XCTestCase {
             }
         }
 
-        return FixtureResult(id: fixture.id, status: "pass", detail: "", screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
+        return FixtureResult(id: fixture.id, status: "pass", detail: settleNote, screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
+    }
+
+    /// Waits until the web view's region of the screen holds more than one
+    /// colour (webPaintTimeout). Returns "" when it did, the reason otherwise.
+    private func waitForWebPaint(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication) -> String {
+        if Self.webBlankIsCorrect[fixture.id] != nil {
+            webPaint.declaredBlank += 1
+            return ""
+        }
+        let start = Date()
+        var polls = 0
+        while true {
+            polls += 1
+            if webRegionHasInk(app) {
+                if polls == 1 { webPaint.atOnce += 1 } else { webPaint.waited += 1 }
+                if polls > 1 {
+                    print(String(format: "[conformance] %@: the web view drew %.2fs after the load marker", fixture.id,
+                                 Date().timeIntervalSince(start)))
+                }
+                return ""
+            }
+            if Date().timeIntervalSince(start) >= webPaintTimeout {
+                webPaint.timedOut += 1
+                return "web_settle: timeout — the web view's region stayed one colour for \(Int(webPaintTimeout))s after the load marker"
+            }
+            Thread.sleep(forTimeInterval: webPaintPoll)
+        }
+    }
+
+    /// Whether the screen inside the web view's frame (the app's frame below
+    /// the status bar when there is no web view element) has more than one
+    /// grey level — the gate's own "ink" (baseline.ink_file), so a region it
+    /// would call blank is one this calls blank.
+    private func webRegionHasInk(_ app: XCUIApplication) -> Bool {
+        let web = app.webViews.firstMatch
+        var region = web.exists ? web.frame : app.frame
+        if !web.exists { region = region.inset(by: UIEdgeInsets(top: 54, left: 0, bottom: 0, right: 0)) }
+        let image = app.screenshot().image
+        guard let cg = image.cgImage, region.width > 1, region.height > 1 else { return true }
+        let scale = image.scale
+        let px = CGRect(x: region.minX * scale, y: region.minY * scale,
+                        width: region.width * scale, height: region.height * scale).integral
+            .intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        guard let cropped = cg.cropping(to: px) else { return true }
+        let w = cropped.width, h = cropped.height
+        var grey = [UInt8](repeating: 0, count: w * h)
+        guard let ctx = CGContext(data: &grey, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+        else { return true }
+        ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let first = grey[0]
+        return grey.contains { $0 != first }
     }
 
     /// `exists / hittable / frame` of the first element with this identifier.

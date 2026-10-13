@@ -231,7 +231,7 @@ public struct WebView: UIViewRepresentable {
         /// Set once onLoadFailed has been called for the current load, so a
         /// 4xx/5xx response whose body then fails to arrive is one failure.
         var loadFailureReported = false
-        /// The 1x1 element whose identifier says whether the page has painted.
+        /// The 1x1 element whose identifier says whether the page's navigation has settled (didFinish or a failure) — loaded, not drawn: the page can reach the screen later (the conformance host waits for that separately).
         /// Only made when the host asks for it; nil for every other caller.
         weak var loadMarker: UIView?
         
