@@ -24,6 +24,17 @@ enum Landing {
     /// - it has answered the same for `still` seconds — the list stays where
     ///   it is, or stopped somewhere; the caller's assertion says which;
     /// - `budget` seconds have passed since the call.
+    ///
+    /// 🔻 STILL COUNTS ONLY ONCE THE LIST HAS MOVED, OR SITS WHERE IT SHOULD.
+    /// A reading equal to `before` that is not the landing is a list that has
+    /// not started: counting `still` from the first read ended the wait one
+    /// second after the tap, so a scroll that began later than that was read
+    /// where it started (CONFORMANCE_SCROLL_START_DELAY, the start-delay
+    /// specimen, holds it back on purpose). Until it moves only `budget`
+    /// bounds the wait. A reading equal to `before` that IS the landing — a
+    /// step whose target is where the list already is — still rests after
+    /// `still`. With no `before` there is nothing to have moved from, and
+    /// `still` counts from the first read.
     /// Prints `LANDING <name>` with every change of the reading and its time,
     /// and returns that line for the caller's report.
     @discardableResult
@@ -54,6 +65,9 @@ enum Landing {
             if isLanded && value != before {
                 outcome = String(format: "landed %.2fs", t)
                 break
+            }
+            if before != nil && value == before && !isLanded {
+                since = now // not started yet: rest is not counted
             }
             if now.timeIntervalSince(since) >= still {
                 outcome = String(format: "still %.0fs at %.2fs", still, t)

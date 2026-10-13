@@ -27,6 +27,10 @@ final class ScrollRuleProbeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [argument]
         if codegenHost { app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen" }
+        // The start-delay specimen (App/ProbeStartDelay.swift), when the run declares one.
+        if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_SCROLL_START_DELAY"] {
+            app.launchEnvironment["CONFORMANCE_SCROLL_START_DELAY"] = delay
+        }
         app.launch()
         XCTAssertTrue(app.staticTexts["sr_ready"].waitForExistence(timeout: 15), "probe did not start")
         XCTAssertEqual(app.staticTexts["sr_codegen"].exists, codegenHost, "the generated half is there iff this is the codegen host")
@@ -49,8 +53,28 @@ final class ScrollRuleProbeUITests: XCTestCase {
 
     /// The label at the top of the list in `frame`: of `labels` on screen,
     /// the one nearest below the list's top edge (a label sits 4pt into its
-    /// view), with how far below.
+    /// view), with how far below. One snapshot (ProbeSnapshot), not a query
+    /// per label.
     private func top(of frame: XCUIElement, among labels: [String]) -> String {
+        let snap = ProbeSnapshot(frame, labels: labels)
+        var best: (String, CGFloat)? = nil
+        for label in labels {
+            guard let f = snap?.visible(label) else { continue }
+            let offset = f.minY - snap!.frame.minY
+            if offset >= -2 && offset < (best?.1 ?? .infinity) { best = (label, offset) }
+        }
+        let got = best.map { $0.1 < 10 ? $0.0 : "\($0.0)@\(Int($0.1))" } ?? "none"
+        if ProbeSnapshot.compare {
+            let old = queriedTop(of: frame, among: labels)
+            let partly = labels.filter { snap?.partlyVisible($0) ?? false }
+            print("PROBE_READ \(old == got ? "SAME" : "DIFF") top | queried: \(old) | snapshot: \(got) | partly visible: \(partly)")
+        }
+        return got
+    }
+
+    /// `top` by one query per label — what the probe read before
+    /// ProbeSnapshot. Only for CONFORMANCE_PROBE_READ_COMPARE=1.
+    private func queriedTop(of frame: XCUIElement, among labels: [String]) -> String {
         let listTop = frame.frame.minY
         var best: (String, CGFloat)? = nil
         for label in labels {
@@ -79,20 +103,22 @@ final class ScrollRuleProbeUITests: XCTestCase {
             let indexBefore = top(of: half.index, among: listLabels)
             lines.append("\(half.name) index before: top=\(indexBefore)")
             app.buttons[half.goIndex].tap()
+            var landed = indexBefore
             lines.append(Landing.wait("\(half.name) index go 6", from: indexBefore, landed: { $0 == "B1" }) {
-                top(of: half.index, among: listLabels)
+                landed = top(of: half.index, among: listLabels)
+                return landed
             })
-            let landed = top(of: half.index, among: listLabels)
             lines.append("\(half.name) index after 6: top=\(landed)")
             XCTAssertEqual(landed, "B1", "\(half.name): scrollTo 6 did not land on B1, the seventh cell")
 
             let keyBefore = top(of: half.key, among: keyLabels)
             lines.append("\(half.name) key before: top=\(keyBefore)")
             app.buttons[half.goKey].tap()
+            var keyed = keyBefore
             lines.append(Landing.wait("\(half.name) key go k3", from: keyBefore, landed: { $0 == "a3" }) {
-                top(of: half.key, among: keyLabels)
+                keyed = top(of: half.key, among: keyLabels)
+                return keyed
             })
-            let keyed = top(of: half.key, among: keyLabels)
             lines.append("\(half.name) key after k3: top=\(keyed)")
             XCTAssertEqual(keyed, "a3", "\(half.name): scrollTo \"k3\" did not land on a3, the first section's cell")
         }
@@ -115,10 +141,11 @@ final class ScrollRuleProbeUITests: XCTestCase {
             for (value, expected) in steps {
                 let before = top(of: half.list, among: labels)
                 app.buttons["\(half.prefix) go \(value)"].tap()
+                var landed = before
                 lines.append(Landing.wait("\(half.name) go \(value)", from: before, landed: { $0 == expected }) {
-                    top(of: half.list, among: labels)
+                    landed = top(of: half.list, among: labels)
+                    return landed
                 })
-                let landed = top(of: half.list, among: labels)
                 lines.append("\(half.name) after \(value): top=\(landed)")
                 XCTAssertEqual(landed, expected, "\(half.name): after scrollTo \"\(value)\" the top is not \(expected)")
             }

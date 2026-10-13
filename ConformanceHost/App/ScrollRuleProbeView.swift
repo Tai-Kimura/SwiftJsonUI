@@ -111,10 +111,10 @@ struct ScrollRuleProbeView: View {
             Text(grid ? "section grid probe" : "scroll rule probe").accessibilityIdentifier("sr_ready")
             if noKey {
                 HStack {
-                    Button("dyn go 3") { noKeyTarget = "3" }
-                    Button("dyn go 1:7") { noKeyTarget = "1:7" }
-                    Button("dyn go 1:y2") { noKeyTarget = "1:y2" }
-                    Button("dyn go y6") { noKeyTarget = "y6" }
+                    Button("dyn go 3") { ProbeStartDelay.run { noKeyTarget = "3" } }
+                    Button("dyn go 1:7") { ProbeStartDelay.run { noKeyTarget = "1:7" } }
+                    Button("dyn go 1:y2") { ProbeStartDelay.run { noKeyTarget = "1:y2" } }
+                    Button("dyn go y6") { ProbeStartDelay.run { noKeyTarget = "y6" } }
                 }
                 dynamic(Self.noKeyLayout, data: ["noKeyRows": Self.noKeyRows, "noKey": noKeyTarget], frame: "dyn_nokey_frame")
                 if let generated = CodegenFixtureRegistry.probeView(named: "probe_scroll_nokey") {
@@ -132,9 +132,9 @@ struct ScrollRuleProbeView: View {
                         .accessibilityIdentifier("cg_grid_frame")
                 }
             } else {
-                Button("dyn go 6") { ruleIndex = 6 }
+                Button("dyn go 6") { ProbeStartDelay.run { ruleIndex = 6 } }
                 dynamic(Self.indexLayout, data: ["ruleRows": Self.ruleRows, "ruleIndex": ruleIndex], frame: "dyn_index_frame")
-                Button("dyn go k3") { ruleKey = "k3" }
+                Button("dyn go k3") { ProbeStartDelay.run { ruleKey = "k3" } }
                 dynamic(Self.keyLayout, data: ["ruleKeyed": Self.ruleKeyed, "ruleKey": ruleKey], frame: "dyn_key_frame")
                 if let generated = CodegenFixtureRegistry.probeView(named: "probe_scroll_rule") {
                     Text("codegen lists").accessibilityIdentifier("sr_codegen")

@@ -39,6 +39,10 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = [argument]
         if codegenHost { app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen" }
+        // The start-delay specimen (App/ProbeStartDelay.swift), when the run declares one.
+        if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_SCROLL_START_DELAY"] {
+            app.launchEnvironment["CONFORMANCE_SCROLL_START_DELAY"] = delay
+        }
         app.launch()
         XCTAssertTrue(app.staticTexts["sp_ready"].waitForExistence(timeout: 15), "probe did not start")
         return app
@@ -57,8 +61,98 @@ final class ScrollRouteProbeUITests: XCTestCase {
 
     /// Of `labels` on screen in `frame`, the one nearest below its top edge,
     /// and how far below (a label sits 4pt into its cell; a List row may add
-    /// its inset). Labels on one row tie; the first in `labels` wins.
+    /// its inset). Labels on one row tie; the first in `labels` wins. One
+    /// snapshot (ProbeSnapshot), not a query per label.
     private func top(of frame: XCUIElement, among labels: [String]) -> (label: String, offset: CGFloat)? {
+        let got = ProbeSnapshot(frame, labels: labels).flatMap { top(in: $0, among: labels) }
+        if ProbeSnapshot.compare { compareRead("top", describe(queriedTop(of: frame, among: labels)), describe(got)) }
+        return got
+    }
+
+    private func top(in snap: ProbeSnapshot, among labels: [String]) -> (label: String, offset: CGFloat)? {
+        var best: (String, CGFloat)? = nil
+        for label in labels {
+            guard let f = snap.visible(label) else { continue }
+            let offset = f.minY - snap.frame.minY
+            if offset >= -2 && offset < (best?.1 ?? .infinity) { best = (label, offset) }
+        }
+        return best
+    }
+
+    private let rowLabels = ["H0", "F0", "H1"] + (0..<5).map { "A\($0)" } + (0..<8).map { "B\($0)" }
+    private let keyLabels = (0..<10).map { "a\($0)" } + (0..<10).map { "b\($0)" }
+
+    /// One reading of a list: how far below its top edge `target` sits (nil
+    /// off screen) and the label nearest the top, from one snapshot — the same
+    /// instant for both.
+    private struct ListReading {
+        let target: String
+        let at: CGFloat?
+        let nearest: (label: String, offset: CGFloat)?
+
+        var value: String {
+            "\(target)@\(at.map { "\(Int($0))" } ?? "off") nearest \(nearest.map { "\($0.label)@\(Int($0.offset))" } ?? "none")"
+        }
+
+        /// What `check` asserts: `target` within `slack` of the top, and no
+        /// label of the list nearer than its row.
+        func landed(slack: CGFloat) -> Bool {
+            guard let at else { return false }
+            return at < slack && (nearest.map { abs(at - $0.offset) <= 1 } ?? true)
+        }
+    }
+
+    private func reading(_ frame: XCUIElement, labels: [String], target: String) -> ListReading {
+        let snap = ProbeSnapshot(frame, labels: labels + [target])
+        let got = ListReading(target: target,
+                              at: snap?.visible(target).map { $0.minY - snap!.frame.minY },
+                              nearest: snap.flatMap { top(in: $0, among: labels) })
+        if ProbeSnapshot.compare {
+            let old = ListReading(target: target, at: queriedOffset(of: target, in: frame), nearest: queriedTop(of: frame, among: labels))
+            let partly = (labels + [target]).filter { snap?.partlyVisible($0) ?? false }
+            compareRead("reading", old.value, got.value, partly: partly)
+        }
+        return got
+    }
+
+    /// `target`'s row is at the top, on the reading the wait ended on — not on
+    /// a second read: `target` sits within `slack` of the top edge, and no
+    /// label of the list sits nearer than its row does.
+    private func check(_ name: String, _ r: ListReading, slack: CGFloat, lines: inout [String]) {
+        lines.append("\(name): \(r.target) at \(r.at.map { "\(Int($0))" } ?? "off screen"), nearest \(r.nearest.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
+        guard let at = r.at else { return XCTFail("\(name): \(r.target) is not on screen") }
+        XCTAssertLessThan(at, slack, "\(name): \(r.target) is \(at) below the top, not at it")
+        if let nearest = r.nearest { XCTAssertEqual(at, nearest.offset, accuracy: 1, "\(name): \(nearest.label) sits above \(r.target)") }
+    }
+
+    /// Taps `button`, then reads `frame` until `target` is at the top as
+    /// `check` judges it, or the list rests (Landing.wait); the series goes
+    /// to `lines`. Returns the reading the wait ended on, for `check`.
+    private func go(_ app: XCUIApplication, _ button: String, _ name: String, _ frame: XCUIElement, labels: [String],
+                    target: String, slack: CGFloat, lines: inout [String]) -> ListReading {
+        let before = reading(frame, labels: labels, target: target).value
+        app.buttons[button].tap()
+        var last = ListReading(target: target, at: nil, nearest: nil)
+        lines.append(Landing.wait(name, from: before) {
+            last = reading(frame, labels: labels, target: target)
+            return (last.value, last.landed(slack: slack))
+        })
+        return last
+    }
+
+    /// `top`'s answer as one reading: the label and how far below.
+    private func nearest(_ frame: XCUIElement, among labels: [String]) -> String {
+        describe(top(of: frame, among: labels))
+    }
+
+    private func describe(_ top: (label: String, offset: CGFloat)?) -> String {
+        top.map { "\($0.label)@\(Int($0.offset))" } ?? "none"
+    }
+
+    // MARK: The same readings by one query per label — what the probe read
+    // before ProbeSnapshot. Only for CONFORMANCE_PROBE_READ_COMPARE=1.
+
+    private func queriedTop(of frame: XCUIElement, among labels: [String]) -> (label: String, offset: CGFloat)? {
         let frameTop = frame.frame.minY
         var best: (String, CGFloat)? = nil
         for label in labels {
@@ -70,51 +164,21 @@ final class ScrollRouteProbeUITests: XCTestCase {
         return best
     }
 
-    /// How far below `frame`'s top edge `label` sits, nil when it is not on screen.
-    private func offset(of label: String, in frame: XCUIElement) -> CGFloat? {
+    private func queriedOffset(of label: String, in frame: XCUIElement) -> CGFloat? {
         let e = frame.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
         guard e.exists && e.isHittable else { return nil }
         return e.frame.minY - frame.frame.minY
     }
 
-    private let rowLabels = ["H0", "F0", "H1"] + (0..<5).map { "A\($0)" } + (0..<8).map { "B\($0)" }
-    private let keyLabels = (0..<10).map { "a\($0)" } + (0..<10).map { "b\($0)" }
-
-    /// `target`'s row is at the top: `target` sits within `slack` of the top
-    /// edge, and no label of the list sits nearer than its row does.
-    private func check(_ name: String, _ frame: XCUIElement, labels: [String], target: String, slack: CGFloat,
-                       lines: inout [String]) {
-        let at = offset(of: target, in: frame)
-        let nearest = top(of: frame, among: labels)
-        lines.append("\(name): \(target) at \(at.map { "\(Int($0))" } ?? "off screen"), nearest \(nearest.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
-        guard let at else { return XCTFail("\(name): \(target) is not on screen") }
-        XCTAssertLessThan(at, slack, "\(name): \(target) is \(at) below the top, not at it")
-        if let nearest { XCTAssertEqual(at, nearest.offset, accuracy: 1, "\(name): \(nearest.label) sits above \(target)") }
+    private func queriedOnPage(_ frame: XCUIElement, among labels: [String]) -> [String] {
+        labels.filter { label in
+            let e = frame.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
+            return e.exists && e.isHittable && frame.frame.contains(CGPoint(x: e.frame.midX, y: e.frame.midY))
+        }
     }
 
-    /// What `check` reads, for Landing.wait: where `target` sits, the nearest
-    /// label, and whether `check` would pass on them.
-    private func reading(_ frame: XCUIElement, labels: [String], target: String, slack: CGFloat) -> (value: String, landed: Bool) {
-        let at = offset(of: target, in: frame)
-        let nearest = top(of: frame, among: labels)
-        let value = "\(target)@\(at.map { "\(Int($0))" } ?? "off") nearest \(nearest.map { "\($0.label)@\(Int($0.offset))" } ?? "none")"
-        guard let at else { return (value, false) }
-        return (value, at < slack && (nearest.map { abs(at - $0.offset) <= 1 } ?? true))
-    }
-
-    /// Taps `button`, then reads `frame` until `target` is at the top as
-    /// `check` judges it, or the list rests (Landing.wait); the series goes
-    /// to `lines`.
-    private func go(_ app: XCUIApplication, _ button: String, _ name: String, _ frame: XCUIElement, labels: [String],
-                    target: String, slack: CGFloat, lines: inout [String]) {
-        let before = reading(frame, labels: labels, target: target, slack: slack).value
-        app.buttons[button].tap()
-        lines.append(Landing.wait(name, from: before) { reading(frame, labels: labels, target: target, slack: slack) })
-    }
-
-    /// `top`'s answer as one reading: the label and how far below.
-    private func nearest(_ frame: XCUIElement, among labels: [String]) -> String {
-        top(of: frame, among: labels).map { "\($0.label)@\(Int($0.offset))" } ?? "none"
+    private func compareRead(_ kind: String, _ old: String, _ new: String, partly: [String] = []) {
+        print("PROBE_READ \(old == new ? "SAME" : "DIFF") \(kind) | queried: \(old) | snapshot: \(new) | partly visible: \(partly)")
     }
 
     private func run(prefix: String, argument: String, dynamic: Bool) {
@@ -130,30 +194,32 @@ final class ScrollRouteProbeUITests: XCTestCase {
         for (route, slack) in [("flow", CGFloat(10)), ("list", CGFloat(24))] {
             let index = element(app, "\(p)_route_\(route)")
             XCTAssertTrue(index.waitForExistence(timeout: 5), "\(p): no \(route)")
-            go(app, "\(p) \(route) go 6", "\(p)_route_\(route) after 6", index, labels: rowLabels, target: "B1", slack: slack, lines: &lines)
-            check("\(p)_route_\(route) after 6", index, labels: rowLabels, target: "B1", slack: slack, lines: &lines)
+            let afterSix = go(app, "\(p) \(route) go 6", "\(p)_route_\(route) after 6", index, labels: rowLabels, target: "B1", slack: slack, lines: &lines)
+            check("\(p)_route_\(route) after 6", afterSix, slack: slack, lines: &lines)
 
             let key = element(app, "\(p)_route_\(route)_key")
-            go(app, "\(p) \(route) go k3", "\(p)_route_\(route)_key after k3", key, labels: keyLabels, target: "a3", slack: slack, lines: &lines)
-            check("\(p)_route_\(route)_key after k3", key, labels: keyLabels, target: "a3", slack: slack, lines: &lines)
+            let afterK3 = go(app, "\(p) \(route) go k3", "\(p)_route_\(route)_key after k3", key, labels: keyLabels, target: "a3", slack: slack, lines: &lines)
+            check("\(p)_route_\(route)_key after k3", afterK3, slack: slack, lines: &lines)
         }
 
         if dynamic {
             let none = element(app, "dyn_route_nil")
             lines.append("dyn_route_nil drawn with none: nearest \(top(of: none, among: rowLabels).map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
-            go(app, "dyn nil go 6", "dyn_route_nil after 6", none, labels: rowLabels, target: "B1", slack: 10, lines: &lines)
-            check("dyn_route_nil after 6", none, labels: rowLabels, target: "B1", slack: 10, lines: &lines)
+            let nilAfterSix = go(app, "dyn nil go 6", "dyn_route_nil after 6", none, labels: rowLabels, target: "B1", slack: 10, lines: &lines)
+            check("dyn_route_nil after 6", nilAfterSix, slack: 10, lines: &lines)
         }
         report(lines, "SPR")
     }
 
     /// The pager's page on screen: of `labels`, the ones whose view sits
-    /// inside `frame` and can be hit.
+    /// inside `frame` (its centre — ProbeSnapshot.visible).
     private func onPage(_ frame: XCUIElement, among labels: [String]) -> [String] {
-        labels.filter { label in
-            let e = frame.staticTexts.matching(NSPredicate(format: "label == %@", label)).firstMatch
-            return e.exists && e.isHittable && frame.frame.contains(CGPoint(x: e.frame.midX, y: e.frame.midY))
+        let snap = ProbeSnapshot(frame, labels: labels)
+        let got = labels.filter { snap?.visible($0) != nil }
+        if ProbeSnapshot.compare {
+            compareRead("onPage", "\(queriedOnPage(frame, among: labels))", "\(got)", partly: labels.filter { snap?.partlyVisible($0) ?? false })
         }
+        return got
     }
 
     private func runSecond(prefix p: String, argument: String) {
@@ -164,10 +230,10 @@ final class ScrollRouteProbeUITests: XCTestCase {
 
         let list = element(app, "\(p)_route_class")
         XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no class-list List")
-        go(app, "\(p) class go 6", "\(p)_route_class after 6", list, labels: classLabels, target: "B1", slack: 24, lines: &lines)
-        check("\(p)_route_class after 6", list, labels: classLabels, target: "B1", slack: 24, lines: &lines)
-        go(app, "\(p) class go k3", "\(p)_route_class_key after k3", element(app, "\(p)_route_class_key"), labels: keyLabels, target: "a3", slack: 24, lines: &lines)
-        check("\(p)_route_class_key after k3", element(app, "\(p)_route_class_key"), labels: keyLabels, target: "a3", slack: 24, lines: &lines)
+        let classAfterSix = go(app, "\(p) class go 6", "\(p)_route_class after 6", list, labels: classLabels, target: "B1", slack: 24, lines: &lines)
+        check("\(p)_route_class after 6", classAfterSix, slack: 24, lines: &lines)
+        let classAfterK3 = go(app, "\(p) class go k3", "\(p)_route_class_key after k3", element(app, "\(p)_route_class_key"), labels: keyLabels, target: "a3", slack: 24, lines: &lines)
+        check("\(p)_route_class_key after k3", classAfterK3, slack: 24, lines: &lines)
 
         for (go, id, want, labels) in [("\(p) pager go 6", "\(p)_route_pager", "B1", classLabels),
                                         ("\(p) pager go k3", "\(p)_route_pager_key", "a3", keyLabels)] {
@@ -175,15 +241,18 @@ final class ScrollRouteProbeUITests: XCTestCase {
             XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no \(id)")
             let before = onPage(pager, among: labels)
             app.buttons[go].tap()
-            lines.append(Landing.wait(id, from: "\(before)", landed: { $0 == "\([want])" }) { "\(onPage(pager, among: labels))" })
-            let after = onPage(pager, among: labels)
+            var after: [String] = []
+            lines.append(Landing.wait(id, from: "\(before)", landed: { $0 == "\([want])" }) {
+                after = onPage(pager, among: labels)
+                return "\(after)"
+            })
             lines.append("\(id): page before \(before), after \(go.split(separator: " ").last ?? ""): \(after)")
             XCTAssertEqual(after, [want], "\(id): the page on screen is not \(want)'s")
         }
 
         let cellId = element(app, "\(p)_route_cellid")
-        go(app, "\(p) cellid go c3", "\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
-        check("\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
+        let cellIdAfterC3 = go(app, "\(p) cellid go c3", "\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
+        check("\(p)_route_cellid after c3", cellIdAfterC3, slack: 10, lines: &lines)
         report(lines, "SPR2")
     }
 
@@ -193,17 +262,18 @@ final class ScrollRouteProbeUITests: XCTestCase {
         for (route, slack) in [("list", CGFloat(10)), ("class", CGFloat(24))] {
             let list = element(app, "\(p)_route_int_\(route)")
             XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no int \(route)")
-            go(app, "\(p) int \(route) go 12", "\(p)_route_int_\(route) after 12", list, labels: keyLabels, target: "b2", slack: slack, lines: &lines)
-            check("\(p)_route_int_\(route) after 12", list, labels: keyLabels, target: "b2", slack: slack, lines: &lines)
+            let afterTwelve = go(app, "\(p) int \(route) go 12", "\(p)_route_int_\(route) after 12", list, labels: keyLabels, target: "b2", slack: slack, lines: &lines)
+            check("\(p)_route_int_\(route) after 12", afterTwelve, slack: slack, lines: &lines)
         }
         let pager = element(app, "\(p)_route_int_pager")
         XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no int pager")
         let before = onPage(pager, among: keyLabels)
         app.buttons["\(p) int pager go 12"].tap()
+        var after: [String] = []
         lines.append(Landing.wait("\(p)_route_int_pager", from: "\(before)", landed: { $0 == "\(["b2"])" }) {
-            "\(onPage(pager, among: keyLabels))"
+            after = onPage(pager, among: keyLabels)
+            return "\(after)"
         })
-        let after = onPage(pager, among: keyLabels)
         lines.append("\(p)_route_int_pager: page before \(before), after 12: \(after)")
         XCTAssertEqual(after, ["b2"], "\(p)_route_int_pager: the page on screen is not b2's")
 
@@ -213,10 +283,11 @@ final class ScrollRouteProbeUITests: XCTestCase {
         for (value, want) in [("3", "g1"), ("k", "g6"), ("w5", "h5"), ("k", "g6")] {
             let before = nearest(dup, among: dupLabels)
             app.buttons["\(p) dup go \(value)"].tap()
+            var landed: (label: String, offset: CGFloat)? = nil
             lines.append(Landing.wait("\(p)_route_dup go \(value)", from: before) {
-                (nearest(dup, among: dupLabels), top(of: dup, among: dupLabels)?.label == want)
+                landed = top(of: dup, among: dupLabels)
+                return (describe(landed), landed?.label == want)
             })
-            let landed = top(of: dup, among: dupLabels)
             lines.append("\(p)_route_dup after \(value): nearest \(landed.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
             XCTAssertEqual(landed?.label, want, "\(p)_route_dup: after \"\(value)\" the top is not \(want)")
         }
@@ -232,28 +303,41 @@ final class ScrollRouteProbeUITests: XCTestCase {
         XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no auto list")
         // All three stay at a0 — nothing lands, so they must rest for the 2 s
         // the fixed sleep gave a move to show.
-        let autoReading = { "list \(self.nearest(list, among: self.keyLabels)) class \(self.nearest(classList, among: self.keyLabels)) pager \(self.onPage(pager, among: self.keyLabels))" }
+        var autoTops: [(name: String, at: (label: String, offset: CGFloat)?)] = []
+        var autoPage: [String] = []
+        let autoReading = { () -> String in
+            autoTops = [("list", self.top(of: list, among: self.keyLabels)), ("class", self.top(of: classList, among: self.keyLabels))]
+            autoPage = self.onPage(pager, among: self.keyLabels)
+            return "list \(self.describe(autoTops[0].at)) class \(self.describe(autoTops[1].at)) pager \(autoPage)"
+        }
         app.buttons["\(p) auto go k3"].tap()
         lines.append(Landing.wait("\(p)_route_auto go k3", still: 2, read: autoReading))
-        for (name, frame) in [("list", list), ("class", classList)] {
-            let at = top(of: frame, among: keyLabels)
+        for (name, at) in autoTops {
             lines.append("\(p)_route_auto_\(name) after k3: nearest \(at.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
             XCTAssertEqual(at?.label, "a0", "\(p)_route_auto_\(name): the data's own key moved it")
         }
-        let raw = onPage(pager, among: keyLabels)
+        let raw = autoPage
         lines.append("\(p)_route_auto_pager after k3: \(raw)")
         XCTAssertEqual(raw, ["a0"], "\(p)_route_auto_pager: the data's own key turned it")
-        let autoBefore = autoReading()
+        var listK3 = ListReading(target: "a3", at: nil, nearest: nil)
+        var classK3 = ListReading(target: "a3", at: nil, nearest: nil)
+        var enriched: [String] = []
+        let k3Reading = { () -> (value: String, landed: Bool) in
+            listK3 = self.reading(list, labels: self.keyLabels, target: "a3")
+            classK3 = self.reading(classList, labels: self.keyLabels, target: "a3")
+            enriched = self.onPage(pager, among: self.keyLabels)
+            return ("list \(listK3.value) class \(classK3.value) pager \(enriched)",
+                    listK3.landed(slack: 10) && classK3.landed(slack: 24) && enriched == ["a3"])
+        }
+        // `before` by the same reading the wait takes. It was autoReading's,
+        // another format, so the first reading already differed from it — the
+        // list counted as moved at once, and rested (the start-delay specimen
+        // caught it: still 1s at 1.32s, a3 off screen).
+        let autoBefore = k3Reading().value
         app.buttons["\(p) auto go k3~"].tap()
-        lines.append(Landing.wait("\(p)_route_auto go k3~", from: autoBefore) {
-            let l = reading(list, labels: keyLabels, target: "a3", slack: 10)
-            let c = reading(classList, labels: keyLabels, target: "a3", slack: 24)
-            let page = onPage(pager, among: keyLabels)
-            return ("list \(l.value) class \(c.value) pager \(page)", l.landed && c.landed && page == ["a3"])
-        })
-        check("\(p)_route_auto_list after k3~", list, labels: keyLabels, target: "a3", slack: 10, lines: &lines)
-        check("\(p)_route_auto_class after k3~", classList, labels: keyLabels, target: "a3", slack: 24, lines: &lines)
-        let enriched = onPage(pager, among: keyLabels)
+        lines.append(Landing.wait("\(p)_route_auto go k3~", from: autoBefore, read: k3Reading))
+        check("\(p)_route_auto_list after k3~", listK3, slack: 10, lines: &lines)
+        check("\(p)_route_auto_class after k3~", classK3, slack: 24, lines: &lines)
         lines.append("\(p)_route_auto_pager after k3~: \(enriched)")
         XCTAssertEqual(enriched, ["a3"], "\(p)_route_auto_pager: a3's cellId did not turn it to a3")
 
@@ -262,10 +346,11 @@ final class ScrollRouteProbeUITests: XCTestCase {
         for (value, want) in [("c2", "c2"), ("1:3", "c2"), ("e4", "d4"), ("c2", "c2")] {
             let before = nearest(cellId, among: labels)
             app.buttons["\(p) cellid2 go \(value)"].tap()
+            var landed: (label: String, offset: CGFloat)? = nil
             lines.append(Landing.wait("\(p)_route_cellid2 go \(value)", from: before) {
-                (nearest(cellId, among: labels), top(of: cellId, among: labels)?.label == want)
+                landed = top(of: cellId, among: labels)
+                return (describe(landed), landed?.label == want)
             })
-            let landed = top(of: cellId, among: labels)
             lines.append("\(p)_route_cellid2 after \(value): nearest \(landed.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
             XCTAssertEqual(landed?.label, want, "\(p)_route_cellid2: after \"\(value)\" the top is not \(want)")
         }

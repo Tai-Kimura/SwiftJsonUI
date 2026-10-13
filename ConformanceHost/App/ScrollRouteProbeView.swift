@@ -257,7 +257,7 @@ struct ScrollRouteProbeView: View {
                             data: ["rows": hRows], frame: "dyn_hstart_\(anchor)")
                 }
             } else if seventh {
-                Button("dyn h go 5") { hTarget = 5 }
+                Button("dyn h go 5") { ProbeStartDelay.run { hTarget = 5 } }
                 let hRows = CollectionDataSource(sections: [ScrollRuleProbeView.section(cells: (0..<10).map { ["title": "a\($0)"] })])
                 ForEach(["top", "center", "bottom"], id: \.self) { anchor in
                     dynamic(##"{"type": "Collection", "id": "dyn_hanchor_\##(anchor)", "width": 200, "height": 40, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}], "layout": "horizontal", "scrollTo": "@{t}", "scrollAnchor": "\##(anchor)", "scrollAnimated": false}"##,
@@ -273,11 +273,11 @@ struct ScrollRouteProbeView: View {
                         data: ["rows": Self.dupNoScrollRows], frame: "dyn_route_dup_noscroll")
             } else if fourth {
                 HStack {
-                    Button("dyn auto go k3") { autoKey = "k3" }
-                    Button("dyn auto go k3~") { autoKey = Self.a3Enriched }
-                    Button("dyn cellid2 go c2") { cellId2Key = "c2" }
-                    Button("dyn cellid2 go 1:3") { cellId2Key = "1:3" }
-                    Button("dyn cellid2 go e4") { cellId2Key = "e4" }
+                    Button("dyn auto go k3") { ProbeStartDelay.run { autoKey = "k3" } }
+                    Button("dyn auto go k3~") { ProbeStartDelay.run { autoKey = Self.a3Enriched } }
+                    Button("dyn cellid2 go c2") { ProbeStartDelay.run { cellId2Key = "c2" } }
+                    Button("dyn cellid2 go 1:3") { ProbeStartDelay.run { cellId2Key = "1:3" } }
+                    Button("dyn cellid2 go e4") { ProbeStartDelay.run { cellId2Key = "e4" } }
                 }
                 .font(.system(size: 9))
                 dynamic(Self.twoSections("dyn_route_auto_list", extra: #""cellIdProperty": "key", "autoChangeTrackingId": true, "#),
@@ -290,15 +290,15 @@ struct ScrollRouteProbeView: View {
                         data: ["rows": Self.cellId2Rows, "t": cellId2Key], frame: "dyn_route_cellid2")
             } else if third {
                 HStack {
-                    Button("dyn int list go 12") { intList = 12 }
-                    Button("dyn int class go 12") { intClass = 12 }
-                    Button("dyn int pager go 12") { intPager = 12 }
+                    Button("dyn int list go 12") { ProbeStartDelay.run { intList = 12 } }
+                    Button("dyn int class go 12") { ProbeStartDelay.run { intClass = 12 } }
+                    Button("dyn int pager go 12") { ProbeStartDelay.run { intPager = 12 } }
                 }
                 .font(.system(size: 9))
                 HStack {
-                    Button("dyn dup go k") { dupKey = "k" }
-                    Button("dyn dup go 3") { dupKey = "3" }
-                    Button("dyn dup go w5") { dupKey = "w5" }
+                    Button("dyn dup go k") { ProbeStartDelay.run { dupKey = "k" } }
+                    Button("dyn dup go 3") { ProbeStartDelay.run { dupKey = "3" } }
+                    Button("dyn dup go w5") { ProbeStartDelay.run { dupKey = "w5" } }
                 }
                 .font(.system(size: 9))
                 dynamic(Self.twoSections("dyn_route_int_list", extra: #""cellIdProperty": "key", "#),
@@ -311,11 +311,11 @@ struct ScrollRouteProbeView: View {
                         data: ["rows": Self.dupRows, "t": dupKey], frame: "dyn_route_dup")
             } else if second {
                 HStack {
-                    Button("dyn class go 6") { classIndex = 6 }
-                    Button("dyn class go k3") { classKey = "k3" }
-                    Button("dyn pager go 6") { pagerIndex = 6 }
-                    Button("dyn pager go k3") { pagerKey = "k3" }
-                    Button("dyn cellid go c3") { cellIdKey = "c3" }
+                    Button("dyn class go 6") { ProbeStartDelay.run { classIndex = 6 } }
+                    Button("dyn class go k3") { ProbeStartDelay.run { classKey = "k3" } }
+                    Button("dyn pager go 6") { ProbeStartDelay.run { pagerIndex = 6 } }
+                    Button("dyn pager go k3") { ProbeStartDelay.run { pagerKey = "k3" } }
+                    Button("dyn cellid go c3") { ProbeStartDelay.run { cellIdKey = "c3" } }
                 }
                 .font(.system(size: 9))
                 dynamic(Self.classList("dyn_route_class", extra: ""),
@@ -330,11 +330,11 @@ struct ScrollRouteProbeView: View {
                         data: ["rows": Self.ruleCellIds, "t": cellIdKey], frame: "dyn_route_cellid")
             } else {
                 HStack {
-                    Button("dyn flow go 6") { flowIndex = 6 }
-                    Button("dyn flow go k3") { flowKey = "k3" }
-                    Button("dyn list go 6") { listIndex = 6 }
-                    Button("dyn list go k3") { listKey = "k3" }
-                    Button("dyn nil go 6") { nilIndex = 6 }
+                    Button("dyn flow go 6") { ProbeStartDelay.run { flowIndex = 6 } }
+                    Button("dyn flow go k3") { ProbeStartDelay.run { flowKey = "k3" } }
+                    Button("dyn list go 6") { ProbeStartDelay.run { listIndex = 6 } }
+                    Button("dyn list go k3") { ProbeStartDelay.run { listKey = "k3" } }
+                    Button("dyn nil go 6") { ProbeStartDelay.run { nilIndex = 6 } }
                 }
                 .font(.system(size: 9))
                 dynamic(Self.layout("dyn_route_flow", rows: "ruleRows", target: "t", extra: #""layout": "flow", "#),
