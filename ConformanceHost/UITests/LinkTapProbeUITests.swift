@@ -14,8 +14,37 @@ import XCTest
 /// counts it.
 ///
 /// Opt-in, like the other probes: LINK_TAP_PROBE=1.
+///
+/// Safari is waited for up to a BUDGET, not a guess (15 s): on the CI runner
+/// (Xcode 26.3, iOS 26.2) it came to the front 2.3 s after the tap on one
+/// path and more than 4 s after it on the other — the probe gave up at 4 s,
+/// read "the link did not open", and its next tap landed on Safari, which
+/// had come up meanwhile, so the Label's onClick read 0 too (run 38322592393,
+/// the first time this probe ran in CI). A tap is now made only with the app
+/// in front, asserted, and each one prints which app was in front.
 final class LinkTapProbeUITests: XCTestCase {
     private var app: XCUIApplication!
+    private let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+    /// How long a link's URL may take to bring Safari to the front.
+    private let safariBudget: TimeInterval = 15
+
+    private func state(_ a: XCUIApplication) -> String {
+        switch a.state {
+        case .runningForeground: return "foreground"
+        case .runningBackground, .runningBackgroundSuspended: return "background"
+        case .notRunning: return "notRunning"
+        default: return "unknown"
+        }
+    }
+
+    /// The app must be in front for a tap to reach it; a tap with Safari in
+    /// front lands on Safari.
+    private func assertAppInFront(_ what: String) -> Bool {
+        let inFront = app.wait(for: .runningForeground, timeout: 10)
+        print("LINK_TAP \(what): app=\(state(app)) safari=\(state(safari))")
+        XCTAssertTrue(inFront, "\(what): the app is not in front (safari=\(state(safari))) — a tap now would land elsewhere")
+        return inFront
+    }
 
     func testALinkTapCallsTheLinkAndTheRestCallsTheLabel() throws {
         guard ProcessInfo.processInfo.environment["LINK_TAP_PROBE"] == "1" else {
@@ -51,6 +80,7 @@ final class LinkTapProbeUITests: XCTestCase {
         for (id, linkKey, labelKey) in [("lt_url", "url", "urlLabel"), ("lt_range", "terms", "rangeLabel")] {
             let element = label(id)
             XCTAssertTrue(element.waitForExistence(timeout: 5), "\(path) \(id): not found")
+            guard assertAppInFront("\(path) \(id) before the link tap") else { continue }
             let before = counts()
 
             // On the link: the link's element if XCUITest reports one, else
@@ -66,9 +96,17 @@ final class LinkTapProbeUITests: XCTestCase {
             // front is the URL opening. The app is brought back to read on.
             var opened = 0
             if linkKey == "url" {
-                let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
-                if safari.wait(for: .runningForeground, timeout: 4) {
-                    opened = 1
+                // Safari in front, or the probe's own count moving, within the
+                // budget — polled, so a fast open is read at once.
+                let start = Date()
+                while Date().timeIntervalSince(start) < safariBudget {
+                    if safari.state == .runningForeground { opened = 1; break }
+                    if (counts()[linkKey] ?? 0) != (before[linkKey] ?? 0) { break }
+                    usleep(250_000)
+                }
+                print(String(format: "LINK_TAP %@ %@: safari in front=%d after %.2f s (budget %.0f s)",
+                             path, id, opened, Date().timeIntervalSince(start), safariBudget))
+                if safari.state == .runningForeground {
                     app.activate()
                     _ = app.staticTexts["lt_ready"].waitForExistence(timeout: 10)
                 }
@@ -77,7 +115,9 @@ final class LinkTapProbeUITests: XCTestCase {
             XCTAssertEqual((onLink[linkKey] ?? 0) - (before[linkKey] ?? 0) + opened, 1, "\(path) \(id): a tap on the link did not call it (link exposed: \(link.exists))")
             XCTAssertEqual((onLink[labelKey] ?? 0) - (before[labelKey] ?? 0), 0, "\(path) \(id): a tap on the link called the Label's onClick")
 
-            // Past the link: the Label's onClick, not the link.
+            // Past the link: the Label's onClick, not the link — with the app
+            // in front, or the tap is not the Label's to receive.
+            guard assertAppInFront("\(path) \(id) before the tap past the link") else { continue }
             element.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
             let offLink = counts()
             XCTAssertEqual((offLink[labelKey] ?? 0) - (onLink[labelKey] ?? 0), 1, "\(path) \(id): a tap past the link did not call the Label's onClick")
