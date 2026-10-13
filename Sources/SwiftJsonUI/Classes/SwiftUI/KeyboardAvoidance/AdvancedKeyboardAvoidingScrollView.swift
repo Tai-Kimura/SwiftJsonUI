@@ -15,6 +15,9 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
     @State private var scrollOffset: CGFloat = 0
     @State private var scrollProxy: ScrollViewProxy?
     @State private var selectBoxPadding: CGFloat = 0
+    @State private var scrollViewBox = EnclosingScrollViewBox()
+    /// A text input inside this ScrollView is being edited (EditingInsideScrollView).
+    @State private var isEditingInside = false
     @Namespace private var scrollSpace
     
     private let axes: Axis.Set
@@ -59,6 +62,7 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                     VStack(alignment: .leading, spacing: 0) {
                         content
                             .environment(\.selectBoxScrollProxy, proxy)
+                            .background(EnclosingScrollViewReader(box: scrollViewBox))
                             .background(
                                 GeometryReader { contentGeometry in
                                     Color.clear
@@ -133,6 +137,10 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
                 .onAppear {
                     self.scrollProxy = proxy
                 }
+                .onReceive(EditingInsideScrollView.changes) { change in
+                    guard EditingInsideScrollView.isInside(change.input, scrollViewBox.scrollView) else { return }
+                    isEditingInside = change.editing
+                }
                 .onPreferenceChange(ContentFramePreferenceKey.self) { _ in
                     // Content frame changed
                 }
@@ -159,11 +167,17 @@ public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
         }
     }
     
-    /// `additionalPadding` while the keyboard is visible and avoidance is
-    /// on, 0 otherwise — the bottom safe-area inset the focus scrolling
-    /// respects. Animated with the keyboard so the field does not jump.
+    /// `additionalPadding` while an input inside is being edited or the
+    /// keyboard is visible, and avoidance is on; 0 otherwise — the bottom
+    /// safe-area inset the focus scrolling respects.
+    ///
+    /// From the start of editing, not from keyboardWillShow alone: the focus
+    /// scroll runs as the keyboard comes up, and an inset that grew after it
+    /// left the field short of the padding (EditingInsideScrollView).
+    /// Known difference: with a hardware keyboard (no software keyboard
+    /// shown) the inset is there while an input inside is edited.
     private var keyboardClearance: CGFloat {
-        guard configuration.isEnabled, keyboardResponder.isKeyboardVisible else { return 0 }
+        guard configuration.isEnabled, isEditingInside || keyboardResponder.isKeyboardVisible else { return 0 }
         return configuration.additionalPadding
     }
 
