@@ -59,10 +59,15 @@ public final class SJUIWindowWidth: ObservableObject {
     private weak var window: UIWindow?
     private var observation: NSKeyValueObservation?
 
+    /// The scene is read at once (the first body has the real width); it is
+    /// OBSERVED only once a probe ties the object to its window
+    /// (`.sjuiTracksWindowWidth`). An object nobody tracks never publishes:
+    /// DynamicView owns one whether or not its tree has a width condition,
+    /// and a publish redraws the whole tree it roots.
     public init() {
         let scene = Self.activeScene()
+        self.scene = scene
         measured = Self.width(of: scene) ?? SJUIWindowMetrics.bounds().width
-        follow(scene)
     }
 
     /// Follow `window` (and its scene) from now on: the probe calls this with
@@ -72,9 +77,9 @@ public final class SJUIWindowWidth: ObservableObject {
         follow(window.windowScene)
     }
 
-    /// Follow `scene` from now on.
+    /// Observe `scene` from now on (the probe's window's).
     func follow(_ scene: UIWindowScene?) {
-        guard let scene, scene !== self.scene else { return }
+        guard let scene, scene !== self.scene || observation == nil else { return }
         self.scene = scene
         observation = scene.observe(\.effectiveGeometry, options: [.new]) { [weak self] _, _ in
             // KVO delivers on the thread that changed the geometry: UIKit's

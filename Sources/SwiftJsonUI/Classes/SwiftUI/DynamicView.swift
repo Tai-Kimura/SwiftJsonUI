@@ -39,7 +39,7 @@ public struct DynamicView: View {
     public init(component: DynamicComponent, viewId: String? = nil, data: [String: Any] = [:]) {
         self.jsonName = nil
         // Stamped here when nothing is left to resolve; otherwise in body,
-        // where the size classes are known (rootComponent).
+        // where the size classes are known (root).
         self.directComponent = JSONLayoutLoader.hasUnresolvedStages(component.rawData)
             ? component : JSONLayoutLoader.stamped(component)
         self.data = data
@@ -50,11 +50,20 @@ public struct DynamicView: View {
     /// When a JSON layout contains `responsive` blocks, resolution is performed at
     /// the dictionary level using the current size classes BEFORE decoding into
     /// DynamicComponent, so individual converters remain unaware of responsive logic.
-    private var rootComponent: DynamicComponent? {
+    ///
+    /// `tracksWindowWidth`: the tree has a responsive width condition
+    /// (minWidth:N / maxWidth:N), and the view keeps its SJUIWindowWidth on
+    /// its window. Only then: the tracking puts a probe behind the view, and
+    /// on every DynamicView — a Collection's cells are DynamicViews — that
+    /// probe changed what the cell's accessibility element covers (its id's
+    /// frame became the cell's outer box, padding included:
+    /// CellIdBoxProbeUITests, SwiftJsonUI 10.29.12's release candidate).
+    private var root: (component: DynamicComponent, tracksWindowWidth: Bool)? {
         if let component = directComponent {
-            return JSONLayoutLoader.prepared(
+            let prepared = JSONLayoutLoader.prepared(
                 component, horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass,
                 windowWidth: windowWidth.value)
+            return (prepared, ResponsiveResolver.jsonContainsWidthConditions(component.rawData))
         }
         if let baseName = jsonName {
             // Responsive variant files (home@regular.json): swap the whole
@@ -75,11 +84,13 @@ public struct DynamicView: View {
                         windowWidth: windowWidth.value
                     )
                     let resolvedJSON = resolver.resolveTree(processedJSON)
-                    return JSONLayoutLoader.decodeComponent(from: resolvedJSON)
+                    return JSONLayoutLoader.decodeComponent(from: resolvedJSON).map {
+                        ($0, ResponsiveResolver.jsonContainsWidthConditions(processedJSON))
+                    }
                 }
             }
             // Fallback: no responsive blocks, use the standard cached component path
-            return JSONLayoutLoader.loadComponent(named: name)
+            return JSONLayoutLoader.loadComponent(named: name).map { ($0, false) }
         }
         return nil
     }
@@ -91,7 +102,8 @@ public struct DynamicView: View {
         // subtree; announce whose sections own bare keys first (the codegen
         // face's current_namespaces, the UIKit face's currentFilePrefix).
         let _ = jsonName.map { DynamicStringManager.shared.beginLayout($0) }
-        if let component = rootComponent {
+        if let root {
+            let component = root.component
             let mergedData = DynamicView.mergeDataDefaults(component: component, externalData: data)
             DynamicComponentBuilder(
                 component: component,
@@ -100,7 +112,7 @@ public struct DynamicView: View {
             )
             .id(refreshId)
             .environment(\.dynamicRadioGroups, radioGroups)
-            .sjuiTracksWindowWidth(windowWidth)
+            .modifier(WindowWidthTracking(width: windowWidth, active: root.tracksWindowWidth))
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("layoutFileDidChanged"))) { _ in
                 DynamicStringManager.shared.reload()
                 refreshId = UUID()
@@ -108,6 +120,17 @@ public struct DynamicView: View {
         } else {
             Text("Failed to load: \(jsonName ?? "unknown")")
                 .foregroundColor(.gray)
+        }
+    }
+
+    /// `.sjuiTracksWindowWidth` where the tree has a width condition, and
+    /// nothing otherwise.
+    private struct WindowWidthTracking: ViewModifier {
+        let width: SJUIWindowWidth
+        let active: Bool
+
+        func body(content: Content) -> some View {
+            if active { content.sjuiTracksWindowWidth(width) } else { content }
         }
     }
 

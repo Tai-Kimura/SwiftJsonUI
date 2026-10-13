@@ -89,6 +89,22 @@ final class ResponsiveResolverVectorTests: XCTestCase {
         XCTAssertEqual(resolver.resolveTree(json)["tag"] as? String, "base")
     }
 
+    /// DynamicView tracks its window's width (a probe behind the view) only
+    /// for a tree with a width condition; a probe on every DynamicView — every
+    /// Collection cell — changed the cell's accessibility frame.
+    func testOnlyATreeWithAWidthConditionTracksTheWindow() {
+        let sizeClassesOnly: [String: Any] = ["type": "View", "responsive": ["regular": ["spacing": 4]],
+                                              "child": [["type": "Label", "responsive": ["landscape": ["fontSize": 20]]]]]
+        XCTAssertFalse(ResponsiveResolver.jsonContainsWidthConditions(sizeClassesOnly))
+        XCTAssertFalse(ResponsiveResolver.jsonContainsWidthConditions(["type": "View"]))
+        let nested: [String: Any] = ["type": "View", "child": [["type": "View", "children": [
+            ["type": "Label", "responsive": ["maxWidth:700": ["fontSize": 12]]]]]]]
+        XCTAssertTrue(ResponsiveResolver.jsonContainsWidthConditions(nested))
+        let inATab: [String: Any] = ["type": "TabView", "tabs": [["child": [["type": "View", "responsive": ["minWidth:0": [:]]]]]]]
+        XCTAssertTrue(ResponsiveResolver.jsonContainsWidthConditions(inATab))
+        XCTAssertFalse(ResponsiveResolver.jsonContainsWidthConditions(["type": "View", "responsive": ["minWidth:7.5": [:]]]))
+    }
+
     // MARK: - SJUIWindowWidth
 
     @MainActor

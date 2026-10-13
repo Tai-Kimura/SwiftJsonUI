@@ -201,6 +201,21 @@ public struct ResponsiveResolver {
         return false
     }
 
+    /// Whether any `responsive` block in the tree holds a width condition
+    /// (minWidth:N / maxWidth:N) — what makes DynamicView track its window's
+    /// width. The same walk as jsonContainsResponsive.
+    public static func jsonContainsWidthConditions(_ json: [String: Any]) -> Bool {
+        if let responsive = json["responsive"] as? [String: Any],
+           responsive.keys.contains(where: { WidthCondition($0) != nil }) {
+            return true
+        }
+        let nested = ["child", "children"].compactMap { json[$0] as? [[String: Any]] }.flatMap { $0 }
+            + ((json["tabs"] as? [[String: Any]]) ?? []).flatMap { tab in
+                ["child", "children"].compactMap { tab[$0] as? [[String: Any]] }.flatMap { $0 }
+            }
+        return nested.contains { jsonContainsWidthConditions($0) }
+    }
+
     // MARK: - Internal
 
     /// Resolve a single node: merge the best-matching responsive override
