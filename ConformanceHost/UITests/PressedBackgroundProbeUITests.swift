@@ -94,7 +94,9 @@ final class PressedBackgroundProbeUITests: XCTestCase {
         let calls = counts(readout())["onScrollItem"] ?? 0
         element("pbScroll").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             .press(forDuration: 0.05, thenDragTo: element("pbScroll").coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.0)))
-        sleep(1)
+        Landing.wait("\(path) scroll item", from: "\(Int(top))", landed: { (Int($0) ?? Int.max) < Int(top - 10) }) {
+            "\(Int(item.frame.minY))"
+        }
         print("PRESSED \(path) scroll item top \(top) -> \(item.frame.minY)")
         XCTAssertLessThan(item.frame.minY, top - 10, "\(path): the scroll view scrolls over a tappable item")
         XCTAssertEqual(counts(readout())["onScrollItem"] ?? 0, calls, "\(path): the swipe calls nothing")

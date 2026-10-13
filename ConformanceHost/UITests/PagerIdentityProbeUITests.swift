@@ -2,9 +2,10 @@ import XCTest
 
 /// PagerIdentityProbeView: 24 swipes released mid-way (momentum finishes
 /// them) across a five-page pager whose off-screen page changes on every page
-/// change. Each must settle on a page: 2 s after the swipe exactly one page's
-/// cell is inside the pager, at the place page 0's cell rested. Prints every
-/// swipe, so a red names which stopped and where.
+/// change. Each must settle on a page: once the pager rests (Landing — read
+/// every 0.25 s until it lands or holds still for 1 s, 10 s at most; it was
+/// a fixed 2 s) exactly one page's cell is inside the pager, at the place page 0's cell rested. Prints every swipe, so a red
+/// names which stopped and where.
 ///
 /// Measured 2026-10-04 (iOS 26.5, Xcode 26.6): the generated half stopped on
 /// 12 of 24 swipes with jsonui-cli v1.9.8 and on none with the pager's loop
@@ -29,16 +30,27 @@ final class PagerIdentityProbeUITests: XCTestCase {
         let pager = element(app, "\(p)_pid_pager")
         let first = element(app, "\(p)_pid_pager_item_0")
         XCTAssertTrue(first.waitForExistence(timeout: 10), "page 0 is not drawn")
-        sleep(1)
+        Landing.wait("\(p) page 0 drawn") { "\(first.frame.minX)" }
         let restX = first.frame.minX
         let frame = pager.frame
         let directions: [Bool] = Array(repeating: [true, true, true, true, false, false, false, false], count: 3).flatMap { $0 }
         var stopped: [String] = []
+        // The cells inside the pager, and whether exactly one rests where
+        // page 0's did.
+        let pages = { () -> (value: String, landed: Bool) in
+            var visible: [(Int, CGFloat)] = []
+            for i in 0..<5 {
+                let cell = self.element(app, "\(p)_pid_pager_item_\(i)")
+                if cell.exists, cell.frame.intersects(frame), cell.frame.width > 0 { visible.append((i, cell.frame.minX)) }
+            }
+            return ("\(visible.map { "\($0.0)@\(Int($0.1))" })", visible.count == 1 && abs(visible[0].1 - restX) < 1.5)
+        }
         for (n, left) in directions.enumerated() {
+            let before = pages().value
             let from = pager.coordinate(withNormalizedOffset: CGVector(dx: left ? 0.7 : 0.3, dy: 0.5))
             let to = pager.coordinate(withNormalizedOffset: CGVector(dx: left ? 0.35 : 0.65, dy: 0.5))
             from.press(forDuration: 0.05, thenDragTo: to, withVelocity: .fast, thenHoldForDuration: 0)
-            sleep(2)
+            Landing.wait("\(p) swipe \(n)", from: before, read: pages)
             var visible: [(Int, CGFloat)] = []
             for i in 0..<5 {
                 let cell = element(app, "\(p)_pid_pager_item_\(i)")

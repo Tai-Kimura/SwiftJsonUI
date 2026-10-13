@@ -92,6 +92,31 @@ final class ScrollRouteProbeUITests: XCTestCase {
         if let nearest { XCTAssertEqual(at, nearest.offset, accuracy: 1, "\(name): \(nearest.label) sits above \(target)") }
     }
 
+    /// What `check` reads, for Landing.wait: where `target` sits, the nearest
+    /// label, and whether `check` would pass on them.
+    private func reading(_ frame: XCUIElement, labels: [String], target: String, slack: CGFloat) -> (value: String, landed: Bool) {
+        let at = offset(of: target, in: frame)
+        let nearest = top(of: frame, among: labels)
+        let value = "\(target)@\(at.map { "\(Int($0))" } ?? "off") nearest \(nearest.map { "\($0.label)@\(Int($0.offset))" } ?? "none")"
+        guard let at else { return (value, false) }
+        return (value, at < slack && (nearest.map { abs(at - $0.offset) <= 1 } ?? true))
+    }
+
+    /// Taps `button`, then reads `frame` until `target` is at the top as
+    /// `check` judges it, or the list rests (Landing.wait); the series goes
+    /// to `lines`.
+    private func go(_ app: XCUIApplication, _ button: String, _ name: String, _ frame: XCUIElement, labels: [String],
+                    target: String, slack: CGFloat, lines: inout [String]) {
+        let before = reading(frame, labels: labels, target: target, slack: slack).value
+        app.buttons[button].tap()
+        lines.append(Landing.wait(name, from: before) { reading(frame, labels: labels, target: target, slack: slack) })
+    }
+
+    /// `top`'s answer as one reading: the label and how far below.
+    private func nearest(_ frame: XCUIElement, among labels: [String]) -> String {
+        top(of: frame, among: labels).map { "\($0.label)@\(Int($0.offset))" } ?? "none"
+    }
+
     private func run(prefix: String, argument: String, dynamic: Bool) {
         let app = launch(argument)
         var lines: [String] = []
@@ -105,21 +130,18 @@ final class ScrollRouteProbeUITests: XCTestCase {
         for (route, slack) in [("flow", CGFloat(10)), ("list", CGFloat(24))] {
             let index = element(app, "\(p)_route_\(route)")
             XCTAssertTrue(index.waitForExistence(timeout: 5), "\(p): no \(route)")
-            app.buttons["\(p) \(route) go 6"].tap()
-            sleep(1)
+            go(app, "\(p) \(route) go 6", "\(p)_route_\(route) after 6", index, labels: rowLabels, target: "B1", slack: slack, lines: &lines)
             check("\(p)_route_\(route) after 6", index, labels: rowLabels, target: "B1", slack: slack, lines: &lines)
 
             let key = element(app, "\(p)_route_\(route)_key")
-            app.buttons["\(p) \(route) go k3"].tap()
-            sleep(1)
+            go(app, "\(p) \(route) go k3", "\(p)_route_\(route)_key after k3", key, labels: keyLabels, target: "a3", slack: slack, lines: &lines)
             check("\(p)_route_\(route)_key after k3", key, labels: keyLabels, target: "a3", slack: slack, lines: &lines)
         }
 
         if dynamic {
             let none = element(app, "dyn_route_nil")
             lines.append("dyn_route_nil drawn with none: nearest \(top(of: none, among: rowLabels).map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
-            app.buttons["dyn nil go 6"].tap()
-            sleep(1)
+            go(app, "dyn nil go 6", "dyn_route_nil after 6", none, labels: rowLabels, target: "B1", slack: 10, lines: &lines)
             check("dyn_route_nil after 6", none, labels: rowLabels, target: "B1", slack: 10, lines: &lines)
         }
         report(lines, "SPR")
@@ -142,11 +164,9 @@ final class ScrollRouteProbeUITests: XCTestCase {
 
         let list = element(app, "\(p)_route_class")
         XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no class-list List")
-        app.buttons["\(p) class go 6"].tap()
-        sleep(1)
+        go(app, "\(p) class go 6", "\(p)_route_class after 6", list, labels: classLabels, target: "B1", slack: 24, lines: &lines)
         check("\(p)_route_class after 6", list, labels: classLabels, target: "B1", slack: 24, lines: &lines)
-        app.buttons["\(p) class go k3"].tap()
-        sleep(1)
+        go(app, "\(p) class go k3", "\(p)_route_class_key after k3", element(app, "\(p)_route_class_key"), labels: keyLabels, target: "a3", slack: 24, lines: &lines)
         check("\(p)_route_class_key after k3", element(app, "\(p)_route_class_key"), labels: keyLabels, target: "a3", slack: 24, lines: &lines)
 
         for (go, id, want, labels) in [("\(p) pager go 6", "\(p)_route_pager", "B1", classLabels),
@@ -155,15 +175,14 @@ final class ScrollRouteProbeUITests: XCTestCase {
             XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no \(id)")
             let before = onPage(pager, among: labels)
             app.buttons[go].tap()
-            sleep(2)
+            lines.append(Landing.wait(id, from: "\(before)", landed: { $0 == "\([want])" }) { "\(onPage(pager, among: labels))" })
             let after = onPage(pager, among: labels)
             lines.append("\(id): page before \(before), after \(go.split(separator: " ").last ?? ""): \(after)")
             XCTAssertEqual(after, [want], "\(id): the page on screen is not \(want)'s")
         }
 
         let cellId = element(app, "\(p)_route_cellid")
-        app.buttons["\(p) cellid go c3"].tap()
-        sleep(1)
+        go(app, "\(p) cellid go c3", "\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
         check("\(p)_route_cellid after c3", cellId, labels: cellIdLabels, target: "a3", slack: 10, lines: &lines)
         report(lines, "SPR2")
     }
@@ -174,15 +193,16 @@ final class ScrollRouteProbeUITests: XCTestCase {
         for (route, slack) in [("list", CGFloat(10)), ("class", CGFloat(24))] {
             let list = element(app, "\(p)_route_int_\(route)")
             XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no int \(route)")
-            app.buttons["\(p) int \(route) go 12"].tap()
-            sleep(1)
+            go(app, "\(p) int \(route) go 12", "\(p)_route_int_\(route) after 12", list, labels: keyLabels, target: "b2", slack: slack, lines: &lines)
             check("\(p)_route_int_\(route) after 12", list, labels: keyLabels, target: "b2", slack: slack, lines: &lines)
         }
         let pager = element(app, "\(p)_route_int_pager")
         XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no int pager")
         let before = onPage(pager, among: keyLabels)
         app.buttons["\(p) int pager go 12"].tap()
-        sleep(2)
+        lines.append(Landing.wait("\(p)_route_int_pager", from: "\(before)", landed: { $0 == "\(["b2"])" }) {
+            "\(onPage(pager, among: keyLabels))"
+        })
         let after = onPage(pager, among: keyLabels)
         lines.append("\(p)_route_int_pager: page before \(before), after 12: \(after)")
         XCTAssertEqual(after, ["b2"], "\(p)_route_int_pager: the page on screen is not b2's")
@@ -191,8 +211,11 @@ final class ScrollRouteProbeUITests: XCTestCase {
         XCTAssertTrue(dup.waitForExistence(timeout: 5), "\(p): no dup list")
         let dupLabels = (0..<10).map { "g\($0)" } + (0..<10).map { "h\($0)" }
         for (value, want) in [("3", "g1"), ("k", "g6"), ("w5", "h5"), ("k", "g6")] {
+            let before = nearest(dup, among: dupLabels)
             app.buttons["\(p) dup go \(value)"].tap()
-            sleep(1)
+            lines.append(Landing.wait("\(p)_route_dup go \(value)", from: before) {
+                (nearest(dup, among: dupLabels), top(of: dup, among: dupLabels)?.label == want)
+            })
             let landed = top(of: dup, among: dupLabels)
             lines.append("\(p)_route_dup after \(value): nearest \(landed.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
             XCTAssertEqual(landed?.label, want, "\(p)_route_dup: after \"\(value)\" the top is not \(want)")
@@ -207,8 +230,11 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let classList = element(app, "\(p)_route_auto_class")
         let pager = element(app, "\(p)_route_auto_pager")
         XCTAssertTrue(list.waitForExistence(timeout: 5), "\(p): no auto list")
+        // All three stay at a0 — nothing lands, so they must rest for the 2 s
+        // the fixed sleep gave a move to show.
+        let autoReading = { "list \(self.nearest(list, among: self.keyLabels)) class \(self.nearest(classList, among: self.keyLabels)) pager \(self.onPage(pager, among: self.keyLabels))" }
         app.buttons["\(p) auto go k3"].tap()
-        sleep(2)
+        lines.append(Landing.wait("\(p)_route_auto go k3", still: 2, read: autoReading))
         for (name, frame) in [("list", list), ("class", classList)] {
             let at = top(of: frame, among: keyLabels)
             lines.append("\(p)_route_auto_\(name) after k3: nearest \(at.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
@@ -217,8 +243,14 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let raw = onPage(pager, among: keyLabels)
         lines.append("\(p)_route_auto_pager after k3: \(raw)")
         XCTAssertEqual(raw, ["a0"], "\(p)_route_auto_pager: the data's own key turned it")
+        let autoBefore = autoReading()
         app.buttons["\(p) auto go k3~"].tap()
-        sleep(2)
+        lines.append(Landing.wait("\(p)_route_auto go k3~", from: autoBefore) {
+            let l = reading(list, labels: keyLabels, target: "a3", slack: 10)
+            let c = reading(classList, labels: keyLabels, target: "a3", slack: 24)
+            let page = onPage(pager, among: keyLabels)
+            return ("list \(l.value) class \(c.value) pager \(page)", l.landed && c.landed && page == ["a3"])
+        })
         check("\(p)_route_auto_list after k3~", list, labels: keyLabels, target: "a3", slack: 10, lines: &lines)
         check("\(p)_route_auto_class after k3~", classList, labels: keyLabels, target: "a3", slack: 24, lines: &lines)
         let enriched = onPage(pager, among: keyLabels)
@@ -228,8 +260,11 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let cellId = element(app, "\(p)_route_cellid2")
         let labels = (0..<10).map { "c\($0)" } + (0..<10).map { "d\($0)" }
         for (value, want) in [("c2", "c2"), ("1:3", "c2"), ("e4", "d4"), ("c2", "c2")] {
+            let before = nearest(cellId, among: labels)
             app.buttons["\(p) cellid2 go \(value)"].tap()
-            sleep(1)
+            lines.append(Landing.wait("\(p)_route_cellid2 go \(value)", from: before) {
+                (nearest(cellId, among: labels), top(of: cellId, among: labels)?.label == want)
+            })
             let landed = top(of: cellId, among: labels)
             lines.append("\(p)_route_cellid2 after \(value): nearest \(landed.map { "\($0.label)@\(Int($0.offset))" } ?? "none")")
             XCTAssertEqual(landed?.label, want, "\(p)_route_cellid2: after \"\(value)\" the top is not \(want)")
@@ -272,8 +307,20 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let app = launch(argument)
         var lines: [String] = []
         XCTAssertTrue(element(app, "\(p)_hanchor_top").waitForExistence(timeout: 5), "\(p): no horizontal list")
+        // Each list's a5: how far its anchored edge is from the viewport's.
+        let anchored = { () -> (value: String, landed: Bool) in
+            let off = ["top", "center", "bottom"].map { anchor -> CGFloat? in
+                let frame = self.element(app, "\(p)_hanchor_\(anchor)").frame
+                let cell = self.element(app, "\(p)_hanchor_\(anchor)_item_5")
+                guard cell.exists else { return nil }
+                let c = cell.frame
+                return anchor == "top" ? c.minX - frame.minX : anchor == "center" ? c.midX - frame.midX : c.maxX - frame.maxX
+            }
+            return (off.map { $0.map { "\(Int($0))" } ?? "off" }.joined(separator: "/"), off.allSatisfy { $0.map { abs($0) <= 2 } ?? false })
+        }
+        let before = anchored().value
         app.buttons["\(p) h go 5"].tap()
-        sleep(1)
+        lines.append(Landing.wait("\(p)_hanchor go 5", from: before, read: anchored))
         for anchor in ["top", "center", "bottom"] {
             let frame = element(app, "\(p)_hanchor_\(anchor)").frame
             let cell = element(app, "\(p)_hanchor_\(anchor)_item_5")
@@ -295,7 +342,16 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let app = launch(argument)
         var lines: [String] = []
         XCTAssertTrue(element(app, "\(p)_hstart_top").waitForExistence(timeout: 5), "\(p): no horizontal list")
-        sleep(1)
+        // Nothing is tapped: the lists start where they start. Read until
+        // they rest, the first cell on screen and its x in each.
+        lines.append(Landing.wait("\(p)_hstart drawn") {
+            ["top", "center", "bottom"].map { anchor -> String in
+                let frame = element(app, "\(p)_hstart_\(anchor)").frame
+                let first = (0..<10).lazy.map { (i: $0, e: self.element(app, "\(p)_hstart_\(anchor)_item_\($0)")) }
+                    .first { $0.e.exists && $0.e.frame.intersects(frame) }
+                return first.map { "\($0.i)@\(Int($0.e.frame.minX - frame.minX))" } ?? "none"
+            }.joined(separator: "/")
+        })
         for anchor in ["top", "center", "bottom"] {
             let frame = element(app, "\(p)_hstart_\(anchor)").frame
             // The cells on screen, by their address: the content's leading

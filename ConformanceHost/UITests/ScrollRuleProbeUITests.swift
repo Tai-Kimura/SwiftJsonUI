@@ -76,16 +76,22 @@ final class ScrollRuleProbeUITests: XCTestCase {
         }
         for half in halves {
             XCTAssertTrue(half.index.waitForExistence(timeout: 5), "\(half.name): no index list")
-            lines.append("\(half.name) index before: top=\(top(of: half.index, among: listLabels))")
+            let indexBefore = top(of: half.index, among: listLabels)
+            lines.append("\(half.name) index before: top=\(indexBefore)")
             app.buttons[half.goIndex].tap()
-            sleep(1)
+            lines.append(Landing.wait("\(half.name) index go 6", from: indexBefore, landed: { $0 == "B1" }) {
+                top(of: half.index, among: listLabels)
+            })
             let landed = top(of: half.index, among: listLabels)
             lines.append("\(half.name) index after 6: top=\(landed)")
             XCTAssertEqual(landed, "B1", "\(half.name): scrollTo 6 did not land on B1, the seventh cell")
 
-            lines.append("\(half.name) key before: top=\(top(of: half.key, among: keyLabels))")
+            let keyBefore = top(of: half.key, among: keyLabels)
+            lines.append("\(half.name) key before: top=\(keyBefore)")
             app.buttons[half.goKey].tap()
-            sleep(1)
+            lines.append(Landing.wait("\(half.name) key go k3", from: keyBefore, landed: { $0 == "a3" }) {
+                top(of: half.key, among: keyLabels)
+            })
             let keyed = top(of: half.key, among: keyLabels)
             lines.append("\(half.name) key after k3: top=\(keyed)")
             XCTAssertEqual(keyed, "a3", "\(half.name): scrollTo \"k3\" did not land on a3, the first section's cell")
@@ -107,8 +113,11 @@ final class ScrollRuleProbeUITests: XCTestCase {
             XCTAssertTrue(half.list.waitForExistence(timeout: 5), "\(half.name): no list")
             lines.append("\(half.name) before: top=\(top(of: half.list, among: labels))")
             for (value, expected) in steps {
+                let before = top(of: half.list, among: labels)
                 app.buttons["\(half.prefix) go \(value)"].tap()
-                sleep(1)
+                lines.append(Landing.wait("\(half.name) go \(value)", from: before, landed: { $0 == expected }) {
+                    top(of: half.list, among: labels)
+                })
                 let landed = top(of: half.list, among: labels)
                 lines.append("\(half.name) after \(value): top=\(landed)")
                 XCTAssertEqual(landed, expected, "\(half.name): after scrollTo \"\(value)\" the top is not \(expected)")
