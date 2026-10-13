@@ -621,7 +621,7 @@ public struct CommonAttributes {
     /// Direct frame [x, y, width, height]
     public let rect: [Any]?
 
-    /// Size class overrides. Keys: compact, medium, regular, landscape, or hyphenated combos (e.g. regular-landscape). Values: object of attribute overrides for that size class.
+    /// Size class or window-width overrides. Keys: compact, medium, regular, landscape, or hyphenated combos (e.g. regular-landscape); or window-width conditions minWidth:N (the window is at least N wide) and maxWidth:N (narrower than N; N is not included, unlike jsonui-test-runner's maxWidth test condition), N a whole number of pt / dp / CSS px. One block uses size classes or width conditions, never both; every maxWidth's N is at most every minWidth's N; no landscape combination for a width condition. The one key that holds and ranks highest wins alone (size classes: regular-landscape > medium-landscape > compact-landscape > landscape > regular > medium > compact; width: the smallest maxWidth, else the largest minWidth). Values: object of attribute overrides.
     public let responsive: [String: Any]?
 
     /// Right margin (binding supported)

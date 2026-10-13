@@ -24,15 +24,22 @@
 //    landscape           -> verticalSizeClass == .compact
 //    compact-landscape   -> horizontalSizeClass == .compact && verticalSizeClass == .compact
 //    regular-landscape   -> horizontalSizeClass == .regular && verticalSizeClass == .compact
-//    medium              -> falls back to compact (iOS has no medium size class)
+//    medium              -> compact's condition (iOS has no medium size class)
+//    medium-landscape    -> compact-landscape's condition
 //
-//  Priority (highest to lowest):
-//    compound (compact-landscape, regular-landscape)
-//    > landscape
-//    > regular
-//    > medium
-//    > compact
-//    > default (no overrides)
+//  One key wins, alone: the first of jsonui-cli's PRIORITY_ORDER
+//  (shared/core/responsive_resolver.rb) that is in the block and holds —
+//    regular-landscape > medium-landscape > compact-landscape > landscape
+//    > regular > medium > compact > default (no overrides)
+//  Until 10.29.12 this resolver had no medium-landscape and tried
+//  compact-landscape first (sjui-dynamic-responsive-ignores-medium-landscape).
+//
+//  Window-width conditions (jui-responsive-width-threshold-conditions): a
+//  block of `minWidth:N` (window width >= N) / `maxWidth:N` (< N) keys and no
+//  size class. The smallest maxWidth that holds wins, else the largest
+//  minWidth. The width is the window's (SJUIWindowWidth), in points.
+//  shared/core/responsive_resolution_vectors.json holds the cases
+//  (ResponsiveResolverVectorTests).
 //
 
 import SwiftUI
@@ -50,12 +57,79 @@ public struct ResponsiveResolver {
     /// Current vertical size class from the SwiftUI environment.
     public let verticalSizeClass: UserInterfaceSizeClass?
 
+    /// The window's width in points, for `minWidth:N` / `maxWidth:N`; nil
+    /// when unknown, and then no width condition holds.
+    public let windowWidth: CGFloat?
+
     public init(
         horizontalSizeClass: UserInterfaceSizeClass?,
-        verticalSizeClass: UserInterfaceSizeClass?
+        verticalSizeClass: UserInterfaceSizeClass?,
+        windowWidth: CGFloat? = nil
     ) {
         self.horizontalSizeClass = horizontalSizeClass
         self.verticalSizeClass = verticalSizeClass
+        self.windowWidth = windowWidth
+    }
+
+    /// jsonui-cli shared/core/responsive_resolver.rb PRIORITY_ORDER.
+    static let priorityOrder = [
+        "regular-landscape", "medium-landscape", "compact-landscape",
+        "landscape", "regular", "medium", "compact"
+    ]
+
+    /// A width condition: `minWidth:N` / `maxWidth:N`, N a whole number
+    /// without a leading zero (responsive_resolver.rb WIDTH_CONDITION).
+    struct WidthCondition: Equatable {
+        enum Kind: Equatable { case min, max }
+        let kind: Kind
+        let value: Int
+
+        init?(_ key: String) {
+            let parts = key.split(separator: ":", maxSplits: 1, omittingEmptySubsequences: false)
+            guard parts.count == 2 else { return nil }
+            switch parts[0] {
+            case "minWidth": kind = .min
+            case "maxWidth": kind = .max
+            default: return nil
+            }
+            let digits = parts[1]
+            guard !digits.isEmpty, digits.allSatisfy({ ("0"..."9").contains($0) }),
+                  digits == "0" || digits.first != "0",
+                  let value = Int(digits) else { return nil }
+            self.value = value
+        }
+
+        func holds(at width: CGFloat) -> Bool {
+            kind == .min ? width >= CGFloat(value) : width < CGFloat(value)
+        }
+    }
+
+    /// Whether a size-class key holds for these size classes.
+    func holds(sizeClass key: String) -> Bool {
+        let isCompact = horizontalSizeClass == .compact
+        let isRegular = horizontalSizeClass == .regular
+        let isLandscape = verticalSizeClass == .compact
+        switch key {
+        case "regular-landscape": return isRegular && isLandscape
+        case "medium-landscape", "compact-landscape": return isCompact && isLandscape
+        case "landscape": return isLandscape
+        case "regular": return isRegular
+        case "medium", "compact": return isCompact
+        default: return false
+        }
+    }
+
+    /// The key that wins in `responsive`, or nil (the base is drawn).
+    func winningKey(in responsive: [String: [String: Any]]) -> String? {
+        let keys = Array(responsive.keys)
+        let widthKeys = keys.compactMap { key in WidthCondition(key).map { (key, $0) } }
+        if !widthKeys.isEmpty && !keys.contains(where: { Self.priorityOrder.contains($0) }) {
+            guard let width = windowWidth else { return nil }
+            let maxes = widthKeys.filter { $0.1.kind == .max }.sorted { $0.1.value < $1.1.value }
+            let mins = widthKeys.filter { $0.1.kind == .min }.sorted { $0.1.value > $1.1.value }
+            return (maxes + mins).first { $0.1.holds(at: width) }?.0
+        }
+        return Self.priorityOrder.first { responsive[$0] != nil && holds(sizeClass: $0) }
     }
 
     // MARK: - Public API
@@ -175,44 +249,9 @@ public struct ResponsiveResolver {
         if let warningHandler { warningHandler(styleInOverride) } else { Logger.debug(styleInOverride) }
     }
 
-    /// Determine the best-matching override dictionary from the responsive
-    /// block, following the priority order:
-    ///   compound > landscape > regular > medium > compact > (none)
+    /// The winning key's override dictionary, or empty (the base as-is).
     func bestMatchingOverrides(from responsive: [String: [String: Any]]) -> [String: Any] {
-        let isCompact = horizontalSizeClass == .compact
-        let isRegular = horizontalSizeClass == .regular
-        let isLandscape = verticalSizeClass == .compact
-
-        // Priority 1: Compound keys (most specific)
-        if isCompact && isLandscape, let overrides = responsive["compact-landscape"] {
-            return overrides
-        }
-        if isRegular && isLandscape, let overrides = responsive["regular-landscape"] {
-            return overrides
-        }
-
-        // Priority 2: Landscape (verticalSizeClass == .compact)
-        if isLandscape, let overrides = responsive["landscape"] {
-            return overrides
-        }
-
-        // Priority 3: Regular (horizontalSizeClass == .regular)
-        if isRegular, let overrides = responsive["regular"] {
-            return overrides
-        }
-
-        // Priority 4: Medium (falls back to compact on iOS)
-        if isCompact, let overrides = responsive["medium"] {
-            return overrides
-        }
-
-        // Priority 5: Compact (horizontalSizeClass == .compact)
-        if isCompact, let overrides = responsive["compact"] {
-            return overrides
-        }
-
-        // No match -- return empty (use base attributes as-is)
-        return [:]
+        winningKey(in: responsive).flatMap { responsive[$0] } ?? [:]
     }
 }
 

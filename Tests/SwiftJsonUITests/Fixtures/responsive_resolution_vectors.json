@@ -1,0 +1,423 @@
+{
+  "version": 1,
+  "title": "JsonUI responsive \u2014 which key of a responsive block wins, shared test vectors",
+  "notes": "The rule shared/core/responsive_resolver.rb gives every codegen (build_branches: the first branch whose condition holds), and both Dynamic runtimes follow. One key wins alone; its overrides go on the base, and no other key's do. Size classes: the first key of PRIORITY_ORDER (regular-landscape, medium-landscape, compact-landscape, landscape, regular, medium, compact) that is in the block and holds. env.sizeClass is the width bucket (Android: compact < 600dp <= medium < 840dp <= regular); on iOS compact and medium are both horizontalSizeClass .compact, so medium and medium-landscape hold wherever compact and compact-landscape do \u2014 ios_winner, where present, is the iOS answer. Width conditions (jui-responsive-width-threshold-conditions): minWidth:N holds when env.width >= N, maxWidth:N when env.width < N; the smallest maxWidth that holds wins, else the largest minWidth that holds. env.width is the window's width in pt / dp / CSS px. winner null: no key holds, the base is drawn. Read by: sjui/kjui/rjui responsive_resolver specs, jui_tools tests, SwiftJsonUI ResponsiveResolverVectorTests, KotlinJsonUI ResponsiveResolverVectorTest (copies checked byte for byte by each library's CI). key_cases: whether a key is a width condition, and which (null: it is not one \u2014 a size class, or a misspelling jui build refuses when it looks like one).",
+  "cases": [
+    {
+      "name": "split at 700, width 699",
+      "keys": [
+        "maxWidth:700",
+        "minWidth:700"
+      ],
+      "env": {
+        "width": 699
+      },
+      "winner": "maxWidth:700"
+    },
+    {
+      "name": "split at 700, width 699.5",
+      "keys": [
+        "maxWidth:700",
+        "minWidth:700"
+      ],
+      "env": {
+        "width": 699.5
+      },
+      "winner": "maxWidth:700"
+    },
+    {
+      "name": "split at 700, width 700",
+      "keys": [
+        "maxWidth:700",
+        "minWidth:700"
+      ],
+      "env": {
+        "width": 700
+      },
+      "winner": "minWidth:700"
+    },
+    {
+      "name": "split at 700, width 701",
+      "keys": [
+        "maxWidth:700",
+        "minWidth:700"
+      ],
+      "env": {
+        "width": 701
+      },
+      "winner": "minWidth:700"
+    },
+    {
+      "name": "two minWidth, width 599",
+      "keys": [
+        "minWidth:600",
+        "minWidth:900"
+      ],
+      "env": {
+        "width": 599
+      },
+      "winner": null
+    },
+    {
+      "name": "two minWidth, width 600",
+      "keys": [
+        "minWidth:600",
+        "minWidth:900"
+      ],
+      "env": {
+        "width": 600
+      },
+      "winner": "minWidth:600"
+    },
+    {
+      "name": "two minWidth, width 601",
+      "keys": [
+        "minWidth:600",
+        "minWidth:900"
+      ],
+      "env": {
+        "width": 601
+      },
+      "winner": "minWidth:600"
+    },
+    {
+      "name": "two minWidth, width 899",
+      "keys": [
+        "minWidth:600",
+        "minWidth:900"
+      ],
+      "env": {
+        "width": 899
+      },
+      "winner": "minWidth:600"
+    },
+    {
+      "name": "two minWidth, width 900",
+      "keys": [
+        "minWidth:600",
+        "minWidth:900"
+      ],
+      "env": {
+        "width": 900
+      },
+      "winner": "minWidth:900"
+    },
+    {
+      "name": "two minWidth, width 901",
+      "keys": [
+        "minWidth:600",
+        "minWidth:900"
+      ],
+      "env": {
+        "width": 901
+      },
+      "winner": "minWidth:900"
+    },
+    {
+      "name": "two maxWidth, width 399",
+      "keys": [
+        "maxWidth:400",
+        "maxWidth:700"
+      ],
+      "env": {
+        "width": 399
+      },
+      "winner": "maxWidth:400"
+    },
+    {
+      "name": "two maxWidth, width 400",
+      "keys": [
+        "maxWidth:400",
+        "maxWidth:700"
+      ],
+      "env": {
+        "width": 400
+      },
+      "winner": "maxWidth:700"
+    },
+    {
+      "name": "two maxWidth, width 401",
+      "keys": [
+        "maxWidth:400",
+        "maxWidth:700"
+      ],
+      "env": {
+        "width": 401
+      },
+      "winner": "maxWidth:700"
+    },
+    {
+      "name": "two maxWidth, width 699",
+      "keys": [
+        "maxWidth:400",
+        "maxWidth:700"
+      ],
+      "env": {
+        "width": 699
+      },
+      "winner": "maxWidth:700"
+    },
+    {
+      "name": "two maxWidth, width 700",
+      "keys": [
+        "maxWidth:400",
+        "maxWidth:700"
+      ],
+      "env": {
+        "width": 700
+      },
+      "winner": null
+    },
+    {
+      "name": "two maxWidth, width 701",
+      "keys": [
+        "maxWidth:400",
+        "maxWidth:700"
+      ],
+      "env": {
+        "width": 701
+      },
+      "winner": null
+    },
+    {
+      "name": "minWidth:0 holds at width 0",
+      "keys": [
+        "minWidth:0"
+      ],
+      "env": {
+        "width": 0
+      },
+      "winner": "minWidth:0"
+    },
+    {
+      "name": "maxWidth:0 never holds",
+      "keys": [
+        "maxWidth:0"
+      ],
+      "env": {
+        "width": 0
+      },
+      "winner": null
+    },
+    {
+      "name": "compact only, regular window",
+      "keys": [
+        "compact"
+      ],
+      "env": {
+        "sizeClass": "regular",
+        "landscape": false
+      },
+      "winner": null,
+      "note": "kjui-dynamic-responsive-stacks-overrides-codegen-picks-one: Dynamic used to apply compact here"
+    },
+    {
+      "name": "compact and medium, medium window",
+      "keys": [
+        "compact",
+        "medium"
+      ],
+      "env": {
+        "sizeClass": "medium",
+        "landscape": false
+      },
+      "winner": "medium"
+    },
+    {
+      "name": "compact and medium, compact window",
+      "keys": [
+        "compact",
+        "medium"
+      ],
+      "env": {
+        "sizeClass": "compact",
+        "landscape": false
+      },
+      "winner": "compact",
+      "ios_winner": "medium",
+      "note": "iOS has no medium size class: medium's condition is compact's, and medium is higher in the order"
+    },
+    {
+      "name": "medium only, regular window",
+      "keys": [
+        "medium"
+      ],
+      "env": {
+        "sizeClass": "regular",
+        "landscape": false
+      },
+      "winner": null
+    },
+    {
+      "name": "regular and landscape, regular landscape",
+      "keys": [
+        "regular",
+        "landscape"
+      ],
+      "env": {
+        "sizeClass": "regular",
+        "landscape": true
+      },
+      "winner": "landscape"
+    },
+    {
+      "name": "regular-landscape beats landscape",
+      "keys": [
+        "landscape",
+        "regular-landscape",
+        "regular"
+      ],
+      "env": {
+        "sizeClass": "regular",
+        "landscape": true
+      },
+      "winner": "regular-landscape"
+    },
+    {
+      "name": "medium-landscape only, medium landscape",
+      "keys": [
+        "medium-landscape"
+      ],
+      "env": {
+        "sizeClass": "medium",
+        "landscape": true
+      },
+      "winner": "medium-landscape",
+      "note": "sjui-dynamic-responsive-ignores-medium-landscape: SwiftJsonUI Dynamic never read this key"
+    },
+    {
+      "name": "medium-landscape only, compact landscape",
+      "keys": [
+        "medium-landscape"
+      ],
+      "env": {
+        "sizeClass": "compact",
+        "landscape": true
+      },
+      "winner": null,
+      "ios_winner": "medium-landscape"
+    },
+    {
+      "name": "compact-landscape and medium-landscape, compact landscape",
+      "keys": [
+        "compact-landscape",
+        "medium-landscape"
+      ],
+      "env": {
+        "sizeClass": "compact",
+        "landscape": true
+      },
+      "winner": "compact-landscape",
+      "ios_winner": "medium-landscape"
+    },
+    {
+      "name": "landscape key in portrait",
+      "keys": [
+        "landscape"
+      ],
+      "env": {
+        "sizeClass": "regular",
+        "landscape": false
+      },
+      "winner": null
+    }
+  ],
+  "key_cases": [
+    {
+      "key": "minWidth:700",
+      "condition": {
+        "kind": "min",
+        "value": 700
+      }
+    },
+    {
+      "key": "maxWidth:700",
+      "condition": {
+        "kind": "max",
+        "value": 700
+      }
+    },
+    {
+      "key": "minWidth:0",
+      "condition": {
+        "kind": "min",
+        "value": 0
+      }
+    },
+    {
+      "key": "maxWidth:12000",
+      "condition": {
+        "kind": "max",
+        "value": 12000
+      }
+    },
+    {
+      "key": "minWidth:07",
+      "condition": null
+    },
+    {
+      "key": "minWidth:7.5",
+      "condition": null
+    },
+    {
+      "key": "minWidth: 700",
+      "condition": null
+    },
+    {
+      "key": "minWidth:700 ",
+      "condition": null
+    },
+    {
+      "key": "minwidth:700",
+      "condition": null
+    },
+    {
+      "key": "MinWidth:700",
+      "condition": null
+    },
+    {
+      "key": "minWidth:-1",
+      "condition": null
+    },
+    {
+      "key": "minWidth:+700",
+      "condition": null
+    },
+    {
+      "key": "minWidth:700-landscape",
+      "condition": null
+    },
+    {
+      "key": "landscape-minWidth:700",
+      "condition": null
+    },
+    {
+      "key": "minWidth:700px",
+      "condition": null
+    },
+    {
+      "key": "minWidth",
+      "condition": null
+    },
+    {
+      "key": "minWidth:",
+      "condition": null
+    },
+    {
+      "key": "maxHeight:700",
+      "condition": null
+    },
+    {
+      "key": "width:700",
+      "condition": null
+    },
+    {
+      "key": "regular",
+      "condition": null
+    },
+    {
+      "key": "compact-landscape",
+      "condition": null
+    }
+  ]
+}

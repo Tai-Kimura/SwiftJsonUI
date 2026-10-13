@@ -135,6 +135,8 @@ jobs:
                "shared/core/include_maps_fixture.json"),
               ("Tests/SwiftJsonUITests/Fixtures/camel_case_vectors.json",
                "shared/core/camel_case_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/responsive_resolution_vectors.json",
+               "shared/core/responsive_resolution_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/image_accessibility_vectors.json",
                "shared/core/image_accessibility_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",

@@ -147,13 +147,15 @@ public class JSONLayoutLoader {
     static func prepared(
         _ component: DynamicComponent,
         horizontalSizeClass: UserInterfaceSizeClass?,
-        verticalSizeClass: UserInterfaceSizeClass?
+        verticalSizeClass: UserInterfaceSizeClass?,
+        windowWidth: CGFloat? = nil
     ) -> DynamicComponent {
         guard hasUnresolvedStages(component.rawData) else { return stamped(component) }
         var json = StyleProcessor.processStyles(component.rawData)
         json = IncludeExpander.shared.processIncludes(json, baseDir: getLayoutFileDirPath())
         if ResponsiveResolver.jsonContainsResponsive(json) {
-            json = ResponsiveResolver(horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass)
+            json = ResponsiveResolver(horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass,
+                                      windowWidth: windowWidth)
                 .resolveTree(json)
         }
         if !LayoutPath.isStamped(json) { json = LayoutPath.stamp(json) }

@@ -17,6 +17,8 @@ public struct DynamicView: View {
     @StateObject private var radioGroups = DynamicRadioGroups()
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// The window's width, for responsive `minWidth:N` / `maxWidth:N`.
+    @StateObject private var windowWidth = SJUIWindowWidth()
     private let data: [String: Any]
     private let viewId: String
     private let jsonName: String?
@@ -51,7 +53,8 @@ public struct DynamicView: View {
     private var rootComponent: DynamicComponent? {
         if let component = directComponent {
             return JSONLayoutLoader.prepared(
-                component, horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass)
+                component, horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass,
+                windowWidth: windowWidth.value)
         }
         if let baseName = jsonName {
             // Responsive variant files (home@regular.json): swap the whole
@@ -68,7 +71,8 @@ public struct DynamicView: View {
                 if ResponsiveResolver.jsonContainsResponsive(processedJSON) {
                     let resolver = ResponsiveResolver(
                         horizontalSizeClass: horizontalSizeClass,
-                        verticalSizeClass: verticalSizeClass
+                        verticalSizeClass: verticalSizeClass,
+                        windowWidth: windowWidth.value
                     )
                     let resolvedJSON = resolver.resolveTree(processedJSON)
                     return JSONLayoutLoader.decodeComponent(from: resolvedJSON)
@@ -96,6 +100,7 @@ public struct DynamicView: View {
             )
             .id(refreshId)
             .environment(\.dynamicRadioGroups, radioGroups)
+            .sjuiTracksWindowWidth(windowWidth)
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("layoutFileDidChanged"))) { _ in
                 DynamicStringManager.shared.reload()
                 refreshId = UUID()
