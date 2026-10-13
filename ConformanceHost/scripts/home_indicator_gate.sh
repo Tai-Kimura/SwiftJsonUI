@@ -84,8 +84,11 @@ EOF
     rm -rf "$RETAKE"; mkdir -p "$RETAKE"
     # The filter matches substrings, so it can take more fixtures than were
     # asked for; only the ones asked for are replaced below.
+    # No shard on the retake: run_conformance.sh exported the run's
+    # TEST_RUNNER_CONFORMANCE_SHARD, which would slice these few ids again.
     TEST_RUNNER_CONFORMANCE_STAGING_DIR="$RETAKE" \
     TEST_RUNNER_CONFORMANCE_FILTER="$(paste -sd, "$HI_DIR/found.txt")" \
+    TEST_RUNNER_CONFORMANCE_SHARD="" \
     xcodebuild test \
         -project "$HOST_DIR/ConformanceHost.xcodeproj" \
         -scheme ConformanceHost \

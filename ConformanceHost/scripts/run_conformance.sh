@@ -202,6 +202,24 @@ if [[ "$HOST_MODE" == "codegen" ]]; then
     export TEST_RUNNER_CONFORMANCE_HOST_MODE="codegen"
 fi
 
+# One shard's test classes (CONFORMANCE_ONLY_TESTING="ClassA ClassB …", spaces
+# or commas; a class or Class/testMethod). Unset is every test, as before.
+# A name that is not an identifier stops the run: a typo would otherwise
+# select nothing and the shard would pass on zero tests.
+ONLY_TESTING=()
+_only_list="${CONFORMANCE_ONLY_TESTING:-}"
+for _t in ${_only_list//,/ }; do
+    if [[ ! "$_t" =~ ^[A-Za-z_][A-Za-z0-9_]*(/[A-Za-z_][A-Za-z0-9_]*)?$ ]]; then
+        echo "error: CONFORMANCE_ONLY_TESTING has \"$_t\", not a test class or Class/method" >&2
+        exit 1
+    fi
+    ONLY_TESTING+=("-only-testing:ConformanceHostUITests/$_t")
+done
+unset _only_list _t
+if [[ ${#ONLY_TESTING[@]} -gt 0 ]]; then
+    echo "[conformance] only-testing: ${#ONLY_TESTING[@]} selector(s)"
+fi
+
 set -x
 xcodebuild test \
     -project "$HOST_DIR/ConformanceHost.xcodeproj" \
@@ -210,6 +228,7 @@ xcodebuild test \
     -derivedDataPath "$DERIVED_DATA" \
     -parallel-testing-enabled NO \
     -test-timeouts-enabled NO \
+    ${ONLY_TESTING[@]+"${ONLY_TESTING[@]}"} \
     2>&1 | tee "$STAGING/xcodebuild.log" | tail -40
 set +x
 # 🔻 THE FULL LOG, BECAUSE `tail -40` DISCARDS THE REASON. A compile error, a

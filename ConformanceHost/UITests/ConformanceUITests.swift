@@ -142,6 +142,20 @@ struct WebMarkerCensus: Encodable {
     var markerAbsent = 0
 }
 
+/// What one shard of a run covered (CONFORMANCE_SHARD=index/count), written
+/// into its results file so the merge can prove the shards partition the run:
+/// every shard counted the same `runnable` total, and every runnable fixture
+/// is in exactly one shard's `executed`.
+struct ShardRecord: Encodable {
+    /// The detail a shard writes for a runnable fixture another shard runs.
+    static let elsewhere = "in another shard"
+
+    let index: Int
+    let count: Int
+    let runnable: Int
+    let executed: [String]
+}
+
 // MARK: - Runner
 
 final class ConformanceUITests: XCTestCase {
@@ -233,6 +247,28 @@ final class ConformanceUITests: XCTestCase {
             }
         }
 
+        // 🔻 ONE CONTIGUOUS SLICE OF THE RUNNABLE FIXTURES, when the run is a
+        // shard (CONFORMANCE_SHARD=k/n). Not CONFORMANCE_FILTER: it matches by
+        // substring, and 241 of the runnable ids are substrings of another id
+        // (common/hidden__binding of common/hidden__binding_negation), so a
+        // filter made of ids runs some fixtures in two shards. The slice is
+        // taken after every skip rule, so the shards of one run cut the same
+        // list; the record written beside the results lets the merge prove
+        // that every runnable fixture ran in exactly one of them.
+        var shardRecord: ShardRecord? = nil
+        if let shard = try shardFromEnvironment() {
+            let total = runnable.count
+            let slice = shard.slice(total)
+            for (i, fixture) in runnable.enumerated() where !slice.contains(i) {
+                results[fixture.id] = FixtureResult(
+                    id: fixture.id, status: "skipped", detail: ShardRecord.elsewhere, screenshot: nil)
+            }
+            runnable = Array(runnable[slice])
+            shardRecord = ShardRecord(index: shard.index, count: shard.count, runnable: total,
+                                      executed: runnable.map { $0.id })
+            print("[conformance] shard \(shard.index)/\(shard.count): fixtures \(slice.lowerBound)..<\(slice.upperBound) of \(total)")
+        }
+
         webMarkerCensus.webFixturesRunnable =
             runnable.filter { $0.host == "Web" }.count
 
@@ -253,7 +289,7 @@ final class ConformanceUITests: XCTestCase {
         XCTAssertEqual(ordered.count, manifest.fixtures.count,
                        "every manifest fixture must have exactly one result")
 
-        try writeResults(ordered, manifestHash: manifestHash, webMarkers: webMarkerCensus)
+        try writeResults(ordered, manifestHash: manifestHash, webMarkers: webMarkerCensus, shard: shardRecord)
 
         // Two invariants, and they fail for different reasons.
         //
@@ -288,6 +324,24 @@ final class ConformanceUITests: XCTestCase {
               + "waitedThenSettled=\(webMarkerCensus.waitedThenSettled) "
               + "timedOut=\(webMarkerCensus.timedOut) "
               + "markerAbsent=\(webMarkerCensus.markerAbsent)")
+    }
+
+    // MARK: Shards
+
+    /// CONFORMANCE_SHARD=k/n (via TEST_RUNNER_CONFORMANCE_SHARD): run the k-th
+    /// of n contiguous slices of the runnable fixtures. Unset or empty is the
+    /// whole run. A value that does not read as k/n with 1 <= k <= n throws —
+    /// running everything instead would put every fixture in every shard.
+    private func shardFromEnvironment() throws -> (index: Int, count: Int, slice: (Int) -> Range<Int>)? {
+        let raw = (ProcessInfo.processInfo.environment["CONFORMANCE_SHARD"] ?? "")
+            .trimmingCharacters(in: .whitespaces)
+        if raw.isEmpty { return nil }
+        let parts = raw.split(separator: "/").map { Int($0) }
+        guard parts.count == 2, let k = parts[0], let n = parts[1], n >= 1, k >= 1, k <= n else {
+            throw NSError(domain: "ConformanceUITests", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "CONFORMANCE_SHARD must read k/n with 1 <= k <= n, got \"\(raw)\""])
+        }
+        return (k, n, { total in (total * (k - 1) / n)..<(total * k / n) })
     }
 
     // MARK: Skip policy
@@ -743,7 +797,7 @@ final class ConformanceUITests: XCTestCase {
     }
 
     private func writeResults(_ results: [FixtureResult], manifestHash: String,
-                              webMarkers: WebMarkerCensus) throws {
+                              webMarkers: WebMarkerCensus, shard: ShardRecord?) throws {
         // Build JSON by hand-encodable structure to guarantee key order stability
         // is not required by the schema; standard JSONEncoder output is fine.
         struct ResultsFile: Encodable {
@@ -755,6 +809,9 @@ final class ConformanceUITests: XCTestCase {
             let manifestHash: String
             let runner: Runner
             let webMarkers: WebMarkerCensus
+            /// Present only on a shard (CONFORMANCE_SHARD); an unsharded run's
+            /// file is what it always was.
+            let shard: ShardRecord?
             let results: [FixtureResult]
         }
 
@@ -763,6 +820,7 @@ final class ConformanceUITests: XCTestCase {
             manifestHash: manifestHash,
             runner: .init(name: "xcuitest", version: xcTestFrameworkVersion()),
             webMarkers: webMarkers,
+            shard: shard,
             results: results
         )
         let encoder = JSONEncoder()
