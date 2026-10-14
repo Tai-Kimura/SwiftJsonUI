@@ -148,15 +148,6 @@
     },
     {
       "gate": "raw-read",
-      "file": "Containers/DynamicScrollViewContainer.swift",
-      "kind": "rawData",
-      "key": "<ResponsiveResolver.scrollBaseChildOrientationKey>",
-      "owner": "—",
-      "plan": "恒久例外",
-      "reason": "属性ではなく ResponsiveResolver が刻印する値。ScrollView の唯一の子 View の、responsive を解決する前の orientation(sjui codegen の scrollview_converter.rb が軸を決めるのに読むもの)。解決後の木からは取り戻せないので型つき抽出には無い(ticket sjui-dynamic-scrollview-axis-from-resolved-child)"
-    },
-    {
-      "gate": "raw-read",
       "file": "DynamicComponentBuilder.swift",
       "kind": "rawData",
       "key": "style",

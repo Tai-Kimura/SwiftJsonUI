@@ -239,7 +239,7 @@
       }
     },
     "rules": [
-      "orientation determines scroll direction",
+      "the axis is horizontal when horizontalScroll is true or orientation is horizontal, and vertical otherwise — never taken from the children; an orientation and a horizontalScroll that disagree are refused by jui build (ERROR [scrollview])",
       "showsIndicator controls scrollbar visibility"
     ]
   },

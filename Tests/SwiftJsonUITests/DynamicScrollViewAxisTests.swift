@@ -2,16 +2,20 @@
 //  DynamicScrollViewAxisTests.swift
 //  SwiftJsonUITests
 //
-//  The axis a Dynamic ScrollView scrolls on, in sjui's codegen order
-//  (jsonui-cli sjui_tools scrollview_converter.rb): `horizontalScroll`, else
-//  the ScrollView's own `orientation`, else its only child View's
-//  orientation AS WRITTEN — before that child's `responsive` is resolved
-//  (sjui-dynamic-scrollview-axis-from-resolved-child).
+//  The axis a Dynamic ScrollView scrolls on: sideways when `horizontalScroll`
+//  is true or its own `orientation` is `horizontal`, vertically otherwise —
+//  never from its children (attribute_definitions.json ScrollView, user
+//  ruling 2026-10-14, jui-scrollview-axis-from-child-web-disagrees; the rule
+//  sjui / kjui codegen and rjui share). A pair that disagrees is refused by
+//  jui build (ERROR [scrollview]); neither key outranks the other here.
 //
-//  The specimen the defect needs is a child whose responsive override turns
-//  its orientation: every such case first asserts that the resolved child
-//  really is turned, so a case that passes is one where reading the resolved
-//  child would have answered the other way.
+//  An earlier commit of the 10.29.14 train (never released on its own) took
+//  the axis from a single child View, read as written before its
+//  `responsive` (sjui-dynamic-scrollview-axis-from-resolved-child). Those
+//  specimens stay: a child horizontal as written, and a child turned by its
+//  responsive block — each case first asserts that the child really is
+//  horizontal where it is read, so a case that passes is one where taking the
+//  axis from the child would have answered the other way.
 //
 
 import XCTest
@@ -21,8 +25,8 @@ import SwiftUI
 #if DEBUG
 final class DynamicScrollViewAxisTests: XCTestCase {
 
-    private func child(_ orientation: String, regular: String? = nil) -> [String: Any] {
-        var node: [String: Any] = ["type": "View", "orientation": orientation,
+    private func child(_ orientation: String, regular: String? = nil, type: String = "View") -> [String: Any] {
+        var node: [String: Any] = ["type": type, "orientation": orientation,
                                    "child": [["type": "Label", "text": "a"]]]
         if let regular { node["responsive"] = ["regular": ["orientation": regular]] }
         return node
@@ -35,7 +39,7 @@ final class DynamicScrollViewAxisTests: XCTestCase {
     }
 
     /// The tree as DynamicView resolves it, decoded; the ScrollView's axis and
-    /// its drawn child's orientation.
+    /// its first child's orientation as drawn.
     private func resolve(_ json: [String: Any], _ size: UserInterfaceSizeClass,
                          file: StaticString = #filePath, line: UInt = #line) -> (horizontal: Bool, childOrientation: String?) {
         let tree = ResponsiveResolver(horizontalSizeClass: size, verticalSizeClass: .regular).resolveTree(json)
@@ -44,7 +48,13 @@ final class DynamicScrollViewAxisTests: XCTestCase {
             return (false, nil)
         }
         let children = (component.childComponents ?? []).filter { $0.isValid || $0.include != nil }
-        return (DynamicScrollViewContainer.isHorizontal(component, children: children), children.first?.orientation)
+        return (DynamicScrollViewContainer.isHorizontal(component), children.first?.orientation)
+    }
+
+    func testAHorizontalChildLeavesTheScrollVertical() {
+        let drawn = resolve(scroll([child("horizontal")]), .compact)
+        XCTAssertEqual(drawn.childOrientation, "horizontal", "the specimen: the child is horizontal")
+        XCTAssertFalse(drawn.horizontal)
     }
 
     func testAChildTurnedHorizontalUnderRegularLeavesTheScrollVertical() {
@@ -55,45 +65,32 @@ final class DynamicScrollViewAxisTests: XCTestCase {
         XCTAssertFalse(resolve(json, .compact).horizontal)
     }
 
-    func testAChildTurnedVerticalUnderRegularLeavesTheScrollHorizontal() {
+    func testAChildHorizontalAsWrittenButVerticalUnderRegularLeavesTheScrollVertical() {
         let json = scroll([child("horizontal", regular: "vertical")])
-        let regular = resolve(json, .regular)
-        XCTAssertEqual(regular.childOrientation, "vertical", "the specimen: the resolved child is turned")
-        XCTAssertTrue(regular.horizontal)
-        XCTAssertTrue(resolve(json, .compact).horizontal)
+        let compact = resolve(json, .compact)
+        XCTAssertEqual(compact.childOrientation, "horizontal", "the specimen: the child is horizontal as written")
+        XCTAssertFalse(compact.horizontal)
+        XCTAssertFalse(resolve(json, .regular).horizontal)
     }
 
-    func testTheScrollViewsOwnVerticalWinsOverAHorizontalChild() {
-        XCTAssertFalse(resolve(scroll([child("horizontal")], ["orientation": "vertical"]), .compact).horizontal)
-        XCTAssertFalse(resolve(scroll([child("horizontal", regular: "horizontal")], ["orientation": "vertical"]), .regular).horizontal)
-    }
-
-    func testTheScrollViewsOwnHorizontalWinsOverAVerticalChild() {
+    func testOrientationHorizontalScrollsSideways() {
         XCTAssertTrue(resolve(scroll([child("vertical")], ["orientation": "horizontal"]), .compact).horizontal)
     }
 
-    func testHorizontalScrollWinsOverTheScrollViewsOwnVertical() {
+    func testHorizontalScrollTrueScrollsSideways() {
+        XCTAssertTrue(resolve(scroll([child("vertical")], ["horizontalScroll": true]), .compact).horizontal)
+    }
+
+    func testNeitherKeyOutranksTheOther() {
+        // The pairs jui build refuses; drawn anyway, either key turns it.
+        XCTAssertTrue(resolve(scroll([child("vertical")], ["orientation": "horizontal", "horizontalScroll": false]), .compact).horizontal)
         XCTAssertTrue(resolve(scroll([child("vertical")], ["orientation": "vertical", "horizontalScroll": true]), .compact).horizontal)
     }
 
-    func testAChildWithoutABlockStillGivesItsAxis() {
-        let json = scroll([child("horizontal")])
-        XCTAssertTrue(resolve(json, .regular).horizontal)
-        XCTAssertNil(ResponsiveResolver.stampingScrollAxis(json)[ResponsiveResolver.scrollBaseChildOrientationKey],
-                     "nothing to stamp: the child is already as written")
-    }
-
-    func testADataEntryBesideTheChildIsNotCounted() {
-        let json = scroll([["data": [["name": "x", "class": "String"]]], child("vertical", regular: "horizontal")])
-        let regular = resolve(json, .regular)
-        XCTAssertEqual(regular.childOrientation, "horizontal", "the specimen: the resolved child is turned")
-        XCTAssertFalse(regular.horizontal)
-    }
-
-    func testTwoChildrenGiveNoAxisFromAChild() {
-        let json = scroll([child("horizontal", regular: "horizontal"), child("horizontal")])
-        XCTAssertNil(ResponsiveResolver.stampingScrollAxis(json)[ResponsiveResolver.scrollBaseChildOrientationKey])
-        XCTAssertFalse(resolve(json, .regular).horizontal)
+    func testAScrollViewWithNoKeyIsVertical() {
+        XCTAssertFalse(resolve(scroll([child("vertical")]), .compact).horizontal)
+        XCTAssertFalse(resolve(scroll([child("vertical")], ["orientation": "vertical"]), .compact).horizontal)
+        XCTAssertFalse(resolve(scroll([child("vertical")], ["horizontalScroll": false]), .compact).horizontal)
     }
 }
 #endif

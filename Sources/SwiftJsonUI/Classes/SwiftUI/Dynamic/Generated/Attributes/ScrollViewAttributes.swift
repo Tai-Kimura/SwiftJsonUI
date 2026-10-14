@@ -125,7 +125,7 @@ public struct ScrollViewAttributes {
     /// Initial scroll position anchor. Sets where the scroll view starts. Declared from the implementation, which already read it: sjui scrollview_converter.rb:207-215. Scope is deliberately all three platforms: the anchor is a portable concept and the declaration says an attribute EXISTS, not which face has caught up — the coverage ledger carries the android and web gaps. The "(iOS 17+)" note this description was copied with belonged to Collection's ios implementation, not to the contract, and has been dropped here (plan 51-E, raised by C).
     public let defaultScrollAnchor: AttrEnum<DefaultScrollAnchor>?
 
-    /// Enable horizontal scroll. Declared from the implementation, which already read it: sjui scrollview_converter.rb:39 (plan 51-E).
+    /// Scroll sideways: true is the same as orientation "horizontal"; false or absent leaves the axis to orientation, vertical when that is not written either. Never taken from the children. Written together with orientation, the two must agree (jui build ERROR [scrollview]). Declared from the implementation, which already read it: sjui scrollview_converter.rb (plan 51-E).
     public let horizontalScroll: Bool?
 
     /// Scroll indicator style
@@ -146,7 +146,7 @@ public struct ScrollViewAttributes {
     /// Minimum zoom scale (binding supported)
     public let minZoom: AttrValue<Double>?
 
-    /// Scroll orientation
+    /// Scroll axis: "horizontal" scrolls sideways; "vertical" — and a ScrollView that writes neither this nor horizontalScroll: true — scrolls vertically. The axis is never taken from the children: a horizontal child View is laid out inside a vertical scroll. Written together with horizontalScroll, the two must agree — orientation "horizontal" with horizontalScroll false, or "vertical" with horizontalScroll true, is refused by jui build (ERROR [scrollview]), under any responsive key too.
     public let orientation: AttrEnum<Orientation>?
 
     /// Enable paging

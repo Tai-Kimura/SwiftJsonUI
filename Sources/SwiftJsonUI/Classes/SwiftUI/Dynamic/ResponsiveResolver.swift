@@ -138,9 +138,7 @@ public struct ResponsiveResolver {
     /// Returns a new dictionary tree with overrides merged and `responsive`
     /// keys removed.
     public func resolveTree(_ json: [String: Any]) -> [String: Any] {
-        // The node's own block first, then — before its children are
-        // resolved below — the axis a ScrollView takes from its child.
-        var resolved = Self.stampingScrollAxis(resolveNode(json))
+        var resolved = resolveNode(json)
 
         // Recursively process "child" array
         if let children = resolved["child"] as? [[String: Any]] {
@@ -216,39 +214,6 @@ public struct ResponsiveResolver {
                 ["child", "children"].compactMap { tab[$0] as? [[String: Any]] }.flatMap { $0 }
             }
         return nested.contains { jsonContainsWidthConditions($0) }
-    }
-
-    // MARK: - ScrollView axis
-
-    /// Stamped on a ScrollView by `stampingScrollAxis`: its only child's
-    /// orientation as written, before that child's `responsive` is resolved.
-    static let scrollBaseChildOrientationKey = "_scrollBaseChildOrientation"
-
-    /// A ScrollView with no `orientation` of its own scrolls the way its only
-    /// child View is laid out — and sjui's codegen (scrollview_converter.rb)
-    /// reads that child as written: the axis is fixed when the code is
-    /// generated, and a `responsive` override of the child's orientation
-    /// changes the stack inside, never the scroll axis. This tree is resolved
-    /// before DynamicScrollViewContainer sees it, so the child it would read
-    /// is the resolved one: a child that is vertical but horizontal under
-    /// `regular` turned the whole screen into a sideways scroll on a regular
-    /// window, its content pinned to the width of its columns
-    /// (sjui-dynamic-scrollview-axis-from-resolved-child). The child's
-    /// orientation is stamped here, while it is still the one written, and
-    /// only when the child has a block that could change it.
-    static func stampingScrollAxis(_ node: [String: Any]) -> [String: Any] {
-        guard node["type"] as? String == "ScrollView", node["orientation"] == nil else { return node }
-        let listed = (node["child"] as? [[String: Any]]) ?? (node["children"] as? [[String: Any]])
-            ?? (node["child"] as? [String: Any]).map { [$0] } ?? []
-        // The children DynamicScrollViewContainer counts: those with a type
-        // or an include (a data-only entry is not drawn).
-        let drawn = listed.filter { ($0["type"] as? String).map { !$0.isEmpty } ?? ($0["include"] != nil) }
-        guard drawn.count == 1, let child = drawn.first,
-              (child["type"] as? String)?.lowercased() == "view",
-              child["responsive"] != nil else { return node }
-        var stamped = node
-        stamped[scrollBaseChildOrientationKey] = child["orientation"] as? String == "horizontal" ? "horizontal" : "vertical"
-        return stamped
     }
 
     // MARK: - Internal

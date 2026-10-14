@@ -226,32 +226,23 @@ public struct DynamicScrollViewContainer: View {
     }
 
     private func resolveIsHorizontal(children: [DynamicComponent]) -> Bool {
-        Self.isHorizontal(component, children: children)
+        Self.isHorizontal(component)
     }
 
-    /// The scroll axis, in sjui's codegen order (scrollview_converter.rb):
-    /// `horizontalScroll`, else the ScrollView's own `orientation` — written
-    /// `vertical`, it is vertical whatever the child is — else its only
-    /// child View's orientation as written, which ResponsiveResolver stamped
-    /// before resolving that child's `responsive`
-    /// (sjui-dynamic-scrollview-axis-from-resolved-child). The child read
-    /// last is for a tree no resolver walked: it has no block, so it is
-    /// already as written.
-    static func isHorizontal(_ component: DynamicComponent, children: [DynamicComponent]) -> Bool {
-        if component.typedAttributes(ScrollViewAttributes.self).horizontalScroll == true {
-            return true
-        }
-        if let orientation = component.orientation { return orientation == "horizontal" }
-        if let written = component.rawData[ResponsiveResolver.scrollBaseChildOrientationKey] as? String {
-            return written == "horizontal"
-        }
-        if children.count == 1,
-           let firstChild = children.first,
-           firstChild.type?.lowercased() == "view",
-           firstChild.orientation == "horizontal" {
-            return true
-        }
-        return false
+    /// The scroll axis: sideways when `horizontalScroll` is true or the
+    /// ScrollView's own `orientation` is `horizontal`, vertical otherwise —
+    /// the rule sjui / kjui codegen and rjui share
+    /// (attribute_definitions.json ScrollView, user ruling 2026-10-14). The
+    /// children never decide: a horizontal child is laid out inside a
+    /// vertical scroll (jui-scrollview-axis-from-child-web-disagrees). Until
+    /// 10.29.14 a single horizontal child View turned the scroll (and an
+    /// earlier commit of the 10.29.14 train, never released on its own, read
+    /// that child as written, before its `responsive`).
+    /// An orientation and a horizontalScroll that disagree are refused by
+    /// jui build (ERROR [scrollview]); neither outranks the other here.
+    static func isHorizontal(_ component: DynamicComponent) -> Bool {
+        component.typedAttributes(ScrollViewAttributes.self).horizontalScroll == true
+            || component.orientation == "horizontal"
     }
 }
 // MARK: - Force re-evaluation when data dictionary changes
