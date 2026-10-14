@@ -155,7 +155,9 @@ struct ConformanceRootView: View {
 
     var body: some View {
         Group {
-            if ProcessInfo.processInfo.arguments.contains("-gestureProbe") {
+            if ProcessInfo.processInfo.arguments.contains("-hiddenToggleProbe") {
+                HiddenToggleProbeView()
+            } else if ProcessInfo.processInfo.arguments.contains("-gestureProbe") {
                 GestureProbeView()
             } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerProbe") {
                 ScreenMarkerProbeView()
