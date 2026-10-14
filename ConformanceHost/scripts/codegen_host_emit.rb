@@ -40,22 +40,41 @@ module CodegenHostEmit
   # reports its PRE-handler value — which is how this defect presented,
   # `Expected 'fired', Actual 'ready'`, with nothing in the staging summary
   # saying the handler had no wiring.
-  def host_source(name, handlers)
+  # `after_first_draw` (the manifest state's `afterFirstDraw`, jsonui-cli
+  # INTERACTIVE_HOST_CONTRACT.md) is the one change the host makes itself
+  # after the first draw: a `set` the layout does not name, so it is a method
+  # of the store rather than a closure in the Data (which has no member of
+  # that name). App/AfterFirstDraw.swift fires and stamps it, on the fixture
+  # id the UITest reads the stamp for.
+  def host_source(name, handlers, after_first_draw: nil, fixture_id: nil)
     handlers = Array(handlers)
-    return plain_host(name) if handlers.empty?
+    return plain_host(name) if handlers.empty? && after_first_draw.nil?
 
     assignments = handlers.map { |handler| handler_assignment(handler) }.join("\n")
+    fire = ''
+    view = "#{name}GeneratedView(data: $store.data)"
+    if after_first_draw
+      raise ArgumentError, 'an afterFirstDraw host needs its fixture id' if fixture_id.nil?
+
+      set = after_first_draw['set'] or raise ArgumentError, 'afterFirstDraw has no `set` operation'
+      value = swift_string_literal(set['value'].to_s)
+      fire = "\n    func fireAfterFirstDraw() { data.#{set['var']} = #{value} }"
+      view = "#{view}\n            .conformanceAfterFirstDraw(#{swift_string_literal(fixture_id)}, declared: true, " \
+             "applied: store.data.#{set['var']} == #{value}, fire: store.fireAfterFirstDraw)"
+    end
     <<~SWIFT
       private final class #{name}Store: ObservableObject {
           @Published var data = #{name}Data()
           init() {
       #{assignments}
-          }
+          }#{fire}
       }
 
       private struct #{name}Host: View {
           @StateObject private var store = #{name}Store()
-          var body: some View { #{name}GeneratedView(data: $store.data) }
+          var body: some View {
+              #{view}
+          }
       }
     SWIFT
   end

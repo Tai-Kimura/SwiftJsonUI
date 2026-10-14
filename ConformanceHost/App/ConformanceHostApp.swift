@@ -427,6 +427,14 @@ struct FixtureScreen: View {
                 }
             } else if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
                 DynamicView(component: component, viewId: "conformance", data: state.externalData)
+                    // afterFirstDraw (AfterFirstDraw.swift): the one change the
+                    // manifest asks for after the first draw, through the store.
+                    .conformanceAfterFirstDraw(
+                        fixtureId,
+                        declared: state.afterFirstDraw != nil,
+                        applied: state.afterFirstDrawApplied,
+                        fire: state.fireAfterFirstDraw
+                    )
             } else {
                 Text("Failed to load fixture: \(fixtureId)")
                     .foregroundColor(.red)
@@ -465,6 +473,28 @@ struct FixtureScreen: View {
                 .frame(width: 1, height: 1)
                 .accessibilityElement(children: .ignore)
                 .accessibilityIdentifier("conformance_origin")
+        }
+        .overlay(alignment: .bottomLeading) {
+            AfterFirstDrawMarker(fixtureId: fixtureId)
+        }
+    }
+}
+
+/// `conformance_after_first_draw`: the afterFirstDraw stamp for the UITest
+/// (`fired=<ms> applied=<ms>`), present only once the current fixture has
+/// fired. A 1x1 clear element, like the other markers: nothing it carries is
+/// drawn. Its own view, so a stamp re-renders the marker and not the fixture.
+struct AfterFirstDrawMarker: View {
+    let fixtureId: String
+    @ObservedObject private var stamp = AfterFirstDrawStamp.shared
+
+    var body: some View {
+        if stamp.fixtureId == fixtureId, !stamp.markerValue.isEmpty {
+            Color.clear
+                .frame(width: 1, height: 1)
+                .accessibilityElement(children: .ignore)
+                .accessibilityIdentifier("conformance_after_first_draw")
+                .accessibilityValue(stamp.markerValue)
         }
     }
 }

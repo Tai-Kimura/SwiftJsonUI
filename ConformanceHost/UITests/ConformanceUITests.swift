@@ -52,6 +52,15 @@ struct ConformanceManifest: Decodable {
         let mode: Mode?
         let layout: String
         let test: String
+        /// Only `afterFirstDraw` is read here (jsonui-cli
+        /// INTERACTIVE_HOST_CONTRACT.md "afterFirstDraw"): the host fires
+        /// it, this runner waits for the stamp and the landing.
+        let state: State?
+    }
+
+    struct State: Decodable {
+        struct AfterFirstDraw: Decodable { let name: String }
+        let afterFirstDraw: AfterFirstDraw?
     }
 
     /// mode is null | "swiftui" | "uikit" | ... | ["swiftui", "compose", ...]
@@ -92,6 +101,9 @@ struct FixtureResult: Encodable {
     /// the root, for `jui conformance gate --frame-parity`. Absent when the
     /// fixture took no screenshot or the record could not be written.
     var frames: String? = nil
+    /// RESULTS_SCHEMA.md `afterFirstDraw`: what the host stamped and how the
+    /// picture came to rest, for a fixture that declares one.
+    var afterFirstDraw: AfterFirstDrawResult? = nil
     /// Why a screenshot has no frames record (`root-not-fill`,
     /// `canvas-marker-missing`, `error: <reason>`), never beside `frames`:
     /// the gate counts it as a reason of its own, apart from a missing file.
@@ -120,6 +132,14 @@ struct FixtureResult: Encodable {
 /// So the detector is now the DECLARED fact (`manifest.host == "Web"`, which is
 /// stable and names the control too) and the markers are used only as the
 /// wait's terminating condition. Every bucket below has an unambiguous zero.
+struct AfterFirstDrawResult: Encodable {
+    let name: String
+    let status: String
+    var firedAtMs: Int? = nil
+    var appliedAtMs: Int? = nil
+    let landing: String
+}
+
 struct WebMarkerCensus: Encodable {
     /// Runnable fixtures hosted by the Web component, from the manifest.
     /// Informational: a fixture that errors before its screen comes up never
@@ -595,6 +615,7 @@ final class ConformanceUITests: XCTestCase {
         var screenshotPath: String? = nil
         var framesPath: String? = nil
         var framesUnrecorded: String? = nil
+        var afterFirstDraw: AfterFirstDrawResult? = nil
         // The last tap of this fixture and what XCTest said about its target
         // just before it — so an assertion that fails after a tap names
         // itself (ticket ios-dynamic-interactive-fixture-tap-not-delivered-
@@ -621,6 +642,9 @@ final class ConformanceUITests: XCTestCase {
                 if step.action == "screenshot", let name = step.name {
                     if fixture.host == "Web" {
                         settleNote = waitForWebPaint(fixture, app: app)
+                    }
+                    if let declared = fixture.state?.afterFirstDraw, afterFirstDraw == nil {
+                        afterFirstDraw = awaitAfterFirstDraw(declared.name, fixture: fixture, app: app)
                     }
                     do {
                         screenshotPath = try captureScreenshot(named: name, app: app)
@@ -673,7 +697,7 @@ final class ConformanceUITests: XCTestCase {
                         detail: stepLabel(step) + ": " + shortError(error)
                             + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
                                                app: app, actions: actionExecutor, asserts: assertionExecutor),
-                        screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
+                        screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
                 }
                 suppressIssues = false
 
@@ -684,12 +708,74 @@ final class ConformanceUITests: XCTestCase {
                         detail: stepLabel(step) + ": " + issues
                             + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
                                                app: app, actions: actionExecutor, asserts: assertionExecutor),
-                        screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
+                        screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
                 }
             }
         }
 
-        return FixtureResult(id: fixture.id, status: "pass", detail: settleNote, screenshot: screenshotPath, frames: framesPath, framesUnrecorded: framesUnrecorded)
+        return FixtureResult(id: fixture.id, status: "pass", detail: settleNote, screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
+    }
+
+    /// afterFirstDraw (jsonui-cli INTERACTIVE_HOST_CONTRACT.md): the host
+    /// fires the declared change after the first presented frame and stamps
+    /// `conformance_after_first_draw` with `fired=<ms> applied=<ms>`
+    /// (App/AfterFirstDraw.swift). Wait for `applied=` (budget 10 s), then read
+    /// where every element carrying a declared id — the Collection's cell
+    /// addresses `<id>_item_<n>` included — is drawn until the reading has
+    /// stood still for 1 s (Landing.wait, budget 10 s): a bounded read, never a
+    /// fixed sleep. A host that never stamps is `not-fired`, which the gate
+    /// fails, so a first-draw screenshot cannot pass as the fixture.
+    private func awaitAfterFirstDraw(_ name: String, fixture: ConformanceManifest.Fixture,
+                                     app: XCUIApplication) -> AfterFirstDrawResult {
+        let marker = app.descendants(matching: .any).matching(identifier: "conformance_after_first_draw").firstMatch
+        let deadline = Date().addingTimeInterval(10)
+        var stamp = ""
+        while Date() < deadline {
+            if marker.exists, let value = marker.value as? String {
+                stamp = value
+                if value.contains("applied=") { break }
+            }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        func ms(_ key: String) -> Int? {
+            stamp.split(separator: " ").first { $0.hasPrefix("\(key)=") }
+                .flatMap { Int($0.dropFirst(key.count + 1)) }
+        }
+        guard let applied = ms("applied") else {
+            let line = "AFTER_FIRST_DRAW \(fixture.id): not-fired (stamp \(stamp.isEmpty ? "absent" : stamp) after 10 s)"
+            print(line)
+            return AfterFirstDrawResult(name: name, status: "not-fired", landing: line)
+        }
+        let ids = declaredIds(fixture).filter { $0 != "root" }
+        let landing = Landing.wait("afterFirstDraw \(fixture.id)", still: 1, budget: 10) {
+            var parts: [String] = []
+            for id in ids {
+                let query = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", id))
+                for element in query.allElementsBoundByIndex {
+                    let f = element.frame
+                    parts.append("\(element.identifier)@\(Int(f.minX)),\(Int(f.minY))")
+                }
+            }
+            return parts.sorted().joined(separator: " ")
+        }
+        return AfterFirstDrawResult(name: name, status: "fired", firedAtMs: ms("fired"), appliedAtMs: applied, landing: landing)
+    }
+
+    /// Every `id` the fixture's layout declares, in document order.
+    private func declaredIds(_ fixture: ConformanceManifest.Fixture) -> [String] {
+        guard let data = try? loadBundledData(relativePath: "fixtures/\(fixture.id).layout.json"),
+              let layout = try? JSONSerialization.jsonObject(with: data) else { return [] }
+        var declared: [String] = []
+        func collect(_ node: Any?) {
+            if let object = node as? [String: Any] {
+                if let id = object["id"] as? String { declared.append(id) }
+                object.values.forEach(collect)
+            } else if let array = node as? [Any] {
+                array.forEach(collect)
+            }
+        }
+        collect(layout)
+        return declared
     }
 
     /// Waits until the web view's region of the screen holds more than one

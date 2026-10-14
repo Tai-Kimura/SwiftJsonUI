@@ -115,6 +115,37 @@ check('autoId -> CellIdGenerator.autoId of the dictionary, in the process') do
 end
 check('autoId -> no literal') { !auto.include?('self?.data.target = "') }
 
+puts
+# --- afterFirstDraw: the change the host makes after the first draw ----------
+# (jsonui-cli INTERACTIVE_HOST_CONTRACT.md "afterFirstDraw"). A store method,
+# not a Data closure: the layout does not name it, so the Data has no member.
+afd = { 'name' => 'conformanceAfterFirstDraw', 'set' => { 'var' => 'scrollTarget', 'value' => 'Gamma' } }
+first = E.host_source('Fx0700', [], after_first_draw: afd, fixture_id: 'Collection/scrollAnchor__top')
+check('afterFirstDraw alone -> a store, not the plain host') { first.include?('Fx0700Store: ObservableObject') }
+check('afterFirstDraw -> a store method that sets the literal') do
+  first.include?('func fireAfterFirstDraw() { data.scrollTarget = "Gamma" }')
+end
+check('afterFirstDraw -> no Data member named after it') { !first.include?('data.conformanceAfterFirstDraw') }
+check('afterFirstDraw -> the modifier, on the fixture id, applied when the value carries it') do
+  first.include?('.conformanceAfterFirstDraw("Collection/scrollAnchor__top", declared: true, ' \
+                 'applied: store.data.scrollTarget == "Gamma", fire: store.fireAfterFirstDraw)')
+end
+both = E.host_source('Fx0701', [{ 'name' => 'h', 'set' => { 'var' => 'v', 'value' => 'x' } }],
+                     after_first_draw: afd, fixture_id: 'f')
+check('afterFirstDraw beside a handler -> both') do
+  both.include?('data.h = { [weak self] in self?.data.v = "x" }') && both.include?('func fireAfterFirstDraw()')
+end
+check('no afterFirstDraw -> no modifier') { !E.host_source('Fx0702', [{ 'name' => 'h', 'set' => { 'var' => 'v', 'value' => 'x' } }]).include?('conformanceAfterFirstDraw') }
+check('afterFirstDraw without a fixture id raises') do
+  begin
+    E.host_source('Fx0703', [], after_first_draw: afd)
+    false
+  rescue ArgumentError
+    true
+  end
+end
+check('no trailing whitespace') { first.lines.none? { |l| l.chomp.end_with?(' ') } }
+
 if FAILURES.empty?
   puts "all #{__FILE__.split('/').last} checks passed"
   exit 0

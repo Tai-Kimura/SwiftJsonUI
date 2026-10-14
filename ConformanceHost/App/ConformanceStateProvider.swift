@@ -66,8 +66,18 @@ struct ConformanceStateDecl: Decodable {
         let embed: EmbedOp?
     }
 
+    /// The one change the host makes itself after the fixture's first draw
+    /// (INTERACTIVE_HOST_CONTRACT.md "afterFirstDraw"): a `set` operation the
+    /// layout does not name. A scrollTo request is a change of the value, so
+    /// a scrollAnchor fixture photographs nothing until one is made.
+    struct AfterFirstDraw: Decodable {
+        let name: String
+        let set: Handler.SetOp
+    }
+
     let vars: [Var]
     let handlers: [Handler]
+    let afterFirstDraw: AfterFirstDraw?
 }
 
 /// fixture id -> manifest data (state declaration, layout path), parsed once
@@ -143,6 +153,23 @@ final class ConformanceStateStore: ObservableObject {
     /// `() -> Void` closure per declared handler (requirement 2). On a name
     /// collision the interactive var wins — a declared var is the more
     /// specific intent.
+    /// The declared afterFirstDraw change, and whether this store's value
+    /// already carries it.
+    var afterFirstDraw: ConformanceStateDecl.AfterFirstDraw? { decl?.afterFirstDraw }
+
+    var afterFirstDrawApplied: Bool {
+        guard let change = decl?.afterFirstDraw else { return false }
+        return values[change.set.var] == change.set.value
+    }
+
+    /// Makes the declared change through the same store a `set` handler
+    /// writes (INTERACTIVE_HOST_CONTRACT.md §2), so the render that follows is
+    /// the one any handler would cause.
+    func fireAfterFirstDraw() {
+        guard let change = decl?.afterFirstDraw else { return }
+        values[change.set.var] = change.set.value
+    }
+
     var externalData: [String: Any] {
         var out: [String: Any] = [:]
         for (name, source) in collectionData {

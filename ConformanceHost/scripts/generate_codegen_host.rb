@@ -366,7 +366,8 @@ entries.each_with_index do |fixture, i|
   generated += 1
   layout_data = JSON.parse(File.read(File.join(conformance_dir, fixture['layout'])))['data']
   hosts << CodegenHostEmit.host_source(
-    name, CodegenHostEmit.with_arity((fixture['state'] || {})['handlers'], layout_data)
+    name, CodegenHostEmit.with_arity((fixture['state'] || {})['handlers'], layout_data),
+    after_first_draw: (fixture['state'] || {})['afterFirstDraw'], fixture_id: fixture['id']
   )
   cases << "        case #{fixture['id'].inspect}: return AnyView(#{name}Host())"
 end
