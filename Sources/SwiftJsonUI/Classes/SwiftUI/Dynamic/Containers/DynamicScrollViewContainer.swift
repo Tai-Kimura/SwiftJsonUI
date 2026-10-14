@@ -225,12 +225,26 @@ public struct DynamicScrollViewContainer: View {
         return children.filter { $0.isValid || $0.include != nil }
     }
 
-    /// Resolve scroll direction from component attributes
     private func resolveIsHorizontal(children: [DynamicComponent]) -> Bool {
+        Self.isHorizontal(component, children: children)
+    }
+
+    /// The scroll axis, in sjui's codegen order (scrollview_converter.rb):
+    /// `horizontalScroll`, else the ScrollView's own `orientation` — written
+    /// `vertical`, it is vertical whatever the child is — else its only
+    /// child View's orientation as written, which ResponsiveResolver stamped
+    /// before resolving that child's `responsive`
+    /// (sjui-dynamic-scrollview-axis-from-resolved-child). The child read
+    /// last is for a tree no resolver walked: it has no block, so it is
+    /// already as written.
+    static func isHorizontal(_ component: DynamicComponent, children: [DynamicComponent]) -> Bool {
         if component.typedAttributes(ScrollViewAttributes.self).horizontalScroll == true {
             return true
         }
-        if component.orientation == "horizontal" { return true }
+        if let orientation = component.orientation { return orientation == "horizontal" }
+        if let written = component.rawData[ResponsiveResolver.scrollBaseChildOrientationKey] as? String {
+            return written == "horizontal"
+        }
         if children.count == 1,
            let firstChild = children.first,
            firstChild.type?.lowercased() == "view",
