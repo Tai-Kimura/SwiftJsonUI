@@ -1,23 +1,30 @@
 import XCTest
 
 /// What the iOS driver finds for each spelling of a decorative image, with
-/// the driver's own predicates (jsonui-test-runner-ios AssertionExecutor,
-/// fc50701: the `visible` assertion = exists && (isHittable ||
-/// !frame.isEmpty); the `notVisible` assertion = !(exists && isHittable);
-/// a `when` / `while` condition's notVisible = !isInstantlyVisible, which is
-/// the visible assertion's predicate again, not the notVisible assertion's;
-/// count over descendants(matching: .any).matching(identifier:)).
+/// the driver's own predicates (jsonui-test-runner-ios 9a191dd: `visible` =
+/// some of the element, at least 1pt each way, inside the app's frame and
+/// every scroll container above it; `notVisible` = exactly its negation; a
+/// `when` / `while` condition's notVisible = the same negation; count over
+/// descendants(matching: .any).matching(identifier:)).
 ///
-/// THE SEMANTICS THIS PINS (measured, iOS 18 simulator, Xcode 26.6): an
-/// element hidden from VoiceOver — `.accessibilityHidden(true)`, which is how
-/// an image with no alt that operates nothing is emitted, and how the
-/// `hidden` attribute's invisible wrapper hides a view — stays in XCUITest's
-/// tree (count 1, exists) and is never hittable. So for the SAME element
-/// both `visible` and `notVisible` hold. A `notVisible` on such an element
-/// cannot fail however the screen looks; `jsonui-test validate` names it
-/// for a decorative image (INFO). The driver is deliberately not changed
-/// here: notVisible reads "not hittable" as gone so that a view covered by
-/// a sheet counts as not visible.
+/// THE SEMANTICS THIS PINS: an element hidden from VoiceOver —
+/// `.accessibilityHidden(true)`, which is how an image with no alt that
+/// operates nothing is emitted — stays in XCUITest's tree (count 1, exists)
+/// and is never hittable, and the driver does not ask about hit-testing: on
+/// screen, it is `visible` and its `notVisible` fails. That is Android's
+/// answer, the baseline: a decorative image (contentDescription = null with
+/// its testTag) is found by resource-id (KotlinJsonUI conformance-host
+/// DecorativeImageProbeTest, API 35).
+///
+/// Until 9a191dd the driver's notVisible read "not hittable" as gone, so for
+/// these elements both `visible` and `notVisible` held and a `notVisible` on
+/// a decorative image could not fail. That was kept so that a view under a
+/// sheet counted as not visible; the driver now answers that from the
+/// accessibility snapshot (what is under a modal is not in it), so hit-
+/// testing is no longer asked. (`hidden_attr` writes the `hidden` wrapper's
+/// modifiers with the identifier OUTSIDE them, which neither the dynamic
+/// runtime nor `jui build` emits — both keep a hidden view's identifier
+/// inside, where XCUITest does not find it at all.)
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_DECORATIVE_IMAGE_PROBE=1.
 final class DecorativeImageProbeUITests: XCTestCase {
@@ -35,12 +42,12 @@ final class DecorativeImageProbeUITests: XCTestCase {
     /// the element is one (nil: not asserted).
     private let expected: [Row] = [
         Row(id: "img_plain", count: 1, visible: true, notVisible: false, label: nil),
-        Row(id: "img_hidden", count: 1, visible: true, notVisible: true, label: nil),
+        Row(id: "img_hidden", count: 1, visible: true, notVisible: false, label: nil),
         Row(id: "img_empty_label", count: 1, visible: true, notVisible: false, label: ""),
         Row(id: "img_labelled", count: 1, visible: true, notVisible: false, label: "Star"),
-        Row(id: "hidden_attr", count: 1, visible: true, notVisible: true, label: nil),
-        Row(id: "dyn_decorative", count: 1, visible: true, notVisible: true, label: nil),
-        Row(id: "dyn_empty_alt", count: 1, visible: true, notVisible: true, label: nil),
+        Row(id: "hidden_attr", count: 1, visible: true, notVisible: false, label: nil),
+        Row(id: "dyn_decorative", count: 1, visible: true, notVisible: false, label: nil),
+        Row(id: "dyn_empty_alt", count: 1, visible: true, notVisible: false, label: nil),
         Row(id: "dyn_control", count: 1, visible: true, notVisible: false, label: "conformance_sample"),
         Row(id: "dyn_labelled", count: 1, visible: true, notVisible: false, label: "Sample"),
         Row(id: "img_absent", count: 0, visible: false, notVisible: true, label: nil),
@@ -48,10 +55,10 @@ final class DecorativeImageProbeUITests: XCTestCase {
         // dynamic runtime renders it (dyn_): around a decorative image, around
         // text and one, a Label, a tappable holding text, around one text,
         // two texts, an image with an alt. Every one is hittable where it is
-        // on screen (iOS 18.6 and 26.4, 2026-09-26), so a `notVisible` on it
-        // fails while it shows — unlike on the decorative image inside. The
-        // driver's note that a SwiftUI container reports isHittable == false
-        // (AssertionExecutor, `visible`) is not what these shapes do.
+        // on screen (iOS 18.6 and 26.4, 2026-09-26), and on screen each is
+        // `visible` and its `notVisible` fails — as the decorative image
+        // inside does now (it is not hittable, which the driver no longer
+        // asks).
         Row(id: "cg_wrap_deco", count: 1, visible: true, notVisible: false, label: nil),
         Row(id: "dyn_wrap_deco", count: 1, visible: true, notVisible: false, label: nil),
         Row(id: "cg_wrap_text", count: 1, visible: true, notVisible: false, label: nil),
@@ -102,9 +109,12 @@ final class DecorativeImageProbeUITests: XCTestCase {
             let exists = element.exists
             let hittable = exists && element.isHittable
             let frame = exists ? element.frame : .zero
-            let visible = exists && (hittable || !frame.isEmpty)
-            let notVisible = !(exists && hittable)
-            let conditionNotVisible = !(exists && (hittable || !frame.isEmpty))
+            // In the viewport: at least 1pt each way of the frame inside the
+            // window (no row sits in a scroll container).
+            let shown = exists ? frame.intersection(window) : .null
+            let visible = !shown.isNull && shown.width >= 1 && shown.height >= 1
+            let notVisible = !visible
+            let conditionNotVisible = !visible
             let onScreen = exists && !frame.isEmpty && window.contains(frame)
             let driverVisible = driverAssertionHolds("visible", row.id)
             let driverNotVisible = driverAssertionHolds("notVisible", row.id)
