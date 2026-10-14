@@ -46,10 +46,17 @@ public struct VisibilityWrapper<Content: View>: View {
             // view). accessibilityHidden alone does not remove *explicit*
             // accessibility containers created inside the subtree, so first
             // collapse the subtree into a single anonymous element.
+            // accessibilityHidden alone also leaves that element — with the
+            // identifier from inside — in the tree XCUITest reads, so a UI test
+            // still found the invisible view on screen (and `visible` held).
+            // Replacing its accessibility representation with nothing takes it
+            // out of that tree too: as on Android, an invisible view is not
+            // found by its id. Drawing and the opacity animation are unchanged.
             content
                 .opacity(0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
+                .accessibilityRepresentation { EmptyView() }
         case .visible:
             // visible: show normally
             content

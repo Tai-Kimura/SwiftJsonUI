@@ -813,6 +813,8 @@ public struct DynamicModifierHelper {
                     .opacity(0)
                     .accessibilityElement(children: .ignore)
                     .accessibilityHidden(true)
+                    // Out of the UI-test tree too (VisibilityWrapper .invisible).
+                    .accessibilityRepresentation { EmptyView() }
             )
         }
         return view
@@ -1060,6 +1062,8 @@ public struct DynamicModifierHelper {
                 .opacity(0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
+                // Out of the UI-test tree too (VisibilityWrapper .invisible).
+                .accessibilityRepresentation { EmptyView() }
         )
     }
 

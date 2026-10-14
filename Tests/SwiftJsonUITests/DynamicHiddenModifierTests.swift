@@ -8,8 +8,9 @@
 //  is visibility:"gone").
 //
 //  These tests lock in the invisible mechanism (opacity(0) +
-//  .accessibilityElement(children: .ignore) + .accessibilityHidden(true),
-//  mirroring VisibilityWrapper.invisible) on every path:
+//  .accessibilityElement(children: .ignore) + .accessibilityHidden(true) +
+//  .accessibilityRepresentation { EmptyView() }, mirroring
+//  VisibilityWrapper.invisible) on every path:
 //  - DynamicModifierHelper.applyHidden (off-builder fallback): literal,
 //    plain binding, reactive binding (ReactiveHiddenWrapper)
 //  - DynamicComponentBuilder.buildWithVisibility: literal hidden maps to
@@ -49,6 +50,7 @@ final class DynamicHiddenModifierTests: XCTestCase {
             baseView.opacity(0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
+                .accessibilityRepresentation { EmptyView() }
         ))
     }
 
@@ -201,6 +203,7 @@ final class DynamicHiddenModifierTests: XCTestCase {
             baseView.opacity(0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
+                .accessibilityRepresentation { EmptyView() }
         ))
         XCTAssertTrue(bodyName.contains(reference), "body type was \(bodyName)")
     }

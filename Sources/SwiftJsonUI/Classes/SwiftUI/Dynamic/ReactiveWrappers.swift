@@ -32,6 +32,8 @@ public struct ReactiveVisibilityWrapper<Content: View>: View {
                 .opacity(0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
+                // Out of the UI-test tree too (VisibilityWrapper .invisible).
+                .accessibilityRepresentation { EmptyView() }
         default:
             content()
         }
@@ -57,6 +59,8 @@ public struct ReactiveHiddenWrapper: View {
                 .opacity(0)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
+                // Out of the UI-test tree too (VisibilityWrapper .invisible).
+                .accessibilityRepresentation { EmptyView() }
         } else {
             content
         }
