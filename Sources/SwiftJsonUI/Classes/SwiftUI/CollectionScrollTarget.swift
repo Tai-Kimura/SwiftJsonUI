@@ -19,7 +19,7 @@
 
 import SwiftUI
 
-public enum CollectionScrollTarget: Equatable {
+public enum CollectionScrollTarget: Hashable {
     /// Scroll to the cell whose id matches — the `cellIdProperty` spelling.
     case cellId(String)
     /// Scroll to the item at this index.

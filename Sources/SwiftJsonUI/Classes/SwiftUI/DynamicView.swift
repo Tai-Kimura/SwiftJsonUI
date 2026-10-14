@@ -112,6 +112,9 @@ public struct DynamicView: View {
             )
             .id(refreshId)
             .environment(\.dynamicRadioGroups, radioGroups)
+            // The screen's Collection scrollTo memory (CollectionScrollMemory):
+            // the outermost DynamicView provides it, an included one shares it.
+            .providesCollectionScrollMemory()
             .modifier(WindowWidthTracking(width: windowWidth, active: root.tracksWindowWidth))
             .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("layoutFileDidChanged"))) { _ in
                 DynamicStringManager.shared.reload()

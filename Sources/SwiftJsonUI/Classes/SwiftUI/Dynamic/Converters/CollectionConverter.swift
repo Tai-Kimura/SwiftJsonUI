@@ -1117,17 +1117,30 @@ public struct CollectionConverter {
         dataSource: CollectionDataSource,
         cellIdProperty: String?,
         animated: Bool,
-        anchor: UnitPoint
+        anchor: UnitPoint,
+        collectionId: String? = nil
     ) -> some View {
-        view.onChange(of: target) { _, newTarget in
-            guard let newTarget,
-                  let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty)
+        let land: (CollectionScrollTarget) -> Void = { newTarget in
+            guard let id = scrollID(for: newTarget, sections: sections, dataSource: dataSource, cellIdProperty: cellIdProperty)
             else { return }
             if animated {
                 withAnimation { proxy.scrollTo(id, anchor: anchor) }
             } else {
                 proxy.scrollTo(id, anchor: anchor)
             }
+        }
+        return view.onChange(of: target) { _, newTarget in
+            guard let newTarget else { return }
+            land(newTarget)
+        }
+        // The value the Collection appears with scrolls nowhere — unless the
+        // screen saw this Collection (by its id) with another value before
+        // visibility gone removed it: then it is a request
+        // (CollectionScrollMemory; kjui-collection-scrollto-ignored-after-
+        // visibility-gone).
+        .collectionScrollEntry(collectionId, value: target) { entryTarget in
+            guard let entryTarget else { return }
+            land(entryTarget)
         }
     }
 
@@ -1269,7 +1282,8 @@ public struct CollectionConverter {
                     }
                 }
                 .collectionScrollOnChange(scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint,
+                                          collectionId: component.id)
             }
         )
     }
@@ -1366,7 +1380,8 @@ public struct CollectionConverter {
                 .listRowSeparator(hideSeparator ? .hidden : .automatic)
             }
         ), style: listStyle), component: component), target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-            cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+            cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint,
+                                          collectionId: component.id)
         })
     }
 
@@ -1493,7 +1508,8 @@ public struct CollectionConverter {
         guard component.typedAttributes(CollectionAttributes.self).scrollTo != nil else { return list }
         return AnyView(ScrollViewReader { scrollProxy in
             scrollOnChange(list, target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-                           cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+                           cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint,
+                                          collectionId: component.id)
         })
     }
 
@@ -1627,7 +1643,8 @@ public struct CollectionConverter {
                     }
                 }
                 .collectionScrollOnChange(scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint,
+                                          collectionId: component.id)
             }
         )
     }
@@ -1896,7 +1913,8 @@ public struct CollectionConverter {
                     }
                 }
                 .collectionScrollOnChange(scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+                                          cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint,
+                                          collectionId: component.id)
             }
         )
     }
@@ -1973,7 +1991,8 @@ public struct CollectionConverter {
                 }
                 .padding(collectionContentEdgeInsets(component: component) ?? EdgeInsets())
             }, target: scrollTarget, proxy: scrollProxy, sections: sections, dataSource: dataSource,
-               cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint)
+               cellIdProperty: cellIdProperty, animated: scrollAnimated, anchor: scrollAnchorPoint,
+                                          collectionId: component.id)
         })
     }
 
@@ -2602,10 +2621,12 @@ fileprivate extension View {
         dataSource: CollectionDataSource,
         cellIdProperty: String?,
         animated: Bool,
-        anchor: UnitPoint
+        anchor: UnitPoint,
+        collectionId: String? = nil
     ) -> some View {
         CollectionConverter.scrollOnChange(self, target: target, proxy: proxy, sections: sections, dataSource: dataSource,
-                                           cellIdProperty: cellIdProperty, animated: animated, anchor: anchor)
+                                           cellIdProperty: cellIdProperty, animated: animated, anchor: anchor,
+                                           collectionId: collectionId)
     }
 }
 

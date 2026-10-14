@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 0a9ac5dbe9285f206dc594fd64d712923135f7b1 # jsonui-cli's scrollAnchor-family commit (conformance-collection-scrollanchor-family-does-not-discriminate); the Collection attr table was re-vendored from it — its defaultScrollAnchor and scrollAnchor descriptions moved, nothing else — and the fixtures and vectors are unchanged. Move it to the release commit that carries it.
+      JSONUI_CLI_MANIFEST_REF: 9346f8386d661c27022138f5470039340e337871 # jsonui-cli's gone-return commit (kjui-collection-scrollto-ignored-after-visibility-gone), on top of the scrollAnchor-family one; the Collection attr table was re-vendored from it — its scrollTo, defaultScrollAnchor and scrollAnchor descriptions moved, nothing else — and the fixtures and vectors are unchanged. Move it to the release commit that carries it.
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
