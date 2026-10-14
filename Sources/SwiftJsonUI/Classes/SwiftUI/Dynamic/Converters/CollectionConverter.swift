@@ -243,9 +243,14 @@ public struct CollectionConverter {
             if let index = unwrapped as? Int { return .index(index) }
             return nil
         }()
-        let scrollAnimated = component.typedAttributes(CollectionAttributes.self).scrollAnimated ?? true
-
-        let scrollAnchorPoint = Self.scrollAnchorPoint(component.scrollAnchor, horizontal: isHorizontal)
+        // scrollAnimated and scrollAnchor take a binding (jsonui-cli 1.9.29,
+        // jui-collection-scrollto-per-request-anchor): read here, from the
+        // data of this render, so the `.onChange(of:)` a scrollTo value keys
+        // lands by the anchor of the render that changed the value — a change
+        // of the anchor alone scrolls nothing. A bound scrollAnimated animates
+        // only when the bound value is true, as the codegens read it.
+        let scrollAnimated = Self.scrollAnimated(component, data: data)
+        let scrollAnchorPoint = Self.scrollAnchorPoint(component, data: data, horizontal: isHorizontal)
 
         // `lazy` may be a boolean (legacy) or one of "lazy" / "eager" / "none".
         // For binding values we resolve at runtime via DynamicBindingHelper so a
@@ -996,6 +1001,35 @@ public struct CollectionConverter {
             return false
         }
         return true
+    }
+
+    /// `scrollAnimated` (default true): false jumps; a binding (declared in
+    /// jsonui-cli 1.9.29) animates only when the bound value is true, as the
+    /// codegens read it.
+    static func scrollAnimated(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        switch component.typedAttributes(CollectionAttributes.self).scrollAnimated {
+        case .value(let animated): return animated
+        case .binding(let expression): return DynamicBindingResolver.resolveBool(expression: expression, data: data) == true
+        case nil: return true
+        }
+    }
+
+    /// The anchor this render's scrollTo lands by: the written one, or a bound
+    /// one (jsonui-cli 1.9.29, jui-collection-scrollto-per-request-anchor)
+    /// resolved from this render's data — the `.onChange(of:)` a scrollTo
+    /// value keys closes over it, so a request lands by the anchor of the
+    /// render that changed the value and a change of the anchor alone scrolls
+    /// nothing (CollectionScrollAnchor).
+    static func scrollAnchorPoint(_ component: DynamicComponent, data: [String: Any], horizontal: Bool) -> UnitPoint {
+        switch component.typedAttributes(CollectionAttributes.self).scrollAnchor {
+        case .binding(let expression):
+            return CollectionScrollAnchor.point(DynamicBindingResolver.resolveString(expression: expression, data: data),
+                                                horizontal: horizontal, collection: component.id ?? "")
+        case .value(let anchor):
+            return scrollAnchorPoint(anchor.knownValue?.rawValue ?? (anchor.unknownValue as? String), horizontal: horizontal)
+        case nil:
+            return scrollAnchorPoint(nil, horizontal: horizontal)
+        }
     }
 
     /// Where a scrollTo's target lands along the scroll axis (the SSoT's

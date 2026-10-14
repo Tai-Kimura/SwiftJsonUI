@@ -166,7 +166,6 @@ public struct DynamicComponent: Decodable {
     let showsVerticalScrollIndicator: Bool?  // Show vertical scroll indicator
     let paging: Bool?  // Enable paging
     let bounces: Bool?  // Enable bounce effect
-    let scrollAnchor: String?  // top, center, bottom
     let defaultScrollAnchor: String?  // top, center, bottom (iOS 17+)
 
     // SelectBox/DatePicker properties
@@ -243,7 +242,7 @@ public struct DynamicComponent: Decodable {
         case contentInsetAdjustmentBehavior
         case showsHorizontalScrollIndicator, showsVerticalScrollIndicator
         case paging, bounces
-        case scrollAnchor, defaultScrollAnchor
+        case defaultScrollAnchor
         case selectItemType, datePickerMode, datePickerStyle
         case dateStringFormat
         case onAppear, onDisappear
@@ -465,7 +464,6 @@ public struct DynamicComponent: Decodable {
         showsVerticalScrollIndicator = try container.decodeIfPresent(Bool.self, forKey: .showsVerticalScrollIndicator)
         paging = try container.decodeIfPresent(Bool.self, forKey: .paging)
         bounces = try container.decodeIfPresent(Bool.self, forKey: .bounces)
-        scrollAnchor = try container.decodeIfPresent(String.self, forKey: .scrollAnchor)
         defaultScrollAnchor = try container.decodeIfPresent(String.self, forKey: .defaultScrollAnchor)
 
         // SelectBox/DatePicker properties

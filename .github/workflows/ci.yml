@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: da4ac4ebcc989bd85a47eab92f5551e2c8b1cad8 # jsonui-cli 1.9.28 release commit (tag v1.9.28 points here); the attr tables, fixtures and responsive vectors were re-vendored from it (SwiftJsonUI 10.29.14)
+      JSONUI_CLI_MANIFEST_REF: e33dd367f746038d6e8636a038387f901184f200 # jsonui-cli 1.9.29's scrollAnchor-binding commit (jui-collection-scrollto-per-request-anchor); the Collection attr table was re-vendored from it, the fixtures and vectors are unchanged since 1.9.28 (SwiftJsonUI 10.29.15). Move it to the 1.9.29 release commit when that exists: the manifest is the same unless the release moves the SSoT.
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
