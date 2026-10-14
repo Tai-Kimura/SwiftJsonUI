@@ -147,12 +147,22 @@ final class A11yActivationProbeUITests: XCTestCase {
         }
     }
 
+    /// How long, after the last touch of a run, the touches' counts are
+    /// waited for: from the budget, not a measurement — five times the
+    /// specimen's 2 s (ProbeTapCountDelay), an order above the read period.
+    static let touchBudget: TimeInterval = 10
+    /// The readout's read period while waiting, in microseconds (0.05 s).
+    static let touchReadPeriod: UInt32 = 50_000
+
     func testAScreenReaderCannotOperateWhatAStopHolds() throws {
         guard ProcessInfo.processInfo.environment["A11Y_ACTIVATION_PROBE"] == "1" else {
             throw XCTSkip("a11y activation probe: run with the guard lifted, as the other probes are")
         }
         let app = XCUIApplication()
         app.launchArguments = ["-a11yActivationProbe"]
+        if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_TAP_COUNT_DELAY"] {
+            app.launchEnvironment["CONFORMANCE_TAP_COUNT_DELAY"] = delay
+        }
         app.launch()
         XCTAssertTrue(app.staticTexts["a11y_probe_ready"].waitForExistence(timeout: 15), "probe did not start")
         XCTAssertFalse(app.staticTexts["a11y_decode_failed"].exists, "the dynamic layout did not decode")
@@ -197,15 +207,33 @@ final class A11yActivationProbeUITests: XCTestCase {
             print("A11Y_PROBE run=\(phase) \(walk) (nodes the in-app walk reached / with an identifier)")
             let list = entries(text)
             XCTAssertFalse(list.isEmpty, "run \(phase): no entries in the readout: \(text)")
+            // VoiceOver's touch for every element whose activation returned
+            // false, in turn; then the readout is read until each touch
+            // expected to move its count has moved it, or `touchBudget`
+            // passes. The counts that should stay are read at that moment,
+            // after at least as long as the slowest expected count took.
+            // This was a fixed 0.4 s after each touch, and on a slow runner a
+            // count landed after it (run 38506940883, run 3 cgLblPlain: touch
+            // 0, want 1 — sjui-conformance-a11y-activation-run3-touch-not-
+            // counted). CONFORMANCE_TAP_COUNT_DELAY holds every touched count
+            // back in the app (ProbeTapCountDelay), so a read that does not
+            // wait is red on any machine.
+            var before: [String: Int] = [:]
+            let start = counts(readout.label)
+            for e in list where !e.returned {
+                guard let p = e.point else { continue }
+                before[e.name] = start[e.name] ?? 0
+                origin.withOffset(CGVector(dx: p.x, dy: p.y)).tap()
+            }
+            let awaited = before.keys.filter { want($0, open: open) == 1 }
+            var after = counts(readout.label)
+            let deadline = Date().addingTimeInterval(Self.touchBudget)
+            while Date() < deadline, awaited.contains(where: { (after[$0] ?? 0) - (before[$0] ?? 0) < 1 }) {
+                usleep(Self.touchReadPeriod)
+                after = counts(readout.label)
+            }
             for e in list {
-                // VoiceOver's touch when the activation returned false
-                var touched: Int? = nil
-                if !e.returned, let p = e.point {
-                    let before = counts(readout.label)[e.name] ?? 0
-                    origin.withOffset(CGVector(dx: p.x, dy: p.y)).tap()
-                    usleep(400_000)
-                    touched = (counts(readout.label)[e.name] ?? 0) - before
-                }
+                let touched = before[e.name].map { (after[e.name] ?? 0) - $0 }
                 let moved = e.returned ? e.moved : (touched ?? 0)
                 let expected = want(e.name, open: open)
                 print("A11Y_PROBE run=\(phase) gate=\(open ? "open" : "closed") \(e.name) via=\(e.via) element=\(e.element) "

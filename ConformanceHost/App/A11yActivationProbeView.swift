@@ -83,14 +83,48 @@ import SwiftUI
 import SwiftJsonUI
 import UIKit
 
+/// Test-only: holds back a count that a touch causes by a declared delay, so
+/// the count reaches the readout well after the tap returns.
+///
+/// XCUITest's tap returns once the app is idle, and on a fast machine the
+/// touch's count is already in the readout by then: run 3 read it after a
+/// fixed 0.4 s and passed here every time, and on a slow CI runner it read
+/// 0 (sjui-conformance-a11y-activation-run3-touch-not-counted). With the
+/// delay set, a read that does not wait for the count goes red on any
+/// machine.
+///
+/// The delay is declared by the run (CONFORMANCE_TAP_COUNT_DELAY, seconds,
+/// forwarded as a launch environment variable by the probe); unset or 0 is
+/// the ordinary run. Chosen from the test's own numbers, not a measurement:
+/// above the old fixed 0.4 s by far, an order above the 0.05 s read period,
+/// and well inside the touch-read budget (A11yActivationProbeUITests
+/// `touchBudget`) — 2.
+enum ProbeTapCountDelay {
+    static let seconds: Double =
+        Double(ProcessInfo.processInfo.environment["CONFORMANCE_TAP_COUNT_DELAY"] ?? "") ?? 0
+}
+
 final class A11yActivationProbeData: ObservableObject {
     @Published var counts: [String: Int] = [:]
     /// The last run's entries, its walk census, and its number.
     @Published var act = ""
     @Published var walk = ""
-    @Published var ran = 0
+    @Published var ran = 0 { didSet { walking = false } }
 
-    func bump(_ name: String) { counts[name, default: 0] += 1 }
+    /// True while the app's own walk is activating elements (from the run
+    /// button to the run's number being written): its counts are read 0.25 s
+    /// after each activation and are never held back.
+    var walking = false
+
+    /// A count the walk did not cause — the touch the test sends VoiceOver's
+    /// way — lands now, or `ProbeTapCountDelay.seconds` later when the run
+    /// declares a delay (the specimen for the test's read of the touch).
+    func bump(_ name: String) {
+        guard !walking, ProbeTapCountDelay.seconds > 0 else { counts[name, default: 0] += 1; return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + ProbeTapCountDelay.seconds) { [weak self] in
+            self?.counts[name, default: 0] += 1
+        }
+    }
 
     // The codegen rows' data surface. A Switch counts each change of value.
     @Published var gateOpen: Bool? = true
@@ -697,6 +731,7 @@ struct A11yActivationProbeView: View {
     /// is what the activation moved (handler calls, or Switch changes), x,y
     /// the activation point VoiceOver touches when `returned` is 0.
     private func run() {
+        data.walking = true
         if Self.wrappersOnly { runWrappers(); return }
         if Self.textFieldsOnly { runTextFields(); return }
         // The wrapper controls with no stop start each run on their first
