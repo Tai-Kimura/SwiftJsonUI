@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 96095128eeaf2b785f593b8eead7023d5f49ed7a # jsonui-cli commit 96095128 (ScrollView axis, released as 1.9.28): the ScrollView attr table and component_metadata.json were re-vendored from it (SwiftJsonUI 10.29.14) — move to the v1.9.28 release commit when it is tagged
+      JSONUI_CLI_MANIFEST_REF: da4ac4ebcc989bd85a47eab92f5551e2c8b1cad8 # jsonui-cli 1.9.28 release commit (tag v1.9.28 points here); the attr tables, fixtures and responsive vectors were re-vendored from it (SwiftJsonUI 10.29.14)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
