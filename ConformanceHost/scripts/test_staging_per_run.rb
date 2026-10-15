@@ -24,8 +24,16 @@ require_relative 'codegen_build_dir'
 
 FAILURES = []
 
+# A check that raises is a FAIL with its reason, and the checks after it
+# still run: an Errno::ENOENT out of one check used to end the whole file
+# there, so the checks below it reported nothing at all.
 def check(label)
-  ok = yield
+  ok = begin
+    yield
+  rescue StandardError => e
+    puts "       #{e.class}: #{e.message}"
+    false
+  end
   FAILURES << label unless ok
   puts "  #{ok ? 'ok  ' : 'FAIL'} #{label}"
 end
@@ -65,7 +73,27 @@ Dir.mktmpdir('host') do |root|
   host = File.join(root, 'ConformanceHost')
   FileUtils.mkdir_p(File.join(host, 'ConformanceHost.xcodeproj'))
   FileUtils.mkdir_p(File.join(host, 'scripts'))
-  %w[run_conformance.sh collect_results.sh].each { |f| FileUtils.cp(File.join(SCRIPTS, f), File.join(host, 'scripts', f)) }
+  # Every script run_conformance.sh reaches through "$HOST_DIR/scripts/…",
+  # followed transitively — derived, not a named list. The named list was
+  # run_conformance.sh + collect_results.sh; 7a0767c then had
+  # run_conformance.sh call home_indicator_gate.sh before collecting, the copy
+  # here never had it, and every stub run exited 1 on "No such file or
+  # directory" — so "two runs at once both finish" failed for a reason that
+  # had nothing to do with staging (measured 2026-10-15 on c2dd640, 3 of 3).
+  copied = []
+  pending = ['run_conformance.sh']
+  until pending.empty?
+    f = pending.shift
+    next if copied.include?(f)
+    copied << f
+    src = File.join(SCRIPTS, f)
+    abort "run_conformance.sh reaches scripts/#{f}, which is not in #{SCRIPTS}" unless File.file?(src)
+    FileUtils.cp(src, File.join(host, 'scripts', f))
+    pending.concat(File.read(src).scan(%r{"\$HOST_DIR/scripts/([A-Za-z0-9_.-]+)"}).flatten)
+  end
+  check('the host copy has every script run_conformance.sh reaches') do
+    %w[run_conformance.sh collect_results.sh home_indicator_gate.sh].all? { |f| copied.include?(f) }
+  end
   bin = File.join(root, 'bin')
   FileUtils.mkdir_p(bin)
   # What the UITest runner leaves in its staging dir, marked with the run.
