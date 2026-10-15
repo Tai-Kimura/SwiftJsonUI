@@ -199,7 +199,18 @@ puts "[codegen-host] staged #{entries.size} fixture layout(s) + #{cell_companion
 # which cannot collide with fx_NNNN.
 probe_layouts = Dir[File.join(host_dir, 'ProbeLayouts', '*.json')].sort
 probe_layouts.each { |src| FileUtils.cp(src, File.join(layouts_dir, File.basename(src))) }
-puts "[codegen-host] staged #{probe_layouts.size} probe layout(s)"
+# A probe's Collection cells (ProbeLayouts/cells/<cell>.json): staged beside
+# the probes under their bare names, as a fixture's __cells/ companions are,
+# so sjui build generates the cell and the <Cell>View its Collection calls.
+# Not probes themselves — no probeView case, no host.
+probe_cells = Dir[File.join(host_dir, 'ProbeLayouts', 'cells', '*.json')].sort
+probe_cells.each do |src|
+  dest = File.join(layouts_dir, File.basename(src))
+  abort "error: probe cell #{File.basename(src)} collides with a staged layout" if File.exist?(dest)
+
+  FileUtils.cp(src, dest)
+end
+puts "[codegen-host] staged #{probe_layouts.size} probe layout(s) + #{probe_cells.size} probe cell layout(s)"
 # The tool names its own denominator, per PREDICATE rather than as one total.
 # `skipped N` alone says how many were dropped and nothing about why, and a
 # reader cannot tell a deliberate exclusion from a fixture that fell through —
@@ -398,11 +409,14 @@ probe_layouts.each do |src|
   unless File.file?(File.join(staging, 'View', pascal, "#{pascal}GeneratedView.swift"))
     abort "error: probe layout #{File.basename(src)} produced no generated view (View/#{pascal}/)"
   end
-  # A probe's handlers (ProbeLayouts/handlers/<probe>.json, the manifest's
-  # `state.handlers` shape): its buttons set data the way a fixture's do.
+  # A probe's handlers (ProbeLayouts/handlers/<probe>.json): the manifest's
+  # `state.handlers` shape — its buttons set data the way a fixture's do — or
+  # an object that also counts and watches through the probe's link
+  # (CodegenHostEmit.probe_manifest, App/ProbeHostLink.swift).
   handlers_file = File.join(host_dir, 'ProbeLayouts', 'handlers', File.basename(src))
-  handlers = File.file?(handlers_file) ? JSON.parse(File.read(handlers_file)) : []
-  hosts << CodegenHostEmit.host_source(pascal, handlers)
+  manifest = CodegenHostEmit.probe_manifest(File.file?(handlers_file) ? JSON.parse(File.read(handlers_file)) : [])
+  handlers = CodegenHostEmit.with_arity(manifest['handlers'], JSON.parse(File.read(src))['data'])
+  hosts << CodegenHostEmit.host_source(pascal, handlers, watch: manifest['watch'], writes: manifest['writes'])
   lines << "        case #{base.inspect}: return AnyView(#{pascal}Host())"
 end
 lines << '        default: return nil'

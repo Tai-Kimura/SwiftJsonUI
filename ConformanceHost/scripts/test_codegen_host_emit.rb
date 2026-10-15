@@ -19,6 +19,7 @@
 #
 # Run: ruby ConformanceHost/scripts/test_codegen_host_emit.rb
 
+require 'json'
 require_relative 'codegen_host_emit'
 
 E = CodegenHostEmit
@@ -76,7 +77,9 @@ end
 check('no fixture id or corpus name is hardcoded') do
   source = File.read(File.join(__dir__, 'codegen_host_emit.rb'))
   body = source.split("\n").reject { |l| l.strip.start_with?('#') }.join("\n")
-  %w[conformanceFire conformanceResult onAppear Fx0152].none? { |n| body.include?(n) }
+  # The fixture is `common/onAppear__callback_fire`: its id's segment, not
+  # SwiftUI's `.onAppear`, which the linked probe host calls.
+  %w[conformanceFire conformanceResult onAppear__ Fx0152].none? { |n| body.include?(n) }
 end
 
 # --- values are escaped, not interpolated -----------------------------------
@@ -145,6 +148,101 @@ check('afterFirstDraw without a fixture id raises') do
   end
 end
 check('no trailing whitespace') { first.lines.none? { |l| l.chomp.end_with?(' ') } }
+
+puts
+# --- a probe's link: count / watch / writes (App/ProbeHostLink.swift) ---------
+# A11yActivationProbeView measured a paste of sjui's output because a probe
+# could not reach a generated view's data; these are what replaced the paste.
+linked = E.host_source('ProbeA', [{ 'name' => 'onTap', 'count' => 'cgTap' },
+                                  { 'name' => 'onSet', 'set' => { 'var' => 'v', 'value' => 'x' } }],
+                       watch: [{ 'var' => 'sw', 'count' => 'cgSw' }, { 'var' => 'sel', 'count' => 'cgSel' }],
+                       writes: %w[gateOpen rows])
+check('count -> the handler counts through the link, by the name the manifest gives') do
+  linked.include?('data.onTap = { [weak self] in self?.link?.count("cgTap") }')
+end
+check('count beside set -> set still wired') { linked.include?('data.onSet = { [weak self] in self?.data.v = "x" }') }
+check('watch -> one change check per var, old against new') do
+  linked.include?('if data.sw != oldValue.sw { link?.count("cgSw") }') &&
+    linked.include?('if data.sel != oldValue.sel { link?.count("cgSel") }')
+end
+check('watch -> on the published data (a Binding write reaches it)') do
+  linked =~ /@Published var data = ProbeAData\(\) \{\n\s+didSet \{/
+end
+check('writes -> each named var taken from the written values, typed by assign') do
+  linked.include?('if let value = values["gateOpen"] { ProbeHostLink.assign(value, to: &next.gateOpen, "gateOpen") }') &&
+    linked.include?('if let value = values["rows"] { ProbeHostLink.assign(value, to: &next.rows, "rows") }')
+end
+check('writes -> one data assignment per write') { linked.scan('data = next').length == 1 }
+check('linked -> reads the link from the environment and attaches on appear') do
+  linked.include?('@Environment(\\.probeHostLink) private var link') &&
+    linked.include?('.onAppear { store.attach(link) }') &&
+    linked.include?('.onReceive(link?.writes ?? ProbeHostLink.noWrites) { store.write($0) }')
+end
+check('linked -> the view still receives a Binding<Data>') { linked.include?('ProbeAGeneratedView(data: $store.data)') }
+check('linked -> no trailing whitespace') { linked.lines.none? { |l| l.chomp.end_with?(' ') } }
+check('a count handler alone makes a linked host') do
+  E.host_source('ProbeB', [{ 'name' => 'h', 'count' => 'c' }]).include?('ProbeHostLink')
+end
+check('writes alone make a linked host') { E.host_source('ProbeC', [], writes: ['g']).include?('ProbeHostLink') }
+check('set handlers alone are not linked (existing probes keep their host)') do
+  !E.host_source('ProbeD', [{ 'name' => 'h', 'set' => { 'var' => 'v', 'value' => 'x' } }]).include?('ProbeHostLink')
+end
+check('a count handler takes its declared arity') do
+  E.host_source('ProbeE', [{ 'name' => 'h', 'count' => 'c', 'arity' => 1 }])
+   .include?('data.h = { [weak self] _ in self?.link?.count("c") }')
+end
+check('a count name is escaped') do
+  E.host_source('ProbeF', [{ 'name' => 'h', 'count' => 'a"b' }]).include?('count("a\\"b")')
+end
+check('a count handler is not wirable for a fixture (no link there)') { !E.wirable?([{ 'name' => 'h', 'count' => 'c' }]) }
+check('a watch without a count raises') do
+  begin
+    E.host_source('ProbeG', [], watch: [{ 'var' => 'v' }])
+    false
+  rescue ArgumentError
+    true
+  end
+end
+check('a linked host refuses afterFirstDraw') do
+  begin
+    E.host_source('ProbeH', [{ 'name' => 'h', 'count' => 'c' }], after_first_draw: afd, fixture_id: 'f')
+    false
+  rescue ArgumentError
+    true
+  end
+end
+
+puts
+# --- arity: the declared closure type, optional or not ------------------------
+check('() -> Void is 0') { E.handler_arity('() -> Void').zero? }
+check('(String) -> Void is 1') { E.handler_arity('(String) -> Void') == 1 }
+check('(String, Any) -> Void is 2') { E.handler_arity('(String, Any) -> Void') == 2 }
+check('(() -> Void)? is 0, as () -> Void (probe layouts declare it so)') { E.handler_arity('(() -> Void)?').zero? }
+check('((String) -> Void)? is 1') { E.handler_arity('((String) -> Void)?') == 1 }
+check('an undeclared handler is 0') { E.handler_arity(nil).zero? }
+
+puts
+# --- the probe manifest: array (as before) or object ------------------------
+arr = E.probe_manifest([{ 'name' => 'h', 'set' => { 'var' => 'v', 'value' => 'x' } }])
+check('an array manifest is the handlers, nothing else') do
+  arr['handlers'].size == 1 && arr['watch'].empty? && arr['writes'].empty?
+end
+obj = E.probe_manifest({ 'handlers' => [{ 'name' => 'h', 'count' => 'c' }], 'watch' => [{ 'var' => 'v', 'count' => 'c' }],
+                         'writes' => ['g'] })
+check('an object manifest carries all three') { obj['handlers'].size == 1 && obj['watch'].size == 1 && obj['writes'] == ['g'] }
+check('a missing key is empty') { E.probe_manifest({ 'writes' => ['g'] })['handlers'] == [] }
+check('an unknown key is refused (a misspelt "watches" would wire nothing)') do
+  begin
+    E.probe_manifest({ 'watches' => [] })
+    false
+  rescue ArgumentError
+    true
+  end
+end
+check('the a11y activation manifest parses and names only known operations') do
+  m = E.probe_manifest(JSON.parse(File.read(File.join(__dir__, '..', 'ProbeLayouts', 'handlers', 'probe_a11y_activation.json'))))
+  m['handlers'].all? { |h| h['count'] } && !m['watch'].empty? && m['writes'].include?('gateOpen')
+end
 
 if FAILURES.empty?
   puts "all #{__FILE__.split('/').last} checks passed"

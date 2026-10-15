@@ -13,16 +13,24 @@
 //  key window's accessibility tree) and reports what it returned and what it
 //  called; the UI test sends the touch for each element that returned false.
 //
-//  Left: what `sjui build` emits for the two layouts below — sjui_tools of
-//  jsonui-cli support4f/tap-rule-uie-round5 (on b9d10daf; jsonui-cli 1.9.0 in
-//  progress: a control a stop holds carries `.jsonuiStoppedControl(…)`, a
-//  Segment's with `items: true`),
-//  JsonToSwiftUIConverter over a layouts directory holding both, as the build
-//  calls it — the probe's body and the cell's body pasted unchanged
-//  (A11yActivationCodegenBody, AxCellGeneratedView). The cell's View / Data /
-//  ViewModel are the shapes `sjui g collection` writes (collection_generator
-//  .rb): the cell view is Equatable on its cellId, and a Collection with
-//  `sections` draws it `.equatable()`. The rows:
+//  Left (codegen host only): what `sjui build` generates from
+//  ProbeLayouts/probe_a11y_activation.json and its cell
+//  ProbeLayouts/cells/a11y_activation_cell.json, built by
+//  scripts/generate_codegen_host.rb with the sjui_tools of the run — not a
+//  copy. Until 2026-10 these rows were the build's output pasted here, and
+//  the paste kept its shape when sjui's changed: the Radio's
+//  `.accessibilityElement(children: .contain)` (SwiftJsonUI 9768b01 /
+//  jsonui-cli b5b9815b) never reached it, and the probe read a codegen
+//  regression as expected (jsonui-cli ticket
+//  sjui-a11y-activation-probe-codegen-rows-are-hand-copies). The generated
+//  view's data is its host's; the probe reaches it through a ProbeHostLink
+//  (ProbeHostLink.swift): the handlers and the controls' changes count here
+//  (ProbeLayouts/handlers/probe_a11y_activation.json: `count`, `watch`), and
+//  the probe writes the bound stop (`gateOpen`), the cell rows and the
+//  wrapper controls' start (`writes`). The cell's View is the one sjui build
+//  scaffolds: Equatable on its key, drawn `.equatable()` by the Collection.
+//  The dynamic-only host has no generated rows; its test requires them
+//  absent there and present in the codegen host. The rows:
 //  - no stop (the controls): a Label with onClick, a Button, a Switch, a
 //    Segment and a Radio group (the wrapper controls: each segment and each
 //    item is an element of its own — the item "b", the glyph "circle");
@@ -32,37 +40,10 @@
 //    four, and a Collection whose cell has a Label with onClick (the cell is
 //    a layout the stop reaches: it reads `jsonuiInteractionStopped`);
 //  - a Button and a Switch with `userInteractionEnabled: false` of their own.
-//    ax_probe.json:
-//      {"type": "View", "id": "cgRoot", "orientation": "vertical", "spacing": 6, "child": [
-//        {"type": "Label", "id": "cgLblPlain", "text": "cgLblPlain", "onClick": "@{onLblPlain}"}
-//        {"type": "Button", "id": "cgBtnPlain", "text": "cgBtnPlain", "onClick": "@{onBtnPlain}"}
-//        {"type": "Switch", "id": "cgSwPlain", "isOn": "@{swPlain}"}
-//        {"type": "Segment", "id": "cgSegPlain", "items": ["a", "b"], "selectedIndex": "@{segPlain}"}
-//        {"type": "Radio", "id": "cgRadPlain", "items": ["a", "b"], "selectedValue": "@{radPlain}"}
-//        {"type": "View", "id": "cgParFalse", "orientation": "vertical", "spacing": 4, "userInteractionEnabled": false, "child": [
-//          {"type": "Button", "id": "cgBtnInFalse", "text": "cgBtnInFalse", "onClick": "@{onBtnInFalse}"}
-//          {"type": "Label", "id": "cgLblInFalse", "text": "cgLblInFalse", "onClick": "@{onLblInFalse}"}
-//          {"type": "View", "id": "cgViewInFalse", "width": 80, "height": 30, "background": "#3366CC", "onClick": "@{onViewInFalse}"}
-//          {"type": "Switch", "id": "cgSwInFalse", "isOn": "@{swInFalse}"}
-//          {"type": "Segment", "id": "cgSegInFalse", "items": ["a", "b"], "selectedIndex": "@{segInFalse}"}
-//          {"type": "Radio", "id": "cgRadInFalse", "items": ["a", "b"], "selectedValue": "@{radInFalse}"}
-//        ]}
-//        {"type": "View", "id": "cgParBound", "orientation": "vertical", "spacing": 4, "userInteractionEnabled": "@{gateOpen}", "child": [
-//          {"type": "Button", "id": "cgBtnInBound", "text": "cgBtnInBound", "onClick": "@{onBtnInBound}"}
-//          {"type": "Label", "id": "cgLblInBound", "text": "cgLblInBound", "onClick": "@{onLblInBound}"}
-//          {"type": "View", "id": "cgViewInBound", "width": 80, "height": 30, "background": "#3366CC", "onClick": "@{onViewInBound}"}
-//          {"type": "Switch", "id": "cgSwInBound", "isOn": "@{swInBound}"}
-//          {"type": "Collection", "id": "cgListBound", "items": "@{rows}", "width": 200, "height": 40, "layout": "horizontal", "sections": [{"cell": "ax_cell"}]}
-//        ]}
-//        {"type": "Button", "id": "cgBtnSelfFalse", "text": "cgBtnSelfFalse", "onClick": "@{onBtnSelfFalse}", "userInteractionEnabled": false}
-//        {"type": "Switch", "id": "cgSwSelfFalse", "isOn": "@{swSelfFalse}", "userInteractionEnabled": false}
-//      ]}
-//    ax_cell.json:
-//      {"type": "View", "id": "cgCell", "child": [
-//        {"type": "Label", "id": "cgCellLbl", "text": "cgCellLbl", "onClick": "@{onRow}"}
-//      ]}
-//  Below the paste, not emitted: the same cell drawn without `.equatable()`
-//  (the contrast for the cell), and the candidate fixes for a Switch and a
+//  Written by hand, not emitted: the same generated cell drawn without
+//  `.equatable()` (cgCellNoEq, CodegenOnly/A11yActivationCellNoEq.swift — the
+//  contrast for the cell; sjui does not emit that form, so it cannot be
+//  generated), and the candidate fixes for a Switch and a
 //  Button inside a stop (A11yActivationProbeView.candidates) — the setter
 //  gated, `.accessibilityRespondsToUserInteraction(false)`, the button and
 //  toggle traits removed, a no-op default action, `.accessibilityElement(
@@ -126,18 +107,16 @@ final class A11yActivationProbeData: ObservableObject {
         }
     }
 
-    // The codegen rows' data surface. A Switch counts each change of value.
-    @Published var gateOpen: Bool? = true
-    @Published var swPlain = false { didSet { if swPlain != oldValue { bump("cgSwPlain") } } }
-    @Published var swInFalse = false { didSet { if swInFalse != oldValue { bump("cgSwInFalse") } } }
-    @Published var swInBound = false { didSet { if swInBound != oldValue { bump("cgSwInBound") } } }
-    @Published var swSelfFalse = false { didSet { if swSelfFalse != oldValue { bump("cgSwSelfFalse") } } }
-    // The wrapper controls: a Segment and a Radio group count each change of
-    // their selection (a segment's, an item's).
-    @Published var segPlain = 0 { didSet { if segPlain != oldValue { bump("cgSegPlain") } } }
-    @Published var radPlain = "a" { didSet { if radPlain != oldValue { bump("cgRadPlain") } } }
-    @Published var segInFalse = 0 { didSet { if segInFalse != oldValue { bump("cgSegInFalse") } } }
-    @Published var radInFalse = "a" { didSet { if radInFalse != oldValue { bump("cgRadInFalse") } } }
+    // The codegen rows' data is the generated host's (ProbeHostLink.swift):
+    // the handlers and the controls' changes count through the link, and the
+    // bound stop and the cell rows are written into it. `gateOpen` is the
+    // probe's, read by the Dynamic rows and the hand-written cell contrast
+    // too, and written through to the generated rows on every change.
+    @Published var gateOpen: Bool? = true { didSet { link.write(["gateOpen": gateOpen ?? false]) } }
+    lazy var link = ProbeHostLink(
+        values: ["gateOpen": gateOpen ?? false, "rows": cellRows("cgCellEq")],
+        count: { [weak self] name in self?.bump(name) }
+    )
     @Published var dynSel: [String: String] = [:]
     // The candidates (not emitted): each Switch counts each change of value.
     @Published var cand: [String: Bool] = [:]
@@ -169,312 +148,13 @@ final class A11yActivationProbeData: ObservableObject {
         SwiftUI.Binding(get: { self.cand[name] ?? false }, set: { _ in })
     }
     @Published var dynSw: [String: Bool] = [:]
-    lazy var onLblPlain: (() -> Void)? = { [weak self] in self?.bump("cgLblPlain") }
-    lazy var onBtnPlain: (() -> Void)? = { [weak self] in self?.bump("cgBtnPlain") }
-    lazy var onBtnInFalse: (() -> Void)? = { [weak self] in self?.bump("cgBtnInFalse") }
-    lazy var onLblInFalse: (() -> Void)? = { [weak self] in self?.bump("cgLblInFalse") }
-    lazy var onViewInFalse: (() -> Void)? = { [weak self] in self?.bump("cgViewInFalse") }
-    lazy var onBtnInBound: (() -> Void)? = { [weak self] in self?.bump("cgBtnInBound") }
-    lazy var onLblInBound: (() -> Void)? = { [weak self] in self?.bump("cgLblInBound") }
-    lazy var onViewInBound: (() -> Void)? = { [weak self] in self?.bump("cgViewInBound") }
-    lazy var onBtnSelfFalse: (() -> Void)? = { [weak self] in self?.bump("cgBtnSelfFalse") }
-    lazy var rows: CollectionDataSource? = cellRows("cgCellEq")
     lazy var rowsNoEq: CollectionDataSource? = cellRows("cgCellNoEq")
 
     private func cellRows(_ name: String) -> CollectionDataSource {
         let onRow: (() -> Void)? = { [weak self] in self?.bump(name) }
         var section = CollectionDataSection()
-        section.setCells(viewName: "AxCell", data: [["cellId": name, "onRow": onRow as Any]])
+        section.setCells(viewName: "A11yActivationCell", data: [["cellId": name, "onRow": onRow as Any]])
         return CollectionDataSource(sections: [section])
-    }
-}
-
-// MARK: - the cell, as `sjui g collection` writes it (collection_generator.rb)
-
-struct AxCellData {
-    var onRow: (() -> Void)? = nil
-
-    mutating func update(dictionary: [String: Any]) {
-        if let value = dictionary["onRow"] {
-            if let typedValue = value as? (() -> Void)? {
-                self.onRow = typedValue
-            }
-        }
-    }
-}
-
-final class AxCellViewModel: ObservableObject {
-    let jsonFileName = "ax_cell"
-
-    @Published var data = AxCellData()
-    private var lastCellId: String?
-
-    func setData(_ itemData: Any) {
-        guard let dict = itemData as? [String: Any] else { return }
-        let cellId = dict["cellId"] as? String
-        guard cellId != lastCellId else { return }
-        lastCellId = cellId
-        data.update(dictionary: dict)
-    }
-}
-
-struct AxCellView: View, Equatable {
-    @StateObject private var viewModel: AxCellViewModel
-    let cellId: String
-    let cellData: Any
-
-    init(data: Any) {
-        let dict = data as? [String: Any]
-        self.cellId = dict?["cellId"] as? String ?? ""
-        self.cellData = data
-        _viewModel = StateObject(wrappedValue: Self.makeViewModel(with: data))
-    }
-
-    private static func makeViewModel(with data: Any) -> AxCellViewModel {
-        let vm = AxCellViewModel()
-        vm.setData(data)
-        return vm
-    }
-
-    static func == (lhs: AxCellView, rhs: AxCellView) -> Bool {
-        lhs.cellId == rhs.cellId
-    }
-
-    var body: some View {
-        AxCellGeneratedView(data: $viewModel.data)
-            .onChange(of: cellId) { _, _ in
-                viewModel.setData(cellData)
-            }
-    }
-}
-
-struct AxCellGeneratedView: View {
-    @SwiftUI.Binding var data: AxCellData
-    // the state line the emission names for ax_cell (a layout a stop reaches)
-    @Environment(\.jsonuiInteractionStopped) private var jsonuiInteractionStopped
-
-    var body: some View {
-        ZStack(alignment: .topLeading) {
-            Group {
-                PartialAttributedText(
-                    "cgCellLbl",
-                    textAlignment: .leading
-                )
-                    .contentShape(Rectangle())
-                    .gesture(TapGesture().onEnded {
-                            data.onRow?()
-                        }, including: !jsonuiInteractionStopped ? .all : .subviews)
-                    .accessibilityAddTraits(!jsonuiInteractionStopped ? AccessibilityTraits.isButton : [])
-                    .accessibilityIdentifier("cgCellLbl")
-            }
-        }
-            .overlay(alignment: .topLeading) {
-                Color.clear
-                    .frame(width: 0.5, height: 0.5)
-                    .accessibilityElement(children: .ignore)
-            }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("cgCell")
-    }
-}
-
-// MARK: - the body `sjui build` emits for ax_probe, pasted unchanged
-
-struct A11yActivationCodegenBody: View {
-    @ObservedObject var data: A11yActivationProbeData
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-                PartialAttributedText(
-                    "cgLblPlain",
-                    textAlignment: .leading
-                )
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                            data.onLblPlain?()
-                        }
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityIdentifier("cgLblPlain")
-                StateAwareButtonView(
-                    text: "cgBtnPlain",
-                    action: { data.onBtnPlain?() },
-                    isEnabled: true
-                )
-                    .accessibilityIdentifier("cgBtnPlain")
-                Toggle(isOn: $data.swPlain) {
-                    Text("")
-                }
-                    .labelsHidden()
-                    .accessibilityIdentifier("cgSwPlain")
-                Picker("", selection: $data.segPlain) {
-                    Text("a".localized()).tag(0)
-                    Text("b".localized()).tag(1)
-                }
-                    .pickerStyle(.segmented)
-                    .accessibilityIdentifier("cgSegPlain")
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Image(systemName: data.radPlain == "a" ? "largecircle.fill.circle" : "circle")
-                            .foregroundColor(.blue)
-                            .onTapGesture {
-                            data.radPlain = "a"
-                        }
-                        Text("a")
-                    }
-                    HStack {
-                        Image(systemName: data.radPlain == "b" ? "largecircle.fill.circle" : "circle")
-                            .foregroundColor(.blue)
-                            .onTapGesture {
-                            data.radPlain = "b"
-                        }
-                        Text("b")
-                    }
-                }
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("cgRadPlain")
-                VStack(alignment: .leading, spacing: 4) {
-                        StateAwareButtonView(
-                            text: "cgBtnInFalse",
-                            action: { },
-                            isEnabled: true
-                        )
-                            .jsonuiStoppedControl(true)
-                            .accessibilityIdentifier("cgBtnInFalse")
-                        PartialAttributedText(
-                            "cgLblInFalse",
-                            textAlignment: .leading
-                        )
-                            .accessibilityIdentifier("cgLblInFalse")
-                        Rectangle()
-                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "#3366CC") ?? Color.black)
-                            .frame(width: 80, height: 30)
-                            .overlay(alignment: .topLeading) {
-                                Color.clear
-                                    .frame(width: 0.5, height: 0.5)
-                                    .accessibilityElement(children: .ignore)
-                            }
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("cgViewInFalse")
-                        Toggle(isOn: $data.swInFalse) {
-                            Text("")
-                        }
-                            .labelsHidden()
-                            .jsonuiStoppedControl(true)
-                            .accessibilityIdentifier("cgSwInFalse")
-                        Picker("", selection: $data.segInFalse) {
-                            Text("a".localized()).tag(0)
-                            Text("b".localized()).tag(1)
-                        }
-                            .pickerStyle(.segmented)
-                            .jsonuiStoppedControl(true, items: true)
-                            .accessibilityIdentifier("cgSegInFalse")
-                        VStack(alignment: .leading, spacing: 8) {
-                            HStack {
-                                Image(systemName: data.radInFalse == "a" ? "largecircle.fill.circle" : "circle")
-                                    .foregroundColor(.blue)
-                                    .onTapGesture {
-                                    data.radInFalse = "a"
-                                }
-                                Text("a")
-                            }
-                            HStack {
-                                Image(systemName: data.radInFalse == "b" ? "largecircle.fill.circle" : "circle")
-                                    .foregroundColor(.blue)
-                                    .onTapGesture {
-                                    data.radInFalse = "b"
-                                }
-                                Text("b")
-                            }
-                        }
-                            .accessibilityElement(children: .contain)
-                            .jsonuiStoppedControl(true, items: true)
-                            .accessibilityIdentifier("cgRadInFalse")
-                }
-                    .allowsHitTesting(false)
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("cgParFalse")
-                VStack(alignment: .leading, spacing: 4) {
-                        StateAwareButtonView(
-                            text: "cgBtnInBound",
-                            action: { if (data.gateOpen ?? false) { data.onBtnInBound?() } },
-                            isEnabled: true
-                        )
-                            .jsonuiStoppedControl(!((data.gateOpen ?? false)))
-                            .accessibilityIdentifier("cgBtnInBound")
-                        PartialAttributedText(
-                            "cgLblInBound",
-                            textAlignment: .leading
-                        )
-                            .contentShape(Rectangle())
-                            .gesture(TapGesture().onEnded {
-                                            data.onLblInBound?()
-                                        }, including: (data.gateOpen ?? false) ? .all : .subviews)
-                            .accessibilityAddTraits((data.gateOpen ?? false) ? AccessibilityTraits.isButton : [])
-                            .accessibilityIdentifier("cgLblInBound")
-                        Rectangle()
-                            .fill(SwiftJsonUIConfiguration.shared.getColor(for: "#3366CC") ?? Color.black)
-                            .frame(width: 80, height: 30)
-                            .contentShape(Rectangle())
-                            .gesture(TapGesture().onEnded {
-                                            data.onViewInBound?()
-                                        }, including: (data.gateOpen ?? false) ? .all : .subviews)
-                            .accessibilityAddTraits((data.gateOpen ?? false) ? AccessibilityTraits.isButton : [])
-                            .overlay(alignment: .topLeading) {
-                                Color.clear
-                                    .frame(width: 0.5, height: 0.5)
-                                    .accessibilityElement(children: .ignore)
-                            }
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier("cgViewInBound")
-                        Toggle(isOn: $data.swInBound) {
-                            Text("")
-                        }
-                            .labelsHidden()
-                            .jsonuiStoppedControl(!((data.gateOpen ?? false)))
-                            .accessibilityIdentifier("cgSwInBound")
-                        CollectionStackView(
-                            mode: .lazy,
-                            axis: .horizontal,
-                            verticalAlignment: .top,
-                            spacing: 0,
-                            showsIndicators: true,
-                            scrollDisabled: false
-                        ) {
-                            if let dataSource = data.rows, dataSource.sections.count > 0 {
-                                let section = dataSource.sections[0]
-                                if let cellsData = section.cells?.data {
-                                    ForEach(Array(cellsData.enumerated()), id: \.offset) { cellIndex, cellData in
-                                        AxCellView(data: cellData).equatable()
-                                            .accessibilityIdentifier("cgListBound_item_\(cellIndex)")
-                                    }
-                                }
-                            }
-                        }
-                            .frame(width: 200, height: 40)
-                            .accessibilityIdentifier("cgListBound")
-                }
-                    .allowsHitTesting((data.gateOpen ?? false))
-                    .transformEnvironment(\.jsonuiInteractionStopped) { $0 = $0 || !(data.gateOpen ?? false) }
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("cgParBound")
-                StateAwareButtonView(
-                    text: "cgBtnSelfFalse",
-                    action: { },
-                    isEnabled: true
-                )
-                    .allowsHitTesting(false)
-                    .jsonuiStoppedControl(true)
-                    .accessibilityIdentifier("cgBtnSelfFalse")
-                Toggle(isOn: $data.swSelfFalse) {
-                    Text("")
-                }
-                    .labelsHidden()
-                    .allowsHitTesting(false)
-                    .jsonuiStoppedControl(true)
-                    .accessibilityIdentifier("cgSwSelfFalse")
-        }
-            .accessibilityElement(children: .contain)
-            .accessibilityIdentifier("cgRoot")
     }
 }
 
@@ -736,9 +416,8 @@ struct A11yActivationProbeView: View {
         if Self.textFieldsOnly { runTextFields(); return }
         // The wrapper controls with no stop start each run on their first
         // item, so the item a run operates ("b", an unselected glyph) moves
-        // the selection again.
-        data.segPlain = 0
-        data.radPlain = "a"
+        // the selection again (the generated rows' through the link).
+        data.link.write(["segPlain": 0, "radPlain": "a"])
         data.dynSel = [:]
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { runTargets() }
     }
@@ -878,11 +557,20 @@ struct A11yActivationProbeView: View {
     private var readout: String {
         let counts = data.counts.sorted { $0.key < $1.key }.map { "\($0.key)=\($0.value)" }.joined(separator: ",")
         let gate = (data.gateOpen ?? false) ? "open" : "closed"
-        return "ran=\(data.ran) gate=\(gate) walk=\(data.walk) act[\(data.act)] counts[\(counts)]"
+        return "ran=\(data.ran) gate=\(gate) host=\(Self.hostMode) cg=\(Self.generated == nil ? 0 : 1) "
+            + "walk=\(data.walk) act[\(data.act)] counts[\(counts)]"
     }
 
 
     @FocusState private var focus: String?
+
+    /// The generated rows: present only in the codegen host's build.
+    static var generated: AnyView? { CodegenFixtureRegistry.probeView(named: "probe_a11y_activation") }
+    /// The host the test says this is, as it reached the app (the test's
+    /// TEST_RUNNER_ environment does not: it is passed as launchEnvironment).
+    /// The test compares it, and `cg`, with its own — a build without the
+    /// generated rows under a codegen run reads as such, not as a pass.
+    static let hostMode = ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] ?? "dynamic"
 
     /// `-candidates`: the candidate fixes alone, on a screen of their own (the
     /// probe's two columns fill the screen).
@@ -1042,34 +730,15 @@ struct A11yActivationProbeView: View {
                 ScrollView { VStack(alignment: .leading, spacing: 4) { candidatesBlock } }
             } else {
             HStack(alignment: .top, spacing: 16) {
-                VStack(alignment: .leading, spacing: 4) {
-                    A11yActivationCodegenBody(data: data)
-                    // not emitted: the cell without `.equatable()`, under the
-                    // same bound stop — the contrast for the cell
-                    VStack(alignment: .leading, spacing: 0) {
-                        CollectionStackView(
-                            mode: .lazy,
-                            axis: .horizontal,
-                            verticalAlignment: .top,
-                            spacing: 0,
-                            showsIndicators: true,
-                            scrollDisabled: false
-                        ) {
-                            if let dataSource = data.rowsNoEq, dataSource.sections.count > 0 {
-                                let section = dataSource.sections[0]
-                                if let cellsData = section.cells?.data {
-                                    ForEach(Array(cellsData.enumerated()), id: \.offset) { cellIndex, cellData in
-                                        AxCellView(data: cellData)
-                                            .accessibilityIdentifier("cgListBoundNoEq_item_\(cellIndex)")
-                                    }
-                                }
-                            }
-                        }
-                            .frame(width: 200, height: 40)
-                            .accessibilityIdentifier("cgListBoundNoEq")
+                // The codegen rows (codegen host only): the generated view
+                // with the link to this probe's data, then the hand-written
+                // contrast for its cell. Nothing around the generated view:
+                // an identifier on it would replace the ids inside it.
+                if let generated = Self.generated {
+                    VStack(alignment: .leading, spacing: 4) {
+                        generated.environment(\.probeHostLink, data.link)
+                        A11yActivationCellNoEq(data: data)
                     }
-                        .allowsHitTesting((data.gateOpen ?? false))
-                        .transformEnvironment(\.jsonuiInteractionStopped) { $0 = $0 || !(data.gateOpen ?? false) }
                 }
                 if let layout = Self.dynamicLayout {
                     DynamicComponentBuilder(component: layout, data: dynamicData)
