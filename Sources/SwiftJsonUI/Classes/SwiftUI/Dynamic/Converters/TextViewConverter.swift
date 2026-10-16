@@ -10,7 +10,7 @@
 //       - text binding, hint, hintAttributes (hintColor, hintFont, hintFontSize, hintLineHeightMultiple)
 //       - hideOnFocused, fontSize, fontColor, font, backgroundColor, cornerRadius
 //       - containerInset (paddings used as containerInset), flexible, minHeight, maxHeight
-//    2. .onChange (onTextChange)
+//    2. onTextChange (called from the text binding's setter)
 //    3. flexible: frame(minHeight/maxHeight) OR apply_frame_constraints + apply_frame_size
 //    4. .overlay (border)
 //    5. apply_margins
@@ -227,9 +227,10 @@ public struct TextViewConverter {
             : resolvedMinHeight
         let maxHeight = component.number(CommonAttributes.self, \.maxHeight, data: data)
 
+        let editorText = UserEditBinding.text(textBinding, component: component, id: id, data: data)
         var result = AnyView(
             TextViewWithPlaceholder(
-                text: textBinding,
+                text: editorText,
                 hint: hint,
                 hintColor: hintColor,
                 hintFont: hintFont,
@@ -297,17 +298,12 @@ public struct TextViewConverter {
             result = AnyView(result.keyboardType(resolved))
         }
 
-        // --- 2. .onChange (onTextChange) ---
-        // Fires for bound AND local-state text (the handler does not require
-        // the text itself to be @{bound}).
-        if let onTextChange = component.onTextChange,
-           DynamicEventHelper.handlerName(from: onTextChange) != nil {
-            result = AnyView(
-                result.onChange(of: textBinding.wrappedValue) { _, newValue in
-                    DynamicEventHelper.callWithValue(onTextChange, id: id, value: newValue, data: data)
-                }
-            )
-        }
+        // --- 2. onTextChange ---
+        // Called from the text binding's setter (`editorText` above), for
+        // bound AND local-state text: the user's edits only. It was
+        // `.onChange(of: textBinding.wrappedValue)`, which also fired for a
+        // view model's updateData and the test runner's initialState (ticket
+        // sjui-ontextchange-fires-on-programmatic-data-change).
 
         // --- 3. Frame modifiers ---
         if flexible {

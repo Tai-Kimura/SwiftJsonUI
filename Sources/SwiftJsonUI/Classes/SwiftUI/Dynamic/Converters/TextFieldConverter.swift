@@ -17,7 +17,7 @@
 //    9. .disabled (enabled == false)
 //   10. .tint (tintColor / caretAttributes)
 //   11. .padding(.leading, textPaddingLeft)
-//   12. .onChange (onTextChange)
+//   12. onTextChange (called from the text binding's setter)
 //   13. .focused
 //   14. .onSubmit (nextFocus)
 //   15. apply_padding
@@ -98,7 +98,11 @@ public struct TextFieldConverter {
         }()
 
         // Field construction shared by the bound and local-state paths
-        let build: (SwiftUI.Binding<String>) -> AnyView = { binding in
+        let build: (SwiftUI.Binding<String>) -> AnyView = { source in
+            // onTextChange is called from this binding's setter — the user's
+            // edits (typing, the clear button) — and not for a change of the
+            // value from elsewhere (UserEditBinding.swift).
+            let binding = UserEditBinding.text(source, component: component, id: id, data: data)
             var built: AnyView
             // Use FocusableTextField when component has an id (for focus chain support)
             if let fieldId = component.id {
@@ -150,15 +154,10 @@ public struct TextFieldConverter {
                 }
             }
 
-            // --- 12. .onChange (onTextChange) ---
-            if let onTextChange = component.onTextChange,
-               DynamicEventHelper.handlerName(from: onTextChange) != nil {
-                built = AnyView(
-                    built.onChange(of: binding.wrappedValue) { _, newValue in
-                        DynamicEventHelper.callWithValue(onTextChange, id: id, value: newValue, data: data)
-                    }
-                )
-            }
+            // --- 12. onTextChange: from the binding's setter (above), not
+            // `.onChange(of:)`, which fired for a view model's updateData and
+            // the test runner's initialState too (ticket
+            // sjui-ontextchange-fires-on-programmatic-data-change).
             return built
         }
 
