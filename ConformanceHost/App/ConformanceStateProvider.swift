@@ -170,6 +170,10 @@ final class ConformanceStateStore: ObservableObject {
         values[change.set.var] = change.set.value
     }
 
+    /// The String vars as they stand — the test bridge's snapshot reads
+    /// them (an afterFirstDraw change lands here).
+    var stringValues: [String: String] { values }
+
     var externalData: [String: Any] {
         var out: [String: Any] = [:]
         for (name, source) in collectionData {

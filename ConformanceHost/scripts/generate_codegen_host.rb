@@ -371,7 +371,10 @@ entries.each_with_index do |fixture, i|
   name = format('Fx%04d', i + 1)
   view_file = File.join(staging, 'View', name, "#{name}GeneratedView.swift")
   has_view = File.file?(view_file)
-  fixture['_codegen'] = { 'component' => name, 'generated' => has_view }
+  # screenId: the screen id sjui gives the staged layout (its basename) —
+  # the key a testBridge payload and `state` use on this face
+  # (INTERACTIVE_HOST_CONTRACT.md section 6).
+  fixture['_codegen'] = { 'component' => name, 'generated' => has_view, 'screenId' => format('fx_%04d', i + 1) }
   next unless has_view
 
   generated += 1

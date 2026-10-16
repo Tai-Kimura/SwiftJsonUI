@@ -109,9 +109,14 @@ struct ConformanceHostApp: App {
 /// Batch state driven by the "jsonui.conformance.advance" Darwin notification.
 final class FixtureBatchModel: ObservableObject {
     static let advanceNotification = "jsonui.conformance.advance" as CFString
+    /// INTERACTIVE_HOST_CONTRACT.md §6 job 4: rebuild the current fixture view
+    /// and its stores, so a new instance of the same screen appears in the
+    /// same launch.
+    static let remountNotification = "jsonui.conformance.remount" as CFString
 
     let fixtureIds: [String]
     @Published var currentIndex: Int = 0
+    @Published var remountCount: Int = 0
 
     var currentFixtureId: String? {
         guard currentIndex < fixtureIds.count else { return nil }
@@ -128,6 +133,26 @@ final class FixtureBatchModel: ObservableObject {
         }
         self.fixtureIds = ids
         registerAdvanceObserver()
+        registerRemountObserver()
+    }
+
+    private func registerRemountObserver() {
+        let center = CFNotificationCenterGetDarwinNotifyCenter()
+        let observer = UnsafeRawPointer(Unmanaged.passUnretained(self).toOpaque())
+        CFNotificationCenterAddObserver(
+            center,
+            observer,
+            { _, observer, _, _, _ in
+                guard let observer = observer else { return }
+                let model = Unmanaged<FixtureBatchModel>.fromOpaque(observer).takeUnretainedValue()
+                DispatchQueue.main.async {
+                    model.remountCount += 1
+                }
+            },
+            FixtureBatchModel.remountNotification,
+            nil,
+            .deliverImmediately
+        )
     }
 
     private func registerAdvanceObserver() {
@@ -366,7 +391,8 @@ struct ConformanceRootView: View {
             } else if let fixtureId = batch.currentFixtureId {
                 FixtureScreen(fixtureId: fixtureId)
                     // Force full teardown/rebuild between fixtures so no state leaks.
-                    .id(fixtureId)
+                    // A remount (testBridge) rebuilds the same fixture the same way.
+                    .id("\(fixtureId)#\(batch.remountCount)")
             } else {
                 Text("Conformance batch complete")
                     .padding()
@@ -428,15 +454,21 @@ struct FixtureScreen: View {
                         .accessibilityIdentifier("conformance_load_error")
                 }
             } else if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
-                DynamicView(component: component, viewId: "conformance", data: state.externalData)
-                    // afterFirstDraw (AfterFirstDraw.swift): the one change the
-                    // manifest asks for after the first draw, through the store.
-                    .conformanceAfterFirstDraw(
-                        fixtureId,
-                        declared: state.afterFirstDraw != nil,
-                        applied: state.afterFirstDrawApplied,
-                        fire: state.fireAfterFirstDraw
-                    )
+                if let bridgeDecl = TestBridgeIndex.decl(for: fixtureId) {
+                    // INTERACTIVE_HOST_CONTRACT.md §6: the bridge, over a typed store.
+                    TestBridgeDynamicFixture(component: component, fixtureId: fixtureId,
+                                             state: state, decl: bridgeDecl)
+                } else {
+                    DynamicView(component: component, viewId: "conformance", data: state.externalData)
+                        // afterFirstDraw (AfterFirstDraw.swift): the one change the
+                        // manifest asks for after the first draw, through the store.
+                        .conformanceAfterFirstDraw(
+                            fixtureId,
+                            declared: state.afterFirstDraw != nil,
+                            applied: state.afterFirstDrawApplied,
+                            fire: state.fireAfterFirstDraw
+                        )
+                }
             } else {
                 Text("Failed to load fixture: \(fixtureId)")
                     .foregroundColor(.red)
@@ -540,3 +572,39 @@ enum FixtureLoader {
         return JSONLayoutLoader.decodeComponent(from: processed)
     }
 }
+
+/// A testBridge fixture on the Dynamic face (INTERACTIVE_HOST_CONTRACT.md §6):
+/// DynamicView over the host's String vars plus the fixture's typed store,
+/// with the library's bridge attached under this face's screen id.
+struct TestBridgeDynamicFixture: View {
+    let component: DynamicComponent
+    let fixtureId: String
+    @ObservedObject var state: ConformanceStateStore
+    @StateObject private var store: TestBridgeFixtureStore
+
+    init(component: DynamicComponent, fixtureId: String, state: ConformanceStateStore, decl: TestBridgeDecl) {
+        self.component = component
+        self.fixtureId = fixtureId
+        self.state = state
+        _store = StateObject(wrappedValue: TestBridgeFixtureStore(decl: decl))
+    }
+
+    var body: some View {
+        // The host's declared String vars win a name collision, as in
+        // ConformanceStateStore.externalData: an afterFirstDraw var is one.
+        let data = store.externalData().merging(state.externalData) { _, declared in declared }
+        DynamicView(component: component, viewId: "conformance", data: data)
+            .conformanceAfterFirstDraw(
+                fixtureId,
+                declared: state.afterFirstDraw != nil,
+                applied: state.afterFirstDrawApplied,
+                fire: state.fireAfterFirstDraw
+            )
+            .jsonUITestBridge(
+                TestBridgeDecl.screenId(for: fixtureId),
+                snapshot: { store.snapshot(overriding: state.stringValues) },
+                apply: { store.apply($0) }
+            )
+    }
+}
+

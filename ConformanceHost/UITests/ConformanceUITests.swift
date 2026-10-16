@@ -484,6 +484,20 @@ final class ConformanceUITests: XCTestCase {
             if ProcessInfo.processInfo.environment["CONFORMANCE_WEB_MARKERS_OFF"] != "1" {
                 app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
             }
+            // INTERACTIVE_HOST_CONTRACT.md §6 job 1: one payload for every
+            // testBridge fixture left in this launch, keyed by this face's
+            // screen id for each.
+            let launchId = UUID().uuidString
+            var bridgeScreens: [String: [String: Any]] = [:]
+            for fixture in remaining {
+                if let values = testBridge[fixture.id]?.initialState {
+                    bridgeScreens[bridgeScreenId(fixture)] = values
+                }
+            }
+            if !bridgeScreens.isEmpty,
+               let payload = InitialStatePayload.encode(screens: bridgeScreens, launchId: launchId) {
+                app.launchEnvironment[LaunchEnvironment.initialState] = payload
+            }
             app.launch()
 
             var crashed = false
@@ -564,6 +578,8 @@ final class ConformanceUITests: XCTestCase {
                         id: current.id, status: "error",
                         detail: "layout failed to load/decode in host",
                         screenshot: nil))
+                } else if let bridgeFailure = prepareTestBridge(current, app: app, launchId: launchId) {
+                    results.append(bridgeFailure)
                 } else {
                     results.append(runFixture(current, app: app))
                 }
@@ -594,6 +610,93 @@ final class ConformanceUITests: XCTestCase {
         )
     }
 
+    // MARK: testBridge (INTERACTIVE_HOST_CONTRACT.md §6)
+
+    struct TestBridgeExpectation {
+        let initialState: [String: Any]?
+        let applied: Set<String>?
+        let rejected: Set<String>?
+        let remount: Bool
+    }
+
+    /// `testBridge` per fixture id, read with JSONSerialization: the values
+    /// are typed (Int, Bool, null).
+    private lazy var testBridge: [String: TestBridgeExpectation] = {
+        guard let data = try? loadBundledData(relativePath: "manifest.json"),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let fixtures = root["fixtures"] as? [[String: Any]] else { return [:] }
+        var out: [String: TestBridgeExpectation] = [:]
+        for fixture in fixtures {
+            guard let id = fixture["id"] as? String, let bridge = fixture["testBridge"] as? [String: Any] else { continue }
+            let receipt = bridge["receipt"] as? [String: Any]
+            out[id] = TestBridgeExpectation(
+                initialState: bridge["initialState"] as? [String: Any],
+                applied: (receipt?["applied"] as? [String]).map(Set.init),
+                rejected: (receipt?["rejected"] as? [[String: String]]).map { Set($0.map { "\($0["key"] ?? "")|\($0["reason"] ?? "")" }) },
+                remount: bridge["remount"] as? Bool ?? false
+            )
+        }
+        return out
+    }()
+
+    /// The screen id this face gives a fixture's screen: the staged layout's
+    /// on the codegen face (codegen-map.json), the host's own spelling on the
+    /// Dynamic face (App/TestBridgeFixture.swift, TestBridgeDecl.screenId).
+    private func bridgeScreenId(_ fixture: ConformanceManifest.Fixture) -> String {
+        if isCodegenHostMode {
+            guard let data = try? loadBundledData(relativePath: "codegen-map.json"),
+                  let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let entry = (root["fixtures"] as? [String: Any])?[fixture.id] as? [String: Any],
+                  let screenId = entry["screenId"] as? String else { return "" }
+            return screenId
+        }
+        return "conformance_\(fixture.id.replacingOccurrences(of: "/", with: "_"))"
+    }
+
+    /// §6 jobs 2 and 4: compare the screen's receipt with the manifest's, then
+    /// remount when asked. Nil when the fixture may run its steps.
+    private func prepareTestBridge(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication,
+                                   launchId: String) -> FixtureResult? {
+        guard let expectation = testBridge[fixture.id] else { return nil }
+        let screenId = bridgeScreenId(fixture)
+        if expectation.initialState != nil {
+            let deadline = Date().addingTimeInterval(15)
+            var reading = StateBridge.Reading.absent
+            var got: StateBridge.Receipt?
+            repeat {
+                reading = StateBridge.read(screenId, in: app)
+                if case .bridge(let bridgeLaunch, let receipt?, _) = reading, bridgeLaunch == launchId {
+                    got = receipt
+                    break
+                }
+                Thread.sleep(forTimeInterval: 0.2)
+            } while Date() < deadline
+            guard let got else {
+                return FixtureResult(id: fixture.id, status: "error",
+                                     detail: "testBridge: " + StateBridge.noReceiptMessage(
+                                        screenId: screenId, timeout: 15, lastReading: reading),
+                                     screenshot: nil)
+            }
+            let applied = Set(got.applied)
+            let rejected = Set(got.rejected.map { "\($0.key)|\($0.reason)" })
+            if applied != (expectation.applied ?? []) || rejected != (expectation.rejected ?? []) {
+                return FixtureResult(id: fixture.id, status: "fail",
+                                     detail: "testBridge receipt: applied \(applied.sorted()) rejected \(rejected.sorted()); "
+                                        + "expected applied \((expectation.applied ?? []).sorted()) rejected \((expectation.rejected ?? []).sorted())",
+                                     screenshot: nil)
+            }
+        }
+        if expectation.remount {
+            let center = CFNotificationCenterGetDarwinNotifyCenter()
+            CFNotificationCenterPostNotification(
+                center, CFNotificationName("jsonui.conformance.remount" as CFString), nil, nil, true)
+            // The steps' own auto-wait carries the rest: they expect the
+            // defaults, which only the rebuilt instance shows.
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return nil
+    }
+
     // MARK: Single fixture execution
 
     private func runFixture(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication) -> FixtureResult {
@@ -612,6 +715,10 @@ final class ConformanceUITests: XCTestCase {
 
         let actionExecutor = XCUITestActionExecutor(platform: "ios")
         let assertionExecutor = XCUITestAssertionExecutor()
+        // §6 job 3: `state` reads this fixture's screen.
+        if testBridge[fixture.id] != nil {
+            assertionExecutor.setStateScreen(bridgeScreenId(fixture))
+        }
         var screenshotPath: String? = nil
         var framesPath: String? = nil
         var framesUnrecorded: String? = nil
