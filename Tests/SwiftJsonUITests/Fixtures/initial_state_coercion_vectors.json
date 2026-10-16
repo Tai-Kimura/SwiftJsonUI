@@ -1,0 +1,1776 @@
+{
+  "version": 1,
+  "title": "initialState: data class x JSON value -> applied or rejected",
+  "description": [
+    "Shared vector for the app-side check that applies an initialState payload to a screen's Data (spec section 10.3).",
+    "Run by: the three generators (sjui / kjui / rjui) through the code they emit, and the two libraries where they hold the check.",
+    "Each case declares the screen's data (name and class exactly as a layout writes them) and an input object; expect lists the keys that are applied and the keys that are rejected with their reason.",
+    "Compare applied and rejected as sets: order is not part of the contract.",
+    "<class> in a reason is the class as the layout spells it, verbatim (Boolean stays Boolean, Int? keeps its ?).",
+    "Order of the checks for one key: not a data field -> unsupported type -> null -> type. So an optional closure given null is still unsupported.",
+    "The Android-only reason 'viewModel has no updateData' depends on the ViewModel, not on the value, and is not a case here."
+  ],
+  "cases": [
+    {
+      "name": "String <- \"a\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "String"
+        }
+      ],
+      "input": {
+        "f": "a"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "String <- \"\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "String"
+        }
+      ],
+      "input": {
+        "f": ""
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "String <- 1",
+      "data": [
+        {
+          "name": "f",
+          "class": "String"
+        }
+      ],
+      "input": {
+        "f": 1
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected String"
+          }
+        ]
+      }
+    },
+    {
+      "name": "String <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "String"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected String"
+          }
+        ]
+      }
+    },
+    {
+      "name": "String <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "String"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "null for non-optional String"
+          }
+        ]
+      }
+    },
+    {
+      "name": "String? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "String?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "String? <- \"a\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "String?"
+        }
+      ],
+      "input": {
+        "f": "a"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "string <- \"a\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "string"
+        }
+      ],
+      "input": {
+        "f": "a"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- 3",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": 3
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- 0",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": 0
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- -7",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": -7
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- 2.0 (integral: JS cannot tell it from 2, so every face accepts it)",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": 2.0
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Int"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Int <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Int"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Int <- \"1\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": "1"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Int"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Int <- 2147483647",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": 2147483647
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- -2147483648",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": -2147483648
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int <- 2147483648",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": 2147483648
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Int"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Int <- -2147483649",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": -2147483649
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Int"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Int <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "null for non-optional Int"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Int? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Int? <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "Int?"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Int?"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Integer <- 3",
+      "data": [
+        {
+          "name": "f",
+          "class": "Integer"
+        }
+      ],
+      "input": {
+        "f": 3
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Integer <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "Integer"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Integer"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Double <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "Double"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Double <- 3",
+      "data": [
+        {
+          "name": "f",
+          "class": "Double"
+        }
+      ],
+      "input": {
+        "f": 3
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Double <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "Double"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Double"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Double <- \"1.5\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Double"
+        }
+      ],
+      "input": {
+        "f": "1.5"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Double"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Float <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "Float"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Float <- 3",
+      "data": [
+        {
+          "name": "f",
+          "class": "Float"
+        }
+      ],
+      "input": {
+        "f": 3
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Float <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "Float"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Float"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Float <- \"1.5\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Float"
+        }
+      ],
+      "input": {
+        "f": "1.5"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Float"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CGFloat <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "CGFloat"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "CGFloat <- 3",
+      "data": [
+        {
+          "name": "f",
+          "class": "CGFloat"
+        }
+      ],
+      "input": {
+        "f": 3
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "CGFloat <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "CGFloat"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected CGFloat"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CGFloat <- \"1.5\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "CGFloat"
+        }
+      ],
+      "input": {
+        "f": "1.5"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected CGFloat"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Number <- 1.5",
+      "data": [
+        {
+          "name": "f",
+          "class": "Number"
+        }
+      ],
+      "input": {
+        "f": 1.5
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Number <- 3",
+      "data": [
+        {
+          "name": "f",
+          "class": "Number"
+        }
+      ],
+      "input": {
+        "f": 3
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Number <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "Number"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Number"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Number <- \"1.5\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Number"
+        }
+      ],
+      "input": {
+        "f": "1.5"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Number"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Double <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Double"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "null for non-optional Double"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Double? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Double?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Bool <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Bool <- false",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool"
+        }
+      ],
+      "input": {
+        "f": false
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Bool <- 0",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool"
+        }
+      ],
+      "input": {
+        "f": 0
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bool <- 1",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool"
+        }
+      ],
+      "input": {
+        "f": 1
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bool <- \"true\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool"
+        }
+      ],
+      "input": {
+        "f": "true"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bool <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "null for non-optional Bool"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Bool? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Bool?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Boolean <- false",
+      "data": [
+        {
+          "name": "f",
+          "class": "Boolean"
+        }
+      ],
+      "input": {
+        "f": false
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Boolean <- 1",
+      "data": [
+        {
+          "name": "f",
+          "class": "Boolean"
+        }
+      ],
+      "input": {
+        "f": 1
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Boolean"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Color <- \"#FF0000\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Color"
+        }
+      ],
+      "input": {
+        "f": "#FF0000"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Color <- \"primary_text\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Color"
+        }
+      ],
+      "input": {
+        "f": "primary_text"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Color <- 1",
+      "data": [
+        {
+          "name": "f",
+          "class": "Color"
+        }
+      ],
+      "input": {
+        "f": 1
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Color"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Color? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Color?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Array(String) <- [\"a\", \"b\"]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)"
+        }
+      ],
+      "input": {
+        "f": [
+          "a",
+          "b"
+        ]
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Array(String) <- []",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)"
+        }
+      ],
+      "input": {
+        "f": []
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Array(String) <- [\"a\", 1]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)"
+        }
+      ],
+      "input": {
+        "f": [
+          "a",
+          1
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Array(String)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Array(String) <- \"a\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)"
+        }
+      ],
+      "input": {
+        "f": "a"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Array(String)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Array(String) <- [\"a\", null] (elements are not optional)",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)"
+        }
+      ],
+      "input": {
+        "f": [
+          "a",
+          null
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Array(String)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "[Int] <- [1, 2]",
+      "data": [
+        {
+          "name": "f",
+          "class": "[Int]"
+        }
+      ],
+      "input": {
+        "f": [
+          1,
+          2
+        ]
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "[Int] <- [1.5]",
+      "data": [
+        {
+          "name": "f",
+          "class": "[Int]"
+        }
+      ],
+      "input": {
+        "f": [
+          1.5
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected [Int]"
+          }
+        ]
+      }
+    },
+    {
+      "name": "List<Bool> <- [true, false]",
+      "data": [
+        {
+          "name": "f",
+          "class": "List<Bool>"
+        }
+      ],
+      "input": {
+        "f": [
+          true,
+          false
+        ]
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "List<Bool> <- [0]",
+      "data": [
+        {
+          "name": "f",
+          "class": "List<Bool>"
+        }
+      ],
+      "input": {
+        "f": [
+          0
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected List<Bool>"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Array(String)? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Array(String) <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(String)"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "null for non-optional Array(String)"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Array <- [1, \"a\", true]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array"
+        }
+      ],
+      "input": {
+        "f": [
+          1,
+          "a",
+          true
+        ]
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Array <- [[1]]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array"
+        }
+      ],
+      "input": {
+        "f": [
+          [
+            1
+          ]
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Array"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Array <- [{\"a\": 1}]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array"
+        }
+      ],
+      "input": {
+        "f": [
+          {
+            "a": 1
+          }
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Array"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Array <- {\"a\": 1}",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array"
+        }
+      ],
+      "input": {
+        "f": {
+          "a": 1
+        }
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Array"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Object <- {\"a\": 1, \"b\": \"x\", \"c\": false}",
+      "data": [
+        {
+          "name": "f",
+          "class": "Object"
+        }
+      ],
+      "input": {
+        "f": {
+          "a": 1,
+          "b": "x",
+          "c": false
+        }
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Object <- {\"a\": {\"b\": 1}}",
+      "data": [
+        {
+          "name": "f",
+          "class": "Object"
+        }
+      ],
+      "input": {
+        "f": {
+          "a": {
+            "b": 1
+          }
+        }
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Object"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Object <- [1]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Object"
+        }
+      ],
+      "input": {
+        "f": [
+          1
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Object"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Hash <- {\"k\": \"v\"}",
+      "data": [
+        {
+          "name": "f",
+          "class": "Hash"
+        }
+      ],
+      "input": {
+        "f": {
+          "k": "v"
+        }
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Object? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Object?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "[OrderItem] <- []",
+      "data": [
+        {
+          "name": "f",
+          "class": "[OrderItem]"
+        }
+      ],
+      "input": {
+        "f": []
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type [OrderItem]"
+          }
+        ]
+      }
+    },
+    {
+      "name": "(() -> Void)? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "(() -> Void)?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type (() -> Void)?"
+          }
+        ]
+      }
+    },
+    {
+      "name": "(String) -> Void <- \"x\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "(String) -> Void"
+        }
+      ],
+      "input": {
+        "f": "x"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type (String) -> Void"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CollectionDataSource <- {}",
+      "data": [
+        {
+          "name": "f",
+          "class": "CollectionDataSource"
+        }
+      ],
+      "input": {
+        "f": {}
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type CollectionDataSource"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility <- \"gone\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": "gone"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Image <- \"icon\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Image"
+        }
+      ],
+      "input": {
+        "f": "icon"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type Image"
+          }
+        ]
+      }
+    },
+    {
+      "name": "EdgeInsets <- {\"top\": 1}",
+      "data": [
+        {
+          "name": "f",
+          "class": "EdgeInsets"
+        }
+      ],
+      "input": {
+        "f": {
+          "top": 1
+        }
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type EdgeInsets"
+          }
+        ]
+      }
+    },
+    {
+      "name": "an undeclared key is not a data field; the declared ones still apply",
+      "data": [
+        {
+          "name": "email",
+          "class": "String"
+        },
+        {
+          "name": "count",
+          "class": "Int"
+        }
+      ],
+      "input": {
+        "email": "a@example.com",
+        "nickname": "x",
+        "count": 2
+      },
+      "expect": {
+        "applied": [
+          "email",
+          "count"
+        ],
+        "rejected": [
+          {
+            "key": "nickname",
+            "reason": "not a data field"
+          }
+        ]
+      }
+    },
+    {
+      "name": "keys are case-sensitive",
+      "data": [
+        {
+          "name": "email",
+          "class": "String"
+        }
+      ],
+      "input": {
+        "Email": "a@example.com"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "Email",
+            "reason": "not a data field"
+          }
+        ]
+      }
+    },
+    {
+      "name": "a dotted key is a key, not a path (no dot notation)",
+      "data": [
+        {
+          "name": "user",
+          "class": "Object"
+        }
+      ],
+      "input": {
+        "user.name": "x"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "user.name",
+            "reason": "not a data field"
+          }
+        ]
+      }
+    },
+    {
+      "name": "one rejection does not stop the other keys",
+      "data": [
+        {
+          "name": "email",
+          "class": "String"
+        },
+        {
+          "name": "agreed",
+          "class": "Bool"
+        },
+        {
+          "name": "age",
+          "class": "Int?"
+        }
+      ],
+      "input": {
+        "email": "a@example.com",
+        "agreed": 1,
+        "age": null
+      },
+      "expect": {
+        "applied": [
+          "email",
+          "age"
+        ],
+        "rejected": [
+          {
+            "key": "agreed",
+            "reason": "type mismatch: expected Bool"
+          }
+        ]
+      }
+    }
+  ]
+}

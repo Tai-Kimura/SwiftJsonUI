@@ -162,6 +162,11 @@ jobs:
               # ImageContentModeDefaultTests binds the no-contentMode drawing to.
               ("Tests/SwiftJsonUITests/Fixtures/attribute_semantics.json",
                "shared/core/attribute_semantics.json"),
+              # initialState: class x JSON value -> applied / rejected
+              # (JsonUITestValue). jsonui-cli copies it from
+              # jsonui-test-runner specs/vectors/initial-state-coercion.json.
+              ("Tests/SwiftJsonUITests/Fixtures/initial_state_coercion_vectors.json",
+               "shared/core/initial_state_coercion_vectors.json"),
               # Not a fixture: the table Dynamic draws type synonyms with
               # (TypeSynonyms), shipped in the package's resource bundle.
               ("Sources/SwiftJsonUI/Resources/type_synonyms.json",

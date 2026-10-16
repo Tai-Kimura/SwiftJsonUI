@@ -56,3 +56,9 @@ passes. (Measured with Xcode 27 RC.)
   builds only.
 - From SwiftJsonUI 10.29.10. Ticket:
   sjui-screenmarker-compiled-out-in-release-blocks-optimized-ui-tests.
+- The same key turns on the test bridge (SwiftJsonUI 10.30.0,
+  `jsonUITestBridge`): the screen applies a UI test's `initialState` and
+  publishes its Data for the `state` assertion. With the key off — a shipped
+  build — the bridge applies nothing and publishes nothing, so a test that
+  sends an `initialState` fails on the missing receipt rather than running
+  against default values.
