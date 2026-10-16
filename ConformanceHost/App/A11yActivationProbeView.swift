@@ -64,6 +64,11 @@ import SwiftUI
 import SwiftJsonUI
 import UIKit
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 /// Test-only: holds back a count that a touch causes by a declared delay, so
 /// the count reaches the readout well after the tap returns.
 ///
@@ -897,3 +902,4 @@ struct TextFieldStopRows: View {
         }
     }
 }
+#endif

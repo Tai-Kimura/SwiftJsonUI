@@ -21,6 +21,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 /// What the Button in the first tab counted.
 final class TabProbeLog: ObservableObject {
     static let shared = TabProbeLog()
@@ -325,3 +330,4 @@ struct TabEnabledCandidates: View {
         .accessibilityIdentifier("tabC")
     }
 }
+#endif

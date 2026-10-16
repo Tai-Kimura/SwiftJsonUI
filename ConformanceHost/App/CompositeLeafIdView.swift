@@ -25,6 +25,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 struct CompositeLeafIdView: View {
     static let shapes: [(String, String)] = [
         // TextField with a clear button, and its control with none.
@@ -91,3 +96,4 @@ struct CompositeLeafIdView: View {
         }
     }
 }
+#endif

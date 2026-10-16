@@ -25,6 +25,11 @@ import UIKit
 import UIKit.UIGestureRecognizerSubclass
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 final class PressedProbeState: ObservableObject {
     @Published var counts: [String: Int] = [:]
     @Published var samples: [String] = []
@@ -284,3 +289,4 @@ struct PressedBackgroundProbeView: View {
         return "other(\(r) \(g) \(b))"
     }
 }
+#endif

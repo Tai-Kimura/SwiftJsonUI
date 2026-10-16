@@ -21,6 +21,9 @@
 import SwiftUI
 import SwiftJsonUI
 
+// The codegen half of a Dynamic-mode probe: DEBUG only, with the probe.
+#if DEBUG
+
 struct TapArityData {
     // Data properties from JSON
     var tS: ((String) -> Void)? = nil
@@ -660,3 +663,4 @@ struct TapArityCodegenPaste: View {
             .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 }
+#endif

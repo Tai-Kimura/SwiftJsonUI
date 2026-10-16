@@ -22,6 +22,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 final class TapArityLog: ObservableObject {
     /// One log for the process: the codegen path's handlers are wired when
     /// its data is made, before any onAppear can run.
@@ -125,3 +130,4 @@ struct TapArityProbeView: View {
         .padding(.horizontal, 12)
     }
 }
+#endif

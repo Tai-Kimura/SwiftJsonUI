@@ -22,6 +22,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 struct CellIdBoxProbeView: View {
     let codegen: Bool
 
@@ -50,3 +55,4 @@ struct CellIdBoxProbeView: View {
         .padding(.horizontal)
     }
 }
+#endif

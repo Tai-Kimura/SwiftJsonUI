@@ -18,6 +18,9 @@
 import SwiftUI
 import SwiftJsonUI
 
+// The codegen half of a Dynamic-mode probe: DEBUG only, with the probe.
+#if DEBUG
+
 struct A11yActivationCellNoEq: View {
     @ObservedObject var data: A11yActivationProbeData
 
@@ -48,3 +51,4 @@ struct A11yActivationCellNoEq: View {
             .transformEnvironment(\.jsonuiInteractionStopped) { $0 = $0 || !(data.gateOpen ?? false) }
     }
 }
+#endif

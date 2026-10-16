@@ -104,6 +104,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 struct ScrollRouteProbeView: View {
     let codegen: Bool
     var second = false
@@ -355,3 +360,4 @@ struct ScrollRouteProbeView: View {
         .padding(.horizontal)
     }
 }
+#endif

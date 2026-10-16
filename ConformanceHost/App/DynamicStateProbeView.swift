@@ -32,6 +32,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 final class DynamicStateProbeData: ObservableObject {
     @Published var unrelated = 0
     @Published var values: [String: Any] = DynamicStateProbeView.declared
@@ -178,3 +183,4 @@ struct DynamicStateProbeView: View {
         .padding(.horizontal, 12)
     }
 }
+#endif

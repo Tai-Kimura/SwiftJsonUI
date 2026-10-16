@@ -19,6 +19,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 final class PickArityLog: ObservableObject {
     @Published var calls: [String] = []
     func record(_ call: String) { calls.append(call) }
@@ -100,3 +105,4 @@ struct PickArityProbeView: View {
         .onAppear { wire() }
     }
 }
+#endif

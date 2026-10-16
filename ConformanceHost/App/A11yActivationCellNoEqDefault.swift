@@ -10,8 +10,12 @@
 
 import SwiftUI
 
+// Stands in for the codegen half of a Dynamic-mode probe: DEBUG only, with the probe.
+#if DEBUG
+
 struct A11yActivationCellNoEq: View {
     @ObservedObject var data: A11yActivationProbeData
 
     var body: some View { EmptyView() }
 }
+#endif

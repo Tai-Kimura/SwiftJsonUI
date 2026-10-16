@@ -13,7 +13,8 @@
 //
 //  testAClosedGateConfirmsNothing runs only when CONFORMANCE_E2E_GATE_CLOSED=1:
 //  in a build with the screen-marker gate closed (Release, no
-//  com.swiftjsonui.SCREEN_MARKER), on the codegen face.
+//  com.swiftjsonui.SCREEN_MARKER), on the codegen face — the only face a
+//  Release build hosts. The two arms that need an open gate skip there.
 //
 
 import XCTest
@@ -54,6 +55,10 @@ final class InitialStateDriverE2ETests: XCTestCase {
         return try JSONDecoder().decode(ScreenTest.self, from: JSONSerialization.data(withJSONObject: test))
     }
 
+    private var gateClosed: Bool {
+        ProcessInfo.processInfo.environment["CONFORMANCE_E2E_GATE_CLOSED"] == "1"
+    }
+
     private func run(_ test: ScreenTest, showing shown: String? = nil) -> TestRunResult {
         var config = TestRunnerConfig()
         config.screenshotOnFailure = false
@@ -61,6 +66,7 @@ final class InitialStateDriverE2ETests: XCTestCase {
     }
 
     func testTheAppConfirmsAndStateReadsIt() throws {
+        try XCTSkipIf(gateClosed, "asserts an open gate; this build has it closed (testAClosedGateConfirmsNothing)")
         let result = run(try screenTest(
             ["tbEmail": "e2e@example.com", "tbCount": 7],
             steps: [
@@ -74,6 +80,7 @@ final class InitialStateDriverE2ETests: XCTestCase {
     }
 
     func testARejectedKeyFailsTheCaseAsSetup() throws {
+        try XCTSkipIf(gateClosed, "asserts an open gate; this build has it closed (testAClosedGateConfirmsNothing)")
         let result = run(try screenTest(["tbEmail": "x", "tbTypo": "y"],
                                         steps: [["assert": "text", "id": "label_email", "equals": "x"]]))
         let row = try XCTUnwrap(result.caseResults.first)
@@ -88,9 +95,8 @@ final class InitialStateDriverE2ETests: XCTestCase {
     /// build this host can make: the app shows a fixture that carries no
     /// bridge, while the test addresses that screen with an initialState. The
     /// driver must fail the case as setup, naming the absent bridge, not run
-    /// the steps against default values. (This host does not build in
-    /// Release: ~30 probe views use Dynamic-mode types that exist in DEBUG
-    /// only, so testAClosedGateConfirmsNothing cannot run here as it stands.)
+    /// the steps against default values. The real closed gate is
+    /// testAClosedGateConfirmsNothing, in a Release build.
     func testAScreenWithoutTheBridgeConfirmsNothing() throws {
         try XCTSkipIf(isCodegen, "every codegen fixture view carries the bridge")
         let other = "common/onclick__callback_fire"
@@ -111,7 +117,7 @@ final class InitialStateDriverE2ETests: XCTestCase {
     }
 
     func testAClosedGateConfirmsNothing() throws {
-        try XCTSkipUnless(ProcessInfo.processInfo.environment["CONFORMANCE_E2E_GATE_CLOSED"] == "1",
+        try XCTSkipUnless(gateClosed,
                           "needs a build with the screen-marker gate closed")
         let result = run(try screenTest(["tbEmail": "e2e@example.com"],
                                         steps: [["assert": "text", "id": "label_email", "equals": "e2e@example.com"]]))

@@ -14,6 +14,9 @@
 import SwiftUI
 import SwiftJsonUI
 
+// The codegen half of a Dynamic-mode probe: DEBUG only, with the probe.
+#if DEBUG
+
 struct PagerIdentityCodegenHalf: View {
     @SwiftUI.Binding var version: Int
     @State private var data = ProbePagerIdentityData()
@@ -29,3 +32,4 @@ struct PagerIdentityCodegenHalf: View {
             }
     }
 }
+#endif

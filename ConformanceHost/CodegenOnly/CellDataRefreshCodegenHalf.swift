@@ -12,6 +12,9 @@
 import SwiftUI
 import SwiftJsonUI
 
+// The codegen half of a Dynamic-mode probe: DEBUG only, with the probe.
+#if DEBUG
+
 struct CellDataRefreshCodegenHalf: View {
     let version: Int
     @State private var data = ProbeCellDataRefreshData()
@@ -29,3 +32,4 @@ struct CellDataRefreshCodegenHalf: View {
             .onChange(of: version) { _, new in load(new) }
     }
 }
+#endif

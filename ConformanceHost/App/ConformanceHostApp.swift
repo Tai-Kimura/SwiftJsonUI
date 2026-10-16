@@ -178,212 +178,123 @@ final class FixtureBatchModel: ObservableObject {
 struct ConformanceRootView: View {
     @StateObject private var batch = FixtureBatchModel()
 
+    /// The probe a launch argument asks for, or nil. DEBUG only: the probes
+    /// render through Dynamic mode, which SwiftJsonUI compiles in DEBUG only,
+    /// so a Release build of this host hosts the codegen face and nothing else
+    /// (Release is how the testBridge gate-closed arm runs).
+    private var probeView: AnyView? {
+        #if DEBUG
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-hiddenToggleProbe") { return AnyView(HiddenToggleProbeView()) }
+        if arguments.contains("-gestureProbe") { return AnyView(GestureProbeView()) }
+        if arguments.contains("-screenMarkerProbe") { return AnyView(ScreenMarkerProbeView()) }
+        if arguments.contains("-screenMarkerSplitProbe") { return AnyView(ScreenMarkerSplitProbeView()) }
+        if arguments.contains("-screenMarkerFullScreenProbe") { return AnyView(ScreenMarkerFullScreenProbeView()) }
+        if arguments.contains("-screenMarkerOverlayProbe") { return AnyView(ScreenMarkerOverlayProbeView()) }
+        if arguments.contains("-offsetProbe") { return AnyView(OffsetHitTargetProbeView()) }
+        if arguments.contains("-confirmationDialogProbe") { return AnyView(ConfirmationDialogProbeView()) }
+        if arguments.contains("-duplicateIdentifierProbe") { return AnyView(DuplicateIdentifierProbeView()) }
+        if arguments.contains("-decorativeImageProbe") { return AnyView(DecorativeImageProbeView()) }
+        if arguments.contains("-imageEventsProbe") { return AnyView(ImageEventsProbeView()) }
+        if arguments.contains("-canTapGateProbe") { return AnyView(CanTapGateProbeView()) }
+        if arguments.contains("-interactionGateProbe") { return AnyView(InteractionGateProbeView()) }
+        if arguments.contains("-a11yActivationProbe") { return AnyView(A11yActivationProbeView()) }
+        if arguments.contains("-interactionInputsProbe") { return AnyView(InteractionInputsProbeView()) }
+        if arguments.contains("-canTapCodegenProbe") { return AnyView(CanTapCodegenProbeView()) }
+        if arguments.contains("-responsiveDisabledProbe") { return AnyView(ResponsiveDisabledProbeView()) }
+        if arguments.contains("-sameTypeDuplicateProbe") { return AnyView(SameTypeDuplicateProbeView()) }
+        if arguments.contains("-clippedViewportProbe") { return AnyView(ClippedViewportProbeView()) }
+        if arguments.contains("-coveredTapProbe") { return AnyView(CoveredTapProbeView()) }
+        if arguments.contains("-keyboardClearanceProbe") { return AnyView(KeyboardClearanceProbeView()) }
+        if arguments.contains("-tapIdentifierOnce") { return AnyView(TapIdentifierOnceView()) }
+        if arguments.contains("-leafChildren") { return AnyView(LeafChildrenProbeView()) }
+        if arguments.contains("-customContainerId") { return AnyView(CustomContainerIdView()) }
+        if arguments.contains("-compositeLeafId") { return AnyView(CompositeLeafIdView()) }
+        if arguments.contains("-onClickProbe") { return AnyView(OnClickProbeView()) }
+        if arguments.contains("-tabEnabledProbe") { return AnyView(TabEnabledProbeView()) }
+        if arguments.contains("-stateNamesProbe") { return AnyView(StateNamesProbeView()) }
+        if arguments.contains("-tapArityProbe") { return AnyView(TapArityProbeView()) }
+        if arguments.contains("-pickArityProbe") { return AnyView(PickArityProbeView()) }
+        if arguments.contains("-linkTapProbe") { return AnyView(LinkTapProbeView()) }
+        if arguments.contains("-dynamicStateProbe") { return AnyView(DynamicStateProbeView()) }
+        if arguments.contains("-pressedBackgroundProbe") { return AnyView(PressedBackgroundProbeView()) }
+        if arguments.contains("-bindFoldProbe") { return AnyView(BindFoldProbeView()) }
+        if arguments.contains("-pagingAddressProbe") { return AnyView(PagingAddressProbeView()) }
+        if arguments.contains("-sectionScrollProbe") { return AnyView(SectionScrollProbeView()) }
+        if arguments.contains("-scrollRuleProbe") { return AnyView(ScrollRuleProbeView(grid: false)) }
+        if arguments.contains("-sectionGridProbe") { return AnyView(ScrollRuleProbeView(grid: true)) }
+        if arguments.contains("-scrollNoKeyProbe") { return AnyView(ScrollRuleProbeView(grid: false, noKey: true)) }
+        if arguments.contains("-scrollRouteProbe") { return AnyView(ScrollRouteProbeView(codegen: false)) }
+        if arguments.contains("-scrollRouteProbeCodegen") { return AnyView(ScrollRouteProbeView(codegen: true)) }
+        if arguments.contains("-scrollRouteProbe2") { return AnyView(ScrollRouteProbeView(codegen: false, second: true)) }
+        if arguments.contains("-scrollRouteProbe2Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, second: true)) }
+        if arguments.contains("-scrollRouteProbe3") { return AnyView(ScrollRouteProbeView(codegen: false, third: true)) }
+        if arguments.contains("-scrollRouteProbe3Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, third: true)) }
+        if arguments.contains("-scrollRouteProbe4") { return AnyView(ScrollRouteProbeView(codegen: false, fourth: true)) }
+        if arguments.contains("-scrollRouteProbe4Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, fourth: true)) }
+        if arguments.contains("-scrollRouteProbe5") { return AnyView(ScrollRouteProbeView(codegen: false, fifth: true)) }
+        if arguments.contains("-scrollRouteProbe5Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, fifth: true)) }
+        if arguments.contains("-scrollRouteProbe6") { return AnyView(ScrollRouteProbeView(codegen: false, sixth: true)) }
+        if arguments.contains("-scrollRouteProbe6Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, sixth: true)) }
+        if arguments.contains("-scrollRouteProbe7") { return AnyView(ScrollRouteProbeView(codegen: false, seventh: true)) }
+        if arguments.contains("-scrollRouteProbe7Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, seventh: true)) }
+        if arguments.contains("-leafGravityProbe") { return AnyView(LeafGravityProbeView(codegen: false)) }
+        if arguments.contains("-leafGravityProbeCodegen") { return AnyView(LeafGravityProbeView(codegen: true)) }
+        if arguments.contains("-eagerRowFillProbe") { return AnyView(EagerRowFillProbeView(codegen: false)) }
+        if arguments.contains("-eagerRowFillProbeCodegen") { return AnyView(EagerRowFillProbeView(codegen: true)) }
+        if arguments.contains("-emptyBackgroundProbe") { return AnyView(EmptyBackgroundProbeView(codegen: false)) }
+        if arguments.contains("-emptyBackgroundProbeCodegen") { return AnyView(EmptyBackgroundProbeView(codegen: true)) }
+        if arguments.contains("-offsetPlacementProbe") { return AnyView(OffsetProbeView(codegen: false)) }
+        if arguments.contains("-offsetPlacementProbeCodegen") { return AnyView(OffsetProbeView(codegen: true)) }
+        if arguments.contains("-anchorTapProbe") { return AnyView(AnchorTapProbeView(variant: UserDefaults.standard.string(forKey: "atVariant") ?? "dyn")) }
+        if arguments.contains("-idBoxProbe") { return AnyView(IdBoxProbeView(codegen: false)) }
+        if arguments.contains("-idBoxProbeCodegen") { return AnyView(IdBoxProbeView(codegen: true)) }
+        if arguments.contains("-cellIdBoxProbe") { return AnyView(CellIdBoxProbeView(codegen: false)) }
+        if arguments.contains("-cellIdBoxProbeCodegen") { return AnyView(CellIdBoxProbeView(codegen: true)) }
+        if arguments.contains("-textViewInsetProbe") { return AnyView(TextViewInsetProbeView(codegen: false)) }
+        if arguments.contains("-textViewInsetProbeCodegen") { return AnyView(TextViewInsetProbeView(codegen: true)) }
+        if arguments.contains("-boundsAlignmentProbe") { return AnyView(BoundsAlignmentProbeView(codegen: false)) }
+        if arguments.contains("-boundsAlignmentProbeCodegen") { return AnyView(BoundsAlignmentProbeView(codegen: true)) }
+        if arguments.contains("-labelVerticalProbe") { return AnyView(LabelVerticalProbeView(codegen: false)) }
+        if arguments.contains("-labelVerticalProbeCodegen") { return AnyView(LabelVerticalProbeView(codegen: true)) }
+        if arguments.contains("-insetsRoutesProbe") { return AnyView(InsetsOrderProbeView(codegen: false, routes: true)) }
+        if arguments.contains("-insetsRoutesProbeCodegen") { return AnyView(InsetsOrderProbeView(codegen: true, routes: true)) }
+        if arguments.contains("-insetsOrderProbe") { return AnyView(InsetsOrderProbeView(codegen: false)) }
+        if arguments.contains("-insetsOrderProbeCodegen") { return AnyView(InsetsOrderProbeView(codegen: true)) }
+        if arguments.contains("-buttonTextAlignProbe") { return AnyView(ButtonTextAlignProbeView(codegen: false)) }
+        if arguments.contains("-buttonTextAlignProbeCodegen") { return AnyView(ButtonTextAlignProbeView(codegen: true)) }
+        if arguments.contains("-rowCrossFitProbe") { return AnyView(RowCrossFitProbeView(codegen: false)) }
+        if arguments.contains("-rowCrossFitProbeCodegen") { return AnyView(RowCrossFitProbeView(codegen: true)) }
+        if arguments.contains("-labelHorizontalProbe") { return AnyView(LabelHorizontalProbeView(codegen: false)) }
+        if arguments.contains("-labelHorizontalProbeCodegen") { return AnyView(LabelHorizontalProbeView(codegen: true)) }
+        if arguments.contains("-wrapMaxProbe") { return AnyView(WrapMaxProbeView(codegen: false)) }
+        if arguments.contains("-wrapMaxProbeCodegen") { return AnyView(WrapMaxProbeView(codegen: true)) }
+        if arguments.contains("-aspectFillHitProbe") { return AnyView(AspectFillHitProbeView(codegen: false)) }
+        if arguments.contains("-aspectFillHitProbeCodegen") { return AnyView(AspectFillHitProbeView(codegen: true)) }
+        if arguments.contains("-paddingsOrderProbe") { return AnyView(PaddingsOrderProbeView(codegen: false)) }
+        if arguments.contains("-paddingsOrderProbeCodegen") { return AnyView(PaddingsOrderProbeView(codegen: true)) }
+        if arguments.contains("-buttonPaddingProbe") { return AnyView(ButtonPaddingProbeView(codegen: false)) }
+        if arguments.contains("-buttonPaddingProbeCodegen") { return AnyView(ButtonPaddingProbeView(codegen: true)) }
+        if arguments.contains("-cellDataRefreshProbe") { return AnyView(CellDataRefreshProbeView(codegen: false)) }
+        if arguments.contains("-cellDataRefreshProbeCodegen") { return AnyView(CellDataRefreshProbeView(codegen: true)) }
+        if arguments.contains("-pagerIdentityProbe") { return AnyView(PagerIdentityProbeView(codegen: false)) }
+        if arguments.contains("-pagerIdentityProbeCodegen") { return AnyView(PagerIdentityProbeView(codegen: true)) }
+        if arguments.contains("-aspectFillProbe") { return AnyView(AspectFillProbeView(codegen: false)) }
+        if arguments.contains("-aspectFillProbeCodegen") { return AnyView(AspectFillProbeView(codegen: true)) }
+        if arguments.contains("-frameAlignmentProbe") { return AnyView(FrameAlignmentProbeView(codegen: false)) }
+        if arguments.contains("-frameAlignmentProbeCodegen") { return AnyView(FrameAlignmentProbeView(codegen: true)) }
+        if arguments.contains("-collectionFitProbe") { return AnyView(CollectionFitProbeView(codegen: false)) }
+        if arguments.contains("-collectionFitProbeCodegen") { return AnyView(CollectionFitProbeView(codegen: true)) }
+        if arguments.contains("-scrollRouteProbe8") { return AnyView(ScrollRouteProbeView(codegen: false, eighth: true)) }
+        if arguments.contains("-scrollRouteProbe8Codegen") { return AnyView(ScrollRouteProbeView(codegen: true, eighth: true)) }
+        #endif
+        return nil
+    }
+
     var body: some View {
         Group {
-            if ProcessInfo.processInfo.arguments.contains("-hiddenToggleProbe") {
-                HiddenToggleProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-gestureProbe") {
-                GestureProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerProbe") {
-                ScreenMarkerProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerSplitProbe") {
-                ScreenMarkerSplitProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerFullScreenProbe") {
-                ScreenMarkerFullScreenProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-screenMarkerOverlayProbe") {
-                ScreenMarkerOverlayProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-offsetProbe") {
-                OffsetHitTargetProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-confirmationDialogProbe") {
-                ConfirmationDialogProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-duplicateIdentifierProbe") {
-                DuplicateIdentifierProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-decorativeImageProbe") {
-                DecorativeImageProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-imageEventsProbe") {
-                ImageEventsProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-canTapGateProbe") {
-                CanTapGateProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-interactionGateProbe") {
-                InteractionGateProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-a11yActivationProbe") {
-                A11yActivationProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-interactionInputsProbe") {
-                InteractionInputsProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-canTapCodegenProbe") {
-                CanTapCodegenProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-responsiveDisabledProbe") {
-                ResponsiveDisabledProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-sameTypeDuplicateProbe") {
-                SameTypeDuplicateProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-clippedViewportProbe") {
-                ClippedViewportProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-coveredTapProbe") {
-                CoveredTapProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-keyboardClearanceProbe") {
-                KeyboardClearanceProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-tapIdentifierOnce") {
-                TapIdentifierOnceView()
-            } else if ProcessInfo.processInfo.arguments.contains("-leafChildren") {
-                LeafChildrenProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-customContainerId") {
-                CustomContainerIdView()
-            } else if ProcessInfo.processInfo.arguments.contains("-compositeLeafId") {
-                CompositeLeafIdView()
-            } else if ProcessInfo.processInfo.arguments.contains("-onClickProbe") {
-                OnClickProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-tabEnabledProbe") {
-                TabEnabledProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-stateNamesProbe") {
-                StateNamesProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-tapArityProbe") {
-                TapArityProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-pickArityProbe") {
-                PickArityProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-linkTapProbe") {
-                LinkTapProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-dynamicStateProbe") {
-                DynamicStateProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-pressedBackgroundProbe") {
-                PressedBackgroundProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-bindFoldProbe") {
-                BindFoldProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-pagingAddressProbe") {
-                PagingAddressProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-sectionScrollProbe") {
-                SectionScrollProbeView()
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRuleProbe") {
-                ScrollRuleProbeView(grid: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-sectionGridProbe") {
-                ScrollRuleProbeView(grid: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollNoKeyProbe") {
-                ScrollRuleProbeView(grid: false, noKey: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe") {
-                ScrollRouteProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbeCodegen") {
-                ScrollRouteProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe2") {
-                ScrollRouteProbeView(codegen: false, second: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe2Codegen") {
-                ScrollRouteProbeView(codegen: true, second: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe3") {
-                ScrollRouteProbeView(codegen: false, third: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe3Codegen") {
-                ScrollRouteProbeView(codegen: true, third: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe4") {
-                ScrollRouteProbeView(codegen: false, fourth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe4Codegen") {
-                ScrollRouteProbeView(codegen: true, fourth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe5") {
-                ScrollRouteProbeView(codegen: false, fifth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe5Codegen") {
-                ScrollRouteProbeView(codegen: true, fifth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe6") {
-                ScrollRouteProbeView(codegen: false, sixth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe6Codegen") {
-                ScrollRouteProbeView(codegen: true, sixth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe7") {
-                ScrollRouteProbeView(codegen: false, seventh: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe7Codegen") {
-                ScrollRouteProbeView(codegen: true, seventh: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-leafGravityProbe") {
-                LeafGravityProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-leafGravityProbeCodegen") {
-                LeafGravityProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-eagerRowFillProbe") {
-                EagerRowFillProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-eagerRowFillProbeCodegen") {
-                EagerRowFillProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-emptyBackgroundProbe") {
-                EmptyBackgroundProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-emptyBackgroundProbeCodegen") {
-                EmptyBackgroundProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-offsetPlacementProbe") {
-                OffsetProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-offsetPlacementProbeCodegen") {
-                OffsetProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-anchorTapProbe") {
-                AnchorTapProbeView(variant: UserDefaults.standard.string(forKey: "atVariant") ?? "dyn")
-            } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbe") {
-                IdBoxProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-idBoxProbeCodegen") {
-                IdBoxProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-cellIdBoxProbe") {
-                CellIdBoxProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-cellIdBoxProbeCodegen") {
-                CellIdBoxProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-textViewInsetProbe") {
-                TextViewInsetProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-textViewInsetProbeCodegen") {
-                TextViewInsetProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbe") {
-                BoundsAlignmentProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-boundsAlignmentProbeCodegen") {
-                BoundsAlignmentProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-labelVerticalProbe") {
-                LabelVerticalProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-labelVerticalProbeCodegen") {
-                LabelVerticalProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-insetsRoutesProbe") {
-                InsetsOrderProbeView(codegen: false, routes: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-insetsRoutesProbeCodegen") {
-                InsetsOrderProbeView(codegen: true, routes: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-insetsOrderProbe") {
-                InsetsOrderProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-insetsOrderProbeCodegen") {
-                InsetsOrderProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-buttonTextAlignProbe") {
-                ButtonTextAlignProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-buttonTextAlignProbeCodegen") {
-                ButtonTextAlignProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-rowCrossFitProbe") {
-                RowCrossFitProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-rowCrossFitProbeCodegen") {
-                RowCrossFitProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-labelHorizontalProbe") {
-                LabelHorizontalProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-labelHorizontalProbeCodegen") {
-                LabelHorizontalProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-wrapMaxProbe") {
-                WrapMaxProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-wrapMaxProbeCodegen") {
-                WrapMaxProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-aspectFillHitProbe") {
-                AspectFillHitProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-aspectFillHitProbeCodegen") {
-                AspectFillHitProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-paddingsOrderProbe") {
-                PaddingsOrderProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-paddingsOrderProbeCodegen") {
-                PaddingsOrderProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-buttonPaddingProbe") {
-                ButtonPaddingProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-buttonPaddingProbeCodegen") {
-                ButtonPaddingProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-cellDataRefreshProbe") {
-                CellDataRefreshProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-cellDataRefreshProbeCodegen") {
-                CellDataRefreshProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-pagerIdentityProbe") {
-                PagerIdentityProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-pagerIdentityProbeCodegen") {
-                PagerIdentityProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-aspectFillProbe") {
-                AspectFillProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-aspectFillProbeCodegen") {
-                AspectFillProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbe") {
-                FrameAlignmentProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-frameAlignmentProbeCodegen") {
-                FrameAlignmentProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-collectionFitProbe") {
-                CollectionFitProbeView(codegen: false)
-            } else if ProcessInfo.processInfo.arguments.contains("-collectionFitProbeCodegen") {
-                CollectionFitProbeView(codegen: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe8") {
-                ScrollRouteProbeView(codegen: false, eighth: true)
-            } else if ProcessInfo.processInfo.arguments.contains("-scrollRouteProbe8Codegen") {
-                ScrollRouteProbeView(codegen: true, eighth: true)
+            if let probe = probeView {
+                probe
             } else if batch.fixtureIds.isEmpty {
                 Text("ConformanceHost: pass -fixtureId <id> or CONFORMANCE_FIXTURE_IDS")
                     .padding()
@@ -404,6 +315,42 @@ struct ConformanceRootView: View {
 
 /// Loads one fixture layout from the bundle and renders it via Dynamic mode.
 struct FixtureScreen: View {
+    /// The Dynamic face: a fixture rendered through DynamicView. DEBUG only —
+    /// SwiftJsonUI compiles Dynamic mode in DEBUG only; a Release build hosts
+    /// the codegen face and says so here if asked for the Dynamic one.
+    @ViewBuilder
+    private var dynamicFixture: some View {
+        #if DEBUG
+        if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
+            if let bridgeDecl = TestBridgeIndex.decl(for: fixtureId) {
+                // INTERACTIVE_HOST_CONTRACT.md §6: the bridge, over a typed store.
+                TestBridgeDynamicFixture(component: component, fixtureId: fixtureId,
+                                         state: state, decl: bridgeDecl)
+            } else {
+                DynamicView(component: component, viewId: "conformance", data: state.externalData)
+                    // afterFirstDraw (AfterFirstDraw.swift): the one change the
+                    // manifest asks for after the first draw, through the store.
+                    .conformanceAfterFirstDraw(
+                        fixtureId,
+                        declared: state.afterFirstDraw != nil,
+                        applied: state.afterFirstDrawApplied,
+                        fire: state.fireAfterFirstDraw
+                    )
+            }
+        } else {
+            Text("Failed to load fixture: \(fixtureId)")
+                .foregroundColor(.red)
+                .padding()
+                .accessibilityIdentifier("conformance_load_error")
+        }
+        #else
+        Text("Dynamic mode is DEBUG-only: run the codegen face in a Release build")
+            .foregroundColor(.red)
+            .padding()
+            .accessibilityIdentifier("conformance_load_error")
+        #endif
+    }
+
     let fixtureId: String
 
     /// Generic interactive-fixture state (INTERACTIVE_HOST_CONTRACT.md):
@@ -453,27 +400,8 @@ struct FixtureScreen: View {
                         .padding()
                         .accessibilityIdentifier("conformance_load_error")
                 }
-            } else if let component = FixtureLoader.loadComponent(fixtureId: fixtureId) {
-                if let bridgeDecl = TestBridgeIndex.decl(for: fixtureId) {
-                    // INTERACTIVE_HOST_CONTRACT.md §6: the bridge, over a typed store.
-                    TestBridgeDynamicFixture(component: component, fixtureId: fixtureId,
-                                             state: state, decl: bridgeDecl)
-                } else {
-                    DynamicView(component: component, viewId: "conformance", data: state.externalData)
-                        // afterFirstDraw (AfterFirstDraw.swift): the one change the
-                        // manifest asks for after the first draw, through the store.
-                        .conformanceAfterFirstDraw(
-                            fixtureId,
-                            declared: state.afterFirstDraw != nil,
-                            applied: state.afterFirstDrawApplied,
-                            fire: state.fireAfterFirstDraw
-                        )
-                }
             } else {
-                Text("Failed to load fixture: \(fixtureId)")
-                    .foregroundColor(.red)
-                    .padding()
-                    .accessibilityIdentifier("conformance_load_error")
+                dynamicFixture
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -560,6 +488,7 @@ enum FixtureLoader {
         return Bundle.main.url(forResource: "\(basename).layout", withExtension: "json")
     }
 
+    #if DEBUG
     static func loadComponent(fixtureId: String) -> DynamicComponent? {
         guard let url = layoutURL(fixtureId: fixtureId),
               let data = try? Data(contentsOf: url),
@@ -571,8 +500,10 @@ enum FixtureLoader {
         let processed = StyleProcessor.processStyles(jsonObject)
         return JSONLayoutLoader.decodeComponent(from: processed)
     }
+    #endif
 }
 
+#if DEBUG
 /// A testBridge fixture on the Dynamic face (INTERACTIVE_HOST_CONTRACT.md §6):
 /// DynamicView over the host's String vars plus the fixture's typed store,
 /// with the library's bridge attached under this face's screen id.
@@ -607,4 +538,4 @@ struct TestBridgeDynamicFixture: View {
             )
     }
 }
-
+#endif

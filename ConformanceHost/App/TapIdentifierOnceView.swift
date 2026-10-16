@@ -26,6 +26,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 struct TapIdentifierOnceView: View {
     /// (wrapper id, layout). The ids a shape declares are what the test counts.
     static let shapes: [(String, String)] = [
@@ -70,3 +75,4 @@ struct TapIdentifierOnceView: View {
         }
     }
 }
+#endif

@@ -32,6 +32,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 struct PagingAddressProbeView: View {
     static let layout = ##"{"type": "Collection", "id": "pa_pager", "layout": "horizontal", "paging": true, "width": 200, "height": 60, "background": "#DDDDDD", "items": "@{rows}", "sections": [{"cell": "conformance_cell"}, {"header": "conformance_cell"}, {"cell": "conformance_cell"}, {"cell": "conformance_cell"}]}"##
 
@@ -84,3 +89,4 @@ struct PagingAddressProbeView: View {
         .padding()
     }
 }
+#endif

@@ -21,6 +21,11 @@
 import SwiftUI
 import SwiftJsonUI
 
+// Dynamic-mode probe: SwiftJsonUI compiles Dynamic mode (DynamicView,
+// DynamicComponent, CustomComponentRegistry) in DEBUG only, so a Release
+// build of this host carries no probe (it hosts the codegen face only).
+#if DEBUG
+
 final class LinkTapLog: ObservableObject {
     static let shared = LinkTapLog()
     @Published var counts: [String: Int] = [:]
@@ -115,3 +120,4 @@ struct LinkTapCodegenPaste: View {
         .font(.system(size: 20))
     }
 }
+#endif
