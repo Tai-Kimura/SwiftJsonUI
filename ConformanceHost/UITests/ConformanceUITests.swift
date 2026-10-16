@@ -739,6 +739,17 @@ final class ConformanceUITests: XCTestCase {
         // `web_settle: timeout …` when a Web capture's paint wait ran out.
         var settleNote = ""
 
+        // A fixture that declares afterFirstDraw but takes no screenshot (an
+        // interactive one: TestBridge's bridge_follows asserts the changed
+        // value) has no screenshot step to wait at, so it waits before its
+        // first step: the steps then run against the changed value, and every
+        // result below carries the stamp (the gate fails a declaring fixture
+        // whose result has none — after_first_draw.py).
+        let takesScreenshot = screenTest.cases.contains { $0.steps.contains { $0.action == "screenshot" } }
+        if let declared = fixture.state?.afterFirstDraw, !takesScreenshot {
+            afterFirstDraw = awaitAfterFirstDraw(declared.name, fixture: fixture, app: app)
+        }
+
         for testCase in screenTest.cases {
             if testCase.skip == true { continue }
             if let platform = testCase.platform, !platform.includes("ios") { continue }
