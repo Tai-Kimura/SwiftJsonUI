@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: c7fce8f9caa8c2ce0bba346068009dc0787e276c # jsonui-cli 1.9.30 release commit (tag v1.9.30 points here); the attr tables, fixtures and responsive vectors were re-vendored from it (SwiftJsonUI 10.29.16)
+      JSONUI_CLI_MANIFEST_REF: 77249d1efbf0d97ade321a13f7e5fef871438e1c # jsonui-cli 1.9.34 release commit (tag v1.9.34 points here); the attr tables, fixtures and responsive vectors were re-vendored from it (SwiftJsonUI 10.30.0)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
