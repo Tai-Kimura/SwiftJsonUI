@@ -295,7 +295,8 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
     /// What sjui codegen emits for a TextView over `@{noteText}` with
     /// `onTextChange: @{onNoteTextChange}`, copied verbatim from
     /// jsonui-cli's TextViewConverter output (fix/ontextchange-coalesce-by-
-    /// generation), with the two declarations it adds to the view. Here
+    /// generation): the generation lives in the main thread's dictionary,
+    /// keyed by the view's type and the field, not in the view. Here
     /// so the generated `$data.x` binding — a
     /// `@SwiftUI.Binding var data` in the generated view — runs on every
     /// simulator leg this suite runs on: the guard reads
@@ -313,11 +314,9 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
 
     private struct CodegenShape: View {
         @SwiftUI.Binding var data: CodegenData
-        private final class UserEditGeneration { var number = 0; var start: String? }
-        @State private var memoTextEdit = UserEditGeneration()
         var body: some View {
             TextEditor(
-                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let edit = memoTextEdit; let before = $data.noteText.wrappedValue; let changed = before != newValue; $data.noteText.wrappedValue = newValue; if changed { if edit.start == nil { edit.start = before }; edit.number += 1; let number = edit.number; DispatchQueue.main.async { guard edit.number == number else { return }; let start = edit.start; edit.start = nil; guard $data.noteText.wrappedValue == newValue, newValue != start else { return }; data.onNoteTextChange?("memo", newValue) } } })
+                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let key = "sjui.userEdit.\(Self.self).memo"; let edit = (Thread.main.threadDictionary[key] as? NSMutableDictionary) ?? NSMutableDictionary(); Thread.main.threadDictionary[key] = edit; let before = $data.noteText.wrappedValue; let changed = before != newValue; $data.noteText.wrappedValue = newValue; if changed { if edit["start"] == nil { edit["start"] = before }; let number = (edit["number"] as? Int ?? 0) + 1; edit["number"] = number; DispatchQueue.main.async { guard edit["number"] as? Int == number else { return }; let start = edit["start"] as? String; edit["start"] = nil; guard $data.noteText.wrappedValue == newValue, newValue != start else { return }; data.onNoteTextChange?("memo", newValue) } } })
             )
         }
     }
