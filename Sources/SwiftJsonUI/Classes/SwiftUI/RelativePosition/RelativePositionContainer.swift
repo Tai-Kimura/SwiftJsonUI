@@ -86,41 +86,68 @@ struct RelativePositionLayout: Layout {
         var width: CGFloat = 0
         var height: CGFloat = 0
 
-        // If matchParent is used, take the proposed size
+        // If matchParent is used, take the proposed size. That size is the
+        // whole box, padding included: the padding is laid out inside it
+        // (calculatePositions), never added on top. Added on top, a filling
+        // container came out wider and taller than its parent by the padding
+        // twice, and a matchParent child got the full width back and only
+        // moved by the padding — past the screen's edge at padding 40.
+        var widthFromProposal = false
+        var heightFromProposal = false
         if hasWidthMatchParent, let proposedWidth = proposal.width, proposedWidth > 0 && !proposedWidth.isInfinite {
             width = proposedWidth
+            widthFromProposal = true
         }
         if hasHeightMatchParent, let proposedHeight = proposal.height, proposedHeight > 0 && !proposedHeight.isInfinite {
             height = proposedHeight
+            heightFromProposal = true
         }
 
-        // Calculate size from children (for wrapContent behavior)
-        for (index, child) in children.enumerated() {
-            guard index < subviews.count else { continue }
-            let subview = subviews[index]
-            let childId = subview[ChildIdKey.self]
+        let subviewsById = subviewsByChildId(subviews)
+        // The room a wrapContent child may take across, when the proposal
+        // bounds the container: a child wider than that wraps (as Android's
+        // wrap_content is capped by its parent) instead of overflowing.
+        let proposedWidth: CGFloat? = {
+            guard let w = proposal.width, w > 0, !w.isNaN, !w.isInfinite else { return nil }
+            return w
+        }()
 
-            // Get child's natural size
-            let childSize = subview.sizeThatFits(.unspecified)
-            Logger.debug("[RelativePositionLayout] sizeThatFits child '\(childId)' naturalSize: \(childSize), widthMode: \(child.widthMode), heightMode: \(child.heightMode)")
-
-            // Width calculation
-            if !hasWidthMatchParent {
+        // Width: from the children unless the container fills.
+        if !hasWidthMatchParent {
+            for child in children {
+                guard let subview = subviewsById[child.id] else { continue }
                 var childWidth: CGFloat = 0
                 switch child.widthMode {
                 case .fixed(let fixedWidth):
                     childWidth = fixedWidth
                 case .wrapContent:
-                    if !childSize.width.isNaN && !childSize.width.isInfinite && childSize.width > 0 {
-                        childWidth = childSize.width
-                    }
+                    childWidth = wrapContentWidth(child, subview: subview, containerWidth: proposedWidth) ?? 0
                 case .matchParent:
-                    // Already handled above
                     break
                 }
                 childWidth += child.margins.leading + child.margins.trailing
                 width = max(width, childWidth)
             }
+        }
+        // The width this container reports — the bounds placeSubviews will
+        // lay the children in: the proposal as it is, or the children's
+        // width plus the padding.
+        let reportedWidth = widthFromProposal ? width : width + parentPadding.leading + parentPadding.trailing
+
+        // Height: each wrapContent child measured at the width it will be
+        // placed with — the container's width less margins and padding, a
+        // fixed width, or a capped wrapContent width — not unconstrained,
+        // which measured a text one line short of what it wraps into.
+        let measureWidth: CGFloat? = width > 0 ? reportedWidth : nil
+        let measured = measuredSizes(
+            containerSize: CGSize(width: measureWidth ?? 0, height: proposal.height.flatMap { $0.isFinite ? $0 : nil } ?? 0),
+            subviewsById: subviewsById,
+            widthKnown: measureWidth != nil
+        )
+        for child in children {
+            guard subviewsById[child.id] != nil else { continue }
+            let childSize = measured[child.id] ?? .zero
+            Logger.debug("[RelativePositionLayout] sizeThatFits child '\(child.id)' measured: \(childSize), widthMode: \(child.widthMode), heightMode: \(child.heightMode)")
 
             // Height calculation
             if !hasHeightMatchParent {
@@ -141,9 +168,13 @@ struct RelativePositionLayout: Layout {
             }
         }
 
-        // Add parent padding
-        width += parentPadding.leading + parentPadding.trailing
-        height += parentPadding.top + parentPadding.bottom
+        // Add parent padding around content-sized axes only (see above)
+        if !widthFromProposal {
+            width += parentPadding.leading + parentPadding.trailing
+        }
+        if !heightFromProposal {
+            height += parentPadding.top + parentPadding.bottom
+        }
 
         // Ensure we return valid values (minimum 1x1)
         let safeWidth = (width.isNaN || width.isInfinite || width <= 0) ? 100 : width
@@ -171,50 +202,14 @@ struct RelativePositionLayout: Layout {
             return
         }
 
-        // First, collect natural sizes for all subviews (for wrapContent and fixed modes only)
-        // matchParent sizes will be calculated later based on positions
-        var naturalSizes: [String: CGSize] = [:]
-        for subview in subviews {
-            let childId = subview[ChildIdKey.self]
-            if !childId.isEmpty {
-                let size = subview.sizeThatFits(.unspecified)
-                naturalSizes[childId] = size
-                Logger.debug("[RelativePositionLayout] placeSubviews child '\(childId)' naturalSize: \(size)")
-            }
-        }
-
-        // Calculate initial sizes (wrapContent and fixed only, matchParent gets placeholder)
-        var viewSizes: [String: CGSize] = [:]
-        for child in children {
-            let naturalSize = naturalSizes[child.id] ?? .zero
-
-            var width: CGFloat = 0
-            switch child.widthMode {
-            case .matchParent:
-                // Will be calculated based on constraints later
-                width = bounds.width - child.margins.leading - child.margins.trailing
-            case .wrapContent:
-                width = (naturalSize.width.isNaN || naturalSize.width.isInfinite || naturalSize.width <= 0)
-                    ? bounds.width : naturalSize.width
-            case .fixed(let fixedWidth):
-                width = fixedWidth
-            }
-
-            var height: CGFloat = 0
-            switch child.heightMode {
-            case .matchParent:
-                // Will be calculated based on constraints later
-                height = bounds.height - child.margins.top - child.margins.bottom
-            case .wrapContent:
-                height = (naturalSize.height.isNaN || naturalSize.height.isInfinite || naturalSize.height <= 0)
-                    ? bounds.height : naturalSize.height
-            case .fixed(let fixedHeight):
-                height = fixedHeight
-            }
-
-            viewSizes[child.id] = CGSize(width: width, height: height)
-            Logger.debug("[RelativePositionLayout] placeSubviews child '\(child.id)' initialSize: \(viewSizes[child.id]!), widthMode: \(child.widthMode), heightMode: \(child.heightMode)")
-        }
+        // Sizes to lay out with: widths as before, and every wrapContent
+        // height measured at the width the child will actually be placed
+        // with (see measuredSizes).
+        var viewSizes = measuredSizes(
+            containerSize: bounds.size,
+            subviewsById: subviewsByChildId(subviews),
+            widthKnown: true
+        )
 
         // Calculate positions based on constraints (this also updates matchParent sizes)
         let positions = calculatePositions(
@@ -254,6 +249,104 @@ struct RelativePositionLayout: Layout {
                 )
             }
         }
+    }
+
+    private func subviewsByChildId(_ subviews: Subviews) -> [String: LayoutSubview] {
+        var out: [String: LayoutSubview] = [:]
+        for subview in subviews {
+            let childId = subview[ChildIdKey.self]
+            if !childId.isEmpty { out[childId] = subview }
+        }
+        return out
+    }
+
+    private func isUsable(_ value: CGFloat) -> Bool {
+        !value.isNaN && !value.isInfinite && value > 0
+    }
+
+    /// A wrapContent child's width: its natural width, capped at the room the
+    /// container leaves it (`containerWidth` less its margins and the
+    /// parent's padding). Capped by measuring at that room, so a text wraps
+    /// there; a child that fits keeps its natural width (it is not stretched,
+    /// which a finite proposal would do to a flexible view). Nil when the
+    /// natural width is unusable.
+    private func wrapContentWidth(_ child: RelativeChildConfig, subview: LayoutSubview, containerWidth: CGFloat?) -> CGFloat? {
+        let natural = subview.sizeThatFits(.unspecified).width
+        guard isUsable(natural) else { return nil }
+        guard let containerWidth else { return natural }
+        let room = containerWidth - child.margins.leading - child.margins.trailing
+            - parentPadding.leading - parentPadding.trailing
+        guard room > 0, natural > room else { return natural }
+        let capped = subview.sizeThatFits(ProposedViewSize(width: room, height: nil)).width
+        return isUsable(capped) ? capped : natural
+    }
+
+    /// The size each child is laid out with before constraints move it.
+    ///
+    /// Widths are what they always were — a matchParent placeholder that the
+    /// constraints then settle, a fixed width, a wrapContent width (now
+    /// capped by the room it has). Heights of wrapContent children are
+    /// measured at the width the child ends up with: the constraints are
+    /// solved once to learn the final widths (a horizontal edge never depends
+    /// on a height, so solving again with the new heights keeps them), and
+    /// each wrapContent height is measured with that width proposed. Measured
+    /// unconstrained, a text was one line short of what it wraps into at its
+    /// placed width, and the last line was cut.
+    ///
+    /// `widthKnown` false (a filling container with no usable proposal) keeps
+    /// the unconstrained measure: there is no width to propose.
+    private func measuredSizes(
+        containerSize: CGSize,
+        subviewsById: [String: LayoutSubview],
+        widthKnown: Bool
+    ) -> [String: CGSize] {
+        var sizes: [String: CGSize] = [:]
+        var wrapHeights: [String] = []
+        for child in children {
+            let subview = subviewsById[child.id]
+            let natural = subview?.sizeThatFits(.unspecified) ?? .zero
+
+            var width: CGFloat = 0
+            switch child.widthMode {
+            case .matchParent:
+                // Settled by the constraints in calculatePositions
+                width = containerSize.width - child.margins.leading - child.margins.trailing
+            case .wrapContent:
+                if let subview, let w = wrapContentWidth(child, subview: subview, containerWidth: widthKnown ? containerSize.width : nil) {
+                    width = w
+                } else {
+                    width = containerSize.width
+                }
+            case .fixed(let fixedWidth):
+                width = fixedWidth
+            }
+
+            var height: CGFloat = 0
+            switch child.heightMode {
+            case .matchParent:
+                // Settled by the constraints in calculatePositions
+                height = containerSize.height - child.margins.top - child.margins.bottom
+            case .wrapContent:
+                height = isUsable(natural.height) ? natural.height : containerSize.height
+                if subview != nil { wrapHeights.append(child.id) }
+            case .fixed(let fixedHeight):
+                height = fixedHeight
+            }
+            sizes[child.id] = CGSize(width: width, height: height)
+        }
+
+        guard widthKnown, !wrapHeights.isEmpty else { return sizes }
+        var settled = sizes
+        _ = calculatePositions(containerSize: containerSize, viewSizes: &settled)
+        for id in wrapHeights {
+            guard let subview = subviewsById[id], let placedWidth = settled[id]?.width, isUsable(placedWidth) else { continue }
+            let height = subview.sizeThatFits(ProposedViewSize(width: placedWidth, height: nil)).height
+            if isUsable(height) {
+                sizes[id]?.height = height
+            }
+            Logger.debug("[RelativePositionLayout] measuredSizes child '\(id)' height \(height) at placed width \(placedWidth)")
+        }
+        return sizes
     }
 
     private func calculatePositions(
