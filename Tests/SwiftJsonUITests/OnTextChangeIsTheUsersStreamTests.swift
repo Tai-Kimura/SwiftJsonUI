@@ -55,6 +55,28 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         RunLoop.main.run(until: Date().addingTimeInterval(0.3))
     }
 
+    /// Spins until `condition` holds or `timeout` passes, and returns the
+    /// time it took. A fixed spin was not enough on a slow runner: on the
+    /// Xcode 16.4 / iOS 18 CI leg the editor wrote "12a" into the binding
+    /// late, the test's next insertText came before the deferred call ran,
+    /// and the two edits coalesced into one call (run 39010897386: calls
+    /// ["12a34567"] where ["12a", "1234567"] was asserted) — the semantics
+    /// working as designed, the test not waiting for the first edit. Waiting
+    /// for the outcome keeps the arm a discriminator: a deferred call that
+    /// the guard dropped wrongly never arrives, and the wait ends red.
+    @discardableResult
+    private func settle(
+        _ host: UIViewController, timeout: TimeInterval = 10, until condition: () -> Bool
+    ) -> TimeInterval {
+        let start = Date()
+        while !condition() && Date().timeIntervalSince(start) < timeout {
+            host.view.setNeedsLayout()
+            host.view.layoutIfNeeded()
+            RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        }
+        return Date().timeIntervalSince(start)
+    }
+
     /// Lets the main queue run what the setter deferred.
     private func drain() {
         RunLoop.main.run(until: Date().addingTimeInterval(0.05))
@@ -180,6 +202,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         let (window, host, input) = try drawFocusedTextView(model) { id, v in calls.append("\(id)=\(v)") }
         defer { window.isHidden = true }
         input.insertText("!")
+        settle(host) { !calls.isEmpty }
         spin(host)
         XCTAssertEqual(calls, ["memo=seed!"])
         XCTAssertEqual(model.text, "seed!")
@@ -196,15 +219,17 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         var calls: [String] = []
         let (window, host, input) = try drawFocusedTextView(model) { _, v in calls.append(v) }
         defer { window.isHidden = true }
+        // Each step waits for its own call before the next, as a person's
+        // keystrokes are far apart; without that, steps coalesce by design.
         input.setMarkedText("か", selectedRange: NSRange(location: 1, length: 0))
-        spin(host)
+        let t1 = settle(host) { calls.count == 1 }
         input.setMarkedText("かん", selectedRange: NSRange(location: 2, length: 0))
-        spin(host)
+        let t2 = settle(host) { calls.count == 2 }
         input.setMarkedText("漢", selectedRange: NSRange(location: 1, length: 0))
-        spin(host)
+        let t3 = settle(host) { calls.count == 3 }
         input.unmarkText()
         spin(host)
-        print("MEASURED marked-text calls=\(calls) model=\(model.text) drawn=\(input.text ?? "")")
+        print("MEASURED marked-text calls=\(calls) model=\(model.text) drawn=\(input.text ?? "") waited=\([t1, t2, t3])")
         XCTAssertEqual(input.text, "漢", "control: the conversion committed")
         XCTAssertEqual(model.text, "漢")
         XCTAssertEqual(calls, ["か", "かん", "漢"], "marked steps fire; the commit of the same text does not fire again")
@@ -226,16 +251,90 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         }
         defer { window.isHidden = true }
         input.insertText("a")
-        spin(host)
-        print("MEASURED narrow after 'a': calls=\(calls) model=\(model.text) drawn=\(input.text ?? "")")
+        let t1 = settle(host) { calls.count == 1 && input.text == "12" }
+        spin(host) // and nothing more arrives: the write-back does not fire
+        print("MEASURED narrow after 'a': calls=\(calls) model=\(model.text) drawn=\(input.text ?? "") waited=\(t1)")
+        XCTAssertEqual(calls, ["12a"], "the edit's own call arrived, once")
         XCTAssertEqual(model.text, "12")
         XCTAssertEqual(input.text, "12", "the editor shows the value the handler wrote back")
         input.insertText("34567")
+        let t2 = settle(host) { calls.count == 2 && input.text == "123456" }
         spin(host)
-        print("MEASURED narrow after '34567': calls=\(calls) model=\(model.text) drawn=\(input.text ?? "")")
+        print("MEASURED narrow after '34567': calls=\(calls) model=\(model.text) drawn=\(input.text ?? "") waited=\(t2)")
         XCTAssertEqual(model.text, "123456")
         XCTAssertEqual(input.text, "123456")
         XCTAssertEqual(calls, ["12a", "1234567"], "one call per edit; the write-back did not fire again")
+    }
+
+    // MARK: - the codegen shape, drawn
+
+    /// What sjui codegen emits for a TextView over `@{noteText}` with
+    /// `onTextChange: @{onNoteTextChange}`, copied verbatim from
+    /// jsonui-cli's TextViewConverter output (fix/ontextchange-stale-
+    /// deferred-value). Here so the generated `$data.x` binding — a
+    /// `@SwiftUI.Binding var data` in the generated view — runs on every
+    /// simulator leg this suite runs on: the guard reads
+    /// `$data.noteText.wrappedValue` when the deferred call runs, and has
+    /// to see the edit's own write there. A transcription, not the
+    /// generator: the jsonui-cli spec pins the generator's text.
+    private struct CodegenData {
+        var noteText = "12"
+        var onNoteTextChange: ((String, String) -> Void)?
+    }
+
+    private final class CodegenModel: ObservableObject {
+        @Published var data = CodegenData()
+    }
+
+    private struct CodegenShape: View {
+        @SwiftUI.Binding var data: CodegenData
+        var body: some View {
+            TextEditor(
+                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let changed = $data.noteText.wrappedValue != newValue; $data.noteText.wrappedValue = newValue; if changed { DispatchQueue.main.async { guard $data.noteText.wrappedValue == newValue else { return }; data.onNoteTextChange?("memo", newValue) } } })
+            )
+        }
+    }
+
+    private struct CodegenHost: View {
+        @ObservedObject var model: CodegenModel
+        var body: some View { CodegenShape(data: $model.data) }
+    }
+
+    /// The codegen shape with a narrowing write-back handler: each edit's
+    /// own call arrives (once), the editor follows the narrowed value, and a
+    /// later programmatic change does not call it.
+    func testTheCodegenShapeCallsOncePerEditAndFollowsTheWriteBack() throws {
+        let model = CodegenModel()
+        var calls: [String] = []
+        model.data.onNoteTextChange = { [unowned model] id, v in
+            calls.append("\(id)=\(v)")
+            model.data.noteText = String(v.filter(\.isNumber).prefix(6))
+        }
+        let host = UIHostingController(rootView: CodegenHost(model: model))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        spin(host)
+        let input = try XCTUnwrap(allSubviews(host.view).first { $0 is UITextView } as? UITextView)
+        XCTAssertTrue(input.becomeFirstResponder(), "control: the editor took focus")
+        spin(host)
+        input.selectedRange = NSRange(location: (input.text ?? "").utf16.count, length: 0)
+
+        input.insertText("a")
+        let t1 = settle(host) { calls.count == 1 && input.text == "12" }
+        spin(host)
+        input.insertText("34567")
+        let t2 = settle(host) { calls.count == 2 && input.text == "123456" }
+        spin(host)
+        print("MEASURED codegen shape: calls=\(calls) data=\(model.data.noteText) drawn=\(input.text ?? "") waited=\([t1, t2])")
+        XCTAssertEqual(calls, ["memo=12a", "memo=1234567"], "one call per edit, with the edit's value")
+        XCTAssertEqual(model.data.noteText, "123456")
+        XCTAssertEqual(input.text, "123456", "the editor follows the write-back")
+
+        model.data.noteText = "from the view model"
+        spin(host)
+        XCTAssertEqual(calls.count, 2, "a programmatic change does not call it")
     }
 
     // MARK: - the binding the control writes through: the user's edit fires
@@ -346,6 +445,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         input.selectedRange = NSRange(location: (input.text ?? "").utf16.count, length: 0)
         for _ in 0..<6 { input.deleteBackward() }
         input.insertText("UITEST NOTE")
+        settle(host) { calls.last == "UITEST NOTE" }
         spin(host)
         XCTAssertEqual(model.text, "UITEST NOTE")
         XCTAssertEqual(input.text, "UITEST NOTE")
