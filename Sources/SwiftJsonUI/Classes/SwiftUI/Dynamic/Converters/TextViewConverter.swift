@@ -33,8 +33,18 @@ public struct TextViewConverter {
         let resolvedBinding = DynamicBindingHelper.string(declaredText, data: data)
 
         // A two-way binding in the data: the view model's text.
+        // A view with onTextChange keeps its pending-edit state
+        // (UserEditGeneration) in a view of its own; one without has none.
+        let drawn: (SwiftUI.Binding<String>) -> AnyView = { text in
+            UserEditBinding.declares(component)
+                ? AnyView(UserEditScope { generation in
+                    convertBody(component: component, data: data, textBinding: text, generation: generation)
+                })
+                : convertBody(component: component, data: data, textBinding: text, generation: UserEditGeneration())
+        }
+
         if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(declaredText, data: data) {
-            return convertBody(component: component, data: data, textBinding: bound)
+            return drawn(bound)
         }
 
         // Literal, absent, or a plain value under @{var}: local editing state
@@ -45,7 +55,7 @@ public struct TextViewConverter {
         // new value from the view model replaces the edit.
         return AnyView(
             DynamicLocalState(initial: resolvedBinding.wrappedValue) { binding in
-                convertBody(component: component, data: data, textBinding: binding)
+                drawn(binding)
             }
         )
     }
@@ -53,7 +63,8 @@ public struct TextViewConverter {
     private static func convertBody(
         component: DynamicComponent,
         data: [String: Any],
-        textBinding: SwiftUI.Binding<String>
+        textBinding: SwiftUI.Binding<String>,
+        generation: UserEditGeneration
     ) -> AnyView {
         // Its handlers' viewId: the id, else the drawn type and the position
         // (LayoutPath.viewId — `textEditor` for every id-less one before).
@@ -227,7 +238,7 @@ public struct TextViewConverter {
             : resolvedMinHeight
         let maxHeight = component.number(CommonAttributes.self, \.maxHeight, data: data)
 
-        let editorText = UserEditBinding.text(textBinding, component: component, id: id, data: data)
+        let editorText = UserEditBinding.text(textBinding, generation: generation, component: component, id: id, data: data)
         var result = AnyView(
             TextViewWithPlaceholder(
                 text: editorText,

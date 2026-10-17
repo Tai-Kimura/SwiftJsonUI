@@ -98,11 +98,11 @@ public struct TextFieldConverter {
         }()
 
         // Field construction shared by the bound and local-state paths
-        let build: (SwiftUI.Binding<String>) -> AnyView = { source in
+        let buildField: (SwiftUI.Binding<String>, UserEditGeneration) -> AnyView = { source, generation in
             // onTextChange is called from this binding's setter — the user's
             // edits (typing, the clear button) — and not for a change of the
             // value from elsewhere (UserEditBinding.swift).
-            let binding = UserEditBinding.text(source, component: component, id: id, data: data)
+            let binding = UserEditBinding.text(source, generation: generation, component: component, id: id, data: data)
             var built: AnyView
             // Use FocusableTextField when component has an id (for focus chain support)
             if let fieldId = component.id {
@@ -159,6 +159,13 @@ public struct TextFieldConverter {
             // the test runner's initialState too (ticket
             // sjui-ontextchange-fires-on-programmatic-data-change).
             return built
+        }
+        // A field with onTextChange keeps its pending-edit state
+        // (UserEditGeneration) in a view of its own; one without has none.
+        let build: (SwiftUI.Binding<String>) -> AnyView = { source in
+            UserEditBinding.declares(component)
+                ? AnyView(UserEditScope { generation in buildField(source, generation) })
+                : buildField(source, UserEditGeneration())
         }
 
         // A two-way binding in the data: the view model's text.

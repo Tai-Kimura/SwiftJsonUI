@@ -77,9 +77,20 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         return Date().timeIntervalSince(start)
     }
 
-    /// Lets the main queue run what the setter deferred.
+    /// Runs the main queue until everything queued so far has run: a marker
+    /// queued behind it, waited for, three times (a block may queue
+    /// another). Not a fixed sleep, so a slow runner (the Xcode 16.4 leg)
+    /// cannot read "not run yet" as "not called".
     private func drain() {
-        RunLoop.main.run(until: Date().addingTimeInterval(0.05))
+        for _ in 0..<3 {
+            var done = false
+            DispatchQueue.main.async { done = true }
+            let start = Date()
+            while !done && Date().timeIntervalSince(start) < 10 {
+                RunLoop.main.run(until: Date().addingTimeInterval(0.01))
+            }
+            XCTAssertTrue(done, "the main queue did not empty in 10 s")
+        }
     }
 
     private func allSubviews(_ view: UIView) -> [UIView] {
@@ -266,12 +277,26 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         XCTAssertEqual(calls, ["12a", "1234567"], "one call per edit; the write-back did not fire again")
     }
 
+    /// Dynamic, drawn: the two bursts typed into a TextView, with a handler
+    /// that records only (a write-back would make the value move again).
+    func testDrawnBurstsCallOnceOrNotAtAll() throws {
+        let model = Model()
+        model.text = "x"
+        var calls: [String] = []
+        let (window, host, input) = try drawFocusedTextView(model) { _, v in calls.append(v) }
+        defer { window.isHidden = true }
+        try assertDrawnBursts(input, host: host, calls: { calls.count })
+        print("MEASURED drawn bursts: calls=\(calls) model=\(model.text)")
+        XCTAssertEqual(calls, ["xa"])
+    }
+
     // MARK: - the codegen shape, drawn
 
     /// What sjui codegen emits for a TextView over `@{noteText}` with
     /// `onTextChange: @{onNoteTextChange}`, copied verbatim from
-    /// jsonui-cli's TextViewConverter output (fix/ontextchange-stale-
-    /// deferred-value). Here so the generated `$data.x` binding — a
+    /// jsonui-cli's TextViewConverter output (fix/ontextchange-coalesce-by-
+    /// generation), with the two declarations it adds to the view. Here
+    /// so the generated `$data.x` binding — a
     /// `@SwiftUI.Binding var data` in the generated view — runs on every
     /// simulator leg this suite runs on: the guard reads
     /// `$data.noteText.wrappedValue` when the deferred call runs, and has
@@ -288,9 +313,11 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
 
     private struct CodegenShape: View {
         @SwiftUI.Binding var data: CodegenData
+        private final class UserEditGeneration { var number = 0; var start: String? }
+        @State private var memoTextEdit = UserEditGeneration()
         var body: some View {
             TextEditor(
-                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let changed = $data.noteText.wrappedValue != newValue; $data.noteText.wrappedValue = newValue; if changed { DispatchQueue.main.async { guard $data.noteText.wrappedValue == newValue else { return }; data.onNoteTextChange?("memo", newValue) } } })
+                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let edit = memoTextEdit; let before = $data.noteText.wrappedValue; let changed = before != newValue; $data.noteText.wrappedValue = newValue; if changed { if edit.start == nil { edit.start = before }; edit.number += 1; let number = edit.number; DispatchQueue.main.async { guard edit.number == number else { return }; let start = edit.start; edit.start = nil; guard $data.noteText.wrappedValue == newValue, newValue != start else { return }; data.onNoteTextChange?("memo", newValue) } } })
             )
         }
     }
@@ -334,7 +361,38 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
 
         model.data.noteText = "from the view model"
         spin(host)
+        drain()
         XCTAssertEqual(calls.count, 2, "a programmatic change does not call it")
+
+        // The two bursts of ticket sjui-ontextchange-deferred-guard-can-
+        // double-call-or-call-without-net-change, typed in one turn each.
+        try assertDrawnBursts(input, host: host, calls: { calls.count })
+    }
+
+    /// Types the two bursts into a drawn editor that holds `X` at its end —
+    /// "y" then delete (back where it began: no call), then "a", delete,
+    /// "a" (one call) — and checks the call count after each.
+    private func assertDrawnBursts(
+        _ input: UITextView, host: UIViewController, calls: () -> Int,
+        file: StaticString = #filePath, line: UInt = #line
+    ) throws {
+        let before = calls()
+        input.selectedRange = NSRange(location: (input.text ?? "").utf16.count, length: 0)
+        let start = input.text ?? ""
+        input.insertText("y")
+        input.deleteBackward()
+        spin(host)
+        drain()
+        XCTAssertEqual(input.text, start, "control: the editor is back where it began", file: file, line: line)
+        XCTAssertEqual(calls(), before, "a burst that ends where it began calls nothing", file: file, line: line)
+
+        input.insertText("a")
+        input.deleteBackward()
+        input.insertText("a")
+        settle(host) { calls() == before + 1 }
+        spin(host)
+        drain()
+        XCTAssertEqual(calls(), before + 1, "a value that comes back within a burst is called once", file: file, line: line)
     }
 
     // MARK: - the binding the control writes through: the user's edit fires
@@ -346,7 +404,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
             let source = SwiftUI.Binding<String>(get: { storage }, set: { storage = $0 })
             let c = try component(["type": type, "id": "f", "text": "@{t}", "onTextChange": handler])
             let data: [String: Any] = ["t": source, "h": { (id: String, v: String) in calls.append("\(id)=\(v)") }]
-            let control = UserEditBinding.text(source, component: c, id: LayoutPath.viewId(of: c), data: data)
+            let control = UserEditBinding.text(source, generation: UserEditGeneration(), component: c, id: LayoutPath.viewId(of: c), data: data)
 
             control.wrappedValue = "a"
             // Stored at once; the handler runs on the main queue's next turn.
@@ -378,7 +436,9 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         var calls: [String] = []
         var staleWrites = 0
         var control: SwiftUI.Binding<String>!
-        init() throws {
+        let generation = UserEditGeneration()
+        init(_ seed: String = "string") throws {
+            storage = seed
             let source = SwiftUI.Binding<String>(get: { self.storage }, set: { self.storage = $0 })
             let c = try XCTUnwrap(JSONLayoutLoader.decodeComponent(
                 from: ["type": "TextView", "id": "note", "text": "@{t}", "onTextChange": "@{h}"]
@@ -388,7 +448,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
                 if v != self.storage { self.staleWrites += 1 }
                 self.storage = v
             }
-            control = UserEditBinding.text(source, component: c, id: "note", data: ["t": source, "h": handler])
+            control = UserEditBinding.text(source, generation: generation, component: c, id: "note", data: ["t": source, "h": handler])
         }
         /// A delete key, as the field applies it: from what the field holds.
         func delete() { control.wrappedValue = String(control.wrappedValue.dropLast()) }
@@ -418,6 +478,44 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         XCTAssertEqual(field.storage, "str", "no delete lost")
         XCTAssertEqual(field.calls, ["str"])
         XCTAssertEqual(field.staleWrites, 0, "no handler wrote back a value the field had left")
+    }
+
+    /// "x" -> "xy" -> "x" in one turn: the burst ends where it began, so
+    /// there is no call (Android compares with the data and does not call;
+    /// 10.30.2 called with "x").
+    func testABurstThatEndsWhereItBeganCallsNothing() throws {
+        let field = try Field("x")
+        field.control.wrappedValue = "xy"
+        field.control.wrappedValue = "x"
+        drain()
+        XCTAssertEqual(field.storage, "x")
+        XCTAssertEqual(field.calls, [], "no net change, no call")
+    }
+
+    /// "" -> "a" -> "" -> "a" in one turn: one call. 10.30.2 called twice —
+    /// the first call's "a" matched the current value by chance.
+    func testAValueThatComesBackInABurstIsCalledOnce() throws {
+        let field = try Field("")
+        field.control.wrappedValue = "a"
+        field.control.wrappedValue = ""
+        field.control.wrappedValue = "a"
+        drain()
+        XCTAssertEqual(field.storage, "a")
+        XCTAssertEqual(field.calls, ["a"], "only the last edit of the burst calls")
+    }
+
+    /// Edits in separate turns are separate bursts: each calls; and a burst
+    /// after a call starts from the value that call left.
+    func testEditsInSeparateTurnsEachCall() throws {
+        let field = try Field("")
+        field.control.wrappedValue = "a"
+        drain()
+        field.control.wrappedValue = "ab"
+        drain()
+        field.control.wrappedValue = "abc"
+        field.control.wrappedValue = "ab"
+        drain()
+        XCTAssertEqual(field.calls, ["a", "ab"], "the third burst ended where it began")
     }
 
     /// A programmatic change while a call is queued: the call is stale, and
@@ -456,7 +554,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         var storage = ""
         let source = SwiftUI.Binding<String>(get: { storage }, set: { storage = $0 })
         let c = try component(["type": "TextField", "text": "@{t}"])
-        let control = UserEditBinding.text(source, component: c, id: "x", data: [:])
+        let control = UserEditBinding.text(source, generation: UserEditGeneration(), component: c, id: "x", data: [:])
         control.wrappedValue = "typed"
         XCTAssertEqual(storage, "typed")
     }
@@ -469,7 +567,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         let source = SwiftUI.Binding<String>(get: { storage }, set: { storage = $0 })
         let c = try component(["type": "TextField", "text": "@{t}", "onTextChange": "@{h}"])
         let data: [String: Any] = ["h": { (v: String) in got.append(v) }]
-        UserEditBinding.text(source, component: c, id: "x", data: data).wrappedValue = "v"
+        UserEditBinding.text(source, generation: UserEditGeneration(), component: c, id: "x", data: data).wrappedValue = "v"
         drain()
         XCTAssertEqual(got, ["v"])
     }
