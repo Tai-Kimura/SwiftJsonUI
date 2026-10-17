@@ -86,12 +86,21 @@ struct RelativePositionLayout: Layout {
         var width: CGFloat = 0
         var height: CGFloat = 0
 
-        // If matchParent is used, take the proposed size
+        // If matchParent is used, take the proposed size. That size is the
+        // whole box, padding included: the padding is laid out inside it
+        // (calculatePositions), never added on top. Added on top, a filling
+        // container came out wider and taller than its parent by the padding
+        // twice, and a matchParent child got the full width back and only
+        // moved by the padding — past the screen's edge at padding 40.
+        var widthFromProposal = false
+        var heightFromProposal = false
         if hasWidthMatchParent, let proposedWidth = proposal.width, proposedWidth > 0 && !proposedWidth.isInfinite {
             width = proposedWidth
+            widthFromProposal = true
         }
         if hasHeightMatchParent, let proposedHeight = proposal.height, proposedHeight > 0 && !proposedHeight.isInfinite {
             height = proposedHeight
+            heightFromProposal = true
         }
 
         let subviewsById = subviewsByChildId(subviews)
@@ -120,9 +129,10 @@ struct RelativePositionLayout: Layout {
                 width = max(width, childWidth)
             }
         }
-        // The width this container reports (padding included, as it always
-        // has been) — the bounds placeSubviews will lay the children in.
-        let reportedWidth = width + parentPadding.leading + parentPadding.trailing
+        // The width this container reports — the bounds placeSubviews will
+        // lay the children in: the proposal as it is, or the children's
+        // width plus the padding.
+        let reportedWidth = widthFromProposal ? width : width + parentPadding.leading + parentPadding.trailing
 
         // Height: each wrapContent child measured at the width it will be
         // placed with — the container's width less margins and padding, a
@@ -158,9 +168,13 @@ struct RelativePositionLayout: Layout {
             }
         }
 
-        // Add parent padding
-        width += parentPadding.leading + parentPadding.trailing
-        height += parentPadding.top + parentPadding.bottom
+        // Add parent padding around content-sized axes only (see above)
+        if !widthFromProposal {
+            width += parentPadding.leading + parentPadding.trailing
+        }
+        if !heightFromProposal {
+            height += parentPadding.top + parentPadding.bottom
+        }
 
         // Ensure we return valid values (minimum 1x1)
         let safeWidth = (width.isNaN || width.isInfinite || width <= 0) ? 100 : width
