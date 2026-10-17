@@ -265,6 +265,93 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         }
     }
 
+    // MARK: - a deferred call a later edit overtook is dropped
+    //
+    // Ticket sjui-ontextchange-deferred-handler-replays-stale-value: 10.30.1
+    // handed each deferred call its own edit's value, and a handler that
+    // writes it back (`data.x = v`, the common shape) replayed intermediate
+    // values over later edits.
+
+    /// A field over storage, with the handler shape most screens use:
+    /// store what it is handed.
+    private final class Field {
+        var storage = "string"
+        var calls: [String] = []
+        var staleWrites = 0
+        var control: SwiftUI.Binding<String>!
+        init() throws {
+            let source = SwiftUI.Binding<String>(get: { self.storage }, set: { self.storage = $0 })
+            let c = try XCTUnwrap(JSONLayoutLoader.decodeComponent(
+                from: ["type": "TextView", "id": "note", "text": "@{t}", "onTextChange": "@{h}"]
+            ))
+            let handler: (String, String) -> Void = { [unowned self] _, v in
+                self.calls.append(v)
+                if v != self.storage { self.staleWrites += 1 }
+                self.storage = v
+            }
+            control = UserEditBinding.text(source, component: c, id: "note", data: ["t": source, "h": handler])
+        }
+        /// A delete key, as the field applies it: from what the field holds.
+        func delete() { control.wrappedValue = String(control.wrappedValue.dropLast()) }
+    }
+
+    /// Six deletes in one turn (the runner's `clear`): one call, with the
+    /// last value; the value stays where the edits left it.
+    func testABurstOfEditsIsOneCallWithTheLatestValue() throws {
+        let field = try Field()
+        for _ in 0..<6 { field.delete() }
+        drain()
+        XCTAssertEqual(field.storage, "")
+        XCTAssertEqual(field.calls, [""], "intermediate values coalesce")
+        XCTAssertEqual(field.staleWrites, 0)
+    }
+
+    /// A key event landing between two queued calls — the shape that lost
+    /// edits on a consumer (queue: A "strin", key, B "stri"). Three deletes
+    /// leave "str"; replaying A's "strin" made the next delete start from it
+    /// and left "stri".
+    func testAKeyBetweenTwoQueuedCallsIsNotUndone() throws {
+        let field = try Field()
+        field.delete()
+        DispatchQueue.main.async { field.delete() }
+        field.delete()
+        drain()
+        XCTAssertEqual(field.storage, "str", "no delete lost")
+        XCTAssertEqual(field.calls, ["str"])
+        XCTAssertEqual(field.staleWrites, 0, "no handler wrote back a value the field had left")
+    }
+
+    /// A programmatic change while a call is queued: the call is stale, and
+    /// the view model's value stands.
+    func testAProgrammaticChangeWhileACallIsQueuedStands() throws {
+        let field = try Field()
+        field.delete()
+        field.storage = "from the view model"
+        drain()
+        XCTAssertEqual(field.storage, "from the view model")
+        XCTAssertEqual(field.calls, [])
+    }
+
+    /// Drawn: clear (six deleteBackward in one turn) then type, with the
+    /// write-back handler — what the consumer's UI test does.
+    func testClearThenTypeIntoADrawnTextViewKeepsTheTypedText() throws {
+        let model = Model()
+        model.text = "string"
+        var calls: [String] = []
+        let (window, host, input) = try drawFocusedTextView(model) { _, v in
+            calls.append(v)
+            model.text = v
+        }
+        defer { window.isHidden = true }
+        input.selectedRange = NSRange(location: (input.text ?? "").utf16.count, length: 0)
+        for _ in 0..<6 { input.deleteBackward() }
+        input.insertText("UITEST NOTE")
+        spin(host)
+        XCTAssertEqual(model.text, "UITEST NOTE")
+        XCTAssertEqual(input.text, "UITEST NOTE")
+        XCTAssertEqual(calls.last, "UITEST NOTE")
+    }
+
     func testNoHandlerLeavesTheBindingAWritableBinding() throws {
         var storage = ""
         let source = SwiftUI.Binding<String>(get: { storage }, set: { storage = $0 })

@@ -24,8 +24,19 @@
 //  TextField keeps showing "12a" while the data holds "12" (measured on a
 //  consumer's TextField, iOS 27.0). Deferred, the write-back is a change of
 //  its own and the field follows it — the order `.onChange(of:)` had, and
-//  the order Compose's LaunchedEffect has. The value handed over is the one
-//  the edit wrote. sjui codegen emits the same (UserEditBindingHelper).
+//  the order Compose's LaunchedEffect has. sjui codegen emits the same
+//  (UserEditBindingHelper).
+//
+//  A deferred call that is no longer current is dropped: it reads the
+//  binding again when it runs, and if the value is not the one its edit
+//  wrote, a later edit (or a programmatic change) came first. 10.30.1 handed
+//  every deferred call its own edit's value, so a burst of edits ("strin" ...
+//  "" from six deletes) queued six calls, and a handler that writes the
+//  value back (`data.x = v`) put an intermediate value back into the field
+//  after the burst, losing the edits after it (ticket
+//  sjui-ontextchange-deferred-handler-replays-stale-value). A burst is now
+//  one call with the latest value — intermediate values coalesce, as under
+//  `.onChange` and LaunchedEffect.
 //
 
 import SwiftUI
@@ -33,15 +44,21 @@ import SwiftUI
 
 extension SwiftUI.Binding where Value: Equatable {
     /// The same binding, calling `onEdit` with the new value — on the main
-    /// queue's next turn — whenever it is SET to something different. Reads
-    /// and programmatic changes of the underlying storage do not call it.
+    /// queue's next turn — whenever it is SET to something different, if
+    /// the value is still that one by then. Reads and programmatic changes
+    /// of the underlying storage do not call it.
     func callingOnEdit(_ onEdit: @escaping (Value) -> Void) -> SwiftUI.Binding<Value> {
         SwiftUI.Binding(
             get: { self.wrappedValue },
             set: { newValue, transaction in
                 let changed = self.wrappedValue != newValue
                 self.transaction(transaction).wrappedValue = newValue
-                if changed { DispatchQueue.main.async { onEdit(newValue) } }
+                guard changed else { return }
+                DispatchQueue.main.async {
+                    // Overtaken by a later edit or a programmatic change: stale.
+                    guard self.wrappedValue == newValue else { return }
+                    onEdit(newValue)
+                }
             }
         )
     }
