@@ -295,8 +295,7 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
     /// What sjui codegen emits for a TextView over `@{noteText}` with
     /// `onTextChange: @{onNoteTextChange}`, copied verbatim from
     /// jsonui-cli's TextViewConverter output (fix/ontextchange-coalesce-by-
-    /// generation): the generation lives in the main thread's dictionary,
-    /// keyed by the view's type and the field, not in the view. Here
+    /// generation), with the two declarations it adds to the view. Here
     /// so the generated `$data.x` binding — a
     /// `@SwiftUI.Binding var data` in the generated view — runs on every
     /// simulator leg this suite runs on: the guard reads
@@ -314,9 +313,11 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
 
     private struct CodegenShape: View {
         @SwiftUI.Binding var data: CodegenData
+        private final class UserEditGeneration { var number = 0; var start: String?; var last: String? }
+        @State private var textEdit_0 = UserEditGeneration()
         var body: some View {
             TextEditor(
-                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let key = "sjui.userEdit.\(Self.self).memo"; let edit = (Thread.main.threadDictionary[key] as? NSMutableDictionary) ?? NSMutableDictionary(); Thread.main.threadDictionary[key] = edit; let before = $data.noteText.wrappedValue; let changed = before != newValue; $data.noteText.wrappedValue = newValue; if changed { if edit["start"] == nil { edit["start"] = before }; let number = (edit["number"] as? Int ?? 0) + 1; edit["number"] = number; DispatchQueue.main.async { guard edit["number"] as? Int == number else { return }; let start = edit["start"] as? String; edit["start"] = nil; guard $data.noteText.wrappedValue == newValue, newValue != start else { return }; data.onNoteTextChange?("memo", newValue) } } })
+                text: SwiftUI.Binding(get: { $data.noteText.wrappedValue }, set: { newValue in let edit = textEdit_0; let before = $data.noteText.wrappedValue; let changed = before != newValue; $data.noteText.wrappedValue = newValue; if changed { if edit.start == nil || before != edit.last { edit.start = before }; edit.last = newValue; edit.number += 1; let number = edit.number; DispatchQueue.main.async { guard edit.number == number else { return }; let start = edit.start; edit.start = nil; guard $data.noteText.wrappedValue == newValue, newValue != start else { return }; data.onNoteTextChange?("memo", newValue) } } })
             )
         }
     }
@@ -392,6 +393,48 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         spin(host)
         drain()
         XCTAssertEqual(calls(), before + 1, "a value that comes back within a burst is called once", file: file, line: line)
+    }
+
+    /// Two instances of the codegen shape (two cells of one template, each
+    /// with its own data): one edit in each, in one turn — each calls.
+    /// (Review S13: a generation shared by the view type dropped A's.)
+    private struct TwoCodegenInstances: View {
+        @ObservedObject var a: CodegenModel
+        @ObservedObject var b: CodegenModel
+        var body: some View {
+            VStack {
+                CodegenShape(data: $a.data).frame(height: 100)
+                CodegenShape(data: $b.data).frame(height: 100)
+            }
+        }
+    }
+
+    func testTwoInstancesOfTheCodegenShapeEditedInOneTurnEachCall() throws {
+        let a = CodegenModel(), b = CodegenModel()
+        var calls: [String] = []
+        a.data.noteText = "string"
+        b.data.noteText = "string"
+        a.data.onNoteTextChange = { _, v in calls.append("A=\(v)") }
+        b.data.onNoteTextChange = { _, v in calls.append("B=\(v)") }
+        let host = UIHostingController(rootView: TwoCodegenInstances(a: a, b: b))
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 320, height: 480))
+        window.rootViewController = host
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        spin(host)
+        let editors = allSubviews(host.view).compactMap { $0 as? UITextView }
+        XCTAssertEqual(editors.count, 2, "control: two editors drawn")
+        guard editors.count == 2 else { return }
+        for e in editors { e.selectedRange = NSRange(location: (e.text ?? "").utf16.count, length: 0) }
+        XCTAssertTrue(editors[0].becomeFirstResponder())
+        editors[0].insertText("1")
+        XCTAssertTrue(editors[1].becomeFirstResponder())
+        editors[1].insertText("2")
+        let waited = settle(host) { calls.count == 2 }
+        spin(host)
+        drain()
+        print("MEASURED two codegen instances: calls=\(calls.sorted()) waited=\(waited)")
+        XCTAssertEqual(calls.sorted(), ["A=string1", "B=string2"])
     }
 
     // MARK: - the binding the control writes through: the user's edit fires
@@ -515,6 +558,29 @@ final class OnTextChangeIsTheUsersStreamTests: XCTestCase {
         field.control.wrappedValue = "ab"
         drain()
         XCTAssertEqual(field.calls, ["a", "ab"], "the third burst ended where it began")
+    }
+
+    /// S17: the view model writes between two edits of one burst; the last
+    /// edit is a change from what the view model wrote, so it calls.
+    func testAnEditAfterTheViewModelWroteMidBurstCalls() throws {
+        let field = try Field("string")
+        field.control.wrappedValue = "stringd"
+        field.storage = "strin"          // the view model
+        field.control.wrappedValue = "string"
+        drain()
+        XCTAssertEqual(field.storage, "string")
+        XCTAssertEqual(field.calls, ["string"], "a change from the view model's value")
+    }
+
+    /// S13 on Dynamic: two fields of one layout (two instances, each its
+    /// own data and generation), one edit each in one turn: each calls.
+    func testTwoInstancesEditedInOneTurnEachCall() throws {
+        let a = try Field("string"), b = try Field("string")
+        a.control.wrappedValue = "string1"
+        b.control.wrappedValue = "string2"
+        drain()
+        XCTAssertEqual(a.calls, ["string1"])
+        XCTAssertEqual(b.calls, ["string2"])
     }
 
     /// A programmatic change while a call is queued: the call is stale, and

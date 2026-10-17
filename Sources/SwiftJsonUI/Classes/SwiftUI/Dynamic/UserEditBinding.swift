@@ -59,6 +59,9 @@ import SwiftUI
 final class UserEditGeneration {
     var number = 0
     var start: String?
+    /// The value this field last wrote; a different value found at the
+    /// next edit was written by someone else (the view model).
+    var last: String?
 }
 
 /// Owns a field's UserEditGeneration across renders.
@@ -84,7 +87,14 @@ extension SwiftUI.Binding where Value == String {
                 let changed = before != newValue
                 self.transaction(transaction).wrappedValue = newValue
                 guard changed else { return }
-                if generation.start == nil { generation.start = before }
+                // The burst starts from the value someone else last wrote:
+                // a value this field did not write (the view model wrote
+                // between two edits) restarts it — "string" -> "stringd" ->
+                // (VM) "strin" -> "string" is a change from "strin" and
+                // calls, as Android's `newValue != data` does (independent
+                // review, S17).
+                if generation.start == nil || before != generation.last { generation.start = before }
+                generation.last = newValue
                 generation.number += 1
                 let number = generation.number
                 DispatchQueue.main.async {
