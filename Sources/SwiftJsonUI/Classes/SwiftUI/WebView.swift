@@ -331,6 +331,75 @@ public struct WebView: UIViewRepresentable {
             print("WebView provisional navigation failed: \(error.localizedDescription)")
             if Self.isLoadFailure(error) { reportLoadFailure() }
         }
+
+        /// 🔻 THE PAGE'S PROCESS ENDED AND THE VIEW STAYS BLANK UNTIL SOMEONE
+        /// LOADS AGAIN. A WKWebView draws in its own WebContent process. When
+        /// the system ends it (memory pressure, a crash), WebKit calls this
+        /// method. It starts a new process for the next load, but the view
+        /// keeps its frame and shows nothing until something loads again.
+        ///
+        /// Measured in ConformanceHost (Xcode 26.3, iOS 26.2 iPhone 16 Pro,
+        /// Dynamic, Web/html__static) by ending the view's WebContent process
+        /// from outside. Without this method, every capture stayed blank
+        /// through the host's whole 10 s paint wait: killed once, 3 of 3;
+        /// stopped for 3 s and then killed, 2 of 2; stopped for 12 s and then
+        /// killed, 2 of 2. In the 12 s case the load marker also timed out.
+        /// That is the exact shape of conformance-mobile run 38958247680
+        /// (Web_html__static ink 533 -> 0, webMarkers timedOut 1,
+        /// web_settle: timeout). That run did not record whether its process
+        /// ended or only stalled; a stall that never ends is not recovered
+        /// here. With this method, the same three arms drew
+        /// the page in 4 of 4, 2 of 2 and 2 of 2 runs. Each png was
+        /// byte-identical to the png of an undisturbed run.
+        public func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+            switch Self.recoveryAction(
+                committedURL: webView.url,
+                lastLoadedURL: lastLoadedURL,
+                lastLoadedHTML: lastLoadedHTML
+            ) {
+            case .reload:
+                webView.reload()
+            case .loadURL(let url):
+                webView.load(URLRequest(url: url))
+            case .loadHTML(let html):
+                webView.loadHTMLString(html, baseURL: nil)
+            case .none:
+                return
+            }
+            // A new load started: the host's marker goes back to pending, and
+            // didFinish settles it again.
+            if WebView.conformanceLoadMarkersEnabled {
+                loadMarker?.accessibilityIdentifier = WebView.webPendingIdentifier
+            }
+        }
+
+        /// What `webViewWebContentProcessDidTerminate` loads.
+        enum RecoveryAction: Equatable {
+            case none
+            case reload
+            case loadURL(URL)
+            case loadHTML(String)
+        }
+
+        /// Decided apart from WebKit so that every branch can be tested
+        /// without ending a process.
+        ///
+        /// - If a page with a real address is committed (the user may have
+        ///   followed a link away from the source), it reloads that page.
+        /// - Otherwise the view loads its own source again: the html when
+        ///   there is no url, else the url. "Otherwise" covers two cases:
+        ///   nothing is committed, or the committed page is the
+        ///   `about:blank` that `loadHTMLString` commits.
+        static func recoveryAction(
+            committedURL: URL?, lastLoadedURL: URL?, lastLoadedHTML: String?
+        ) -> RecoveryAction {
+            if let committed = committedURL, committed.absoluteString != "about:blank" {
+                return .reload
+            }
+            if let html = lastLoadedHTML, lastLoadedURL == nil { return .loadHTML(html) }
+            if let url = lastLoadedURL { return .loadURL(url) }
+            return .none
+        }
     }
 }
 
