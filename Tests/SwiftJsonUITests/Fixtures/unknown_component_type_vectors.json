@@ -1,5 +1,5 @@
 {
-  "_description": "The one sentence a node of a type the tool cannot draw is named with (4f's ruling, jsonui-cli 1.9.0; JsonUIShared::AttributeValidatorCore.unknown_component_type_message, and KotlinJsonUI Dynamic's own constant, held to this table from a byte-identical copy). `known` is the types the tool draws; `written` the node's type as written; `expect` the sentence. Type names are matched as written: a spelling that matches a known type only when case is ignored is offered that type.",
+  "_description": "The one sentence a node of a type the tool cannot draw is named with (the orchestrator's ruling, jsonui-cli 1.9.0; JsonUIShared::AttributeValidatorCore.unknown_component_type_message, and KotlinJsonUI Dynamic's own constant, held to this table from a byte-identical copy). `known` is the types the tool draws; `written` the node's type as written; `expect` the sentence. Type names are matched as written: a spelling that matches a known type only when case is ignored is offered that type.",
   "cases": [
     {
       "name": "a spelling in another case is offered the declared one",
