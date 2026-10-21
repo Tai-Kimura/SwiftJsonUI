@@ -140,7 +140,7 @@ public class JSONLayoutLoader {
     /// (LayoutPath), as every other entry is. A tree with no style, include
     /// or responsive block left is only stamped (`stamped`). It was only
     /// stamped whatever it held: styles, includes and responsive overrides
-    /// were skipped, silently, on this entry alone (4f's ruling on the
+    /// were skipped, silently, on this entry alone (the orchestrator's ruling on the
     /// entries that skip stages, 1.9.0). The stages are idempotent
     /// (EntryPipelineIdempotenceTests), so a tree the app already styled —
     /// ConformanceHost's FixtureLoader — comes out as it went in.

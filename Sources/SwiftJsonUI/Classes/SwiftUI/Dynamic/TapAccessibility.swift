@@ -86,7 +86,7 @@ enum TapAccessibility {
     /// its operation without a tap on it, a screen reader's activation too
     /// (DynamicModifierHelper.applyHitTesting, JsonUIStoppedControl). Asked of
     /// the type it is drawn as, as isInteractiveType is. An app's own
-    /// component is none, whatever it spells (4f's ruling, jsonui-cli 1.9.0):
+    /// component is none, whatever it spells (the orchestrator's ruling, jsonui-cli 1.9.0):
     /// it carries its own role — and the interactive list holds alias
     /// spellings as written (Toggle, Table), which a registered adapter draws
     /// as written.
@@ -212,7 +212,7 @@ enum TapAccessibility {
     /// The children a component draws: the shapes do not count a data-only
     /// one (jsonui-cli `drawn_children`). It read as a child of unknown type,
     /// a control, and a Label with onClick whose only child declared its data
-    /// was no button (4f's ruling, jsonui-cli 1.9.0).
+    /// was no button (the orchestrator's ruling, jsonui-cli 1.9.0).
     static func drawnChildren(_ component: DynamicComponent) -> [DynamicComponent] {
         (component.childComponents ?? []).filter { !isDataOnly($0) }
     }

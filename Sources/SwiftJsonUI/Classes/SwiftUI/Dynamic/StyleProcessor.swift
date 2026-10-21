@@ -40,7 +40,7 @@ public class StyleProcessor {
         // Process child components recursively — the merged node's, so a
         // child the style brings has its own style applied too, as every
         // other path does (sjui / kjui codegen, rjui, KotlinJsonUI Dynamic;
-        // 4f's ruling, 1.9.0). The node as written was walked: a style's
+        // the orchestrator's ruling, 1.9.0). The node as written was walked: a style's
         // child kept its `style` unapplied, and a second pass — an entry that
         // runs the stages again — applied it, so the stages were not
         // idempotent.

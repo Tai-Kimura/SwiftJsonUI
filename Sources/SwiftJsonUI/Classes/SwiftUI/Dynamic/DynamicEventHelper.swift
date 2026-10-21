@@ -29,7 +29,7 @@ public struct DynamicEventHelper {
     ///   - selector: "handlerName"     (legacy lowercase attrs, e.g. onclick)
     /// Both resolve to the same data-dict closure in Dynamic mode. A `:` —
     /// UIKit's sender mark (`handlerName:`), which means nothing here — is
-    /// not part of the name (4f's ruling on
+    /// not part of the name (the orchestrator's ruling on
     /// control-onclick-is-called-differently-on-every-path, 1.9.0; kjui and
     /// KJUI Dynamic strip it, sjui reads the name without it): `handlerName:`
     /// looked up a closure named with the colon, and nothing was called.
@@ -59,7 +59,7 @@ public struct DynamicEventHelper {
 
     /// A handler that takes no value — a tap, a control's or a Button's
     /// onClick, a long press, onAppear / onDisappear, a Web's onLoadFailed —
-    /// called as the closure the data holds asks (4f's ruling on
+    /// called as the closure the data holds asks (the orchestrator's ruling on
     /// control-onclick-is-called-differently-on-every-path, 1.9.0):
     /// `(String) -> Void` with the viewId (LayoutPath.viewId: the id, else
     /// the drawn type and the position), `() -> Void` with nothing — what the
@@ -164,7 +164,7 @@ public struct DynamicEventHelper {
     /// `binding`, with `onValueChange` after each of the control's own writes
     /// that changes the value — the user's operation. A view model's change
     /// never goes through the control's binding, so it reports nothing
-    /// (4f's ruling: the control's update, then onValueChange, then onClick,
+    /// (the orchestrator's ruling: the control's update, then onValueChange, then onClick,
     /// all from the user's operation; kjui and KotlinJsonUI's Dynamic call it
     /// from the operation only). The bound paths observed the value with
     /// `.onChange(of:)`, which ran on the next update — after the call — and

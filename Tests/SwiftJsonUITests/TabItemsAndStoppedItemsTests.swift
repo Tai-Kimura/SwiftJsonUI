@@ -2,7 +2,7 @@
 //  TabItemsAndStoppedItemsTests.swift
 //  SwiftJsonUITests
 //
-//  The judgments the Dynamic runtime takes for two of 4f's rulings (jsonui-cli
+//  The judgments the Dynamic runtime takes for two of the orchestrator's rulings (jsonui-cli
 //  1.9.0), the same as sjui build's emit:
 //  - a TabView's `enabled` stops its tab items, not the tab view: no
 //    `.disabled` stage for it (applyDisabled), the tab items read the value

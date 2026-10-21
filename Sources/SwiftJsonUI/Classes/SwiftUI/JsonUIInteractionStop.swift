@@ -67,7 +67,7 @@ private struct JsonUIControlStoppedKey: EnvironmentKey {
 /// (`accessibilityRepresentation`, which is not drawn): each segment is still
 /// there, with its selection, and reads not enabled and not responding.
 /// Nothing drawn changes (measured; `.disabled(true)` on the control itself
-/// dims it). 4f's ruling (jsonui-cli 1.9.0): the items are told they are
+/// dims it). The orchestrator's ruling (jsonui-cli 1.9.0): the items are told they are
 /// stopped too, as Compose marks each one disabled.
 public struct JsonUIStoppedControl: ViewModifier {
     @Environment(\.jsonuiInteractionStopped) private var handedDown

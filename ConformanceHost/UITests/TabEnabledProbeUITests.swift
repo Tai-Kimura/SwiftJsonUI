@@ -1,7 +1,7 @@
 import XCTest
 
 /// What a TabView's `enabled: false` stops (TabEnabledProbeView): the tab
-/// items, not the tab shown (4f's ruling, jsonui-cli 1.9.0). For each gate —
+/// items, not the tab shown (the orchestrator's ruling, jsonui-cli 1.9.0). For each gate —
 /// E `enabled: false`, N `enabled: true` (the control), U
 /// `userInteractionEnabled: false` (the tab view and what it shows) — on both
 /// paths (DynamicView and what sjui build emits): a tap on the Button in the

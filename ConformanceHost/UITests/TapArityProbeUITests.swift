@@ -1,7 +1,7 @@
 import XCTest
 
 /// A handler that takes no value, called as its declared closure type asks
-/// (TapArityProbeView; 4f's ruling on
+/// (TapArityProbeView; the orchestrator's ruling on
 /// control-onclick-is-called-differently-on-every-path, 1.9.0), on both paths:
 /// `()` with no argument, `(String)` with the viewId — every node id-less, so
 /// the drawn type and the position. A View's, an Image's and a Label's tap, the

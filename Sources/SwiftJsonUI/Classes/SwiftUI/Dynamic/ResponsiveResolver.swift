@@ -234,7 +234,7 @@ public struct ResponsiveResolver {
 
         // Merge overrides on top of base attributes — but `style`: an
         // override's attributes are its own, written in it, and a style named
-        // there is applied by no path (4f's ruling, 1.9.0; the shared
+        // there is applied by no path (the orchestrator's ruling, 1.9.0; the shared
         // validator names it). Merged, it sat on the node unapplied until a
         // second pass of the stages applied it.
         for (key, value) in matchingOverrides where key != "style" {

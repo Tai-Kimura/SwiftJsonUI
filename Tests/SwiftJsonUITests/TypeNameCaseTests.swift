@@ -3,7 +3,7 @@ import SwiftUI
 @testable import SwiftJsonUI
 
 #if DEBUG
-/// A component type is its SSoT spelling, case and all (4f's ruling, 1.9.0):
+/// A component type is its SSoT spelling, case and all (the orchestrator's ruling, 1.9.0):
 /// "switch" is not Switch, an app's "progressbar" is not its "ProgressBar".
 /// The builder switched on `type.lowercased()` and the registry keyed both
 /// sides lowercased, so Dynamic drew what no codegen draws. A spelling that

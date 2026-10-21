@@ -74,7 +74,7 @@ public struct TabViewConverter {
         // `enabled` stops the tab items, not the tab view (applyDisabled
         // leaves a TabView as it is): each tab's content sets the tab bar
         // items' isEnabled (jsonuiTabItemsEnabled), so the tab shown still
-        // works — the Compose and web forms (4f's ruling, jsonui-cli 1.9.0).
+        // works — the Compose and web forms (the orchestrator's ruling, jsonui-cli 1.9.0).
         let tabsEnabled = DynamicModifierHelper.enabledBinding(component, data: data)
 
         // The tab view, over whichever selection it moves (the view model's

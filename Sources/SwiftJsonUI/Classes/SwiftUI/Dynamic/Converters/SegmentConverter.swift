@@ -83,7 +83,7 @@ public struct SegmentConverter {
         // platform named). UIKit wires it to .valueChanged, and sjui build,
         // kjui build and rjui call it where onValueChange is not declared, from
         // the user's choice; this runtime read it not at all, so a DEBUG build
-        // did not call what the release build called (4f's ruling).
+        // did not call what the release build called (the orchestrator's ruling).
         let handler = component.onValueChangeSpelling()
             .flatMap { DynamicEventHelper.extractPropertyName(from: $0) != nil ? $0 : nil }
             ?? Self.valueChangeSelector(attrs.valueChange)

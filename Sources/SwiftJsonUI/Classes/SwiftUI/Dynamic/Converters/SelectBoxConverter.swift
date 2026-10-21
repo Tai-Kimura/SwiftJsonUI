@@ -27,14 +27,14 @@ public struct SelectBoxConverter {
 
     /// A date picker for `selectItemType` "Date", as declared
     /// (attribute_definitions.json SelectBox.selectItemType: "Normal" | "Date"),
-    /// a list otherwise — the spelling the codegen compares (4f's ruling,
+    /// a list otherwise — the spelling the codegen compares (the orchestrator's ruling,
     /// 1.9.0). "date" was a date picker on this path only.
     static func itemType(of component: DynamicComponent) -> SelectBoxView.SelectItemType {
         component.selectItemType == "Date" ? .date : .normal
     }
 
     /// onValueChange's call for a pick, by the closure the data holds for it
-    /// (4f's ruling on control-onclick-is-called-differently-on-every-path,
+    /// (the orchestrator's ruling on control-onclick-is-called-differently-on-every-path,
     /// 1.9.0; selectbox_converter.rb's pick_invocation reads the same from the
     /// declaration): `(String)` — the picked item, even with selectedIndex
     /// bound; `(String, Int)` — the viewId and the index; `(String, String)` —
@@ -42,7 +42,7 @@ public struct SelectBoxConverter {
     /// is the item's place in `items` (the bound selectedIndex once
     /// SelectBoxView has written it), -1 for the prompt. A date has none: a
     /// handler taking an Int is not called for it, and is named once in DEBUG
-    /// (4f's ruling, 1.9.0; the build names it too —
+    /// (the orchestrator's ruling, 1.9.0; the build names it too —
     /// BindingValidatorCore.date_pick_handler_problem — and sjui writes an
     /// `// ERROR:` comment where the call would be).
     ///
@@ -277,7 +277,7 @@ public struct SelectBoxConverter {
         // first) and before onClick — with what the handler's parameters ask
         // for (reportPick). Not from the view model's own writes: an
         // `.onChange(of:)` on the bound value reported those too, on the next
-        // update and so after the call (4f's ruling: the control's update,
+        // update and so after the call (the orchestrator's ruling: the control's update,
         // then onValueChange, then onClick, all from the user's operation). A
         // box bound to a plain value had neither: nothing was observed, and
         // the pick was not passed on.

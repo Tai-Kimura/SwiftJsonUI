@@ -3,7 +3,7 @@
 //  ConformanceHost
 //
 //  What a TabView's `enabled: false` stops: the tab items, not the tab shown
-//  (4f's ruling, jsonui-cli 1.9.0 — the Compose and web forms). NOT part of
+//  (the orchestrator's ruling, jsonui-cli 1.9.0 — the Compose and web forms). NOT part of
 //  the conformance suite. Launch with `-tabEnabledProbe <E|N|U>` (enabled
 //  false / enabled true, the control / userInteractionEnabled false, which
 //  stops the tab view and what it shows) and `-ocPath <dynamic|codegen>`:

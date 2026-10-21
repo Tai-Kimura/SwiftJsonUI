@@ -66,7 +66,7 @@ public enum LeafChildren {
 /// A component type drawn as unknown — declared nowhere, or written in
 /// another case than it is declared or registered in ("switch" for "Switch"),
 /// which no path draws as that type — named once per spelling in DEBUG, in
-/// the sentence every path says (4f's ruling, 1.9.0: the shared validator,
+/// the sentence every path says (the orchestrator's ruling, 1.9.0: the shared validator,
 /// the codegens, both Dynamic runtimes), with the type it may mean.
 public enum TypeNameSpelling {
     /// The sentence, and its tail for a type that differs in case only.
@@ -103,7 +103,7 @@ public class CustomComponentRegistry {
     public static let shared = CustomComponentRegistry()
     
     /// Registered adapters keyed by component type, as spelled: a type
-    /// name is case-sensitive, as the SSoT spells it (4f's ruling, 1.9.0).
+    /// name is case-sensitive, as the SSoT spells it (the orchestrator's ruling, 1.9.0).
     private var adapters: [String: CustomComponentAdapter] = [:]
     
     private init() {}

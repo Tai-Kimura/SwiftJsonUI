@@ -4,7 +4,7 @@
 //
 //  A handler that takes no value — a tap (onClick, the onclick selector), a
 //  control's onClick from its operation, a Button's, a long press, onAppear,
-//  onDisappear — called as its declared closure type asks (4f's ruling on
+//  onDisappear — called as its declared closure type asks (the orchestrator's ruling on
 //  control-onclick-is-called-differently-on-every-path, 1.9.0): `()` with no
 //  argument, `(String)` with the viewId (the id, else the drawn type and the
 //  position: `view_0_0`, `image_0_2`, …). Every node here is id-less, its

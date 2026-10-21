@@ -8,7 +8,7 @@ import XCTest
 /// in another case (written by jsonui-cli's UnknownTypeCaseRows, copied here
 /// byte for byte and compared by CI). The candidate is TypeSynonyms
 /// .caseOnlyMatch over the declared types, the synonyms and the alias
-/// sections — the one search every path asks (4f's ruling); the builder
+/// sections — the one search every path asks (the orchestrator's ruling); the builder
 /// searched the declared types alone.
 final class TypeNameCaseVectorsTests: XCTestCase {
     private struct Section: Decodable {

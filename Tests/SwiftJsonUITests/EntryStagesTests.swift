@@ -2,7 +2,7 @@
 //  EntryStagesTests.swift
 //  SwiftJsonUITests
 //
-//  Every entry runs the stages the loader runs (4f's ruling on the entries
+//  Every entry runs the stages the loader runs (the orchestrator's ruling on the entries
 //  that skip stages, 1.9.0). A component the app decoded itself, handed to
 //  DynamicView(component:), was only stamped: its styles, includes and
 //  responsive overrides were skipped. It now goes through

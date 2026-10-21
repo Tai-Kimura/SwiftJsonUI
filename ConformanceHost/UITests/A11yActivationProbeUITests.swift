@@ -21,7 +21,7 @@ import XCTest
 /// flipped; the cell drawn without `.equatable()` is the contrast.
 /// A wrapper control's item (a Segment's segment, a Radio's item — elements
 /// of their own inside the control) responds with no stop, and inside the
-/// stop neither responds nor reads as an enabled button (4f's ruling,
+/// stop neither responds nor reads as an enabled button (the orchestrator's ruling,
 /// jsonui-cli 1.9.0: a stopped control does not say it is operable, down to
 /// its items). `-wrappers` prints the forms the emit chose from
 /// (testTheWrapperCandidates).
@@ -281,7 +281,7 @@ final class A11yActivationProbeUITests: XCTestCase {
                 // A wrapper control's item (a segment, a Radio's item) — an
                 // element of its own inside the control: with no stop it
                 // responds; inside the stop it neither responds nor reads as
-                // an enabled button (4f's ruling, jsonui-cli 1.9.0: a stopped
+                // an enabled button (the orchestrator's ruling, jsonui-cli 1.9.0: a stopped
                 // control does not say it is operable, down to its items).
                 if (e.name.hasPrefix("cg") || e.name.hasPrefix("dyn")) && ["Seg", "Rad"].contains(where: { e.name.contains($0) }) {
                     if e.via != "label" {

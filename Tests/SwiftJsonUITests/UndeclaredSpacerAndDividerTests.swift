@@ -5,7 +5,7 @@
 //  Spacer, Space, Divider and Separator are not component types: neither
 //  attribute_definitions.json nor component_metadata.json declares any of
 //  them. The codegens name all four spellings as unknown types and draw
-//  nothing there (sjui's DefaultConverter, kjui, rjui — 4f's ruling, 1.9.0);
+//  nothing there (sjui's DefaultConverter, kjui, rjui — the orchestrator's ruling, 1.9.0);
 //  KotlinJsonUI's Dynamic has no case for them. The
 //  Dynamic runtime here was the one face that drew them (a SwiftUI Spacer, a
 //  Divider), so DEBUG showed a screen the release build does not.

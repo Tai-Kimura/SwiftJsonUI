@@ -3,12 +3,12 @@
 //  SwiftJsonUITests
 //
 //  What a SelectBox's onValueChange is handed on the Dynamic path, by the
-//  closure the data holds for it (SelectBoxConverter.reportPick; 4f's ruling
+//  closure the data holds for it (SelectBoxConverter.reportPick; the orchestrator's ruling
 //  on control-onclick-is-called-differently-on-every-path, 1.9.0): `(String)`
 //  the picked item, even with selectedIndex bound; `(String, Int)` the viewId
 //  and the index; `(String, String)` the viewId and the item; `(Int)` the
 //  index; `()` nothing. A date has no index: a handler taking an Int is not
-//  called for it, and is named once (4f's ruling, 1.9.0). End to end, on both
+//  called for it, and is named once (the orchestrator's ruling, 1.9.0). End to end, on both
 //  iOS paths: ConformanceHost PickArityProbeUITests.
 //
 
@@ -86,7 +86,7 @@ final class SelectBoxPickReportTests: XCTestCase {
     }
 
     /// `selectItemType` as declared: "Date" is a date picker, anything else
-    /// — "date" too — a list (4f's ruling, 1.9.0; the codegen's comparison).
+    /// — "date" too — a list (the orchestrator's ruling, 1.9.0; the codegen's comparison).
     func testSelectItemTypeIsReadAsDeclared() throws {
         func type(_ json: String) throws -> SelectBoxView.SelectItemType {
             SelectBoxConverter.itemType(of: try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8)))

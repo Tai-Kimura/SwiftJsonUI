@@ -452,7 +452,7 @@ public struct DynamicModifierHelper {
     /// shipped with a codegen implementation and no Dynamic one; both faces
     /// rendered an identical picture on iOS 18 because neither drew glass, so
     /// the conformance comparison agreed for the wrong reason. It only became
-    /// visible when the iOS lane moved to an SDK that has Liquid Glass —
+    /// visible when the iOS builds moved to an SDK that has Liquid Glass —
     /// measured on run 34849471695, `common_glass__true.png`, hamming 151.
     /// A parity gap that only one OS can see is not a gap the suite finds; the
     /// OS move is what turned the instrument on.
@@ -1086,7 +1086,7 @@ public struct DynamicModifierHelper {
     public static func applyDisabled(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
         // A TabView's `enabled` stops its tab items, not the tab view: the
         // TabView converter hands it to each tab (jsonuiTabItemsEnabled).
-        // `.disabled` here disabled the controls of the tab shown too (4f's
+        // `.disabled` here disabled the controls of the tab shown too (the orchestrator's
         // ruling, jsonui-cli 1.9.0; measured, ConformanceHost
         // -tabEnabledProbe).
         if isTabView(component) { return view }

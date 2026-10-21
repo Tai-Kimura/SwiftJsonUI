@@ -62,7 +62,7 @@ enum LayoutPath {
     /// The viewId a component's handlers are handed: its id, else the type it
     /// is drawn as with its first letter lowercased, `_`, and its position —
     /// `switch_0_1`, `selectBox_0_3` — the name every path gives it
-    /// (JsonUIShared::LayoutPath.view_id; 4f's ruling, 1.9.0). An id-less
+    /// (JsonUIShared::LayoutPath.view_id; the orchestrator's ruling, 1.9.0). An id-less
     /// component's viewId was a per-kind word (`toggle`, `selectBox`,
     /// `textEditor`), the same for every one of the kind.
     static func viewId(of component: DynamicComponent) -> String {

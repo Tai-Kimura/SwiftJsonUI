@@ -9,7 +9,7 @@
 //  one, and the conformance suite compared the two faces and agreed — because
 //  on iOS 18 neither face draws glass, so "identical picture" was true for a
 //  reason that had nothing to do with either implementation. The gap became
-//  visible only when the iOS lane moved to an SDK that has Liquid Glass
+//  visible only when the iOS builds moved to an SDK that has Liquid Glass
 //  (run 34849471695: `common_glass__true.png`, hamming distance 151).
 //
 //  ⚠️ So a cross-face comparison is not, by itself, coverage of either face:

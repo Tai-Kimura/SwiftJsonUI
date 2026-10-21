@@ -354,11 +354,11 @@ public struct DynamicComponentBuilder: View {
     /// The types declaredComponent draws, as spelled (the SSoT's section
     /// names; CircleImage is a type-synonym spelling drawn as Image). The
     /// switch compared `type.lowercased()`, so "switch" was drawn as Switch
-    /// on this path alone (4f's ruling, 1.9.0: case-sensitive).
+    /// on this path alone (the orchestrator's ruling, 1.9.0: case-sensitive).
     /// The spelling an unknown `type` differs from only in case, offered in
     /// its sentence: TypeSynonyms.caseOnlyMatch over the declared types, the
     /// synonyms and the alias sections — the one search jsonui-cli's
-    /// validator and codegen ask (4f's ruling). It searched the declared
+    /// validator and codegen ask (the orchestrator's ruling). It searched the declared
     /// types alone, so "hstack" was offered nothing here and "HStack" there.
     static func spellingCandidate(for type: String) -> String? {
         TypeSynonyms.caseOnlyMatch(type, known: declaredTypes)
@@ -539,7 +539,7 @@ public struct DynamicComponentBuilder: View {
 }
 /// A node drawn with a stage not run on it — a `style` not applied, a
 /// `responsive` block not resolved, an `include` not expanded — named once
-/// per stage in DEBUG (4f's ruling on the entries that skip stages, 1.9.0).
+/// per stage in DEBUG (the orchestrator's ruling on the entries that skip stages, 1.9.0).
 /// The symptom, not the entry: the entries stamp and resolve, but a node a
 /// stage does not walk to arrives the same way, and so does a style whose
 /// file is missing.

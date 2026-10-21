@@ -1,7 +1,7 @@
 import XCTest
 
 /// What a SelectBox's onValueChange is handed, by the parameters the data
-/// declares for it (PickArityProbeView; 4f's ruling on
+/// declares for it (PickArityProbeView; the orchestrator's ruling on
 /// control-onclick-is-called-differently-on-every-path, 1.9.0), on both paths:
 /// `(String)` the picked item, even with selectedIndex bound; `(String, Int)`
 /// the viewId and the index; `(String, String)` the viewId and the item — each

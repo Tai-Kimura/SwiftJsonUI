@@ -2,7 +2,7 @@
 //  JsonUITabItemsEnabled.swift
 //  SwiftJsonUI
 //
-//  A TabView's `enabled` stops its tab items, not the tab view (4f's ruling,
+//  A TabView's `enabled` stops its tab items, not the tab view (the orchestrator's ruling,
 //  jsonui-cli 1.9.0 — the Compose form, NavigationBarItem's `enabled`, and
 //  web's, each tab's `<button disabled>`). The tab view's control is its row
 //  of tabs; what a tab shows is a layout of its own, which a user who means

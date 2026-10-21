@@ -4,7 +4,7 @@
 //
 //  The dictionary stages a layout goes through before it is decoded —
 //  StyleProcessor, then ResponsiveResolver — run twice give what they give
-//  once (4f's condition on the entries that skip stages: ConformanceHost's
+//  once (the orchestrator's condition on the entries that skip stages: ConformanceHost's
 //  FixtureLoader applies styles and then hands the component to
 //  DynamicView(component:), which will run the stages again).
 //
@@ -65,7 +65,7 @@ final class EntryPipelineIdempotenceTests: XCTestCase {
 
     /// A style that brings children, one of them styled itself: the child's
     /// style is applied the first time, as every other path applies it
-    /// (4f's ruling, 1.9.0). It was left on the child, and a second pass
+    /// (the orchestrator's ruling, 1.9.0). It was left on the child, and a second pass
     /// applied it.
     func testAStyleThatBringsAStyledChild() throws {
         let tag = "idem_\(UUID().uuidString.prefix(8))"
@@ -79,7 +79,7 @@ final class EntryPipelineIdempotenceTests: XCTestCase {
     }
 
     /// A responsive override that names a style: applied by no path, and
-    /// named (4f's ruling, 1.9.0). It was merged onto the node unapplied, and
+    /// named (the orchestrator's ruling, 1.9.0). It was merged onto the node unapplied, and
     /// a second pass applied it.
     func testAResponsiveOverrideThatNamesAStyle() throws {
         let tag = "idem_\(UUID().uuidString.prefix(8))"

@@ -4,7 +4,7 @@
 //
 //  A handler that takes no value — a tap, a control's or a Button's onClick,
 //  a long press, onAppear / onDisappear, a Web's onLoadFailed — is called as
-//  the closure the data holds asks (4f's ruling on
+//  the closure the data holds asks (the orchestrator's ruling on
 //  control-onclick-is-called-differently-on-every-path, 1.9.0): `(String)`
 //  with the viewId (the id, else the drawn type and the position), `()` with
 //  nothing. Every one of them went through `call`, which calls `() -> Void`
@@ -59,7 +59,7 @@ final class NoValueHandlerCallTests: XCTestCase {
 
     /// `x`, `@{x}` and `x:` (UIKit's sender mark) are the one name `x` —
     /// what onAppear / onDisappear and every other handler is looked up by
-    /// (4f's ruling, 1.9.0). `x:` was looked up with its colon.
+    /// (the orchestrator's ruling, 1.9.0). `x:` was looked up with its colon.
     func testTheThreeSpellingsAreOneName() {
         for spelling in ["named", "@{named}", "named:"] {
             XCTAssertEqual(DynamicEventHelper.handlerName(from: spelling), "named", spelling)
