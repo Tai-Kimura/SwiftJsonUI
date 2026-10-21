@@ -80,7 +80,19 @@ final class InteractionGateProbeUITests: XCTestCase {
         let dynKid = byId("dynKidUieFalse")
         origin.withOffset(CGVector(dx: dynKid.maxX + 8, dy: dynKid.midY)).tap()
         tap(dynKid)
-        for id in ["swUiePlain", "swUieFalse", "dynSwPlain", "dynSwUieFalse"] { tap(byId(id)) }
+        // The control rows' switches (no gate) say a tap reaches: one the simulator lost is tapped once more, and
+        // said (the 10-18 weekly run lost one tap on swUiePlain at its centre; 13 runs of the same build did not).
+        // The gated rows are tapped once only — a second tap must never be the reason a gate reads as holding.
+        var retapped: [String] = []
+        for id in ["swUiePlain", "swUieFalse", "dynSwPlain", "dynSwUieFalse"] {
+            let r = byId(id)
+            guard switched[id] == true else { tap(r); continue }
+            let element = app.descendants(matching: .any).matching(identifier: id).firstMatch
+            if Self.tapControl(id, read: { element.value as? String }, tap: { tap(r) }, log: { print($0) }) {
+                retapped.append(id)
+            }
+        }
+        XCTAssertTrue(retapped.allSatisfy { switched[$0] == true }, "a gated switch was tapped twice: \(retapped)")
         sleep(1)
 
         let text = app.staticTexts["gate_readout"].label
@@ -113,4 +125,24 @@ final class InteractionGateProbeUITests: XCTestCase {
             XCTAssertEqual(sw[name], "\(want)", "\(name) switched")
         }
     }
+
+    /// Taps a control row's switch and waits up to `wait` seconds for its value to change; when it did not, taps it
+    /// once more and says so (`GATE_PROBE retap <id> …`). Returns whether it tapped again. Only for the rows with
+    /// no gate: their job is to say the tap reaches, and a lost tap is the simulator's, not the gate's.
+    @discardableResult
+    static func tapControl(_ id: String, read: () -> String?, tap: () -> Void, wait: TimeInterval = 2,
+                           log: (String) -> Void) -> Bool {
+        let before = read()
+        tap()
+        let deadline = Date().addingTimeInterval(wait)
+        while Date() < deadline {
+            if read() != before { return false }
+            Thread.sleep(forTimeInterval: min(0.2, wait / 4))
+        }
+        if read() != before { return false }
+        log("GATE_PROBE retap \(id): its value stayed \(before ?? "nil") \(wait)s after one tap — tapped once more")
+        tap()
+        return true
+    }
 }
+
