@@ -191,6 +191,7 @@ struct ConformanceRootView: View {
         if arguments.contains("-screenMarkerSplitProbe") { return AnyView(ScreenMarkerSplitProbeView()) }
         if arguments.contains("-screenMarkerFullScreenProbe") { return AnyView(ScreenMarkerFullScreenProbeView()) }
         if arguments.contains("-screenMarkerOverlayProbe") { return AnyView(ScreenMarkerOverlayProbeView()) }
+        if arguments.contains("-screenMarkerShrinkProbe") { return AnyView(ScreenMarkerShrinkProbeView()) }
         if arguments.contains("-offsetProbe") { return AnyView(OffsetHitTargetProbeView()) }
         if arguments.contains("-confirmationDialogProbe") { return AnyView(ConfirmationDialogProbeView()) }
         if arguments.contains("-duplicateIdentifierProbe") { return AnyView(DuplicateIdentifierProbeView()) }
