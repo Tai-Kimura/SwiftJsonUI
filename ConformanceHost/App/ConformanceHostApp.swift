@@ -202,6 +202,9 @@ struct ConformanceRootView: View {
         if arguments.contains("-a11yActivationProbe") { return AnyView(A11yActivationProbeView()) }
         if arguments.contains("-interactionInputsProbe") { return AnyView(InteractionInputsProbeView()) }
         if arguments.contains("-canTapCodegenProbe") { return AnyView(CanTapCodegenProbeView()) }
+        if let i = arguments.firstIndex(of: "-autoFocusProbe"), i + 1 < arguments.count {
+            return AnyView(AutoFocusCodegenProbeView(variant: arguments[i + 1]))
+        }
         if arguments.contains("-responsiveDisabledProbe") { return AnyView(ResponsiveDisabledProbeView()) }
         if arguments.contains("-sameTypeDuplicateProbe") { return AnyView(SameTypeDuplicateProbeView()) }
         if arguments.contains("-clippedViewportProbe") { return AnyView(ClippedViewportProbeView()) }
