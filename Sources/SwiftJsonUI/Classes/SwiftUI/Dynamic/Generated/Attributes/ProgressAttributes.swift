@@ -21,7 +21,9 @@ public struct ProgressAttributes {
         "color",
         "hidesWhenStopped",
         "indicatorStyle",
+        "maximumValue",
         "progress",
+        "progressHeight",
         "progressImage",
         "progressTintColor",
         "progressViewStyle",
@@ -54,8 +56,14 @@ public struct ProgressAttributes {
     /// ActivityIndicator size style.
     public let indicatorStyle: AttrEnum<IndicatorStyle>?
 
+    /// The value that fills the bar, the <progress> max (rjui progress_converter).
+    public let maximumValue: Double?
+
     /// Progress value (0-1, can be binding)
     public let progress: AttrValue<Double>?
+
+    /// Height of the bar (rjui progress_converter).
+    public let progressHeight: Double?
 
     /// Custom progress image
     public let progressImage: String?
@@ -82,7 +90,9 @@ public struct ProgressAttributes {
         self.color = AttrCoerce.string(AttrCoerce.lookup(json, "color"))
         self.hidesWhenStopped = AttrCoerce.boolean(AttrCoerce.lookup(json, "hidesWhenStopped"))
         self.indicatorStyle = Self.parseIndicatorStyle(AttrCoerce.lookup(json, "indicatorStyle"))
+        self.maximumValue = AttrCoerce.number(AttrCoerce.lookup(json, "maximumValue"))
         self.progress = AttrCoerce.attrValue(AttrCoerce.lookup(json, "progress"), AttrCoerce.number)
+        self.progressHeight = AttrCoerce.number(AttrCoerce.lookup(json, "progressHeight"))
         self.progressImage = AttrCoerce.string(AttrCoerce.lookup(json, "progressImage"))
         self.progressTintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "progressTintColor"), AttrCoerce.string)
         self.progressViewStyle = AttrCoerce.string(AttrCoerce.lookup(json, "progressViewStyle"))

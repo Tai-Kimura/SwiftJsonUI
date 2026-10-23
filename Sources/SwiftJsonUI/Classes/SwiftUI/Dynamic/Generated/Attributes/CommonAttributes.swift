@@ -247,6 +247,7 @@ public struct CommonAttributes {
         "widthRaw",
         "widthWeight",
         "wrapContent",
+        "zIndex",
     ]
 
     /// Alias spelling → canonical attribute name. Alias
@@ -699,6 +700,9 @@ public struct CommonAttributes {
     /// Wrap content
     public let wrapContent: Bool?
 
+    /// Stacking order among siblings; wins over indexAbove / indexBelow (rjui base_converter).
+    public let zIndex: Double?
+
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
@@ -848,6 +852,7 @@ public struct CommonAttributes {
         self.widthRaw = AttrCoerce.string(AttrCoerce.lookup(json, "widthRaw"))
         self.widthWeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "widthWeight"), AttrCoerce.number)
         self.wrapContent = AttrCoerce.boolean(AttrCoerce.lookup(json, "wrapContent"))
+        self.zIndex = AttrCoerce.number(AttrCoerce.lookup(json, "zIndex"))
     }
 
     private static func parseAlignment(_ raw: Any?) -> AttrEnum<Alignment>? {

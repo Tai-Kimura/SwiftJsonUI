@@ -55,6 +55,7 @@ public struct ButtonAttributes {
         "fontWeight",
         "highlightBackground",
         "highlightColor",
+        "href",
         "image",
         "partialAttributes",
         "tapBackground",
@@ -108,6 +109,9 @@ public struct ButtonAttributes {
     /// Highlight color - hex string or color name from colors.json (binding supported) [aliases: hilightColor]
     public let highlightColor: AttrValue<String>?
 
+    /// Draws the button as a link to this URL (rjui button_converter).
+    public let href: String?
+
     /// Button image - asset name (binding supported)
     public let image: AttrValue<String>?
 
@@ -137,6 +141,7 @@ public struct ButtonAttributes {
         self.fontWeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontWeight"), { $0 })
         self.highlightBackground = AttrCoerce.string(AttrCoerce.lookup(json, "highlightBackground"))
         self.highlightColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightColor", ["hilightColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
+        self.href = AttrCoerce.string(AttrCoerce.lookup(json, "href"))
         self.image = AttrCoerce.attrValue(AttrCoerce.lookup(json, "image"), AttrCoerce.string)
         self.partialAttributes = AttrCoerce.array(AttrCoerce.lookup(json, "partialAttributes"))
         self.tapBackground = AttrCoerce.string(AttrCoerce.lookup(json, "tapBackground"))

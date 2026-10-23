@@ -23,6 +23,7 @@ public struct BlurAttributes {
         "child",
         "children",
         "effectStyle",
+        "intensity",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -52,6 +53,9 @@ public struct BlurAttributes {
     /// Blur effect style
     public let effectStyle: AttrEnum<EffectStyle>?
 
+    /// Blur strength 0-1, drawn as a backdrop blur of intensity x 20 px (rjui blur_converter).
+    public let intensity: Double?
+
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
@@ -60,6 +64,7 @@ public struct BlurAttributes {
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.effectStyle = Self.parseEffectStyle(AttrCoerce.lookup(json, "effectStyle"))
+        self.intensity = AttrCoerce.number(AttrCoerce.lookup(json, "intensity"))
     }
 
     private static func parseEffectStyle(_ raw: Any?) -> AttrEnum<EffectStyle>? {

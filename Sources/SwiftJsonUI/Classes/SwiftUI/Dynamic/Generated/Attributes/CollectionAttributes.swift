@@ -16,6 +16,16 @@ public struct CollectionAttributes {
         public static let declaredSpellings: [String] = ["top", "center", "bottom"]
     }
 
+    public enum FlowAlignment: String {
+        case leading = "leading"
+        case center = "center"
+        case trailing = "trailing"
+        case end = "end"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["leading", "center", "trailing", "end"]
+    }
+
     public enum Layout: String {
         case vertical = "vertical"
         case horizontal = "horizontal"
@@ -76,6 +86,7 @@ public struct CollectionAttributes {
         "contentInsets",
         "currentPage",
         "defaultScrollAnchor",
+        "flowAlignment",
         "footerClasses",
         "headerClasses",
         "hideSeparator",
@@ -163,6 +174,9 @@ public struct CollectionAttributes {
 
     /// Initial scroll position anchor (iOS 17+). Sets where the scroll view starts. On Compose (kjui codegen and KotlinJsonUI Dynamic) it is applied once, when the list first has cells, by scrolling to the middle (center) or last (bottom) CELL counted as scrollTo counts them - across the drawn sections, headers, footers and grid fillers not counted (4f ruling 2026-09-27, round 11); center lands that cell's middle at the viewport's middle, as iOS and the web draw a list longer than its viewport (kjui-defaultscrollanchor-center-differs-when-content-overflows, 2026-10-14: Compose put it at the top edge, and a list whose middle cell could not get there stopped at its end, drawing bottom's picture); until jsonui-cli 1.9.0 it counted the first data section only and scrolled to that lazy item index. Under reverseLayout a list rests at its visual bottom, so top and bottom trade places, as they do for scrollAnchor (4f ruling 2026-09-27, round 12 - where iOS lands, which draws the same order from content anchored at its bottom): bottom is where the list rests and moves nothing; top goes to the cell drawn at the visual top, the last one the content emits. Until jsonui-cli 1.9.0 bottom went to the last cell, which a reversed list draws at its visual top. A container that is not a lazy list and draws no reverseLayout (the wrapContent Column, the horizontal EAGER one) takes the middle or last cell to its top edge (round 12); the vertical EAGER one draws reverseLayout and follows the lazy list (round 13). It sets the initial position only: how a list keeps its position when its data changes with no scrollTo is each platform's own - iOS keeps the anchored edge while the list rests at it and, once a scrollTo has moved it, stays where it scrolled; Compose keeps the first visible item - so to follow new content, send scrollTo (4f ruling 2026-09-27, round 13; the iOS half measured round 14: a list resting at its bottom showed an appended cell there, and one a scrollTo had left above a cell kept it below the edge when more arrived). On Compose a list that is not reversed, with defaultScrollAnchor bottom and content shorter than its viewport, sits at its bottom, as iOS draws it (4f ruling 2026-09-27, round 14; it sat at the top). On a horizontal Collection, top / center / bottom mean the start / centre / end along the scroll axis, in reading direction, on every platform (4f ruling 2026-09-27); a horizontal list whose content is shorter than its row sits at the row's centre (center) or end (bottom) on Compose too, on the lazy and eager routes, as iOS draws it - measured on sjui codegen and SwiftJsonUI Dynamic - and a `lazy: none` row, which does not scroll, at its start, as sjui codegen draws it (4f ruling 2026-09-27, round 15; every Compose row sat at its start until jsonui-cli 1.9.0). A vertical list shorter than its viewport sits in its middle for center, on Compose too - the lazy and eager routes, reversed or not, as iOS draws them (measured 2026-09-27 on sjui codegen and SwiftJsonUI Dynamic) - and a `lazy: none` Column, which does not scroll, at its top (4f ruling 2026-09-27, round 16; it sat at the top, the bottom when reversed, until jsonui-cli 1.9.0).
     public let defaultScrollAnchor: AttrEnum<DefaultScrollAnchor>?
+
+    /// Row alignment of a flow layout: leading (default), center, trailing/end (kjui collection_component).
+    public let flowAlignment: AttrEnum<FlowAlignment>?
 
     /// Footer class definitions
     public let footerClasses: [Any]?
@@ -268,6 +282,7 @@ public struct CollectionAttributes {
         self.contentInsets = AttrCoerce.any(AttrCoerce.lookup(json, "contentInsets"))
         self.currentPage = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "currentPage"))
         self.defaultScrollAnchor = Self.parseDefaultScrollAnchor(AttrCoerce.lookup(json, "defaultScrollAnchor"))
+        self.flowAlignment = Self.parseFlowAlignment(AttrCoerce.lookup(json, "flowAlignment"))
         self.footerClasses = AttrCoerce.array(AttrCoerce.lookup(json, "footerClasses"))
         self.headerClasses = AttrCoerce.array(AttrCoerce.lookup(json, "headerClasses"))
         self.hideSeparator = AttrCoerce.boolean(AttrCoerce.lookup(json, "hideSeparator"))
@@ -311,6 +326,22 @@ public struct CollectionAttributes {
         }
         let near = (raw as? String).flatMap { s in DefaultScrollAnchor.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
         AttrCodegenWarnings.emit("Collection.defaultScrollAnchor: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
+        return .unknown(raw)
+    }
+
+    private static func parseFlowAlignment(_ raw: Any?) -> AttrEnum<FlowAlignment>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s {
+            case "leading": return .known(FlowAlignment.leading)
+            case "center": return .known(FlowAlignment.center)
+            case "trailing": return .known(FlowAlignment.trailing)
+            case "end": return .known(FlowAlignment.end)
+            default: break
+            }
+        }
+        let near = (raw as? String).flatMap { s in FlowAlignment.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Collection.flowAlignment: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 

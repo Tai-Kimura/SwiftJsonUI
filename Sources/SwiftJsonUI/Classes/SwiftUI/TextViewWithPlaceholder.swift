@@ -43,6 +43,9 @@ public struct TextViewWithPlaceholder: View {
     /// kept in two-way sync with the internal `@FocusState`, so a ViewModel can
     /// drive focus (`data.xIsFocused = true` → focus + keyboard) and observe it.
     private let externalFocus: SwiftUI.Binding<Bool>?
+    /// `autoFocus`: take the focus when the view appears (Dynamic's TextView;
+    /// the generated code sets its own `isFocused` binding on appear instead).
+    private let autoFocus: Bool
 
     public init(
         text: SwiftUI.Binding<String>,
@@ -62,9 +65,11 @@ public struct TextViewWithPlaceholder: View {
         minHeight: CGFloat? = nil,
         maxHeight: CGFloat? = nil,
         isFocused: SwiftUI.Binding<Bool>? = nil,
-        accessibilityIdentifier: String? = nil
+        accessibilityIdentifier: String? = nil,
+        autoFocus: Bool = false
     ) {
         self.accessibilityIdentifier = accessibilityIdentifier
+        self.autoFocus = autoFocus
         self._text = text
         self.externalFocus = isFocused
         self.hint = hint
@@ -201,6 +206,12 @@ public struct TextViewWithPlaceholder: View {
         .onAppear {
             if externalFocus?.wrappedValue == true {
                 isFocused = true
+            }
+            // The next run loop turn, as the generated code sets it: a
+            // FocusState set in the view's first appearance is dropped inside
+            // a navigation transition.
+            if autoFocus {
+                DispatchQueue.main.async { isFocused = true }
             }
         }
     }

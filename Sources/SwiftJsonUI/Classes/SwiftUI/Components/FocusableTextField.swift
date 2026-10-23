@@ -29,6 +29,8 @@ public struct FocusableTextField: View {
     /// and placeholder overlays, which would each take it too (see
     /// View.leafAccessibilityIdentifier).
     let accessibilityIdentifier: String?
+    /// `autoFocus`: take the focus when the field appears.
+    let autoFocus: Bool
 
     @FocusState private var isFocused: Bool
 
@@ -44,7 +46,8 @@ public struct FocusableTextField: View {
         onSubmitAction: (() -> Void)? = nil,
         clearButtonMode: TextFieldClearButtonMode? = nil,
         onFocusChange: ((Bool) -> Void)? = nil,
-        accessibilityIdentifier: String? = nil
+        accessibilityIdentifier: String? = nil,
+        autoFocus: Bool = false
     ) {
         self.placeholder = placeholder
         self._text = text
@@ -58,6 +61,7 @@ public struct FocusableTextField: View {
         self.clearButtonMode = clearButtonMode
         self.onFocusChange = onFocusChange
         self.accessibilityIdentifier = accessibilityIdentifier
+        self.autoFocus = autoFocus
     }
 
     public var body: some View {
@@ -84,6 +88,14 @@ public struct FocusableTextField: View {
         }
         .onChange(of: isFocused) { _, focused in
             onFocusChange?(focused)
+        }
+        // The next run loop turn, as the generated code sets its FocusState:
+        // one set in the view's first appearance is dropped inside a
+        // navigation transition.
+        .onAppear {
+            if autoFocus {
+                DispatchQueue.main.async { isFocused = true }
+            }
         }
         .onReceive(FocusManager.shared.focusRequestPublisher) { requestedId in
             if requestedId == fieldId {

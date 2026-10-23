@@ -122,6 +122,7 @@ public struct EditTextAttributes {
         "accessoryCornerRadius",
         "accessoryTextColor",
         "applyLiquidGlass",
+        "autoFocus",
         "autocapitalizationType",
         "autocorrectionType",
         "borderStyle",
@@ -130,6 +131,7 @@ public struct EditTextAttributes {
         "contentType",
         "disabledBackground",
         "doneText",
+        "editable",
         "fieldPadding",
         "font",
         "fontColor",
@@ -149,6 +151,7 @@ public struct EditTextAttributes {
         "leftView",
         "leftViewMode",
         "maxLength",
+        "name",
         "nextFocus",
         "onBeginEditing",
         "onBlur",
@@ -163,6 +166,7 @@ public struct EditTextAttributes {
         "onShouldReturn",
         "onSubmit",
         "onTextChange",
+        "outlined",
         "pattern",
         "placeholder",
         "required",
@@ -207,6 +211,9 @@ public struct EditTextAttributes {
     /// Apply liquid glass effect. SUPERSEDED by the common attribute 'glass' as of 2026-09-14. The fold from this spelling to glass belongs to the normalizer and IS NOT IMPLEMENTED YET, so both spellings are live: this one stays TextField-only, UIKit-only and backed by UIBlurEffect, while glass is declared on common for SwiftUI and UIKit. Nothing breaks while both exist - they do not overlap in platform, mode or component - but a layout should be written against glass.
     public let applyLiquidGlass: Bool?
 
+    /// Focuses the field when the screen appears (the keyboard opens): iOS SwiftUI sets the field's @FocusState on appear, Android Compose requests focus with a FocusRequester, web draws autoFocus.
+    public let autoFocus: Bool?
+
     /// Auto-capitalization type. UIKit's vocabulary, honoured on every platform (.textInputAutocapitalization / KeyboardCapitalization / the HTML autocapitalize attribute). `characters` is an accepted alias spelling of allCharacters.
     public let autocapitalizationType: AttrEnum<AutocapitalizationType>?
 
@@ -230,6 +237,9 @@ public struct EditTextAttributes {
 
     /// Text of the input accessory toolbar's Done button. UIKit only (see accessoryBackground).
     public let doneText: String?
+
+    /// false draws the input readOnly (rjui text_field_converter).
+    public let editable: Bool?
 
     /// Field padding
     public let fieldPadding: Double?
@@ -288,6 +298,9 @@ public struct EditTextAttributes {
     /// Maximum input length
     public let maxLength: Double?
 
+    /// The input's form name attribute (rjui text_field_converter).
+    public let name: String?
+
     /// ID of the next field to focus on submit (for focus chain)
     public let nextFocus: String?
 
@@ -329,6 +342,9 @@ public struct EditTextAttributes {
 
     /// Text change event handler
     public let onTextChange: String?
+
+    /// Draws the outlined text field style (kjui textfield_component; borderColor / borderWidth also select it).
+    public let outlined: Bool?
 
     /// Input validation pattern
     public let pattern: String?
@@ -377,6 +393,7 @@ public struct EditTextAttributes {
         self.accessoryCornerRadius = AttrCoerce.number(AttrCoerce.lookup(json, "accessoryCornerRadius"))
         self.accessoryTextColor = AttrCoerce.string(AttrCoerce.lookup(json, "accessoryTextColor"))
         self.applyLiquidGlass = AttrCoerce.boolean(AttrCoerce.lookup(json, "applyLiquidGlass"))
+        self.autoFocus = AttrCoerce.boolean(AttrCoerce.lookup(json, "autoFocus"))
         self.autocapitalizationType = Self.parseAutocapitalizationType(AttrCoerce.lookup(json, "autocapitalizationType"))
         self.autocorrectionType = Self.parseAutocorrectionType(AttrCoerce.lookup(json, "autocorrectionType"))
         self.borderStyle = Self.parseBorderStyle(AttrCoerce.lookup(json, "borderStyle"))
@@ -385,6 +402,7 @@ public struct EditTextAttributes {
         self.contentType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentType"), { Self.parseContentType($0) })
         self.disabledBackground = AttrCoerce.string(AttrCoerce.lookup(json, "disabledBackground"))
         self.doneText = AttrCoerce.string(AttrCoerce.lookup(json, "doneText"))
+        self.editable = AttrCoerce.boolean(AttrCoerce.lookup(json, "editable"))
         self.fieldPadding = AttrCoerce.number(AttrCoerce.lookup(json, "fieldPadding"))
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
@@ -404,6 +422,7 @@ public struct EditTextAttributes {
         self.leftView = AttrCoerce.object(AttrCoerce.lookup(json, "leftView"))
         self.leftViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "leftViewMode"))
         self.maxLength = AttrCoerce.number(AttrCoerce.lookup(json, "maxLength"))
+        self.name = AttrCoerce.string(AttrCoerce.lookup(json, "name"))
         self.nextFocus = AttrCoerce.string(AttrCoerce.lookup(json, "nextFocus"))
         self.onBeginEditing = AttrCoerce.string(AttrCoerce.lookup(json, "onBeginEditing"))
         self.onBlur = AttrCoerce.string(AttrCoerce.lookup(json, "onBlur"))
@@ -418,6 +437,7 @@ public struct EditTextAttributes {
         self.onShouldReturn = AttrCoerce.string(AttrCoerce.lookup(json, "onShouldReturn"))
         self.onSubmit = AttrCoerce.string(AttrCoerce.lookup(json, "onSubmit"))
         self.onTextChange = AttrCoerce.string(AttrCoerce.lookup(json, "onTextChange"))
+        self.outlined = AttrCoerce.boolean(AttrCoerce.lookup(json, "outlined"))
         self.pattern = AttrCoerce.string(AttrCoerce.lookup(json, "pattern"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))
         self.required = AttrCoerce.boolean(AttrCoerce.lookup(json, "required"))

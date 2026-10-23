@@ -19,9 +19,11 @@ public struct IconLabelAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "contentDescription",
         "font",
         "fontColor",
         "fontSize",
+        "fontWeight",
         "iconMargin",
         "iconPosition",
         "iconSize",
@@ -29,8 +31,10 @@ public struct IconLabelAttributes {
         "icon_on",
         "selected",
         "selectedFontColor",
+        "strikethrough",
         "text",
         "textShadow",
+        "underline",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -49,6 +53,9 @@ public struct IconLabelAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
+    /// Accessibility description of the icon (kjui iconlabel_component).
+    public let contentDescription: String?
+
     /// Font name
     public let font: String?
 
@@ -57,6 +64,9 @@ public struct IconLabelAttributes {
 
     /// Font size
     public let fontSize: Double?
+
+    /// Weight of the label's text (kjui iconlabel_component, rjui icon_label_converter). [accepts: string | number]
+    public let fontWeight: Any?
 
     /// Icon-text spacing
     public let iconMargin: Double?
@@ -79,19 +89,27 @@ public struct IconLabelAttributes {
     /// Selected text color - hex string or color name from colors.json
     public let selectedFontColor: String?
 
+    /// Strikes the label's text through (rjui icon_label_converter).
+    public let strikethrough: Bool?
+
     /// Label text (can be data binding)
     public let text: AttrValue<String>?
 
     /// Text shadow — same object contract as Label ({color, blur, offset: [x, y]}; the UIKit runtime passes the identical JSON to both) [accepts: string | object]
     public let textShadow: Any?
 
+    /// Underlines the label's text (rjui icon_label_converter).
+    public let underline: Bool?
+
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.contentDescription = AttrCoerce.string(AttrCoerce.lookup(json, "contentDescription"))
         self.font = AttrCoerce.string(AttrCoerce.lookup(json, "font"))
         self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor"))
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
+        self.fontWeight = AttrCoerce.any(AttrCoerce.lookup(json, "fontWeight"))
         self.iconMargin = AttrCoerce.number(AttrCoerce.lookup(json, "iconMargin"))
         self.iconPosition = Self.parseIconPosition(AttrCoerce.lookup(json, "iconPosition"))
         self.iconSize = AttrCoerce.any(AttrCoerce.lookup(json, "iconSize"))
@@ -99,8 +117,10 @@ public struct IconLabelAttributes {
         self.icon_on = AttrCoerce.string(AttrCoerce.lookup(json, "icon_on"))
         self.selected = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selected", ["isOn"], canonicalOnly: canonicalOnly), AttrCoerce.boolean)
         self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor"))
+        self.strikethrough = AttrCoerce.boolean(AttrCoerce.lookup(json, "strikethrough"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)
         self.textShadow = AttrCoerce.any(AttrCoerce.lookup(json, "textShadow"))
+        self.underline = AttrCoerce.boolean(AttrCoerce.lookup(json, "underline"))
     }
 
     private static func parseIconPosition(_ raw: Any?) -> AttrEnum<IconPosition>? {

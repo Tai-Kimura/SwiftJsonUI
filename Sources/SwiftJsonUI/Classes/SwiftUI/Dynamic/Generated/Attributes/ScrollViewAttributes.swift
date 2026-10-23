@@ -64,6 +64,7 @@ public struct ScrollViewAttributes {
         "bounces",
         "child",
         "children",
+        "contentInset",
         "contentInsetAdjustmentBehavior",
         "contentOffset",
         "contentSize",
@@ -109,6 +110,9 @@ public struct ScrollViewAttributes {
 
     /// Child components. A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
+
+    /// Padding inside the scroll area: one, two or four values (rjui scroll_view_converter). [accepts: number | array]
+    public let contentInset: Any?
 
     /// Content inset adjustment
     public let contentInsetAdjustmentBehavior: AttrEnum<ContentInsetAdjustmentBehavior>?
@@ -177,6 +181,7 @@ public struct ScrollViewAttributes {
         self.bounces = AttrCoerce.boolean(AttrCoerce.lookup(json, "bounces"))
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
+        self.contentInset = AttrCoerce.any(AttrCoerce.lookup(json, "contentInset"))
         self.contentInsetAdjustmentBehavior = Self.parseContentInsetAdjustmentBehavior(AttrCoerce.lookup(json, "contentInsetAdjustmentBehavior"))
         self.contentOffset = AttrCoerce.array(AttrCoerce.lookup(json, "contentOffset"))
         self.contentSize = AttrCoerce.array(AttrCoerce.lookup(json, "contentSize"))

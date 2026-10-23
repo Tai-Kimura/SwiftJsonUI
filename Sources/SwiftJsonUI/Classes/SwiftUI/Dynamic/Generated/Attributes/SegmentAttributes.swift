@@ -12,6 +12,7 @@ public struct SegmentAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "apportionsSegmentWidthsByContent",
         "fontColor",
+        "fontSize",
         "items",
         "momentary",
         "onValueChange",
@@ -46,6 +47,9 @@ public struct SegmentAttributes {
     /// Label color of the UNSELECTED segments - hex string or color name from colors.json [aliases: normalColor]
     public let fontColor: String?
 
+    /// Font size of the segments' text (rjui segment_converter).
+    public let fontSize: Double?
+
     /// Segment items array. Static labels; an entry may be a strings key, resolved at render time on every face. [required]
     public let items: [Any]?
 
@@ -73,6 +77,7 @@ public struct SegmentAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.apportionsSegmentWidthsByContent = AttrCoerce.boolean(AttrCoerce.lookup(json, "apportionsSegmentWidthsByContent"))
         self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor", ["normalColor"], canonicalOnly: canonicalOnly))
+        self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
         self.items = AttrCoerce.array(AttrCoerce.lookup(json, "items"))
         self.momentary = AttrCoerce.boolean(AttrCoerce.lookup(json, "momentary"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))

@@ -10,13 +10,28 @@ public struct WebAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "allow",
+        "allowCamera",
+        "allowDownloads",
+        "allowGeolocation",
+        "allowMicrophone",
+        "allowModals",
+        "allowPopupsToEscapeSandbox",
+        "allowZoom",
         "allowsBackForwardNavigationGestures",
+        "allowsFullScreen",
+        "allowsInlineMediaPlayback",
         "allowsLinkPreview",
         "html",
+        "javaScriptCanOpenWindowsAutomatically",
+        "javaScriptEnabled",
+        "lazyLoad",
         "onLoadFailed",
         "reloadToken",
         "sandbox",
+        "scrollEnabled",
+        "title",
         "url",
+        "userAgent",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -37,14 +52,50 @@ public struct WebAttributes {
     /// Iframe allow attribute for feature policy
     public let allow: String?
 
+    /// Adds camera to the iframe's allow list (rjui web_converter).
+    public let allowCamera: Bool?
+
+    /// Adds allow-downloads to the iframe's sandbox (rjui web_converter).
+    public let allowDownloads: Bool?
+
+    /// Adds geolocation to the iframe's allow list (rjui web_converter).
+    public let allowGeolocation: Bool?
+
+    /// Adds microphone to the iframe's allow list (rjui web_converter).
+    public let allowMicrophone: Bool?
+
+    /// Adds allow-modals to the iframe's sandbox (rjui web_converter).
+    public let allowModals: Bool?
+
+    /// Adds allow-popups-to-escape-sandbox to the iframe's sandbox (rjui web_converter).
+    public let allowPopupsToEscapeSandbox: Bool?
+
+    /// Turns the WebView's zoom controls on (kjui web_component).
+    public let allowZoom: Bool?
+
     /// Enable swipe navigation
     public let allowsBackForwardNavigationGestures: Bool?
+
+    /// fullscreen is in the iframe's allow list unless this is false (rjui web_converter).
+    public let allowsFullScreen: Bool?
+
+    /// Adds autoplay to the iframe's allow list (rjui web_converter).
+    public let allowsInlineMediaPlayback: Bool?
 
     /// Enable link preview
     public let allowsLinkPreview: Bool?
 
     /// HTML content
     public let html: String?
+
+    /// Adds allow-popups to the iframe's sandbox (rjui web_converter).
+    public let javaScriptCanOpenWindowsAutomatically: Bool?
+
+    /// JavaScript runs unless this is false (kjui web_component: settings.javaScriptEnabled; rjui web_converter: allow-scripts in the sandbox).
+    public let javaScriptEnabled: Bool?
+
+    /// Draws the iframe with loading="lazy" (rjui web_converter).
+    public let lazyLoad: Bool?
 
     /// Handler called when the MAIN-FRAME load fails - binding only (@{functionName}), called with no arguments. A failure is either the navigation itself failing (no connection, timeout, DNS, TLS) or the main-frame response carrying HTTP 4xx/5xx. Never called for a subresource (image, CSS, script) or a subframe, and never for a navigation that was cancelled because another one replaced it - a reloadToken change during a load is exactly that (iOS reports it as NSURLErrorCancelled, which is excluded; Android excludes net::ERR_ABORTED should it be reported). At most one call per load. The page a server returns with a 4xx/5xx is still displayed; to show an error face instead, hide the Web from the handler. iOS: WKNavigationDelegate didFail / didFailProvisionalNavigation and the status in decidePolicyFor(navigationResponse:). Android: WebViewClient onReceivedError / onReceivedHttpError, both gated on request.isForMainFrame. Not declared for react: an iframe reports neither the HTTP status of its document nor a cross-origin load failure (its load event fires for the browser's error page too, and error never fires for a document), so a web face could not honour this declaration. [binding: one-way]
     public let onLoadFailed: AttrValue<Any>?
@@ -55,20 +106,44 @@ public struct WebAttributes {
     /// Iframe sandboxing kill-switch. `false` emits no sandbox attribute at all; otherwise the permission list is built from the other Web attributes (javaScriptEnabled, javaScriptCanOpenWindowsAutomatically, allowPopupsToEscapeSandbox, allowModals, ...) rather than from a value written here.
     public let sandbox: Bool?
 
+    /// false hides the iframe's overflow (rjui web_converter).
+    public let scrollEnabled: Bool?
+
+    /// The iframe's title, read by screen readers (rjui web_converter).
+    public let title: String?
+
     /// Web page URL (can be data binding)
     public let url: AttrValue<String>?
+
+    /// The WebView's user agent string (kjui web_component).
+    public let userAgent: String?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.allow = AttrCoerce.string(AttrCoerce.lookup(json, "allow"))
+        self.allowCamera = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowCamera"))
+        self.allowDownloads = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowDownloads"))
+        self.allowGeolocation = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowGeolocation"))
+        self.allowMicrophone = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowMicrophone"))
+        self.allowModals = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowModals"))
+        self.allowPopupsToEscapeSandbox = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowPopupsToEscapeSandbox"))
+        self.allowZoom = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowZoom"))
         self.allowsBackForwardNavigationGestures = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsBackForwardNavigationGestures"))
+        self.allowsFullScreen = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsFullScreen"))
+        self.allowsInlineMediaPlayback = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsInlineMediaPlayback"))
         self.allowsLinkPreview = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsLinkPreview"))
         self.html = AttrCoerce.string(AttrCoerce.lookup(json, "html"))
+        self.javaScriptCanOpenWindowsAutomatically = AttrCoerce.boolean(AttrCoerce.lookup(json, "javaScriptCanOpenWindowsAutomatically"))
+        self.javaScriptEnabled = AttrCoerce.boolean(AttrCoerce.lookup(json, "javaScriptEnabled"))
+        self.lazyLoad = AttrCoerce.boolean(AttrCoerce.lookup(json, "lazyLoad"))
         self.onLoadFailed = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onLoadFailed"))
         self.reloadToken = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "reloadToken"))
         self.sandbox = AttrCoerce.boolean(AttrCoerce.lookup(json, "sandbox"))
+        self.scrollEnabled = AttrCoerce.boolean(AttrCoerce.lookup(json, "scrollEnabled"))
+        self.title = AttrCoerce.string(AttrCoerce.lookup(json, "title"))
         self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url"), AttrCoerce.string)
+        self.userAgent = AttrCoerce.string(AttrCoerce.lookup(json, "userAgent"))
     }
 }

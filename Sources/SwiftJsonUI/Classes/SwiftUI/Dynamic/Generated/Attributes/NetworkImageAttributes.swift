@@ -42,6 +42,7 @@ public struct NetworkImageAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "alt",
         "cachePolicy",
+        "circle",
         "contentMode",
         "defaultImage",
         "errorImage",
@@ -51,6 +52,7 @@ public struct NetworkImageAttributes {
         "loadingImage",
         "placeholder",
         "renderingMode",
+        "size",
         "src",
         "timeout",
         "url",
@@ -80,6 +82,9 @@ public struct NetworkImageAttributes {
     /// Cache policy
     public let cachePolicy: String?
 
+    /// Clips the image to a circle; cornerRadius is then not applied (rjui network_image_converter).
+    public let circle: Bool?
+
     /// Content mode (binding supported)
     public let contentMode: AttrValue<AttrEnum<ContentMode>>?
 
@@ -107,6 +112,9 @@ public struct NetworkImageAttributes {
     /// Rendering mode. Declared from the implementation, which already read it: sjui network_image_converter.rb:67-68 (plan 51-E).
     public let renderingMode: AttrEnum<RenderingMode>?
 
+    /// Width and height in dp when width/height are not given (kjui networkimage_component).
+    public let size: Double?
+
     /// Image URL (can be data binding)
     public let src: AttrValue<String>?
 
@@ -122,6 +130,7 @@ public struct NetworkImageAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.alt = AttrCoerce.attrValue(AttrCoerce.lookup(json, "alt", ["accessibilityLabel", "contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.cachePolicy = AttrCoerce.string(AttrCoerce.lookup(json, "cachePolicy"))
+        self.circle = AttrCoerce.boolean(AttrCoerce.lookup(json, "circle"))
         self.contentMode = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentMode"), { Self.parseContentMode($0) })
         self.defaultImage = AttrCoerce.string(AttrCoerce.lookup(json, "defaultImage"))
         self.errorImage = AttrCoerce.string(AttrCoerce.lookup(json, "errorImage"))
@@ -131,6 +140,7 @@ public struct NetworkImageAttributes {
         self.loadingImage = AttrCoerce.string(AttrCoerce.lookup(json, "loadingImage"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))
         self.renderingMode = Self.parseRenderingMode(AttrCoerce.lookup(json, "renderingMode"))
+        self.size = AttrCoerce.number(AttrCoerce.lookup(json, "size"))
         self.src = AttrCoerce.attrValue(AttrCoerce.lookup(json, "src"), AttrCoerce.string)
         self.timeout = AttrCoerce.number(AttrCoerce.lookup(json, "timeout"))
         self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url", ["source"], canonicalOnly: canonicalOnly), AttrCoerce.string)

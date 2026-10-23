@@ -59,6 +59,8 @@ public struct SelectBoxAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "canBack",
+        "cancelButtonBackgroundColor",
+        "cancelButtonTextColor",
         "caretAttributes",
         "colorScheme",
         "datePickerMode",
@@ -109,6 +111,12 @@ public struct SelectBoxAttributes {
 
     /// Show back button
     public let canBack: Bool?
+
+    /// Background colour of the picker dialog's cancel button (kjui selectbox_component).
+    public let cancelButtonBackgroundColor: String?
+
+    /// Text colour of the picker dialog's cancel button (kjui selectbox_component).
+    public let cancelButtonTextColor: String?
 
     /// Caret/arrow styling for the closed select. Absent: every face keeps its native indicator at its native inset (the picture each face drew before 1.8.101), so existing layouts do not move. Present: the face draws the caret itself from these keys, on every platform and mode — this object was UIKit-only (SJUISelectBox) until 1.8.101; SwiftUI codegen/dynamic, Compose codegen/dynamic and the web <select> now honour it too. `src` is optional: when it is absent the face draws its own default chevron glyph, so `{"rightMargin": 12}` alone moves the native-looking arrow away from the trailing edge. Not inherited from any other object; the multiple/list-box and Date modes have no closed-state caret and ignore it.
     public let caretAttributes: [String: Any]?
@@ -202,6 +210,8 @@ public struct SelectBoxAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.canBack = AttrCoerce.boolean(AttrCoerce.lookup(json, "canBack"))
+        self.cancelButtonBackgroundColor = AttrCoerce.string(AttrCoerce.lookup(json, "cancelButtonBackgroundColor"))
+        self.cancelButtonTextColor = AttrCoerce.string(AttrCoerce.lookup(json, "cancelButtonTextColor"))
         self.caretAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "caretAttributes"))
         self.colorScheme = Self.parseColorScheme(AttrCoerce.lookup(json, "colorScheme"))
         self.datePickerMode = Self.parseDatePickerMode(AttrCoerce.lookup(json, "datePickerMode"))

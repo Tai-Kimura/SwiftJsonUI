@@ -260,7 +260,10 @@ public struct TextViewConverter {
                 // On the TextEditor itself, not around the hint
                 // (LeafAccessibilityIdentifier.swift). An invisible view
                 // takes none, as applyAccessibilityId had it.
-                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : component.id
+                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : component.id,
+                // `autoFocus`: the field takes the focus when it appears, as
+                // sjui codegen sets its isFocused binding on appear.
+                autoFocus: component.typedAttributes(TextViewAttributes.self).autoFocus == true
             )
         )
 

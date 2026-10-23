@@ -16,14 +16,33 @@ public struct GradientViewAttributes {
         public static let declaredSpellings: [String] = ["Vertical", "Horizontal", "Oblique"]
     }
 
+    public enum GradientType: String {
+        case linear = "linear"
+        case radial = "radial"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["linear", "radial"]
+    }
+
+    public enum Orientation: String {
+        case vertical = "vertical"
+        case horizontal = "horizontal"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["vertical", "horizontal"]
+    }
+
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "angle",
         "child",
         "children",
         "endPoint",
         "gradient",
         "gradientDirection",
+        "gradientType",
         "locations",
+        "orientation",
         "startPoint",
     ])
 
@@ -43,6 +62,9 @@ public struct GradientViewAttributes {
     /// Attributes shared across all components.
     public let common: CommonAttributes
 
+    /// Angle of a linear gradient in degrees; wins over gradientDirection (rjui gradient_view_converter).
+    public let angle: Double?
+
     /// Child component(s). Declared from the implementation, which already read it: sjui gradient_view_converter.rb:16 (plan 51-E). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
 
@@ -58,8 +80,14 @@ public struct GradientViewAttributes {
     /// Gradient direction
     public let gradientDirection: AttrEnum<GradientDirection>?
 
+    /// linear (default) or radial (rjui gradient_view_converter).
+    public let gradientType: AttrEnum<GradientType>?
+
     /// Color stop locations (0.0-1.0)
     public let locations: [Any]?
+
+    /// How the children stack inside the gradient: vertical (default, a flex column) or horizontal (rjui gradient_view_converter). Not the gradient's direction — that is gradientDirection.
+    public let orientation: AttrEnum<Orientation>?
 
     /// Unit coordinates in the view's own box for where the gradient starts: [x, y] or {"x": x, "y": y}, with 0 = leading/top, 0.5 = centre/middle, 1 = trailing/bottom. THREE faces read this key three incompatible ways today: sjui gradient_view_converter.rb:107-109 wants an OBJECT ({x, y}), rjui gradient_view_converter.rb:72-73 destructures an ARRAY ([x, y]), and kjui gradientview_component.rb:58-59 expects a STRING edge name ('top'). The two coordinate forms are declared because both are real coordinate spellings of the same thing; the android string form is NOT declared - it is `gradientDirection` semantics written under the wrong key, and is filed as a defect rather than blessed here. Declaring BOTH startPoint and endPoint replaces gradientDirection entirely; declaring only one is ignored and gradientDirection still decides (plan 51-E). [accepts: array | object]
     public let startPoint: Any?
@@ -68,12 +96,15 @@ public struct GradientViewAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.angle = AttrCoerce.number(AttrCoerce.lookup(json, "angle"))
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.endPoint = AttrCoerce.any(AttrCoerce.lookup(json, "endPoint"))
         self.gradient = AttrCoerce.array(AttrCoerce.lookup(json, "gradient", ["colors"], canonicalOnly: canonicalOnly))
         self.gradientDirection = Self.parseGradientDirection(AttrCoerce.lookup(json, "gradientDirection"))
+        self.gradientType = Self.parseGradientType(AttrCoerce.lookup(json, "gradientType"))
         self.locations = AttrCoerce.array(AttrCoerce.lookup(json, "locations"))
+        self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
         self.startPoint = AttrCoerce.any(AttrCoerce.lookup(json, "startPoint"))
     }
 
@@ -89,6 +120,34 @@ public struct GradientViewAttributes {
         }
         let near = (raw as? String).flatMap { s in GradientDirection.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
         AttrCodegenWarnings.emit("GradientView.gradientDirection: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
+        return .unknown(raw)
+    }
+
+    private static func parseGradientType(_ raw: Any?) -> AttrEnum<GradientType>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s {
+            case "linear": return .known(GradientType.linear)
+            case "radial": return .known(GradientType.radial)
+            default: break
+            }
+        }
+        let near = (raw as? String).flatMap { s in GradientType.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("GradientView.gradientType: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
+        return .unknown(raw)
+    }
+
+    private static func parseOrientation(_ raw: Any?) -> AttrEnum<Orientation>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s {
+            case "vertical": return .known(Orientation.vertical)
+            case "horizontal": return .known(Orientation.horizontal)
+            default: break
+            }
+        }
+        let near = (raw as? String).flatMap { s in Orientation.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("GradientView.orientation: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
         return .unknown(raw)
     }
 }

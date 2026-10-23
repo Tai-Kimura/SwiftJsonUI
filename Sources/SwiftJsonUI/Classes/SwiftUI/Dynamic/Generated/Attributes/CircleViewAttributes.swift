@@ -11,6 +11,7 @@ public struct CircleViewAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "child",
         "children",
+        "size",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -34,11 +35,15 @@ public struct CircleViewAttributes {
     /// Child components (alias for child). A single component node (object) is accepted as a one-element array.
     public let children: [Any]?
 
+    /// Diameter in dp when width/height are not given (kjui circleview_component).
+    public let size: Double?
+
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
+        self.size = AttrCoerce.number(AttrCoerce.lookup(json, "size"))
     }
 }

@@ -94,6 +94,7 @@ public struct TextViewAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "allowsEditingTextAttributes",
+        "autoFocus",
         "cols",
         "containerInset",
         "dataDetectorTypes",
@@ -116,6 +117,8 @@ public struct TextViewAttributes {
         "keyboardType",
         "lineBreakMode",
         "maxLength",
+        "maxLines",
+        "name",
         "onBeginEditing",
         "onChangeSelection",
         "onEndEditing",
@@ -152,6 +155,9 @@ public struct TextViewAttributes {
 
     /// Allow editing text attributes
     public let allowsEditingTextAttributes: Bool?
+
+    /// Focuses the field when the screen appears (the keyboard opens): iOS SwiftUI sets the field's @FocusState on appear, Android Compose requests focus with a FocusRequester, web draws autoFocus.
+    public let autoFocus: Bool?
 
     /// Number of visible columns
     public let cols: Double?
@@ -219,6 +225,12 @@ public struct TextViewAttributes {
     /// Maximum input length
     public let maxLength: Double?
 
+    /// Most lines shown before the text scrolls (kjui textview_component).
+    public let maxLines: Double?
+
+    /// The textarea's form name attribute (rjui text_view_converter).
+    public let name: String?
+
     /// Begin editing event handler
     public let onBeginEditing: String?
 
@@ -275,6 +287,7 @@ public struct TextViewAttributes {
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.allowsEditingTextAttributes = AttrCoerce.boolean(AttrCoerce.lookup(json, "allowsEditingTextAttributes"))
+        self.autoFocus = AttrCoerce.boolean(AttrCoerce.lookup(json, "autoFocus"))
         self.cols = AttrCoerce.number(AttrCoerce.lookup(json, "cols"))
         self.containerInset = AttrCoerce.any(AttrCoerce.lookup(json, "containerInset"))
         self.dataDetectorTypes = AttrCoerce.string(AttrCoerce.lookup(json, "dataDetectorTypes"))
@@ -297,6 +310,8 @@ public struct TextViewAttributes {
         self.keyboardType = Self.parseKeyboardType(AttrCoerce.lookup(json, "keyboardType"))
         self.lineBreakMode = Self.parseLineBreakMode(AttrCoerce.lookup(json, "lineBreakMode"))
         self.maxLength = AttrCoerce.number(AttrCoerce.lookup(json, "maxLength"))
+        self.maxLines = AttrCoerce.number(AttrCoerce.lookup(json, "maxLines"))
+        self.name = AttrCoerce.string(AttrCoerce.lookup(json, "name"))
         self.onBeginEditing = AttrCoerce.string(AttrCoerce.lookup(json, "onBeginEditing"))
         self.onChangeSelection = AttrCoerce.string(AttrCoerce.lookup(json, "onChangeSelection"))
         self.onEndEditing = AttrCoerce.string(AttrCoerce.lookup(json, "onEndEditing"))

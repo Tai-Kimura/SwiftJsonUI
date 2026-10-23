@@ -18,6 +18,7 @@ public struct SliderAttributes {
         "progressTintColor",
         "range",
         "step",
+        "thumbTintColor",
         "tintColor",
         "trackTintColor",
         "value",
@@ -67,6 +68,9 @@ public struct SliderAttributes {
     /// Step increment value
     public let step: Double?
 
+    /// Colour of the thumb; tintColor when absent (kjui slider_component).
+    public let thumbTintColor: String?
+
     /// Tint color - hex string or color name from colors.json
     public let tintColor: String?
 
@@ -88,6 +92,7 @@ public struct SliderAttributes {
         self.progressTintColor = AttrCoerce.string(AttrCoerce.lookup(json, "progressTintColor"))
         self.range = AttrCoerce.array(AttrCoerce.lookup(json, "range"))
         self.step = AttrCoerce.number(AttrCoerce.lookup(json, "step"))
+        self.thumbTintColor = AttrCoerce.string(AttrCoerce.lookup(json, "thumbTintColor"))
         self.tintColor = AttrCoerce.string(AttrCoerce.lookup(json, "tintColor"))
         self.trackTintColor = AttrCoerce.string(AttrCoerce.lookup(json, "trackTintColor"))
         self.value = AttrCoerce.attrValue(AttrCoerce.lookup(json, "value"), AttrCoerce.number)

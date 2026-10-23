@@ -149,8 +149,12 @@ public struct TextFieldConverter {
                 if let submit = submitAction(component: component, data: data) {
                     built = AnyView(built.onSubmit { submit() })
                 }
-                if let focusChange = focusChangeAction(component: component, data: data) {
-                    built = AnyView(built.modifier(DynamicFocusReporter(onChange: focusChange)))
+                // autoFocus needs the same focus state: the field takes it on
+                // appear (sjui codegen gives an id-less autoFocus field one).
+                let autoFocus = component.typedAttributes(TextFieldAttributes.self).autoFocus == true
+                let focusChange = focusChangeAction(component: component, data: data)
+                if focusChange != nil || autoFocus {
+                    built = AnyView(built.modifier(DynamicFocusReporter(onChange: focusChange ?? { _ in }, autoFocus: autoFocus)))
                 }
             }
 
@@ -308,7 +312,8 @@ public struct TextFieldConverter {
                 // On the field itself, before the clear button and the styled
                 // placeholder go on (LeafAccessibilityIdentifier.swift). An
                 // invisible field takes none, as applyAccessibilityId had it.
-                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : fieldId
+                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : fieldId,
+                autoFocus: attrs.autoFocus == true
             )
         )
 
@@ -635,15 +640,23 @@ public struct TextFieldConverter {
 }
 
 /// Holds a focus state for a field that has none of its own (an id-less
-/// TextField), to tell its focus handlers when it gains or loses focus.
+/// TextField), to tell its focus handlers when it gains or loses focus, and
+/// to take the focus on appear for `autoFocus`.
 struct DynamicFocusReporter: ViewModifier {
     let onChange: (Bool) -> Void
+    var autoFocus: Bool = false
     @FocusState private var focused: Bool
 
     func body(content: Content) -> some View {
         content
             .focused($focused)
             .onChange(of: focused) { _, value in onChange(value) }
+            // The next run loop turn, as FocusableTextField sets it.
+            .onAppear {
+                if autoFocus {
+                    DispatchQueue.main.async { focused = true }
+                }
+            }
     }
 }
 

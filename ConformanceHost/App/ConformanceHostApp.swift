@@ -205,6 +205,9 @@ struct ConformanceRootView: View {
         if let i = arguments.firstIndex(of: "-autoFocusProbe"), i + 1 < arguments.count {
             return AnyView(AutoFocusCodegenProbeView(variant: arguments[i + 1]))
         }
+        if let i = arguments.firstIndex(of: "-autoFocusDynamicProbe"), i + 1 < arguments.count {
+            return AnyView(AutoFocusDynamicProbeView(variant: arguments[i + 1]))
+        }
         if arguments.contains("-responsiveDisabledProbe") { return AnyView(ResponsiveDisabledProbeView()) }
         if arguments.contains("-sameTypeDuplicateProbe") { return AnyView(SameTypeDuplicateProbeView()) }
         if arguments.contains("-clippedViewportProbe") { return AnyView(ClippedViewportProbeView()) }

@@ -21,8 +21,11 @@ public struct IndicatorAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "animating",
         "color",
+        "halfSpinner",
         "hidesWhenStopped",
         "indicatorStyle",
+        "strokeWidth",
+        "trackColor",
     ])
 
     /// Alias spelling → canonical attribute name (merged with common). Alias
@@ -47,11 +50,20 @@ public struct IndicatorAttributes {
     /// Indicator color - hex string or color name from colors.json (binding supported). `tint` folds here (sjui indicator_converter.rb:77 reads `color || tintColor || tint`). [aliases: tint]
     public let color: AttrValue<String>?
 
+    /// Draws the spinner's ring half coloured (rjui indicator_converter).
+    public let halfSpinner: Bool?
+
     /// Hide when stopped. Decides SPACE: `true` collapses the stopped indicator out of the layout, `false` keeps it drawn AND laid out. Full ruling in attribute_semantics.json -> indicatorStopped.
     public let hidesWhenStopped: Bool?
 
     /// Indicator style: `small` / `medium` / `large` are the spinner's size and `linear` a bar instead of a spinner. Each size is the platform's own value, `small` and `large` as well as `medium` (2026-10-05 user ruling): the faces need not draw the same small or large spinner. A declared width / height wins over the style's size. The legacy spellings `style` (naming one of these values) and `size` (a length) are folded by the layout normalizer, with a warning: `style` into this attribute, `size` into width and height.
     public let indicatorStyle: AttrEnum<IndicatorStyle>?
+
+    /// Width of the spinner's stroke (kjui indicator_component: circular only; rjui indicator_converter: border width, 2 by default).
+    public let strokeWidth: Double?
+
+    /// Track colour of a linear indicator (kjui indicator_component).
+    public let trackColor: String?
 
     /// Pass `canonicalOnly: true` for L1-normalized input —
     /// alias fallback is then disabled.
@@ -59,8 +71,11 @@ public struct IndicatorAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.animating = AttrCoerce.attrValue(AttrCoerce.lookup(json, "animating"), AttrCoerce.boolean)
         self.color = AttrCoerce.attrValue(AttrCoerce.lookup(json, "color", ["tint"], canonicalOnly: canonicalOnly), AttrCoerce.string)
+        self.halfSpinner = AttrCoerce.boolean(AttrCoerce.lookup(json, "halfSpinner"))
         self.hidesWhenStopped = AttrCoerce.boolean(AttrCoerce.lookup(json, "hidesWhenStopped"))
         self.indicatorStyle = Self.parseIndicatorStyle(AttrCoerce.lookup(json, "indicatorStyle"))
+        self.strokeWidth = AttrCoerce.number(AttrCoerce.lookup(json, "strokeWidth"))
+        self.trackColor = AttrCoerce.string(AttrCoerce.lookup(json, "trackColor"))
     }
 
     private static func parseIndicatorStyle(_ raw: Any?) -> AttrEnum<IndicatorStyle>? {
