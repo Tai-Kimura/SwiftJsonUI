@@ -15,6 +15,12 @@ import XCTest
 /// hierarchy that shrinks while they read it. A recorded failure is the red:
 /// each test passes only when nothing was recorded.
 ///
+/// Only API every vendored driver has is called here, so the target builds
+/// on any driver and an old one fails these tests rather than the build: the
+/// helper 2.1.2 added (snapshotsBoundByIndex) is reached through
+/// presentMarkers, never called by name. A test that called it took the
+/// whole UITests target down on a 2.1.1 driver.
+///
 /// Opt-in, like the other probes: TEST_RUNNER_SCREEN_MARKER_SHRINK_PROBE=1.
 final class ScreenMarkerShrinkProbeUITests: XCTestCase {
 
@@ -163,21 +169,6 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
             in: app)) { error in
             XCTAssertTrue("\(error)".contains("does not exist"), "\(error)")
         }
-    }
-
-    /// The reading the fix shares: every marker the query matched, one
-    /// snapshot each, over the same shrink.
-    func testSnapshotsBoundByIndexWhileMarkersLeave() throws {
-        let app = launch()
-        app.buttons["shrink_start"].tap()
-        var sizes: [Int] = []
-        repeat {
-            let read = markers(app).snapshotsBoundByIndex()
-            XCTAssertTrue(read.allSatisfy { $0.identifier.hasPrefix("__screen_") })
-            sizes.append(read.count)
-        } while app.staticTexts["shrink_left"].label != "left 0"
-        print("  snapshots per round while the markers left: \(sizes)")
-        XCTAssertEqual(markers(app).snapshotsBoundByIndex().map(\.identifier), ["__screen_shrink_target"])
     }
 }
 
