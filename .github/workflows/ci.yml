@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 1889b3949a94a1738d7f8c00deae7fba5ecc3c5c # jsonui-cli 2.3.15 release commit (tag v2.3.15 points here); the attr tables match it unchanged, two fixtures are re-copied from it (their description text names a role, not a session)
+      JSONUI_CLI_MANIFEST_REF: 1889b3949a94a1738d7f8c00deae7fba5ecc3c5c # jsonui-cli 2.3.15 release commit (tag v2.3.15 points here); the attr tables match it unchanged, two fixtures are re-copied from it (their description text names a role, not a session) (SwiftJsonUI 10.30.5)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
