@@ -1759,7 +1759,8 @@ public struct CollectionConverter {
                 onItemAppearCallback: onItemAppear,
                 component: component,
                 data: data,
-                viewId: viewId
+                viewId: viewId,
+                fitHeight: component.heightRaw == "wrapContent"
             )
         )
     }
@@ -2512,6 +2513,26 @@ struct CollectionCellItem: Identifiable {
 /// Wrapper view that manages @State for paging TabView selection.
 /// Similar to TabViewWrapperView pattern - holds @State internally
 /// and syncs with optional external Binding<Int>.
+/// A pager's page at its own height (not the pager's, which comes from it),
+/// written down by page, then laid at the page's top; nothing when the pager
+/// is not wrapContent.
+private struct PagerPageHeight: ViewModifier {
+    let enabled: Bool
+    let index: Int
+    @SwiftUI.Binding var heights: [Int: CGFloat]
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { heights[index] = $0 }
+                .frame(maxHeight: .infinity, alignment: .top)
+        } else {
+            content
+        }
+    }
+}
+
 private struct PagingCollectionWrapperView: View {
     let pageItems: [PagingPageItem]
     let itemSpacing: CGFloat
@@ -2531,8 +2552,18 @@ private struct PagingCollectionWrapperView: View {
     let component: DynamicComponent
     let data: [String: Any]
     let viewId: String?
+    /// height wrapContent: the pager is as tall as the page it shows, as
+    /// KotlinJsonUI's HorizontalPager(...wrapContentHeight()) is. A page-style
+    /// TabView has no height of its own: in a vertical ScrollView it took the
+    /// height the ScrollView had left, and asked its ideal size it is 0 (ticket
+    /// 2026-10-23-sjui-paging-collection-wrapcontent-height-collapses-in-scrollview).
+    /// Each page is measured at its own height and the TabView framed at the
+    /// shown page's; before one is measured, the tallest measured. sjui
+    /// codegen's add_paging_cell / paging_fit_heights emit the same.
+    var fitHeight: Bool = false
 
     @State private var internalCurrentPage: Int = 0
+    @State private var pageHeights: [Int: CGFloat] = [:]
 
     private var effectiveSelection: SwiftUI.Binding<Int> {
         if let binding = currentPageBinding {
@@ -2564,10 +2595,12 @@ private struct PagingCollectionWrapperView: View {
                 )
                 .padding(pageInsets ?? EdgeInsets())
                 .padding(.horizontal, itemSpacing > 0 ? itemSpacing / 2 : 0)
+                .modifier(PagerPageHeight(enabled: fitHeight, index: page.index, heights: $pageHeights))
                 .tag(page.index)
             }
         }
         .tabViewStyle(.page(indexDisplayMode: .never))
+        .frame(height: fitHeight ? (pageHeights[effectiveSelection.wrappedValue] ?? pageHeights.values.max()) : nil)
         .onChange(of: effectiveSelection.wrappedValue) { oldValue, newValue in
             let change = CollectionConverter.pageChange(from: oldValue, to: newValue, pageCount: pageItems.count)
             if let page = change.writeBack { effectiveSelection.wrappedValue = page }

@@ -280,6 +280,8 @@ struct ConformanceRootView: View {
         if arguments.contains("-cellDataRefreshProbeCodegen") { return AnyView(CellDataRefreshProbeView(codegen: true)) }
         if arguments.contains("-pagerIdentityProbe") { return AnyView(PagerIdentityProbeView(codegen: false)) }
         if arguments.contains("-pagerIdentityProbeCodegen") { return AnyView(PagerIdentityProbeView(codegen: true)) }
+        if arguments.contains("-pagerHeightProbe") { return AnyView(PagerHeightProbeView(codegen: false)) }
+        if arguments.contains("-pagerHeightProbeCodegen") { return AnyView(PagerHeightProbeView(codegen: true)) }
         if arguments.contains("-aspectFillProbe") { return AnyView(AspectFillProbeView(codegen: false)) }
         if arguments.contains("-aspectFillProbeCodegen") { return AnyView(AspectFillProbeView(codegen: true)) }
         if arguments.contains("-frameAlignmentProbe") { return AnyView(FrameAlignmentProbeView(codegen: false)) }
