@@ -19,11 +19,39 @@ import SwiftUI
 
 
 // MARK: - ScrollView Container
+/// The scroll's content at its own height (before the frame stretches it to
+/// the viewport), written down; nothing when the ScrollView is not wrapContent.
+private struct ScrollContentHeight: ViewModifier {
+    let enabled: Bool
+    @SwiftUI.Binding var height: CGFloat?
+
+    func body(content: Content) -> some View {
+        if enabled {
+            content
+                .fixedSize(horizontal: false, vertical: true)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+        } else {
+            content
+        }
+    }
+}
+
 public struct DynamicScrollViewContainer: View {
     let component: DynamicComponent
     let data: [String: Any]
     let viewId: String?
     @State private var zoomScale: CGFloat = 1.0
+    /// A horizontal ScrollView of height wrapContent: its content's own height
+    /// (nil until measured). AdvancedKeyboardAvoidingScrollView is a
+    /// GeometryReader framing the scroll at the reader's height, and in a
+    /// vertical ScrollView the reader is offered none: it took the height the
+    /// outer ScrollView had left — a 28pt row drew 386pt tall in a 420pt
+    /// ScrollView (jsonui-cli ticket
+    /// 2026-10-23-sjui-geometryreader-in-vertical-scroll-collapses). Measured
+    /// here, the ScrollView is framed at it, as KotlinJsonUI's horizontalScroll
+    /// row is its content's height. sjui codegen's scrollview_converter
+    /// content_fit_height emits the same.
+    @State private var contentHeight: CGFloat? = nil
 
     public init(component: DynamicComponent, data: [String: Any], viewId: String? = nil) {
         self.component = component
@@ -98,6 +126,10 @@ public struct DynamicScrollViewContainer: View {
         }
 
         // --- 2. .disabled (scrollEnabled) ---
+        if isHorizontal && component.heightRaw == "wrapContent" {
+            result = AnyView(result.frame(height: contentHeight))
+        }
+
         if DynamicHelpers.resolveBool(
             component.typedAttributes(ScrollViewAttributes.self).scrollEnabled,
             legacy: nil, data: data
@@ -179,6 +211,7 @@ public struct DynamicScrollViewContainer: View {
                 }
                 Spacer(minLength: 0)
             }
+            .modifier(ScrollContentHeight(enabled: component.heightRaw == "wrapContent", height: $contentHeight))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .environment(\.jsonuiScrollingAncestor, true)
         } else {

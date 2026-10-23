@@ -1,0 +1,78 @@
+{
+  "type": "View",
+  "id": "cg_sh_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "ScrollView",
+      "id": "cg_sh_scroll",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": 420,
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_sh_content",
+          "orientation": "vertical",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "child": [
+            {
+              "type": "Label",
+              "id": "cg_sh_head",
+              "text": "head",
+              "fontSize": 14
+            },
+            {
+              "type": "ScrollView",
+              "id": "cg_sh_row",
+              "orientation": "horizontal",
+              "width": "matchParent",
+              "height": "wrapContent",
+              "child": [
+                {
+                  "type": "View",
+                  "id": "cg_sh_rowcontent",
+                  "orientation": "horizontal",
+                  "width": "wrapContent",
+                  "height": "wrapContent",
+                  "child": [
+                    {
+                      "type": "View",
+                      "id": "cg_sh_box0",
+                      "width": 100,
+                      "height": 28,
+                      "background": "#3366CC"
+                    },
+                    {
+                      "type": "View",
+                      "id": "cg_sh_box1",
+                      "width": 100,
+                      "height": 28,
+                      "background": "#3366CC"
+                    },
+                    {
+                      "type": "View",
+                      "id": "cg_sh_box2",
+                      "width": 100,
+                      "height": 28,
+                      "background": "#3366CC"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "type": "Label",
+              "id": "cg_sh_foot",
+              "text": "foot",
+              "fontSize": 14
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
