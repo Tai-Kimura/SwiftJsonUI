@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: ea30b22304eafd6fd515629a6e924318c4ce9c51 # jsonui-cli release/2.3.21 (v2.3.21 is cut from it); the attr tables are re-vendored from it (autoFocus on TextField / TextView, and the attributes declared since 2.3.15), the fixtures match it unchanged (SwiftJsonUI 10.30.6)
+      JSONUI_CLI_MANIFEST_REF: v2.3.21 # jsonui-cli release tag v2.3.21 (8b8c924e); the attr tables are re-vendored from it (autoFocus on TextField / TextView, and the attributes declared since 2.3.15), the fixtures match it unchanged (SwiftJsonUI 10.30.6)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
