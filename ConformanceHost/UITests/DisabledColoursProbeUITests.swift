@@ -12,6 +12,8 @@
 import XCTest
 
 final class DisabledColoursProbeUITests: XCTestCase {
+    private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
+
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
@@ -61,6 +63,9 @@ final class DisabledColoursProbeUITests: XCTestCase {
     }
 
     func testABoundEnabledTurnedFalseShowsTheDisabledColoursGenerated() throws {
+        // A dynamic-only build has no generated view (DisabledColoursProbeView
+        // shows dc_missing): the probe has nothing to read there.
+        guard codegenHost else { throw XCTSkip("the generated half is in the codegen host only") }
         let app = XCUIApplication()
         app.launchArguments = ["-disabledColoursProbeCodegen"]
         app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen"
