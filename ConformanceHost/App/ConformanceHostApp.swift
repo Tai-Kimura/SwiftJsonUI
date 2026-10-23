@@ -245,6 +245,7 @@ struct ConformanceRootView: View {
         if arguments.contains("-eagerRowFillProbeCodegen") { return AnyView(EagerRowFillProbeView(codegen: true)) }
         if arguments.contains("-emptyBackgroundProbe") { return AnyView(EmptyBackgroundProbeView(codegen: false)) }
         if arguments.contains("-emptyBackgroundProbeCodegen") { return AnyView(EmptyBackgroundProbeView(codegen: true)) }
+        if arguments.contains("-disabledColoursProbeCodegen") { return AnyView(DisabledColoursProbeView()) }
         if arguments.contains("-offsetPlacementProbe") { return AnyView(OffsetProbeView(codegen: false)) }
         if arguments.contains("-offsetPlacementProbeCodegen") { return AnyView(OffsetProbeView(codegen: true)) }
         if arguments.contains("-anchorTapProbe") { return AnyView(AnchorTapProbeView(variant: UserDefaults.standard.string(forKey: "atVariant") ?? "dyn")) }
