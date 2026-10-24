@@ -21,7 +21,8 @@ import XCTest
 /// read "the link did not open", and its next tap landed on Safari, which
 /// had come up meanwhile, so the Label's onClick read 0 too (run 38322592393,
 /// the first time this probe ran in CI). A tap is now made only with the app
-/// in front, asserted, and each one prints which app was in front.
+/// in front, asserted, and each one prints which app was in front. Each path
+/// starts with Safari not running (it is stopped if the path before left it).
 final class LinkTapProbeUITests: XCTestCase {
     private var app: XCUIApplication!
     private let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
@@ -72,6 +73,16 @@ final class LinkTapProbeUITests: XCTestCase {
     }
 
     private func run(_ path: String) {
+        // Each path from a Safari not running, as the first one is: brought
+        // up from the background (the path before left it there) it came to
+        // the front 3.8 s after the tap on a green run and past the 15 s
+        // budget on run 40094279447 (both attempts; it came up a moment
+        // later), while from not running it took 1.1–1.4 s on every run.
+        if safari.state != .notRunning {
+            safari.terminate()
+            let gone = safari.wait(for: .notRunning, timeout: 10)
+            print("LINK_TAP \(path): safari stopped before the path=\(gone ? 1 : 0)")
+        }
         app = XCUIApplication()
         app.launchArguments = ["-linkTapProbe", "-ltPath", path]
         app.launch()
