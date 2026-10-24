@@ -15,7 +15,9 @@ public struct FocusableTextField: View {
     let fieldId: String
     let isSecure: Bool
     let keyboardType: UIKeyboardType
-    let submitLabel: SubmitLabel
+    /// The layout's `returnKeyType`. nil puts no `.submitLabel` on — the
+    /// system's key, as sjui codegen leaves it when nothing is declared.
+    let submitLabel: SubmitLabel?
     let textAlignment: TextAlignment
     let nextFocusId: String?
     let onSubmitAction: (() -> Void)?
@@ -40,7 +42,7 @@ public struct FocusableTextField: View {
         fieldId: String,
         isSecure: Bool = false,
         keyboardType: UIKeyboardType = .default,
-        submitLabel: SubmitLabel = .done,
+        submitLabel: SubmitLabel? = nil,
         textAlignment: TextAlignment = .leading,
         nextFocusId: String? = nil,
         onSubmitAction: (() -> Void)? = nil,
@@ -68,12 +70,13 @@ public struct FocusableTextField: View {
         Group {
             if isSecure {
                 SecureField(placeholder, text: $text)
+                    .optionalSubmitLabel(submitLabel)
                     .multilineTextAlignment(textAlignment)
                     .leafAccessibilityIdentifier(accessibilityIdentifier)
             } else {
                 TextField(placeholder, text: $text)
                     .keyboardType(keyboardType)
-                    .submitLabel(submitLabel)
+                    .optionalSubmitLabel(submitLabel)
                     .multilineTextAlignment(textAlignment)
                     .leafAccessibilityIdentifier(accessibilityIdentifier)
             }
@@ -103,6 +106,18 @@ public struct FocusableTextField: View {
             } else if isFocused {
                 isFocused = false
             }
+        }
+    }
+}
+extension View {
+    /// `.submitLabel` only when one is declared. SubmitLabel has no "system
+    /// default" member, so "not declared" cannot be passed as a value.
+    @ViewBuilder
+    func optionalSubmitLabel(_ label: SubmitLabel?) -> some View {
+        if let label {
+            submitLabel(label)
+        } else {
+            self
         }
     }
 }

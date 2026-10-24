@@ -281,6 +281,16 @@ public struct TextViewConverter {
         default: break
         }
 
+        // --- 1.55 .submitLabel (returnKeyType) ---
+        // Codegen attaches `.submitLabel(...)` to the closed call when
+        // returnKeyType is declared, and nothing when it is not; nothing here
+        // read it, so a declared key was the system's on this path only.
+        // TextView's own table (textview_converter.rb
+        // return_key_to_submit_label), not TextField's.
+        if let returnKey = component.enumString(TextViewAttributes.self, \.returnKeyType) {
+            result = AnyView(result.submitLabel(submitLabel(fromReturnKeyType: returnKey)))
+        }
+
         // --- 1.6 .keyboardType (input, then keyboardType) ---
         // Both spellings were declared, both emitted by codegen
         // (textview_converter.rb lines 267-270 for `input`, and
@@ -411,6 +421,19 @@ public struct TextViewConverter {
     /// The Ruby normalises with `downcase.gsub(/[^a-z]/, '')`, which is why
     /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
     /// normalisation is applied so the declared spellings match.
+    /// textview_converter.rb#return_key_to_submit_label: Continue / Join /
+    /// Route are TextField's words and fall to `.return` here, as there.
+    static func submitLabel(fromReturnKeyType value: String) -> SubmitLabel {
+        switch value {
+        case "Done": return .done
+        case "Go": return .go
+        case "Next": return .next
+        case "Search": return .search
+        case "Send": return .send
+        default: return .return
+        }
+    }
+
     static func keyboardType(fromKeyboardTypeSpelling value: String) -> UIKeyboardType? {
         switch DeclaredSpelling.lowered(value, in: TextViewAttributes.KeyboardType.declaredSpellings)?.filter({ $0.isLetter && $0.isASCII }) {
         case "default": return .default

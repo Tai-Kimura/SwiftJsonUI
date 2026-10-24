@@ -303,7 +303,7 @@ public struct TextFieldConverter {
                 fieldId: fieldId,
                 isSecure: isSecure,
                 keyboardType: DynamicHelpers.keyboardType(forInput: component.input),
-                submitLabel: getSubmitLabel(from: component.returnKeyType),
+                submitLabel: component.returnKeyType.map { getSubmitLabel(from: $0) },
                 textAlignment: DynamicHelpers.getTextAlignment(from: component),
                 nextFocusId: nextFocusId,
                 onSubmitAction: submitAction(component: component, data: data),
