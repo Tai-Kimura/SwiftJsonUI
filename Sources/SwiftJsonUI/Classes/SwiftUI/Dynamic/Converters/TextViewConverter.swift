@@ -408,19 +408,6 @@ public struct TextViewConverter {
         return result
     }
 
-    /// `keyboardType` -> `UIKeyboardType`, transcribed from
-    /// textview_converter.rb#keyboard_type_to_swiftui.
-    ///
-    /// Local to TextView because it is local there: `keyboardType` is
-    /// declared on TextView only, while `input` is shared and lives in
-    /// DynamicHelpers. Returning nil means "no row" — the emitter guards with
-    /// `if resolved`, so an unmatched spelling emits no modifier at all
-    /// rather than an explicit `.default`, and the two are different (the
-    /// system default can differ from `.default` in a nested context).
-    ///
-    /// The Ruby normalises with `downcase.gsub(/[^a-z]/, '')`, which is why
-    /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
-    /// normalisation is applied so the declared spellings match.
     /// textview_converter.rb#return_key_to_submit_label: Continue / Join /
     /// Route are TextField's words and fall to `.return` here, as there.
     static func submitLabel(fromReturnKeyType value: String) -> SubmitLabel {
@@ -434,6 +421,19 @@ public struct TextViewConverter {
         }
     }
 
+    /// `keyboardType` -> `UIKeyboardType`, transcribed from
+    /// textview_converter.rb#keyboard_type_to_swiftui.
+    ///
+    /// Local to TextView because it is local there: `keyboardType` is
+    /// declared on TextView only, while `input` is shared and lives in
+    /// DynamicHelpers. Returning nil means "no row" — the emitter guards with
+    /// `if resolved`, so an unmatched spelling emits no modifier at all
+    /// rather than an explicit `.default`, and the two are different (the
+    /// system default can differ from `.default` in a nested context).
+    ///
+    /// The Ruby normalises with `downcase.gsub(/[^a-z]/, '')`, which is why
+    /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
+    /// normalisation is applied so the declared spellings match.
     static func keyboardType(fromKeyboardTypeSpelling value: String) -> UIKeyboardType? {
         switch DeclaredSpelling.lowered(value, in: TextViewAttributes.KeyboardType.declaredSpellings)?.filter({ $0.isLetter && $0.isASCII }) {
         case "default": return .default
