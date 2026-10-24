@@ -1,17 +1,16 @@
 --- a/Actions/ActionExecutor.swift
 +++ b/Actions/ActionExecutor.swift
-@@ -646,7 +646,13 @@
-         let timeout = TimeInterval(step.timeout ?? 5000) / 1000.0
-         let element = findElementQuery(id: id, in: app)
+@@ -721,6 +721,13 @@
+         }
  
--        let exists = element.waitForExistence(timeout: timeout)
+         let timeout = TimeInterval(step.timeout ?? 5000) / 1000.0
 +        // `exists` first: waitForExistence evaluates its predicate only after
 +        // ~1s, even when the element is already there. Measured 2026-10-13 on
 +        // 52 fixtures: suite 128.3s / 138.0s -> 82.6s, all 48 screenshots
 +        // byte-identical. The suite's own fixture-marker wait keeps its ~1s:
 +        // removing that one too changed 3 screenshots (the status bar clock was
 +        // captured mid tint transition after a background change).
-+        let exists = element.exists || element.waitForExistence(timeout: timeout)
-         if !exists {
-             throw ActionError.timeout(id: id, timeout: step.timeout ?? 5000)
-         }
++        if step.within == nil, ElementScope.element(id: id, within: nil, in: app).exists { return }
+         let look = ElementScope.wait(id: id, within: step.within, timeout: timeout, in: app)
+         if case .found = look { return }
+         guard let within = step.within else {
