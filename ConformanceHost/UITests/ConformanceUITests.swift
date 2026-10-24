@@ -108,6 +108,24 @@ struct FixtureResult: Encodable {
     /// `canvas-marker-missing`, `error: <reason>`), never beside `frames`:
     /// the gate counts it as a reason of its own, apart from a missing file.
     var framesUnrecorded: String? = nil
+    /// RESULTS_SCHEMA.md `retap`: the fixture passed on a SECOND tap — the
+    /// first touch was not delivered (jsonui-cli ticket 2026-10-24-ios-
+    /// conformance-tap-not-delivered-recurred, the requester's choice B: a
+    /// retry that names itself, at most once per fixture; the gate counts
+    /// them). Absent when every tap took on the first try.
+    var retap: RetapResult? = nil
+}
+
+/// What the one retap of a fixture met: the tap, when it landed, the element
+/// before it and after it, and the screenshot taken when the first tap had no
+/// effect.
+struct RetapResult: Encodable {
+    let reason: String
+    let tap: String
+    let at: Double
+    let before: String
+    let after: String
+    let screenshot: String?
 }
 
 /// 🔻 A RUN-LEVEL CENSUS OF THE WEB LOAD-MARKER PATH, BECAUSE THE WAIT'S OWN
@@ -736,6 +754,8 @@ final class ConformanceUITests: XCTestCase {
         // (Embed's pop after a push), not because the tap was slow.
         var lastActionStart = fixtureStart
         var tapCount = 0
+        // The fixture's one retap, if a step passed only on a second tap.
+        var retap: RetapResult? = nil
         // `web_settle: timeout …` when a Web capture's paint wait ran out.
         var settleNote = ""
 
@@ -810,28 +830,39 @@ final class ConformanceUITests: XCTestCase {
                     }
                 } catch {
                     suppressIssues = false
+                    let diagnosis = postTapDiagnosis(after: lastTap, failed: step, fixture: fixture, app: app,
+                                                     actions: actionExecutor, asserts: assertionExecutor, retapped: retap != nil)
+                    if let taken = diagnosis.retap {   // the step passed on the second tap: named, and the fixture goes on
+                        retap = taken
+                        continue
+                    }
                     return FixtureResult(
                         id: fixture.id, status: "error",
-                        detail: stepLabel(step) + ": " + shortError(error)
-                            + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
-                                               app: app, actions: actionExecutor, asserts: assertionExecutor),
+                        detail: stepLabel(step) + ": " + shortError(error) + diagnosis.text,
                         screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
                 }
                 suppressIssues = false
 
                 if !capturedIssues.isEmpty {
                     let issues = capturedIssues.joined(separator: " | ")
+                    let diagnosis = postTapDiagnosis(after: lastTap, failed: step, fixture: fixture, app: app,
+                                                     actions: actionExecutor, asserts: assertionExecutor, retapped: retap != nil)
+                    if let taken = diagnosis.retap {
+                        retap = taken
+                        continue
+                    }
                     return FixtureResult(
                         id: fixture.id, status: "fail",
-                        detail: stepLabel(step) + ": " + issues
-                            + postTapDiagnosis(after: lastTap, failed: step, fixture: fixture,
-                                               app: app, actions: actionExecutor, asserts: assertionExecutor),
+                        detail: stepLabel(step) + ": " + issues + diagnosis.text,
                         screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
                 }
             }
         }
 
-        return FixtureResult(id: fixture.id, status: "pass", detail: settleNote, screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
+        if let taken = retap {
+            print("RETAP \(fixture.id) \(taken.tap) +\(String(format: "%.3f", taken.at))s \(taken.reason)")
+        }
+        return FixtureResult(id: fixture.id, status: "pass", detail: settleNote, screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded, retap: retap)
     }
 
     /// afterFirstDraw (jsonui-cli INTERACTIVE_HOST_CONTRACT.md): the host
@@ -953,25 +984,41 @@ final class ConformanceUITests: XCTestCase {
         TapDiagnosis.elementState(id, in: app)
     }
 
+    /// What the post-tap diagnosis found: the words for the detail, and the
+    /// retap when the second tap made the failed assertion pass.
+    struct PostTapOutcome {
+        var text = ""
+        var retap: RetapResult? = nil
+    }
+
     /// Only for an ASSERTION that fails after a tap in the same fixture: what
     /// the tapped element looked like before the tap and now, a screenshot,
     /// and whether a SECOND tap makes the same assertion pass. A second tap
     /// that fires separates "the touch was not delivered" (timing, the
     /// screen still settling) from "the handler is not wired" (it would not
-    /// fire either). The verdict stays the first attempt's — the second tap
-    /// is a measurement, never a retry that turns the fixture green.
+    /// fire either).
+    ///
+    /// A second tap that makes it pass is the fixture's retap (jsonui-cli
+    /// ticket 2026-10-24-ios-conformance-tap-not-delivered-recurred, the
+    /// requester's choice B): the step counts as passed and the result names
+    /// it (`retap`), never silently — the gate fails the same fixture retapping
+    /// on two runs in a row and more than two in a run. One per fixture: a
+    /// fixture that already retapped (`retapped`) and needs a second one keeps
+    /// the failure, the diagnosis in its detail.
     private func postTapDiagnosis(
         after lastTap: (step: TestStep, before: String, at: TimeInterval)?,
         failed step: TestStep, fixture: ConformanceManifest.Fixture, app: XCUIApplication,
-        actions: XCUITestActionExecutor, asserts: XCUITestAssertionExecutor
-    ) -> String {
-        guard step.isAssertion, let tap = lastTap, let id = tap.step.id else { return "" }
+        actions: XCUITestActionExecutor, asserts: XCUITestAssertionExecutor, retapped: Bool
+    ) -> PostTapOutcome {
+        guard step.isAssertion, let tap = lastTap, let id = tap.step.id else { return PostTapOutcome() }
+        let now = elementState(id, in: app)
         var parts = ["after tap(\(id)) at +\(String(format: "%.2f", tap.at))s",
                      "before: \(tap.before)",
-                     "now: \(elementState(id, in: app))",
+                     "now: \(now)",
                      "app: \(app.state.rawValue)"]
         let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))__post_tap_failure"
-        if let path = try? captureScreenshot(named: shot, app: app) {
+        let path = try? captureScreenshot(named: shot, app: app)
+        if let path {
             parts.append("screenshot: \(path)")
         }
         capturedIssues = []
@@ -986,8 +1033,12 @@ final class ConformanceUITests: XCTestCase {
             })
         suppressIssues = false
         capturedIssues = []
-        parts.append(second)
-        return " — [post-tap] " + parts.joined(separator: "; ")
+        if second == TapDiagnosis.deliveredOnSecondTap && !retapped {
+            return PostTapOutcome(retap: RetapResult(reason: "touch not delivered", tap: id, at: tap.at,
+                                                     before: tap.before, after: now, screenshot: path))
+        }
+        parts.append(second + (second == TapDiagnosis.deliveredOnSecondTap ? " — but this fixture already retapped once" : ""))
+        return PostTapOutcome(text: " — [post-tap] " + parts.joined(separator: "; "))
     }
 
     private func stepLabel(_ step: TestStep) -> String {
