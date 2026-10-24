@@ -52,12 +52,18 @@ enum TapDiagnosis {
         return description.replacingOccurrences(of: "\n", with: " ")
     }
 
+    /// The verdict when the second tap's effect shows: the first touch was
+    /// not delivered. ConformanceUITests names a fixture's retap by it.
+    static let deliveredOnSecondTap = "a second tap made it pass (touch not delivered)"
+
     /// Taps once more (`retap`) and asks `effectShows` whether the effect is
     /// there now: it returns nil when it is, or the reason it is not. A second
     /// tap whose effect shows means the first touch was not delivered; one
     /// whose effect does not show either means the handler (or the drawing)
-    /// did not answer. The caller's verdict stays the first tap's — this is a
-    /// measurement, never a retry that turns a red check green.
+    /// did not answer. What the caller does with it is the caller's: a probe
+    /// keeps the first tap's verdict (a measurement); ConformanceUITests
+    /// takes a delivered second tap as the fixture's one named retap
+    /// (`deliveredOnSecondTap`, RESULTS_SCHEMA.md `retap`).
     ///
     /// Not for a non-idempotent tap judged by the first tap's expectation: a
     /// second tap there has its own effect (a counter goes to 3, not 2), so
@@ -68,7 +74,7 @@ enum TapDiagnosis {
             if let failure = try effectShows() {
                 return "a second tap did not either: \(failure)"
             }
-            return "a second tap made it pass (touch not delivered)"
+            return deliveredOnSecondTap
         } catch {
             return "a second tap did not either: \(shortError(error))"
         }
