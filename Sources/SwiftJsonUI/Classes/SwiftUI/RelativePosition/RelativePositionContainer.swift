@@ -102,6 +102,22 @@ struct RelativePositionLayout: Layout {
             height = proposedHeight
             heightFromProposal = true
         }
+        // A fixed container is its declared size, padding included, whatever
+        // its children ask: it is the whole box, as the proposal is for a
+        // filling one. Measured from the children instead, a container 180
+        // high reported the child's height, sat at the top of its frame, and
+        // alignBottom / centerVertical resolved inside a box as tall as the
+        // child (the same across for a fixed width and alignRight).
+        let fixedWidth = fixedSize(containerWidthMode)
+        let fixedHeight = fixedSize(containerHeightMode)
+        if let fixedWidth {
+            width = fixedWidth
+            widthFromProposal = true
+        }
+        if let fixedHeight {
+            height = fixedHeight
+            heightFromProposal = true
+        }
 
         let subviewsById = subviewsByChildId(subviews)
         // The room a wrapContent child may take across, when the proposal
@@ -112,8 +128,8 @@ struct RelativePositionLayout: Layout {
             return w
         }()
 
-        // Width: from the children unless the container fills.
-        if !hasWidthMatchParent {
+        // Width: from the children unless the container fills or is fixed.
+        if !hasWidthMatchParent && fixedWidth == nil {
             for child in children {
                 guard let subview = subviewsById[child.id] else { continue }
                 var childWidth: CGFloat = 0
@@ -150,7 +166,7 @@ struct RelativePositionLayout: Layout {
             Logger.debug("[RelativePositionLayout] sizeThatFits child '\(child.id)' measured: \(childSize), widthMode: \(child.widthMode), heightMode: \(child.heightMode)")
 
             // Height calculation
-            if !hasHeightMatchParent {
+            if !hasHeightMatchParent && fixedHeight == nil {
                 var childHeight: CGFloat = 0
                 switch child.heightMode {
                 case .fixed(let fixedHeight):
@@ -188,6 +204,11 @@ struct RelativePositionLayout: Layout {
     private func isMatchParent(_ mode: RelativeSizeMode) -> Bool {
         if case .matchParent = mode { return true }
         return false
+    }
+
+    private func fixedSize(_ mode: RelativeSizeMode) -> CGFloat? {
+        if case .fixed(let size) = mode, size > 0, size.isFinite { return size }
+        return nil
     }
 
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
