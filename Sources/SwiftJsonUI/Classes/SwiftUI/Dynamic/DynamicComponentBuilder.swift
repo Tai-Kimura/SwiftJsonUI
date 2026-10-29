@@ -214,6 +214,29 @@ public struct DynamicComponentBuilder: View {
         var needsSpacerAfter: Bool = false
     }
 
+    /// Whether *component*, a child of a stack along *orientation*, takes the
+    /// stack's free space along the main axis with a Spacer of its own
+    /// (buildAlignmentWrappedComponent): alignRight, alignLeft or
+    /// centerHorizontal in a row, alignBottom, alignTop or centerVertical in a
+    /// column, centerInParent in either. The stack's gravity Spacer stands
+    /// down then, as flexbox's justify-content does for an auto margin; beside
+    /// it the two split the free space and alignRight drew in the middle of a
+    /// row (ticket sjui-hstack-alignright-centred-by-trailing-spacer).
+    static func takesMainAxisSpace(_ component: DynamicComponent, orientation: String, data: [String: Any]) -> Bool {
+        let common = component.typedAttributes(CommonAttributes.self)
+        func flag(_ attr: AttrValue<Bool>?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: nil, data: data) == true
+        }
+        if flag(common.centerInParent) { return true }
+        if orientation == "horizontal" {
+            return flag(common.alignRight) || flag(common.alignLeft) || flag(common.centerHorizontal)
+        }
+        if orientation == "vertical" {
+            return flag(common.alignBottom) || flag(common.alignTop) || flag(common.centerVertical)
+        }
+        return false
+    }
+
     private func getComponentAlignmentInfo() -> AlignmentInfo {
         guard let parentOrientation = parentOrientation else {
             return AlignmentInfo()

@@ -304,13 +304,19 @@ public struct DynamicViewContainer: View {
         // for the ratio and cannot be expanded, so the widthExpands gate is
         // too narrow for it.
         let widthIsWrapContent = component.declaredWidth == nil
+        // A child that takes the free space with a Spacer of its own
+        // (alignRight, centerHorizontal, ...) stands the gravity Spacer down
+        // (DynamicComponentBuilder.takesMainAxisSpace).
+        let childTakesSpace = children.contains {
+            DynamicComponentBuilder.takesMainAxisSpace($0, orientation: "horizontal", data: distributionFillData("horizontal"))
+        }
 
         HStack(alignment: getVerticalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading edge spacer: equalCentering's half-gap, or right-gravity
             // packing — or a rightToLeft row with no horizontal gravity, which
             // starts at the right edge (DirectionStart).
             if distribution == "equalcentering" ||
-                (!distributesGaps && (extractHorizontalFromGravity(gravity) == "right" || DirectionStart.edge(of: component) == "right")) {
+                (!distributesGaps && !childTakesSpace && (extractHorizontalFromGravity(gravity) == "right" || DirectionStart.edge(of: component) == "right")) {
                 Spacer(minLength: 0)
             }
 
@@ -341,7 +347,7 @@ public struct DynamicViewContainer: View {
                 if !widthIsWrapContent {
                     Spacer(minLength: 0)
                 }
-            } else if widthExpands && !distributesGaps &&
+            } else if widthExpands && !distributesGaps && !childTakesSpace &&
                 extractHorizontalFromGravity(gravity) == "left" && DirectionStart.edge(of: component) == nil {
                 Spacer(minLength: 0)
             }
@@ -364,13 +370,17 @@ public struct DynamicViewContainer: View {
         // Same gap construction as hStackContent — see the table there.
         let distributesGaps = distribution == "equalspacing" || distribution == "equalcentering"
         let heightIsWrapContent = component.declaredHeight == nil
+        // As in hStackContent: a child's own Spacer stands the gravity one down.
+        let childTakesSpace = children.contains {
+            DynamicComponentBuilder.takesMainAxisSpace($0, orientation: "vertical", data: distributionFillData("vertical"))
+        }
 
         VStack(alignment: getHorizontalAlignmentFromGravity(), spacing: spacingValue) {
             // Leading edge spacer: equalCentering's half-gap, or bottom-gravity
             // packing — or a bottomToTop column with no vertical gravity, which
             // starts at the bottom edge (DirectionStart).
             if distribution == "equalcentering" ||
-                (!distributesGaps && (extractVerticalFromGravity(gravity) == "bottom" || DirectionStart.edge(of: component) == "bottom")) {
+                (!distributesGaps && !childTakesSpace && (extractVerticalFromGravity(gravity) == "bottom" || DirectionStart.edge(of: component) == "bottom")) {
                 Spacer(minLength: 0)
             }
 
@@ -401,7 +411,7 @@ public struct DynamicViewContainer: View {
                 if !heightIsWrapContent {
                     Spacer(minLength: 0)
                 }
-            } else if heightExpands && !distributesGaps &&
+            } else if heightExpands && !distributesGaps && !childTakesSpace &&
                 extractVerticalFromGravity(gravity) == "top" && DirectionStart.edge(of: component) == nil {
                 Spacer(minLength: 0)
             }
