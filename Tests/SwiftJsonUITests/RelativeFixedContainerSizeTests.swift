@@ -44,10 +44,8 @@ final class RelativeFixedContainerSizeTests: XCTestCase {
                  constraints: [.init(type: .parentBottom, targetId: ""), .init(type: .parentRight, targetId: "")],
                  json: #""alignBottom": true, "alignRight": true"#,
                  want: { w, h, p in CGPoint(x: w - p - b, y: h - p - b) }),
-            // alignLeft too: an axis with no constraint at all is placed
-            // without the padding, whatever the container's size (its own
-            // ticket, swiftjsonui-relative-unconstrained-axis-ignores-parent-
-            // padding).
+            // alignLeft too, so the case reads the fixed size alone: the
+            // free axis has its own arm (RelativeUnconstrainedAxisTests).
             Case(name: "centerVertical alignLeft",
                  constraints: [.init(type: .parentCenterVertical, targetId: ""), .init(type: .parentLeft, targetId: "")],
                  json: #""centerVertical": true, "alignLeft": true"#,

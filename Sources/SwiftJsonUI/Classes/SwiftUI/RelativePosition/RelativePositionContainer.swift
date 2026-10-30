@@ -491,35 +491,44 @@ struct RelativePositionLayout: Layout {
         var leftEdge: CGFloat? = nil     // If set, left edge is fixed at this position
         var rightEdge: CGFloat? = nil    // If set, right edge is fixed at this position
 
-        // Set default positions based on alignment
+        // Set default positions based on alignment. An axis no constraint
+        // places starts inside the padding and the child's own margin, as the
+        // constrained axes do (parentLeft adds both): a child with only
+        // alignBottom was drawn at x 0 in a container with padding 10 and a
+        // leftMargin of 8, where Android and the web draw it at 18 (ticket
+        // swiftjsonui-relative-unconstrained-axis-ignores-parent-padding).
+        let left = -containerSize.width / 2 + childSize.width / 2 + child.margins.leading + parentPadding.leading
+        let right = containerSize.width / 2 - childSize.width / 2 - child.margins.trailing - parentPadding.trailing
+        let top = -containerSize.height / 2 + childSize.height / 2 + child.margins.top + parentPadding.top
+        let bottom = containerSize.height / 2 - childSize.height / 2 - child.margins.bottom - parentPadding.bottom
         switch alignment {
         case .topLeading:
-            x = -containerSize.width / 2 + childSize.width / 2
-            y = -containerSize.height / 2 + childSize.height / 2
+            x = left
+            y = top
         case .top:
             x = 0
-            y = -containerSize.height / 2 + childSize.height / 2
+            y = top
         case .topTrailing:
-            x = containerSize.width / 2 - childSize.width / 2
-            y = -containerSize.height / 2 + childSize.height / 2
+            x = right
+            y = top
         case .leading:
-            x = -containerSize.width / 2 + childSize.width / 2
+            x = left
             y = 0
         case .center:
             x = 0
             y = 0
         case .trailing:
-            x = containerSize.width / 2 - childSize.width / 2
+            x = right
             y = 0
         case .bottomLeading:
-            x = -containerSize.width / 2 + childSize.width / 2
-            y = containerSize.height / 2 - childSize.height / 2
+            x = left
+            y = bottom
         case .bottom:
             x = 0
-            y = containerSize.height / 2 - childSize.height / 2
+            y = bottom
         case .bottomTrailing:
-            x = containerSize.width / 2 - childSize.width / 2
-            y = containerSize.height / 2 - childSize.height / 2
+            x = right
+            y = bottom
         default:
             x = 0
             y = 0
