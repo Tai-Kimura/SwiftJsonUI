@@ -8,6 +8,15 @@ import Foundation
 /// Shared attributes are available via `common`.
 /// Overrides the common definition of: `distribution` (use the property on this struct).
 public struct ViewAttributes {
+    public enum AccessibilityLiveRegion: String {
+        case polite = "polite"
+        case assertive = "assertive"
+        case off = "off"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["polite", "assertive", "off"]
+    }
+
     public enum Direction: String {
         case topToBottom = "topToBottom"
         case bottomToTop = "bottomToTop"
@@ -66,6 +75,8 @@ public struct ViewAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "accessibilityLabel",
+        "accessibilityLiveRegion",
         "child",
         "children",
         "direction",
@@ -91,6 +102,7 @@ public struct ViewAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "contentDescription": "accessibilityLabel",
     ]
 
     /// True when `key` is a declared canonical name or alias spelling.
@@ -100,6 +112,12 @@ public struct ViewAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
+
+    /// What screen readers say for this control in place of what it shows (web aria-label, iOS accessibilityLabel, Android contentDescription): a strings.json key or text, localized like `text`, or a binding. Use it where the visible text does not say enough, as with a row's "Open" that should be read "Open the second image". Unset, the control is read as before (its text, label or value). The image's own name is `alt`, which takes these two spellings too. On a View it names the View when the View operates a tap of its own (a button, or one button made of its content); a View that taps nothing, or holds a control of its own, is not one element to a screen reader, and the attribute does nothing there. [aliases: contentDescription]
+    public let accessibilityLabel: AttrValue<String>?
+
+    /// Read out what this View holds whenever it changes, where focus does not move: `polite` waits for the screen reader to finish, `assertive` interrupts it, `off` (or none) reads nothing. Web aria-live with role status (polite) or alert (assertive), Android liveRegion. iOS has no live region, so on iOS a View's accessibilityLiveRegion has no effect: put it on the Label whose text changes.
+    public let accessibilityLiveRegion: AttrEnum<AccessibilityLiveRegion>?
 
     /// Child component(s). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
@@ -159,6 +177,8 @@ public struct ViewAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
+        self.accessibilityLiveRegion = Self.parseAccessibilityLiveRegion(AttrCoerce.lookup(json, "accessibilityLiveRegion"))
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.direction = Self.parseDirection(AttrCoerce.lookup(json, "direction"))
@@ -177,6 +197,21 @@ public struct ViewAttributes {
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
         self.safeAreaInsetPositions = AttrCoerce.array(AttrCoerce.lookup(json, "safeAreaInsetPositions"))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)
+    }
+
+    private static func parseAccessibilityLiveRegion(_ raw: Any?) -> AttrEnum<AccessibilityLiveRegion>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s {
+            case "polite": return .known(AccessibilityLiveRegion.polite)
+            case "assertive": return .known(AccessibilityLiveRegion.assertive)
+            case "off": return .known(AccessibilityLiveRegion.off)
+            default: break
+            }
+        }
+        let near = (raw as? String).flatMap { s in AccessibilityLiveRegion.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("View.accessibilityLiveRegion: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
+        return .unknown(raw)
     }
 
     private static func parseDirection(_ raw: Any?) -> AttrEnum<Direction>? {

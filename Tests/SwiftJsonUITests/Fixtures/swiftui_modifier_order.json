@@ -2,7 +2,7 @@
   "_about": [
     "The order sjui codegen emits SwiftUI modifiers in, for SwiftJsonUI to hold its Dynamic runtime to (DynamicModifierHelper.standardOrder).",
     "bag: ModifierBag::MODIFIER_ORDER (swiftui/views/modifier_bag.rb), the order emit_all writes the registered keys in.",
-    "after_bag: what BaseViewConverter writes after the bag, in order: the accessibilityIdentifier, then .disabled again outside it (apply_outer_disabled).",
+    "after_bag: what BaseViewConverter writes after the bag, in order: the accessibilityIdentifier, then .disabled again outside it (apply_outer_disabled), then the control's screen-reader name and a Label's announcement (apply_control_accessibility), on the element the chain formed.",
     "shared_slots: keys that carry more than one attribute family, in the order their entries are written: :padding gets padding first, then insets (SpacingHelper#apply_insets appends to :padding after apply_padding).",
     "spec/swiftui/views/modifier_order_json_spec.rb holds this file to the constant and to generated code. Change them together; SwiftJsonUI copies this file byte for byte and its CI compares the copy with this file at its pinned jsonui-cli ref."
   ],
@@ -46,7 +46,8 @@
   ],
   "after_bag": [
     "accessibility_identifier",
-    "disabled"
+    "disabled",
+    "control_accessibility"
   ],
   "shared_slots": {
     "padding": [

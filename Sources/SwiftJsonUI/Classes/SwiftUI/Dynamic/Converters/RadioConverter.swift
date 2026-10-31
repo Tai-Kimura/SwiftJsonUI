@@ -169,7 +169,9 @@ public struct RadioConverter {
             // the group reads as its title. The sjui codegen forms the group
             // the same way (radio_converter.rb).
             .accessibilityElement(children: .contain)
-            .accessibilityLabel(text.isEmpty ? "" : text.dynamicLocalized())
+            // A declared accessibilityLabel names the group in place of its
+            // title (ControlAccessibility).
+            .accessibilityLabel(ControlAccessibility.label(component, data: data) ?? (text.isEmpty ? "" : text.dynamicLocalized()))
         ) }
         if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(selectionExpr, data: data) {
             return build(bound)
@@ -251,7 +253,7 @@ public struct RadioConverter {
                 // text — otherwise the SF Symbol image leaks its symbol name
                 // ("circle") as the element label.
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel(text.dynamicLocalized())
+                .accessibilityLabel(ControlAccessibility.label(component, data: data) ?? text.dynamicLocalized())
                 .accessibilityAddTraits(.isButton)
             )
         }

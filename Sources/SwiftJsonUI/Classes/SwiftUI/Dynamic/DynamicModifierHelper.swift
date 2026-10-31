@@ -1745,6 +1745,10 @@ public struct DynamicModifierHelper {
         // element inside the disabled environment. Double-application is
         // harmless, and this entry is NOT a duplicate to be tidied away.
         Stage("disabledOuter") { v, c, d in applyDisabled(v, component: c, data: d) },
+        // The control's screen-reader name and a Label's announcement, last,
+        // on the element the chain formed (ControlAccessibility). codegen:
+        // modifier_order.json after_bag `control_accessibility`.
+        Stage("controlAccessibility") { v, c, d in ControlAccessibility.apply(v, component: c, data: d) },
     ]
 
     public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false, skipBackground: Bool = false) -> AnyView {

@@ -11,6 +11,7 @@ import Foundation
 public struct CheckAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "accessibilityLabel",
         "checked",
         "checkedColor",
         "enabled",
@@ -39,6 +40,7 @@ public struct CheckAttributes {
         "action": "onValueChange",
         "alpha": "opacity",
         "checkColor": "checkedColor",
+        "contentDescription": "accessibilityLabel",
         "fontStyle": "fontWeight",
         "onSrc": "selectedIcon",
         "onTintColor": "checkedColor",
@@ -52,6 +54,9 @@ public struct CheckAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
+
+    /// What screen readers say for this control in place of what it shows (web aria-label, iOS accessibilityLabel, Android contentDescription): a strings.json key or text, localized like `text`, or a binding. Use it where the visible text does not say enough, as with a row's "Open" that should be read "Open the second image". Unset, the control is read as before (its text, label or value). The image's own name is `alt`, which takes these two spellings too. [aliases: contentDescription]
+    public let accessibilityLabel: AttrValue<String>?
 
     /// Checked state alias (binding for two-way) [binding: two-way]
     public let checked: AttrValue<Bool>?
@@ -114,6 +119,7 @@ public struct CheckAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.checked = AttrCoerce.attrValue(AttrCoerce.lookup(json, "checked"), AttrCoerce.boolean)
         self.checkedColor = AttrCoerce.string(AttrCoerce.lookup(json, "checkedColor", ["checkColor", "onTintColor"], canonicalOnly: canonicalOnly))
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)

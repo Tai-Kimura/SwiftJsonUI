@@ -7,6 +7,15 @@ import Foundation
 /// Typed attribute extraction for the `Label` component.
 /// Shared attributes are available via `common`.
 public struct LabelAttributes {
+    public enum AccessibilityLiveRegion: String {
+        case polite = "polite"
+        case assertive = "assertive"
+        case off = "off"
+        /// Every spelling this attribute accepts, as declared (values and
+        /// valueAliases keys) — case-sensitive.
+        public static let declaredSpellings: [String] = ["polite", "assertive", "off"]
+    }
+
     public enum LineBreakMode: String {
         case char = "Char"
         case clip = "Clip"
@@ -78,6 +87,7 @@ public struct LabelAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "accessibilityLiveRegion",
         "autoShrink",
         "disabledFontColor",
         "edgeInset",
@@ -123,6 +133,9 @@ public struct LabelAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
+
+    /// Read out what this shows whenever it changes, where focus does not move (a progress or saved / failed line): `polite` waits for the screen reader to finish, `assertive` interrupts it, `off` (or none) reads nothing. Web aria-live with role status (polite) or alert (assertive), Android liveRegion, iOS an announcement of the Label's text when a bound text changes (a static text never changes, so it announces nothing).
+    public let accessibilityLiveRegion: AttrEnum<AccessibilityLiveRegion>?
 
     /// Enable auto-shrink. Active only on a bounded axis (explicit size, matchParent, or a max bound) — a no-op under wrapContent, which grows to the content and leaves nothing to shrink into. Full ruling in attribute_semantics.json -> autoShrink.
     public let autoShrink: Bool?
@@ -215,6 +228,7 @@ public struct LabelAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.accessibilityLiveRegion = Self.parseAccessibilityLiveRegion(AttrCoerce.lookup(json, "accessibilityLiveRegion"))
         self.autoShrink = AttrCoerce.boolean(AttrCoerce.lookup(json, "autoShrink"))
         self.disabledFontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "disabledFontColor"), AttrCoerce.string)
         self.edgeInset = AttrCoerce.any(AttrCoerce.lookup(json, "edgeInset"))
@@ -244,6 +258,21 @@ public struct LabelAttributes {
         self.textShadow = AttrCoerce.any(AttrCoerce.lookup(json, "textShadow"))
         self.textTransform = Self.parseTextTransform(AttrCoerce.lookup(json, "textTransform"))
         self.underline = AttrCoerce.any(AttrCoerce.lookup(json, "underline"))
+    }
+
+    private static func parseAccessibilityLiveRegion(_ raw: Any?) -> AttrEnum<AccessibilityLiveRegion>? {
+        guard let raw = raw, !(raw is NSNull) else { return nil }
+        if let s = raw as? String {
+            switch s {
+            case "polite": return .known(AccessibilityLiveRegion.polite)
+            case "assertive": return .known(AccessibilityLiveRegion.assertive)
+            case "off": return .known(AccessibilityLiveRegion.off)
+            default: break
+            }
+        }
+        let near = (raw as? String).flatMap { s in AccessibilityLiveRegion.declaredSpellings.first { $0.caseInsensitiveCompare(s) == .orderedSame } }
+        AttrCodegenWarnings.emit("Label.accessibilityLiveRegion: unknown enum value '\(raw)'" + (near.map { " — did you mean '\($0)'?" } ?? ""))
+        return .unknown(raw)
     }
 
     private static func parseLineBreakMode(_ raw: Any?) -> AttrEnum<LineBreakMode>? {

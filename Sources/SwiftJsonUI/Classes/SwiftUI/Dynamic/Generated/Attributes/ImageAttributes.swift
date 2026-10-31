@@ -51,7 +51,6 @@ public struct ImageAttributes {
         "maxZoom",
         "minZoom",
         "renderingMode",
-        "size",
         "src",
         "srcName",
         "systemIcon",
@@ -107,9 +106,6 @@ public struct ImageAttributes {
     /// Rendering mode
     public let renderingMode: AttrEnum<RenderingMode>?
 
-    /// Width and height in dp when width/height are not given (kjui image_component).
-    public let size: Double?
-
     /// Image source name (can be data binding). On web it is passed to `<img src>` as a path, since web has no asset catalog, so a bare image name belongs in srcName there (rjui warns).
     public let src: AttrValue<String>?
 
@@ -134,7 +130,6 @@ public struct ImageAttributes {
         self.maxZoom = AttrCoerce.number(AttrCoerce.lookup(json, "maxZoom"))
         self.minZoom = AttrCoerce.number(AttrCoerce.lookup(json, "minZoom"))
         self.renderingMode = Self.parseRenderingMode(AttrCoerce.lookup(json, "renderingMode"))
-        self.size = AttrCoerce.number(AttrCoerce.lookup(json, "size"))
         self.src = AttrCoerce.attrValue(AttrCoerce.lookup(json, "src"), AttrCoerce.string)
         self.srcName = AttrCoerce.attrValue(AttrCoerce.lookup(json, "srcName"), AttrCoerce.string)
         self.systemIcon = AttrCoerce.boolean(AttrCoerce.lookup(json, "systemIcon"))
