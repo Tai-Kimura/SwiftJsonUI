@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: ba655ed301fd8bf3c70e9b4cc77aff2903fd087c # jsonui-cli fix/a11y-label-live (ba655ed3, on v2.3.37): the attr tables are re-vendored from it (accessibilityLabel on the controls, accessibilityLiveRegion on Label / View, and the size / Collection END retirements since v2.3.22); the fixtures match it unchanged
+      JSONUI_CLI_MANIFEST_REF: v2.3.38 # jsonui-cli release tag v2.3.38: the attr tables are re-vendored from it (accessibilityLabel on the controls, accessibilityLiveRegion on Label / View, and the size / Collection END retirements since v2.3.22); the fixtures match it unchanged
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
