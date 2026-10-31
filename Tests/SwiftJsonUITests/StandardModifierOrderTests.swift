@@ -72,6 +72,7 @@ final class StandardModifierOrderTests: XCTestCase {
         "disabled",
         "accessibilityId",
         "disabledOuter",
+        "controlAccessibility",
     ]
 
     func testEveryStageIsWiredInOrder() {

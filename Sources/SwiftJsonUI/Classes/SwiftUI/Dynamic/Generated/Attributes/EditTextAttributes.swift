@@ -118,6 +118,7 @@ public struct EditTextAttributes {
 
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "accessibilityLabel",
         "accessoryBackground",
         "accessoryCornerRadius",
         "accessoryTextColor",
@@ -187,6 +188,7 @@ public struct EditTextAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "contentDescription": "accessibilityLabel",
         "placeholderColor": "hintColor",
         "value": "text",
     ]
@@ -198,6 +200,9 @@ public struct EditTextAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
+
+    /// What screen readers say for this control in place of what it shows (web aria-label, iOS accessibilityLabel, Android contentDescription): a strings.json key or text, localized like `text`, or a binding. Use it where the visible text does not say enough, as with a row's "Open" that should be read "Open the second image". Unset, the control is read as before (its text, label or value). The image's own name is `alt`, which takes these two spellings too. [aliases: contentDescription]
+    public let accessibilityLabel: AttrValue<String>?
 
     /// Input accessory toolbar background - hex string or color name from colors.json. UIKit only: read by SJUITextField's accessory toolbar; SwiftUI has no input-accessory surface.
     public let accessoryBackground: String?
@@ -389,6 +394,7 @@ public struct EditTextAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.accessoryBackground = AttrCoerce.string(AttrCoerce.lookup(json, "accessoryBackground"))
         self.accessoryCornerRadius = AttrCoerce.number(AttrCoerce.lookup(json, "accessoryCornerRadius"))
         self.accessoryTextColor = AttrCoerce.string(AttrCoerce.lookup(json, "accessoryTextColor"))

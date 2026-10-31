@@ -10,6 +10,7 @@ import Foundation
 public struct SliderAttributes {
     /// Canonical attribute names declared for this component, including the shared `common` set (public metadata contract).
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
+        "accessibilityLabel",
         "maximum",
         "maximumValueImage",
         "minimum",
@@ -29,6 +30,7 @@ public struct SliderAttributes {
     /// entry and are not redirected.
     public static let aliasMap: [String: String] = [
         "alpha": "opacity",
+        "contentDescription": "accessibilityLabel",
         "maxValue": "maximum",
         "maximumValue": "maximum",
         "minValue": "minimum",
@@ -43,6 +45,9 @@ public struct SliderAttributes {
 
     /// Attributes shared across all components.
     public let common: CommonAttributes
+
+    /// What screen readers say for this control in place of what it shows (web aria-label, iOS accessibilityLabel, Android contentDescription): a strings.json key or text, localized like `text`, or a binding. Use it where the visible text does not say enough, as with a row's "Open" that should be read "Open the second image". Unset, the control is read as before (its text, label or value). The image's own name is `alt`, which takes these two spellings too. [aliases: contentDescription]
+    public let accessibilityLabel: AttrValue<String>?
 
     /// Maximum value (binding supported). `maxValue` / `maximumValue` are accepted alias spellings. Defaults to 1: with no bounds declared the range is 0 .. 1, this SSoT's convention for a unitless value on a track (compare Progress.progress and opacity, both declared min 0 / max 1). Full ruling in attribute_semantics.json -> sliderRange. [default: 1; aliases: maximumValue, maxValue]
     public let maximum: AttrValue<Double>?
@@ -84,6 +89,7 @@ public struct SliderAttributes {
     /// alias fallback is then disabled.
     public init(json: [String: Any], canonicalOnly: Bool = false) {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
+        self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.maximum = AttrCoerce.attrValue(AttrCoerce.lookup(json, "maximum", ["maximumValue", "maxValue"], canonicalOnly: canonicalOnly), AttrCoerce.number)
         self.maximumValueImage = AttrCoerce.string(AttrCoerce.lookup(json, "maximumValueImage"))
         self.minimum = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minimum", ["minimumValue", "minValue"], canonicalOnly: canonicalOnly), AttrCoerce.number)

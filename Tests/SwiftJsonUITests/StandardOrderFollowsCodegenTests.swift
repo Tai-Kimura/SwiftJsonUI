@@ -62,6 +62,7 @@ final class StandardOrderFollowsCodegenTests: XCTestCase {
         "alert": "alert",
         "accessibilityId": "after_bag:accessibility_identifier",
         "disabledOuter": "after_bag:disabled",
+        "controlAccessibility": "after_bag:control_accessibility",
     ]
 
     private struct CodegenOrder {
