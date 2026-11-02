@@ -830,6 +830,11 @@ final class ConformanceUITests: XCTestCase {
                     }
                 } catch {
                     suppressIssues = false
+                    if retap == nil, let taken = selectOptionRetap(step, error: error, fixture: fixture, app: app,
+                                                                  actions: actionExecutor, since: fixtureStart) {
+                        retap = taken
+                        continue
+                    }
                     let diagnosis = postTapDiagnosis(after: lastTap, failed: step, fixture: fixture, app: app,
                                                      actions: actionExecutor, asserts: assertionExecutor, retapped: retap != nil)
                     if let taken = diagnosis.retap {   // the step passed on the second tap: named, and the fixture goes on
@@ -1039,6 +1044,40 @@ final class ConformanceUITests: XCTestCase {
         }
         parts.append(second + (second == TapDiagnosis.deliveredOnSecondTap ? " — but this fixture already retapped once" : ""))
         return PostTapOutcome(text: " — [post-tap] " + parts.joined(separator: "; "))
+    }
+
+    /// A `selectOption` whose picker sheet never appeared is sent once more:
+    /// the driver taps the SelectBox once and waits for the sheet, so a tap
+    /// that was not delivered fails the step as "Picker sheet did not appear"
+    /// (jsonui-cli ticket 2026-11-02-ios-selectoption-picker-sheet-timeout-
+    /// recurred: the weekly run of 2026-11-01 failed SelectBox/onValueChange__
+    /// callback_fire so, on inputs that passed before and after). If the
+    /// second one passes, it is the fixture's retap — the same named retry as
+    /// postTapDiagnosis's (choice B), counted by the same gate; a sheet that
+    /// does not appear on the second one either keeps the error.
+    private func selectOptionRetap(
+        _ step: TestStep, error: Error, fixture: ConformanceManifest.Fixture, app: XCUIApplication,
+        actions: XCUITestActionExecutor, since fixtureStart: Date
+    ) -> RetapResult? {
+        guard step.action == "selectOption", let id = step.id,
+              shortError(error).contains("Picker sheet did not appear") else { return nil }
+        let at = Date().timeIntervalSince(fixtureStart)
+        let before = "selectOption: " + shortError(error) + "; " + elementState(id, in: app)
+        let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))__select_option_no_sheet"
+        let path = try? captureScreenshot(named: shot, app: app)
+        print("SELECT_OPTION_RETAP \(fixture.id) \(id) +\(String(format: "%.3f", at))s — the picker sheet did not appear; sent once more")
+        capturedIssues = []
+        suppressIssues = true
+        defer { suppressIssues = false }
+        do {
+            try actions.execute(step: step, in: app)
+        } catch {
+            print("SELECT_OPTION_RETAP \(fixture.id) \(id): the second did not open the sheet either — the error stands")
+            return nil
+        }
+        guard capturedIssues.isEmpty else { return nil }
+        return RetapResult(reason: "touch not delivered", tap: id, at: at, before: before,
+                           after: elementState(id, in: app), screenshot: path)
     }
 
     private func stepLabel(_ step: TestStep) -> String {
