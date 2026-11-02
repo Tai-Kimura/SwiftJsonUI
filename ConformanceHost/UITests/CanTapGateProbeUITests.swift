@@ -87,7 +87,24 @@ final class CanTapGateProbeUITests: XCTestCase {
             }
         }
         sleep(1)
-        let text = readout(app)
+        var text = readout(app)
+        // One named retap, as a fixture's (jsonui-cli tickets 2026-10-24-ios-
+        // conformance-tap-not-delivered-recurred, the requester's choice B, and
+        // 2026-11-02-conformance-weekly-ios-cantap-gate-probe-red): a Switch
+        // that did not switch is tapped once more and the line says so. The
+        // weekly run of 2026-11-01 lost sw_closed's tap — XCUITest computed no
+        // hit point ({-1, -1}) for all three Switches, and only that one did
+        // not switch; its handler count was right. One per probe: two Switches
+        // that did not switch, or one that a second tap does not switch either
+        // (a gate that really stops the control), stay red below.
+        let unswitched = ["closed", "open", "plain"].filter { pairs(text, "sw")[$0] != "true" }
+        if unswitched.count == 1 {
+            let id = "sw_\(unswitched[0])"
+            print("CANTAP_PROBE retap \(id): did not switch on the first tap (touch not delivered) — tapped once more")
+            XCTContext.runActivity(named: "retap \(id) (touch not delivered)") { _ in element(id).tap() }
+            sleep(1)
+            text = readout(app)
+        }
         print("CANTAP_PROBE readout=\(text)")
         let counts = pairs(text, "counts")
         for (name, want) in calls.sorted(by: { $0.key < $1.key }) {
