@@ -28,6 +28,14 @@ enum TapDiagnosis {
         return "exists=true hittable=\(element.isHittable) frame=\(element.frame)"
     }
 
+    /// What every failure screenshot's name carries. The captures and the
+    /// diagnostics share `artifacts/ios`, and the report (jsonui-cli
+    /// conformance/baseline.py DIAGNOSTIC_SCREENSHOT_MARKERS) tells them
+    /// apart by this: a diagnostic without it is compared as a capture, and
+    /// the codegen host — which does not host interactive fixtures — reads
+    /// as a host that skipped it.
+    static let failureMarker = "__post_tap_failure"
+
     /// Writes app.screenshot() to `artifacts/ios/<name>.png` under the staging
     /// directory (collect_results.sh uploads it) and returns that relative path.
     /// It makes the directory itself: run_conformance.sh creates only the

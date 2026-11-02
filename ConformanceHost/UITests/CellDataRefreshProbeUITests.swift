@@ -71,7 +71,7 @@ final class CellDataRefreshProbeUITests: XCTestCase {
                 var detail = "bump to v\(version): version shown before \(versionBefore.map(String.init) ?? "?"), after \(shownVersion(app).map(String.init) ?? "?")"
                 detail += "; cdr_bump before the tap: \(bumpBefore); now: \(TapDiagnosis.elementState("cdr_bump", in: app))"
                 do {
-                    detail += "; screenshot \(try TapDiagnosis.screenshot(named: "\(name)__post_tap_failure_v\(version)", app: app))"
+                    detail += "; screenshot \(try TapDiagnosis.screenshot(named: "\(name)\(TapDiagnosis.failureMarker)_v\(version)", app: app))"
                 } catch {
                     detail += "; no screenshot (\(TapDiagnosis.shortError(error)))"
                 }

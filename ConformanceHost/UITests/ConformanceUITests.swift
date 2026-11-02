@@ -1021,7 +1021,7 @@ final class ConformanceUITests: XCTestCase {
                      "before: \(tap.before)",
                      "now: \(now)",
                      "app: \(app.state.rawValue)"]
-        let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))__post_tap_failure"
+        let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))" + TapDiagnosis.failureMarker
         let path = try? captureScreenshot(named: shot, app: app)
         if let path {
             parts.append("screenshot: \(path)")
@@ -1063,7 +1063,14 @@ final class ConformanceUITests: XCTestCase {
               shortError(error).contains("Picker sheet did not appear") else { return nil }
         let at = Date().timeIntervalSince(fixtureStart)
         let before = "selectOption: " + shortError(error) + "; " + elementState(id, in: app)
+        // A diagnostic, not a capture: the name carries `__post_tap_failure`
+        // (TapDiagnosis.failureMarker) so the report leaves it out of the
+        // dynamic/codegen comparison and CI's tap-repro upload picks it up.
+        // `<fixture>__select_option_no_sheet.png` was read as a capture only
+        // the dynamic host drew (jsonui-cli ticket 2026-11-02-ios-
+        // selectoption-retap-shot-counted-as-a-render, run 41426977222).
         let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))__select_option_no_sheet"
+            + TapDiagnosis.failureMarker
         let path = try? captureScreenshot(named: shot, app: app)
         print("SELECT_OPTION_RETAP \(fixture.id) \(id) +\(String(format: "%.3f", at))s — the picker sheet did not appear; sent once more")
         capturedIssues = []
