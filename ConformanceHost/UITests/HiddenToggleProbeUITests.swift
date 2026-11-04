@@ -2,6 +2,7 @@
 import XCTest
 
 final class HiddenToggleProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("HiddenToggle")
     private let wrapped = ["htp_wrapper", "htp_reactive_vis", "htp_reactive_hidden"]
 
     private func state(_ app: XCUIApplication, _ phase: String) -> [String: (Bool, Bool)] {
@@ -25,10 +26,11 @@ final class HiddenToggleProbeUITests: XCTestCase {
         let s1 = state(app, "hidden")
         for id in wrapped { XCTAssertEqual(s1[id]?.0, false, "\(id) hidden: not found") }
         XCTAssertEqual(s1["htp_opacity0"]?.1, true, "opacity 0 stays visible")
-        app.buttons["htp_toggle"].tap()
+        let first = app.descendants(matching: .any).matching(identifier: wrapped[0]).firstMatch
+        retap.tap("htp_toggle to shown", until: { first.exists }) { app.buttons["htp_toggle"].tap() }
         let s2 = state(app, "shown")
         for id in wrapped { XCTAssertEqual(s2[id]?.1, true, "\(id) shown: found and visible") }
-        app.buttons["htp_toggle"].tap()
+        retap.tap("htp_toggle to hidden", until: { !first.exists }) { app.buttons["htp_toggle"].tap() }
         let s3 = state(app, "hidden_again")
         for id in wrapped { XCTAssertEqual(s3[id]?.0, false, "\(id) hidden again: not found") }
     }

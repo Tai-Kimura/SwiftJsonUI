@@ -30,6 +30,7 @@
 import XCTest
 
 final class AnchorTapProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("AnchorTap")
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
@@ -59,7 +60,8 @@ final class AnchorTapProbeUITests: XCTestCase {
     private struct Ax { let frame: CGRect; let activation: CGPoint; let count: Int }
 
     private func axReads(_ app: XCUIApplication) -> [String: Ax] {
-        element(app, "at_measure").tap()
+        let wasAx = label(app, "at_ax")
+        retap.tap("at_measure", until: { label(app, "at_ax") != wasAx }) { element(app, "at_measure").tap() }
         RunLoop.current.run(until: Date().addingTimeInterval(0.5))
         var out: [String: Ax] = [:]
         for part in label(app, "at_ax").split(separator: ";") {
@@ -122,7 +124,9 @@ final class AnchorTapProbeUITests: XCTestCase {
                 let m = all.element(boundBy: i)
                 return "\(m.elementType.rawValue)\(text(m.frame))"
             }.joined(separator: " ")
-            e.tap()
+            // Named by what ran: a touch that reached the wrong handler is no lost touch, and stays red below.
+            let beforeTap = label(app, "\(p)_at_hit")
+            retap.tap("\(id) tap", until: { label(app, "\(p)_at_hit") != beforeTap }) { e.tap() }
             let byTap = hit(app, p, want: "btn_\(k)")
             let landed = touch(app).map(moved)
             var line = "\(variant) \(id): frame \(text(frame)) hittable \(hittable) tap→\(landed.map { String(format: "%.2f,%.2f", $0.x, $0.y) } ?? "none") hit \(byTap) matches \(all.count) [\(seen)]"
@@ -143,18 +147,20 @@ final class AnchorTapProbeUITests: XCTestCase {
             judge(byTap == "btn_\(k)", "\(id): the element tap ran '\(byTap)', not btn_\(k)")
             if let landed { judge(frame.insetBy(dx: -0.5, dy: -0.5).contains(landed), "\(id): the tap landed at \(landed), outside the frame \(text(frame))") }
             // Away from the button, so the activation tap has to change it.
-            element(app, "\(p)_at_card_n").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap()
+            retap.tap("\(id) back on card_n", until: { label(app, "\(p)_at_hit") == "card_n" }) { element(app, "\(p)_at_card_n").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap() }
             _ = hit(app, p, want: "card_n")
             if let raw = ax[id] {
                 let a = Ax(frame: moved(raw.frame), activation: moved(raw.activation), count: raw.count)
                 let origin = app.coordinate(withNormalizedOffset: .zero)
                 let zero = origin.screenPoint
-                origin.withOffset(CGVector(dx: a.activation.x - zero.x, dy: a.activation.y - zero.y)).tap()
+                retap.tap("\(id) activation", until: { label(app, "\(p)_at_hit") != "card_n" }) {
+                    origin.withOffset(CGVector(dx: a.activation.x - zero.x, dy: a.activation.y - zero.y)).tap()
+                }
                 let byActivation = hit(app, p, want: "btn_\(k)")
                 line += " | ax frame \(text(a.frame)) activation \(String(format: "%.2f,%.2f", a.activation.x, a.activation.y)) elements \(a.count) → hit \(byActivation)"
                 judge(frame.insetBy(dx: -0.5, dy: -0.5).contains(a.activation), "\(id): activation point \(a.activation) outside the frame \(text(frame))")
                 judge(byActivation == "btn_\(k)", "\(id): a touch at the activation point ran '\(byActivation)', not btn_\(k)")
-                element(app, "\(p)_at_card_n").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap()
+                retap.tap("\(id) back on card_n", until: { label(app, "\(p)_at_hit") == "card_n" }) { element(app, "\(p)_at_card_n").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap() }
                 _ = hit(app, p, want: "card_n")
             } else {
                 judge(false, "\(id): no accessibility element read in the app")
@@ -188,7 +194,9 @@ final class AnchorTapProbeUITests: XCTestCase {
             lines.append(line)
         }
         // Control: the card m still answers its own tap away from the button.
-        element(app, "\(p)_at_card_m").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap()
+        retap.tap("\(p) card_m", until: { label(app, "\(p)_at_hit") == "card_m" }) {
+            element(app, "\(p)_at_card_m").coordinate(withNormalizedOffset: CGVector(dx: 0.2, dy: 0.7)).tap()
+        }
         let card = hit(app, p, want: "card_m")
         lines.append("\(variant) control card_m → hit \(card)")
         XCTAssertEqual(card, "card_m", "\(variant): the card's own tap ran '\(card)'")

@@ -23,6 +23,7 @@
 import XCTest
 
 final class ScreenMarkerProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("ScreenMarker")
 
     private func marker(_ app: XCUIApplication, _ screenId: String) -> XCUIElement {
         app.descendants(matching: .any).matching(identifier: "__screen_\(screenId)").firstMatch
@@ -237,7 +238,7 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         XCTAssertTrue(marker(app, "fullbleed_probe").waitForExistence(timeout: 15))
         XCTAssertTrue(isDisplayed(app, "fullbleed_probe"), "precondition: displayed before covering")
 
-        app.buttons["fullbleed_open_sheet"].tap()
+        retap.tap("fullbleed_open_sheet", until: { marker(app, "fullbleed_sheet").exists }) { app.buttons["fullbleed_open_sheet"].tap() }
         XCTAssertTrue(marker(app, "fullbleed_sheet").waitForExistence(timeout: 15), "sheet did not present")
 
         print("  covering screens: \(otherHittableScreens(app, excluding: "fullbleed_probe"))")
@@ -259,7 +260,7 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         XCTAssertTrue(element.waitForExistence(timeout: 15))
         XCTAssertTrue(element.isHittable, "precondition: marker hittable before covering")
 
-        app.buttons["fullbleed_open_sheet"].tap()
+        retap.tap("fullbleed_open_sheet", until: { marker(app, "fullbleed_sheet").exists }) { app.buttons["fullbleed_open_sheet"].tap() }
         XCTAssertTrue(marker(app, "fullbleed_sheet").waitForExistence(timeout: 15), "sheet did not present")
 
         print("  " + snapshot(app, "covered(fullbleed_probe)", "__screen_fullbleed_probe"))
@@ -284,7 +285,7 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         try skipUnlessEnabled()
         let app = launchProbe()
         XCTAssertTrue(element(app, "go_pushed").waitForExistence(timeout: 15))
-        element(app, "go_pushed").tap()
+        retap.tap("go_pushed", until: { marker(app, "pushed_screen").exists }) { element(app, "go_pushed").tap() }
         XCTAssertTrue(marker(app, "pushed_screen").waitForExistence(timeout: 10))
 
         print("[screen-marker] PUSH")
@@ -297,7 +298,7 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         try skipUnlessEnabled()
         let app = launchProbe()
         XCTAssertTrue(element(app, "open_sheet").waitForExistence(timeout: 15))
-        element(app, "open_sheet").tap()
+        retap.tap("open_sheet", until: { marker(app, "sheet_screen").exists }) { element(app, "open_sheet").tap() }
         XCTAssertTrue(marker(app, "sheet_screen").waitForExistence(timeout: 10))
 
         print("[screen-marker] SHEET")
@@ -309,7 +310,7 @@ final class ScreenMarkerProbeUITests: XCTestCase {
         try skipUnlessEnabled()
         let app = launchProbe()
         XCTAssertTrue(element(app, "open_cover").waitForExistence(timeout: 15))
-        element(app, "open_cover").tap()
+        retap.tap("open_cover", until: { marker(app, "cover_screen").exists }) { element(app, "open_cover").tap() }
         XCTAssertTrue(marker(app, "cover_screen").waitForExistence(timeout: 10))
 
         print("[screen-marker] FULLSCREEN COVER")
@@ -328,7 +329,7 @@ final class ScreenMarkerProbeUITests: XCTestCase {
 
         let secondTab = app.buttons["second"].exists ? app.buttons["second"] : app.staticTexts["second"]
         if secondTab.exists {
-            secondTab.tap()
+            retap.tap("second tab", until: { marker(app, "second_tab").exists }) { secondTab.tap() }
             _ = marker(app, "second_tab").waitForExistence(timeout: 10)
             print("[screen-marker] TAB (after switch)")
             print("  " + snapshot(app, "active(second_tab)", "__screen_second_tab"))

@@ -12,6 +12,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_CANTAP_CODEGEN_PROBE=1.
 final class CanTapCodegenProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("CanTapCodegen")
     private let kinds = ["Icl", "Radio", "Check", "Img"]
     private let gates = ["None", "False", "BClosed", "BOpen"]
 
@@ -46,13 +47,21 @@ final class CanTapCodegenProbeUITests: XCTestCase {
         func tap(_ x: CGFloat, _ y: CGFloat) { origin.withOffset(CGVector(dx: x, dy: y)).tap() }
 
         for g in gates {
-            let icl = frame("cgIcl\(g)"); tap(icl.midX, icl.midY)
-            let img = frame("cgImg\(g)"); tap(img.midX, img.midY)
-            let check = frame("cgCheck\(g)"); tap(check.midX, check.midY)
+            // A shut gate's row is touched once: its calls stay 0 and that is what it is here to show.
+            func touched(_ kind: String, _ x: CGFloat, _ y: CGFloat) {
+                let name = "\(kind)\(g)"
+                guard g == "None" || g == "BOpen" else { return tap(x, y) }
+                func now() -> Int { Int(pairs(app.staticTexts["cg_readout"].label, "counts")[name] ?? "0") ?? -1 }
+                let was = now()
+                retap.tap(name, until: { now() > was }) { tap(x, y) }
+            }
+            let icl = frame("cgIcl\(g)"); touched("Icl", icl.midX, icl.midY)
+            let img = frame("cgImg\(g)"); touched("Img", img.midX, img.midY)
+            let check = frame("cgCheck\(g)"); touched("Check", check.midX, check.midY)
             // A Radio row: its glyph (its selection) at the left, its text at the right.
             let radio = frame("cgRadio\(g)")
-            tap(radio.minX + 8, radio.midY)
-            tap(radio.maxX - 4, radio.midY)
+            touched("Radio", radio.minX + 8, radio.midY)
+            touched("Radio", radio.maxX - 4, radio.midY)
         }
         sleep(1)
         let text = app.staticTexts["cg_readout"].label

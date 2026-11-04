@@ -16,6 +16,7 @@
 import XCTest
 
 final class OffsetHitTargetProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("OffsetHitTarget")
 
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
@@ -33,7 +34,7 @@ final class OffsetHitTargetProbeUITests: XCTestCase {
     /// Reset first, so a tap that lands on nothing reports "none" instead of
     /// the previous hit.
     private func tapFresh(_ app: XCUIApplication, x: CGFloat, y: CGFloat) -> String {
-        app.buttons["offset_probe_reset"].tap()
+        retap.tap("offset_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["offset_probe_reset"].tap() }
         XCTAssertEqual(result(app), "tapped: none", "reset did not take")
         tap(app, x: x, y: y)
         return result(app)

@@ -23,6 +23,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_SCREEN_MARKER_SHRINK_PROBE=1.
 final class ScreenMarkerShrinkProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("ScreenMarkerShrink")
 
     private let markerPredicate = NSPredicate(format: "identifier BEGINSWITH %@", "__screen_")
 
@@ -44,6 +45,12 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
             "the probe did not come up"
         )
         return app
+    }
+
+    /// A button that starts the markers leaving, retapped by name when `shrink_left` does not move.
+    private func start(_ app: XCUIApplication, _ button: String) {
+        let left = app.staticTexts["shrink_left"], was = left.label
+        retap.tap(button, until: { left.label != was }) { app.buttons[button].tap() }
     }
 
     private func markers(_ app: XCUIApplication) -> XCUIElementQuery {
@@ -68,7 +75,7 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
         let before = query.count
         XCTAssertEqual(before, probeLeavingCount + 1, "the target and every leaving marker")
         let last = query.element(boundBy: before - 1)
-        app.buttons["shrink_remove_all"].tap()
+        start(app, "shrink_remove_all")
         waitUntilAllLeft(app)
         XCTAssertEqual(query.count, 1, "only the target is left")
 
@@ -85,7 +92,7 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
         XCTAssertTrue(byId.isHittable, "precondition: hittable while it is there")
         let query = markers(app)
         let last = query.element(boundBy: query.count - 1)
-        app.buttons["shrink_remove_all"].tap()
+        start(app, "shrink_remove_all")
         waitUntilAllLeft(app)
 
         let started = Date()
@@ -111,7 +118,7 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
     /// shrunk end.
     func testHittableScreensWhileMarkersLeave() throws {
         let app = launch(leavingRenamed: true)
-        app.buttons["shrink_start"].tap()
+        start(app, "shrink_start")
         var rounds = 0
         repeat {
             let covering = ScreenMarker.hittableScreens(in: app, excluding: "shrink_target")
@@ -126,7 +133,7 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
     /// for is not there, so this is presentMarkers alone.
     func testDiagnosisWhileMarkersLeave() throws {
         let app = launch()
-        app.buttons["shrink_start"].tap()
+        start(app, "shrink_start")
         var last = ""
         repeat {
             last = ScreenMarker.diagnosis(screenId: "shrink_gone", in: app)
@@ -143,7 +150,7 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
     func testAssertScreenWhileMarkersLeave() throws {
         let app = launch(leavingRenamed: true)
         let executor = XCUITestAssertionExecutor(screenTransitionTimeout: 10)
-        app.buttons["shrink_start"].tap()
+        start(app, "shrink_start")
         var rounds = 0
         repeat {
             try executor.execute(step: TestStep(assert: "screen", timeout: 10_000, name: "shrink_target"), in: app)
@@ -162,7 +169,7 @@ final class ScreenMarkerShrinkProbeUITests: XCTestCase {
         try executor.execute(
             step: TestStep(assert: "text", id: "leaving_text_0", timeout: 2000, equals: AnyCodable("leaving 0")),
             in: app)
-        app.buttons["shrink_remove_all"].tap()
+        start(app, "shrink_remove_all")
         waitUntilAllLeft(app)
         XCTAssertThrowsError(try executor.execute(
             step: TestStep(assert: "text", id: "leaving_text_0", timeout: 1000, equals: AnyCodable("leaving 0")),

@@ -8,6 +8,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_CANTAP_GATE_PROBE=1.
 final class CanTapGateProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("CanTapGate")
     /// Handler calls expected after one tap on each element.
     private let calls: [String: Int] = [
         // codegen: the gate shut takes the parent's tap away, not the child's
@@ -69,6 +70,11 @@ final class CanTapGateProbeUITests: XCTestCase {
             print("CANTAP_PROBE enabled \(id) isEnabled=\(e.isEnabled) type=\(e.elementType.rawValue)")
             XCTAssertTrue(e.isEnabled, "\(id) reads as enabled")
         }
+        // A row that should call is sent again when no call follows (ProbeRetap). A shut gate's row is touched
+        // once: a second touch must never be the reason it reads as stopped.
+        func reached(_ name: String, _ touch: () -> Void) {
+            retap.tap(name, until: { Int(pairs(readout(app), "counts")[name] ?? "0") ?? 0 > 0 }, touch)
+        }
         // A parent is tapped in its padding, 8 pt right of its child: the
         // frame XCUITest reports for the parent's accessibility container is
         // its child's, so a tap inside that frame lands on the child.
@@ -76,14 +82,16 @@ final class CanTapGateProbeUITests: XCTestCase {
         for state in ["closed", "open", "old"] {
             let kid = element("kid_\(state)").frame
             _ = element("par_\(state)")
-            origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap()
+            let touch = { origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap() }
+            if state == "open" { reached("par_open", touch) } else { touch() }
         }
         for id in ["kid_closed", "kid_open", "kid_old", "sw_closed", "sw_open", "sw_plain"] {
-            element(id).tap()
+            if id == "kid_open" { reached(id) { element(id).tap() } } else { element(id).tap() }
         }
         for kind in ["btn", "icl", "radio", "check"] {
             for g in ["none", "false", "bclosed", "bopen"] {
-                element("dyn_\(kind)_\(g)").tap()
+                let id = "dyn_\(kind)_\(g)"
+                if g == "none" || g == "bopen" { reached(id) { element(id).tap() } } else { element(id).tap() }
             }
         }
         sleep(1)
@@ -98,9 +106,8 @@ final class CanTapGateProbeUITests: XCTestCase {
         // that did not switch, or one that a second tap does not switch either
         // (a gate that really stops the control), stay red below.
         let unswitched = ["closed", "open", "plain"].filter { pairs(text, "sw")[$0] != "true" }
-        if unswitched.count == 1 {
+        if unswitched.count == 1, retap.spend("sw_\(unswitched[0])") {
             let id = "sw_\(unswitched[0])"
-            print("CANTAP_PROBE retap \(id): did not switch on the first tap (touch not delivered) — tapped once more")
             XCTContext.runActivity(named: "retap \(id) (touch not delivered)") { _ in element(id).tap() }
             sleep(1)
             text = readout(app)

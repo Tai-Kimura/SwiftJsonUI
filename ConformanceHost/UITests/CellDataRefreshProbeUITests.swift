@@ -26,6 +26,7 @@ import XCTest
 /// drawing that did not answer (jsonui-cli ticket
 /// ios-dynamic-interactive-fixture-tap-not-delivered-intermittently).
 final class CellDataRefreshProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("CellDataRefresh")
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
     /// The N of the probe's "version N" label, or nil when it cannot be read.
@@ -46,7 +47,8 @@ final class CellDataRefreshProbeUITests: XCTestCase {
             let versionBefore = shownVersion(app)
             let bumpBefore = TapDiagnosis.elementState("cdr_bump", in: app)
             if version > 0 {
-                app.buttons["cdr_bump"].tap()
+                // Judged by the version going up, not by the cells: stale cells under a new version stay red below.
+                retap.tap("\(argument) bump to v\(version)", until: { (shownVersion(app) ?? -1) > (versionBefore ?? -1) }) { app.buttons["cdr_bump"].tap() }
                 sleep(1)
             }
             var staleNow: [String] = []

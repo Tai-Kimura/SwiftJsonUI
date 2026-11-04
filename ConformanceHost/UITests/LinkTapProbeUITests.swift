@@ -24,6 +24,7 @@ import XCTest
 /// in front, asserted, and each one prints which app was in front. Each path
 /// starts with Safari not running (it is stopped if the path before left it).
 final class LinkTapProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("LinkTap")
     private var app: XCUIApplication!
     private let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
     /// How long a link's URL may take to bring Safari to the front.
@@ -97,10 +98,12 @@ final class LinkTapProbeUITests: XCTestCase {
             // On the link: the link's element if XCUITest reports one, else
             // the Label's leading edge, where both links start.
             let link = element.links.firstMatch
-            if link.exists {
-                link.tap()
-            } else {
-                element.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap()
+            retap.tap("\(path) \(id) link", until: { safari.state == .runningForeground || (counts()[linkKey] ?? 0) != (before[linkKey] ?? 0) }, wait: safariBudget) {
+                if link.exists {
+                    link.tap()
+                } else {
+                    element.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.5)).tap()
+                }
             }
             // A detected URL goes to PartialAttributedText's own OpenURLAction,
             // which hands an http URL to the system: Safari coming to the
@@ -129,7 +132,9 @@ final class LinkTapProbeUITests: XCTestCase {
             // Past the link: the Label's onClick, not the link — with the app
             // in front, or the tap is not the Label's to receive.
             guard assertAppInFront("\(path) \(id) before the tap past the link") else { continue }
-            element.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            retap.tap("\(path) \(id) past the link", until: { (counts()[labelKey] ?? 0) != (onLink[labelKey] ?? 0) }) {
+                element.coordinate(withNormalizedOffset: CGVector(dx: 0.92, dy: 0.5)).tap()
+            }
             let offLink = counts()
             XCTAssertEqual((offLink[labelKey] ?? 0) - (onLink[labelKey] ?? 0), 1, "\(path) \(id): a tap past the link did not call the Label's onClick")
             XCTAssertEqual((offLink[linkKey] ?? 0) - (onLink[linkKey] ?? 0), 0, "\(path) \(id): a tap past the link called the link")

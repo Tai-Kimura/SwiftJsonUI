@@ -20,6 +20,7 @@
 import XCTest
 
 final class CoveredTapProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("CoveredTap")
 
     /// What the driver writes to stderr while `body` runs. The driver's
     /// notices (`ActionExecutor.note`) go to this process's standard error
@@ -92,15 +93,21 @@ final class CoveredTapProbeUITests: XCTestCase {
             + "routes to `.offscreen` — again not the branch under test")
 
         // ---- the measurement ----
-        app.buttons["covered_probe_reset"].tap()
+        retap.tap("covered_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["covered_probe_reset"].tap() }
         XCTAssertEqual(result(app), "tapped: none", "reset did not take")
 
         let executor = XCUITestActionExecutor(platform: "ios")
-        let notices = try capturingStandardError {
+        var notices = try capturingStandardError {
             try executor.execute(step: TestStep(action: "tap", id: "covered_target"), in: app)
         }
 
-        let fired = result(app)
+        var fired = result(app)
+        if fired == "tapped: none", retap.spend("the driver's tap on covered_target") {
+            notices = try capturingStandardError {
+                try executor.execute(step: TestStep(action: "tap", id: "covered_target"), in: app)
+            }
+            fired = result(app)
+        }
         print("CTAP_PROBE_RESULT \(fired)")
 
         // Not refused: the coordinate tap goes ahead, and lands on the cover.

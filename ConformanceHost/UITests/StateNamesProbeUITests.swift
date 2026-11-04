@@ -14,6 +14,7 @@ import UIKit
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_STATE_NAMES_PROBE=1.
 final class StateNamesProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("StateNames")
     private var app: XCUIApplication!
 
     func testIdlessControlsKeepAStateEach() throws {
@@ -57,14 +58,17 @@ final class StateNamesProbeUITests: XCTestCase {
         let cb = (0...1).map { digest(shot, labelled("c\($0 + 1)").frame) }
         let sl = (0...1).map { "\(app.sliders.element(boundBy: $0).value ?? "nil")" }
 
-        app.switches.element(boundBy: 0).tap()
-        labelled("c1").tap()
-        app.buttons["a2"].tap()
-        app.sliders.element(boundBy: 0).adjust(toNormalizedSliderPosition: 0.8)
+        // One named retap (ProbeRetap): the run of 2026-10-25 lost this Switch's touch.
+        retap.tap("\(path) first Switch", until: { "\(app.switches.element(boundBy: 0).value ?? "nil")" != sw[0] }) { app.switches.element(boundBy: 0).tap() }
+        retap.tap("\(path) first CheckBox", until: { digest(XCUIScreen.main.screenshot().image, labelled("c1").frame) != cb[0] }) { labelled("c1").tap() }
+        retap.tap("\(path) first Segment", until: { app.buttons["a2"].isSelected }) { app.buttons["a2"].tap() }
+        retap.tap("\(path) first Slider", until: { "\(app.sliders.element(boundBy: 0).value ?? "nil")" != sl[0] }) { app.sliders.element(boundBy: 0).adjust(toNormalizedSliderPosition: 0.8) }
         // A Radio is tapped on its glyph — the one place both paths take it.
         for label in ["h2", "g2", "j2"] {
             let g = glyph(label, row: label != "j2")
-            app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: g.midX, dy: g.midY)).tap()
+            retap.tap("\(path) Radio \(label)", until: { digest(XCUIScreen.main.screenshot().image, glyph(label, row: label != "j2")) != glyphsBefore[label] }) {
+                app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: g.midX, dy: g.midY)).tap()
+            }
         }
         sleep(1)
 
@@ -95,7 +99,7 @@ final class StateNamesProbeUITests: XCTestCase {
 
         // The text fields last: their keyboard covers what is below them.
         let tf = app.textFields.element(boundBy: 0)
-        tf.tap()
+        retap.tap("\(path) first TextField", until: { (tf.value(forKey: "hasKeyboardFocus") as? Bool) == true }) { tf.tap() }
         tf.typeText("x")
         sleep(1)
         let tfs = (0...1).map { "\(app.textFields.element(boundBy: $0).value ?? "nil")" }

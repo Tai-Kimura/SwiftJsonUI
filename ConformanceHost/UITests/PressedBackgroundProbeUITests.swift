@@ -12,6 +12,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_PRESSED_BACKGROUND_PROBE=1.
 final class PressedBackgroundProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("PressedBackground")
     private let pressed = ["pbView", "pbLabel", "pbEmpty", "pbScrollItem"]
     private let handler = ["pbView": "onView", "pbLabel": "onLabel", "pbEmpty": "onEmpty", "pbScrollItem": "onScrollItem"]
 
@@ -63,7 +64,8 @@ final class PressedBackgroundProbeUITests: XCTestCase {
         // without a tap is the control: never pressed.
         let held = pressed.prefix(3) + ["pbNoTap", "pbScrollItem"]
         for id in held {
-            corner(id).press(forDuration: 1.0)
+            let taken = field(readout(), "samples").split(separator: ",").count
+            retap.tap("\(path) \(id) held", until: { field(readout(), "samples").split(separator: ",").count > taken }) { corner(id).press(forDuration: 1.0) }
             sleep(1)
         }
         let samples = field(readout(), "samples").split(separator: ",").map(String.init)
@@ -78,7 +80,11 @@ final class PressedBackgroundProbeUITests: XCTestCase {
 
         // Tapped: each handler is called once more than before.
         let before = counts(readout())
-        for id in pressed { corner(id).tap(); usleep(400_000) }
+        for id in pressed {
+            let name = handler[id]!, was = counts(readout())[name] ?? 0
+            retap.tap("\(path) \(id) tapped", until: { (counts(readout())[name] ?? 0) > was }) { corner(id).tap() }
+            usleep(400_000)
+        }
         sleep(1)
         let after = counts(readout())
         for id in pressed {

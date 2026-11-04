@@ -21,6 +21,7 @@
 import XCTest
 
 final class KeyboardClearanceProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("KeyboardClearance")
 
     private struct Reading {
         let shape: String
@@ -77,8 +78,8 @@ final class KeyboardClearanceProbeUITests: XCTestCase {
         app.launch()
         let field = app.textFields["probe_field"]
         XCTAssertTrue(field.waitForExistence(timeout: 10), "probe did not start")
-        field.tap()
         let keyboard = app.keyboards.firstMatch
+        retap.tap("\(shape) \(padding) field", until: { keyboard.exists }, wait: 5) { field.tap() }
         XCTAssertTrue(keyboard.waitForExistence(timeout: 10),
             "no software keyboard — on a simulator with a hardware keyboard attached the probe cannot measure")
         // The visible bottom. Footer shape: the ScrollView's frame ends at

@@ -15,6 +15,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_PICK_ARITY_PROBE=1.
 final class PickArityProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("PickArity")
     private var app: XCUIApplication!
 
     private let boxes: [(box: String, pick: String, call: String)] = [
@@ -64,12 +65,12 @@ final class PickArityProbeUITests: XCTestCase {
 
         for (name, pick, call) in boxes {
             let before = calls().count
-            box(name).tap()
             let isDate = name.hasPrefix("sbD")
             let wheel = isDate ? app.pickerWheels.element(boundBy: 1) : app.pickerWheels.firstMatch
+            retap.tap("\(path) \(name)", until: { wheel.exists }) { box(name).tap() }
             if wheel.waitForExistence(timeout: 5) {
                 wheel.adjust(toPickerWheelValue: pick)
-                app.buttons["Done"].tap()
+                retap.tap("\(path) \(name) Done", until: { !wheel.exists }) { app.buttons["Done"].tap() }
             } else {
                 XCTFail("\(path) \(name): the picker did not open")
             }
