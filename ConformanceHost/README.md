@@ -55,6 +55,15 @@ CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
   signal/battery) before capturing screenshots; the live clock is otherwise
   the largest source of visual-baseline noise (measured distance up to 31 vs
   ≤6 frozen — see `conformance/baselines/README.md`).
+- The run script also turns the keyboard's candidate bar off on that simulator
+  and marks the "slide to type" card as shown, both in
+  `com.apple.keyboard.preferences`, so the two fixtures that take the focus draw
+  the same keyboard every time. The settings stay on the device.
+- A simulator takes its language from the Mac. To compare with `baselines/ci`,
+  set the device to `en_US` first, or a Japanese Mac's device draws the kana
+  keyboard in those two pictures.
+- `CONFORMANCE_KEYBOARD_DELAY=3` runs the specimen for the keyboard wait
+  (`App/KeyboardDelaySpecimen.swift`).
 - The script always uses the `test` action: `TEST_RUNNER_*` variables only
   reach the runner when the test action evaluates them from xcodebuild's own
   environment (a repeat run with no source changes rebuilds incrementally

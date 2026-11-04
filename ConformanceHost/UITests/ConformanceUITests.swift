@@ -256,6 +256,37 @@ final class ConformanceUITests: XCTestCase {
     /// How each Web capture's paint wait ended, printed at the end of the run.
     private var webPaint = (atOnce: 0, waited: 0, timedOut: 0, declaredBlank: 0)
 
+    /// 🔻 A FIXTURE THAT TAKES THE FOCUS DRAWS A KEYBOARD, AND THE KEYBOARD IS
+    /// STILL ARRIVING WHEN THE MARKER IS ALREADY THERE. The marker says the
+    /// screen is on; the keyboard slides up afterwards in its own process. So
+    /// TextField/autoFocus__true was captured at whatever moment that was: on
+    /// the CI runner (Xcode 26.3, iOS 26.2) distance 92 / vertical 160 against
+    /// the baseline with the keyboard a few points short of its place and its
+    /// candidates half faded in (run 41426977222, codegen), and distance 37 with
+    /// the candidate bar empty (runs 40094279447, 40109924320, 41041200904).
+    /// Neither is the library's drawing.
+    ///
+    /// So before the screenshot of a fixture whose layout declares autoFocus
+    /// true, the host waits for the keyboard's region of the screen to hold more
+    /// than one grey level and to read the same `keyboardSettleReadings` times
+    /// in a row. The region alone, because the caret blinks and would never
+    /// hold still. The element's frame is no signal: it is the resting place
+    /// from the start of the slide. The run script turns the candidates off
+    /// (run_conformance.sh), so what is left to wait for is the slide. At
+    /// `keyboardSettleTimeout` the capture is taken anyway and the result says
+    /// why (`keyboard_settle: timeout`), and the picture is there to read.
+    /// The specimen that makes the race happen on a fast machine is the host's
+    /// KeyboardDelaySpecimen (CONFORMANCE_KEYBOARD_DELAY): without this wait it
+    /// captures the screen with no keyboard.
+    private let keyboardSettleTimeout: TimeInterval = 10.0
+    private let keyboardSettlePoll: TimeInterval = 0.2
+    private let keyboardSettleReadings = 3
+
+    /// How each keyboard wait ended, printed at the end of the run.
+    /// `moved` counts the settled pictures that differ from the wait's first
+    /// reading: the captures this wait changed.
+    private var keyboardSettle = (settled: 0, moved: 0, timedOut: 0)
+
     /// Optional filter for debugging: run only fixtures whose id contains one
     /// of these comma-separated substrings
     /// (env CONFORMANCE_FILTER via TEST_RUNNER_CONFORMANCE_FILTER).
@@ -381,6 +412,8 @@ final class ConformanceUITests: XCTestCase {
 
         print("[conformance] web paint: drawn at once \(webPaint.atOnce), drawn after waiting \(webPaint.waited), "
               + "timed out \(webPaint.timedOut), declared blank \(webPaint.declaredBlank)")
+        print("[conformance] keyboard settle: settled \(keyboardSettle.settled), moved while waiting "
+              + "\(keyboardSettle.moved), timed out \(keyboardSettle.timedOut)")
 
         let counts = Dictionary(grouping: ordered, by: { $0.status }).mapValues { $0.count }
         print("[conformance] finished: \(counts) webMarkers: "
@@ -498,6 +531,10 @@ final class ConformanceUITests: XCTestCase {
             // The paint-delay specimen (App/WebPaintDelaySpecimen.swift), when the run declares one.
             if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_WEB_PAINT_DELAY"] {
                 app.launchEnvironment["CONFORMANCE_WEB_PAINT_DELAY"] = delay
+            }
+            // The keyboard-delay specimen (App/KeyboardDelaySpecimen.swift), when the run declares one.
+            if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_KEYBOARD_DELAY"] {
+                app.launchEnvironment["CONFORMANCE_KEYBOARD_DELAY"] = delay
             }
             if ProcessInfo.processInfo.environment["CONFORMANCE_WEB_MARKERS_OFF"] != "1" {
                 app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
@@ -781,6 +818,9 @@ final class ConformanceUITests: XCTestCase {
                     if fixture.host == "Web" {
                         settleNote = waitForWebPaint(fixture, app: app)
                     }
+                    if declaresAutoFocus(fixture) {
+                        settleNote = waitForKeyboardSettled(fixture, app: app)
+                    }
                     if let declared = fixture.state?.afterFirstDraw, afterFirstDraw == nil {
                         afterFirstDraw = awaitAfterFirstDraw(declared.name, fixture: fixture, app: app)
                     }
@@ -982,6 +1022,76 @@ final class ConformanceUITests: XCTestCase {
         ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: w, height: h))
         let first = grey[0]
         return grey.contains { $0 != first }
+    }
+
+    /// Whether the fixture's layout declares `autoFocus: true` on any node. The
+    /// declaration is the source, not the fixture's name, so a new fixture of
+    /// the shape waits without anyone listing it.
+    private func declaresAutoFocus(_ fixture: ConformanceManifest.Fixture) -> Bool {
+        guard let data = try? loadBundledData(relativePath: "fixtures/\(fixture.id).layout.json"),
+              let layout = try? JSONSerialization.jsonObject(with: data) else { return false }
+        func declares(_ node: Any) -> Bool {
+            if let object = node as? [String: Any] {
+                if object["autoFocus"] as? Bool == true { return true }
+                return object.values.contains(where: declares)
+            }
+            if let array = node as? [Any] { return array.contains(where: declares) }
+            return false
+        }
+        return declares(layout)
+    }
+
+    /// Waits until the keyboard's region of the screen has held still (see
+    /// keyboardSettleTimeout). Returns "" when it did, the reason otherwise.
+    private func waitForKeyboardSettled(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication) -> String {
+        let start = Date()
+        var first: [UInt8]? = nil
+        var last: [UInt8]? = nil
+        var same = 0
+        while Date().timeIntervalSince(start) < keyboardSettleTimeout {
+            if let reading = keyboardRegionReading(app) {
+                if first == nil { first = reading }
+                same = (reading == last) ? same + 1 : 1
+                last = reading
+                if same >= keyboardSettleReadings {
+                    keyboardSettle.settled += 1
+                    if reading != first { keyboardSettle.moved += 1 }
+                    print(String(format: "[conformance] %@: the keyboard settled %.2fs after the marker%@", fixture.id,
+                                 Date().timeIntervalSince(start), reading != first ? " (it moved while waiting)" : ""))
+                    return ""
+                }
+            } else {
+                same = 0
+                last = nil
+            }
+            Thread.sleep(forTimeInterval: keyboardSettlePoll)
+        }
+        keyboardSettle.timedOut += 1
+        return "keyboard_settle: timeout — the keyboard's region did not hold still with something drawn in it for "
+            + "\(Int(keyboardSettleTimeout))s after the marker"
+    }
+
+    /// The grey levels of the keyboard's region of the screen; nil when there is
+    /// no keyboard yet or the region is one colour (the slide has not reached it).
+    private func keyboardRegionReading(_ app: XCUIApplication) -> [UInt8]? {
+        let keyboard = app.keyboards.firstMatch
+        guard keyboard.exists else { return nil }
+        let region = keyboard.frame
+        let image = app.screenshot().image
+        guard let cg = image.cgImage, region.width > 1, region.height > 1 else { return nil }
+        let scale = image.scale
+        let px = CGRect(x: region.minX * scale, y: region.minY * scale,
+                        width: region.width * scale, height: region.height * scale).integral
+            .intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        guard let cropped = cg.cropping(to: px) else { return nil }
+        let w = cropped.width, h = cropped.height
+        var grey = [UInt8](repeating: 0, count: w * h)
+        guard let ctx = CGContext(data: &grey, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+        else { return nil }
+        ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let firstGrey = grey[0]
+        return grey.contains { $0 != firstGrey } ? grey : nil
     }
 
     /// `exists / hittable / frame` of the first element with this identifier.
