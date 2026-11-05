@@ -15,6 +15,11 @@
 //  tapped through this: a second tap must never be the reason a gate reads as
 //  holding. Taps there stay plain `.tap()`.
 //
+//  The wording of these lines is a contract: jsonui-cli's
+//  .github/scripts/ios_retaps.py counts them against the run's retap cap, and a
+//  line it cannot parse counts as a retap rather than as nothing. Change the
+//  wording there too.
+//
 
 import XCTest
 
