@@ -81,6 +81,8 @@ struct ConformanceHostApp: App {
         URLProtocol.registerClass(ConformanceInvalidHostProtocol.self)
         // Test-only, and only when the run declares a delay (WebPaintDelaySpecimen).
         WebPaintDelaySpecimen.startIfDeclared()
+        // Test-only, and only when the run declares a delay (KeyboardDelaySpecimen).
+        KeyboardDelaySpecimen.startIfDeclared()
         if ConformanceHostMode.isCodegen {
             // Generated views check ViewSwitcher.isDynamicMode inside their
             // body (DEBUG builds render DynamicView while it is true). Flip

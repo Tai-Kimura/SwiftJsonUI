@@ -166,6 +166,28 @@ if [[ -n "$STATUS_BAR_UDID" ]]; then
         >/dev/null 2>&1 \
         && echo "status bar frozen (9:41) on $STATUS_BAR_UDID" \
         || echo "warning: could not freeze status bar on $STATUS_BAR_UDID (screenshots may drift)" >&2
+    # The keyboard's candidate bar, off before anything is captured. The two
+    # fixtures that take the focus draw the keyboard, and what the bar shows is
+    # the OS's answer at that moment, not the library's drawing: on the CI runner
+    # (Xcode 26.3, iOS 26.2) "I / The / I'm" or nothing, distance 37 against the
+    # baseline from that bar alone (runs 40094279447, 40109924320, 41041200904).
+    # With it off the bar is not drawn; the keys, the return key and the caret
+    # are, which is what those pictures are for. It lives in the simulator's data,
+    # so it survives the home indicator's reboot.
+    # com.apple.Preferences, the domain usually named for this key, is written
+    # and read back and changes no pixel on iOS 26.2 (measured 2026-11-05).
+    # The domain that takes effect may move with the runtime. Then the bar comes
+    # back and those two pictures fail the baseline by name.
+    # DidShowContinuousPathIntroduction: on a simulator that has never shown a
+    # QWERTY keyboard, the first one is replaced by the OS's "slide to type" card,
+    # which holds still and would be captured as the keyboard (measured on a new
+    # device with nothing written, 2026-11-05).
+    xcrun simctl spawn "$STATUS_BAR_UDID" defaults write com.apple.keyboard.preferences KeyboardPrediction -bool NO \
+        >/dev/null 2>&1 \
+        && xcrun simctl spawn "$STATUS_BAR_UDID" defaults write com.apple.keyboard.preferences DidShowContinuousPathIntroduction -bool YES \
+        >/dev/null 2>&1 \
+        && echo "keyboard candidates off on $STATUS_BAR_UDID" \
+        || echo "warning: could not turn the keyboard candidates off on $STATUS_BAR_UDID (the autoFocus screenshots may drift)" >&2
 else
     echo "warning: no specific simulator resolved — status bar not frozen; screenshot baselines will be noisy" >&2
 fi
