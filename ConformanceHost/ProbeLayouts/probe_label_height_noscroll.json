@@ -1,0 +1,41 @@
+{
+  "type": "SafeAreaView",
+  "id": "cg_lhn_root",
+  "width": "matchParent",
+  "height": "matchParent",
+  "orientation": "vertical",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_lhn_top",
+      "width": "matchParent",
+      "height": 120,
+      "background": "#CCCCCC"
+    },
+    {
+      "type": "Label",
+      "id": "cg_lhn_first",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+      "fontSize": 16,
+      "textAlign": "center"
+    },
+    {
+      "type": "Label",
+      "id": "cg_lhn_second",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+      "fontSize": 16,
+      "textAlign": "center"
+    },
+    {
+      "type": "View",
+      "id": "cg_lhn_bottom",
+      "width": "matchParent",
+      "height": 150,
+      "background": "#CCCCCC"
+    }
+  ]
+}
