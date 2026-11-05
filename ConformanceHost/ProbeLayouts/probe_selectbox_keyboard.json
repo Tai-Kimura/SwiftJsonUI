@@ -1,0 +1,221 @@
+{
+  "type": "SafeAreaView",
+  "id": "sbk_safe",
+  "width": "matchParent",
+  "height": "matchParent",
+  "data": [
+    {
+      "name": "email",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "note",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "onEmailChange",
+      "class": "((String, String) -> Void)?"
+    },
+    {
+      "name": "onFooter",
+      "class": "(() -> Void)?"
+    },
+    {
+      "name": "overlayVisibility",
+      "class": "String",
+      "defaultValue": "gone"
+    }
+  ],
+  "child": [
+    {
+      "type": "View",
+      "id": "sbk_vertical",
+      "width": "matchParent",
+      "height": "matchParent",
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "ScrollView",
+          "id": "sbk_scroll",
+          "width": "matchParent",
+          "child": [
+            {
+              "type": "View",
+              "id": "sbk_content",
+              "orientation": "vertical",
+              "width": "matchParent",
+              "height": "wrapContent",
+              "child": [
+                {
+                  "type": "Label",
+                  "id": "sbk_ready",
+                  "text": "sbk ready",
+                  "height": 24
+                },
+                {
+                  "type": "TextField",
+                  "id": "sbk_tf",
+                  "text": "@{email}",
+                  "hint": "field",
+                  "width": "matchParent",
+                  "height": 44,
+                  "background": "#DDEEFF",
+                  "returnKeyType": "Done",
+                  "onTextChange": "@{onEmailChange}"
+                },
+                {
+                  "type": "TextView",
+                  "id": "sbk_tv",
+                  "text": "@{note}",
+                  "hint": "view",
+                  "width": "matchParent",
+                  "height": 70,
+                  "background": "#DDFFEE"
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_near",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_near",
+                  "background": "#EEEEEE",
+                  "items": [
+                    "One",
+                    "Two",
+                    "Three"
+                  ]
+                },
+                {
+                  "type": "View",
+                  "id": "sbk_filler",
+                  "width": "matchParent",
+                  "height": 700,
+                  "background": "#FAFAFA"
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_normal",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_normal",
+                  "background": "#EEEEEE",
+                  "items": [
+                    "One",
+                    "Two",
+                    "Three"
+                  ]
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_date",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_date",
+                  "background": "#EEEEEE",
+                  "selectItemType": "Date",
+                  "datePickerMode": "date",
+                  "datePickerStyle": "wheel",
+                  "dateStringFormat": "yyyy-MM-dd"
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_time",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_time",
+                  "background": "#EEEEEE",
+                  "selectItemType": "Date",
+                  "datePickerMode": "time",
+                  "datePickerStyle": "wheel",
+                  "dateStringFormat": "HH:mm"
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_interval",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_interval",
+                  "background": "#EEEEEE",
+                  "selectItemType": "Date",
+                  "datePickerMode": "time",
+                  "datePickerStyle": "wheel",
+                  "dateStringFormat": "HH:mm",
+                  "minuteInterval": 15
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_graphical",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_graphical",
+                  "background": "#EEEEEE",
+                  "selectItemType": "Date",
+                  "datePickerMode": "date",
+                  "datePickerStyle": "graphical",
+                  "dateStringFormat": "yyyy-MM-dd"
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_compact",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_compact",
+                  "background": "#EEEEEE",
+                  "selectItemType": "Date",
+                  "datePickerMode": "date",
+                  "datePickerStyle": "compact",
+                  "dateStringFormat": "yyyy-MM-dd"
+                },
+                {
+                  "type": "SelectBox",
+                  "id": "sbk_automatic",
+                  "width": "matchParent",
+                  "height": 44,
+                  "prompt": "pick sbk_automatic",
+                  "background": "#EEEEEE",
+                  "selectItemType": "Date",
+                  "datePickerMode": "date",
+                  "datePickerStyle": "automatic",
+                  "dateStringFormat": "yyyy-MM-dd"
+                },
+                {
+                  "type": "View",
+                  "id": "sbk_tail",
+                  "width": "matchParent",
+                  "height": 300
+                }
+              ]
+            }
+          ],
+          "weight": 1
+        },
+        {
+          "type": "View",
+          "id": "sbk_footer",
+          "width": "matchParent",
+          "height": 56,
+          "background": "#333333",
+          "orientation": "horizontal",
+          "onClick": "@{onFooter}",
+          "child": [
+            {
+              "type": "Label",
+              "text": "footer",
+              "id": "sbk_footer_label"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "sbk_overlay",
+      "width": "matchParent",
+      "height": "matchParent",
+      "visibility": "@{overlayVisibility}",
+      "background": "#88000000"
+    }
+  ]
+}
