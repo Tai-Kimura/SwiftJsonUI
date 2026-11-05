@@ -37,7 +37,7 @@ struct OpenScrollEnd: ViewModifier {
         if !fills, component.declaredHeight != nil { return true }
         if common.maxHeight != nil { return true }
         if let raw, raw.hasPrefix("@{") { return true }
-        if component.rawAttribute("heightWeight") != nil { return true }
+        if common.heightWeight != nil { return true }
         if parentOrientation == "vertical",
            let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
             return true
@@ -70,7 +70,7 @@ struct LabelWrapHeight: ViewModifier {
         if let raw = component.heightRaw, raw.lowercased() != "wrapcontent", raw.lowercased() != "wrap_content" { return false }
         let common = component.typedAttributes(CommonAttributes.self)
         if common.minWidth != nil || common.maxWidth != nil || common.minHeight != nil || common.maxHeight != nil { return false }
-        if component.rawAttribute("heightWeight") != nil { return false }
+        if common.heightWeight != nil { return false }
         if parentOrientation == "vertical",
            let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
             return false
