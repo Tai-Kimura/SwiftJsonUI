@@ -16,6 +16,7 @@
 import XCTest
 
 final class ConfirmationDialogProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("ConfirmationDialog")
 
     private func launch() -> XCUIApplication {
         let app = XCUIApplication()
@@ -32,9 +33,8 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         -> (destructive: Bool, cancel: Bool) {
         XCTAssertTrue(app.buttons[identifier].waitForExistence(timeout: 10),
                       "probe did not launch: \(identifier) never appeared")
-        app.buttons[identifier].tap()
-
         let destructive = app.buttons["probe_destructive"]
+        retap.tap(identifier, until: { destructive.exists }) { app.buttons[identifier].tap() }
         XCTAssertTrue(destructive.waitForExistence(timeout: 5),
                       "nothing was presented for \(identifier)")
         // Settle: the cancel, if it is drawn at all, is drawn with the rest.
@@ -58,7 +58,7 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         let sizeClass = app.staticTexts["probe_size_class"].label
 
         XCTAssertTrue(app.buttons["probe_open_dialog"].waitForExistence(timeout: 10))
-        app.buttons["probe_open_dialog"].tap()
+        retap.tap("probe_open_dialog", until: { app.buttons["probe_destructive"].exists }) { app.buttons["probe_open_dialog"].tap() }
         XCTAssertTrue(app.buttons["probe_destructive"].waitForExistence(timeout: 5),
                       "nothing was presented")
 
@@ -95,7 +95,7 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         // detects a dismissal at all.
         var controlClosed = true
         if !closed {
-            app.buttons["probe_destructive"].tap()
+            retap.tap("probe_destructive", until: { !app.buttons["probe_destructive"].exists }) { app.buttons["probe_destructive"].tap() }
             controlClosed = !app.buttons["probe_destructive"]
                 .waitForExistence(timeout: 3)
         }
@@ -126,7 +126,7 @@ final class ConfirmationDialogProbeUITests: XCTestCase {
         let dialog = present(app, opening: "probe_open_dialog")
         // Dismiss before the second arm: a presented dialog swallows taps.
         if dialog.cancel {
-            app.buttons["probe_cancel"].tap()
+            retap.tap("probe_cancel", until: { !app.buttons["probe_destructive"].exists }) { app.buttons["probe_cancel"].tap() }
         } else {
             app.tap()
         }

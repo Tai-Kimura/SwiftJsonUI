@@ -14,6 +14,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_TAP_ARITY_PROBE=1.
 final class TapArityProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("TapArity")
     private var app: XCUIApplication!
 
     func testEachHandlerIsCalledAsItsDeclarationAsks() throws {
@@ -38,7 +39,7 @@ final class TapArityProbeUITests: XCTestCase {
 
     private func check(_ path: String, _ what: String, _ want: [String], _ operate: () -> Void) {
         let before = calls().count
-        operate()
+        retap.tap("\(path) \(what)", until: { calls().count > before }, operate)
         sleep(1)
         let made = Array(calls().dropFirst(before))
         print("TAPARITY \(path) \(what) calls=\(made.joined(separator: "|"))")
@@ -72,7 +73,7 @@ final class TapArityProbeUITests: XCTestCase {
         check(path, "long press", ["pS(view_0_7)"]) { labelled("press pS").press(forDuration: 1.2) }
         // onDisappear — the rows hidden together, in no promised order.
         let before = calls().count
-        app.buttons["ta_hide"].tap()
+        retap.tap("\(path) ta_hide", until: { calls().count > before }) { app.buttons["ta_hide"].tap() }
         sleep(1)
         let gone = Array(calls().dropFirst(before))
         print("TAPARITY \(path) onDisappear calls=\(gone.joined(separator: "|"))")

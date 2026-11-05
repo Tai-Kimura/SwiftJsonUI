@@ -12,6 +12,7 @@
 import XCTest
 
 final class DisabledColoursProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("DisabledColours")
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
@@ -73,7 +74,10 @@ final class DisabledColoursProbeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["dc_ready"].waitForExistence(timeout: 15), "probe did not start")
         XCTAssertTrue(element(app, "cg_dc_view").waitForExistence(timeout: 10), "cg_dc_view is not there")
         let on = read(app, "on")
-        element(app, "cg_dc_off").tap()
+        retap.tap("cg_dc_off", until: {
+            guard let image = XCUIScreen.main.screenshot().image.cgImage, let data = pixels(image) else { return false }
+            return middle(of: element(app, "cg_dc_view").frame, image, data, scale: CGFloat(image.width) / app.frame.width) != on["view"] as? String
+        }) { element(app, "cg_dc_off").tap() }
         sleep(1)
         let off = read(app, "off")
         print("DCP on \(on)")

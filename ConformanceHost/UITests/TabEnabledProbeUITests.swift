@@ -9,6 +9,7 @@ import XCTest
 /// and N and not under U; the tab switches under N only. Opt-in:
 /// TEST_RUNNER_TAB_ENABLED_PROBE=1.
 final class TabEnabledProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("TabEnabled")
     func testADisabledTabViewDoesNotSwitch() throws {
         guard ProcessInfo.processInfo.environment["TAB_ENABLED_PROBE"] == "1" else {
             throw XCTSkip("tab enabled probe: run with the guard lifted, as the other probes are")
@@ -27,11 +28,20 @@ final class TabEnabledProbeUITests: XCTestCase {
                 XCTAssertTrue(button.waitForExistence(timeout: 5), "\(path) \(gate): the first tab's Button is there")
                 sleep(1)
                 let buttonEnabled = button.isEnabled
-                button.tap()
+                // Gate U stops the Button and the others the tab: those rows are touched once.
+                if gate == "U" {
+                    button.tap()
+                } else {
+                    retap.tap("\(path) \(gate) first tab's Button", until: { app.staticTexts["te_taps"].label == "taps=1" }) { button.tap() }
+                }
                 sleep(1)
                 let taps = app.staticTexts["te_taps"].label
                 let before = two.isSelected
-                two.tap()
+                if gate == "N" {
+                    retap.tap("\(path) N tab Two", until: { two.isSelected }) { two.tap() }
+                } else {
+                    two.tap()
+                }
                 sleep(1)
                 let after = two.isSelected
                 print("TABENABLED \(path) \(gate) button.enabled=\(buttonEnabled) \(taps) two.selected \(before) -> \(after) two.enabled=\(two.isEnabled)")

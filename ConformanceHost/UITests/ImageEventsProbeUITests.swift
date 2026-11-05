@@ -13,6 +13,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_IMAGE_EVENTS_PROBE=1.
 final class ImageEventsProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("ImageEvents")
     private enum Act { case tap, edgeTap, longPress, none }
 
     private struct Row {
@@ -20,6 +21,10 @@ final class ImageEventsProbeUITests: XCTestCase {
         let act: Act
         let type: XCUIElement.ElementType
         let count: Int
+    }
+
+    private func app(_ app: XCUIApplication, _ id: String) -> XCUIElement {
+        app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
 
     private let expected: [Row] = [
@@ -50,18 +55,25 @@ final class ImageEventsProbeUITests: XCTestCase {
         for row in expected {
             let element = app.descendants(matching: .any).matching(identifier: row.id).firstMatch
             XCTAssertTrue(element.waitForExistence(timeout: 5), "\(row.id) not found")
-            switch row.act {
-            case .tap:
-                element.tap()
-            case .edgeTap:
-                app.descendants(matching: .any).matching(identifier: "img_edge_box").firstMatch
-                    .coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.5)).tap()
-            case .longPress:
-                element.press(forDuration: 1.2)
-            case .none:
-                break
-            }
             let counter = app.staticTexts["count_\(row.id)"]
+            let touch = {
+                switch row.act {
+                case .tap:
+                    element.tap()
+                case .edgeTap:
+                    self.app(app, "img_edge_box").coordinate(withNormalizedOffset: CGVector(dx: 0.06, dy: 0.5)).tap()
+                case .longPress:
+                    element.press(forDuration: 1.2)
+                case .none:
+                    break
+                }
+            }
+            // A row that expects no call (ni_gated) is touched once, whatever it shows.
+            if row.count > 0 && row.act != .none {
+                retap.tap(row.id, until: { (Int(counter.label) ?? -1) >= row.count }, touch)
+            } else {
+                touch()
+            }
             // An appearance may be reported more than once; one is what it
             // takes to say the handler is attached.
             let deadline = Date().addingTimeInterval(row.count > 0 ? 3 : 1)

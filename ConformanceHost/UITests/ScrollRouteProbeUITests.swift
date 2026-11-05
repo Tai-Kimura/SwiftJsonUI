@@ -33,6 +33,7 @@
 import XCTest
 
 final class ScrollRouteProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("ScrollRoute")
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
     private func launch(_ argument: String) -> XCUIApplication {
@@ -131,7 +132,7 @@ final class ScrollRouteProbeUITests: XCTestCase {
     private func go(_ app: XCUIApplication, _ button: String, _ name: String, _ frame: XCUIElement, labels: [String],
                     target: String, slack: CGFloat, lines: inout [String]) -> ListReading {
         let before = reading(frame, labels: labels, target: target).value
-        app.buttons[button].tap()
+        retap.tap(button, until: { reading(frame, labels: labels, target: target).value != before }, wait: 4) { app.buttons[button].tap() }
         var last = ListReading(target: target, at: nil, nearest: nil)
         lines.append(Landing.wait(name, from: before) {
             last = reading(frame, labels: labels, target: target)
@@ -240,7 +241,7 @@ final class ScrollRouteProbeUITests: XCTestCase {
             let pager = element(app, id)
             XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no \(id)")
             let before = onPage(pager, among: labels)
-            app.buttons[go].tap()
+            retap.tap(go, until: { onPage(pager, among: labels) != before }, wait: 4) { app.buttons[go].tap() }
             var after: [String] = []
             lines.append(Landing.wait(id, from: "\(before)", landed: { $0 == "\([want])" }) {
                 after = onPage(pager, among: labels)
@@ -268,7 +269,7 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let pager = element(app, "\(p)_route_int_pager")
         XCTAssertTrue(pager.waitForExistence(timeout: 5), "\(p): no int pager")
         let before = onPage(pager, among: keyLabels)
-        app.buttons["\(p) int pager go 12"].tap()
+        retap.tap("\(p) int pager go 12", until: { onPage(pager, among: keyLabels) != before }, wait: 4) { app.buttons["\(p) int pager go 12"].tap() }
         var after: [String] = []
         lines.append(Landing.wait("\(p)_route_int_pager", from: "\(before)", landed: { $0 == "\(["b2"])" }) {
             after = onPage(pager, among: keyLabels)
@@ -282,7 +283,7 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let dupLabels = (0..<10).map { "g\($0)" } + (0..<10).map { "h\($0)" }
         for (value, want) in [("3", "g1"), ("k", "g6"), ("w5", "h5"), ("k", "g6")] {
             let before = nearest(dup, among: dupLabels)
-            app.buttons["\(p) dup go \(value)"].tap()
+            retap.tap("\(p) dup go \(value)", until: { nearest(dup, among: dupLabels) != before }, wait: 4) { app.buttons["\(p) dup go \(value)"].tap() }
             var landed: (label: String, offset: CGFloat)? = nil
             lines.append(Landing.wait("\(p)_route_dup go \(value)", from: before) {
                 landed = top(of: dup, among: dupLabels)
@@ -334,7 +335,7 @@ final class ScrollRouteProbeUITests: XCTestCase {
         // list counted as moved at once, and rested (the start-delay specimen
         // caught it: still 1s at 1.32s, a3 off screen).
         let autoBefore = k3Reading().value
-        app.buttons["\(p) auto go k3~"].tap()
+        retap.tap("\(p) auto go k3~", until: { k3Reading().value != autoBefore }, wait: 4) { app.buttons["\(p) auto go k3~"].tap() }
         lines.append(Landing.wait("\(p)_route_auto go k3~", from: autoBefore, read: k3Reading))
         check("\(p)_route_auto_list after k3~", listK3, slack: 10, lines: &lines)
         check("\(p)_route_auto_class after k3~", classK3, slack: 24, lines: &lines)
@@ -345,7 +346,12 @@ final class ScrollRouteProbeUITests: XCTestCase {
         let labels = (0..<10).map { "c\($0)" } + (0..<10).map { "d\($0)" }
         for (value, want) in [("c2", "c2"), ("1:3", "c2"), ("e4", "d4"), ("c2", "c2")] {
             let before = nearest(cellId, among: labels)
-            app.buttons["\(p) cellid2 go \(value)"].tap()
+            // "1:3" is no cell's key: the list stays, and that row is touched once.
+            if value == "1:3" {
+                app.buttons["\(p) cellid2 go \(value)"].tap()
+            } else {
+                retap.tap("\(p) cellid2 go \(value)", until: { nearest(cellId, among: labels) != before }, wait: 4) { app.buttons["\(p) cellid2 go \(value)"].tap() }
+            }
             var landed: (label: String, offset: CGFloat)? = nil
             lines.append(Landing.wait("\(p)_route_cellid2 go \(value)", from: before) {
                 landed = top(of: cellId, among: labels)
@@ -404,7 +410,7 @@ final class ScrollRouteProbeUITests: XCTestCase {
             return (off.map { $0.map { "\(Int($0))" } ?? "off" }.joined(separator: "/"), off.allSatisfy { $0.map { abs($0) <= 2 } ?? false })
         }
         let before = anchored().value
-        app.buttons["\(p) h go 5"].tap()
+        retap.tap("\(p) h go 5", until: { anchored().value != before }, wait: 4) { app.buttons["\(p) h go 5"].tap() }
         lines.append(Landing.wait("\(p)_hanchor go 5", from: before, read: anchored))
         for anchor in ["top", "center", "bottom"] {
             let frame = element(app, "\(p)_hanchor_\(anchor)").frame

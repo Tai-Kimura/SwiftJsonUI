@@ -21,6 +21,7 @@
 import XCTest
 
 final class ScrollRuleProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("ScrollRule")
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
     private func launch(_ argument: String) -> XCUIApplication {
@@ -102,7 +103,7 @@ final class ScrollRuleProbeUITests: XCTestCase {
             XCTAssertTrue(half.index.waitForExistence(timeout: 5), "\(half.name): no index list")
             let indexBefore = top(of: half.index, among: listLabels)
             lines.append("\(half.name) index before: top=\(indexBefore)")
-            app.buttons[half.goIndex].tap()
+            retap.tap(half.goIndex, until: { top(of: half.index, among: listLabels) != indexBefore }, wait: 4) { app.buttons[half.goIndex].tap() }
             var landed = indexBefore
             lines.append(Landing.wait("\(half.name) index go 6", from: indexBefore, landed: { $0 == "B1" }) {
                 landed = top(of: half.index, among: listLabels)
@@ -113,7 +114,7 @@ final class ScrollRuleProbeUITests: XCTestCase {
 
             let keyBefore = top(of: half.key, among: keyLabels)
             lines.append("\(half.name) key before: top=\(keyBefore)")
-            app.buttons[half.goKey].tap()
+            retap.tap(half.goKey, until: { top(of: half.key, among: keyLabels) != keyBefore }, wait: 4) { app.buttons[half.goKey].tap() }
             var keyed = keyBefore
             lines.append(Landing.wait("\(half.name) key go k3", from: keyBefore, landed: { $0 == "a3" }) {
                 keyed = top(of: half.key, among: keyLabels)
@@ -140,7 +141,12 @@ final class ScrollRuleProbeUITests: XCTestCase {
             lines.append("\(half.name) before: top=\(top(of: half.list, among: labels))")
             for (value, expected) in steps {
                 let before = top(of: half.list, among: labels)
-                app.buttons["\(half.prefix) go \(value)"].tap()
+                // A value that is no cell's key leaves the list where it is: that row is touched once.
+                if expected == before {
+                    app.buttons["\(half.prefix) go \(value)"].tap()
+                } else {
+                    retap.tap("\(half.prefix) go \(value)", until: { top(of: half.list, among: labels) != before }, wait: 4) { app.buttons["\(half.prefix) go \(value)"].tap() }
+                }
                 var landed = before
                 lines.append(Landing.wait("\(half.name) go \(value)", from: before, landed: { $0 == expected }) {
                     landed = top(of: half.list, among: labels)

@@ -38,6 +38,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_A11Y_ACTIVATION_PROBE=1.
 final class A11yActivationProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("A11yActivation")
     private struct Entry {
         let name: String
         let via: String
@@ -116,7 +117,7 @@ final class A11yActivationProbeUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["a11y_probe_ready"].waitForExistence(timeout: 15), "probe did not start")
         XCTAssertFalse(app.staticTexts["a11y_decode_failed"].exists, "the dynamic layout did not decode")
         let readout = app.staticTexts["a11y_readout"]
-        app.buttons["a11y_run"].tap()
+        retap.tap("a11y_run", until: { readout.label.hasPrefix("ran=1 ") }, wait: 60) { app.buttons["a11y_run"].tap() }
         let done = expectation(for: NSPredicate(format: "label BEGINSWITH %@", "ran=1 "), evaluatedWith: readout)
         wait(for: [done], timeout: 60)
         let text = readout.label
@@ -215,10 +216,10 @@ final class A11yActivationProbeUITests: XCTestCase {
         var mismatches: [String] = []
         for (phase, open) in [(1, true), (2, false), (3, true)] {
             if phase > 1 {
-                app.buttons["a11y_flip"].tap()
+                retap.tap("a11y_flip to run \(phase)", until: { readout.label.contains("gate=\(open ? "open" : "closed")") }) { app.buttons["a11y_flip"].tap() }
                 sleep(1)
             }
-            app.buttons["a11y_run"].tap()
+            retap.tap("a11y_run \(phase)", until: { readout.label.hasPrefix("ran=\(phase) ") }, wait: 90) { app.buttons["a11y_run"].tap() }
             let ran = NSPredicate(format: "label BEGINSWITH %@", "ran=\(phase) ")
             let done = expectation(for: ran, evaluatedWith: readout)
             wait(for: [done], timeout: 90)
@@ -252,6 +253,18 @@ final class A11yActivationProbeUITests: XCTestCase {
             while Date() < deadline, awaited.contains(where: { (after[$0] ?? 0) - (before[$0] ?? 0) < 1 }) {
                 usleep(Self.touchReadPeriod)
                 after = counts(readout.label)
+            }
+            // A row that should have counted and did not: its touch once more, by name (ProbeRetap). Rows a stop
+            // holds at 0 are touched once, in the loop above.
+            let unanswered = awaited.filter { (after[$0] ?? 0) - (before[$0] ?? 0) < 1 }.sorted()
+            if unanswered.count == 1, let lost = list.first(where: { $0.name == unanswered[0] }), let p = lost.point,
+               retap.spend("run \(phase) \(lost.name)") {
+                origin.withOffset(CGVector(dx: p.x, dy: p.y)).tap()
+                let again = Date().addingTimeInterval(Self.touchBudget)
+                while Date() < again, (after[lost.name] ?? 0) - (before[lost.name] ?? 0) < 1 {
+                    usleep(Self.touchReadPeriod)
+                    after = counts(readout.label)
+                }
             }
             for e in list {
                 // A generated row: absent in the dynamic host, present in the

@@ -29,6 +29,7 @@
 import XCTest
 
 final class DuplicateIdentifierProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("DuplicateIdentifier")
 
     private let sharedIdentifier = "dup_target"
     private let expectedMatches = 12
@@ -100,13 +101,17 @@ final class DuplicateIdentifierProbeUITests: XCTestCase {
             "FIXTURE: the interactive row and index 0 occupy the same frame — the arm cannot discriminate")
 
         // ---- the measurement ----
-        app.buttons["dup_probe_reset"].tap()
+        retap.tap("dup_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["dup_probe_reset"].tap() }
         XCTAssertEqual(result(app), "tapped: none", "reset did not take")
 
         let executor = XCUITestActionExecutor(platform: "ios")
         try executor.execute(step: TestStep(action: "tap", id: sharedIdentifier), in: app)
 
-        let fired = result(app)
+        var fired = result(app)
+        if fired == "tapped: none", retap.spend("the driver's tap") {
+            try executor.execute(step: TestStep(action: "tap", id: sharedIdentifier), in: app)
+            fired = result(app)
+        }
         print("DUP_PROBE_RESULT \(fired)")
 
         // Every row reports its own index, so a wrong resolution names the

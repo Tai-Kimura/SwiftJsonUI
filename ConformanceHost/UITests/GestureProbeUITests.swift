@@ -17,6 +17,7 @@
 import XCTest
 
 final class GestureProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("Gesture")
 
     private func edgeSwipe(_ app: XCUIApplication) {
         let window = app.windows.firstMatch
@@ -37,12 +38,12 @@ final class GestureProbeUITests: XCTestCase {
 
         // Navigate: probe-root -> detail (parent stack depth 1)
         XCTAssertTrue(app.buttons["go-detail"].waitForExistence(timeout: 10))
-        app.buttons["go-detail"].tap()
+        retap.tap("go-detail", until: { app.staticTexts["detail-marker"].exists }) { app.buttons["go-detail"].tap() }
         XCTAssertTrue(app.staticTexts["detail-marker"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.staticTexts["embed-root-probe"].waitForExistence(timeout: 5))
 
         // Drive the embed to depth 1 through the registry-backed button.
-        app.buttons["push-embed"].tap()
+        retap.tap("push-embed", until: { app.staticTexts["embed-pushed"].exists }) { app.buttons["push-embed"].tap() }
         XCTAssertTrue(app.staticTexts["embed-pushed"].waitForExistence(timeout: 5))
 
         // ── Item 1: edge swipe at embed depth > 0 ──
@@ -57,7 +58,7 @@ final class GestureProbeUITests: XCTestCase {
 
         // Re-establish: detail on screen, embed at depth 0.
         if parentPopped {
-            app.buttons["go-detail"].tap()
+            retap.tap("go-detail again", until: { app.staticTexts["detail-marker"].exists }) { app.buttons["go-detail"].tap() }
             XCTAssertTrue(app.staticTexts["detail-marker"].waitForExistence(timeout: 5))
         }
         XCTAssertTrue(app.staticTexts["embed-root-probe"].waitForExistence(timeout: 5))

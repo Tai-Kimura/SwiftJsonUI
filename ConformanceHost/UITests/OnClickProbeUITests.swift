@@ -17,6 +17,7 @@ import UIKit
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_ON_CLICK_PROBE=1.
 final class OnClickProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("OnClick")
     private var app: XCUIApplication!
     private var gate = "N"
 
@@ -128,31 +129,55 @@ final class OnClickProbeUITests: XCTestCase {
         return readout[start..<end].split(separator: ",").map(String.init)
     }
 
+    /// How many calls the readout has made so far.
+    private func made() -> Int {
+        gate == "V" ? sequence().count : counts(app.staticTexts["oc_readout"].label).values.reduce(0, +)
+    }
+
+    /// A control operated under gate N or V, where it calls: one named retap (ProbeRetap) when no call
+    /// followed. Under C and E the call or the operation is stopped: touched once, whatever shows.
+    private func operated(_ what: String, _ touch: () -> Void) {
+        guard gate == "N" || gate == "V" else { return touch() }
+        let was = made()
+        retap.tap("\(gate) \(what)", until: { made() > was }, touch)
+    }
+
+    /// The same for a SelectBox, whose effect is the wheel: opening shows it, Done takes it away (the pick
+    /// itself may already have called).
+    private func opened(_ what: String, wheel: XCUIElement, _ touch: () -> Void) {
+        guard gate == "N" || gate == "V" else { return touch() }
+        retap.tap("\(gate) \(what) open", until: { wheel.exists }, touch)
+    }
+    private func done(_ what: String, wheel: XCUIElement) {
+        guard gate == "N" || gate == "V" else { return app.buttons["Done"].tap() }
+        retap.tap("\(gate) \(what) Done", until: { !wheel.exists }) { app.buttons["Done"].tap() }
+    }
+
     private func operateV() {
-        for id in ["swuV", "swbV", "cbuV", "cbbV"] { element(id).tap() }
-        radioGlyph(app.staticTexts["ub"].frame).tap()
-        radioGlyph(app.staticTexts["bb"].frame).tap()
-        app.buttons["uy"].tap()
-        app.buttons["by"].tap()
-        for item in ["p2", "q2", "r2", "s2"] { app.buttons[item].tap() }
-        app.sliders["sluV"].adjust(toNormalizedSliderPosition: 0.8)
-        app.sliders["slbV"].adjust(toNormalizedSliderPosition: 0.8)
+        for id in ["swuV", "swbV", "cbuV", "cbbV"] { operated(id) { element(id).tap() } }
+        operated("ub") { radioGlyph(app.staticTexts["ub"].frame).tap() }
+        operated("bb") { radioGlyph(app.staticTexts["bb"].frame).tap() }
+        operated("uy") { app.buttons["uy"].tap() }
+        operated("by") { app.buttons["by"].tap() }
+        for item in ["p2", "q2", "r2", "s2"] { operated(item) { app.buttons[item].tap() } }
+        operated("sluV") { app.sliders["sluV"].adjust(toNormalizedSliderPosition: 0.8) }
+        operated("slbV") { app.sliders["slbV"].adjust(toNormalizedSliderPosition: 0.8) }
         for (id, item) in [("sbuV", "uq"), ("sbbV", "bq")] {
-            element(id).tap()
             let wheel = app.pickerWheels.firstMatch
+            opened(id, wheel: wheel) { element(id).tap() }
             if wheel.waitForExistence(timeout: 3) {
                 wheel.adjust(toPickerWheelValue: item)
-                app.buttons["Done"].tap()
+                done(id, wheel: wheel)
             } else {
                 XCTFail("\(id): the picker did not open")
             }
             sleep(1)
         }
-        element("sbdV").tap()
         let day = app.pickerWheels.element(boundBy: 1)
+        opened("sbdV", wheel: day) { element("sbdV").tap() }
         if day.waitForExistence(timeout: 5) {
             day.adjust(toPickerWheelValue: "3")
-            app.buttons["Done"].tap()
+            done("sbdV", wheel: day)
         } else {
             XCTFail("sbdV: the date picker did not open")
         }
@@ -167,17 +192,17 @@ final class OnClickProbeUITests: XCTestCase {
         let swl = element(id("swl"))
         print("ONCLICK swl frame=\(swl.frame) sw frame=\(element(id("sw")).frame)")
         swl.tap()
-        element(id("sw")).tap()
-        element(id("cb")).tap()
-        radioGlyph(app.staticTexts["rb"].frame).tap()
-        radioGlyph(app.staticTexts["rg2"].exists ? app.staticTexts["rg2"].frame : element(id("rgb")).frame, rowStart: true).tap()
-        app.buttons["sy"].tap()
-        app.sliders[id("sl")].adjust(toNormalizedSliderPosition: 0.8)
-        element(id("sb")).tap()
+        operated("sw") { element(id("sw")).tap() }
+        operated("cb") { element(id("cb")).tap() }
+        operated("rb") { radioGlyph(app.staticTexts["rb"].frame).tap() }
+        operated("rg2") { radioGlyph(app.staticTexts["rg2"].exists ? app.staticTexts["rg2"].frame : element(id("rgb")).frame, rowStart: true).tap() }
+        operated("sy") { app.buttons["sy"].tap() }
+        operated("sl") { app.sliders[id("sl")].adjust(toNormalizedSliderPosition: 0.8) }
         let wheel = app.pickerWheels.firstMatch
+        opened("sb", wheel: wheel) { element(id("sb")).tap() }
         if wheel.waitForExistence(timeout: 3) {
             wheel.adjust(toPickerWheelValue: "qq")
-            app.buttons["Done"].tap()
+            done("sb", wheel: wheel)
         }
         sleep(1)
         // The text inputs last: their keyboard covers what is below them.

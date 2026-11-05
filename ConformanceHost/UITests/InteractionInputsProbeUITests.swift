@@ -9,6 +9,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_INTERACTION_INPUTS_PROBE=1.
 final class InteractionInputsProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("InteractionInputs")
     func testTheGateStopsTheInputs() throws {
         guard ProcessInfo.processInfo.environment["INTERACTION_INPUTS_PROBE"] == "1" else {
             throw XCTSkip("interaction inputs probe: run with the guard lifted, as the other probes are")
@@ -35,24 +36,37 @@ final class InteractionInputsProbeUITests: XCTestCase {
         var seen: [String: String] = [:]
         for p in ["cg", "dyn"] {
             element("\(p)BtnUieFalse").tap()
-            element("\(p)BtnPlain").tap()
+            let plain = "\(p)BtnPlain=1"
+            retap.tap(plain, until: { app.staticTexts["inputs_readout"].label.contains(plain) }) { element("\(p)BtnPlain").tap() }
         }
         // `enabled`: an Image's tap, a long press, a pan — each under no gate,
         // `false` and a binding resolving false.
         for p in ["cg", "dyn"] {
             for g in ["Plain", "EnFalse", "EnBound"] {
-                element("\(p)Img\(g)").tap()
-                element("\(p)Hold\(g)").press(forDuration: 1.2)
+                // The rows under `enabled` are touched once, whatever they show.
+                func touched(_ kind: String, _ touch: () -> Void) {
+                    guard g == "Plain" else { return touch() }
+                    let key = "\(p)\(kind)\(g)="
+                    retap.tap("\(p)\(kind)\(g)", until: { app.staticTexts["inputs_readout"].label.contains(key) }, touch)
+                }
+                touched("Img") { element("\(p)Img\(g)").tap() }
+                touched("Hold") { element("\(p)Hold\(g)").press(forDuration: 1.2) }
                 let drag = element("\(p)Drag\(g)")
-                drag.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
-                    .press(forDuration: 0.1, thenDragTo: drag.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+                touched("Drag") {
+                    drag.coordinate(withNormalizedOffset: CGVector(dx: 0.1, dy: 0.5))
+                        .press(forDuration: 0.1, thenDragTo: drag.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)))
+                }
             }
         }
         // The fields: the gated ones first, then the controls.
         for suffix in ["UieFalse", "Plain"] {
             for p in ["cg", "dyn"] {
                 for kind in ["Tf", "Tv"] {
-                    element("\(p)\(kind)\(suffix)").tap()
+                    if suffix == "Plain" {
+                        retap.tap("\(p)\(kind)Plain", until: { focused("\(p)\(kind)Plain") }) { element("\(p)\(kind)Plain").tap() }
+                    } else {
+                        element("\(p)\(kind)\(suffix)").tap()
+                    }
                     sleep(1)
                     seen["\(p)\(kind)\(suffix)_focused"] = "\(focused("\(p)\(kind)\(suffix)"))"
                 }
@@ -62,9 +76,14 @@ final class InteractionInputsProbeUITests: XCTestCase {
         // screen, so each is closed again before the next.
         app.staticTexts["inputs_probe_ready"].tap()
         for (id, item) in [("cgSbUieFalse", "yUieFalse"), ("dynSbUieFalse", "dyUieFalse"), ("cgSbPlain", "yPlain")] {
-            element(id).tap()
+            let isOpen = { app.staticTexts[item].exists || app.buttons[item].exists || app.pickerWheels.count > 0 }
+            if id == "cgSbPlain" {
+                retap.tap(id, until: isOpen) { element(id).tap() }
+            } else {
+                element(id).tap()
+            }
             sleep(1)
-            let opened = app.staticTexts[item].exists || app.buttons[item].exists || app.pickerWheels.count > 0
+            let opened = isOpen()
             seen["\(id)_opened"] = "\(opened)"
             if opened {
                 app.swipeDown(velocity: .fast)

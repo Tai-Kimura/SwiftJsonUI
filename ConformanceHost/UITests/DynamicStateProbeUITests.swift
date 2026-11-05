@@ -23,6 +23,7 @@ import UIKit
 /// (`codegen`: what sjui build emits for the static layout, pasted — ticket
 /// static-valued-controls-do-not-change-on-a-users-tap).
 final class DynamicStateProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("DynamicState")
     static let groups = [
         "controls": ["sw", "tg", "cb", "rv", "rg", "seg", "tab", "sl", "sb", "sbi"],
         "inputs": ["tf", "tv", "sbv", "sbd", "sln"],
@@ -70,9 +71,9 @@ final class DynamicStateProbeUITests: XCTestCase {
         // value to the chosen one and back.
         var modelFirst: (moved: Reading, back: Reading)?
         if bound {
-            app.buttons["dsp_vm_chosen"].tap(); sleep(1)
+            model("dsp_vm_chosen"); sleep(1)
             let moved = read()
-            app.buttons["dsp_vm_declared"].tap(); sleep(1)
+            model("dsp_vm_declared"); sleep(1)
             modelFirst = (moved, read())
         }
         choose()
@@ -90,7 +91,7 @@ final class DynamicStateProbeUITests: XCTestCase {
             }
         }
 
-        app.buttons["dsp_unrelated"].tap()
+        retap.tap("\(group) \(form) dsp_unrelated", until: { app.staticTexts["u1"].exists }) { app.buttons["dsp_unrelated"].tap() }
         XCTAssertTrue(app.staticTexts["u1"].waitForExistence(timeout: 5), "\(form): the unrelated change reached the dynamic tree")
         sleep(1)
         let afterUnrelated = read()
@@ -99,9 +100,9 @@ final class DynamicStateProbeUITests: XCTestCase {
         // chosen one and back to the declared one.
         var modelAfter: (moved: Reading, back: Reading)?
         if bound {
-            app.buttons["dsp_vm_chosen"].tap(); sleep(1)
+            model("dsp_vm_chosen"); sleep(1)
             let moved = read()
-            app.buttons["dsp_vm_declared"].tap(); sleep(1)
+            model("dsp_vm_declared"); sleep(1)
             modelAfter = (moved, read())
         }
         print("DSP \(group) \(form) readout_end=\(app.staticTexts["dsp_readout"].label)")
@@ -169,29 +170,55 @@ final class DynamicStateProbeUITests: XCTestCase {
         app.descendants(matching: .any).matching(identifier: id).firstMatch
     }
 
+    /// A button that moves the model: its effect is the readout changing.
+    private func model(_ button: String) {
+        let readout = app.staticTexts["dsp_readout"], was = readout.label
+        retap.tap("\(group) \(button)", until: { readout.label != was }) { app.buttons[button].tap() }
+    }
+
+    /// A control whose effect is its own pixels: `key` in frames().
+    private func movesPixels(_ key: String, _ touch: () -> Void) {
+        let was = crop(XCUIScreen.main.screenshot().image, frames()[key] ?? .zero)
+        retap.tap("\(group) \(key)", until: { diff(was, crop(XCUIScreen.main.screenshot().image, frames()[key] ?? .zero)) > Self.tolerance }, touch)
+    }
+
+    /// A SelectBox: the wheel opens, the value is picked, Done closes it.
+    private func pick(_ id: String, _ wheel: XCUIElement, _ value: String, timeout: TimeInterval = 5, what: String? = nil) {
+        retap.tap("\(group) \(id) open", until: { wheel.exists }, wait: timeout) { element(id).tap() }
+        if wheel.waitForExistence(timeout: timeout) {
+            wheel.adjust(toPickerWheelValue: value)
+            retap.tap("\(group) \(id) Done", until: { !wheel.exists }) { app.buttons["Done"].tap() }
+        } else {
+            XCTFail(what ?? "\(id): the picker did not open")
+        }
+    }
+
+    /// A field: its effect is the keyboard's focus, on it or on the text view inside it.
+    private func focus(_ field: XCUIElement, _ what: String) {
+        let focused = {
+            (field.value(forKey: "hasKeyboardFocus") as? Bool) == true
+                || field.descendants(matching: .textView).allElementsBoundByIndex.contains { ($0.value(forKey: "hasKeyboardFocus") as? Bool) == true }
+        }
+        retap.tap("\(group) \(what)", until: focused) { field.tap() }
+    }
+
     private func choose() {
         if group == "inputs" { chooseInputs(); return }
         if group == "bound" { chooseBound(); return }
-        app.switches["sw"].tap()
-        app.switches["tg"].tap()
-        element("cb").tap()
-        radioGlyph("rb").tap()
+        let swWas = "\(app.switches["sw"].value ?? "nil")", tgWas = "\(app.switches["tg"].value ?? "nil")"
+        retap.tap("\(group) sw", until: { "\(app.switches["sw"].value ?? "nil")" != swWas }) { app.switches["sw"].tap() }
+        retap.tap("\(group) tg", until: { "\(app.switches["tg"].value ?? "nil")" != tgWas }) { app.switches["tg"].tap() }
+        movesPixels("cb") { element("cb").tap() }
+        movesPixels("rv") { radioGlyph("rb").tap() }
         // A group of single Radios (rg1 checked): the rows are leading-aligned
         // at the probe's 12 pt padding, the glyph their first 20-odd points.
         let row = element("rg2").frame
-        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 22, dy: row.midY)).tap()
-        app.buttons["sy"].tap()
-        app.tabBars.buttons["tb"].tap()
-        app.sliders["sl"].adjust(toNormalizedSliderPosition: 0.8)
+        movesPixels("rg") { app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 22, dy: row.midY)).tap() }
+        retap.tap("\(group) sy", until: { app.buttons["sy"].isSelected }) { app.buttons["sy"].tap() }
+        retap.tap("\(group) tb", until: { app.tabBars.buttons["tb"].isSelected }) { app.tabBars.buttons["tb"].tap() }
+        movesPixels("sl") { app.sliders["sl"].adjust(toNormalizedSliderPosition: 0.8) }
         for id in ["sb", "sbi"] {
-            element(id).tap()
-            let wheel = app.pickerWheels.firstMatch
-            if wheel.waitForExistence(timeout: 5) {
-                wheel.adjust(toPickerWheelValue: "qq")
-                app.buttons["Done"].tap()
-            } else {
-                XCTFail("\(id): the picker did not open")
-            }
+            pick(id, app.pickerWheels.firstMatch, "qq")
             sleep(1)
         }
         sleep(1)
@@ -200,21 +227,14 @@ final class DynamicStateProbeUITests: XCTestCase {
     /// The SelectBoxes first (a sheet each), then the TextView, then the
     /// TextField, whose return key ends the editing and puts the keyboard away.
     private func chooseInputs() {
-        element("sbv").tap()
-        let wheel = app.pickerWheels.firstMatch
-        if wheel.waitForExistence(timeout: 5) {
-            wheel.adjust(toPickerWheelValue: "qq")
-            app.buttons["Done"].tap()
-        } else {
-            XCTFail("sbv: the picker did not open")
-        }
+        pick("sbv", app.pickerWheels.firstMatch, "qq")
         sleep(1)
-        element("sbd").tap()
         let day = app.pickerWheels.element(boundBy: 1)
+        retap.tap("\(group) sbd open", until: { day.exists }, wait: 5) { element("sbd").tap() }
         if day.waitForExistence(timeout: 5) {
             print("DSP \(group) sbd wheels=\(app.pickerWheels.allElementsBoundByIndex.map { $0.value as? String ?? "?" })")
             day.adjust(toPickerWheelValue: "3")
-            app.buttons["Done"].tap()
+            retap.tap("\(group) sbd Done", until: { !day.exists }) { app.buttons["Done"].tap() }
         } else {
             XCTFail("sbd: the date picker did not open")
         }
@@ -222,10 +242,10 @@ final class DynamicStateProbeUITests: XCTestCase {
         // The slider with no value: its start is read, then it is moved to 30%.
         app.sliders["sln"].adjust(toNormalizedSliderPosition: 0.3)
         let tv = element("tv")
-        tv.tap()
+        focus(tv, "tv")
         tv.typeText("x")
         let tf = element("tf")
-        tf.tap()
+        focus(tf, "tf")
         tf.typeText("x\n")
         sleep(1)
     }
@@ -233,24 +253,10 @@ final class DynamicStateProbeUITests: XCTestCase {
     /// The bound SelectBoxes: qq in the three lists, the 3rd in the date.
     private func chooseBound() {
         for id in ["sbi", "sbv", "sb"] {
-            element(id).tap()
-            let wheel = app.pickerWheels.firstMatch
-            if wheel.waitForExistence(timeout: 5) {
-                wheel.adjust(toPickerWheelValue: "qq")
-                app.buttons["Done"].tap()
-            } else {
-                XCTFail("\(id): the picker did not open")
-            }
+            pick(id, app.pickerWheels.firstMatch, "qq")
             sleep(1)
         }
-        element("sbd").tap()
-        let day = app.pickerWheels.element(boundBy: 1)
-        if day.waitForExistence(timeout: 5) {
-            day.adjust(toPickerWheelValue: "3")
-            app.buttons["Done"].tap()
-        } else {
-            XCTFail("sbd: the date picker did not open")
-        }
+        pick("sbd", app.pickerWheels.element(boundBy: 1), "3", what: "sbd: the date picker did not open")
         sleep(1)
     }
 

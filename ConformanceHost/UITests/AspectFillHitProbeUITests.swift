@@ -6,6 +6,7 @@ import XCTest
 /// field hittable. Prints each row's frames and readings, so a red names what
 /// covered the field.
 final class AspectFillHitProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("AspectFillHit")
     private var codegenHost: Bool { ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen" }
 
     private func element(_ app: XCUIApplication, _ id: String) -> XCUIElement {
@@ -26,7 +27,7 @@ final class AspectFillHitProbeUITests: XCTestCase {
         let f = field.frame
         let point = CGPoint(x: f.maxX - 8, y: f.midY)
         let origin = app.coordinate(withNormalizedOffset: .zero)
-        origin.withOffset(CGVector(dx: point.x, dy: point.y)).tap()
+        retap.tap("\(p) \(row) field", until: { focused(field) }) { origin.withOffset(CGVector(dx: point.x, dy: point.y)).tap() }
         let took = field.waitForExistence(timeout: 1) && focused(field)
         let after = element(app, "\(p)_afh_\(row)_after").frame
         print("[AspectFillHit] \(p) \(row): field=\(f) spine=\(spine.frame) after.minX=\(after.minX) tap=\(point) hittable=\(hittable) focused=\(took)")

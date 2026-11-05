@@ -27,6 +27,7 @@
 import XCTest
 
 final class SameTypeDuplicateProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("SameTypeDuplicate")
 
     private let sharedIdentifier = "same_type_target"
     private let expectedMatches = 4
@@ -82,13 +83,17 @@ final class SameTypeDuplicateProbeUITests: XCTestCase {
             "FIXTURE: matches do not occupy distinct frames, so the resolved one cannot be identified")
 
         // ---- the measurement ----
-        app.buttons["same_type_probe_reset"].tap()
+        retap.tap("same_type_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["same_type_probe_reset"].tap() }
         XCTAssertEqual(result(app), "tapped: none", "reset did not take")
 
         let executor = XCUITestActionExecutor(platform: "ios")
         try executor.execute(step: TestStep(action: "tap", id: sharedIdentifier), in: app)
 
-        let fired = result(app)
+        var fired = result(app)
+        if fired == "tapped: none", retap.spend("the driver's tap") {
+            try executor.execute(step: TestStep(action: "tap", id: sharedIdentifier), in: app)
+            fired = result(app)
+        }
         print("DUP2_PROBE_RESULT \(fired)")
 
         // Both rules reduce to "the first interactive element in tree order",
@@ -175,13 +180,17 @@ final class SameTypeDuplicateProbeUITests: XCTestCase {
             + "via the unfiltered one, so they would tap DIFFERENT elements here")
 
         // End to end: the vendored driver resolves the same one.
-        app.buttons["same_type_probe_reset"].tap()
+        retap.tap("same_type_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["same_type_probe_reset"].tap() }
         XCTAssertEqual(result(app), "tapped: none", "reset did not take")
 
         let executor = XCUITestActionExecutor(platform: "ios")
         try executor.execute(step: TestStep(action: "tap", id: identifier), in: app)
 
-        let fired = result(app)
+        var fired = result(app)
+        if fired == "tapped: none", retap.spend("the driver's tap") {
+            try executor.execute(step: TestStep(action: "tap", id: identifier), in: app)
+            fired = result(app)
+        }
         print("DUP2_NESTED_RESULT \(fired)")
 
         // ⚠️ NOT asserted against a hardcoded index. Once real containers

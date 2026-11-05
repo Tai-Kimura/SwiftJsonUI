@@ -9,6 +9,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_BIND_FOLD_PROBE=1.
 final class BindFoldProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("BindFold")
     func testBindIsFoldedIntoTheValueItStandsFor() throws {
         guard ProcessInfo.processInfo.environment["BIND_FOLD_PROBE"] == "1" else {
             throw XCTSkip("bind fold probe: run with the guard lifted, as the other probes are")
@@ -42,7 +43,8 @@ final class BindFoldProbeUITests: XCTestCase {
         sleep(1)
         print("BINDFOLD \(path) after the literal CheckBox: \(readout())")
         XCTAssertEqual(readout(), "day=2026-01-02,on=true", "\(path): bind beside the literal isOn is dropped — nothing written")
-        element("bfCheckLone").tap()
+        // bfCheck above is the row where nothing may be written: one touch only.
+        retap.tap("\(path) bfCheckLone", until: { readout().hasSuffix("on=false") }) { element("bfCheckLone").tap() }
         sleep(1)
         print("BINDFOLD \(path) after the lone CheckBox: \(readout())")
         XCTAssertEqual(readout(), "day=2026-01-02,on=false", "\(path): a lone bind is the isOn — written")

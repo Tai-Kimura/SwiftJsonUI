@@ -14,6 +14,7 @@
 import XCTest
 
 final class SectionScrollProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("SectionScroll")
     func testAScrollReachesTheCellItNamesAndSharedKeysDrawEveryCell() throws {
         let codegenHost = ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
         let app = XCUIApplication()
@@ -37,8 +38,8 @@ final class SectionScrollProbeUITests: XCTestCase {
         ["A0", "B3", "a0", "b3"].forEach(note)
 
         // scrollTo an index: 13 is B3.
-        app.buttons["go index"].tap()
         let b3 = text("B3")
+        retap.tap("go index", until: { b3.exists }, wait: 4) { app.buttons["go index"].tap() }
         XCTAssertTrue(b3.waitForExistence(timeout: 5), "scrollTo 13 did not bring B3 into the list")
         XCTAssertTrue(b3.exists && b3.isHittable, "B3 is not on screen after scrollTo 13")
         XCTAssertFalse(text("A0").exists && text("A0").isHittable, "A0 is still on screen: the list did not scroll")
@@ -48,8 +49,8 @@ final class SectionScrollProbeUITests: XCTestCase {
         }
 
         // scrollTo a key: "b3", a later section's cell.
-        app.buttons["go key"].tap()
         let keyed = text("b3")
+        retap.tap("go key", until: { keyed.exists }, wait: 4) { app.buttons["go key"].tap() }
         XCTAssertTrue(keyed.waitForExistence(timeout: 5), "scrollTo \"b3\" did not bring b3 into the list")
         XCTAssertTrue(keyed.exists && keyed.isHittable, "b3 is not on screen after scrollTo \"b3\"")
         XCTAssertFalse(text("a0").exists && text("a0").isHittable, "a0 is still on screen: the list did not scroll")

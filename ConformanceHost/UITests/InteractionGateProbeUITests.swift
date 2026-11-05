@@ -9,6 +9,7 @@ import XCTest
 ///
 /// Opt-in, like the other probes: TEST_RUNNER_INTERACTION_GATE_PROBE=1.
 final class InteractionGateProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("InteractionGate")
     /// Handler calls expected after one tap (or press) on each element.
     private let calls: [String: Int] = [
         "parPlain": 1, "kidPlain": 1,
@@ -59,23 +60,38 @@ final class InteractionGateProbeUITests: XCTestCase {
         func press(_ r: CGRect) {
             origin.withOffset(CGVector(dx: r.midX, dy: r.midY)).press(forDuration: 1.2)
         }
+        // A row with no gate says a touch reaches, so a lost one is sent again (ProbeRetap). The gated rows use
+        // tap and press above, once only.
+        func reached(_ row: String, _ touch: () -> Void) {
+            let readout = app.staticTexts["gate_readout"]
+            retap.tap(row, until: { readout.label.contains("\(row)=") }, touch)
+        }
 
         // A parent is tapped in its padding, 8 pt right of its child (the
         // parent without an id is found through its child).
         for name in ["Plain", "UieFalse", "UieBound", "EnBoundNoId", "UieOld"] {
             let kid = byId("kid\(name)")
-            origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap()
-            tap(kid)
+            if name == "Plain" {
+                reached("parPlain") { origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap() }
+                reached("kidPlain") { tap(kid) }
+            } else {
+                origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap()
+                tap(kid)
+            }
         }
         tap(byLabel("lblUieFalse"))
         tap(byLabel("lblEnBoundNoId"))
-        press(byId("lpPlain"))
+        let lpPlain = byId("lpPlain")
+        reached("lpPlain") { press(lpPlain) }
         press(byId("lpUieFalse"))
-        for id in ["dynViewPlain", "dynViewUieFalse", "dynViewUieBound", "dynViewEnBound"] {
+        let dynViewPlain = byId("dynViewPlain")
+        reached("dynViewPlain") { tap(dynViewPlain) }
+        for id in ["dynViewUieFalse", "dynViewUieBound", "dynViewEnBound"] {
             tap(byId(id))
         }
         tap(byLabel("dynLblUieFalse"))
-        press(byId("dynLpPlain"))
+        let dynLpPlain = byId("dynLpPlain")
+        reached("dynLpPlain") { press(dynLpPlain) }
         press(byId("dynLpUieFalse"))
         let dynKid = byId("dynKidUieFalse")
         origin.withOffset(CGVector(dx: dynKid.maxX + 8, dy: dynKid.midY)).tap()
