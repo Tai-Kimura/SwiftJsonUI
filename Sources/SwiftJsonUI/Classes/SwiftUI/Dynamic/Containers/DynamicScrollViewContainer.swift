@@ -248,6 +248,9 @@ public struct DynamicScrollViewContainer: View {
             // name used to exist beside the others and was reached by nothing;
             // it is gone so the next change lands here.
             .environment(\.jsonuiScrollingAncestor, true)
+            // Whatever bounds the ScrollView, its content has no height to
+            // run out of (LabelHeightFit).
+            .environment(\.jsonuiHeightBound, false)
         }
     }
 

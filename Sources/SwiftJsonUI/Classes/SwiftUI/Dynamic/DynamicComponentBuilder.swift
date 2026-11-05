@@ -75,6 +75,7 @@ public struct DynamicComponentBuilder: View {
         // resolving false, stops everything built inside it (TapAccessibility).
         // Always applied, so a binding that flips keeps the subtree's identity.
         .environment(\.jsonuiInteractionStopped, stoppedAround || stopsInteraction)
+        .modifier(HeightBoundMark(effect: HeightBoundEffect.of(component, parentOrientation: parentOrientation, data: data)))
     }
 
     /// `userInteractionEnabled` is false, or a binding resolving false.

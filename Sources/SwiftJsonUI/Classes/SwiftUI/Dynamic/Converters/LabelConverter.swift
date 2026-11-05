@@ -214,6 +214,11 @@ public struct LabelConverter {
         // --- 6. apply_padding (paddings/paddingTop etc.) ---
         result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
 
+        // --- 6b. height wrapContent keeps its lines (frame_helper.rb apply_label_wrap_height) ---
+        if LabelWrapHeight.applies(to: component, parentOrientation: parentOrientation, data: data) {
+            result = AnyView(result.modifier(LabelWrapHeight()))
+        }
+
         // --- 7. apply_frame_size (width/height) ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
