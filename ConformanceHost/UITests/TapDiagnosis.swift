@@ -54,6 +54,12 @@ enum TapDiagnosis {
         return relative
     }
 
+    /// A step that fails because a tap's effect did not come: a wait, as an
+    /// assertion is. `wait` (a fixed time) and `readText` wait for nothing.
+    static func waitsForAnEffect(_ action: String?) -> Bool {
+        action == "waitFor" || action == "waitForAny"
+    }
+
     /// One line for an error, for a detail string.
     static func shortError(_ error: Error) -> String {
         let description = (error as? LocalizedError)?.errorDescription ?? String(describing: error)

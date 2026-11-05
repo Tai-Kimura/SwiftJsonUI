@@ -1125,7 +1125,8 @@ final class ConformanceUITests: XCTestCase {
         failed step: TestStep, fixture: ConformanceManifest.Fixture, app: XCUIApplication,
         actions: XCUITestActionExecutor, asserts: XCUITestAssertionExecutor, retapped: Bool
     ) -> PostTapOutcome {
-        guard step.isAssertion, let tap = lastTap, let id = tap.step.id else { return PostTapOutcome() }
+        guard let tap = lastTap, let id = tap.step.id,
+              step.isAssertion || TapDiagnosis.waitsForAnEffect(step.action) else { return PostTapOutcome() }
         let now = elementState(id, in: app)
         var parts = ["after tap(\(id)) at +\(String(format: "%.2f", tap.at))s",
                      "before: \(tap.before)",
@@ -1135,6 +1136,15 @@ final class ConformanceUITests: XCTestCase {
         let path = try? captureScreenshot(named: shot, app: app)
         if let path {
             parts.append("screenshot: \(path)")
+        }
+        // A wait after a tap leaves what it met and is not tapped again: whether
+        // a second tap may turn this red green is decided from what these lines
+        // show (jsonui-cli ticket 2026-11-06-ios-conformance-embed-push-error-
+        // and-statenames-retap-twice: this error left no line and no picture).
+        if !step.isAssertion {
+            if let waited = step.id { parts.append("waited for \(waited): \(elementState(waited, in: app))") }
+            parts.append("not tapped again")
+            return PostTapOutcome(text: " — [post-tap] " + parts.joined(separator: "; "))
         }
         capturedIssues = []
         suppressIssues = true
