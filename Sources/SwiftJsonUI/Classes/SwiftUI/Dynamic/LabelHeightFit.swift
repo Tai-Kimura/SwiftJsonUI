@@ -2,73 +2,64 @@ import SwiftUI
 
 #if DEBUG
 
-private struct HeightBoundKey: EnvironmentKey {
+private struct InOpenScrollKey: EnvironmentKey {
     static let defaultValue = false
 }
 
 extension EnvironmentValues {
-    /// True under a node that bounds the height (a declared height or
-    /// maxHeight, or a weight along a vertical stack), with no vertical
-    /// ScrollView in between. sjui codegen: JsonToSwiftUIConverter
-    /// mark_height_bounds, the same rule over the layout's tree.
-    var jsonuiHeightBound: Bool {
-        get { self[HeightBoundKey.self] }
-        set { self[HeightBoundKey.self] = newValue }
+    /// True inside a vertical ScrollView, with no node between it and here that
+    /// bounds the height. sjui codegen: JsonToSwiftUIConverter mark_open_scroll,
+    /// the same rule over the layout's tree.
+    var jsonuiInOpenScroll: Bool {
+        get { self[InOpenScrollKey.self] }
+        set { self[InOpenScrollKey.self] = newValue }
     }
 }
 
-/// What a node does to `jsonuiHeightBound` for everything built inside it.
-enum HeightBoundEffect {
-    case inherit
-    case bound
-    /// A Collection's cells and an Embed's screen: generated on their own,
-    /// so the generator's walk does not see the node around them.
-    case cleared
+/// Ends `jsonuiInOpenScroll` for what a node builds inside it. A vertical
+/// ScrollView starts it again (DynamicScrollViewContainer).
+struct OpenScrollEnd: ViewModifier {
+    let ends: Bool
+    @Environment(\.jsonuiInOpenScroll) private var inherited
 
-    static func of(_ component: DynamicComponent, parentOrientation: String?, data: [String: Any]) -> HeightBoundEffect {
-        if component.type == "Collection" || component.type == "Embed" { return .cleared }
+    func body(content: Content) -> some View {
+        content.environment(\.jsonuiInOpenScroll, ends ? false : inherited)
+    }
+
+    static func ends(_ component: DynamicComponent, parentOrientation: String?, data: [String: Any]) -> Bool {
+        // A Collection's cells and an Embed's screen are generated on their
+        // own, so the generator's walk does not see the node around them.
+        if component.type == "Collection" || component.type == "Embed" { return true }
         let common = component.typedAttributes(CommonAttributes.self)
-        // matchParent is the screen's height, not a bound: a Label under it
-        // that the screen has no room for runs on, as on Android.
+        // matchParent inside a ScrollView takes the height the content has.
         let raw = component.heightRaw?.lowercased()
         let fills = raw == "matchparent" || raw == "match_parent" || raw == "-1"
-        if !fills, component.declaredHeight != nil { return .bound }
-        if common.maxHeight != nil { return .bound }
-        if let raw, raw.hasPrefix("@{") { return .bound }
-        if component.rawAttribute("heightWeight") != nil { return .bound }
+        if !fills, component.declaredHeight != nil { return true }
+        if common.maxHeight != nil { return true }
+        if let raw, raw.hasPrefix("@{") { return true }
+        if component.rawAttribute("heightWeight") != nil { return true }
         if parentOrientation == "vertical",
            let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
-            return .bound
+            return true
         }
-        return .inherit
+        return false
     }
 }
 
-struct HeightBoundMark: ViewModifier {
-    let effect: HeightBoundEffect
-    @Environment(\.jsonuiHeightBound) private var inherited
-
-    func body(content: Content) -> some View {
-        switch effect {
-        case .inherit: content.environment(\.jsonuiHeightBound, inherited)
-        case .bound: content.environment(\.jsonuiHeightBound, true)
-        case .cleared: content.environment(\.jsonuiHeightBound, false)
-        }
-    }
-}
-
-/// A Label of height wrapContent keeps all its lines. A stack divides a finite
-/// height among its children: a child whose text needs more than its share
-/// shrinks, even with room left at the end of the screen (ticket
-/// sjui-label-matchparent-wrapcontent-truncates-in-scroll: a 2-line question
-/// next to its buttons drew 1 line and "…"). Under a node that bounds the
-/// height the text stays inside it as before, and `lines` limits it as before.
+/// A Label of height wrapContent inside a vertical ScrollView keeps all its
+/// lines. A stack divides a finite height among its children: a child whose
+/// text needs more than its share shrinks, even with room left at the end of
+/// the screen (ticket sjui-label-matchparent-wrapcontent-truncates-in-scroll: a
+/// 2-line question next to its buttons drew 1 line and "..."). There the content
+/// can grow. Outside a ScrollView it cannot: the text would push what is below
+/// it off a screen that does not scroll, so it stays as it was, as it does under
+/// a node that bounds the height, and `lines` limits it as before.
 /// sjui codegen: frame_helper.rb apply_label_wrap_height.
 struct LabelWrapHeight: ViewModifier {
-    @Environment(\.jsonuiHeightBound) private var bound
+    @Environment(\.jsonuiInOpenScroll) private var inOpenScroll
 
     func body(content: Content) -> some View {
-        content.fixedSize(horizontal: false, vertical: !bound)
+        content.fixedSize(horizontal: false, vertical: inOpenScroll)
     }
 
     /// height wrapContent; a node with a min or max goes through

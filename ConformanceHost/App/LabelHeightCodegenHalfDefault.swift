@@ -9,6 +9,8 @@
 import SwiftUI
 
 struct LabelHeightCodegenHalf: View {
+    let noScroll: Bool
+
     var body: some View {
         Text("no codegen half in a dynamic-only build").accessibilityIdentifier("lh_codegen_absent")
     }
