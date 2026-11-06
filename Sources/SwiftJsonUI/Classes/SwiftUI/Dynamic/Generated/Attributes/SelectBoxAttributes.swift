@@ -61,6 +61,7 @@ public struct SelectBoxAttributes {
         "accessibilityLabel",
         "canBack",
         "cancelButtonBackgroundColor",
+        "cancelButtonText",
         "cancelButtonTextColor",
         "caretAttributes",
         "colorScheme",
@@ -68,6 +69,7 @@ public struct SelectBoxAttributes {
         "datePickerStyle",
         "dateStringFormat",
         "dividerAttributes",
+        "doneButtonText",
         "font",
         "fontColor",
         "fontSize",
@@ -90,6 +92,7 @@ public struct SelectBoxAttributes {
         "selectedIndex",
         "selectedItem",
         "selectedValue",
+        "sheetTitle",
         "size",
     ])
 
@@ -120,6 +123,9 @@ public struct SelectBoxAttributes {
     /// Background colour of the picker dialog's cancel button (kjui selectbox_component).
     public let cancelButtonBackgroundColor: String?
 
+    /// The picker sheet's cancel button (kjui). A strings.json key or a text. Absent: the library's word in the app's language (kjui_sheet_cancel).
+    public let cancelButtonText: String?
+
     /// Text colour of the picker dialog's cancel button (kjui selectbox_component).
     public let cancelButtonTextColor: String?
 
@@ -140,6 +146,9 @@ public struct SelectBoxAttributes {
 
     /// Divider styling attributes
     public let dividerAttributes: [String: Any]?
+
+    /// The button that closes the picker sheet with the choice: Done on iOS, a date sheet's confirm on Android. A strings.json key or a text. Absent: the app's own Done key in Localizable.strings (iOS) or kjui_sheet_confirm (Android), else the library's word in the app's language.
+    public let doneButtonText: String?
 
     /// Font name
     public let font: String?
@@ -207,6 +216,9 @@ public struct SelectBoxAttributes {
     /// Selected value (binding for two-way)
     public let selectedValue: AttrValue<String>?
 
+    /// The picker sheet's title (kjui). A strings.json key or a text. Absent: the library's word in the app's language, which an app can also replace by declaring kjui_sheet_select_option (a list) or kjui_sheet_select_date (a date) in its own values.
+    public let sheetTitle: String?
+
     /// Number of visible options
     public let size: Double?
 
@@ -217,6 +229,7 @@ public struct SelectBoxAttributes {
         self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.canBack = AttrCoerce.boolean(AttrCoerce.lookup(json, "canBack"))
         self.cancelButtonBackgroundColor = AttrCoerce.string(AttrCoerce.lookup(json, "cancelButtonBackgroundColor"))
+        self.cancelButtonText = AttrCoerce.string(AttrCoerce.lookup(json, "cancelButtonText"))
         self.cancelButtonTextColor = AttrCoerce.string(AttrCoerce.lookup(json, "cancelButtonTextColor"))
         self.caretAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "caretAttributes"))
         self.colorScheme = Self.parseColorScheme(AttrCoerce.lookup(json, "colorScheme"))
@@ -224,6 +237,7 @@ public struct SelectBoxAttributes {
         self.datePickerStyle = Self.parseDatePickerStyle(AttrCoerce.lookup(json, "datePickerStyle"))
         self.dateStringFormat = AttrCoerce.string(AttrCoerce.lookup(json, "dateStringFormat", ["dateFormat"], canonicalOnly: canonicalOnly))
         self.dividerAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "dividerAttributes"))
+        self.doneButtonText = AttrCoerce.string(AttrCoerce.lookup(json, "doneButtonText"))
         self.font = AttrCoerce.string(AttrCoerce.lookup(json, "font"))
         self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor"))
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
@@ -246,6 +260,7 @@ public struct SelectBoxAttributes {
         self.selectedIndex = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedIndex"), AttrCoerce.number)
         self.selectedItem = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedItem"), AttrCoerce.string)
         self.selectedValue = AttrCoerce.attrValue(AttrCoerce.lookup(json, "selectedValue"), AttrCoerce.string)
+        self.sheetTitle = AttrCoerce.string(AttrCoerce.lookup(json, "sheetTitle"))
         self.size = AttrCoerce.number(AttrCoerce.lookup(json, "size"))
     }
 

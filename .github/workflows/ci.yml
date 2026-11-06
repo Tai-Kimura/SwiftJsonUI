@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.3.38 # jsonui-cli release tag v2.3.38: the attr tables are re-vendored from it (accessibilityLabel on the controls, accessibilityLiveRegion on Label / View, and the size / Collection END retirements since v2.3.22); the fixtures match it unchanged
+      JSONUI_CLI_MANIFEST_REF: d68007122074785398371a26586f02e489e54199 # jsonui-cli fix/selectbox-sheet-strings: the attr tables are re-vendored from it (sheetTitle, cancelButtonText, doneButtonText). The integration moves this to the release tag.
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
