@@ -22,16 +22,29 @@ struct SelectBoxKeyboardProbeView: View {
     /// `-sbkDismissMode onDrag|interactive` declares the ScrollView's keyboardDismissMode.
     static var resolvedLayout: String {
         let args = ProcessInfo.processInfo.arguments
-        guard let i = args.firstIndex(of: "-sbkDismissMode"), i + 1 < args.count, !args[i + 1].isEmpty else { return layout }
-        return layout.replacingOccurrences(
-            of: #""id":"sbk_scroll","#,
-            with: #""id":"sbk_scroll","keyboardDismissMode":"\#(args[i + 1])","#)
+        var result = layout
+        if let i = args.firstIndex(of: "-sbkDismissMode"), i + 1 < args.count, !args[i + 1].isEmpty {
+            result = result.replacingOccurrences(
+                of: #""id":"sbk_scroll","#,
+                with: #""id":"sbk_scroll","keyboardDismissMode":"\#(args[i + 1])","#)
+        }
+        // `-sbkFiller N`: how far below the fields the box sits; `-sbkTail N`: how much runs on after the last row.
+        if let i = args.firstIndex(of: "-sbkFiller"), i + 1 < args.count {
+            result = result.replacingOccurrences(of: #""id":"sbk_filler","width":"matchParent","height":700"#,
+                                                 with: #""id":"sbk_filler","width":"matchParent","height":\#(args[i + 1])"#)
+        }
+        if let i = args.firstIndex(of: "-sbkTail"), i + 1 < args.count {
+            result = result.replacingOccurrences(of: #""id":"sbk_tail","width":"matchParent","height":300"#,
+                                                 with: #""id":"sbk_tail","width":"matchParent","height":\#(args[i + 1])"#)
+        }
+        return result
     }
 
     @State private var email = ""
     @State private var note = ""
     @State private var dialogShown = false
     @State private var alertShown = false
+    @State private var barItemPressed = false
 
     private var data: [String: Any] {
         [
@@ -80,6 +93,13 @@ struct SelectBoxKeyboardProbeView: View {
                     NavigationLink("go") {
                         content
                             .navigationTitle("form")
+                            .toolbar {
+                                ToolbarItem(placement: .topBarTrailing) {
+                                    Button("item") { barItemPressed = true }
+                                        .accessibilityIdentifier("sbk_bar_item")
+                                }
+                            }
+                            .alert("sbk bar item pressed", isPresented: $barItemPressed) { Button("OK") {} }
                             .navigationBarTitleDisplayMode(.inline)
                             .navigationDestination(isPresented: .constant(false)) { Text("a") }
                             .navigationDestination(isPresented: .constant(false)) { Text("b") }
@@ -91,6 +111,11 @@ struct SelectBoxKeyboardProbeView: View {
                             .alert("i", isPresented: .constant(false)) { Button("j") {} }
                     }
                     .accessibilityIdentifier("sbk_go")
+                }
+            } else if ProcessInfo.processInfo.arguments.contains("-sbkTabs") {
+                TabView {
+                    content.tabItem { Text("one") }
+                    Text("two").tabItem { Text("two") }
                 }
             } else {
                 content
@@ -123,6 +148,7 @@ private final class SBKWindowTap: NSObject, UIGestureRecognizerDelegate {
         var view = touch.view
         while let v = view {
             if v is UITextField || v is UITextView { return false }
+            if v.canBecomeFirstResponder && String(describing: type(of: v)).contains("TextField") { return false }
             view = v.superview
         }
         return true
