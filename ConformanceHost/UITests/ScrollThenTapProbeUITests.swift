@@ -77,7 +77,24 @@ final class ScrollThenTapProbeUITests: XCTestCase {
                     let v = el(app, "sbk_scroll").frame
                     let nb = env["STT_TABS"] == "1" ? app.tabBars.firstMatch : app.navigationBars.firstMatch
                     at = " y=\(Int(t.frame.minY))..\(Int(t.frame.maxY)) hittable=\(t.isHittable) scroller=\(Int(v.minY))..\(Int(v.maxY)) keyboards=\(app.keyboards.count) bar=\(nb.exists ? "\(Int(nb.frame.minY))..\(Int(nb.frame.maxY))" : "none")"
-                    if action == "scrollOnly" {
+                    if action == "nextVisible" {
+                        // The row under the target, once the target's sheet is done with.
+                        try executor.execute(step: step(#"{"action":"selectOption","id":"\#(target)","index":1,"timeout":1500}"#), in: app)
+                        if env["STT_HIDE"] == "1" {
+                            try executor.execute(step: step(#"{"action":"hideKeyboard"}"#), in: app)
+                        }
+                        let next = env["STT_NEXT"] ?? "sbk_date"
+                        let until = Date().addingTimeInterval(5)
+                        var shown = false
+                        while !shown && Date() < until {
+                            shown = ViewportVisibility.isVisible(id: next, in: app)
+                            if !shown { usleep(200_000) }
+                        }
+                        let n = el(app, next).frame
+                        let v2 = el(app, "sbk_scroll").frame
+                        at += " next=\(Int(n.minY))..\(Int(n.maxY)) scrollerAfter=\(Int(v2.minY))..\(Int(v2.maxY)) keyboardsAfter=\(app.keyboards.count)"
+                        if !shown { outcome = "nextNotInViewport" }
+                    } else if action == "scrollOnly" {
                         // scrollUntilVisible alone: where it leaves the target.
                         let m = t.frame.midY
                         if m < nb.frame.maxY || m > v.maxY { outcome = "notInBand" }
