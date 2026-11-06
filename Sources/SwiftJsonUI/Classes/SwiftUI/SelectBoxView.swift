@@ -56,6 +56,8 @@ public struct SelectBoxView: View {
     
     let id: String
     let prompt: String?
+    /// The word on the button that closes the sheet (SelectBoxSheetWords: absent, the app's Done, then the library's).
+    let doneButtonText: String?
     let fontSize: CGFloat
     let fontColor: Color
     /// The label font, resolved from `font` + `fontSize` at init.
@@ -160,6 +162,7 @@ public struct SelectBoxView: View {
     public init(
         id: String = "selectBox",
         prompt: String? = nil,
+        doneButtonText: String? = nil,
         fontSize: CGFloat = 16,
         fontColor: Color = .primary,
         // Font family (or "bold") for the label. Same spelling and same
@@ -189,6 +192,7 @@ public struct SelectBoxView: View {
     ) {
         self.id = id
         self.prompt = prompt
+        self.doneButtonText = doneButtonText
         self.fontSize = fontSize
         self.fontColor = fontColor
         // "bold" is the weight spelling, not a family — the rule
@@ -461,7 +465,7 @@ public struct SelectBoxView: View {
                     }
                 }
                 .navigationBarItems(
-                    trailing: Button("Done") {
+                    trailing: Button(SelectBoxSheetWords.done(given: doneButtonText)) {
                         isPresented = false
                         // Notify sheet responder when dismissing
                         sheetResponder.sheetWillDismiss(id: id)

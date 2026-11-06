@@ -310,6 +310,7 @@ public struct SelectBoxConverter {
             SelectBoxView(
                 id: id,
                 prompt: prompt,
+                doneButtonText: attrs.doneButtonText?.dynamicLocalized(),
                 fontSize: fontSize,
                 fontColor: fontColor,
                 fontName: fontName,
