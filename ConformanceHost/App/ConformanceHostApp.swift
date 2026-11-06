@@ -210,6 +210,9 @@ struct ConformanceRootView: View {
         if let i = arguments.firstIndex(of: "-autoFocusDynamicProbe"), i + 1 < arguments.count {
             return AnyView(AutoFocusDynamicProbeView(variant: arguments[i + 1]))
         }
+        if let i = arguments.firstIndex(of: "-sheetJumpProbe"), i + 1 < arguments.count {
+            return AnyView(SheetCloseJumpProbeView(arm: arguments[i + 1]))
+        }
         if let i = arguments.firstIndex(of: "-selectBoxKeyboardProbe"), i + 1 < arguments.count {
             return AnyView(SelectBoxKeyboardProbeView(codegen: arguments[i + 1] == "cg"))
         }
