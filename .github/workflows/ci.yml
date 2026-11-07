@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.10 # jsonui-cli v2.5.10: the attr tables are vendored from it
+      JSONUI_CLI_MANIFEST_REF: d9685dbed07bebcc116d71806e8844640f016c28 # jsonui-cli fix/textfield-content-type-webauthn: move to the release tag that carries it
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
