@@ -42,6 +42,43 @@ final class ProbeRetapTests: XCTestCase {
         XCTAssertTrue(said().last?.contains("the second touch showed nothing either") == true, "\(said())")
     }
 
+    func testTheWindowsLogSaysATouchWasNotDelivered() {
+        let (retap, said) = make()
+        var touches = 0
+        let log = "120.00,300.00 #4"
+        XCTAssertTrue(retap.tap("a", until: { touches == 2 }, wait: 0.05, window: { log }) { touches += 1 })
+        XCTAssertEqual(touches, 2, "the retap is the same with the window read")
+        XCTAssertTrue(said()[0].hasSuffix("— touched once more; the app's window saw no touch either: not delivered"), "\(said())")
+    }
+
+    func testTheWindowsLogSaysATouchArrivedLate() {
+        let (retap, said) = make()
+        var touches = 0, log = "120.00,300.00 #4"
+        XCTAssertTrue(retap.tap("a", until: { touches == 2 }, wait: 0.05, window: { log }) { touches += 1; log = "10.00,20.00 #\(4 + touches)" })
+        XCTAssertTrue(said()[0].hasSuffix("; the app's window saw that touch (10.00,20.00 #5): delivered, its effect late or elsewhere"), "\(said())")
+    }
+
+    func testAWindowLogNeverInstalledSaysNothingOfTheTouch() {
+        let (retap, said) = make()
+        var touches = 0
+        XCTAssertTrue(retap.tap("a", until: { touches == 2 }, wait: 0.05, window: { ProbeRetap.unread }) { touches += 1 })
+        XCTAssertTrue(said()[0].hasSuffix("; the app's window logs no touches (its log was not installed): delivery unknown"), "\(said())")
+    }
+
+    func testAWindowLogInstalledBetweenTheReadsSaysNothingOfTheTouch() {
+        XCTAssertEqual(ProbeRetap.saw(before: ProbeRetap.unread, after: "no touch yet"),
+                       "; the app's window logs no touches (its log was not installed): delivery unknown")
+    }
+
+    func testARefusedRetapSaysTheWindowToo() {
+        let (retap, said) = make()
+        var touches = 0
+        XCTAssertTrue(retap.tap("a", until: { touches == 2 }, wait: 0.05) { touches += 1 })
+        XCTAssertFalse(retap.tap("b", until: { false }, wait: 0.05, window: { "1.00,1.00 #1" }) { touches += 1 })
+        XCTAssertTrue(said().last?.hasSuffix("— not tapped again; the app's window saw no touch either: not delivered") == true, "\(said())")
+        XCTAssertFalse(said()[0].contains("window"), "no window, no word of it: \(said())")
+    }
+
     func testSpendSaysOnceThenRefuses() {
         let (retap, said) = make()
         XCTAssertTrue(retap.spend("x"))
