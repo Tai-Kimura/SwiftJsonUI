@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.7 # jsonui-cli release tag v2.5.7: the attr tables are re-vendored from it (sheetTitle, cancelButtonText, doneButtonText)
+      JSONUI_CLI_MANIFEST_REF: a5837d5ca4820a9351a0ec1fcca2ecd200b49c6a # jsonui-cli fix/shadow-opacity-dynamic: the attr tables are re-vendored from it (common.shadow's fields declared bindable with defaults); move to the v2.5.10 tag at release
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
