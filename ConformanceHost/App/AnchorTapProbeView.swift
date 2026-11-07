@@ -99,14 +99,19 @@ final class AnchorTapStore: ObservableObject {
     }
 }
 
-/// Where the last touch landed, in window points.
+/// Where the last touch landed, in window points, and how many the window has
+/// seen ("x,y #n"): a touch at the same point as the one before still changes it,
+/// so a test can tell a touch the window never received (ProbeRetap `window`).
+/// "none" until it is installed, "no touch yet" after.
 final class AnchorTapTouchLog: NSObject, ObservableObject, UIGestureRecognizerDelegate {
     @Published var last = "none"
     private var installed = false
+    private var count = 0
 
     func install() {
         guard !installed, let window = A11yActivator.keyWindow() else { return }
         installed = true
+        last = "no touch yet"
         let recognizer = UITapGestureRecognizer(target: self, action: #selector(tapped(_:)))
         recognizer.cancelsTouchesInView = false
         recognizer.delaysTouchesBegan = false
@@ -117,7 +122,8 @@ final class AnchorTapTouchLog: NSObject, ObservableObject, UIGestureRecognizerDe
 
     @objc private func tapped(_ recognizer: UITapGestureRecognizer) {
         let p = recognizer.location(in: recognizer.view)
-        last = String(format: "%.2f,%.2f", p.x, p.y)
+        count += 1
+        last = String(format: "%.2f,%.2f #%d", p.x, p.y, count)
     }
 
     func gestureRecognizer(_ g: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
