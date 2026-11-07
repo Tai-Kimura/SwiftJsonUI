@@ -40,6 +40,7 @@ public struct EditTextAttributes {
 
     public enum ContentType: String {
         case username = "username"
+        case usernameWebauthn = "usernameWebauthn"
         case password = "password"
         case newPassword = "newPassword"
         case oneTimeCode = "oneTimeCode"
@@ -55,7 +56,7 @@ public struct EditTextAttributes {
         case uRL = "URL"
         /// Every spelling this attribute accepts, as declared (values and
         /// valueAliases keys) — case-sensitive.
-        public static let declaredSpellings: [String] = ["username", "password", "newPassword", "oneTimeCode", "email", "emailAddress", "name", "givenName", "familyName", "telephoneNumber", "tel", "phone", "streetAddress", "postalCode", "country", "creditCardNumber", "URL"]
+        public static let declaredSpellings: [String] = ["username", "usernameWebauthn", "password", "newPassword", "oneTimeCode", "email", "emailAddress", "name", "givenName", "familyName", "telephoneNumber", "tel", "phone", "streetAddress", "postalCode", "country", "creditCardNumber", "URL"]
     }
 
     public enum Input: String {
@@ -234,7 +235,7 @@ public struct EditTextAttributes {
     /// Clear button mode
     public let clearButtonMode: String?
 
-    /// Content type for autofill (binding supported). The enum is the set of tokens at least one platform actually maps: iOS to .textContentType, web to the autoComplete attribute, Android to the keyboard type. `email` (not emailAddress) and `telephoneNumber` (not tel) are the canonical spellings — the web converter only matches those two, so the alternates are normalized before conversion. Tokens no platform maps are deliberately absent: declaring UIKit's full UITextContentType list would enumerate values that cannot reach any output.
+    /// Content type for autofill (binding supported). The enum is the set of tokens at least one platform actually maps: iOS to .textContentType, web to the autoComplete attribute, Android to the keyboard type. `email` (not emailAddress) and `telephoneNumber` (not tel) are the canonical spellings — the web converter only matches those two, so the alternates are normalized before conversion. Tokens no platform maps are deliberately absent: declaring UIKit's full UITextContentType list would enumerate values that cannot reach any output. `usernameWebauthn` is a username field that also offers passkeys: the web writes autoComplete="username webauthn" (WebAuthn conditional mediation), iOS the .username content type (the app's performAutoFillAssistedRequests brings the passkeys), and Android draws it as `username` — a Compose field takes no Credential Manager request (PendingGetCredentialRequest is View-only), so the app offers passkeys through CredentialManager.getCredential.
     public let contentType: AttrValue<AttrEnum<ContentType>>?
 
     /// Background color when disabled - hex string or color name from colors.json
@@ -511,6 +512,7 @@ public struct EditTextAttributes {
         if let s = raw as? String {
             switch s {
             case "username": return .known(ContentType.username)
+            case "usernameWebauthn": return .known(ContentType.usernameWebauthn)
             case "password": return .known(ContentType.password)
             case "newPassword": return .known(ContentType.newPassword)
             case "oneTimeCode": return .known(ContentType.oneTimeCode)

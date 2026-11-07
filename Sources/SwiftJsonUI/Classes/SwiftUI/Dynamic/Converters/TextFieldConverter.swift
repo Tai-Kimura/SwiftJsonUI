@@ -583,6 +583,9 @@ public struct TextFieldConverter {
     ) -> AnyView {
         switch contentType {
         case .username: return AnyView(view.textContentType(.username))
+        // A username field that also offers passkeys: the passkeys come from the
+        // app's performAutoFillAssistedRequests; the field asks for .username.
+        case .usernameWebauthn: return AnyView(view.textContentType(.username))
         case .password: return AnyView(view.textContentType(.password))
         case .newPassword: return AnyView(view.textContentType(.newPassword))
         case .oneTimeCode: return AnyView(view.textContentType(.oneTimeCode))
