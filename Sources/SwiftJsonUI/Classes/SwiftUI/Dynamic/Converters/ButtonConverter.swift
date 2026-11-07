@@ -214,6 +214,14 @@ public struct ButtonConverter {
         // --- 3. apply_frame_size ---
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
 
+        // shadow and opacity, where codegen draws them (button_converter.rb
+        // apply_common_decorations, after the frame and before the margins).
+        // This chain does not run applyStandardModifiers, so neither drew here:
+        // a declared opacity left the Button opaque (ticket
+        // 2026-11-07-declared-binding-slots-and-dynamic-shadow).
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
+        result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
+
         // --- 4. apply_margins ---
         // The frames gate's measuring element, inside the margins (applyConformanceFrame).
         result = DynamicModifierHelper.applyConformanceFrame(result, component: component)

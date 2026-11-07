@@ -406,7 +406,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
 
         // --- 23. shadow ---
-        result = DynamicModifierHelper.applyShadow(result, component: component)
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
 
         // --- 24. clipped ---
         result = DynamicModifierHelper.applyClipped(result, component: component, data: data)
@@ -532,7 +532,7 @@ public struct TextFieldConverter {
         result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
 
         // --- 23. shadow ---
-        result = DynamicModifierHelper.applyShadow(result, component: component)
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
 
         // --- 24. clipped ---
         result = DynamicModifierHelper.applyClipped(result, component: component, data: data)

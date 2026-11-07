@@ -98,7 +98,11 @@ public struct IndicatorConverter {
         let colorStr = component.typedAttributes(IndicatorAttributes.self).color?.rawRepresentation as? String
             ?? component.commonString(\.tintColor)
             ?? component.string(SwitchAttributes.self, \.tint)
-        if let colorStr = colorStr, let color = DynamicHelpers.getColor(colorStr) {
+        // With data: `color` is declared string|binding, and "@{c}" read without
+        // data resolved to nothing, so a bound colour fell to the default tint
+        // while the same colour written was drawn (Android reads it with data;
+        // ticket 2026-11-08-ios-dynamic-colours-resolved-without-data).
+        if let colorStr = colorStr, let color = DynamicHelpers.getColor(colorStr, data: data) {
             result = AnyView(result.tint(color))
         }
 

@@ -342,6 +342,12 @@ public struct SelectBoxConverter {
         // --- 4. .overlay (border) ---
         result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
+        // shadow — the standard order's place, after the border (standardOrder:
+        // border, shadow). This chain does not run applyStandardModifiers, where
+        // the shadow stage lives, so a declared shadow never drew here while
+        // codegen drew it (ticket 2026-11-07-declared-binding-slots-and-dynamic-shadow).
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
+
         // --- 5. apply_margins ---
         // The frames gate's measuring element, inside the margins (applyConformanceFrame).
         result = DynamicModifierHelper.applyConformanceFrame(result, component: component)

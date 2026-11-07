@@ -201,7 +201,12 @@ public struct DynamicViewContainer: View {
         // colour is painted exactly once — the double opaque layer used to
         // cast the declared .shadow twice.
         if component.commonString(\.background) != nil, gradientColors(component) == nil {
-            let base = DynamicHelpers.getColor(component.commonString(\.background))
+            // With data: a bound background ("@{x}") is the fill too. Read
+            // without it, the binding resolved to nothing and an empty View
+            // painted clear, while one with a child (the standard chain's
+            // applyBackground) and codegen's Rectangle().fill painted it
+            // (ticket 2026-11-08-ios-dynamic-empty-view-bound-background).
+            let base = DynamicHelpers.getColor(component.commonString(\.background), data: data)
             if let pressed = DynamicEventHelper.pressedBackgroundColor(component, data: data) {
                 PressedFill(pressed: pressed, base: base)
             } else {

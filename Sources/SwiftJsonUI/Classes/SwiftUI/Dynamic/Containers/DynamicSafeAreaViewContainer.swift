@@ -43,6 +43,16 @@ public struct DynamicSafeAreaViewContainer: View {
 
     private func buildBody() -> AnyView {
         let children = getChildren()
+        // With no child, a SafeAreaView is an empty View: the View's empty
+        // content (a background is its fill, a size or a weight a clear box).
+        // It was EmptyView here, which lays out nothing, so a sized
+        // SafeAreaView with a background drew nothing while Android and the
+        // web drew the box (ticket 2026-11-08-ios-dynamic-empty-view-bound-
+        // background). The insets are in the shared chain, which the View
+        // container runs too.
+        if children.isEmpty {
+            return AnyView(DynamicViewContainer(component: component, data: data, viewId: viewId))
+        }
         let orientation = component.orientation
         let needsRelativePositioning = orientation == nil &&
             RelativePositionConverter.childrenNeedRelativePositioning(children)
