@@ -822,7 +822,7 @@ public struct DynamicModifierHelper {
 
     // MARK: - 10. Shadow
 
-    public static func applyShadow(_ view: AnyView, component: DynamicComponent) -> AnyView {
+    public static func applyShadow(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
         guard let shadow = component.shadow else { return view }
         // The declared STRING form is the UIKit pipe contract
         // 'color|offsetX|offsetY|opacity|radius' — exactly five fields;
@@ -847,13 +847,39 @@ public struct DynamicModifierHelper {
         // Object form mirrors sjui codegen (build_shadow_modifier): no
         // declared opacity leaves the colour at full strength, and no
         // declared colour falls through to SwiftUI's default shadow colour.
-        let colorHex = shadowDict["color"] as? String ?? shadowDict["shadowColor"] as? String
-        let radius = CGFloat(shadowDict["radius"] as? Double ?? shadowDict["shadowRadius"] as? Double ?? 5.0)
-        let offsetX = CGFloat(shadowDict["offsetX"] as? Double ?? shadowDict["shadowOffsetX"] as? Double ?? 0.0)
-        let offsetY = CGFloat(shadowDict["offsetY"] as? Double ?? shadowDict["shadowOffsetY"] as? Double ?? 0.0)
-        let opacity = shadowDict["opacity"] as? Double ?? shadowDict["shadowOpacity"] as? Double
+        // Each field is a number or a `@{binding}`, as codegen reads it
+        // (number_slot, bound colour): a whole number ("radius": 8) is as
+        // declared as 8.5 — `as? Double` read it as absent — and a binding is
+        // read from data, as the other stages read theirs.
+        func number(_ key: String, _ alias: String) -> Double? {
+            for raw in [shadowDict[key], shadowDict[alias]] {
+                if let text = raw as? String {
+                    if let inner = DynamicBindingResolver.inner(of: text) {
+                        if let bound = DynamicBindingResolver.resolveDouble(expression: inner, data: data) { return bound }
+                        continue
+                    }
+                    if let number = Double(text.trimmingCharacters(in: .whitespaces)) { return number }
+                    continue
+                }
+                if let number = raw as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() { return number.doubleValue }
+                if let number = raw as? Double { return number }
+                if let number = raw as? Int { return Double(number) }
+                if let number = raw as? CGFloat { return Double(number) }
+            }
+            return nil
+        }
+        let colorName = shadowDict["color"] as? String ?? shadowDict["shadowColor"] as? String
+        let radius = CGFloat(number("radius", "shadowRadius") ?? 5.0)
+        let offsetX = CGFloat(number("offsetX", "shadowOffsetX") ?? 0.0)
+        let offsetY = CGFloat(number("offsetY", "shadowOffsetY") ?? 0.0)
+        let opacity = number("opacity", "shadowOpacity")
 
-        if let hex = colorHex, let color = DynamicHelpers.getColor(hex) {
+        if let name = colorName {
+            // A colour that does not resolve falls back as codegen's does:
+            // a written one to black (get_swiftui_color's `?? Color.black`), a
+            // bound one to clear — no shadow (`?? Color.clear`).
+            let fallback = DynamicBindingResolver.inner(of: name) == nil ? Color.black : Color.clear
+            let color = DynamicHelpers.getColor(name, data: data) ?? fallback
             let resolved = opacity.map { color.opacity($0) } ?? color
             return AnyView(view.shadow(color: resolved, radius: radius, x: offsetX, y: offsetY))
         }
@@ -1678,7 +1704,7 @@ public struct DynamicModifierHelper {
         Stage("glass") { v, c, d in applyMaterials(v, component: c, data: d) },
         Stage("cornerRadius") { v, c, d in applyCornerRadius(v, component: c, data: d) },
         Stage("border") { v, c, d in applyBorder(v, component: c, data: d) },
-        Stage("shadow") { v, c, _ in applyShadow(v, component: c) },
+        Stage("shadow") { v, c, d in applyShadow(v, component: c, data: d) },
         Stage("clipped") { v, c, d in applyClipped(v, component: c, data: d) },
         Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
         Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },

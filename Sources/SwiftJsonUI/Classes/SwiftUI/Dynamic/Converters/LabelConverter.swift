@@ -247,6 +247,12 @@ public struct LabelConverter {
         // all four of them had (Label, Image, NetworkImage, Text).
         result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
 
+        // shadow — the standard order's place, after the border (standardOrder:
+        // border, shadow). This chain does not run applyStandardModifiers, where
+        // the shadow stage lives, so a declared shadow never drew here while
+        // codegen drew it (ticket 2026-11-07-declared-binding-slots-and-dynamic-shadow).
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
+
         // --- 10b. textShadow — { color:, blur:, offset: [x, y] } (or a bare
         // color string, UIKit default 1pt blur). Mirrors label_converter.rb
         // apply_text_shadow; the dynamic path never read it (33 cross-effect:
