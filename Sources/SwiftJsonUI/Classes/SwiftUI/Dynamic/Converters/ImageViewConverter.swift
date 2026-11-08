@@ -37,7 +37,7 @@ public struct ImageViewConverter {
             // spelling IS the literal "@{expr}", which matches no asset and
             // rendered nothing. Resolve it the same way `src` and
             // `highlightSrc` already do.
-            image = Image(DynamicHelpers.processText(srcName, data: data))
+            image = Image(jsonUIAsset: DynamicHelpers.processText(srcName, data: data))
         } else if let src = component.string(ImageAttributes.self, \.src) {
             let processedSrc = DynamicHelpers.processText(src, data: data)
             // systemIcon reinterprets `src` as an SF Symbol name rather than
@@ -46,7 +46,7 @@ public struct ImageViewConverter {
             if component.systemIcon == true {
                 image = Image(systemName: processedSrc)
             } else {
-                image = Image(processedSrc)
+                image = Image(jsonUIAsset: processedSrc)
             }
         } else if let fallback = component.defaultImage
             ?? component.errorImage ?? component.loadingImage {
@@ -55,7 +55,7 @@ public struct ImageViewConverter {
             // in-flight states here — they join the chain behind defaultImage
             // (image_converter.rb:36-43 makes the same call). Better an
             // intended asset than the photo glyph.
-            image = Image(fallback)
+            image = Image(jsonUIAsset: fallback)
         } else {
             image = Image(systemName: "photo")
         }
@@ -108,7 +108,7 @@ public struct ImageViewConverter {
             let resolved = DynamicHelpers.processText(highlightSrc, data: data)
             let highlightImage = component.systemIcon == true
                 ? Image(systemName: resolved)
-                : Image(resolved)
+                : Image(jsonUIAsset: resolved)
             let base = result
             result = AnyView(
                 HighlightableImage(

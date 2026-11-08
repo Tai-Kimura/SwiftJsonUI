@@ -318,7 +318,7 @@ public struct RadioConverter {
         if icon != nil || selectedIcon != nil {
             let onName = selectedIcon ?? icon ?? ""
             let offName = icon ?? selectedIcon ?? ""
-            var image = Image(selected ? onName : offName)
+            var image = Image(jsonUIAsset: selected ? onName : offName)
             if iconColor != nil {
                 image = image.renderingMode(.template)
             }

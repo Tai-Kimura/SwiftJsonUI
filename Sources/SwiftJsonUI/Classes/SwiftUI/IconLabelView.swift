@@ -8,6 +8,8 @@
 import SwiftUI
 
 public struct IconLabelView: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
     let text: String
     let iconOn: String?
     let iconOff: String?
@@ -132,14 +134,14 @@ public struct IconLabelView: View {
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             } else if iconWidth != nil || iconHeight != nil || iconSize != nil {
                 // Custom image at the declared size
-                Image(iconName)
+                Image(jsonUIAsset: iconName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: iconWidth ?? iconSize, height: iconHeight ?? iconSize)
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             } else {
                 // Custom image, no size declared: the image's own size
-                Image(iconName)
+                Image(jsonUIAsset: iconName)
                     .foregroundColor(isSelected ? selectedFontColor : fontColor)
             }
         }

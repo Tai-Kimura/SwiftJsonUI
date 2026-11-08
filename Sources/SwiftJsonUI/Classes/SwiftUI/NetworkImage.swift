@@ -193,6 +193,8 @@ private final class NetworkImageLoader: ObservableObject {
 // MARK: - NetworkImage View
 
 public struct NetworkImage: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
     let url: String?
     let placeholder: String?
     let defaultImage: String?
@@ -250,11 +252,11 @@ public struct NetworkImage: View {
                 styledImage(Image(uiImage: image))
             } else if loader.isLoading {
                 if let loadingImage = loadingImage {
-                    styledImage(Image(loadingImage))
+                    styledImage(Image(jsonUIAsset: loadingImage))
                 } else if let placeholder = placeholder {
-                    styledImage(Image(placeholder))
+                    styledImage(Image(jsonUIAsset: placeholder))
                 } else if let defaultImage = defaultImage {
-                    styledImage(Image(defaultImage))
+                    styledImage(Image(jsonUIAsset: defaultImage))
                 } else {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -264,12 +266,12 @@ public struct NetworkImage: View {
                     loader.retry(url: url, headers: headers)
                 } label: {
                     if let errorImage = errorImage {
-                        styledImage(Image(errorImage))
+                        styledImage(Image(jsonUIAsset: errorImage))
                     } else if let defaultImage = defaultImage {
                         // error falls back to defaultImage (canonical chain).
-                        styledImage(Image(defaultImage))
+                        styledImage(Image(jsonUIAsset: defaultImage))
                     } else if let placeholder = placeholder {
-                        styledImage(Image(placeholder))
+                        styledImage(Image(jsonUIAsset: placeholder))
                     } else {
                         VStack(spacing: 4) {
                             Image(systemName: "arrow.clockwise")
@@ -285,9 +287,9 @@ public struct NetworkImage: View {
                 // No src at all: defaultImage first (canonical
                 // networkImage.noSrc = defaultImage), then placeholder.
                 if let defaultImage = defaultImage {
-                    styledImage(Image(defaultImage))
+                    styledImage(Image(jsonUIAsset: defaultImage))
                 } else if let placeholder = placeholder {
-                    styledImage(Image(placeholder))
+                    styledImage(Image(jsonUIAsset: placeholder))
                 } else {
                     Color.clear
                 }

@@ -228,7 +228,7 @@ private struct TabViewWrapperView: View {
         if !showLabels {
             // Icon only.
             if item.iconType == "resource" {
-                Image(currentIcon).renderingMode(.template)
+                Image(jsonUIAsset: currentIcon).renderingMode(.template)
             } else {
                 Image(systemName: currentIcon)
             }
@@ -238,14 +238,14 @@ private struct TabViewWrapperView: View {
                 Label {
                     Text(item.title.dynamicLocalized())
                 } icon: {
-                    Image(currentIcon)
+                    Image(jsonUIAsset: currentIcon)
                         .renderingMode(.template)
                 }
             } else {
                 Label {
                     Text(item.title.dynamicLocalized())
                 } icon: {
-                    Image(item.icon)
+                    Image(jsonUIAsset: item.icon)
                         .renderingMode(.template)
                 }
             }
