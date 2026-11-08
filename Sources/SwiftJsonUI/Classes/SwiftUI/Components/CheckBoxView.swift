@@ -3,6 +3,8 @@ import SwiftUI
 /// CheckBoxView - A customizable checkbox component for SwiftUI Static mode
 /// Supports custom icons, labels, and two-way binding
 public struct CheckBoxView: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
     private var isOn: SwiftUI.Binding<Bool>
     let label: String?
     let icon: String?
@@ -119,14 +121,14 @@ public struct CheckBoxView: View {
             // template, so iconColor decides the rendering mode as well —
             // applying .foregroundColor to an original-mode asset does nothing.
             if let iconColor = iconColor {
-                Image(customIcon)
+                Image(jsonUIAsset: customIcon)
                     .renderingMode(.template)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: iconSize, height: iconSize)
                     .foregroundColor(iconColor)
             } else {
-                Image(customIcon)
+                Image(jsonUIAsset: customIcon)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: iconSize, height: iconSize)

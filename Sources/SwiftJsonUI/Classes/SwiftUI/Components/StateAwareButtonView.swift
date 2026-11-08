@@ -27,6 +27,8 @@ struct StateAwareButtonStyle: ButtonStyle {
 // State-aware button for Static mode
 // Tracks pressed and disabled states for visual feedback
 public struct StateAwareButtonView: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
     let text: String
     let partialAttributes: [PartialAttribute]?
     let action: () -> Void
@@ -212,7 +214,7 @@ public struct StateAwareButtonView: View {
             // lands on Android's 18pt default for an unsized button.
             let iconSize = fontSize.map { $0 * 1.25 } ?? Self.defaultIconSize
             HStack(spacing: text.isEmpty ? 0 : Self.iconLabelSpacing) {
-                Image(image)
+                Image(jsonUIAsset: image)
                     .renderingMode(imageTint == nil ? .original : .template)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

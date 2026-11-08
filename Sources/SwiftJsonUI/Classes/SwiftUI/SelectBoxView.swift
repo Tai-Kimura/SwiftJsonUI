@@ -52,6 +52,8 @@ struct UIKitDatePicker: UIViewRepresentable {
 }
 
 public struct SelectBoxView: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
     @Environment(\.selectBoxScrollProxy) private var scrollProxy
     
     let id: String
@@ -542,7 +544,7 @@ public struct SelectBoxView: View {
             // The asset's own rendering mode decides whether the tint lands
             // — a template asset takes it, a full-colour one keeps its
             // colours. Forcing `.template` here would recolour the latter.
-            Image(src)
+            Image(jsonUIAsset: src)
                 .foregroundColor(caret.tintColor ?? .gray)
         } else {
             Image(systemName: "chevron.down")
