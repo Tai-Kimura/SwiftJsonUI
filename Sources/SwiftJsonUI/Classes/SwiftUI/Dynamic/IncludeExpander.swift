@@ -106,8 +106,21 @@ public class IncludeExpander {
                 newPrefix = idPrefix
             }
 
+            // A constraint between two elements of this partial names its
+            // target by the id the partial wrote; the element's id gets this
+            // include's prefix below, so the target gets it too — before the
+            // include element's own properties are merged in, which name the
+            // including layout's elements and stay as written (jsonui-cli
+            // ticket rjui-include-root-sibling-constraint-dropped, row D4;
+            // the codegen expanders' prefix_constraint_targets, answer for
+            // answer — Tests/.../Fixtures/include_constraint_targets_fixture.json).
+            var partial = includedJSON
+            if let prefix = newPrefix {
+                partial = prefixConstraintTargets(partial, prefix: prefix, ids: Set(declaredIds(partial))) as? [String: Any] ?? partial
+            }
+
             // Merge properties from the include element (except id and include)
-            var merged = includedJSON
+            var merged = partial
             for (key, value) in json {
                 if key == "include" || key == "id" {
                     continue
@@ -195,6 +208,53 @@ public class IncludeExpander {
         }
 
         return json
+    }
+
+    // MARK: - Constraint targets inside an include
+
+    /// The attributes that name another element of the same container as a
+    /// constraint's target (common.json align*OfView / align*View /
+    /// alignCenter*View).
+    static let constraintTargetKeys = [
+        "alignTopOfView", "alignBottomOfView", "alignLeftOfView", "alignRightOfView",
+        "alignTopView", "alignBottomView", "alignLeftView", "alignRightView",
+        "alignCenterVerticalView", "alignCenterHorizontalView"
+    ]
+
+    /// The ids a partial declares itself: its elements' ids, not the ids
+    /// inside a partial it includes and not an include element's id (a
+    /// prefix, not an element).
+    func declaredIds(_ node: Any) -> [String] {
+        if let dict = node as? [String: Any] {
+            if dict["include"] != nil { return [] }
+            var ids: [String] = []
+            if let id = dict["id"] as? String { ids.append(id) }
+            if let kids = dict["child"] ?? dict["children"] { ids += declaredIds(kids) }
+            return ids
+        }
+        if let array = node as? [Any] { return array.flatMap { declaredIds($0) } }
+        return []
+    }
+
+    /// Prefixes each constraint target in `node` that names one of `ids`,
+    /// the way the ids themselves are prefixed. An include element's own
+    /// properties are read (they land on its root); the partial it names is
+    /// not entered.
+    func prefixConstraintTargets(_ node: Any, prefix: String, ids: Set<String>) -> Any {
+        if var dict = node as? [String: Any] {
+            for key in Self.constraintTargetKeys {
+                if let target = dict[key] as? String, ids.contains(target) {
+                    dict[key] = combineWithPrefix(prefix, target)
+                }
+            }
+            if dict["include"] != nil { return dict }
+            for key in ["child", "children"] {
+                if let kids = dict[key] { dict[key] = prefixConstraintTargets(kids, prefix: prefix, ids: ids) }
+            }
+            return dict
+        }
+        if let array = node as? [Any] { return array.map { prefixConstraintTargets($0, prefix: prefix, ids: ids) } }
+        return node
     }
 
     // MARK: - ID Prefix Application

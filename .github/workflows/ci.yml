@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.11 # jsonui-cli v2.5.11: the attr tables are vendored from it
+      JSONUI_CLI_MANIFEST_REF: a52418eaaebbbfe8c86d0a0ea5f6db4ffc411587 # jsonui-cli fix/rjui-include-sibling-constraints (after v2.5.24): the attr tables are v2.5.11's (manifest unchanged); include_constraint_targets_fixture.json is new there
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
@@ -131,6 +131,8 @@ jobs:
                "shared/core/binding_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/include_ids_fixture.json",
                "shared/core/include_ids_fixture.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/include_constraint_targets_fixture.json",
+               "shared/core/include_constraint_targets_fixture.json"),
               ("Tests/SwiftJsonUITests/Fixtures/include_maps_fixture.json",
                "shared/core/include_maps_fixture.json"),
               ("Tests/SwiftJsonUITests/Fixtures/camel_case_vectors.json",
