@@ -44,6 +44,8 @@ public struct DynamicViewContainer: View {
         // zstackChildData re-adds it for direct ZStack children. Forwarding
         // an inherited flag suppressed grandchild margins nothing had taken.
         d.removeValue(forKey: "__zstackMarginChild")
+        d.removeValue(forKey: "__zstackPadHorizontal")
+        d.removeValue(forKey: "__zstackPadVertical")
         d.removeValue(forKey: "__relativeMarginChild")
         d.removeValue(forKey: "__distributionFillOrientation")
         return d
@@ -452,7 +454,28 @@ public struct DynamicViewContainer: View {
     private var zstackChildData: [String: Any] {
         var d = childData
         d["__zstackMarginChild"] = true
+        let (padH, padV) = zstackPadsAxes
+        d["__zstackPadHorizontal"] = padH
+        d["__zstackPadVertical"] = padV
         return d
+    }
+
+    /// The axes on which a ZStack child pads its individual margins in full
+    /// rather than taking them as an offset: those the ZStack aligns to an
+    /// edge (leading / trailing, top / bottom).
+    ///
+    /// There the margin is the gap to that edge and part of the child's
+    /// size, as on Android and web: a child at the top-left with a right
+    /// or bottom margin stays at its own left / top margin, and a
+    /// wrapContent ZStack holds the margins. The offset (left − right,
+    /// top − bottom) moved such a child out by the far margin and left the
+    /// margins out of the ZStack's size (ticket
+    /// sjui-overlay-child-far-margin-moves-it-out, family table
+    /// 2026-11-10). An axis the ZStack centres keeps the offset, which is
+    /// what a centred frame needs to move the child by the full margin.
+    private var zstackPadsAxes: (Bool, Bool) {
+        let alignment = component.alignment ?? .topLeading
+        return (alignment.horizontal != .center, alignment.vertical != .center)
     }
 
     private func zstackMarginOffset(for child: DynamicComponent) -> CGSize {
@@ -472,6 +495,11 @@ public struct DynamicViewContainer: View {
         }
         if centres(common.centerHorizontal) { x = 0 }
         if centres(common.centerVertical) { y = 0 }
+        // An edge-aligned axis pads the margins in full instead
+        // (zstackPadsAxes, offsetOwnedMarginInsets).
+        let (padH, padV) = zstackPadsAxes
+        if padH { x = 0 }
+        if padV { y = 0 }
         return CGSize(width: x, height: y)
     }
 

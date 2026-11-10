@@ -721,11 +721,18 @@ public struct DynamicModifierHelper {
             ? 0 : sharedMargin(component, .topMargin, .bottomMargin, data: data)
         let start = component.margin(.startMargin, data: data)
         let end = component.margin(.endMargin, data: data)
+        // An axis the ZStack aligns to an edge takes no offset: the child
+        // pads both margins in full there (DynamicViewContainer
+        // zstackPadsAxes; ticket sjui-overlay-child-far-margin-moves-it-out).
+        let padsH = data["__zstackPadHorizontal"] as? Bool == true && !centersHorizontally
+        let padsV = data["__zstackPadVertical"] as? Bool == true && !centersVertically
+        let leading = padsH ? component.margin(.leftMargin, data: data) : sharedHorizontal
+        let trailing = padsH ? component.margin(.rightMargin, data: data) : sharedHorizontal
         return EdgeInsets(
-            top: sharedVertical,
-            leading: start != 0 ? start : sharedHorizontal,
-            bottom: sharedVertical,
-            trailing: end != 0 ? end : sharedHorizontal
+            top: padsV ? component.margin(.topMargin, data: data) : sharedVertical,
+            leading: start != 0 ? start : leading,
+            bottom: padsV ? component.margin(.bottomMargin, data: data) : sharedVertical,
+            trailing: end != 0 ? end : trailing
         )
     }
 

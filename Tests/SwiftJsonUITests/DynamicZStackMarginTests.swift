@@ -62,6 +62,46 @@ final class DynamicZStackMarginTests: XCTestCase {
         XCTAssertEqual(result.top, 10)
     }
 
+    // MARK: - An edge-aligned axis pads in full (sjui-overlay-child-far-margin-moves-it-out)
+
+    /// A ZStack aligned to an edge on an axis (the default .topLeading on
+    /// both) emits no offset there, so the child pads both margins in full:
+    /// a right margin at the top-left is a gap on the right, not a move to
+    /// the left (x -10 before, where Android and web draw 0), and it is part
+    /// of the child's size in a wrapContent ZStack.
+    func testAnEdgeAlignedAxisPadsBothMarginsInFull() throws {
+        let json = """
+        { "type": "View", "leftMargin": 10, "rightMargin": 30,
+          "topMargin": 0, "bottomMargin": 10 }
+        """
+        let padded = try insets(json, data: ["__zstackPadHorizontal": true, "__zstackPadVertical": true])
+        XCTAssertEqual(padded.leading, 10)
+        XCTAssertEqual(padded.trailing, 30)
+        XCTAssertEqual(padded.top, 0)
+        XCTAssertEqual(padded.bottom, 10)
+    }
+
+    /// An axis the ZStack centres keeps the offset and pads only the shared
+    /// inset, as before.
+    func testACentredZStackAxisKeepsTheSharedInset() throws {
+        let result = try insets("""
+        { "type": "View", "leftMargin": 10, "rightMargin": 30 }
+        """, data: ["__zstackPadHorizontal": false, "__zstackPadVertical": true])
+        XCTAssertEqual(result.leading, 10)
+        XCTAssertEqual(result.trailing, 10)
+    }
+
+    /// An axis the child centres takes no margin, whatever the ZStack does.
+    func testAChildCentredAxisStillTakesNoMargin() throws {
+        let result = try insets("""
+        { "type": "View", "leftMargin": 10, "rightMargin": 30, "topMargin": 10,
+          "centerHorizontal": true }
+        """, data: ["__zstackPadHorizontal": true, "__zstackPadVertical": true])
+        XCTAssertEqual(result.leading, 0)
+        XCTAssertEqual(result.trailing, 0)
+        XCTAssertEqual(result.top, 10)
+    }
+
     // MARK: - The regression
 
     func testSymmetricVerticalMarginKeepsItsSharedInset() throws {
