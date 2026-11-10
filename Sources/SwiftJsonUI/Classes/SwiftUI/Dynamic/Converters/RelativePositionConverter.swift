@@ -32,8 +32,26 @@ public struct RelativePositionConverter {
             constraints: constraints,
             margins: margins,
             widthMode: widthMode,
-            heightMode: heightMode
+            heightMode: heightMode,
+            isGone: isGone(component, data: data)
         )
+    }
+
+    /// Whether the child's visibility resolves to `gone`, read as
+    /// DynamicComponentBuilder reads it to draw the child (a binding through
+    /// the same lookup; `hidden` is invisible, not gone).
+    static func isGone(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        guard let spelling = component.visibilitySpelling() else { return false }
+        guard let inner = DynamicBindingResolver.inner(of: spelling) else { return spelling == "gone" }
+        let expression = DynamicBindingResolver.parse(inner)
+        if expression.negated { return false }
+        let raw = DynamicBindingResolver.lookupRaw(path: expression.path, in: data)
+        if let binding = raw as? SwiftUI.Binding<String> { return binding.wrappedValue == "gone" }
+        if let binding = raw as? SwiftUI.Binding<Bool> { return !binding.wrappedValue }
+        if let flag = DynamicBindingResolver.strictBool(raw) { return !flag }
+        if let value = DynamicBindingResolver.stringify(raw) { return value == "gone" }
+        if case .string(let fallback)? = expression.defaultLiteral { return fallback == "gone" }
+        return false
     }
 
     /// The CONTAINER's own size intent, read off the parent component so a

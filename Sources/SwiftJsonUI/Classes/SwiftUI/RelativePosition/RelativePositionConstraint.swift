@@ -48,6 +48,10 @@ public struct RelativeChildConfig: Identifiable {
     public let size: CGSize?
     public let widthMode: RelativeSizeMode
     public let heightMode: RelativeSizeMode
+    /// The child's visibility resolves to `gone`: it takes no size and no
+    /// position, and a constraint that names it does not apply
+    /// (attribute_semantics goneModel; RelativePositionContainer).
+    public let isGone: Bool
 
     public init(
         id: String,
@@ -56,7 +60,8 @@ public struct RelativeChildConfig: Identifiable {
         margins: EdgeInsets = .init(),
         size: CGSize? = nil,
         widthMode: RelativeSizeMode = .wrapContent,
-        heightMode: RelativeSizeMode = .wrapContent
+        heightMode: RelativeSizeMode = .wrapContent,
+        isGone: Bool = false
     ) {
         self.id = id
         self.view = view
@@ -65,5 +70,16 @@ public struct RelativeChildConfig: Identifiable {
         self.size = size
         self.widthMode = widthMode
         self.heightMode = heightMode
+        self.isGone = isGone
+    }
+
+    /// This child without the constraints that name one of [ids].
+    func withoutConstraints(naming ids: Set<String>) -> RelativeChildConfig {
+        guard !ids.isEmpty, constraints.contains(where: { ids.contains($0.targetId) }) else { return self }
+        return RelativeChildConfig(
+            id: id, view: view,
+            constraints: constraints.filter { !ids.contains($0.targetId) },
+            margins: margins, size: size, widthMode: widthMode, heightMode: heightMode, isGone: isGone
+        )
     }
 }

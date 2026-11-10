@@ -36,8 +36,22 @@ public struct RelativePositionContainer: View {
         self.containerHeightMode = containerHeightMode
     }
 
+    /// The children laid out: a gone child is left out — it takes no size
+    /// and no position — and a constraint that names it does not apply, so
+    /// the child it constrained is placed as it would be without it
+    /// (attribute_semantics goneModel, 2026-11-10; ticket
+    /// relative-constraint-to-gone-anchor-keeps-its-place). A gone anchor
+    /// used to keep the box its own constraints placed, and a sibling was
+    /// linked to it as if it were there.
+    var laidOutChildren: [RelativeChildConfig] {
+        let gone = Set(children.filter { $0.isGone }.map { $0.id })
+        guard !gone.isEmpty else { return children }
+        return children.filter { !$0.isGone }.map { $0.withoutConstraints(naming: gone) }
+    }
+
     public var body: some View {
         let _ = Logger.debug("[RelativePositionContainer] body called with \(children.count) children: \(children.map { $0.id })")
+        let children = laidOutChildren
         RelativePositionLayout(
             children: children,
             alignment: alignment,
