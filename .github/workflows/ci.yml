@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: a52418eaaebbbfe8c86d0a0ea5f6db4ffc411587 # jsonui-cli fix/rjui-include-sibling-constraints (after v2.5.24): the attr tables are v2.5.11's (manifest unchanged); include_constraint_targets_fixture.json is new there
+      JSONUI_CLI_MANIFEST_REF: v2.5.27 # jsonui-cli v2.5.27: visibility's description and semantics.visibility (gone collapses) are new there; the attr tables differ from v2.5.26 by that description
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest

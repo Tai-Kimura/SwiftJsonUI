@@ -516,6 +516,17 @@
         "Label.text"
       ],
       "ruling": "2026-10-05 user ruling (relayed by the orchestrator, answered as a choice): a word longer than the Label's box breaks inside the box — only the word that does not fit is cut at the box's width and carried to the next line (CSS `overflow-wrap: anywhere`); where it breaks may differ per OS. Measured before the ruling: a 200-wide Label with \"See https://example.com/conformance for details\" (Label/linkable__* and __control/Label__text-5ed92def) wrapped the URL inside the box on iOS and Android and let it run past the box on web. A declared lineBreakMode Char / Word keeps its own rule."
+    },
+    "visibility": {
+      "goneModel": "gone takes no size and no position: the element is laid out as if it were absent, and a constraint that names a gone element does not apply — the constrained element is placed as it would be without that constraint. invisible keeps its size and position and only stops drawing; hidden: true is invisible.",
+      "ruling": "2026-11-10, ticket kjui-align-to-view-in-visibility-wrapper-and-margin-sign. The declaration (attribute_definitions visibility) named the three values and nothing about what gone does to layout; the conformance fixture visibility__gone only asserts the target is not visible. Measured on two shapes — a 20pt anchor centred in a 100pt frame with visibility gone, and a 10pt child aligned to it (alignTopView + topMargin 10; alignBottomOfView): android codegen and web draw the child at (0,10) / (0,0), where it lands with no anchor at all; ios sjui codegen draws it at (0,50) / (0,60), the anchor kept in place. The vocabulary is Android's View.GONE, kjui (visibility_helper.rb, a literal gone is not emitted) and rjui (base_converter.rb, display:none) already implement collapse, so ios is the divergent face. The fixture common/visibility__gone_anchor (jui_cli/conformance/gone_fixtures.py) draws both shapes against a control with the same children and no anchor: a face that collapses renders it identically to the control. Fixed the same day, measured on the fixture against its control (frames and pixels identical): ios dynamic and codegen (SwiftJsonUI 48ba331 RelativePositionContainer leaves a gone child out and drops the constraints that name it; sjui_tools c287e77ce passes isGone), and android dynamic, which drew it as ios did, (0,50) / (0,60), and is fixed too (KotlinJsonUI b972b73). Every face is inert now.",
+      "observable": {
+        "common/visibility__gone_anchor": {
+          "ios": "inert",
+          "android": "inert",
+          "web": "inert"
+        }
+      }
     }
   }
 }
