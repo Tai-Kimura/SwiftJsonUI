@@ -42,7 +42,8 @@ public enum JsonUITestValue {
         /// (`String`, `Int`, `Double`, `Float`, `CGFloat`, `Bool`, a typed
         /// array of those, `[Any]`, `[String: Any]`), or nil for an accepted
         /// `null`. A `Color` is accepted as its `String` spelling; resolving
-        /// it is the caller's.
+        /// it is the caller's. A `Visibility` is one of its three words, as
+        /// the `String` the generated Data holds.
         case accept(Any?)
         /// The rejection reason, verbatim from spec §10.3.
         case reject(String)
@@ -57,8 +58,14 @@ public enum JsonUITestValue {
         case typedArray(Primitive)
         case untypedArray
         case object
+        /// `visible` / `invisible` / `gone`: what the `visibility` attribute
+        /// reads, and a `String` on the generated Data. Never an array element.
+        case visibility
         case unsupported
     }
+
+    static let visibilitySpellings: Set<String> = ["Visibility", "visibility"]
+    static let visibilityValues: Set<String> = ["visible", "invisible", "gone"]
 
     /// The generators' class vocabulary (`type_mapping.json`): a synonym
     /// judges like its class, and keeps its own spelling in a reason.
@@ -81,6 +88,7 @@ public enum JsonUITestValue {
         // A closure type is unsupported whatever else it looks like.
         if base.contains("->") { return (.unsupported, optional) }
         if let primitive = primitiveSpellings[base] { return (.primitive(primitive), optional) }
+        if visibilitySpellings.contains(base) { return (.visibility, optional) }
         if ["Array", "array"].contains(base) { return (.untypedArray, optional) }
         if ["Object", "object", "Hash", "hash"].contains(base) { return (.object, optional) }
         if let element = arrayElement(base) {
@@ -129,6 +137,9 @@ public enum JsonUITestValue {
         case .object:
             guard let entries = value as? [String: Any], entries.values.allSatisfy(isScalar) else { return mismatch }
             return .accept(entries)
+        case .visibility:
+            guard let word = value as? String, visibilityValues.contains(word) else { return mismatch }
+            return .accept(word)
         case .unsupported:
             return .reject("unsupported type \(declaredClass)")
         }

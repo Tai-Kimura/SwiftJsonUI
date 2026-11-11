@@ -1613,11 +1613,247 @@
         "f": "gone"
       },
       "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Visibility <- \"visible\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": "visible"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Visibility <- \"invisible\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": "invisible"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "visibility <- \"gone\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "visibility"
+        }
+      ],
+      "input": {
+        "f": "gone"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Visibility <- \"hidden\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": "hidden"
+      },
+      "expect": {
         "applied": [],
         "rejected": [
           {
             "key": "f",
-            "reason": "unsupported type Visibility"
+            "reason": "type mismatch: expected Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility <- \"Gone\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": "Gone"
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility <- \"\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": ""
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility <- true",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": true
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility <- 0",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": 0
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "type mismatch: expected Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "null for non-optional Visibility"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Visibility? <- null",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility?"
+        }
+      ],
+      "input": {
+        "f": null
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Visibility? <- \"invisible\"",
+      "data": [
+        {
+          "name": "f",
+          "class": "Visibility?"
+        }
+      ],
+      "input": {
+        "f": "invisible"
+      },
+      "expect": {
+        "applied": [
+          "f"
+        ],
+        "rejected": []
+      }
+    },
+    {
+      "name": "Array(Visibility) <- [\"gone\"]",
+      "data": [
+        {
+          "name": "f",
+          "class": "Array(Visibility)"
+        }
+      ],
+      "input": {
+        "f": [
+          "gone"
+        ]
+      },
+      "expect": {
+        "applied": [],
+        "rejected": [
+          {
+            "key": "f",
+            "reason": "unsupported type Array(Visibility)"
           }
         ]
       }

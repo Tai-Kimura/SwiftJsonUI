@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.27 # jsonui-cli v2.5.27: visibility's description and semantics.visibility (gone collapses) are new there; the attr tables differ from v2.5.26 by that description
+      JSONUI_CLI_MANIFEST_REF: fc04ca48d7c2e86b09f8a71b5ab8f2ef8d3e8eae # jsonui-cli fix/initial-state-visibility (on v2.5.27): initial_state_coercion_vectors.json accepts Visibility (98 cases); the attr tables are v2.5.27's
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest

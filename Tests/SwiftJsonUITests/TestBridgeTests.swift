@@ -69,6 +69,8 @@ final class InitialStateCoercionVectorTests: XCTestCase {
         XCTAssertEqual(try accepted("[\"a\",\"b\"]", "Array(String)") as? [String], ["a", "b"])
         XCTAssertEqual(try accepted("[1,2]", "[Int]") as? [Int], [1, 2])
         XCTAssertNil(try accepted("null", "String?"))
+        XCTAssertEqual(try accepted("\"gone\"", "Visibility") as? String, "gone")
+        XCTAssertEqual(try accepted("\"invisible\"", "visibility?") as? String, "invisible")
     }
 
     func testASwiftBoolIsABooleanAndASwiftIntIsNot() {
