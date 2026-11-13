@@ -149,15 +149,10 @@ public struct CheckBoxView: View {
         let baseText = Text(text)
 
         if let fontSize = fontSize {
-            if let fontWeight = fontWeight {
-                baseText
-                    .font(.system(size: fontSize, weight: fontWeight))
-                    .foregroundColor(fontColor ?? .primary)
-            } else {
-                baseText
-                    .font(.system(size: fontSize))
-                    .foregroundColor(fontColor ?? .primary)
-            }
+            // Through sjuiFont: the app's fontProvider and the text size rule (2026-11-13).
+            baseText
+                .sjuiFont(FontSpec(weight: fontWeight, size: fontSize))
+                .foregroundColor(fontColor ?? .primary)
         } else if let fontWeight = fontWeight {
             baseText
                 .fontWeight(fontWeight)

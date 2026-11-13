@@ -13,8 +13,10 @@ public struct SegmentAttributes {
         "accessibilityLabel",
         "apportionsSegmentWidthsByContent",
         "fontColor",
+        "fontScaling",
         "fontSize",
         "items",
+        "maxFontScale",
         "momentary",
         "onValueChange",
         "selectedFontColor",
@@ -52,11 +54,17 @@ public struct SegmentAttributes {
     /// Label color of the UNSELECTED segments - hex string or color name from colors.json [aliases: normalColor]
     public let fontColor: String?
 
+    /// Whether this component's text follows the OS / browser text size (iOS Dynamic Type, Android font scale, the browser's font size). Absent: the app default (Configuration font scaling, true unless the app sets it). false: the declared fontSize is drawn at that size at every text size (iOS pins the component to the standard size; Android reads fontSize as dp; web as px). The faces grow differently up to their caps: Android 14+ grows small text more than large (non-linear, up to 2x); iOS grows linearly with .body (x2.82 at AX5 on iOS 27.2); the web linearly with the root font size. Applies to partialAttributes' sizes too.
+    public let fontScaling: Bool?
+
     /// Font size of the segments' text (rjui segment_converter).
     public let fontSize: Double?
 
     /// Segment items array. Static labels; an entry may be a strings key, resolved at render time on every face. [required]
     public let items: [Any]?
+
+    /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
+    public let maxFontScale: Double?
 
     /// Momentary selection mode
     public let momentary: Bool?
@@ -83,8 +91,10 @@ public struct SegmentAttributes {
         self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.apportionsSegmentWidthsByContent = AttrCoerce.boolean(AttrCoerce.lookup(json, "apportionsSegmentWidthsByContent"))
         self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor", ["normalColor"], canonicalOnly: canonicalOnly))
+        self.fontScaling = AttrCoerce.boolean(AttrCoerce.lookup(json, "fontScaling"))
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
         self.items = AttrCoerce.array(AttrCoerce.lookup(json, "items"))
+        self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
         self.momentary = AttrCoerce.boolean(AttrCoerce.lookup(json, "momentary"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange"))
         self.selectedFontColor = AttrCoerce.string(AttrCoerce.lookup(json, "selectedFontColor", ["selectedColor"], canonicalOnly: canonicalOnly))

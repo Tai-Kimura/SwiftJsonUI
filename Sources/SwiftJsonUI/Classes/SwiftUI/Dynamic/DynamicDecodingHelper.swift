@@ -393,8 +393,9 @@ public struct DynamicDecodingHelper {
         return SwiftJsonUIConfiguration.shared.getColor(for: identifier)
     }
 
-    /// Convert component properties to Font
-    public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]? = nil) -> Font? {
+    /// The component's declared font as a spec (family / weight / size), nil when it declares none. Drawn through
+    /// `sjuiFont`, so the app's fontProvider and the text size rule apply (ticket sjui-label-font-size-ignores-dynamic-type).
+    public static func fontSpecFromComponent(_ component: DynamicComponent, data: [String: Any]? = nil) -> FontSpec? {
         // Return nil if no font attributes are specified
         // `fontSize` is declared on eleven tables; the widest declared form
         // is Label's `AttrValue<Double>?`, and the extraction only coerces
@@ -454,9 +455,7 @@ public struct DynamicDecodingHelper {
         // FontSpec resolver so the app's `fontProvider` sees family + weight
         // + size together.
         if let fontFamily = declaredFontFamily {
-            return config.resolveFont(
-                FontSpec(family: fontFamily, weight: resolvedWeight, size: size)
-            )
+            return FontSpec(family: fontFamily, weight: resolvedWeight, size: size)
         }
 
         let fontName = declaredFont ?? config.font.name
@@ -464,9 +463,7 @@ public struct DynamicDecodingHelper {
         // `font` carries either a family name or a weight keyword. When it's
         // a real family name, treat it as `fontFamily` for resolution.
         if let fontName = fontName, !weightNames.contains(fontName.lowercased()) {
-            return config.resolveFont(
-                FontSpec(family: fontName, weight: resolvedWeight, size: size)
-            )
+            return FontSpec(family: fontName, weight: resolvedWeight, size: size)
         }
 
         // Pure weight (or nothing) — still routed through the FontSpec
@@ -475,9 +472,12 @@ public struct DynamicDecodingHelper {
         // `resolveFont`; without a provider `defaultFont(family: nil)` is the
         // same `.system(size:weight:)` this branch used to build directly,
         // because size and weight are passed explicitly.
-        return config.resolveFont(
-            FontSpec(family: nil, weight: resolvedWeight ?? config.font.weight, size: size)
-        )
+        return FontSpec(family: nil, weight: resolvedWeight ?? config.font.weight, size: size)
+    }
+
+    /// Convert component properties to Font
+    public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]? = nil) -> Font? {
+        fontSpecFromComponent(component, data: data).map { SwiftJsonUIConfiguration.shared.resolveFont($0) }
     }
 
     /// Convert content mode string to ContentMode

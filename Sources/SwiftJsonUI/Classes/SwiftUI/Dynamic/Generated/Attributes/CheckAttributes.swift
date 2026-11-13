@@ -17,6 +17,7 @@ public struct CheckAttributes {
         "enabled",
         "font",
         "fontColor",
+        "fontScaling",
         "fontSize",
         "fontWeight",
         "icon",
@@ -24,6 +25,7 @@ public struct CheckAttributes {
         "iconSize",
         "isOn",
         "label",
+        "maxFontScale",
         "onValueChange",
         "selectedIcon",
         "spacing",
@@ -73,6 +75,9 @@ public struct CheckAttributes {
     /// Text color - hex string or color name from colors.json (binding supported)
     public let fontColor: AttrValue<String>?
 
+    /// Whether this component's text follows the OS / browser text size (iOS Dynamic Type, Android font scale, the browser's font size). Absent: the app default (Configuration font scaling, true unless the app sets it). false: the declared fontSize is drawn at that size at every text size (iOS pins the component to the standard size; Android reads fontSize as dp; web as px). The faces grow differently up to their caps: Android 14+ grows small text more than large (non-linear, up to 2x); iOS grows linearly with .body (x2.82 at AX5 on iOS 27.2); the web linearly with the root font size. Applies to partialAttributes' sizes too.
+    public let fontScaling: Bool?
+
     /// Font size (binding supported)
     public let fontSize: AttrValue<Double>?
 
@@ -93,6 +98,9 @@ public struct CheckAttributes {
 
     /// Checkbox label (can be data binding)
     public let label: AttrValue<String>?
+
+    /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
+    public let maxFontScale: Double?
 
     /// Value change handler - binding only (@{functionName}). Legacy handler spellings fold here (sjui checkbox_converter.rb:122 reads `onValueChange || onClick || action || onValueChanged`; `onClick` stays common). [aliases: action, onValueChanged]
     public let onValueChange: AttrValue<Any>?
@@ -125,6 +133,7 @@ public struct CheckAttributes {
         self.enabled = AttrCoerce.attrValue(AttrCoerce.lookup(json, "enabled"), AttrCoerce.boolean)
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
+        self.fontScaling = AttrCoerce.boolean(AttrCoerce.lookup(json, "fontScaling"))
         self.fontSize = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontSize"), AttrCoerce.number)
         self.fontWeight = AttrCoerce.any(AttrCoerce.lookup(json, "fontWeight", ["fontStyle"], canonicalOnly: canonicalOnly))
         self.icon = AttrCoerce.string(AttrCoerce.lookup(json, "icon"))
@@ -132,6 +141,7 @@ public struct CheckAttributes {
         self.iconSize = AttrCoerce.number(AttrCoerce.lookup(json, "iconSize"))
         self.isOn = AttrCoerce.attrValue(AttrCoerce.lookup(json, "isOn"), AttrCoerce.boolean)
         self.label = AttrCoerce.attrValue(AttrCoerce.lookup(json, "label"), AttrCoerce.string)
+        self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
         self.onValueChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onValueChange", ["action", "onValueChanged"], canonicalOnly: canonicalOnly))
         self.selectedIcon = AttrCoerce.string(AttrCoerce.lookup(json, "selectedIcon", ["onSrc"], canonicalOnly: canonicalOnly))
         self.spacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "spacing"), AttrCoerce.number)

@@ -75,6 +75,18 @@ public struct PartialAttributedText: View {
     let isHighlighted: Bool
 
     @Environment(\.jsonuiInteractionStopped) private var stoppedAround
+    @Environment(\.dynamicTypeSize) private var systemTypeSize
+    @Environment(\.fontScalingDeclaration) private var scalingDeclaration
+
+    /// The multiple every size here is drawn at (the component's fontScaling / maxFontScale under Dynamic Type).
+    private var scaleFactor: CGFloat {
+        FontScaling.factor(system: systemTypeSize, declaration: scalingDeclaration)
+    }
+
+    /// The base size, drawn: the declared fontSize (else the configured default) × scaleFactor.
+    private var drawnFontSize: CGFloat {
+        (effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size) * scaleFactor
+    }
 
     /// Whether the links operate: passed enabled, and no stop handed down.
     var linksOperate: Bool { linksEnabled && !stoppedAround }
@@ -266,6 +278,7 @@ public struct PartialAttributedText: View {
         if !partialAttributes.isEmpty || linkable {
             let result = createAttributedStringWithMapping()
             Text(result.attributedString)
+                .environment(\.dynamicTypeSize, .large)
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
@@ -305,11 +318,7 @@ public struct PartialAttributedText: View {
             )
         } else {
             Text(text)
-                .applyBaseFont(
-                    fontSize: effectiveFontSize,
-                    fontWeight: effectiveFontWeight,
-                    fontFamily: effectiveFontFamily
-                )
+                .sjuiFont(FontSpec(family: effectiveFontFamily, weight: effectiveFontWeight, size: effectiveFontSize))
                 .applyTextColor(effectiveFontColor)
                 .applyTextModifiers(
                     underline: underline,
@@ -329,9 +338,12 @@ public struct PartialAttributedText: View {
         strikethroughDecoration?.lineStyle == .double || strikethroughDecoration?.lineStyle == .thick
     }
 
+    /// The UIKit bridge's font (Double/Thick lines, and the empty Label's line height): the drawn size, the declared
+    /// family else the configured default name (the fontProvider is SwiftUI-only).
     private var uiKitFont: UIFont {
-        let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
-        if let family = effectiveFontFamily, let named = UIFont(name: family, size: size) {
+        let size = drawnFontSize
+        if let family = effectiveFontFamily ?? SwiftJsonUIConfiguration.shared.font.name,
+           let named = UIFont(name: family, size: size) {
             return named
         }
         let weight: UIFont.Weight = {
@@ -362,24 +374,12 @@ public struct PartialAttributedText: View {
         var attributedString = AttributedString(text)
         var urlMapping: [String: PartialAttribute] = [:]
 
-        // Apply base styles to entire string.
-        // fontFamily routes through the unified resolver so apps with a
-        // `fontProvider` see the full FontSpec (family + weight + size).
-        if let fontFamily = effectiveFontFamily {
-            let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
-            attributedString.font = SwiftJsonUIConfiguration.shared.resolveFont(
-                FontSpec(family: fontFamily, weight: effectiveFontWeight, size: size)
-            )
-        } else if let fontSize = effectiveFontSize, let fontWeight = effectiveFontWeight {
-            attributedString.font = .system(size: fontSize, weight: fontWeight)
-        } else if let fontSize = effectiveFontSize {
-            attributedString.font = .system(size: fontSize)
-        } else if let fontWeight = effectiveFontWeight {
-            attributedString.font = .system(
-                size: SwiftJsonUIConfiguration.shared.font.size,
-                weight: fontWeight
-            )
-        }
+        // Apply base styles to entire string. Every font goes through the unified resolver (the app's
+        // `fontProvider`), at the drawn size (ruling 2026-11-13: the text follows Dynamic Type unless the component
+        // or the app says otherwise, and the provider's typeface is every text's).
+        attributedString.font = SwiftJsonUIConfiguration.shared.resolveFont(
+            FontSpec(family: effectiveFontFamily, weight: effectiveFontWeight, size: drawnFontSize)
+        )
 
         if let fontColor = effectiveFontColor {
             attributedString.foregroundColor = fontColor
@@ -415,13 +415,13 @@ public struct PartialAttributedText: View {
                 attributedString[range].foregroundColor = color
             }
 
-            // Apply fontSize and fontWeight
-            if let size = partial.fontSize {
-                attributedString[range].font = .system(size: size, weight: partial.fontWeight ?? .regular)
-            } else if let weight = partial.fontWeight {
-                // Apply only weight if fontSize not specified
-                let size = effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size
-                attributedString[range].font = .system(size: size, weight: weight)
+            // Apply fontSize and fontWeight: through the resolver too, the size drawn at the component's factor
+            // (a partial's size follows its component's declaration).
+            if partial.fontSize != nil || partial.fontWeight != nil {
+                let size = (partial.fontSize ?? effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size) * scaleFactor
+                attributedString[range].font = SwiftJsonUIConfiguration.shared.resolveFont(
+                    FontSpec(family: effectiveFontFamily, weight: partial.fontWeight ?? effectiveFontWeight, size: size)
+                )
             }
 
             // Apply underline
@@ -508,10 +508,6 @@ public struct PartialAttributedText: View {
 
 // MARK: - View Extensions for Text modifiers
 extension View {
-    func applyBaseFont(fontSize: CGFloat?, fontWeight: Font.Weight?, fontFamily: String? = nil) -> some View {
-        self.modifier(BaseFontModifier(fontSize: fontSize, fontWeight: fontWeight, fontFamily: fontFamily))
-    }
-
     func applyTextColor(_ color: Color?) -> some View {
         self.modifier(TextColorModifier(color: color))
     }
@@ -540,41 +536,6 @@ extension View {
     }
 }
 
-struct BaseFontModifier: ViewModifier {
-    let fontSize: CGFloat?
-    let fontWeight: Font.Weight?
-    let fontFamily: String?
-
-    init(fontSize: CGFloat?, fontWeight: Font.Weight?, fontFamily: String? = nil) {
-        self.fontSize = fontSize
-        self.fontWeight = fontWeight
-        self.fontFamily = fontFamily
-    }
-
-    func body(content: Content) -> some View {
-        if let fontFamily = fontFamily {
-            // fontFamily specified: route through the unified FontSpec resolver
-            // so apps with a `fontProvider` see family + weight + size together.
-            let size = fontSize ?? SwiftJsonUIConfiguration.shared.font.size
-            content.font(
-                SwiftJsonUIConfiguration.shared.resolveFont(
-                    FontSpec(family: fontFamily, weight: fontWeight, size: size)
-                )
-            )
-        } else if let fontSize = fontSize, let fontWeight = fontWeight {
-            // Both fontSize and fontWeight specified
-            content.font(.system(size: fontSize, weight: fontWeight))
-        } else if let fontSize = fontSize {
-            // Only fontSize specified
-            content.font(.system(size: fontSize))
-        } else if let fontWeight = fontWeight {
-            // Only fontWeight specified - use default size from configuration
-            content.font(.system(size: SwiftJsonUIConfiguration.shared.font.size, weight: fontWeight))
-        } else {
-            content
-        }
-    }
-}
 
 struct TextColorModifier: ViewModifier {
     let color: Color?

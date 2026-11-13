@@ -107,7 +107,7 @@ public struct RadioConverter {
         )
 
         // Font and color for group title
-        let titleFont = radioFont(component, data: data)
+        let titleFont = radioFontSpec(component, data: data)
         let titleColor: Color? = {
             if let fc = component.string(RadioAttributes.self, \.fontColor) {
                 // data-aware: string|binding — the binding face was inert
@@ -194,7 +194,7 @@ public struct RadioConverter {
         let group = component.group ?? "defaultGroup"
 
         // Font and color
-        let labelFont = radioFont(component, data: data)
+        let labelFont = radioFontSpec(component, data: data)
         let labelColor: Color? = {
             if let fc = component.string(RadioAttributes.self, \.fontColor) {
                 // data-aware: string|binding — the binding face was inert
@@ -286,6 +286,11 @@ public struct RadioConverter {
         DynamicHelpers.fontFromComponent(component, data: data)
     }
 
+    /// The same font as a spec, drawn through sjuiFont (the provider and the text size rule).
+    static func radioFontSpec(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
+        DynamicHelpers.fontSpecFromComponent(component, data: data)
+    }
+
     // MARK: - Private helpers
 
     // The radio glyph, mirroring the codegen contract (radio_converter.rb
@@ -338,12 +343,12 @@ public struct RadioConverter {
     }
 
     @ViewBuilder
-    private static func buildTitleText(text: String, font: Font?, color: Color?) -> some View {
+    private static func buildTitleText(text: String, font: FontSpec?, color: Color?) -> some View {
         let baseText = Text(text.dynamicLocalized())
         if let font = font, let color = color {
-            baseText.font(font).foregroundColor(color)
+            baseText.sjuiFont(font).foregroundColor(color)
         } else if let font = font {
-            baseText.font(font)
+            baseText.sjuiFont(font)
         } else if let color = color {
             baseText.foregroundColor(color)
         } else {
@@ -352,12 +357,12 @@ public struct RadioConverter {
     }
 
     @ViewBuilder
-    private static func buildLabelText(text: String, font: Font?, color: Color?) -> some View {
+    private static func buildLabelText(text: String, font: FontSpec?, color: Color?) -> some View {
         let baseText = Text(text.dynamicLocalized())
         if let font = font, let color = color {
-            baseText.font(font).foregroundColor(color)
+            baseText.sjuiFont(font).foregroundColor(color)
         } else if let font = font {
-            baseText.font(font)
+            baseText.sjuiFont(font)
         } else if let color = color {
             baseText.foregroundColor(color)
         } else {

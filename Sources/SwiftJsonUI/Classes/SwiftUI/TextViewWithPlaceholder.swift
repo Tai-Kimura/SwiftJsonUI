@@ -22,13 +22,13 @@ public struct TextViewWithPlaceholder: View {
     @SwiftUI.Binding var text: String
     let hint: String?
     let hintColor: Color
-    let hintFont: Font
+    let hintFont: FontSpec
     let hintFontSize: CGFloat?
     let hintLineSpacing: CGFloat
     let hideOnFocused: Bool
     let fontSize: CGFloat
     let fontColor: Color
-    let font: Font
+    let font: FontSpec
     let backgroundColor: Color
     let cornerRadius: CGFloat
     let containerInset: EdgeInsets
@@ -110,12 +110,12 @@ public struct TextViewWithPlaceholder: View {
         // the vocabulary DynamicDecodingHelper accepts for Label
         // (semibold/medium/light/…). That divergence is untouched here and
         // reported separately — it is not the family gap this fixes.
-        func resolveFont(_ name: String?, size: CGFloat) -> Font {
-            let config = SwiftJsonUIConfiguration.shared
+        // Specs, drawn through sjuiFont at the body (the provider and the text size rule, 2026-11-13).
+        func resolveFont(_ name: String?, size: CGFloat) -> FontSpec {
             if name == "bold" {
-                return config.resolveFont(FontSpec(family: nil, weight: .bold, size: size))
+                return FontSpec(family: nil, weight: .bold, size: size)
             }
-            return config.resolveFont(FontSpec(family: name, weight: nil, size: size))
+            return FontSpec(family: name, weight: nil, size: size)
         }
 
         self.hintFont = resolveFont(hintFont, size: effectiveHintFontSize)
@@ -127,7 +127,7 @@ public struct TextViewWithPlaceholder: View {
             // ヒント（プレースホルダー）
             if let hint = hint, shouldShowHint {
                 Text(hint)
-                    .font(hintFont)
+                    .sjuiFont(hintFont)
                     .foregroundColor(hintColor)
                     .lineSpacing(hintLineSpacing)
                     .padding(EdgeInsets(
@@ -151,7 +151,7 @@ public struct TextViewWithPlaceholder: View {
                 // Flexible mode: 高さを動的に計算
                 // 非表示のTextでサイズを計算
                 Text(text.isEmpty ? " " : text)
-                    .font(font)
+                    .sjuiFont(font)
                     .padding(containerInset)
                     .opacity(0)
                     .accessibilityHidden(true) // a sizing copy, not content
@@ -164,7 +164,7 @@ public struct TextViewWithPlaceholder: View {
                 
                 // TextEditor
                 TextEditor(text: $text)
-                    .font(font)
+                    .sjuiFont(font)
                     .foregroundColor(fontColor)
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)
@@ -176,7 +176,7 @@ public struct TextViewWithPlaceholder: View {
             } else {
                 // Normal mode: 固定高さ
                 TextEditor(text: $text)
-                    .font(font)
+                    .sjuiFont(font)
                     .foregroundColor(fontColor)
                     .scrollContentBackground(.hidden)
                     .background(Color.clear)

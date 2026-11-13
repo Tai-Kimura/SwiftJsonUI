@@ -95,7 +95,7 @@ final class DynamicInertAttributeTests: XCTestCase {
 
         let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
         XCTAssertFalse(style.isEmpty)
-        XCTAssertEqual(style.font, Font.system(size: 11))
+        XCTAssertEqual(style.spec, FontSpec(size: 11))
         // Size alone must not repaint the placeholder.
         XCTAssertNil(style.color)
     }
@@ -108,8 +108,8 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
 
         XCTAssertEqual(
-            TextFieldConverter.placeholderStyle(component: c, data: [:]).font,
-            Font.system(size: 11)
+            TextFieldConverter.placeholderStyle(component: c, data: [:]).spec,
+            FontSpec(size: 11)
         )
     }
 
@@ -121,8 +121,8 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
 
         XCTAssertEqual(
-            TextFieldConverter.placeholderStyle(component: c, data: [:]).font,
-            Font.custom("Helvetica", size: 20)
+            TextFieldConverter.placeholderStyle(component: c, data: [:]).spec,
+            FontSpec(family: "Helvetica", size: 20)
         )
     }
 
@@ -135,7 +135,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         XCTAssertFalse(style.isEmpty)
         XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
         // Color alone must not resize the placeholder.
-        XCTAssertNil(style.font)
+        XCTAssertNil(style.spec)
     }
 
     /// `hintColor` is the other spelling and accepts the bound form.
@@ -173,20 +173,20 @@ final class DynamicInertAttributeTests: XCTestCase {
         // "bold" is the weight spelling, not a font family — same rule as
         // TextViewWithPlaceholder.
         XCTAssertEqual(
-            TextFieldPlaceholderStyle(hintFont: "bold", hintFontSize: 12).font,
-            Font.system(size: 12, weight: .bold)
+            TextFieldPlaceholderStyle(hintFont: "bold", hintFontSize: 12).spec,
+            FontSpec(weight: .bold, size: 12)
         )
         XCTAssertEqual(
-            TextFieldPlaceholderStyle(hintFont: "Helvetica", hintFontSize: 12).font,
-            Font.custom("Helvetica", size: 12)
+            TextFieldPlaceholderStyle(hintFont: "Helvetica", hintFontSize: 12).spec,
+            FontSpec(family: "Helvetica", size: 12)
         )
         // hintFontSize alone: system font at that size.
         XCTAssertEqual(
-            TextFieldPlaceholderStyle(hintFontSize: 12).font,
-            Font.system(size: 12)
+            TextFieldPlaceholderStyle(hintFontSize: 12).spec,
+            FontSpec(size: 12)
         )
         // Nothing declared: no font, so the field's own keeps applying.
-        XCTAssertNil(TextFieldPlaceholderStyle(hintColor: .red).font)
+        XCTAssertNil(TextFieldPlaceholderStyle(hintColor: .red).spec)
         XCTAssertTrue(TextFieldPlaceholderStyle().isEmpty)
     }
 
@@ -227,19 +227,19 @@ final class DynamicInertAttributeTests: XCTestCase {
     /// nothing. Codegen (B) emits `fontName:`, so the dynamic path has to
     /// resolve it from the same place or the two render differently.
     func testSelectBoxViewHonoursFontName() {
+        // The label is a FontSpec drawn through sjuiFont (the app's fontProvider, the text size rule; 2026-11-13).
         XCTAssertEqual(
             SelectBoxView(fontSize: 20, fontName: "Helvetica").labelFont,
-            Font.custom("Helvetica", size: 20)
+            FontSpec(family: "Helvetica", size: 20)
         )
         // "bold" is the weight spelling, not a family.
         XCTAssertEqual(
             SelectBoxView(fontSize: 20, fontName: "bold").labelFont,
-            Font.system(size: 20, weight: .bold)
+            FontSpec(weight: .bold, size: 20)
         )
-        // Undeclared keeps the previous appearance exactly.
         XCTAssertEqual(
             SelectBoxView(fontSize: 20).labelFont,
-            Font.system(size: 20)
+            FontSpec(size: 20)
         )
     }
 
@@ -267,7 +267,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
 
         let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
-        XCTAssertEqual(style.font, Font.system(size: 12))
+        XCTAssertEqual(style.spec, FontSpec(size: 12))
         XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
     }
 
@@ -281,7 +281,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
 
         let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
-        XCTAssertEqual(style.font, Font.system(size: 12))
+        XCTAssertEqual(style.spec, FontSpec(size: 12))
         XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
     }
 
@@ -294,7 +294,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         """)
 
         let style = TextFieldConverter.placeholderStyle(component: c, data: [:])
-        XCTAssertEqual(style.font, Font.system(size: 20), "no nested fontSize, so the flat one stands")
+        XCTAssertEqual(style.spec, FontSpec(size: 20), "no nested fontSize, so the flat one stands")
         XCTAssertEqual(style.color, DynamicHelpers.getColor("#FF0000"))
     }
 

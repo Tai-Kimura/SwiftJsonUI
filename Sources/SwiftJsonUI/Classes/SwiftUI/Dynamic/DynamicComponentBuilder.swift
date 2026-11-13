@@ -78,6 +78,8 @@ public struct DynamicComponentBuilder: View {
         .modifier(OpenScrollEnd(ends: OpenScrollEnd.ends(component, parentOrientation: parentOrientation, data: data)))
         // The element a reorderable Collection's rows are grabbed by (reorderHandle), when this is it.
         .modifier(CollectionReorderHandleMark(componentId: component.id))
+        // A text component's fontScaling / maxFontScale, for every font inside it (FontScaling).
+        .modifier(DynamicFontScalingMark(declaration: DynamicFontScaling.declaration(component)))
     }
 
     /// `userInteractionEnabled` is false, or a binding resolving false.

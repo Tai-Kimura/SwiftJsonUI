@@ -94,6 +94,7 @@ public struct LabelAttributes {
         "font",
         "fontColor",
         "fontFamily",
+        "fontScaling",
         "fontSize",
         "fontWeight",
         "highlightAttributes",
@@ -107,6 +108,7 @@ public struct LabelAttributes {
         "lineSpacing",
         "lines",
         "linkable",
+        "maxFontScale",
         "minimumScaleFactor",
         "partialAttributes",
         "placeholder",
@@ -155,6 +157,9 @@ public struct LabelAttributes {
     /// Font family name (e.g., 'Noto Sans JP'). Passed as the `family` field of `FontSpec` to `Configuration.Font.fontProvider`. Coexists with `font` (weight) and `fontSize` which are passed in the same FontSpec.
     public let fontFamily: AttrValue<String>?
 
+    /// Whether this component's text follows the OS / browser text size (iOS Dynamic Type, Android font scale, the browser's font size). Absent: the app default (Configuration font scaling, true unless the app sets it). false: the declared fontSize is drawn at that size at every text size (iOS pins the component to the standard size; Android reads fontSize as dp; web as px). The faces grow differently up to their caps: Android 14+ grows small text more than large (non-linear, up to 2x); iOS grows linearly with .body (x2.82 at AX5 on iOS 27.2); the web linearly with the root font size. Applies to partialAttributes' sizes too.
+    public let fontScaling: Bool?
+
     /// Font size. Passed as the `size` field of `FontSpec` to `Configuration.Font.fontProvider`. Can be a data binding.
     public let fontSize: AttrValue<Double>?
 
@@ -193,6 +198,9 @@ public struct LabelAttributes {
 
     /// Enable URL/phone detection. Auto-links BARE http(s) URLs and phone numbers found in the text. It does not parse markdown, and relative paths are deliberately never linked: a path like "/guides/x" only means something to a web router, so linkifying it would produce a control that is dead on iOS and Android. Express a cross-document reference with partialAttributes 'range' + 'onClick', where the handler performs the navigation itself — including scrolling to the target position, which an href cannot express on mobile anyway.
     public let linkable: AttrValue<Bool>?
+
+    /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
+    public let maxFontScale: Double?
 
     /// Minimum scale factor for auto-shrink (binding supported)
     public let minimumScaleFactor: AttrValue<Double>?
@@ -235,6 +243,7 @@ public struct LabelAttributes {
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
         self.fontFamily = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontFamily"), AttrCoerce.string)
+        self.fontScaling = AttrCoerce.boolean(AttrCoerce.lookup(json, "fontScaling"))
         self.fontSize = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontSize"), AttrCoerce.number)
         self.fontWeight = AttrCoerce.any(AttrCoerce.lookup(json, "fontWeight"))
         self.highlightAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "highlightAttributes"))
@@ -248,6 +257,7 @@ public struct LabelAttributes {
         self.lineSpacing = AttrCoerce.attrValue(AttrCoerce.lookup(json, "lineSpacing"), AttrCoerce.number)
         self.lines = AttrCoerce.attrValue(AttrCoerce.lookup(json, "lines"), AttrCoerce.number)
         self.linkable = AttrCoerce.attrValue(AttrCoerce.lookup(json, "linkable"), AttrCoerce.boolean)
+        self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
         self.minimumScaleFactor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minimumScaleFactor"), AttrCoerce.number)
         self.partialAttributes = AttrCoerce.array(AttrCoerce.lookup(json, "partialAttributes"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))

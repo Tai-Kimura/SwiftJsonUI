@@ -1,0 +1,140 @@
+//
+//  FontScaling.swift
+//  SwiftJsonUI
+//
+//  The text size a component's text is drawn at (ticket sjui-label-font-size-ignores-dynamic-type, ruling 2026-11-13):
+//  every text follows Dynamic Type unless it (or the app default, `SwiftJsonUIConfiguration.shared.font.scaling`)
+//  says `fontScaling: false`; `maxFontScale` caps the drawn size at fontSize × maxFontScale, rounded down to a Dynamic
+//  Type step. The same rule as shared/core/font_scale_vectors.json, which the tests read.
+//
+//  Every text component sets its font through `sjuiFont(_:scaling:maxFontScale:)`: the size is worked out here from
+//  the environment's Dynamic Type size, the font comes from `resolveFont` (the app's `fontProvider` when it has one),
+//  and the component is then pinned to the standard size so a provider's `Font.custom(_:size:)` does not grow it a
+//  second time.
+//
+
+import SwiftUI
+import UIKit
+
+/// The rule, free of SwiftUI: which text follows the text size and how large it is drawn.
+public enum FontScaleRule {
+    /// Whether the text follows the text size: its own declaration, else the app default.
+    public static func follows(_ declared: Bool?, appDefault: Bool) -> Bool {
+        declared ?? appDefault
+    }
+
+    /// The size drawn: `size` when it does not follow; size × scale, at most size × maxScale.
+    public static func drawn(size: CGFloat, scale: CGFloat, declared: Bool?, maxScale: CGFloat?,
+                             appDefault: Bool) -> CGFloat {
+        guard follows(declared, appDefault: appDefault) else { return size }
+        guard let maxScale else { return size * scale }
+        return size * min(scale, maxScale)
+    }
+
+    /// The step a cap rounds down to: the largest step (in order from the standard size up) whose ratio is at most
+    /// `maxScale`; none: the largest step; below every step above the standard one: the standard step.
+    public static func capStep<Step>(_ maxScale: CGFloat?, steps: [(step: Step, ratio: CGFloat)]) -> Step? {
+        guard let last = steps.last else { return nil }
+        guard let maxScale else { return last.step }
+        return steps.last(where: { $0.ratio <= maxScale + 0.0001 })?.step ?? steps.first?.step
+    }
+}
+
+/// Dynamic Type on iOS: each step's ratio to the standard size, as UIFontMetrics(.body) scales 17pt on this OS.
+public enum FontScaling {
+    public static let steps: [DynamicTypeSize] = [.large, .xLarge, .xxLarge, .xxxLarge, .accessibility1,
+                                                  .accessibility2, .accessibility3, .accessibility4, .accessibility5]
+
+    /// The step's ratio to the standard size (.large), from UIFontMetrics(.body). Steps below .large are below 1.
+    public static func ratio(_ size: DynamicTypeSize) -> CGFloat {
+        let traits = UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(size))
+        return UIFontMetrics(forTextStyle: .body).scaledValue(for: 17, compatibleWith: traits) / 17
+    }
+
+    /// The step `maxScale` rounds down to.
+    public static func capStep(_ maxScale: CGFloat?) -> DynamicTypeSize {
+        FontScaleRule.capStep(maxScale, steps: steps.map { ($0, ratio($0)) }) ?? .large
+    }
+
+    /// The multiple a declared size is drawn at under the system's `dynamicTypeSize`, for a component that declares
+    /// `declaration` (each half nil: the app default).
+    public static func factor(system: DynamicTypeSize, declaration: FontScalingDeclaration) -> CGFloat {
+        let config = SwiftJsonUIConfiguration.shared.font
+        guard FontScaleRule.follows(declaration.scaling, appDefault: config.scaling) else { return 1 }
+        let cap = declaration.maxFontScale ?? config.maxScale
+        let effective = cap == nil ? system : min(system, capStep(cap))
+        return ratio(effective)
+    }
+}
+
+/// What a component declares: `fontScaling` and `maxFontScale`, each nil when the layout does not say.
+public struct FontScalingDeclaration: Equatable {
+    public var scaling: Bool?
+    public var maxFontScale: CGFloat?
+    public init(scaling: Bool? = nil, maxFontScale: CGFloat? = nil) {
+        self.scaling = scaling
+        self.maxFontScale = maxFontScale
+    }
+}
+
+private struct FontScalingDeclarationKey: EnvironmentKey {
+    static let defaultValue = FontScalingDeclaration()
+}
+
+extension EnvironmentValues {
+    /// The `fontScaling` / `maxFontScale` the component around declares (generated code and Dynamic put it on the
+    /// component with `.fontScaling(_:maxFontScale:)`); every font the component sets reads it.
+    public var fontScalingDeclaration: FontScalingDeclaration {
+        get { self[FontScalingDeclarationKey.self] }
+        set { self[FontScalingDeclarationKey.self] = newValue }
+    }
+}
+
+/// The font of a text component: its spec's size drawn at the size the rule gives under the environment's Dynamic
+/// Type size, resolved through `resolveFont` (the provider). The component is then pinned to the standard size, so a
+/// provider's `Font.custom(_:size:)` keeps the size worked out here.
+public struct SJUIFontModifier: ViewModifier {
+    let spec: FontSpec
+    @Environment(\.dynamicTypeSize) private var system
+    @Environment(\.fontScalingDeclaration) private var declaration
+
+    public init(spec: FontSpec) {
+        self.spec = spec
+    }
+
+    public func body(content: Content) -> some View {
+        let size = spec.size ?? SwiftJsonUIConfiguration.shared.font.size
+        let factor = FontScaling.factor(system: system, declaration: declaration)
+        let drawn = FontSpec(family: spec.family, weight: spec.weight, size: size * factor, italic: spec.italic)
+        content
+            .font(SwiftJsonUIConfiguration.shared.resolveFont(drawn))
+            .environment(\.fontScalingFactor, factor)
+            .environment(\.dynamicTypeSize, .large)
+    }
+}
+
+private struct FontScalingFactorKey: EnvironmentKey {
+    static let defaultValue: CGFloat? = nil
+}
+
+extension EnvironmentValues {
+    /// The factor the enclosing `sjuiFont` drew its text at, for the parts of a component that set sizes of their
+    /// own (partialAttributes): nil outside one.
+    public var fontScalingFactor: CGFloat? {
+        get { self[FontScalingFactorKey.self] }
+        set { self[FontScalingFactorKey.self] = newValue }
+    }
+}
+
+public extension View {
+    /// The font every text component sets: `spec` through `resolveFont`, drawn at the size the component's
+    /// `fontScaling` / `maxFontScale` (else the app defaults) give under the current Dynamic Type size.
+    func sjuiFont(_ spec: FontSpec) -> some View {
+        modifier(SJUIFontModifier(spec: spec))
+    }
+
+    /// A component's `fontScaling` / `maxFontScale`, for the fonts inside it. Nil for either: the app default.
+    func fontScaling(_ scaling: Bool?, maxFontScale: CGFloat? = nil) -> some View {
+        environment(\.fontScalingDeclaration, FontScalingDeclaration(scaling: scaling, maxFontScale: maxFontScale))
+    }
+}

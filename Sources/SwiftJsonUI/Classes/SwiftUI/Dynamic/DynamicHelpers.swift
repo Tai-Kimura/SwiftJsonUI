@@ -150,6 +150,12 @@ public struct DynamicHelpers {
     /// Get font from component with data binding support for the `font` attribute.
     /// If `font` is a binding expression like @{fontProp}, resolves the font name/weight from data.
     public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]) -> Font? {
+        fontSpecFromComponent(component, data: data).map { SwiftJsonUIConfiguration.shared.resolveFont($0) }
+    }
+
+    /// The component's font as a spec, with the `font` binding resolved (see fontFromComponent). Drawn through
+    /// `sjuiFont`: the app's fontProvider and the text size rule.
+    public static func fontSpecFromComponent(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
         // Check if font attribute is a binding expression
         if let fontInner = component.typedAttributes(LabelAttributes.self)
             .font?.bindingExpression {
@@ -183,9 +189,9 @@ public struct DynamicHelpers {
                 }()
 
                 if weightNames.contains(fontName.lowercased()) {
-                    return .system(size: size, weight: fontWeight)
+                    return FontSpec(weight: fontWeight, size: size)
                 } else {
-                    return .custom(fontName, size: size)
+                    return FontSpec(family: fontName, size: size)
                 }
             }
         }
@@ -193,7 +199,7 @@ public struct DynamicHelpers {
         // No binding or binding not resolved, fall back to standard resolution
         // — with data, so a bound `fontSize` on an otherwise-static font
         // still resolves (the font-binding branch above never runs for it).
-        return DynamicDecodingHelper.fontFromComponent(component, data: data)
+        return DynamicDecodingHelper.fontSpecFromComponent(component, data: data)
     }
 
     public static func getColor(_ identifier: String?) -> Color? {

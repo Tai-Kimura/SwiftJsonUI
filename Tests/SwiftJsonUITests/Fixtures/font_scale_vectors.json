@@ -1,0 +1,36 @@
+{
+  "_comment": "fontScaling / maxFontScale (ticket sjui-label-font-size-ignores-dynamic-type, ruling 2026-11-13): the size a component's text is drawn at. Every face's runtime reads these; shared/core/font_scale_rule.py is the rule in Python, pinned against them by jui_tools/tests/test_font_scale_vectors.py.",
+  "rule": {
+    "follows": "A text follows the OS / browser text size when its fontScaling says so; absent, the app default (Configuration font scaling), which is true unless the app sets it.",
+    "drawn": "Not following: the declared fontSize at every text size (iOS pins the component to the standard size, Android reads fontSize as dp, the web as px). Following: fontSize x scale, where scale is what the system multiplies this size by (Android 14+: non-linear, the factor its conversion gives for this size; iOS and the web: one factor for every size); with maxFontScale, at most fontSize x maxFontScale.",
+    "partial": "partialAttributes' sizes follow their component's declaration.",
+    "iosCap": "iOS caps by a Dynamic Type step: the largest step whose .body ratio (UIFontMetrics on the running OS) is at most maxFontScale; none: the largest step; below every step above the standard one: the standard step."
+  },
+  "drawn": [
+    {"name": "follows by default", "size": 15, "scale": 1.82, "drawn": 27.3},
+    {"name": "standard size: unchanged", "size": 15, "scale": 1.0, "drawn": 15},
+    {"name": "declared true", "size": 13, "scale": 2.0, "declared": true, "drawn": 26},
+    {"name": "declared false keeps the size", "size": 13, "scale": 2.82, "declared": false, "drawn": 13},
+    {"name": "app default false", "size": 17, "scale": 1.82, "appDefault": false, "drawn": 17},
+    {"name": "declaration overrides an app default false", "size": 17, "scale": 1.82, "declared": true, "appDefault": false, "drawn": 30.94},
+    {"name": "declaration overrides an app default true", "size": 17, "scale": 1.82, "declared": false, "appDefault": true, "drawn": 17},
+    {"name": "cap reached", "size": 16, "scale": 2.82, "max": 1.5, "drawn": 24},
+    {"name": "cap not reached", "size": 16, "scale": 1.2, "max": 1.5, "drawn": 19.2},
+    {"name": "cap equal to the scale", "size": 10, "scale": 2.0, "max": 2.0, "drawn": 20},
+    {"name": "cap with fontScaling false: no effect", "size": 12, "scale": 2.82, "declared": false, "max": 2.0, "drawn": 12},
+    {"name": "cap 1: never grows", "size": 14, "scale": 1.82, "max": 1, "drawn": 14},
+    {"name": "Android non-linear factor for a large size", "size": 30, "scale": 1.6, "max": 2.0, "drawn": 48}
+  ],
+  "iosCap": {
+    "_ratiosSource": "UIFontMetrics(forTextStyle: .body).scaledValue(for: 17) / 17 on the iOS 27.2 simulator (measured 2026-11-13)",
+    "ratios": {"large": 1.0, "xLarge": 1.098, "xxLarge": 1.1765, "xxxLarge": 1.3137, "accessibility1": 1.549, "accessibility2": 1.8235, "accessibility3": 2.1765, "accessibility4": 2.549, "accessibility5": 2.8235},
+    "cases": [
+      {"name": "no cap: the largest step", "max": null, "step": "accessibility5"},
+      {"name": "1.5 rounds down to xxxLarge", "max": 1.5, "step": "xxxLarge"},
+      {"name": "2.0 rounds down to accessibility2", "max": 2.0, "step": "accessibility2"},
+      {"name": "a step's own ratio is that step", "max": 1.549, "step": "accessibility1"},
+      {"name": "1: the standard step", "max": 1, "step": "large"},
+      {"name": "above every step: the largest", "max": 5, "step": "accessibility5"}
+    ]
+  }
+}

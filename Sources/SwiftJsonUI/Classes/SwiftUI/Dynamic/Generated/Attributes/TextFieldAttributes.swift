@@ -137,6 +137,7 @@ public struct TextFieldAttributes {
         "font",
         "fontColor",
         "fontFamily",
+        "fontScaling",
         "fontSize",
         "glassEffectStyle",
         "hasContainer",
@@ -151,6 +152,7 @@ public struct TextFieldAttributes {
         "inputType",
         "leftView",
         "leftViewMode",
+        "maxFontScale",
         "maxLength",
         "name",
         "nextFocus",
@@ -258,6 +260,9 @@ public struct TextFieldAttributes {
     /// Font family name (e.g., 'Noto Sans JP'). Passed as the `family` field of `FontSpec` to `Configuration.Font.fontProvider`. Coexists with `font` (weight) and `fontSize` which are passed in the same FontSpec.
     public let fontFamily: AttrValue<String>?
 
+    /// Whether this component's text follows the OS / browser text size (iOS Dynamic Type, Android font scale, the browser's font size). Absent: the app default (Configuration font scaling, true unless the app sets it). false: the declared fontSize is drawn at that size at every text size (iOS pins the component to the standard size; Android reads fontSize as dp; web as px). The faces grow differently up to their caps: Android 14+ grows small text more than large (non-linear, up to 2x); iOS grows linearly with .body (x2.82 at AX5 on iOS 27.2); the web linearly with the root font size. Applies to partialAttributes' sizes too.
+    public let fontScaling: Bool?
+
     /// Font size (binding supported)
     public let fontSize: AttrValue<Double>?
 
@@ -299,6 +304,9 @@ public struct TextFieldAttributes {
 
     /// Left view display mode
     public let leftViewMode: String?
+
+    /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
+    public let maxFontScale: Double?
 
     /// Maximum input length
     public let maxLength: Double?
@@ -413,6 +421,7 @@ public struct TextFieldAttributes {
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
         self.fontFamily = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontFamily"), AttrCoerce.string)
+        self.fontScaling = AttrCoerce.boolean(AttrCoerce.lookup(json, "fontScaling"))
         self.fontSize = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontSize"), AttrCoerce.number)
         self.glassEffectStyle = AttrCoerce.string(AttrCoerce.lookup(json, "glassEffectStyle"))
         self.hasContainer = AttrCoerce.boolean(AttrCoerce.lookup(json, "hasContainer"))
@@ -427,6 +436,7 @@ public struct TextFieldAttributes {
         self.inputType = Self.parseInputType(AttrCoerce.lookup(json, "inputType"))
         self.leftView = AttrCoerce.object(AttrCoerce.lookup(json, "leftView"))
         self.leftViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "leftViewMode"))
+        self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
         self.maxLength = AttrCoerce.number(AttrCoerce.lookup(json, "maxLength"))
         self.name = AttrCoerce.string(AttrCoerce.lookup(json, "name"))
         self.nextFocus = AttrCoerce.string(AttrCoerce.lookup(json, "nextFocus"))

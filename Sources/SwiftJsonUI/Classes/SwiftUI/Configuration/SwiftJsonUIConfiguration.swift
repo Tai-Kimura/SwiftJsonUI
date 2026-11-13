@@ -128,6 +128,15 @@ public class SwiftJsonUIConfiguration: ObservableObject {
         /// Default font size
         public var size: CGFloat = 17.0
 
+        /// The app default for `fontScaling`: whether a text component's text follows the text size (Dynamic Type)
+        /// when the layout does not say. true unless the app sets it (ruling 2026-11-13). A component's `fontScaling`
+        /// overrides it. See `FontScaling`.
+        public var scaling: Bool = true
+
+        /// The app default for `maxFontScale`: the largest drawn size as a multiple of the declared one. nil: no cap
+        /// beyond the OS one. A component's `maxFontScale` overrides it.
+        public var maxScale: CGFloat? = nil
+
         /// Default font weight
         public var weight: Font.Weight = .regular
 

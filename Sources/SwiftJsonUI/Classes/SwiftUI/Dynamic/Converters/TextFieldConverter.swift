@@ -48,6 +48,11 @@ public struct TextFieldConverter {
         DynamicHelpers.fontFromComponent(component, data: data)
     }
 
+    /// The same font as a spec, drawn through sjuiFont (the provider and the text size rule).
+    static func declaredFontSpec(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
+        DynamicHelpers.fontSpecFromComponent(component, data: data)
+    }
+
     /// Convert DynamicComponent to SwiftUI TextField/SecureField
     /// Matches textfield_converter.rb convert method exactly
     public static func convert(
@@ -334,8 +339,8 @@ public struct TextFieldConverter {
         // (FocusableTextField handles focused/onSubmit internally)
 
         // --- 2. font ---
-        if let font = declaredFont(component, data: data) {
-            result = AnyView(result.font(font))
+        if let spec = declaredFontSpec(component, data: data) {
+            result = AnyView(result.sjuiFont(spec))
         }
 
         // --- 4. foregroundColor ---
@@ -439,8 +444,8 @@ public struct TextFieldConverter {
         var result = view
 
         // --- 2. font ---
-        if let font = declaredFont(component, data: data) {
-            result = AnyView(result.font(font))
+        if let spec = declaredFontSpec(component, data: data) {
+            result = AnyView(result.sjuiFont(spec))
         }
 
         // --- 3. multilineTextAlignment ---

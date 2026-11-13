@@ -52,12 +52,14 @@ public struct ButtonAttributes {
         "font",
         "fontColor",
         "fontFamily",
+        "fontScaling",
         "fontSize",
         "fontWeight",
         "highlightBackground",
         "highlightColor",
         "href",
         "image",
+        "maxFontScale",
         "partialAttributes",
         "tapBackground",
         "text",
@@ -102,6 +104,9 @@ public struct ButtonAttributes {
     /// Font family name (e.g., 'Noto Sans JP'). Passed as the `family` field of `FontSpec` to `Configuration.Font.fontProvider`. Coexists with `font` (weight) and `fontSize` which are passed in the same FontSpec. Declared from the implementation, which already read it: sjui button_converter.rb:173-178 (plan 51-E).
     public let fontFamily: AttrValue<String>?
 
+    /// Whether this component's text follows the OS / browser text size (iOS Dynamic Type, Android font scale, the browser's font size). Absent: the app default (Configuration font scaling, true unless the app sets it). false: the declared fontSize is drawn at that size at every text size (iOS pins the component to the standard size; Android reads fontSize as dp; web as px). The faces grow differently up to their caps: Android 14+ grows small text more than large (non-linear, up to 2x); iOS grows linearly with .body (x2.82 at AX5 on iOS 27.2); the web linearly with the root font size. Applies to partialAttributes' sizes too.
+    public let fontScaling: Bool?
+
     /// Font size
     public let fontSize: Double?
 
@@ -119,6 +124,9 @@ public struct ButtonAttributes {
 
     /// Button image - asset name (binding supported)
     public let image: AttrValue<String>?
+
+    /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
+    public let maxFontScale: Double?
 
     /// Partial text styling: apply font/size/color/underline/shadow to a substring selected by 'range' (a [start, end] pair, a text pattern, or a binding), and optionally make it tappable with 'onClick' (alias 'onclick'). This is the supported way to get emphasis or a link inside a Label, since 'text' is plain text and markdown is not interpreted, and it is the portable way to express a cross-reference: the handler navigates (and scrolls to the target) in host code, so the same layout works everywhere, where a URL-based link would only work on web. All three platforms resolve partials at RUNTIME against the resolved string, so a pattern range and a localized or bound 'text' both work. Semantics, identical across platforms and verified against each runtime: an array range is [start, end) with the end exclusive; a string range is the FIRST occurrence and the partial is skipped (not an error) when the pattern is absent; a range that is out of bounds or inverted is skipped; partials apply in declaration order and MERGE where they overlap, later declarations winning per property. Declared from the implementation, which already read it: sjui button_converter.rb:68-129 (plan 51-E).
     public let partialAttributes: [Any]?
@@ -143,12 +151,14 @@ public struct ButtonAttributes {
         self.font = AttrCoerce.string(AttrCoerce.lookup(json, "font"))
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
         self.fontFamily = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontFamily"), AttrCoerce.string)
+        self.fontScaling = AttrCoerce.boolean(AttrCoerce.lookup(json, "fontScaling"))
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
         self.fontWeight = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontWeight"), { $0 })
         self.highlightBackground = AttrCoerce.string(AttrCoerce.lookup(json, "highlightBackground"))
         self.highlightColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "highlightColor", ["hilightColor"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.href = AttrCoerce.string(AttrCoerce.lookup(json, "href"))
         self.image = AttrCoerce.attrValue(AttrCoerce.lookup(json, "image"), AttrCoerce.string)
+        self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
         self.partialAttributes = AttrCoerce.array(AttrCoerce.lookup(json, "partialAttributes"))
         self.tapBackground = AttrCoerce.string(AttrCoerce.lookup(json, "tapBackground"))
         self.text = AttrCoerce.attrValue(AttrCoerce.lookup(json, "text"), AttrCoerce.string)

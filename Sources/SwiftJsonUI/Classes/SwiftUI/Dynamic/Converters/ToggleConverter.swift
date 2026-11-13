@@ -26,6 +26,11 @@ public struct ToggleConverter {
         DynamicHelpers.fontFromComponent(component, data: data)
     }
 
+    /// The same font as a spec, drawn through sjuiFont (the provider and the text size rule).
+    static func declaredFontSpec(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
+        DynamicHelpers.fontSpecFromComponent(component, data: data)
+    }
+
     public static func convert(
         component: DynamicComponent,
         data: [String: Any]
@@ -75,7 +80,7 @@ public struct ToggleConverter {
         let labelAttrsDict = attrs.labelAttributes
 
         // Build the label Text view with font and color modifiers
-        let labelFont: Font? = {
+        let labelFont: FontSpec? = {
             if let labelAttrs = labelAttrsDict {
                 // labelAttributes override component-level font settings
                 // Switch/Toggle declares no fontSize of its own, so there is
@@ -93,15 +98,15 @@ public struct ToggleConverter {
                 let fontWeight = labelAttrs["fontWeight"] as? String ?? labelAttrs["fontStyle"] as? String ?? component.fontWeightSpelling()
                 guard fontSize != nil || fontName != nil || fontWeight != nil else { return nil }
                 if let name = fontName, let size = fontSize ?? 17 as CGFloat? {
-                    return Font.custom(name, size: size)
+                    return FontSpec(family: name, size: size)
                 }
                 if let size = fontSize {
                     let weight = DynamicHelpers.fontWeightFromString(fontWeight)
-                    return Font.system(size: size, weight: weight)
+                    return FontSpec(weight: weight, size: size)
                 }
                 return nil
             } else {
-                return declaredFont(component, data: data)
+                return declaredFontSpec(component, data: data)
             }
         }()
 
@@ -232,12 +237,12 @@ public struct ToggleConverter {
     // MARK: - Private helpers
 
     @ViewBuilder
-    private static func buildLabelText(text: String, font: Font?, color: Color?) -> some View {
+    private static func buildLabelText(text: String, font: FontSpec?, color: Color?) -> some View {
         let baseText = Text(text.dynamicLocalized())
         if let font = font, let color = color {
-            baseText.font(font).foregroundColor(color)
+            baseText.sjuiFont(font).foregroundColor(color)
         } else if let font = font {
-            baseText.font(font)
+            baseText.sjuiFont(font)
         } else if let color = color {
             baseText.foregroundColor(color)
         } else {

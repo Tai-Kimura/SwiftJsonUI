@@ -68,7 +68,8 @@ public struct SelectBoxView: View {
     /// sits *inside* the view — so a `.font()` applied from outside was
     /// always overridden and a declared `font` did nothing. The name has to
     /// come in as a parameter for the modifier to be able to honour it.
-    let labelFont: Font
+    /// A spec, drawn through `sjuiFont` (the app's fontProvider, the text size rule).
+    let labelFont: FontSpec
     let hintColor: Color
     let backgroundColor: Color
     let cornerRadius: CGFloat
@@ -200,11 +201,11 @@ public struct SelectBoxView: View {
         // "bold" is the weight spelling, not a family — the rule
         // TextViewWithPlaceholder.init and IconLabelView already use.
         if let fontName, fontName != "bold" {
-            self.labelFont = .custom(fontName, size: fontSize)
+            self.labelFont = FontSpec(family: fontName, size: fontSize)
         } else if fontName == "bold" {
-            self.labelFont = .system(size: fontSize, weight: .bold)
+            self.labelFont = FontSpec(weight: .bold, size: fontSize)
         } else {
-            self.labelFont = .system(size: fontSize)
+            self.labelFont = FontSpec(size: fontSize)
         }
         self.hintColor = hintColor
         self.backgroundColor = backgroundColor
@@ -276,7 +277,7 @@ public struct SelectBoxView: View {
                         }
                     }
                 }
-                .font(labelFont)
+                .sjuiFont(labelFont)
 
                 Spacer()
 

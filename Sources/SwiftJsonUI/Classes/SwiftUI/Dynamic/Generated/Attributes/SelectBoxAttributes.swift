@@ -72,6 +72,7 @@ public struct SelectBoxAttributes {
         "doneButtonText",
         "font",
         "fontColor",
+        "fontScaling",
         "fontSize",
         "hint",
         "hintColor",
@@ -79,6 +80,7 @@ public struct SelectBoxAttributes {
         "includePromptWhenDataBinding",
         "items",
         "labelAttributes",
+        "maxFontScale",
         "maximumDate",
         "minimumDate",
         "minuteInterval",
@@ -156,6 +158,9 @@ public struct SelectBoxAttributes {
     /// Font color - hex string or color name from colors.json
     public let fontColor: String?
 
+    /// Whether this component's text follows the OS / browser text size (iOS Dynamic Type, Android font scale, the browser's font size). Absent: the app default (Configuration font scaling, true unless the app sets it). false: the declared fontSize is drawn at that size at every text size (iOS pins the component to the standard size; Android reads fontSize as dp; web as px). The faces grow differently up to their caps: Android 14+ grows small text more than large (non-linear, up to 2x); iOS grows linearly with .body (x2.82 at AX5 on iOS 27.2); the web linearly with the root font size. Applies to partialAttributes' sizes too.
+    public let fontScaling: Bool?
+
     /// Font size
     public let fontSize: Double?
 
@@ -176,6 +181,9 @@ public struct SelectBoxAttributes {
 
     /// Label styling attributes
     public let labelAttributes: [String: Any]?
+
+    /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
+    public let maxFontScale: Double?
 
     /// Maximum date (yyyy-MM-dd format, binding supported)
     public let maximumDate: AttrValue<String>?
@@ -240,6 +248,7 @@ public struct SelectBoxAttributes {
         self.doneButtonText = AttrCoerce.string(AttrCoerce.lookup(json, "doneButtonText"))
         self.font = AttrCoerce.string(AttrCoerce.lookup(json, "font"))
         self.fontColor = AttrCoerce.string(AttrCoerce.lookup(json, "fontColor"))
+        self.fontScaling = AttrCoerce.boolean(AttrCoerce.lookup(json, "fontScaling"))
         self.fontSize = AttrCoerce.number(AttrCoerce.lookup(json, "fontSize"))
         self.hint = AttrCoerce.string(AttrCoerce.lookup(json, "hint"))
         self.hintColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "hintColor"), AttrCoerce.string)
@@ -247,6 +256,7 @@ public struct SelectBoxAttributes {
         self.includePromptWhenDataBinding = AttrCoerce.boolean(AttrCoerce.lookup(json, "includePromptWhenDataBinding"))
         self.items = AttrCoerce.attrValue(AttrCoerce.lookup(json, "items"), AttrCoerce.array)
         self.labelAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "labelAttributes"))
+        self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
         self.maximumDate = AttrCoerce.attrValue(AttrCoerce.lookup(json, "maximumDate"), AttrCoerce.string)
         self.minimumDate = AttrCoerce.attrValue(AttrCoerce.lookup(json, "minimumDate"), AttrCoerce.string)
         self.minuteInterval = AttrCoerce.number(AttrCoerce.lookup(json, "minuteInterval"))

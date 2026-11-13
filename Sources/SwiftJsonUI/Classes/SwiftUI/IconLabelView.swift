@@ -150,7 +150,7 @@ public struct IconLabelView: View {
     @ViewBuilder
     private var textView: some View {
         let base = Text(text)
-            .font(font)
+            .sjuiFont(fontSpec)
             .foregroundColor(isSelected ? selectedFontColor : fontColor)
         if let shadow = textShadowColor {
             base.shadow(
@@ -164,17 +164,9 @@ public struct IconLabelView: View {
         }
     }
     
-    private var font: Font {
-        let resolved: Font
-        if let fontName = fontName {
-            resolved = .custom(fontName, size: fontSize)
-        } else {
-            resolved = .system(size: fontSize)
-        }
-        if let weight = fontWeight {
-            return resolved.weight(weight)
-        }
-        return resolved
+    /// Drawn through sjuiFont: the app's fontProvider and the text size rule (2026-11-13).
+    private var fontSpec: FontSpec {
+        FontSpec(family: fontName, weight: fontWeight, size: fontSize)
     }
 }
 

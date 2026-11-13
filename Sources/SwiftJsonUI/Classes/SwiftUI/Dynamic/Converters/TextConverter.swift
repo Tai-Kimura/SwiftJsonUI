@@ -52,10 +52,10 @@ public struct TextConverter {
 
         // --- 1. Text view with font, color, alignment ---
         var result: AnyView
-        if let font = DynamicHelpers.fontFromComponent(component, data: data) {
+        if let spec = DynamicHelpers.fontSpecFromComponent(component, data: data) {
             result = AnyView(
                 Text(text)
-                    .font(font)
+                    .sjuiFont(spec)
                     .foregroundColor(textColor)
                     .multilineTextAlignment(alignment)
             )

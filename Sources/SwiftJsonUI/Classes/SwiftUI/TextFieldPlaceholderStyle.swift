@@ -19,11 +19,15 @@ import SwiftUI
 /// The placeholder styling a layout declared. `nil` in a slot means "the
 /// layout said nothing", which keeps the native placeholder appearance.
 public struct TextFieldPlaceholderStyle: Equatable {
+    /// A font handed in as it is (`init(font:color:)`); drawn as given.
     public let font: Font?
+    /// The declared hint font, drawn through `sjuiFont` (the app's fontProvider, the text size rule; 2026-11-13).
+    public let spec: FontSpec?
     public let color: Color?
 
     public init(font: Font? = nil, color: Color? = nil) {
         self.font = font
+        self.spec = nil
         self.color = color
     }
 
@@ -50,24 +54,25 @@ public struct TextFieldPlaceholderStyle: Equatable {
         if hintFont == nil && hintFontSize == nil {
             // No font declared: the field's own font keeps applying, exactly
             // as the native placeholder behaves.
-            self.font = nil
+            self.spec = nil
         } else {
             let size = hintFontSize ?? fontSize ?? SwiftJsonUIConfiguration.shared.font.size
             if let hintFont, hintFont != "bold" {
-                self.font = .custom(hintFont, size: size)
+                self.spec = FontSpec(family: hintFont, size: size)
             } else if hintFont == "bold" {
-                self.font = .system(size: size, weight: .bold)
+                self.spec = FontSpec(weight: .bold, size: size)
             } else {
-                self.font = .system(size: size)
+                self.spec = FontSpec(size: size)
             }
         }
+        self.font = nil
         self.color = hintColor
     }
 
     /// True when the layout declared no placeholder styling at all. Callers
     /// use this to keep the native placeholder rather than pay for an
     /// overlay that would look identical.
-    public var isEmpty: Bool { font == nil && color == nil }
+    public var isEmpty: Bool { font == nil && spec == nil && color == nil }
 }
 
 private struct StyledPlaceholderModifier: ViewModifier {
@@ -92,7 +97,7 @@ private struct StyledPlaceholderModifier: ViewModifier {
             .overlay(alignment: alignment) {
                 if value.wrappedValue.isEmpty {
                     Text(placeholder)
-                        .font(style.font)
+                        .placeholderFont(style)
                         // Only the declared color overrides the system default;
                         // a font-only declaration must not repaint the text.
                         .foregroundColor(style.color ?? Color(UIColor.placeholderText))
@@ -137,5 +142,17 @@ public func textFieldPlaceholderAlignment(for textAlignment: TextAlignment) -> A
     case .leading: return .leading
     case .center: return .center
     case .trailing: return .trailing
+    }
+}
+
+private extension View {
+    /// The declared hint font through `sjuiFont`, a font handed in as it is, else the field's own.
+    @ViewBuilder
+    func placeholderFont(_ style: TextFieldPlaceholderStyle) -> some View {
+        if let spec = style.spec {
+            sjuiFont(spec)
+        } else {
+            font(style.font)
+        }
     }
 }
