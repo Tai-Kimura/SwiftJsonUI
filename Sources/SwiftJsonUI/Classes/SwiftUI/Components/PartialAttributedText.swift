@@ -85,6 +85,11 @@ public struct PartialAttributedText: View {
         FontScaling.factor(system: outerTypeSize ?? pinnedTypeSize, declaration: scalingDeclaration)
     }
 
+    /// Whether this text sets no font of its own (FontScaling.keepsEnvironmentFont).
+    private var keepsEnvironmentFont: Bool {
+        FontScaling.keepsEnvironmentFont(FontSpec(family: effectiveFontFamily, weight: effectiveFontWeight, size: effectiveFontSize))
+    }
+
     /// The base size, drawn: the declared fontSize (else the configured default) × scaleFactor.
     private var drawnFontSize: CGFloat {
         (effectiveFontSize ?? SwiftJsonUIConfiguration.shared.font.size) * scaleFactor
@@ -280,7 +285,11 @@ public struct PartialAttributedText: View {
         if !partialAttributes.isEmpty || linkable {
             let result = createAttributedStringWithMapping()
             Text(result.attributedString)
-                .environment(\.dynamicTypeSize, .large)
+                // Pinned: every size in the string is drawn at the factor already. A string with no font of its
+                // own keeps the environment's text style, drawn at the declaration's Dynamic Type size instead.
+                .environment(\.dynamicTypeSize, keepsEnvironmentFont
+                    ? FontScaling.typeSize(system: outerTypeSize ?? pinnedTypeSize, declaration: scalingDeclaration)
+                    : .large)
                 .applyTextModifiers(
                     underline: underline,
                     strikethrough: strikethrough,
@@ -379,9 +388,13 @@ public struct PartialAttributedText: View {
         // Apply base styles to entire string. Every font goes through the unified resolver (the app's
         // `fontProvider`), at the drawn size (ruling 2026-11-13: the text follows Dynamic Type unless the component
         // or the app says otherwise, and the provider's typeface is every text's).
-        attributedString.font = SwiftJsonUIConfiguration.shared.resolveFont(
-            FontSpec(family: effectiveFontFamily, weight: effectiveFontWeight, size: drawnFontSize)
-        )
+        // A Label that says nothing about its font, in an app with no fontProvider, sets none: the environment's
+        // `.body`, as before the rule (FontScaling.keepsEnvironmentFont).
+        if !keepsEnvironmentFont {
+            attributedString.font = SwiftJsonUIConfiguration.shared.resolveFont(
+                FontSpec(family: effectiveFontFamily, weight: effectiveFontWeight, size: drawnFontSize)
+            )
+        }
 
         if let fontColor = effectiveFontColor {
             attributedString.foregroundColor = fontColor

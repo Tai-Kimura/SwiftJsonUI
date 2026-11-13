@@ -59,11 +59,26 @@ public enum FontScaling {
     /// The multiple a declared size is drawn at under the system's `dynamicTypeSize`, for a component that declares
     /// `declaration` (each half nil: the app default).
     public static func factor(system: DynamicTypeSize, declaration: FontScalingDeclaration) -> CGFloat {
+        ratio(typeSize(system: system, declaration: declaration))
+    }
+
+    /// The Dynamic Type size a text is drawn at under `declaration`: the system's when it follows, capped at
+    /// maxFontScale's step, the standard size when it does not follow.
+    public static func typeSize(system: DynamicTypeSize, declaration: FontScalingDeclaration) -> DynamicTypeSize {
         let config = SwiftJsonUIConfiguration.shared.font
-        guard FontScaleRule.follows(declaration.scaling, appDefault: config.scaling) else { return 1 }
+        guard FontScaleRule.follows(declaration.scaling, appDefault: config.scaling) else { return .large }
         let cap = declaration.maxFontScale ?? config.maxScale
-        let effective = cap == nil ? system : min(system, capStep(cap))
-        return ratio(effective)
+        return cap == nil ? system : min(system, capStep(cap))
+    }
+
+    /// A text whose spec says nothing (no family, size, weight or italic) and that no fontProvider answers keeps the
+    /// environment's font — `.body` unless the app sets one — as it did before the text size rule: that rule drew
+    /// it at the configured size's system font, whose lines are 20.3 high where `.body`'s are 22, and an app with no
+    /// provider saw every multi-line Label shorten (the orchestrator's ruling 2026-11-14). Its size still follows
+    /// the declaration, through the Dynamic Type size the text style reads (typeSize).
+    public static func keepsEnvironmentFont(_ spec: FontSpec) -> Bool {
+        guard spec.family == nil, spec.size == nil, spec.weight == nil, !spec.italic else { return false }
+        return SwiftJsonUIConfiguration.shared.fontProvider?(spec) == nil
     }
 }
 
@@ -111,15 +126,24 @@ public struct SJUIFontModifier: ViewModifier {
         self.spec = spec
     }
 
+    @ViewBuilder
     public func body(content: Content) -> some View {
-        let size = spec.size ?? SwiftJsonUIConfiguration.shared.font.size
         let factor = FontScaling.factor(system: system, declaration: declaration)
-        let drawn = FontSpec(family: spec.family, weight: spec.weight, size: size * factor, italic: spec.italic)
-        content
-            .font(SwiftJsonUIConfiguration.shared.resolveFont(drawn))
-            .environment(\.fontScalingFactor, factor)
-            .environment(\.sjuiSystemTypeSize, system)
-            .environment(\.dynamicTypeSize, .large)
+        if FontScaling.keepsEnvironmentFont(spec) {
+            // No font of its own: the environment's text style, at the declaration's Dynamic Type size.
+            content
+                .environment(\.fontScalingFactor, factor)
+                .environment(\.sjuiSystemTypeSize, system)
+                .environment(\.dynamicTypeSize, FontScaling.typeSize(system: system, declaration: declaration))
+        } else {
+            let size = spec.size ?? SwiftJsonUIConfiguration.shared.font.size
+            let drawn = FontSpec(family: spec.family, weight: spec.weight, size: size * factor, italic: spec.italic)
+            content
+                .font(SwiftJsonUIConfiguration.shared.resolveFont(drawn))
+                .environment(\.fontScalingFactor, factor)
+                .environment(\.sjuiSystemTypeSize, system)
+                .environment(\.dynamicTypeSize, .large)
+        }
     }
 }
 
