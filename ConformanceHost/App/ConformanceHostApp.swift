@@ -424,6 +424,9 @@ struct FixtureScreen: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        // A fontScaling / maxFontScale fixture (and its control) is drawn at the text size its manifest entry
+        // names (textScale), as the Android host scales its density's fontScale and the web its root font size.
+        .modifier(FixtureTextSize(size: ConformanceStateIndex.dynamicTypeSize(for: fixtureId)))
         // The frames gate's measuring elements: every id hands its layout
         // box up, and a clear `frame:<id>` element is drawn at it here,
         // behind the fixture so the fixture's own elements stay hittable
@@ -558,3 +561,17 @@ struct TestBridgeDynamicFixture: View {
     }
 }
 #endif
+
+/// The Dynamic Type size a fixture names, around it; nothing for a fixture that names none.
+private struct FixtureTextSize: ViewModifier {
+    let size: DynamicTypeSize?
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if let size {
+            content.environment(\.dynamicTypeSize, size)
+        } else {
+            content
+        }
+    }
+}

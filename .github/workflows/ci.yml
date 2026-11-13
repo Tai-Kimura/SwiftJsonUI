@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 34c63cffebeb48cdffba02884951f4d3c2461828 # jsonui-cli feat/font-scaling-base: fontScaling / maxFontScale on every component with a fontSize (ticket sjui-label-font-size-ignores-dynamic-type)
+      JSONUI_CLI_MANIFEST_REF: b2bb399da95230e7a2099c7c2121c1591f1f7a29 # jsonui-cli feat/font-scaling-base: fontScaling / maxFontScale on every component with a fontSize (ticket sjui-label-font-size-ignores-dynamic-type)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest

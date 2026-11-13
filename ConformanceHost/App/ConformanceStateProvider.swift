@@ -88,6 +88,9 @@ enum ConformanceStateIndex {
             let id: String
             let layout: String
             let state: ConformanceStateDecl?
+            /// The text size the fixture is drawn at (fontScaling / maxFontScale fixtures and their controls); nil:
+            /// the standard size.
+            let textScale: Double?
         }
         let fixtures: [Fixture]
     }
@@ -115,6 +118,13 @@ enum ConformanceStateIndex {
     /// fixture ids collide case-insensitively (onclick vs onClick).
     static func layoutPath(for fixtureId: String) -> String? {
         fixtures[fixtureId]?.layout
+    }
+
+    /// The Dynamic Type size a fixture is drawn at: the step its manifest `textScale` rounds down to (2.0 is
+    /// accessibility2 on iOS 27.2, ×1.82), nil for the standard size (the host leaves the system's).
+    static func dynamicTypeSize(for fixtureId: String) -> DynamicTypeSize? {
+        guard let scale = fixtures[fixtureId]?.textScale else { return nil }
+        return FontScaling.capStep(CGFloat(scale))
     }
 }
 

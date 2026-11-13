@@ -288,7 +288,7 @@ public struct RadioConverter {
 
     /// The same font as a spec, drawn through sjuiFont (the provider and the text size rule).
     static func radioFontSpec(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
-        DynamicHelpers.fontSpecFromComponent(component, data: data)
+        DynamicFontScaling.spec(DynamicHelpers.fontSpecFromComponent(component, data: data), for: component)
     }
 
     // MARK: - Private helpers

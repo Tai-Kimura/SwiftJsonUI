@@ -83,4 +83,21 @@ final class FontScaleVectorTests: XCTestCase {
         XCTAssertEqual(FontScaling.factor(system: .accessibility5, declaration: .init(maxFontScale: 1.5)),
                        FontScaling.ratio(.xxxLarge), accuracy: 0.0001, "the component's cap overrides the app's")
     }
+
+    /// rule.noFontSize: a text component that declares fontScaling / maxFontScale without a font is still held to
+    /// the rule (at the configured size); one that declares neither keeps the system's own font.
+    func testADeclarationWithoutAFontStillHoldsTheText() throws {
+        func component(_ json: String) throws -> DynamicComponent {
+            try JSONDecoder().decode(DynamicComponent.self, from: Data(json.utf8))
+        }
+        let declared = try component(#"{ "type": "TextField", "fontScaling": false }"#)
+        XCTAssertEqual(DynamicFontScaling.spec(nil, for: declared), FontSpec())
+        let capped = try component(#"{ "type": "Radio", "maxFontScale": 1.5 }"#)
+        XCTAssertEqual(DynamicFontScaling.spec(nil, for: capped), FontSpec())
+        let plain = try component(#"{ "type": "TextField" }"#)
+        XCTAssertNil(DynamicFontScaling.spec(nil, for: plain))
+        XCTAssertEqual(DynamicFontScaling.spec(FontSpec(size: 20), for: declared), FontSpec(size: 20))
+        XCTAssertTrue(FontScalingDeclaration(maxFontScale: 1.2).isDeclared)
+        XCTAssertFalse(FontScalingDeclaration().isDeclared)
+    }
 }

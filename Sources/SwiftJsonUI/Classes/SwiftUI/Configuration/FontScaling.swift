@@ -75,6 +75,10 @@ public struct FontScalingDeclaration: Equatable {
         self.scaling = scaling
         self.maxFontScale = maxFontScale
     }
+
+    /// Whether the component declares either. A component that does and has no fontSize still has its text held to
+    /// the rule, at its own default size (font_scale_vectors.json rule.noFontSize, ruling 2026-11-13).
+    public var isDeclared: Bool { scaling != nil || maxFontScale != nil }
 }
 
 private struct FontScalingDeclarationKey: EnvironmentKey {
@@ -133,8 +137,31 @@ public extension View {
         modifier(SJUIFontModifier(spec: spec))
     }
 
+    /// The font of a component's text when the layout gave it no fontSize: through `sjuiFont` at the configured
+    /// size (`font.size`, 17 — SwiftUI's .body at the standard size) when the component declares fontScaling or
+    /// maxFontScale; otherwise only the weight, if any, on the system's own font, as before.
+    func sjuiDeclaredFont(weight: Font.Weight? = nil) -> some View {
+        modifier(SJUIDeclaredFontModifier(weight: weight))
+    }
+
     /// A component's `fontScaling` / `maxFontScale`, for the fonts inside it. Nil for either: the app default.
     func fontScaling(_ scaling: Bool?, maxFontScale: CGFloat? = nil) -> some View {
         environment(\.fontScalingDeclaration, FontScalingDeclaration(scaling: scaling, maxFontScale: maxFontScale))
+    }
+}
+
+struct SJUIDeclaredFontModifier: ViewModifier {
+    let weight: Font.Weight?
+    @Environment(\.fontScalingDeclaration) private var declaration
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if declaration.isDeclared {
+            content.sjuiFont(FontSpec(weight: weight))
+        } else if let weight {
+            content.fontWeight(weight)
+        } else {
+            content
+        }
     }
 }

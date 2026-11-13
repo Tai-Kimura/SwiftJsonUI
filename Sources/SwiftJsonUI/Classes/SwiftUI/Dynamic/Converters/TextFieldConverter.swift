@@ -50,7 +50,7 @@ public struct TextFieldConverter {
 
     /// The same font as a spec, drawn through sjuiFont (the provider and the text size rule).
     static func declaredFontSpec(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
-        DynamicHelpers.fontSpecFromComponent(component, data: data)
+        DynamicFontScaling.spec(DynamicHelpers.fontSpecFromComponent(component, data: data), for: component)
     }
 
     /// Convert DynamicComponent to SwiftUI TextField/SecureField

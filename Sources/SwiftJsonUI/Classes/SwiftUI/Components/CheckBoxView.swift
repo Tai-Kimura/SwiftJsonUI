@@ -153,12 +153,10 @@ public struct CheckBoxView: View {
             baseText
                 .sjuiFont(FontSpec(weight: fontWeight, size: fontSize))
                 .foregroundColor(fontColor ?? .primary)
-        } else if let fontWeight = fontWeight {
-            baseText
-                .fontWeight(fontWeight)
-                .foregroundColor(fontColor ?? .primary)
         } else {
+            // No fontSize: the rule still holds the text when the CheckBox declares fontScaling / maxFontScale.
             baseText
+                .sjuiDeclaredFont(weight: fontWeight)
                 .foregroundColor(fontColor ?? .primary)
         }
     }

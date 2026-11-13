@@ -52,7 +52,7 @@ public struct TextConverter {
 
         // --- 1. Text view with font, color, alignment ---
         var result: AnyView
-        if let spec = DynamicHelpers.fontSpecFromComponent(component, data: data) {
+        if let spec = DynamicFontScaling.spec(DynamicHelpers.fontSpecFromComponent(component, data: data), for: component) {
             result = AnyView(
                 Text(text)
                     .sjuiFont(spec)
