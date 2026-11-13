@@ -59,6 +59,9 @@ public struct CollectionStackView<Content: View>: View {
     /// matchParent): its eager row fills that height, as the lazy row's
     /// LazyHStack does. A wrapContent height keeps the row its cells' height.
     let fillsCrossAxis: Bool
+    /// A reorderable Collection (ticket jui-collection-drag-to-reorder): its vertical stack carries the reorder
+    /// container (CollectionReorder.swift). Nil: the stack as before.
+    let reorder: CollectionReorder?
     @ViewBuilder let content: () -> Content
 
     public init(
@@ -74,6 +77,7 @@ public struct CollectionStackView<Content: View>: View {
         insetTrailing: CGFloat = 0,
         contentInsets: EdgeInsets? = nil,
         fillsCrossAxis: Bool = false,
+        reorder: CollectionReorder? = nil,
         @ViewBuilder content: @escaping () -> Content
     ) {
         self.mode = mode
@@ -88,6 +92,7 @@ public struct CollectionStackView<Content: View>: View {
         self.insetTrailing = insetTrailing
         self.contentInsets = contentInsets
         self.fillsCrossAxis = fillsCrossAxis
+        self.reorder = reorder
         self.content = content
     }
 
@@ -96,6 +101,7 @@ public struct CollectionStackView<Content: View>: View {
         case (.lazy, .vertical):
             verticalScrollContainer {
                 LazyVStack(alignment: horizontalAlignment, spacing: spacing) { content() }
+                    .collectionReorderContainer(reorder)
                     .applyContentInsets(contentInsets)
             }
         case (.eager, .vertical):
@@ -106,11 +112,13 @@ public struct CollectionStackView<Content: View>: View {
             // not move sideways by container mode).
             verticalScrollContainer {
                 VStack(alignment: horizontalAlignment, spacing: spacing) { content() }
+                    .collectionReorderContainer(reorder)
                     .applyContentInsets(contentInsets)
                     .frame(maxWidth: .infinity, alignment: Alignment(horizontal: horizontalAlignment, vertical: .top))
             }
         case (.none, .vertical):
             VStack(alignment: horizontalAlignment, spacing: spacing) { content() }
+                .collectionReorderContainer(reorder)
                 .applyContentInsets(contentInsets)
 
         case (.lazy, .horizontal):
