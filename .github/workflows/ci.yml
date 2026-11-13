@@ -141,6 +141,9 @@ jobs:
                "shared/core/responsive_resolution_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/image_accessibility_vectors.json",
                "shared/core/image_accessibility_vectors.json"),
+              # accessibilitySelected (ControlAccessibilitySelectedVectorsTests).
+              ("Tests/SwiftJsonUITests/Fixtures/control_accessibility_vectors.json",
+               "shared/core/control_accessibility_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",
                "shared/core/tap_accessibility_vectors.json"),
               ("Tests/SwiftJsonUITests/Fixtures/leaf_children_vectors.json",
