@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 27ea4c6927aee372edc5d82bea0caee025e64e2b # jsonui-cli feat/font-scaling-base: fontScaling / maxFontScale on every component with a fontSize (ticket sjui-label-font-size-ignores-dynamic-type)
+      JSONUI_CLI_MANIFEST_REF: 9780aa7f620e6c2fadad424da647c0f179a9854d # jsonui-cli feat/accessibility-selected: accessibilitySelected on Button / View / IconLabel and shared/core/control_accessibility_vectors.json (move to v2.5.37 at integration)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
