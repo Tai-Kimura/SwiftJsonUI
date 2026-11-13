@@ -296,10 +296,10 @@ public struct CollectionReorderRows<Content: View>: View {
     // The library's own drag (below iOS 27, with a handle or locked rows, or a build without iOS 27's container).
     @ViewBuilder
     private func libraryRows(_ reorder: CollectionReorder) -> some View {
-        let _ = drag.configure(section: section, count: ids.count, locked: locked, reorder: reorder, registry: registry)
+        let _ = drag.configure(section: section, ids: items.map(\.id), locked: locked, reorder: reorder, registry: registry)
         ForEach(Array(items.enumerated()), id: \.element.id) { index, _ in
             content(index)
-                .modifier(CollectionReorderDraggedRow(drag: drag, index: index))
+                .modifier(CollectionReorderDraggedRow(drag: drag, index: index, id: items[index].id))
                 .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked, reorder: reorder)
         }
     }
@@ -376,7 +376,10 @@ final class CollectionReorderDrag: ObservableObject {
     @Published var dy: CGFloat = 0
     var spans: [CollectionReorderRule.RowSpan] = []
     var frames: [Int: CGRect] = [:]
-    var handleFrames: [Int: CGRect] = [:]
+    /// Each row's handle, in the row's own coordinates, by the row's id: a row that moves keeps its handle's place in
+    /// it, so nothing depends on the handle reporting again after the rows swap (the row's frame places it).
+    var handleFrames: [String: CGRect] = [:]
+    var ids: [String] = []
     var startY: CGFloat = 0
     var scrolled: CGFloat = 0
     var fingerY: CGFloat = 0
@@ -533,9 +536,10 @@ private struct CollectionReorderHandleModifier: ViewModifier {
     func body(content: Content) -> some View {
         if let report {
             content.background(GeometryReader { proxy in
+                let frame = proxy.frame(in: .named(CollectionReorderDraggedRow.space))
                 Color.clear
-                    .onAppear { report(proxy.frame(in: .global)) }
-                    .onChange(of: proxy.frame(in: .global)) { _, frame in report(frame) }
+                    .onAppear { report(frame) }
+                    .onChange(of: frame) { _, frame in report(frame) }
             })
         } else {
             content
@@ -548,6 +552,10 @@ private struct CollectionReorderHandleModifier: ViewModifier {
 private struct CollectionReorderDraggedRow: ViewModifier {
     @ObservedObject var drag: CollectionReorderDrag
     let index: Int
+    let id: String
+
+    /// The row's own coordinate space: its handle's frame is measured in it.
+    static let space = "collectionReorderRow"
 
     private var shift: CGFloat {
         guard let from = drag.dragging, from != index, drag.spans.indices.contains(from) else { return 0 }
@@ -567,7 +575,8 @@ private struct CollectionReorderDraggedRow: ViewModifier {
     func body(content: Content) -> some View {
         let isDragged = drag.dragging == index
         content
-            .environment(\.collectionReorderHandleFrame) { frame in drag.handleFrames[index] = frame }
+            .environment(\.collectionReorderHandleFrame) { [id] frame in drag.handleFrames[id] = frame }
+            .coordinateSpace(name: Self.space)
             .background(GeometryReader { proxy in
                 Color.clear
                     .onAppear { drag.frames[index] = proxy.frame(in: .global) }
@@ -580,7 +589,10 @@ private struct CollectionReorderDraggedRow: ViewModifier {
             .zIndex(isDragged ? 1 : 0)
             .scaleEffect(isDragged ? 1.02 : 1)
             .shadow(color: .black.opacity(isDragged ? 0.2 : 0), radius: isDragged ? 8 : 0, y: isDragged ? 4 : 0)
-            .animation(.easeInOut(duration: 0.15), value: shift)
+            // The rows step aside with an animation while a row is carried; when it is let go they are put in place at
+            // once. Animated back, a row that changed its index was drawn a row off for the animation, and a drag that
+            // started at once aimed at where it was drawn (the KotlinJsonUI family, 2026-11-13).
+            .animation(drag.dragging == nil ? nil : .easeInOut(duration: 0.15), value: shift)
     }
 }
 
@@ -676,14 +688,23 @@ private struct CollectionReorderTouchHost: UIViewRepresentable {
 extension CollectionReorderDrag {
     /// The pick-up test (a row, its handle when the Collection declares one, never a locked row) and the release
     /// (inside the container, else cancelled) for the rows as they are drawn now.
-    func configure(section: Int, count: Int, locked: Set<Int>, reorder: CollectionReorder,
+    func configure(section: Int, ids: [String], locked: Set<Int>, reorder: CollectionReorder,
                    registry: CollectionReorderRegistry?) {
+        let count = ids.count
         self.count = count
+        self.ids = ids
         lockedNow = locked
         pickable = { [weak self] point in
             guard let self, reorder.isEnabled, self.dragging == nil else { return nil }
             for i in 0..<count where CollectionReorderRule.canPickUp(i, locked: locked) {
-                let area = reorder.usesHandle ? self.handleFrames[i] : self.frames[i]
+                guard let row = self.frames[i] else { continue }
+                let area: CGRect?
+                if reorder.usesHandle {
+                    area = self.ids.indices.contains(i)
+                        ? self.handleFrames[self.ids[i]].map { $0.offsetBy(dx: row.minX, dy: row.minY) } : nil
+                } else {
+                    area = row
+                }
                 if let area, area.contains(point) { return i }
             }
             return nil

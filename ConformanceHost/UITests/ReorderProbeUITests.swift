@@ -97,6 +97,50 @@ final class ReorderProbeUITests: XCTestCase {
         XCTAssertEqual(drag(app, from: center(row(app, 0)), to: below), "BCDEFA", "below the container: cancelled")
     }
 
+    /// The row just dropped is picked up again at once and taken back: C (2) down to 3, then straight back to 2, twelve
+    /// times. Each return must land on 2 — never one row past it (KotlinJsonUI overcounted the finger here: 5 of 12
+    /// came back to 1, 2026-11-13). `grab` is where the drag starts inside the row (the handle for "handle").
+    private func pickUpTheJustDroppedRowAgain(_ variant: String) throws {
+        let app = try launch(variant)
+        let order = app.staticTexts["reorder_order"]
+        XCTAssertTrue(row(app, 2).waitForExistence(timeout: 5))
+        func grab(_ index: Int) -> XCUICoordinate {
+            guard variant == "handle" else { return center(row(app, index)) }
+            return center(row(app, index).descendants(matching: .any)["within_badge"].firstMatch)
+        }
+        var landings: [String] = []
+        for _ in 0..<12 {
+            // the finger travels one row and 10pt more from the same point of the row, so the carried row's centre
+            // passes its neighbour's whether it is held at its centre or by a handle in its corner
+            grab(2).press(forDuration: 1.0, thenDragTo: grab(3).withOffset(CGVector(dx: 0, dy: 10)), withVelocity: .slow,
+                          thenHoldForDuration: 0.5)
+            let down = NSPredicate(format: "label == %@", "ABDCEF")
+            _ = XCTWaiter.wait(for: [expectation(for: down, evaluatedWith: order)], timeout: 2)
+            let afterDown = order.label
+            // at once: no settle between the drop and the next pick-up
+            grab(3).press(forDuration: 1.0, thenDragTo: grab(2).withOffset(CGVector(dx: 0, dy: -10)), withVelocity: .slow,
+                          thenHoldForDuration: 0.5)
+            sleep(1)
+            landings.append("\(afterDown)->\(order.label)")
+            if order.label != "ABCDEF" { // start the next round from ABCDEF again
+                app.terminate()
+                app.launch()
+                XCTAssertTrue(row(app, 2).waitForExistence(timeout: 15))
+            }
+        }
+        print("REORDER_REPICK \(variant): \(landings.joined(separator: " "))")
+        XCTAssertEqual(landings.filter { $0 != "ABDCEF->ABCDEF" }, [], "every return lands on 2")
+        XCTAssertEqual(landings.count, 12)
+    }
+
+    func testTheJustDroppedRowPickedUpAgainReturnsToItsPlace() throws {
+        try pickUpTheJustDroppedRowAgain("none")
+    }
+
+    func testTheJustDroppedRowPickedUpAgainByItsHandleReturnsToItsPlace() throws {
+        try pickUpTheJustDroppedRowAgain("handle")
+    }
+
     func testAScrollThatStartsOnARowStillScrolls() throws {
         let app = try launch("none")
         let before = app.staticTexts["reorder_before"].firstMatch
