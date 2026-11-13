@@ -269,17 +269,41 @@ public struct CollectionReorderRows<Content: View>: View {
 // MARK: - Accessibility
 
 private extension View {
-    /// "Move up" / "Move down" on a row, as the rule allows them (not past an edge, a locked row, or for a locked row).
+    /// "Move up" / "Move down" on a row, only those the rule allows: VoiceOver lists what the row can do. The list
+    /// is CollectionReorderAccessibility.actions, applied as it stands.
     func collectionReorderAccessibility(section: Int, index: Int, count: Int, locked: Set<Int>,
                                         reorder: CollectionReorder) -> some View {
+        let actions = CollectionReorderAccessibility.actions(section: section, index: index, count: count,
+                                                             locked: locked, reorder: reorder)
+        return self.accessibilityActions {
+            ForEach(actions.indices, id: \.self) { i in
+                Button(actions[i].name, action: actions[i].perform)
+            }
+        }
+    }
+}
+
+/// The accessibility actions a row offers, as data: what VoiceOver lists and what each one reports.
+enum CollectionReorderAccessibility {
+    struct Action {
+        let name: String
+        let perform: () -> Void
+    }
+
+    static func actions(section: Int, index: Int, count: Int, locked: Set<Int>, reorder: CollectionReorder) -> [Action] {
         let moves = CollectionReorderRule.accessibilityMoves(index: index, count: count, locked: locked)
-        return self
-            .accessibilityAction(named: Text(CollectionReorderText.moveUp)) {
-                if moves.up { reorder.report(section: section, from: index, to: index - 1, locked: locked) }
-            }
-            .accessibilityAction(named: Text(CollectionReorderText.moveDown)) {
-                if moves.down { reorder.report(section: section, from: index, to: index + 1, locked: locked) }
-            }
+        var out: [Action] = []
+        if moves.up {
+            out.append(Action(name: CollectionReorderText.moveUp) {
+                reorder.report(section: section, from: index, to: index - 1, locked: locked)
+            })
+        }
+        if moves.down {
+            out.append(Action(name: CollectionReorderText.moveDown) {
+                reorder.report(section: section, from: index, to: index + 1, locked: locked)
+            })
+        }
+        return out
     }
 }
 
