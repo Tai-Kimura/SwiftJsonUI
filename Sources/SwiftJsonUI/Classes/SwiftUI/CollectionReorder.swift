@@ -446,6 +446,32 @@ public extension View {
     }
 }
 
+private struct CollectionReorderHandleIdKey: EnvironmentKey {
+    static let defaultValue: String? = nil
+}
+
+extension EnvironmentValues {
+    /// Dynamic: the id of the cell's handle element (reorderHandle), for CollectionReorderHandleMark.
+    var collectionReorderHandleId: String? {
+        get { self[CollectionReorderHandleIdKey.self] }
+        set { self[CollectionReorderHandleIdKey.self] = newValue }
+    }
+}
+
+/// Dynamic: puts `.collectionReorderHandle()` on the component whose id is the reorderable row's handle. Every
+/// component carries it; outside a reorderable row with a handle it does nothing.
+struct CollectionReorderHandleMark: ViewModifier {
+    let componentId: String?
+    @Environment(\.collectionReorderHandleId) private var handleId
+    func body(content: Content) -> some View {
+        if let handleId, let componentId, handleId == componentId {
+            content.collectionReorderHandle()
+        } else {
+            content
+        }
+    }
+}
+
 private struct CollectionReorderHandleKey: EnvironmentKey {
     static let defaultValue: ((CGRect) -> Void)? = nil
 }

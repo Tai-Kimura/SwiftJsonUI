@@ -189,6 +189,9 @@ struct ConformanceRootView: View {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-hiddenToggleProbe") { return AnyView(HiddenToggleProbeView()) }
         if arguments.contains("-gestureProbe") { return AnyView(GestureProbeView()) }
+        if let i = arguments.firstIndex(of: "-reorderProbe"), i + 1 < arguments.count {
+            return AnyView(ReorderProbeView(variant: arguments[i + 1]))
+        }
         if arguments.contains("-screenMarkerProbe") { return AnyView(ScreenMarkerProbeView()) }
         if arguments.contains("-screenMarkerSplitProbe") { return AnyView(ScreenMarkerSplitProbeView()) }
         if arguments.contains("-screenMarkerFullScreenProbe") { return AnyView(ScreenMarkerFullScreenProbeView()) }

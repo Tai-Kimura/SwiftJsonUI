@@ -1202,6 +1202,7 @@ public struct CollectionConverter {
         onItemAppear: ((Int) -> Void)? = nil,
         mode: CollectionStackMode = .lazy
     ) -> AnyView {
+        let reorderDecl = reorder(component: component, data: data)
         let showsIndicators = component.showsVerticalScrollIndicator ?? true
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let vstackAlignment = getVStackAlignment(from: component)
@@ -1214,7 +1215,8 @@ public struct CollectionConverter {
                     horizontalAlignment: vstackAlignment,
                     spacing: lineSpacing,
                     showsIndicators: showsIndicators,
-                    contentInsets: collectionContentEdgeInsets(component: component)
+                    contentInsets: collectionContentEdgeInsets(component: component),
+                    reorder: reorderDecl
                 ) {
                     ForEach(
                         0..<min(sections.count, dataSource.sections.count),
@@ -1251,7 +1253,8 @@ public struct CollectionConverter {
                                     onItemAppear: onItemAppear
                                 )
                             } else {
-                            ForEach(items) { cell in
+                            reorderableRows(items: items, section: sectionIndex, component: component,
+                                            cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .stack) { cell in
                                 applyDeclaredCellFrame(
                                     AnyView(buildCellView(
                                         cellClassName: cellName,
@@ -1305,6 +1308,7 @@ public struct CollectionConverter {
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
+        let reorderDecl = reorder(component: component, data: data)
         let listStyle = component.enumString(CollectionAttributes.self, \.listStyle) ?? "plain"
         let hideSeparator = component.typedAttributes(CollectionAttributes.self).hideSeparator ?? false
 
@@ -1348,7 +1352,8 @@ public struct CollectionConverter {
                                     onItemAppear: onItemAppear
                                 )
                             } else {
-                            ForEach(items) { cell in
+                            reorderableRows(items: items, section: sectionIndex, component: component,
+                                            cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .list) { cell in
                                 applyDeclaredCellFrame(
                                     AnyView(buildCellView(
                                         cellClassName: cellName,
@@ -1437,6 +1442,7 @@ public struct CollectionConverter {
         viewId: String?,
         onItemAppear: ((Int) -> Void)? = nil
     ) -> AnyView {
+        let reorderDecl = reorder(component: component, data: data)
         // `listStyle` picks the chrome; the generated code reads the same
         // attribute onto SwiftUI's concrete styles, so the hardcoded
         // PlainListStyle here was a parity drift the moment codegen stopped
@@ -1448,7 +1454,8 @@ public struct CollectionConverter {
             ForEach(0..<dataSource.sections.count, id: \.self) { sectionIndex in
                 if let cellName, let cellsData = dataSource.sections[sectionIndex].cells {
                     let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
-                    ForEach(items) { cell in
+                    reorderableRows(items: items, section: sectionIndex, component: component,
+                                    cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .list) { cell in
                         applyDeclaredCellFrame(
                             AnyView(buildCellView(
                                 cellClassName: cellName,
@@ -2063,6 +2070,7 @@ public struct CollectionConverter {
         oneGridForAllSections: Bool = false,
         columnsIsBinding: Bool = false
     ) -> AnyView {
+        let reorderDecl = reorder(component: component, data: data)
         let lineSpacing = component.typedAttributes(CollectionAttributes.self).lineSpacing.map { CGFloat($0) } ?? component.itemSpacing ?? 0
         let columnSpacing = component.columnSpacing ?? component.itemSpacing ?? 0
         let cellAttrs = component.typedAttributes(CollectionAttributes.self)
@@ -2154,7 +2162,8 @@ public struct CollectionConverter {
                                 }
                             }
                         } else {
-                            ForEach(items) { cell in
+                            reorderableRows(items: items, section: sectionIndex, component: component,
+                                            cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .stack) { cell in
                                 buildCellView(
                                     cellClassName: cellName,
                                     cellData: cell.data,
@@ -2241,6 +2250,7 @@ public struct CollectionConverter {
                         buildFooterView(footerClassName: legacyFooter, footerData: [:], data: data, viewId: viewId)
                     }
                 }
+                .collectionReorderContainer(reorderDecl)
             )
         }
     }

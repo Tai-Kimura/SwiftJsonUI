@@ -76,6 +76,8 @@ public struct DynamicComponentBuilder: View {
         // Always applied, so a binding that flips keeps the subtree's identity.
         .environment(\.jsonuiInteractionStopped, stoppedAround || stopsInteraction)
         .modifier(OpenScrollEnd(ends: OpenScrollEnd.ends(component, parentOrientation: parentOrientation, data: data)))
+        // The element a reorderable Collection's rows are grabbed by (reorderHandle), when this is it.
+        .modifier(CollectionReorderHandleMark(componentId: component.id))
     }
 
     /// `userInteractionEnabled` is false, or a binding resolving false.
