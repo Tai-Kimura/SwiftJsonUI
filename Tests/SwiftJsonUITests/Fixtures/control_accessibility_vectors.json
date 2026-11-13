@@ -1,0 +1,200 @@
+{
+  "_description": "accessibilitySelected — shared/core/control_accessibility.rb `selected` / `selected_misplaced?`: the table the sjui, kjui and rjui codegen and the SwiftJsonUI / KotlinJsonUI Dynamic runtimes all run (the libraries from byte-identical copies). `selected` is what the node tells a screen reader: true, the binding as written (told while it is true), or null (nothing: false, no value, or a node where it takes no effect). `warns` is whether the validator says it takes no effect there. It takes effect on a Button, and on a View or IconLabel the tap rule (tap_accessibility_vectors.json) makes one button (shape button / combine). iOS .isSelected, Android semantics selected, web aria-pressed; false tells nothing on all three.",
+  "cases": [
+    {
+      "name": "a Button that is selected",
+      "layout": {
+        "type": "Button",
+        "id": "t",
+        "text": "Must",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": true
+      },
+      "selected": true,
+      "warns": false
+    },
+    {
+      "name": "a Button bound to its selection",
+      "layout": {
+        "type": "Button",
+        "id": "t",
+        "text": "Must",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": "@{isMust}"
+      },
+      "selected": "@{isMust}",
+      "warns": false
+    },
+    {
+      "name": "a Button that is not selected tells nothing",
+      "layout": {
+        "type": "Button",
+        "id": "t",
+        "text": "Must",
+        "accessibilitySelected": false
+      },
+      "selected": null,
+      "warns": false
+    },
+    {
+      "name": "a Button with no tap is still a button",
+      "layout": {
+        "type": "Button",
+        "id": "t",
+        "text": "Must",
+        "accessibilitySelected": true
+      },
+      "selected": true,
+      "warns": false
+    },
+    {
+      "name": "a tappable View holding a Label is one button (combine)",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": "@{isMust}",
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "Must"
+          }
+        ]
+      },
+      "selected": "@{isMust}",
+      "warns": false
+    },
+    {
+      "name": "a tappable View with no children is one button",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": true
+      },
+      "selected": true,
+      "warns": false
+    },
+    {
+      "name": "a View with no tap tells nothing and warns",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "accessibilitySelected": true,
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "Must"
+          }
+        ]
+      },
+      "selected": null,
+      "warns": true
+    },
+    {
+      "name": "a tappable View holding a control tells nothing and warns",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": true,
+        "child": [
+          {
+            "type": "Switch",
+            "id": "s"
+          }
+        ]
+      },
+      "selected": null,
+      "warns": true
+    },
+    {
+      "name": "a View whose tap is shut (canTap false) tells nothing and warns",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "onClick": "@{onMust}",
+        "canTap": false,
+        "accessibilitySelected": true
+      },
+      "selected": null,
+      "warns": true
+    },
+    {
+      "name": "a tappable IconLabel is one button",
+      "layout": {
+        "type": "IconLabel",
+        "id": "t",
+        "text": "Must",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": "@{isMust}"
+      },
+      "selected": "@{isMust}",
+      "warns": false
+    },
+    {
+      "name": "an IconLabel with no tap tells nothing and warns",
+      "layout": {
+        "type": "IconLabel",
+        "id": "t",
+        "text": "Must",
+        "accessibilitySelected": true
+      },
+      "selected": null,
+      "warns": true
+    },
+    {
+      "name": "a synonym of View (HStack) is read as its View",
+      "layout": {
+        "type": "HStack",
+        "id": "t",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": true,
+        "child": [
+          {
+            "type": "Label",
+            "id": "l",
+            "text": "Must"
+          }
+        ]
+      },
+      "selected": true,
+      "warns": false
+    },
+    {
+      "name": "a type that does not declare it (Label) tells nothing and warns",
+      "layout": {
+        "type": "Label",
+        "id": "t",
+        "text": "Must",
+        "onClick": "@{onMust}",
+        "accessibilitySelected": true
+      },
+      "selected": null,
+      "warns": true
+    },
+    {
+      "name": "false on a View with no tap is no warning (it tells nothing either way)",
+      "layout": {
+        "type": "View",
+        "id": "t",
+        "accessibilitySelected": false
+      },
+      "selected": null,
+      "warns": false
+    },
+    {
+      "name": "an empty binding is no value",
+      "layout": {
+        "type": "Button",
+        "id": "t",
+        "text": "Must",
+        "accessibilitySelected": "@{ }"
+      },
+      "selected": null,
+      "warns": false
+    }
+  ]
+}
