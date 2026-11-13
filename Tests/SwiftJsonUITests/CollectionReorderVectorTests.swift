@@ -122,10 +122,11 @@ final class CollectionReorderVectorTests: XCTestCase {
         }
     }
 
-    /// The one place iOS 27's own reorderContainer reads the rule differently is written down, not hidden.
-    func testTheKnownDifferenceIsIOS27sCentre() throws {
+    /// iOS 27's own reorderContainer and the rule agree on the drag: both pass a row at its edge (ticket
+    /// jui-collection-reorder-target-lags-one-row-behind-finger). The entry that read the standard as the centre
+    /// rule measured one release exactly on a centre and is gone; no drag difference is written down.
+    func testNoDragDifferenceFromIOS27sStandard() throws {
         let known = try XCTUnwrap(vectors["knownDifferences"] as? [[String: Any]])
-        XCTAssertEqual(known.count, 1)
-        XCTAssertTrue("\(known[0])".contains("27"))
+        XCTAssertFalse(known.contains { ($0["rule"] as? String) == "drag" }, "\(known)")
     }
 }

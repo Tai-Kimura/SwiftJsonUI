@@ -2,7 +2,7 @@
   "_comment": "How a reorderable Collection's rows move, the same on iOS, Android and the web (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13). Each face's runtime reads these: the drag (which `to` a finger at an offset means), the drop (what onReorder's (from, to) does to the order), iOS onMove's destination converted to `to`, and the screen reader's move up / move down. Hand-written, not generated from the reference (shared/core/reorder_rule.py, pinned by jui_tools/tests/test_reorder_vectors.py): a generated table would agree with its generator by construction. Indices are within one section; the section is not part of the rule (v1 moves within a section only).",
   "rule": {
     "to": "The dragged row's index in the order AFTER the move: take the row out at `from`, put it back at `to`. to == from is no move, and onReorder is not called.",
-    "drag": "The dragged row's centre is its resting centre plus the finger's vertical offset `dy` (down is positive). Each other row is passed when the dragged centre goes strictly beyond that row's centre: a row below `from` whose centre is above the dragged centre is passed (to + 1), a row above `from` whose centre is below it is passed (to - 1). Exactly on a centre is not past it. Row heights may differ; gaps (itemSpacing) are part of each row's span and do not change the centres compared.",
+    "drag": "The dragged row's centre is its resting centre plus the finger's vertical offset `dy` (down is positive). Each other row is passed when the dragged centre goes strictly beyond that row's resting edge on the dragged row's side: a row below `from` is passed (to + 1) when the dragged centre is below its top, a row above `from` is passed (to - 1) when the dragged centre is above its bottom. Exactly on an edge is not past it. So the gap is always under the dragged centre, as iOS 27's standard reorderable draws it (measured 2026-11-14, rows 60 high: 30 down or up is no move, 33 passes one row). Row heights may differ; gaps (itemSpacing) are part of each row's span, so its edges include them.",
     "locked": "A row whose reorderLockedProperty value is true is never picked up, and no row is moved past it: `to` is clamped to stay between the nearest locked row above `from` and the nearest one below it. A drag that would pass one stops just before it.",
     "fixed": "A row whose reorderFixedProperty value is true, or a row of a Collection with a reorderHandle whose handle is not drawn (gone, hidden or absent), is fixed: it is never picked up and the screen reader offers it neither action, but it is not a bound - other rows are moved past it like any row, and their `to` counts it. A row both locked and fixed is locked (ticket jui-collection-reorder-fixed-row-vs-barrier-row, the orchestrator's ruling 2026-11-14).",
     "iosOnMove": "SwiftUI's onMove(perform:) gives the destination counted BEFORE the row is taken out: to = destination - 1 when destination > from, else destination. destination == from or from + 1 is no move.",
@@ -11,9 +11,7 @@
     "release": "Released with the finger inside the Collection's container (its rows with the section's header and footer, `header` and `footer` high; 0 when there is none), the move is decided: over a row, the drag's `to`; above the first row (over the header) the first place; below the last row (over the footer) the last place; each clamped short of a locked row (the drag rule's clamp: a move that would pass a locked row stops just before it). Released outside the container it is cancelled: the order goes back and onReorder is not called. The finger's place, from the container's top, is header + the row's top + where it grabbed the row (grabAt) + dy; each row's span includes the spacing after it. iOS 27's own reorderContainer hands a release over the header / footer as the first / last place and cancels only outside, and cannot be changed, so the library's drags (iOS below 27, a reorderHandle on any iOS, Android, the web) do the same (the orchestrator's ruling 2026-11-13, on support 1's measurement on iOS 27.2).",
     "autoScroll": "While a row is dragged, a finger inside the band of `band` (48 pt / dp / CSS px) at the top or the bottom of the Collection's visible area scrolls it that way, at maxSpeed (800 per second) times how deep the finger is in the band (0 at the band's inner edge, 1 at the visible area's edge and beyond); outside the bands it does not scroll. Scrolling moves the rows under a still finger, so dy is counted in the content: the finger's movement plus the scroll since the row was picked up, and the drag rule applies to the rows scrolled into view as to any other."
   },
-  "knownDifferences": [
-    {"where": "iOS 27's standard reorderContainer (stack paths with no reorderHandle, iOS 27 and later)", "rule": "drag", "difference": "A dragged centre exactly on another row's centre counts as past it there (A released on D's exact centre: BCDAEF; the rule and the library's drags: BCADEF). Only the boundary differs, by one place; the standard's judgement cannot be changed from the library, so the rule stays. The drivers release at dy 0.75 / 0.25 of the target row, never on a centre, so a test's result is the same on every path.", "measured": "support 1, iOS 27.2 simulator, 2026-11-13; SwiftJsonUI CollectionReorderRule.target follows the rule (dy 60 not past, 61 past)"}
-  ],
+  "knownDifferences": [],
   "drop": [
     {"name": "down by one", "rows": ["a", "b", "c", "d"], "from": 0, "to": 1, "order": ["b", "a", "c", "d"]},
     {"name": "down to the end", "rows": ["a", "b", "c", "d"], "from": 0, "to": 3, "order": ["b", "c", "d", "a"]},
@@ -34,22 +32,24 @@
     {"name": "a move between two locked rows", "rows": ["h", "a", "b", "c", "k"], "locked": [0, 4], "from": 3, "to": 1, "order": ["h", "c", "a", "b", "k"]}
   ],
   "drag": [
-    {"name": "not yet past the next row's centre", "heights": [40, 40, 40, 40], "from": 0, "dy": 39, "to": 0},
-    {"name": "exactly on the next row's centre is not past it", "heights": [40, 40, 40, 40], "from": 0, "dy": 40, "to": 0},
-    {"name": "just past the next row's centre", "heights": [40, 40, 40, 40], "from": 0, "dy": 41, "to": 1},
-    {"name": "past two centres", "heights": [40, 40, 40, 40], "from": 0, "dy": 81, "to": 2},
+    {"name": "not yet past the next row's top edge", "heights": [40, 40, 40, 40], "from": 0, "dy": 19, "to": 0},
+    {"name": "exactly on the next row's top edge is not past it", "heights": [40, 40, 40, 40], "from": 0, "dy": 20, "to": 0},
+    {"name": "just past the next row's top edge", "heights": [40, 40, 40, 40], "from": 0, "dy": 21, "to": 1},
+    {"name": "a row and a half down is not yet past the second row", "heights": [40, 40, 40, 40], "from": 0, "dy": 60, "to": 1},
+    {"name": "past two top edges", "heights": [40, 40, 40, 40], "from": 0, "dy": 61, "to": 2},
     {"name": "far below the last row stops at the end", "heights": [40, 40, 40, 40], "from": 0, "dy": 1000, "to": 3},
-    {"name": "up past one centre", "heights": [40, 40, 40, 40], "from": 3, "dy": -41, "to": 2},
+    {"name": "up: exactly on the row above's bottom edge is not past it", "heights": [40, 40, 40, 40], "from": 3, "dy": -20, "to": 3},
+    {"name": "up past one bottom edge", "heights": [40, 40, 40, 40], "from": 3, "dy": -21, "to": 2},
     {"name": "far above the first row stops at the start", "heights": [40, 40, 40, 40], "from": 2, "dy": -1000, "to": 0},
-    {"name": "uneven heights: a tall row's centre is further away", "heights": [40, 120, 40], "from": 0, "dy": 79, "to": 0},
-    {"name": "uneven heights: past the tall row's centre", "heights": [40, 120, 40], "from": 0, "dy": 81, "to": 1},
-    {"name": "uneven heights, upward: not yet past the tall row's centre", "heights": [40, 120, 40], "from": 2, "dy": -79, "to": 2},
-    {"name": "uneven heights, upward: past the tall row's centre", "heights": [40, 120, 40], "from": 2, "dy": -81, "to": 1},
+    {"name": "uneven heights: a tall row is passed once the centre is inside it", "heights": [40, 120, 40], "from": 0, "dy": 21, "to": 1},
+    {"name": "uneven heights: not yet past the tall row's top edge", "heights": [40, 120, 40], "from": 0, "dy": 20, "to": 0},
+    {"name": "uneven heights, upward: not yet past the tall row's bottom edge", "heights": [40, 120, 40], "from": 2, "dy": -20, "to": 2},
+    {"name": "uneven heights, upward: past the tall row's bottom edge", "heights": [40, 120, 40], "from": 2, "dy": -21, "to": 1},
     {"name": "a short drag either way is no move", "heights": [40, 40, 40], "from": 1, "dy": -10, "to": 1},
     {"name": "a locked row below stops the drag before it", "heights": [40, 40, 40, 40], "locked": [2], "from": 0, "dy": 1000, "to": 1},
     {"name": "a locked row above stops the drag after it", "heights": [40, 40, 40, 40], "locked": [1], "from": 3, "dy": -1000, "to": 2},
     {"name": "a locked row is not dragged", "heights": [40, 40, 40], "locked": [1], "from": 1, "dy": 100, "to": null},
-    {"name": "a dragged row passes a fixed row like any row", "heights": [40, 40, 40, 40], "fixed": [1], "from": 0, "dy": 81, "to": 2},
+    {"name": "a dragged row passes a fixed row like any row", "heights": [40, 40, 40, 40], "fixed": [1], "from": 0, "dy": 61, "to": 2},
     {"name": "a fixed row is not dragged", "heights": [40, 40, 40, 40], "fixed": [1], "from": 1, "dy": 50, "to": null}
   ],
   "iosOnMove": [

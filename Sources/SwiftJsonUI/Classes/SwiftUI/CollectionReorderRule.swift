@@ -30,21 +30,24 @@ public enum CollectionReorderRule {
         !locked.contains(index) && !fixed.contains(index)
     }
 
-    /// Where the row grabbed at `from` lands while it is dragged `dy`: past every neighbour whose centre its own
-    /// centre has crossed (exactly on a centre is not past it), and never onto or past a locked row.
+    /// Where the row grabbed at `from` lands while it is dragged `dy`: past every neighbour whose edge on its side its
+    /// own centre has crossed — a row below once the centre is below its top, a row above once it is above its
+    /// bottom (exactly on an edge is not past it) — and never onto or past a locked row. The gap is under the
+    /// dragged centre, as iOS 27's standard reorderable draws it (ticket
+    /// jui-collection-reorder-target-lags-one-row-behind-finger).
     public static func target(from: Int, dy: CGFloat, rows: [RowSpan], locked: Set<Int>) -> Int {
         guard rows.indices.contains(from) else { return from }
         let center = rows[from].center + dy
         var to = from
         if dy > 0 {
             var j = from + 1
-            while j < rows.count, !locked.contains(j), center > rows[j].center {
+            while j < rows.count, !locked.contains(j), center > rows[j].top {
                 to = j
                 j += 1
             }
         } else if dy < 0 {
             var j = from - 1
-            while j >= 0, !locked.contains(j), center < rows[j].center {
+            while j >= 0, !locked.contains(j), center < rows[j].bottom {
                 to = j
                 j -= 1
             }
