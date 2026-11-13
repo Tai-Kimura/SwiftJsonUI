@@ -7,6 +7,7 @@
 //  reorderable / onReorder / reorderHandle / reorderLockedProperty.
 //
 
+#if DEBUG
 import SwiftUI
 
 extension CollectionConverter {
@@ -71,3 +72,5 @@ extension CollectionConverter {
         }
     }
 }
+
+#endif // DEBUG
