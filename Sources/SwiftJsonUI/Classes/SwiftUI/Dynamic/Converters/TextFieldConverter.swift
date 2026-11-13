@@ -124,9 +124,9 @@ public struct TextFieldConverter {
                 )
             } else {
                 if isSecure {
-                    built = AnyView(SecureField(nativePlaceholder, text: binding))
+                    built = AnyView(SecureField(nativePlaceholder, text: binding).leafAccessibilityLabel(ControlAccessibility.label(component, data: data)))
                 } else {
-                    built = AnyView(TextField(nativePlaceholder, text: binding))
+                    built = AnyView(TextField(nativePlaceholder, text: binding).leafAccessibilityLabel(ControlAccessibility.label(component, data: data)))
                 }
                 if !hintStyle.isEmpty {
                     built = AnyView(
@@ -318,7 +318,8 @@ public struct TextFieldConverter {
                 // placeholder go on (LeafAccessibilityIdentifier.swift). An
                 // invisible field takes none, as applyAccessibilityId had it.
                 accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : fieldId,
-                autoFocus: attrs.autoFocus == true
+                autoFocus: attrs.autoFocus == true,
+                accessibilityLabel: ControlAccessibility.label(component, data: data)
             )
         )
 
@@ -555,9 +556,8 @@ public struct TextFieldConverter {
         // --- 27. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
-        // Last, as the standard chain's controlAccessibility stage (sjui's after_bag): accessibilityLabel and
-        // accessibilitySelected. This hand-built chain never ran that stage, so neither reached VoiceOver here.
-        result = ControlAccessibility.apply(result, component: component, data: data)
+        // accessibilityLabel went on the field itself (leafAccessibilityLabel), where VoiceOver reads it: this
+        // hand-built chain runs no controlAccessibility stage, and a name on this outer chain names no element.
 
         return result
     }
