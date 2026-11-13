@@ -1290,8 +1290,11 @@ final class DynamicInertAttributeTests: XCTestCase {
             padding: EdgeInsets(top: 1, leading: 2, bottom: 3, trailing: 4)
         )
         XCTAssertEqual(declared.caret?.rightMargin, 24)
-        XCTAssertEqual(declared.contentInsets.trailing, 0)
+        // The trailing inset runs from the edge to the caret's box, and rightMargin is that distance
+        // (ruling 2026-11-13: the same on every face).
+        XCTAssertEqual(declared.contentInsets.trailing, 24)
         XCTAssertEqual(declared.contentInsets.leading, 2)
+        XCTAssertEqual(SelectBoxView(caret: .init(width: 20)).contentInsets.trailing, 12, "no rightMargin: the padding's")
     }
 }
 #endif

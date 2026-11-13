@@ -92,6 +92,50 @@ public struct SelectBoxConverter {
 
     /// Convert DynamicComponent to SwiftUI SelectBoxView
     /// Matches selectbox_converter.rb convert method exactly
+    /// The SelectBox's insets, side by side (ruling 2026-11-13, ticket
+    /// kjui-selectbox-fixed-56dp-ignores-wrap-content-height; selectbox_converter.rb the same): SelectBoxView's
+    /// default (0 above and below, 12 at the sides), then `padding` on every side, then `paddings`, then each side's
+    /// own key. A side nothing names keeps the default. Nil when nothing is declared (SelectBoxView's default).
+    static func padding(_ component: DynamicComponent, data: [String: Any]) -> EdgeInsets? {
+        func edge(_ keyPath: KeyPath<CommonAttributes, AttrValue<Double>?>) -> CGFloat? {
+            component.number(CommonAttributes.self, keyPath, data: data)
+        }
+        var insets = EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        var declared = false
+        if let all = edge(\.padding) {
+            insets = EdgeInsets(top: all, leading: all, bottom: all, trailing: all)
+            declared = true
+        }
+        if let edges = DynamicHelpers.resolveEdgeValues(component.paddings, data: data) {
+            insets = DynamicDecodingHelper.edgeInsetsFromArray(edges)
+            declared = true
+        }
+        if let v = edge(\.paddingTop) ?? edge(\.topPadding) { insets.top = v; declared = true }
+        if let v = edge(\.paddingBottom) ?? edge(\.bottomPadding) { insets.bottom = v; declared = true }
+        if let v = edge(\.paddingStart) ?? edge(\.paddingLeft) ?? edge(\.leftPadding) { insets.leading = v; declared = true }
+        if let v = edge(\.paddingEnd) ?? edge(\.paddingRight) ?? edge(\.rightPadding) { insets.trailing = v; declared = true }
+        // insets / insetHorizontal / insetVertical add to it, as getPadding adds them for every component.
+        if let extra = DynamicDecodingHelper.insetsFromAnyCodable(component.insets) {
+            insets.top += extra.top; insets.leading += extra.leading
+            insets.bottom += extra.bottom; insets.trailing += extra.trailing
+            declared = true
+        }
+        if let value = component.insetHorizontal { insets.leading += value; insets.trailing += value; declared = true }
+        if let value = component.insetVertical { insets.top += value; insets.bottom += value; declared = true }
+        return declared ? insets : nil
+    }
+
+    /// Whether the SelectBox takes its content's height: no height (or wrapContent), no min / max height, and no
+    /// weighted or `distribution: fill` parent sizing it vertically.
+    static func needsContentHeight(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        guard component.declaredHeight == nil else { return false }
+        let common = component.typedAttributes(CommonAttributes.self)
+        if DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data) != nil
+            || DynamicHelpers.resolveNumber(common.maxHeight, legacy: nil, data: data) != nil { return false }
+        let weighted = data["__isWeightedChild"] as? Bool == true && data["__weightedParentOrientation"] as? String == "vertical"
+        return !weighted && data["__distributionFillOrientation"] as? String != "vertical"
+    }
+
     public static func convert(
         component: DynamicComponent,
         data: [String: Any]
@@ -253,13 +297,7 @@ public struct SelectBoxConverter {
         }()
 
         // padding (internal padding for SelectBoxView)
-        let padding: EdgeInsets? = {
-            let p = DynamicHelpers.getPadding(from: component, data: data)
-            if p.top != 0 || p.leading != 0 || p.bottom != 0 || p.trailing != 0 {
-                return p
-            }
-            return nil
-        }()
+        let padding = SelectBoxConverter.padding(component, data: data)
 
         // caretAttributes — the closed-state caret. Absent: SelectBoxView
         // keeps its fixed chevron, the picture every layout drew before the
@@ -338,6 +376,13 @@ public struct SelectBoxConverter {
         // SelectBoxView handles padding/background/cornerRadius internally
         result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
         result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
+        // No height or wrapContent: the content's height (ticket
+        // kjui-selectbox-fixed-56dp-ignores-wrap-content-height; selectbox_converter.rb the same).
+        // SelectBoxView fills the height it is offered, and a stack offered it all the free height.
+        // A min / max already sized it (applyFrameConstraints); a weighted / fill parent sizes it.
+        if needsContentHeight(component, data: data) {
+            result = AnyView(result.fixedSize(horizontal: false, vertical: true))
+        }
 
         // --- 4. .overlay (border) ---
         result = DynamicModifierHelper.applyBorder(result, component: component, data: data)

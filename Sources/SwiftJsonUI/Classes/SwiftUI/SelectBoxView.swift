@@ -255,7 +255,10 @@ public struct SelectBoxView: View {
                 }
             }
         }) {
-            HStack {
+            // The text, then 8, then the caret's box; the trailing inset runs from the select's edge to the box
+            // (ruling 2026-11-13, ticket kjui-selectbox-fixed-56dp-ignores-wrap-content-height: the same on
+            // every face).
+            HStack(spacing: SelectBoxView.caretGap) {
                 // Label text
                 Group {
                     switch selectItemType {
@@ -278,8 +281,7 @@ public struct SelectBoxView: View {
                     }
                 }
                 .sjuiFont(labelFont)
-
-                Spacer()
+                .frame(maxWidth: .infinity, alignment: .leading)
 
                 // Caret icon
                 caretView
@@ -504,17 +506,17 @@ public struct SelectBoxView: View {
         }
     }
     
-    /// The inset around label + caret.
-    ///
-    /// Without `caret` this is the declared padding, or the 12pt the view has
-    /// always used. With it the trailing inset is 0: `rightMargin` is defined
-    /// from the select's own trailing edge (UIKit pins the caret subview to
-    /// the right edge and lets the label carry its own inset), so the caret
-    /// has to be positioned by its own margin, not by the label's.
+    /// The caret's box when the layout gives none, and the space between the text and it (the same on every face).
+    public static let caretBox: CGFloat = 16
+    public static let caretGap: CGFloat = 8
+
+    /// The inset around label + caret: the declared padding, else 0 above and below and 12 at the sides (the same
+    /// on every face). The trailing inset runs from the select's edge to the caret's box; a caret's `rightMargin`
+    /// is that distance and wins over the padding.
     var contentInsets: EdgeInsets {
         var insets = padding ?? EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
-        if caret != nil {
-            insets.trailing = 0
+        if let margin = caret?.rightMargin {
+            insets.trailing = margin
         }
         return insets
     }
@@ -529,13 +531,13 @@ public struct SelectBoxView: View {
     private var caretView: some View {
         if let caret {
             caretGlyph(caret)
-                .frame(width: caret.width, height: caret.height)
+                .frame(width: caret.width ?? Self.caretBox, height: caret.height ?? Self.caretBox)
                 .background(caret.background ?? Color.clear)
-                .padding(.trailing, caret.rightMargin ?? 0)
         } else {
             Image(systemName: "chevron.down")
                 .foregroundColor(.gray)
                 .font(.system(size: 12))
+                .frame(width: Self.caretBox, height: Self.caretBox)
         }
     }
 
