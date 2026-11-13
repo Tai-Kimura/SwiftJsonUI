@@ -42,14 +42,44 @@ public struct CollectionReorder {
     /// The Collection declares reorderFixedProperty: some rows do not move but are passed.
     public let hasFixedRows: Bool
     public let onReorder: (_ section: Int, _ from: Int, _ to: Int) -> Void
+    /// onReorderStart: a row was picked up (rule.callbacks).
+    public let onReorderStart: ((_ section: Int, _ index: Int) -> Void)?
+    /// onReorderEnd: the drag that onReorderStart began is over, once, after onReorder when the row moved.
+    public let onReorderEnd: ((_ section: Int) -> Void)?
 
     public init(isEnabled: Bool, usesHandle: Bool = false, hasLockedRows: Bool = false, hasFixedRows: Bool = false,
+                onReorderStart: ((_ section: Int, _ index: Int) -> Void)? = nil,
+                onReorderEnd: ((_ section: Int) -> Void)? = nil,
                 onReorder: @escaping (_ section: Int, _ from: Int, _ to: Int) -> Void) {
         self.isEnabled = isEnabled
         self.usesHandle = usesHandle
         self.hasLockedRows = hasLockedRows
         self.hasFixedRows = hasFixedRows
+        self.onReorderStart = onReorderStart
+        self.onReorderEnd = onReorderEnd
         self.onReorder = onReorder
+    }
+
+    /// The Collection declares onReorderStart or onReorderEnd.
+    public var hasCallbacks: Bool { onReorderStart != nil || onReorderEnd != nil }
+
+    /// A row was picked up (rule.callbacks).
+    func started(section: Int, index: Int) {
+        guard isEnabled else { return }
+        onReorderStart?(section, index)
+    }
+
+    /// The drag is over: once, after any onReorder (rule.callbacks).
+    func ended(section: Int) {
+        guard isEnabled else { return }
+        onReorderEnd?(section)
+    }
+
+    /// One whole move as a single step (the screen reader's move up / down, List.onMove): start, the move, end.
+    func step(section: Int, index: Int, _ move: () -> Void) {
+        started(section: section, index: index)
+        move()
+        ended(section: section)
     }
 
     /// Whether this stack uses SwiftUI's own reorder container (iOS 27) rather than the library's drag. Not with a
@@ -57,9 +87,11 @@ public struct CollectionReorder {
     /// opens its gap past a locked row and moves the locked row aside, and no API it has keeps a place closed
     /// (measured on iOS 27.2; ruling 2026-11-13). A locked row is a divider that does not move, as on every other OS.
     /// Not with fixed rows either: the library's drag is the one whose pick-up test is known to keep a fixed row
-    /// still (ticket jui-collection-reorder-fixed-row-vs-barrier-row).
+    /// still (ticket jui-collection-reorder-fixed-row-vs-barrier-row). Nor when onReorderStart / onReorderEnd is
+    /// declared: the container has no hook for a drag beginning, nor for one let go where it began or cancelled, so
+    /// only the library's drag can call them as rule.callbacks says (the orchestrator's ruling 2026-11-14).
     var usesSystemContainer: Bool {
-        guard Self.systemContainerIsCompiled, !usesHandle, !hasLockedRows, !hasFixedRows else { return false }
+        guard Self.systemContainerIsCompiled, !usesHandle, !hasLockedRows, !hasFixedRows, !hasCallbacks else { return false }
         if #available(iOS 27.0, *) { return true }
         return false
     }
@@ -285,7 +317,11 @@ public struct CollectionReorderRows<Content: View>: View {
         .onMove { source, destination in
             guard source.count == 1, let from = source.first else { return }
             let to = CollectionReorderRule.toIndex(fromOnMove: from, destination: destination)
-            reorder.releaseReport(section: section, from: from, to: to, count: ids.count, locked: locked, fixed: fixed)
+            // List.onMove has no pick-up: start and end come together when the row lands (a release where it began,
+            // or a cancel, calls neither; jui build says so: INFO [ios-reorder-callbacks]).
+            reorder.step(section: section, index: from) {
+                reorder.releaseReport(section: section, from: from, to: to, count: ids.count, locked: locked, fixed: fixed)
+            }
         }
     }
 
@@ -376,12 +412,16 @@ enum CollectionReorderAccessibility {
         var out: [Action] = []
         if moves.up {
             out.append(Action(name: CollectionReorderText.moveUp) {
-                reorder.report(section: section, from: index, to: index - 1, count: count, locked: locked, fixed: fixed)
+                reorder.step(section: section, index: index) {
+                    reorder.report(section: section, from: index, to: index - 1, count: count, locked: locked, fixed: fixed)
+                }
             })
         }
         if moves.down {
             out.append(Action(name: CollectionReorderText.moveDown) {
-                reorder.report(section: section, from: index, to: index + 1, count: count, locked: locked, fixed: fixed)
+                reorder.step(section: section, index: index) {
+                    reorder.report(section: section, from: index, to: index + 1, count: count, locked: locked, fixed: fixed)
+                }
             })
         }
         return out
@@ -454,6 +494,7 @@ final class CollectionReorderDrag: ObservableObject {
         scrolled = 0
         dy = 0
         dragging = index
+        onStart(index)
         // The scroll view's own pan must not move the content under the finger (nor cancel the press) while a row
         // is carried; the auto-scroll moves it instead. Back on at the end.
         scrollView?.panGestureRecognizer.isEnabled = false
@@ -479,9 +520,15 @@ final class CollectionReorderDrag: ObservableObject {
         // indexes would name other rows, so it is cancelled - the rows go back and nothing is reported.
         let changed = rowsChanged
         started = nil
-        guard !cancelled, !changed, let from else { return }
-        commit(from, to, released)
+        guard let from else { return }
+        if !cancelled, !changed { commit(from, to, released) }
+        // Once, whatever the drag came to: after onReorder when it moved (rule.callbacks).
+        onEnd()
     }
+
+    /** onReorderStart / onReorderEnd for this section (configure sets them). */
+    var onStart: (Int) -> Void = { _ in }
+    var onEnd: () -> Void = {}
 
     var lockedNow: Set<Int> = []
     /** The fixed rows as last drawn (declared, and with a handle every row whose handle is not drawn). */
@@ -801,6 +848,8 @@ extension CollectionReorderDrag {
             }
             return nil
         }
+        onStart = { index in reorder.started(section: section, index: index) }
+        onEnd = { reorder.ended(section: section) }
         commit = { [weak self] from, to, released in
             guard let self else { return }
             let spans = self.spans
