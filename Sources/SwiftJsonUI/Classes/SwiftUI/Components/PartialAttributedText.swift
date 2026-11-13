@@ -75,12 +75,14 @@ public struct PartialAttributedText: View {
     let isHighlighted: Bool
 
     @Environment(\.jsonuiInteractionStopped) private var stoppedAround
-    @Environment(\.dynamicTypeSize) private var systemTypeSize
+    @Environment(\.dynamicTypeSize) private var pinnedTypeSize
+    @Environment(\.sjuiSystemTypeSize) private var outerTypeSize
     @Environment(\.fontScalingDeclaration) private var scalingDeclaration
 
-    /// The multiple every size here is drawn at (the component's fontScaling / maxFontScale under Dynamic Type).
+    /// The multiple every size here is drawn at (the component's fontScaling / maxFontScale under Dynamic Type),
+    /// by the system's size even inside an enclosing sjuiFont's pin.
     private var scaleFactor: CGFloat {
-        FontScaling.factor(system: systemTypeSize, declaration: scalingDeclaration)
+        FontScaling.factor(system: outerTypeSize ?? pinnedTypeSize, declaration: scalingDeclaration)
     }
 
     /// The base size, drawn: the declared fontSize (else the configured default) × scaleFactor.

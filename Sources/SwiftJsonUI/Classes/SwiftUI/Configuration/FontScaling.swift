@@ -99,8 +99,13 @@ extension EnvironmentValues {
 /// provider's `Font.custom(_:size:)` keeps the size worked out here.
 public struct SJUIFontModifier: ViewModifier {
     let spec: FontSpec
-    @Environment(\.dynamicTypeSize) private var system
+    @Environment(\.dynamicTypeSize) private var pinned
+    @Environment(\.sjuiSystemTypeSize) private var outer
     @Environment(\.fontScalingDeclaration) private var declaration
+
+    /// The system's Dynamic Type size: the one an enclosing sjuiFont saw before it pinned its subtree to the
+    /// standard size, else the environment's. A text inside another (a TextField's placeholder) scales by it too.
+    private var system: DynamicTypeSize { outer ?? pinned }
 
     public init(spec: FontSpec) {
         self.spec = spec
@@ -113,7 +118,21 @@ public struct SJUIFontModifier: ViewModifier {
         content
             .font(SwiftJsonUIConfiguration.shared.resolveFont(drawn))
             .environment(\.fontScalingFactor, factor)
+            .environment(\.sjuiSystemTypeSize, system)
             .environment(\.dynamicTypeSize, .large)
+    }
+}
+
+private struct SJUISystemTypeSizeKey: EnvironmentKey {
+    static let defaultValue: DynamicTypeSize? = nil
+}
+
+extension EnvironmentValues {
+    /// The system's Dynamic Type size, kept by the outermost sjuiFont when it pins its subtree to the standard size
+    /// (nil outside one). Every font inside reads it, so a nested text is sized by the system's size, not the pin.
+    public var sjuiSystemTypeSize: DynamicTypeSize? {
+        get { self[SJUISystemTypeSizeKey.self] }
+        set { self[SJUISystemTypeSizeKey.self] = newValue }
     }
 }
 
@@ -138,8 +157,8 @@ public extension View {
     }
 
     /// The font of a component's text when the layout gave it no fontSize: through `sjuiFont` at the configured
-    /// size (`font.size`, 17 — SwiftUI's .body at the standard size) when the component declares fontScaling or
-    /// maxFontScale; otherwise only the weight, if any, on the system's own font, as before.
+    /// size (`font.size`, 17 — SwiftUI's .body at the standard size), so it is the provider's typeface and held to
+    /// the text size rule whether or not the component declares fontScaling (ruling 2026-11-13, P1).
     func sjuiDeclaredFont(weight: Font.Weight? = nil) -> some View {
         modifier(SJUIDeclaredFontModifier(weight: weight))
     }
@@ -152,16 +171,8 @@ public extension View {
 
 struct SJUIDeclaredFontModifier: ViewModifier {
     let weight: Font.Weight?
-    @Environment(\.fontScalingDeclaration) private var declaration
 
-    @ViewBuilder
     func body(content: Content) -> some View {
-        if declaration.isDeclared {
-            content.sjuiFont(FontSpec(weight: weight))
-        } else if let weight {
-            content.fontWeight(weight)
-        } else {
-            content
-        }
+        content.sjuiFont(FontSpec(weight: weight))
     }
 }

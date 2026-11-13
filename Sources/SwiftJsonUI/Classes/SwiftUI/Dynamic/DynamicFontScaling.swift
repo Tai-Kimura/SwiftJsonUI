@@ -44,11 +44,10 @@ enum DynamicFontScaling {
 }
 
 extension DynamicFontScaling {
-    /// The component's font spec, or — when it gives none but declares fontScaling / maxFontScale — the configured
-    /// size's spec, so the declaration holds its text (font_scale_vectors.json rule.noFontSize).
+    /// The component's font spec, or the configured size's when it gives none: every text goes through the
+    /// provider and the text size rule (ruling 2026-11-13, P1; font_scale_vectors.json rule.noFontSize).
     static func spec(_ declared: FontSpec?, for component: DynamicComponent) -> FontSpec? {
-        if let declared { return declared }
-        return declaration(component)?.isDeclared == true ? FontSpec() : nil
+        declared ?? FontSpec()
     }
 }
 

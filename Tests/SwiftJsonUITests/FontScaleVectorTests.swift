@@ -94,8 +94,9 @@ final class FontScaleVectorTests: XCTestCase {
         XCTAssertEqual(DynamicFontScaling.spec(nil, for: declared), FontSpec())
         let capped = try component(#"{ "type": "Radio", "maxFontScale": 1.5 }"#)
         XCTAssertEqual(DynamicFontScaling.spec(nil, for: capped), FontSpec())
+        // Undeclared too (P1, 2026-11-13): every text goes through the provider at the configured size.
         let plain = try component(#"{ "type": "TextField" }"#)
-        XCTAssertNil(DynamicFontScaling.spec(nil, for: plain))
+        XCTAssertEqual(DynamicFontScaling.spec(nil, for: plain), FontSpec())
         XCTAssertEqual(DynamicFontScaling.spec(FontSpec(size: 20), for: declared), FontSpec(size: 20))
         XCTAssertTrue(FontScalingDeclaration(maxFontScale: 1.2).isDeclared)
         XCTAssertFalse(FontScalingDeclaration().isDeclared)
