@@ -20,6 +20,11 @@
 //  move inside one section and never across a locked row. The VM reorders its data; a move it does not apply snaps
 //  back. Each row also carries the "move up" / "move down" accessibility actions the rule allows.
 //
+//  iOS 27's container exists only in a build against the iOS 27 SDK. `canImport(SwiftUI, _version: 8.0)` keys
+//  that SDK itself (its SwiftUI is 8.x — 8.1.13 in iPhoneSimulator27.2.sdk; the iOS 26 SDK's is 7.x), not the
+//  toolchain. A build against an older SDK (Xcode 26, 16) compiles none of it and takes the library's drag on every
+//  iOS, iOS 27 included (systemContainerIsCompiled).
+//
 
 import SwiftUI
 import UIKit
@@ -49,9 +54,18 @@ public struct CollectionReorder {
     /// opens its gap past a locked row and moves the locked row aside, and no API it has keeps a place closed
     /// (measured on iOS 27.2; ruling 2026-11-13). A locked row is a divider that does not move, as on every other OS.
     var usesSystemContainer: Bool {
-        guard !usesHandle, !hasLockedRows else { return false }
+        guard Self.systemContainerIsCompiled, !usesHandle, !hasLockedRows else { return false }
         if #available(iOS 27.0, *) { return true }
         return false
+    }
+
+    /// Whether this build has iOS 27's container at all (built against the iOS 27 SDK; see the file's header).
+    static var systemContainerIsCompiled: Bool {
+        #if canImport(SwiftUI, _version: 8.0)
+        return true
+        #else
+        return false
+        #endif
     }
 
     /// Report a move, as every path does: a valid move only (the vectors' `drop`: inside the rows, real, not of or
@@ -130,6 +144,7 @@ private struct CollectionReorderContainerModifier: ViewModifier {
     @State private var registry = CollectionReorderRegistry()
 
     func body(content: Content) -> some View {
+        #if canImport(SwiftUI, _version: 8.0)
         if let reorder, reorder.usesSystemContainer, #available(iOS 27.0, *) {
             content
                 .reorderContainer(for: CollectionReorderItem.self, in: Int.self, isEnabled: reorder.isEnabled) { difference in
@@ -139,7 +154,17 @@ private struct CollectionReorderContainerModifier: ViewModifier {
                     Self.draggable(id, registry: registry)
                 }
                 .environment(\.collectionReorderRegistry, registry)
-        } else if reorder != nil {
+        } else {
+            libraryContainer(content)
+        }
+        #else
+        libraryContainer(content)
+        #endif
+    }
+
+    @ViewBuilder
+    private func libraryContainer(_ content: Content) -> some View {
+        if reorder != nil {
             content
                 .background(GeometryReader { proxy in
                     Color.clear
@@ -152,6 +177,7 @@ private struct CollectionReorderContainerModifier: ViewModifier {
         }
     }
 
+    #if canImport(SwiftUI, _version: 8.0)
     @available(iOS 27.0, *)
     @MainActor
     private static func apply(_ difference: ReorderDifference<String, Int>, reorder: CollectionReorder,
@@ -173,6 +199,7 @@ private struct CollectionReorderContainerModifier: ViewModifier {
         let to = CollectionReorderRule.toIndex(from: from, beforeIndex: before, count: count)
         reorder.releaseReport(section: section, from: from, to: to, count: count, locked: registry.locked[section] ?? [])
     }
+    #endif
 
     @MainActor
     private static func draggable(_ id: String, registry: CollectionReorderRegistry) -> [CollectionReorderItem] {
@@ -250,6 +277,7 @@ public struct CollectionReorderRows<Content: View>: View {
     @ViewBuilder
     private func stackRows(_ reorder: CollectionReorder) -> some View {
         let _ = register()
+        #if canImport(SwiftUI, _version: 8.0)
         if reorder.usesSystemContainer, #available(iOS 27.0, *) {
             ForEach(items) { item in
                 let index = ids.firstIndex(of: item.key) ?? 0
@@ -258,12 +286,21 @@ public struct CollectionReorderRows<Content: View>: View {
             }
             .reorderable(collectionID: section)
         } else {
-            let _ = drag.configure(section: section, count: ids.count, locked: locked, reorder: reorder, registry: registry)
-            ForEach(Array(items.enumerated()), id: \.element.id) { index, _ in
-                content(index)
-                    .modifier(CollectionReorderDraggedRow(drag: drag, index: index))
-                    .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked, reorder: reorder)
-            }
+            libraryRows(reorder)
+        }
+        #else
+        libraryRows(reorder)
+        #endif
+    }
+
+    // The library's own drag (below iOS 27, with a handle or locked rows, or a build without iOS 27's container).
+    @ViewBuilder
+    private func libraryRows(_ reorder: CollectionReorder) -> some View {
+        let _ = drag.configure(section: section, count: ids.count, locked: locked, reorder: reorder, registry: registry)
+        ForEach(Array(items.enumerated()), id: \.element.id) { index, _ in
+            content(index)
+                .modifier(CollectionReorderDraggedRow(drag: drag, index: index))
+                .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked, reorder: reorder)
         }
     }
 

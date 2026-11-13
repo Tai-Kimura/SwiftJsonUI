@@ -48,19 +48,28 @@ final class CollectionReorderAccessibilityTests: XCTestCase {
         XCTAssertEqual(reported, [])
     }
 
-    /// iOS 27's container is used only for a Collection with neither a handle nor locked rows; the library's drag
-    /// otherwise, on every iOS.
+    /// iOS 27's container is used only for a Collection with neither a handle nor locked rows, and only in a build
+    /// against the iOS 27 SDK; the library's drag otherwise, on every iOS.
     func testThePathFollowsTheDeclaration() {
         let plain = CollectionReorder(isEnabled: true) { _, _, _ in }
         let handle = CollectionReorder(isEnabled: true, usesHandle: true) { _, _, _ in }
         let locked = CollectionReorder(isEnabled: true, hasLockedRows: true) { _, _, _ in }
-        if #available(iOS 27.0, *) {
+        if #available(iOS 27.0, *), CollectionReorder.systemContainerIsCompiled {
             XCTAssertTrue(plain.usesSystemContainer)
         } else {
             XCTAssertFalse(plain.usesSystemContainer)
         }
         XCTAssertFalse(handle.usesSystemContainer)
         XCTAssertFalse(locked.usesSystemContainer)
+    }
+
+    /// The build against the iOS 27 SDK (SwiftUI 8) has the container; one against an older SDK has none of it.
+    func testTheContainerIsCompiledOnlyAgainstTheIOS27SDK() {
+        #if canImport(SwiftUI, _version: 8.0)
+        XCTAssertTrue(CollectionReorder.systemContainerIsCompiled)
+        #else
+        XCTAssertFalse(CollectionReorder.systemContainerIsCompiled)
+        #endif
     }
 
     func testTheWordsFollowTheLanguage() {
