@@ -17,6 +17,9 @@
 //    text is bound, an announcement of the new text whenever it changes
 //    (assertive at high priority). iOS has no live region, so a View's does
 //    nothing (jsonui-cli declares it for web and Android).
+//  - accessibilitySelected (a boolean or a binding) on a Button, or a View /
+//    IconLabel that is one button: the `.isSelected` trait while it is true;
+//    false tells nothing (shared/core/control_accessibility_vectors.json).
 //
 
 import SwiftUI
@@ -69,6 +72,26 @@ public enum ControlAccessibility {
         return DynamicHelpers.processText(raw, data: data).dynamicLocalized()
     }
 
+    /// The accessibilitySelected as written where it takes effect (a Button, or a View / IconLabel that is one
+    /// button), or nil.
+    static func writtenSelected(_ component: DynamicComponent) -> AttrValue<Bool>? {
+        switch section(component) {
+        case "button": return component.typedAttributes(ButtonAttributes.self).accessibilitySelected
+        case "view":
+            guard isOneButton(component) else { return nil }
+            return component.typedAttributes(ViewAttributes.self).accessibilitySelected
+        case "iconlabel":
+            guard isOneButton(component) else { return nil }
+            return component.typedAttributes(IconLabelAttributes.self).accessibilitySelected
+        default: return nil
+        }
+    }
+
+    /// Whether VoiceOver is told the control is the selected one: true only while it resolves true.
+    public static func selected(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        DynamicHelpers.resolveBool(writtenSelected(component), legacy: nil, data: data) == true
+    }
+
     /// A Label's live region: polite or assertive, nil for off / none.
     public static func live(_ component: DynamicComponent) -> LabelAttributes.AccessibilityLiveRegion? {
         guard section(component) == "label",
@@ -88,6 +111,9 @@ public enum ControlAccessibility {
            text.bindingExpression != nil {
             let current = DynamicHelpers.processText(text.rawString, data: data)
             result = AnyView(result.modifier(LiveAnnouncement(text: current, assertive: live == .assertive)))
+        }
+        if selected(component, data: data) {
+            result = AnyView(result.accessibilityAddTraits(.isSelected))
         }
         return result
     }

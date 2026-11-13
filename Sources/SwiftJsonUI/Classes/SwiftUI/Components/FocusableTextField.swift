@@ -33,6 +33,9 @@ public struct FocusableTextField: View {
     let accessibilityIdentifier: String?
     /// `autoFocus`: take the focus when the field appears.
     let autoFocus: Bool
+    /// The layout's accessibilityLabel, on the FIELD itself as the identifier is: on the wrapper around the clear
+    /// button and placeholder it named no element, and VoiceOver read the field by its placeholder.
+    let accessibilityLabel: String?
 
     @FocusState private var isFocused: Bool
 
@@ -49,7 +52,8 @@ public struct FocusableTextField: View {
         clearButtonMode: TextFieldClearButtonMode? = nil,
         onFocusChange: ((Bool) -> Void)? = nil,
         accessibilityIdentifier: String? = nil,
-        autoFocus: Bool = false
+        autoFocus: Bool = false,
+        accessibilityLabel: String? = nil
     ) {
         self.placeholder = placeholder
         self._text = text
@@ -64,6 +68,7 @@ public struct FocusableTextField: View {
         self.onFocusChange = onFocusChange
         self.accessibilityIdentifier = accessibilityIdentifier
         self.autoFocus = autoFocus
+        self.accessibilityLabel = accessibilityLabel
     }
 
     public var body: some View {
@@ -73,12 +78,14 @@ public struct FocusableTextField: View {
                     .optionalSubmitLabel(submitLabel)
                     .multilineTextAlignment(textAlignment)
                     .leafAccessibilityIdentifier(accessibilityIdentifier)
+                    .leafAccessibilityLabel(accessibilityLabel)
             } else {
                 TextField(placeholder, text: $text)
                     .keyboardType(keyboardType)
                     .optionalSubmitLabel(submitLabel)
                     .multilineTextAlignment(textAlignment)
                     .leafAccessibilityIdentifier(accessibilityIdentifier)
+                    .leafAccessibilityLabel(accessibilityLabel)
             }
         }
         .focused($isFocused)
