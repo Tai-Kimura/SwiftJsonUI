@@ -288,7 +288,7 @@ public struct PartialAttributedText: View {
                 // Pinned: every size in the string is drawn at the factor already. A string with no font of its
                 // own keeps the environment's text style, drawn at the declaration's Dynamic Type size instead.
                 .environment(\.dynamicTypeSize, keepsEnvironmentFont
-                    ? FontScaling.typeSize(system: outerTypeSize ?? pinnedTypeSize, declaration: scalingDeclaration)
+                    ? FontScaling.bodyTypeSize(system: outerTypeSize ?? pinnedTypeSize, declaration: scalingDeclaration)
                     : .large)
                 .applyTextModifiers(
                     underline: underline,

@@ -71,11 +71,33 @@ public enum FontScaling {
         return cap == nil ? system : min(system, capStep(cap))
     }
 
+    /// How much larger `.body` is at `size` than at the standard size: the text style's own table (17, 19, 21, 23, 28,
+    /// 33, 40, 47, 53 pt from large to accessibility5), larger than `ratio`'s at the big sizes by 5 to 10 %.
+    public static func bodyRatio(_ size: DynamicTypeSize) -> CGFloat {
+        func points(_ s: DynamicTypeSize) -> CGFloat {
+            UIFont.preferredFont(forTextStyle: .body,
+                                 compatibleWith: UITraitCollection(preferredContentSizeCategory: UIContentSizeCategory(s))).pointSize
+        }
+        return points(size) / points(.large)
+    }
+
+    /// The Dynamic Type size a text that keeps the environment's `.body` (keepsEnvironmentFont) is drawn at: the
+    /// system's when it follows, the standard size when it does not, and under maxFontScale the largest step whose
+    /// `.body` stays within the cap — chosen by `.body`'s own table, so the cap holds (a 1.1 cap is the standard size:
+    /// `.body` at xLarge is 19 / 17 = 1.118).
+    public static func bodyTypeSize(system: DynamicTypeSize, declaration: FontScalingDeclaration) -> DynamicTypeSize {
+        let config = SwiftJsonUIConfiguration.shared.font
+        guard FontScaleRule.follows(declaration.scaling, appDefault: config.scaling) else { return .large }
+        guard let cap = declaration.maxFontScale ?? config.maxScale else { return system }
+        let step = FontScaleRule.capStep(cap, steps: steps.map { ($0, bodyRatio($0)) }) ?? .large
+        return min(system, step)
+    }
+
     /// A text whose spec says nothing (no family, size, weight or italic) and that no fontProvider answers keeps the
     /// environment's font — `.body` unless the app sets one — as it did before the text size rule: that rule drew
     /// it at the configured size's system font, whose lines are 20.3 high where `.body`'s are 22, and an app with no
     /// provider saw every multi-line Label shorten (the orchestrator's ruling 2026-11-14). Its size still follows
-    /// the declaration, through the Dynamic Type size the text style reads (typeSize).
+    /// the declaration, through the Dynamic Type size the text style reads (bodyTypeSize): it grows as `.body` does.
     public static func keepsEnvironmentFont(_ spec: FontSpec) -> Bool {
         guard spec.family == nil, spec.size == nil, spec.weight == nil, !spec.italic else { return false }
         return SwiftJsonUIConfiguration.shared.fontProvider?(spec) == nil
@@ -134,7 +156,7 @@ public struct SJUIFontModifier: ViewModifier {
             content
                 .environment(\.fontScalingFactor, factor)
                 .environment(\.sjuiSystemTypeSize, system)
-                .environment(\.dynamicTypeSize, FontScaling.typeSize(system: system, declaration: declaration))
+                .environment(\.dynamicTypeSize, FontScaling.bodyTypeSize(system: system, declaration: declaration))
         } else {
             let size = spec.size ?? SwiftJsonUIConfiguration.shared.font.size
             let drawn = FontSpec(family: spec.family, weight: spec.weight, size: size * factor, italic: spec.italic)
