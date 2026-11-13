@@ -16,6 +16,15 @@ import XCTest
 
 final class ReorderProbeUITests: XCTestCase {
 
+    /// The app is ended here, inside the test, rather than left to XCTest's own teardown: on the iOS 27.2 simulator
+    /// (Xcode 27.2) the runner process crashed in that teardown ("Critical process xctest crashed") after a long
+    /// press the library's drag declined (the locked row), with every assertion already passed and the app well; an
+    /// explicit terminate here does not (measured 2026-11-13; 18.6 and 26.5 never crashed).
+    override func tearDownWithError() throws {
+        XCUIApplication().terminate()
+        try super.tearDownWithError()
+    }
+
     private func launch(_ variant: String) throws -> XCUIApplication {
         guard ProcessInfo.processInfo.environment["REORDER_PROBE"] == "1" else {
             throw XCTSkip("reorder probe: set TEST_RUNNER_REORDER_PROBE=1 to run")

@@ -48,6 +48,21 @@ final class CollectionReorderAccessibilityTests: XCTestCase {
         XCTAssertEqual(reported, [])
     }
 
+    /// iOS 27's container is used only for a Collection with neither a handle nor locked rows; the library's drag
+    /// otherwise, on every iOS.
+    func testThePathFollowsTheDeclaration() {
+        let plain = CollectionReorder(isEnabled: true) { _, _, _ in }
+        let handle = CollectionReorder(isEnabled: true, usesHandle: true) { _, _, _ in }
+        let locked = CollectionReorder(isEnabled: true, hasLockedRows: true) { _, _, _ in }
+        if #available(iOS 27.0, *) {
+            XCTAssertTrue(plain.usesSystemContainer)
+        } else {
+            XCTAssertFalse(plain.usesSystemContainer)
+        }
+        XCTAssertFalse(handle.usesSystemContainer)
+        XCTAssertFalse(locked.usesSystemContainer)
+    }
+
     func testTheWordsFollowTheLanguage() {
         XCTAssertTrue(["上へ移動", "Move up"].contains(CollectionReorderText.moveUp))
         XCTAssertTrue(["下へ移動", "Move down"].contains(CollectionReorderText.moveDown))

@@ -20,7 +20,9 @@ extension CollectionConverter {
         let raw = attrs.onReorder?.rawRepresentation as? String
         let handler = DynamicEventHelper.handlerName(from: raw).flatMap { data[$0] as? (Int, Int, Int) -> Void }
         let handle = attrs.reorderHandle.flatMap { $0.isEmpty ? nil : $0 }
-        return CollectionReorder(isEnabled: enabled, usesHandle: handle != nil) { section, from, to in
+        let lockedProperty = attrs.reorderLockedProperty.flatMap { $0.isEmpty ? nil : $0 }
+        return CollectionReorder(isEnabled: enabled, usesHandle: handle != nil,
+                                 hasLockedRows: lockedProperty != nil) { section, from, to in
             handler?(section, from, to)
         }
     }

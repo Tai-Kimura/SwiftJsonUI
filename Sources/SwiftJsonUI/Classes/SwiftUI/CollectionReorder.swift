@@ -32,17 +32,24 @@ import UniformTypeIdentifiers
 public struct CollectionReorder {
     public let isEnabled: Bool
     public let usesHandle: Bool
+    /// The Collection declares reorderLockedProperty: some rows are fixed dividers.
+    public let hasLockedRows: Bool
     public let onReorder: (_ section: Int, _ from: Int, _ to: Int) -> Void
 
-    public init(isEnabled: Bool, usesHandle: Bool = false, onReorder: @escaping (_ section: Int, _ from: Int, _ to: Int) -> Void) {
+    public init(isEnabled: Bool, usesHandle: Bool = false, hasLockedRows: Bool = false,
+                onReorder: @escaping (_ section: Int, _ from: Int, _ to: Int) -> Void) {
         self.isEnabled = isEnabled
         self.usesHandle = usesHandle
+        self.hasLockedRows = hasLockedRows
         self.onReorder = onReorder
     }
 
-    /// Whether this stack uses SwiftUI's own reorder container (iOS 27, no handle) rather than the library's drag.
+    /// Whether this stack uses SwiftUI's own reorder container (iOS 27) rather than the library's drag. Not with a
+    /// handle (the container picks a row up anywhere) and not with locked rows: while a row is carried the container
+    /// opens its gap past a locked row and moves the locked row aside, and no API it has keeps a place closed
+    /// (measured on iOS 27.2; ruling 2026-11-13). A locked row is a divider that does not move, as on every other OS.
     var usesSystemContainer: Bool {
-        guard !usesHandle else { return false }
+        guard !usesHandle, !hasLockedRows else { return false }
         if #available(iOS 27.0, *) { return true }
         return false
     }
