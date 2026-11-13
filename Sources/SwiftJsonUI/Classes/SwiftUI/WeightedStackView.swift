@@ -44,7 +44,7 @@ public struct WeightedHStack: View {
 
     public var body: some View {
         if needsProportional {
-            WeightedHStackLayout(alignment: alignment, spacing: spacing) {
+            WeightedHStackLayout(alignment: alignment, spacing: spacing, fillsCrossAxis: hasMatchParentCrossAxis) {
                 ForEach(0..<children.count, id: \.self) { index in
                     children[index].view
                         .layoutWeight(children[index].weight)
@@ -117,10 +117,44 @@ public struct WeightedVStack: View {
 public struct WeightedHStackLayout: Layout {
     public let alignment: VerticalAlignment
     public let spacing: CGFloat
+    /// The stack's height is matchParent: it takes the height its parent proposes. Otherwise (wrapContent, or not
+    /// declared) it is as tall as its tallest child, as the equal-weight HStack (`.fixedSize(vertical:)`) and
+    /// Android's Row are. It took the proposal either way, so a 3:2 row of 56pt buttons in a card's column grew to
+    /// the column's remaining height (ticket sjui-weighted-hstack-wrap-content-takes-proposed-height). A declared
+    /// number needs neither: the frame sjui_tools / Dynamic put around the stack holds it, aligned by gravity.
+    public let fillsCrossAxis: Bool
 
-    public init(alignment: VerticalAlignment = .center, spacing: CGFloat = 0) {
+    public init(alignment: VerticalAlignment = .center, spacing: CGFloat = 0, fillsCrossAxis: Bool = false) {
         self.alignment = alignment
         self.spacing = spacing
+        self.fillsCrossAxis = fillsCrossAxis
+    }
+
+    /// Each child's width: a weighted child its share of what the unweighted ones and the spacing leave, an
+    /// unweighted one its own. The same split sizes the stack and places the children, so a child that wraps (a
+    /// Label) is measured at the width it is drawn at, not on one line.
+    private func childWidths(totalWidth: CGFloat, height: CGFloat?, subviews: Subviews) -> [CGFloat] {
+        let spacingTotal = spacing * CGFloat(max(0, subviews.count - 1))
+        let crossAxisProposal = ProposedViewSize(width: nil, height: height)
+        var fixedWidth: CGFloat = 0
+        var totalWeight: CGFloat = 0
+        var natural: [CGFloat?] = []
+        for subview in subviews {
+            let weight = subview[WeightLayoutKey.self]
+            if weight > 0 {
+                totalWeight += weight
+                natural.append(nil)
+            } else {
+                let w = subview.sizeThatFits(crossAxisProposal).width
+                fixedWidth += w
+                natural.append(w)
+            }
+        }
+        let remainingSpace = max(0, totalWidth - fixedWidth - spacingTotal)
+        return zip(subviews, natural).map { subview, w in
+            if let w { return w }
+            return totalWeight > 0 ? remainingSpace * (subview[WeightLayoutKey.self] / totalWeight) : 0
+        }
     }
 
     public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -137,20 +171,13 @@ public struct WeightedHStackLayout: Layout {
             return CGSize(width: totalWidth + spacingTotal, height: maxHeight)
         }
 
-        let crossAxisProposal = ProposedViewSize(width: nil, height: proposal.height)
-        var fixedWidth: CGFloat = 0
-        var totalWeight: CGFloat = 0
-
-        for subview in subviews {
-            let weight = subview[WeightLayoutKey.self]
-            if weight > 0 {
-                totalWeight += weight
-            } else {
-                fixedWidth += subview.sizeThatFits(crossAxisProposal).width
-            }
+        if fillsCrossAxis, let proposedHeight = proposal.height, proposedHeight.isFinite {
+            return CGSize(width: proposedWidth, height: proposedHeight)
         }
-
-        let resultHeight = proposal.height ?? subviews.map { $0.sizeThatFits(crossAxisProposal).height }.max() ?? 0
+        let widths = childWidths(totalWidth: proposedWidth, height: proposal.height, subviews: subviews)
+        let resultHeight = zip(subviews, widths)
+            .map { $0.sizeThatFits(ProposedViewSize(width: $1, height: proposal.height)).height }
+            .max() ?? 0
         return CGSize(width: proposedWidth, height: resultHeight)
     }
 
@@ -207,10 +234,41 @@ public struct WeightedHStackLayout: Layout {
 public struct WeightedVStackLayout: Layout {
     public let alignment: HorizontalAlignment
     public let spacing: CGFloat
+    /// The column's width is matchParent: it takes the width proposed. Otherwise it is as wide as its widest child,
+    /// as the equal-weight VStack and Android's Column are (the same ticket as WeightedHStackLayout's height). A
+    /// matchParent width is also held by the `.frame(maxWidth: .infinity)` around the column, so the default leaves
+    /// the drawn box unchanged for it.
+    public let fillsCrossAxis: Bool
 
-    public init(alignment: HorizontalAlignment = .leading, spacing: CGFloat = 0) {
+    public init(alignment: HorizontalAlignment = .leading, spacing: CGFloat = 0, fillsCrossAxis: Bool = false) {
         self.alignment = alignment
         self.spacing = spacing
+        self.fillsCrossAxis = fillsCrossAxis
+    }
+
+    /// Each child's height, split as WeightedHStackLayout splits widths.
+    private func childHeights(totalHeight: CGFloat, width: CGFloat?, subviews: Subviews) -> [CGFloat] {
+        let spacingTotal = spacing * CGFloat(max(0, subviews.count - 1))
+        let crossAxisProposal = ProposedViewSize(width: width, height: nil)
+        var fixedHeight: CGFloat = 0
+        var totalWeight: CGFloat = 0
+        var natural: [CGFloat?] = []
+        for subview in subviews {
+            let weight = subview[WeightLayoutKey.self]
+            if weight > 0 {
+                totalWeight += weight
+                natural.append(nil)
+            } else {
+                let h = subview.sizeThatFits(crossAxisProposal).height
+                fixedHeight += h
+                natural.append(h)
+            }
+        }
+        let remainingSpace = max(0, totalHeight - fixedHeight - spacingTotal)
+        return zip(subviews, natural).map { subview, h in
+            if let h { return h }
+            return totalWeight > 0 ? remainingSpace * (subview[WeightLayoutKey.self] / totalWeight) : 0
+        }
     }
 
     public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
@@ -227,8 +285,13 @@ public struct WeightedVStackLayout: Layout {
             return CGSize(width: maxWidth, height: totalHeight + spacingTotal)
         }
 
-        let crossAxisProposal = ProposedViewSize(width: proposal.width, height: nil)
-        let resultWidth = proposal.width ?? subviews.map { $0.sizeThatFits(crossAxisProposal).width }.max() ?? 0
+        if fillsCrossAxis, let proposedWidth = proposal.width, proposedWidth.isFinite {
+            return CGSize(width: proposedWidth, height: proposedHeight)
+        }
+        let heights = childHeights(totalHeight: proposedHeight, width: proposal.width, subviews: subviews)
+        let resultWidth = zip(subviews, heights)
+            .map { $0.sizeThatFits(ProposedViewSize(width: proposal.width, height: $1)).width }
+            .max() ?? 0
         return CGSize(width: resultWidth, height: proposedHeight)
     }
 
