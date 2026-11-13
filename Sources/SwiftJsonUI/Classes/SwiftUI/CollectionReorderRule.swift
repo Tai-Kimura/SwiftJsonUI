@@ -131,4 +131,13 @@ public enum CollectionReorderRule {
         let down = index < count - 1 && !locked.contains(index + 1)
         return (up, down)
     }
+
+    /// Whether a drag let go with the rows now is cancelled, having read the rows when it began (rule.itemsChange):
+    /// the ids differ in number or order, or the locked or the fixed rows differ. Text and colours alone are not a
+    /// change. iOS 27's own container follows each row by its id and places the move by the rows as they are, so it
+    /// names no other row and is not cancelled.
+    public static func itemsChanged(startIds: [String], startLocked: Set<Int>, startFixed: Set<Int>,
+                                    nowIds: [String], nowLocked: Set<Int>, nowFixed: Set<Int>) -> Bool {
+        startIds != nowIds || startLocked != nowLocked || startFixed != nowFixed
+    }
 }

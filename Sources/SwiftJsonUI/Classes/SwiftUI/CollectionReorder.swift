@@ -442,6 +442,8 @@ final class CollectionReorderDrag: ObservableObject {
     var commit: (_ from: Int, _ to: Int, _ released: CGFloat) -> Void = { _, _, _ in }
 
     func begin(index: Int, at y: CGFloat, count: Int) {
+        // The rows as the drag reads them now (rule.itemsChange): compared again when it is let go.
+        started = (ids, lockedNow, fixedNow)
         spans = (0..<count).map { i in
             let f = frames[i] ?? .zero
             return CollectionReorderRule.RowSpan(top: f.minY, bottom: f.maxY)
@@ -473,11 +475,26 @@ final class CollectionReorderDrag: ObservableObject {
         let to = target(locked: lockedNow)   // before the drag is cleared: target() reads it
         dragging = nil
         dy = 0
-        guard !cancelled, let from else { return }
+        // The rows changed under the drag (ids in another number or order, locked or fixed rows otherwise): its
+        // indexes would name other rows, so it is cancelled - the rows go back and nothing is reported.
+        let changed = rowsChanged
+        started = nil
+        guard !cancelled, !changed, let from else { return }
         commit(from, to, released)
     }
 
     var lockedNow: Set<Int> = []
+    /** The fixed rows as last drawn (declared, and with a handle every row whose handle is not drawn). */
+    var fixedNow: Set<Int> = []
+    /** The rows when the drag began: ids, locked, fixed (rule.itemsChange). */
+    var started: (ids: [String], locked: Set<Int>, fixed: Set<Int>)?
+
+    /** Whether the rows changed since the drag began (rule.itemsChange). */
+    var rowsChanged: Bool {
+        guard let started else { return false }
+        return CollectionReorderRule.itemsChanged(startIds: started.ids, startLocked: started.locked, startFixed: started.fixed,
+                                                  nowIds: ids, nowLocked: lockedNow, nowFixed: fixedNow)
+    }
     var count = 0
     lazy var recognizer = CollectionReorderRecognizer(drag: self)
 
@@ -768,6 +785,7 @@ extension CollectionReorderDrag {
         self.count = count
         self.ids = ids
         lockedNow = locked
+        fixedNow = fixed
         pickable = { [weak self] point in
             guard let self, reorder.isEnabled, self.dragging == nil else { return nil }
             for i in 0..<count where CollectionReorderRule.canPickUp(i, locked: locked, fixed: fixed) {

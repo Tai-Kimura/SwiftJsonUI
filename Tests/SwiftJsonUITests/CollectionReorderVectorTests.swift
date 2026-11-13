@@ -129,4 +129,13 @@ final class CollectionReorderVectorTests: XCTestCase {
         let known = try XCTUnwrap(vectors["knownDifferences"] as? [[String: Any]])
         XCTAssertFalse(known.contains { ($0["rule"] as? String) == "drag" }, "\(known)")
     }
+
+    func testItemsChange() throws {
+        for c in try cases("itemsChange") {
+            let start = try XCTUnwrap(c["start"] as? [String: Any]), now = try XCTUnwrap(c["release"] as? [String: Any])
+            let changed = Rule.itemsChanged(startIds: start["ids"] as! [String], startLocked: locked(start), startFixed: fixed(start),
+                                            nowIds: now["ids"] as! [String], nowLocked: locked(now), nowFixed: fixed(now))
+            XCTAssertEqual(changed, c["cancelled"] as? Bool, "\(c["name"] ?? "")")
+        }
+    }
 }
