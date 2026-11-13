@@ -110,7 +110,11 @@ public struct CheckBoxView: View {
         // ("Square") as the element label.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(label ?? "")
-        .accessibilityAddTraits(.isButton)
+        // A checked box reads "selected" — the state was only in the glyph,
+        // so VoiceOver read a checked and an unchecked box the same (ticket
+        // sjui-radio-checkbox-selected-state-not-read). Unchecked adds
+        // nothing, as the accessibilitySelected attribute's false does.
+        .accessibilityAddTraits(isOn.wrappedValue ? [.isButton, .isSelected] : .isButton)
     }
 
     @ViewBuilder

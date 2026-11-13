@@ -157,6 +157,11 @@ public struct RadioConverter {
                         // options' labels drew neither (the title and a single
                         // radio's label read them) — the codegen draws them too.
                         buildLabelText(text: item, font: titleFont, color: titleColor)
+                            // The chosen option's label reads "selected". The
+                            // option stays its glyph and its label (the group
+                            // is `.contain`, tests reach the option by its
+                            // text), so the state goes on the label.
+                            .accessibilityAddTraits(selectionBinding.wrappedValue == item ? .isSelected : [])
                     }
                 }
             }
@@ -254,7 +259,10 @@ public struct RadioConverter {
                 // ("circle") as the element label.
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(ControlAccessibility.label(component, data: data) ?? text.dynamicLocalized())
-                .accessibilityAddTraits(.isButton)
+                // The chosen radio reads "selected" (ticket
+                // sjui-radio-checkbox-selected-state-not-read); the state was
+                // only the glyph's picture.
+                .accessibilityAddTraits(isGlyphSelected ? [.isButton, .isSelected] : .isButton)
             )
         }
 
