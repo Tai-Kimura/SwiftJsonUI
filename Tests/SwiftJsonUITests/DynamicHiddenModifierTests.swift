@@ -48,6 +48,8 @@ final class DynamicHiddenModifierTests: XCTestCase {
     private var invisibleReferenceTypeName: String {
         storageTypeName(AnyView(
             baseView.opacity(0)
+                // A reorderable row's handle inside reads it (CollectionReorder: not drawn, the row is fixed).
+                .environment(\.jsonuiNotDrawn, true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
                 .accessibilityRepresentation { EmptyView() }
@@ -201,6 +203,8 @@ final class DynamicHiddenModifierTests: XCTestCase {
         // applied to the AnyView content.
         let reference = String(describing: type(of:
             baseView.opacity(0)
+                // A reorderable row's handle inside reads it (CollectionReorder: not drawn, the row is fixed).
+                .environment(\.jsonuiNotDrawn, true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
                 .accessibilityRepresentation { EmptyView() }
