@@ -47,12 +47,18 @@ public struct CollectionReorder {
         return false
     }
 
-    /// Report a move, as every path does: within one section, short of a locked row, and only a real one.
-    func report(section: Int, from: Int, to: Int, locked: Set<Int>) {
-        guard isEnabled,
-              let to = CollectionReorderRule.clampedTo(from: from, to: to, locked: locked),
-              CollectionReorderRule.shouldReport(from: from, to: to) else { return }
+    /// Report a move, as every path does: a valid move only (the vectors' `drop`: inside the rows, real, not of or
+    /// past a locked row). A release is clamped short of a locked row before it gets here (releaseReport).
+    func report(section: Int, from: Int, to: Int, count: Int, locked: Set<Int>) {
+        guard isEnabled, CollectionReorderRule.isValidMove(from: from, to: to, count: count, locked: locked) else { return }
         onReorder(section, from, to)
+    }
+
+    /// A release that SwiftUI placed (iOS 27's container, List.onMove): like the library's drag, it stops short of
+    /// a locked row in its way (the vectors' `release`), then is reported.
+    func releaseReport(section: Int, from: Int, to: Int, count: Int, locked: Set<Int>) {
+        guard let to = CollectionReorderRule.clampedTo(from: from, to: to, locked: locked) else { return }
+        report(section: section, from: from, to: to, count: count, locked: locked)
     }
 }
 
@@ -158,7 +164,7 @@ private struct CollectionReorderContainerModifier: ViewModifier {
             before = nil
         }
         let to = CollectionReorderRule.toIndex(from: from, beforeIndex: before, count: count)
-        reorder.report(section: section, from: from, to: to, locked: registry.locked[section] ?? [])
+        reorder.releaseReport(section: section, from: from, to: to, count: count, locked: registry.locked[section] ?? [])
     }
 
     @MainActor
@@ -229,7 +235,7 @@ public struct CollectionReorderRows<Content: View>: View {
         .onMove { source, destination in
             guard source.count == 1, let from = source.first else { return }
             let to = CollectionReorderRule.toIndex(fromOnMove: from, destination: destination)
-            reorder.report(section: section, from: from, to: to, locked: locked)
+            reorder.releaseReport(section: section, from: from, to: to, count: ids.count, locked: locked)
         }
     }
 
@@ -295,12 +301,12 @@ enum CollectionReorderAccessibility {
         var out: [Action] = []
         if moves.up {
             out.append(Action(name: CollectionReorderText.moveUp) {
-                reorder.report(section: section, from: index, to: index - 1, locked: locked)
+                reorder.report(section: section, from: index, to: index - 1, count: count, locked: locked)
             })
         }
         if moves.down {
             out.append(Action(name: CollectionReorderText.moveDown) {
-                reorder.report(section: section, from: index, to: index + 1, locked: locked)
+                reorder.report(section: section, from: index, to: index + 1, count: count, locked: locked)
             })
         }
         return out
@@ -606,7 +612,7 @@ extension CollectionReorderDrag {
         lockedNow = locked
         pickable = { [weak self] point in
             guard let self, reorder.isEnabled, self.dragging == nil else { return nil }
-            for i in 0..<count where !locked.contains(i) {
+            for i in 0..<count where CollectionReorderRule.canPickUp(i, locked: locked) {
                 let area = reorder.usesHandle ? self.handleFrames[i] : self.frames[i]
                 if let area, area.contains(point) { return i }
             }
@@ -620,7 +626,7 @@ extension CollectionReorderDrag {
                           height: (spans.last?.bottom ?? 0) - (spans.first?.top ?? 0))
             guard CollectionReorderRule.releaseCommits(fingerY: released, containerTop: container.minY,
                                                        containerBottom: container.maxY) else { return }
-            reorder.report(section: section, from: from, to: to, locked: locked)
+            reorder.report(section: section, from: from, to: to, count: count, locked: locked)
         }
     }
 }

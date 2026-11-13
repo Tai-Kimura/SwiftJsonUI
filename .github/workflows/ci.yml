@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.28 # jsonui-cli v2.5.28: initial_state_coercion_vectors.json accepts Visibility (98 cases); the attr tables are v2.5.27's
+      JSONUI_CLI_MANIFEST_REF: a4e5c98e38451ee14f1cd2b118760afffd32364d # jsonui-cli feat/collection-reorder-base: Collection's reorderable / onReorder / reorderHandle / reorderLockedProperty (ticket jui-collection-drag-to-reorder)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
@@ -169,6 +169,8 @@ jobs:
               # jsonui-test-runner specs/vectors/initial-state-coercion.json.
               ("Tests/SwiftJsonUITests/Fixtures/initial_state_coercion_vectors.json",
                "shared/core/initial_state_coercion_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/reorder_vectors.json",
+               "shared/core/reorder_vectors.json"),
               # Not a fixture: the table Dynamic draws type synonyms with
               # (TypeSynonyms), shipped in the package's resource bundle.
               ("Sources/SwiftJsonUI/Resources/type_synonyms.json",

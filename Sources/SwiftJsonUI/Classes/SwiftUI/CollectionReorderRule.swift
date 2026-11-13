@@ -23,6 +23,9 @@ public enum CollectionReorderRule {
         public var center: CGFloat { (top + bottom) / 2 }
     }
 
+    /// Whether a row may be picked up at all: a locked row never is.
+    public static func canPickUp(_ index: Int, locked: Set<Int>) -> Bool { !locked.contains(index) }
+
     /// Where the row grabbed at `from` lands while it is dragged `dy`: past every neighbour whose centre its own
     /// centre has crossed (exactly on a centre is not past it), and never onto or past a locked row.
     public static func target(from: Int, dy: CGFloat, rows: [RowSpan], locked: Set<Int>) -> Int {
@@ -51,7 +54,7 @@ public enum CollectionReorderRule {
     /// container does on iOS 27, which reports a release over the header or the footer as the start or the end and
     /// cannot be told otherwise (measured; ruling 2026-11-13).
     public static func releaseCommits(fingerY: CGFloat, containerTop: CGFloat, containerBottom: CGFloat) -> Bool {
-        fingerY >= containerTop && fingerY <= containerBottom
+        fingerY >= containerTop && fingerY < containerBottom   // the bottom edge is outside (reorder_vectors)
     }
 
     /// `onReorder` is called only for a real move.
@@ -67,6 +70,13 @@ public enum CollectionReorderRule {
     public static func toIndex(from: Int, beforeIndex: Int?, count: Int) -> Int {
         guard let before = beforeIndex else { return count - 1 }
         return before > from ? before - 1 : before
+    }
+
+    /// Whether a reported move is one (the vectors' `drop`): inside the rows, a real move, not of a locked row nor past
+    /// one. A release reaches here already clamped (clampedTo); this is the last check before onReorder.
+    public static func isValidMove(from: Int, to: Int, count: Int, locked: Set<Int>) -> Bool {
+        (0..<count).contains(from) && (0..<count).contains(to) && from != to
+            && !crossesLocked(from: from, to: to, locked: locked)
     }
 
     /// Whether a move crosses a locked row (or starts on one): the library refuses it, whichever way it came.

@@ -102,9 +102,13 @@ public struct CollectionAttributes {
         "lineSpacing",
         "listStyle",
         "onItemAppear",
+        "onReorder",
         "onValueChange",
         "orientation",
         "paging",
+        "reorderHandle",
+        "reorderLockedProperty",
+        "reorderable",
         "reverseLayout",
         "scrollAnchor",
         "scrollAnimated",
@@ -225,6 +229,9 @@ public struct CollectionAttributes {
     /// Called with the cell index (Int) when a cell appears on screen. Use for pagination by checking index against total count in ViewModel. Declared `binding` because that is what a layout actually carries: the author writes `@{handlerName}`, a STRING, and every reader matches it as one (kjui collection_component.rb:364 `json_data['onItemAppear'].match(/@\{([^}]+)\}/)`, and the binding validators infer `((Int) -> Unit)?` from that spelling). It was `type: "callback"` — the only callback-typed attribute in the whole SSoT — and attr-codegen skips that type as "function-valued, not extractable from JSON". True of a function; not true of the `@{...}` string a JSON layout can hold, so the attribute had no row in any generated table and no platform could read it typed (2026-08-05, plan 49-E, raised by A).
     public let onItemAppear: AttrValue<String>?
 
+    /// Called when a dragged row is released at a new place: `@{handler}` with (section: Int, from: Int, to: Int) — Swift `(Int, Int, Int) -> Void`, Kotlin `(Int, Int, Int) -> Unit`, TS `(section: number, from: number, to: number) => void`. `to` is the row's index in the order AFTER the move (iOS onMove's destination, counted before the row is taken out, is converted by the library). Same section only (v1: no move across sections); a single-section Collection is section 0. Not called when the row is released where it started. The screen reader's move up / move down call it with to = from - 1 / from + 1 (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13).
+    public let onReorder: AttrValue<Any>?
+
     /// Collection page/selection change handler. Canonical; prefer over onPageChanged. Called when the page changes — by a swipe, a scrollTo or a currentPage write — with the new page; not called when the pager first appears (ruling 2026-10-02). [aliases: onValueChanged, onPageChanged; binding: one-way]
     public let onValueChange: AttrValue<String>?
 
@@ -233,6 +240,15 @@ public struct CollectionAttributes {
 
     /// Enable paging
     public let paging: Bool?
+
+    /// The id of an element in the cell layout that starts the drag when long-pressed (e.g. a grip at the row's right edge). Without it, a long press anywhere on the row starts it. The rest of the row keeps its taps (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13).
+    public let reorderHandle: String?
+
+    /// A key of the cell data: a row whose value for it is true does not move, and no other row is moved past it (a divider row). Section headers and footers are not rows and never move (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13).
+    public let reorderLockedProperty: String?
+
+    /// Rows of the Collection can be reordered: long-press a row (or its reorderHandle) and drag it up or down within its section; on release onReorder is called. A binding turns it on only while it is true (e.g. an edit mode). v1: the vertical single-column paths (lazy / eager / none); a grid or horizontal Collection does not reorder. The ViewModel moves the data: a row the handler does not move goes back. Rows need an identity that moves with them (cellIdProperty, or a cellId in the cell data): the layout validator warns when reorderable is set and cellIdProperty is not. Screen readers get 'move up' / 'move down' actions on every row, on every OS version. iOS: the List path uses onMove; the stack paths use reorderable() + reorderContainer from iOS 27 and the library's own drag below it (jui build prints INFO [ios-reorder] when the app's minimum iOS is below 27); with a reorderHandle the library's drag is used on every iOS, since reorderable() has no handle-only form. The swap rule and how `to` is counted are shared/core/reorder_vectors.json (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13). [default: false]
+    public let reorderable: AttrValue<Bool>?
 
     /// Reverse the layout direction of the Collection grid. When true, section order in the generated code is also reversed so that JSON definition order (index 0 first) matches the visual top-to-bottom order on iOS (which does not support reverseLayout). Compose's reverseLayout then flips the entire list so index 0 appears at the bottom. A reversed list whose content is shorter than its viewport sits at its bottom (its end, horizontally) - where iOS draws such a list, bottom-anchored - and the vertical EAGER container draws reverseLayout as the lazy list does (its first cell at the bottom, resting there), on both Compose paths (4f rulings 2026-09-27, round 13; jsonui-cli 1.9.0). Until then a short reversed list sat at its top and EAGER drew no reverseLayout. The Column of a wrapContent or `lazy: none` Collection and the horizontal EAGER container draw no reverseLayout.
     public let reverseLayout: Bool?
@@ -298,9 +314,13 @@ public struct CollectionAttributes {
         self.lineSpacing = AttrCoerce.number(AttrCoerce.lookup(json, "lineSpacing", ["sectionSpacing"], canonicalOnly: canonicalOnly))
         self.listStyle = Self.parseListStyle(AttrCoerce.lookup(json, "listStyle"))
         self.onItemAppear = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onItemAppear"), AttrCoerce.string)
+        self.onReorder = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onReorder"))
         self.onValueChange = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onValueChange", ["onValueChanged", "onPageChanged"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
         self.paging = AttrCoerce.boolean(AttrCoerce.lookup(json, "paging"))
+        self.reorderHandle = AttrCoerce.string(AttrCoerce.lookup(json, "reorderHandle"))
+        self.reorderLockedProperty = AttrCoerce.string(AttrCoerce.lookup(json, "reorderLockedProperty"))
+        self.reorderable = AttrCoerce.attrValue(AttrCoerce.lookup(json, "reorderable"), AttrCoerce.boolean)
         self.reverseLayout = AttrCoerce.boolean(AttrCoerce.lookup(json, "reverseLayout"))
         self.scrollAnchor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "scrollAnchor"), { Self.parseScrollAnchor($0) })
         self.scrollAnimated = AttrCoerce.attrValue(AttrCoerce.lookup(json, "scrollAnimated"), AttrCoerce.boolean)

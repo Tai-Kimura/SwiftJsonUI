@@ -40,6 +40,7 @@ final class CollectionReorderRuleTests: XCTestCase {
         XCTAssertTrue(Rule.releaseCommits(fingerY: 380, containerTop: -40, containerBottom: 396), "over the footer")
         XCTAssertTrue(Rule.releaseCommits(fingerY: -20, containerTop: -40, containerBottom: 396), "over the header")
         XCTAssertFalse(Rule.releaseCommits(fingerY: 397, containerTop: -40, containerBottom: 396), "below the container")
+        XCTAssertFalse(Rule.releaseCommits(fingerY: 396, containerTop: -40, containerBottom: 396), "the bottom edge is outside")
         XCTAssertFalse(Rule.releaseCommits(fingerY: -41, containerTop: -40, containerBottom: 396), "above the container")
     }
 
