@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.34 # jsonui-cli v2.5.34: Collection's reorderable / onReorder / reorderHandle / reorderLockedProperty (ticket jui-collection-drag-to-reorder)
+      JSONUI_CLI_MANIFEST_REF: 6cc3dcd251d3db4b64f78141afc3713bc6fea651 # jsonui-cli feat/reorder-items-guard 6cc3dcd25: onReorderStart / onReorderEnd (rule.callbacks), the reorder vectors and the Collection attr table
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest

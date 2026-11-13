@@ -13,7 +13,8 @@ import SwiftUI
 extension CollectionConverter {
 
     /// The Collection's reorder declaration, or nil when it declares none (the rows are then the plain ForEach they
-    /// always were). `reorderable` may be a binding; `onReorder` names a `(Int, Int, Int) -> Void` the data holds.
+    /// always were). `reorderable` may be a binding; `onReorder` names a `(Int, Int, Int) -> Void` the data holds,
+    /// onReorderStart a `(Int, Int) -> Void` and onReorderEnd an `(Int) -> Void`.
     static func reorder(component: DynamicComponent, data: [String: Any]) -> CollectionReorder? {
         let attrs = component.typedAttributes(CollectionAttributes.self)
         guard attrs.reorderable != nil else { return nil }
@@ -23,8 +24,14 @@ extension CollectionConverter {
         let handle = attrs.reorderHandle.flatMap { $0.isEmpty ? nil : $0 }
         let lockedProperty = attrs.reorderLockedProperty.flatMap { $0.isEmpty ? nil : $0 }
         let fixedProperty = attrs.reorderFixedProperty.flatMap { $0.isEmpty ? nil : $0 }
+        // onReorderStart (section, index) and onReorderEnd (section): named handlers the data holds (rule.callbacks).
+        let start = (attrs.onReorderStart?.rawRepresentation as? String)
+            .flatMap(DynamicEventHelper.handlerName(from:)).flatMap { data[$0] as? (Int, Int) -> Void }
+        let end = (attrs.onReorderEnd?.rawRepresentation as? String)
+            .flatMap(DynamicEventHelper.handlerName(from:)).flatMap { data[$0] as? (Int) -> Void }
         return CollectionReorder(isEnabled: enabled, usesHandle: handle != nil,
-                                 hasLockedRows: lockedProperty != nil, hasFixedRows: fixedProperty != nil) { section, from, to in
+                                 hasLockedRows: lockedProperty != nil, hasFixedRows: fixedProperty != nil,
+                                 onReorderStart: start, onReorderEnd: end) { section, from, to in
             handler?(section, from, to)
         }
     }
