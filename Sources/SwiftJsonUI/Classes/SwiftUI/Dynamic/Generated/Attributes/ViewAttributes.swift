@@ -77,6 +77,7 @@ public struct ViewAttributes {
     public static let declaredAttributes: Set<String> = CommonAttributes.declaredAttributes.union([
         "accessibilityLabel",
         "accessibilityLiveRegion",
+        "accessibilitySelected",
         "child",
         "children",
         "direction",
@@ -118,6 +119,9 @@ public struct ViewAttributes {
 
     /// Read out what this View holds whenever it changes, where focus does not move: `polite` waits for the screen reader to finish, `assertive` interrupts it, `off` (or none) reads nothing. Web aria-live with role status (polite) or alert (assertive), Android liveRegion. iOS has no live region, so on iOS a View's accessibilityLiveRegion has no effect: put it on the Label whose text changes.
     public let accessibilityLiveRegion: AttrEnum<AccessibilityLiveRegion>?
+
+    /// Whether screen readers are told this control is the selected one (iOS the .isSelected trait, Android semantics selected, web aria-pressed): a boolean or a binding, as with two buttons of which one is chosen. `false` tells nothing, on all three platforms (VoiceOver says nothing of a control that is not selected; the other two follow it). It takes effect where the control is one button to a screen reader: a Button, and a View or IconLabel whose onClick makes it one button (it holds no control of its own: the tap rule's button / combine shape, as accessibilityLabel's View). Elsewhere the build warns and nothing is told. Radio, CheckBox, Switch, Segment, TabView and SelectBox say their own state.
+    public let accessibilitySelected: AttrValue<Bool>?
 
     /// Child component(s). A single component node (object) is accepted as a one-element array.
     public let child: [Any]?
@@ -179,6 +183,7 @@ public struct ViewAttributes {
         self.common = CommonAttributes(json: json, canonicalOnly: canonicalOnly)
         self.accessibilityLabel = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilityLabel", ["contentDescription"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.accessibilityLiveRegion = Self.parseAccessibilityLiveRegion(AttrCoerce.lookup(json, "accessibilityLiveRegion"))
+        self.accessibilitySelected = AttrCoerce.attrValue(AttrCoerce.lookup(json, "accessibilitySelected"), AttrCoerce.boolean)
         self.child = AttrCoerce.array(AttrCoerce.lookup(json, "child"))
         self.children = AttrCoerce.array(AttrCoerce.lookup(json, "children"))
         self.direction = Self.parseDirection(AttrCoerce.lookup(json, "direction"))

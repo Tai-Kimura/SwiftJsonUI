@@ -278,6 +278,10 @@ public struct ButtonConverter {
         // --- 5. accessibilityIdentifier ---
         result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
 
+        // Last, as the standard chain's controlAccessibility stage (sjui's after_bag): accessibilityLabel and
+        // accessibilitySelected. This hand-built chain never ran that stage, so neither reached VoiceOver here.
+        result = ControlAccessibility.apply(result, component: component, data: data)
+
         return result
     }
 
