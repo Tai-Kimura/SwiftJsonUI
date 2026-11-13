@@ -23,8 +23,12 @@ public enum CollectionReorderRule {
         public var center: CGFloat { (top + bottom) / 2 }
     }
 
-    /// Whether a row may be picked up at all: a locked row never is.
-    public static func canPickUp(_ index: Int, locked: Set<Int>) -> Bool { !locked.contains(index) }
+    /// Whether a row may be picked up at all: a locked row never is, nor a fixed one (reorderFixedProperty, or a row
+    /// whose reorderHandle is not drawn). A fixed row is not a bound: other rows pass it (target() and clampedTo()
+    /// read only `locked`; ticket jui-collection-reorder-fixed-row-vs-barrier-row).
+    public static func canPickUp(_ index: Int, locked: Set<Int>, fixed: Set<Int> = []) -> Bool {
+        !locked.contains(index) && !fixed.contains(index)
+    }
 
     /// Where the row grabbed at `from` lands while it is dragged `dy`: past every neighbour whose centre its own
     /// centre has crossed (exactly on a centre is not past it), and never onto or past a locked row.
@@ -72,10 +76,11 @@ public enum CollectionReorderRule {
         return before > from ? before - 1 : before
     }
 
-    /// Whether a reported move is one (the vectors' `drop`): inside the rows, a real move, not of a locked row nor past
-    /// one. A release reaches here already clamped (clampedTo); this is the last check before onReorder.
-    public static func isValidMove(from: Int, to: Int, count: Int, locked: Set<Int>) -> Bool {
-        (0..<count).contains(from) && (0..<count).contains(to) && from != to
+    /// Whether a reported move is one (the vectors' `drop`): inside the rows, a real move, not of a locked or a fixed
+    /// row nor past a locked one (a fixed row is passed). A release reaches here already clamped (clampedTo); this is
+    /// the last check before onReorder.
+    public static func isValidMove(from: Int, to: Int, count: Int, locked: Set<Int>, fixed: Set<Int> = []) -> Bool {
+        (0..<count).contains(from) && (0..<count).contains(to) && from != to && !fixed.contains(from)
             && !crossesLocked(from: from, to: to, locked: locked)
     }
 
@@ -88,9 +93,9 @@ public enum CollectionReorderRule {
 
     /// Where a move reported from anywhere (iOS 27's container and List.onMove can carry a row past a locked one)
     /// ends: short of the first locked row in its way, as the library's own drag stops. Nil when the row itself is
-    /// locked, which never moves.
-    public static func clampedTo(from: Int, to: Int, locked: Set<Int>) -> Int? {
-        if locked.contains(from) { return nil }
+    /// locked or fixed, which never moves.
+    public static func clampedTo(from: Int, to: Int, locked: Set<Int>, fixed: Set<Int> = []) -> Int? {
+        if locked.contains(from) || fixed.contains(from) { return nil }
         if to > from, let wall = locked.filter({ $0 > from && $0 <= to }).min() { return wall - 1 }
         if to < from, let wall = locked.filter({ $0 < from && $0 >= to }).max() { return wall + 1 }
         return to
@@ -114,10 +119,11 @@ public enum CollectionReorderRule {
         return upward ? -speed : speed
     }
 
-    /// The accessibility actions a row offers: up unless it is first, the row above is locked, or it is locked
-    /// itself; down likewise.
-    public static func accessibilityMoves(index: Int, count: Int, locked: Set<Int>) -> (up: Bool, down: Bool) {
-        guard !locked.contains(index), index >= 0, index < count else { return (false, false) }
+    /// The accessibility actions a row offers: up unless it is first, the row above is locked, or it is locked or
+    /// fixed itself; down likewise. A row next to a fixed one has the action (the fixed row is passed).
+    public static func accessibilityMoves(index: Int, count: Int, locked: Set<Int>,
+                                          fixed: Set<Int> = []) -> (up: Bool, down: Bool) {
+        guard !locked.contains(index), !fixed.contains(index), index >= 0, index < count else { return (false, false) }
         let up = index > 0 && !locked.contains(index - 1)
         let down = index < count - 1 && !locked.contains(index + 1)
         return (up, down)

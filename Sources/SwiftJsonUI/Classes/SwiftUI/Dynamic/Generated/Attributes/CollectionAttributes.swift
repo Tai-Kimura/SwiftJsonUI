@@ -106,6 +106,7 @@ public struct CollectionAttributes {
         "onValueChange",
         "orientation",
         "paging",
+        "reorderFixedProperty",
         "reorderHandle",
         "reorderLockedProperty",
         "reorderable",
@@ -241,6 +242,9 @@ public struct CollectionAttributes {
     /// Enable paging
     public let paging: Bool?
 
+    /// A key of the cell data: a row whose value for it is true does not move and has no screen reader move up / down, but other rows are moved past it (a cancelled or skipped row). A row of a Collection with a reorderHandle whose handle is not drawn is fixed the same way. reorderLockedProperty wins when a row is both (ticket jui-collection-reorder-fixed-row-vs-barrier-row, ruling 2026-11-14).
+    public let reorderFixedProperty: String?
+
     /// The id of an element in the cell layout that starts the drag when long-pressed (e.g. a grip at the row's right edge). Without it, a long press anywhere on the row starts it. The rest of the row keeps its taps (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13).
     public let reorderHandle: String?
 
@@ -318,6 +322,7 @@ public struct CollectionAttributes {
         self.onValueChange = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onValueChange", ["onValueChanged", "onPageChanged"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
         self.paging = AttrCoerce.boolean(AttrCoerce.lookup(json, "paging"))
+        self.reorderFixedProperty = AttrCoerce.string(AttrCoerce.lookup(json, "reorderFixedProperty"))
         self.reorderHandle = AttrCoerce.string(AttrCoerce.lookup(json, "reorderHandle"))
         self.reorderLockedProperty = AttrCoerce.string(AttrCoerce.lookup(json, "reorderLockedProperty"))
         self.reorderable = AttrCoerce.attrValue(AttrCoerce.lookup(json, "reorderable"), AttrCoerce.boolean)

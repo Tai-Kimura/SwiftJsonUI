@@ -818,6 +818,8 @@ public struct DynamicModifierHelper {
             return AnyView(
                 view
                     .opacity(0)
+                    // A reorderable row's handle in here is not drawn: its row is fixed.
+                    .environment(\.jsonuiNotDrawn, true)
                     .accessibilityElement(children: .ignore)
                     .accessibilityHidden(true)
                     // Out of the UI-test tree too (VisibilityWrapper .invisible).
@@ -1093,6 +1095,8 @@ public struct DynamicModifierHelper {
         AnyView(
             view
                 .opacity(0)
+                // A reorderable row's handle in here is not drawn: its row is fixed.
+                .environment(\.jsonuiNotDrawn, true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
                 // Out of the UI-test tree too (VisibilityWrapper .invisible).

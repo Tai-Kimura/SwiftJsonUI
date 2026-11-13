@@ -22,29 +22,34 @@ extension CollectionConverter {
         let handler = DynamicEventHelper.handlerName(from: raw).flatMap { data[$0] as? (Int, Int, Int) -> Void }
         let handle = attrs.reorderHandle.flatMap { $0.isEmpty ? nil : $0 }
         let lockedProperty = attrs.reorderLockedProperty.flatMap { $0.isEmpty ? nil : $0 }
+        let fixedProperty = attrs.reorderFixedProperty.flatMap { $0.isEmpty ? nil : $0 }
         return CollectionReorder(isEnabled: enabled, usesHandle: handle != nil,
-                                 hasLockedRows: lockedProperty != nil) { section, from, to in
+                                 hasLockedRows: lockedProperty != nil, hasFixedRows: fixedProperty != nil) { section, from, to in
             handler?(section, from, to)
         }
     }
 
     /// The ids the rows are told (each cell's own key — its cellId, else its cellIdProperty value — or its index
-    /// when it has none or repeats one), and the indexes of the locked rows.
+    /// when it has none or repeats one), and the indexes of the locked rows and of the fixed rows.
     static func reorderIdentity(of items: [CollectionCellItem], component: DynamicComponent,
-                                cellIdProperty: String?) -> (ids: [String], locked: Set<Int>) {
+                                cellIdProperty: String?) -> (ids: [String], locked: Set<Int>, fixed: Set<Int>) {
         var seen = Set<String>()
         let ids = items.map { item -> String in
             if let key = cellKey(item.data, cellIdProperty: cellIdProperty), seen.insert(key).inserted { return key }
             return "#\(item.index)"
         }
-        guard let property = component.typedAttributes(CollectionAttributes.self).reorderLockedProperty,
-              !property.isEmpty else { return (ids, []) }
-        let locked = Set(items.enumerated().compactMap { offset, item -> Int? in
+        let attrs = component.typedAttributes(CollectionAttributes.self)
+        return (ids, rows(of: items, whose: attrs.reorderLockedProperty), rows(of: items, whose: attrs.reorderFixedProperty))
+    }
+
+    /// The indexes of the rows whose cell data holds true for `property` (none when it is not declared).
+    private static func rows(of items: [CollectionCellItem], whose property: String?) -> Set<Int> {
+        guard let property, !property.isEmpty else { return [] }
+        return Set(items.enumerated().compactMap { offset, item -> Int? in
             let value = DynamicBindingResolver.unwrap(item.data[property])
-            let isLocked = (value as? Bool) ?? ((value as? NSNumber)?.boolValue) ?? ((value as? String) == "true")
-            return isLocked ? offset : nil
+            let isTrue = (value as? Bool) ?? ((value as? NSNumber)?.boolValue) ?? ((value as? String) == "true")
+            return isTrue ? offset : nil
         })
-        return (ids, locked)
     }
 
     /// One section's rows: the plain ForEach without a reorder declaration, CollectionReorderRows with one. The
@@ -61,8 +66,8 @@ extension CollectionConverter {
     ) -> some View {
         if let reorder {
             let identity = reorderIdentity(of: items, component: component, cellIdProperty: cellIdProperty)
-            CollectionReorderRows(section: section, ids: identity.ids, locked: identity.locked, reorder: reorder,
-                                  style: style) { index in
+            CollectionReorderRows(section: section, ids: identity.ids, locked: identity.locked, fixed: identity.fixed,
+                                  reorder: reorder, style: style) { index in
                 row(items[index])
                     .environment(\.collectionReorderHandleId,
                                  component.typedAttributes(CollectionAttributes.self).reorderHandle)

@@ -63,7 +63,7 @@ public struct DynamicComponentBuilder: View {
             if needsVisibilityWrapper {
                 buildWithVisibility()
             } else {
-                buildComponentWithModifiers()
+                markedComponent()
             }
         }
         // A component with a tap handler is the nearest tappable for every
@@ -76,8 +76,6 @@ public struct DynamicComponentBuilder: View {
         // Always applied, so a binding that flips keeps the subtree's identity.
         .environment(\.jsonuiInteractionStopped, stoppedAround || stopsInteraction)
         .modifier(OpenScrollEnd(ends: OpenScrollEnd.ends(component, parentOrientation: parentOrientation, data: data)))
-        // The element a reorderable Collection's rows are grabbed by (reorderHandle), when this is it.
-        .modifier(CollectionReorderHandleMark(componentId: component.id))
     }
 
     /// `userInteractionEnabled` is false, or a binding resolving false.
@@ -105,7 +103,7 @@ public struct DynamicComponentBuilder: View {
             // hidden: true == visibility:"invisible" (space kept, not drawn,
             // accessibility-hidden) — NOT "gone".
             VisibilityWrapper("invisible") {
-                buildComponentWithModifiers()
+                markedComponent()
             }
         } else if let hiddenValue = bindingHiddenExpression {
             if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
@@ -113,7 +111,7 @@ public struct DynamicComponentBuilder: View {
                     get: { binding.wrappedValue ? "invisible" : "visible" },
                     set: { _ in }
                 )) {
-                    buildComponentWithModifiers()
+                    markedComponent()
                 }
             } else {
                 // Plain value: re-resolves on every data-driven rebuild.
@@ -121,7 +119,7 @@ public struct DynamicComponentBuilder: View {
                     DynamicBindingHelper.resolveBool(hiddenValue, data: data, fallback: false)
                         ? "invisible" : "visible"
                 ) {
-                    buildComponentWithModifiers()
+                    markedComponent()
                 }
             }
         } else if let visibilityValue = component.visibilitySpelling() {
@@ -134,7 +132,7 @@ public struct DynamicComponentBuilder: View {
                 if let binding = rawValue as? SwiftUI.Binding<String> {
                     let _ = Logger.debug("[Visibility] id=\(component.id ?? "?") varName=\(expression.path) → Binding<String>=\(binding.wrappedValue)")
                     ReactiveVisibilityWrapper(visibility: binding) {
-                        buildComponentWithModifiers()
+                        markedComponent()
                     }
                 } else {
                     // Fallback: unwrap Binding / plain value via the
@@ -156,17 +154,26 @@ public struct DynamicComponentBuilder: View {
                     }()
                     let _ = Logger.debug("[Visibility] id=\(component.id ?? "?") varName=\(expression.path) → resolved=\(resolved ?? "nil")")
                     VisibilityWrapper(resolved) {
-                        buildComponentWithModifiers()
+                        markedComponent()
                     }
                 }
             } else {
                 VisibilityWrapper(visibilityValue) {
-                    buildComponentWithModifiers()
+                    markedComponent()
                 }
             }
         } else {
-            buildComponentWithModifiers()
+            markedComponent()
         }
+    }
+
+    @ViewBuilder
+    /// The component, marked as a reorderable Collection's handle (reorderHandle) when it is one. Inside the
+    /// visibility wrappers, so the handle reads its own invisible / hidden (jsonuiNotDrawn): a handle that is not
+    /// drawn makes its row fixed (ticket jui-collection-reorder-fixed-row-vs-barrier-row).
+    private func markedComponent() -> some View {
+        buildComponentWithModifiers()
+            .modifier(CollectionReorderHandleMark(componentId: component.id))
     }
 
     @ViewBuilder

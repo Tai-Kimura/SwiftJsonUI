@@ -39,13 +39,16 @@ public struct CollectionReorder {
     public let usesHandle: Bool
     /// The Collection declares reorderLockedProperty: some rows are fixed dividers.
     public let hasLockedRows: Bool
+    /// The Collection declares reorderFixedProperty: some rows do not move but are passed.
+    public let hasFixedRows: Bool
     public let onReorder: (_ section: Int, _ from: Int, _ to: Int) -> Void
 
-    public init(isEnabled: Bool, usesHandle: Bool = false, hasLockedRows: Bool = false,
+    public init(isEnabled: Bool, usesHandle: Bool = false, hasLockedRows: Bool = false, hasFixedRows: Bool = false,
                 onReorder: @escaping (_ section: Int, _ from: Int, _ to: Int) -> Void) {
         self.isEnabled = isEnabled
         self.usesHandle = usesHandle
         self.hasLockedRows = hasLockedRows
+        self.hasFixedRows = hasFixedRows
         self.onReorder = onReorder
     }
 
@@ -53,8 +56,10 @@ public struct CollectionReorder {
     /// handle (the container picks a row up anywhere) and not with locked rows: while a row is carried the container
     /// opens its gap past a locked row and moves the locked row aside, and no API it has keeps a place closed
     /// (measured on iOS 27.2; ruling 2026-11-13). A locked row is a divider that does not move, as on every other OS.
+    /// Not with fixed rows either: the library's drag is the one whose pick-up test is known to keep a fixed row
+    /// still (ticket jui-collection-reorder-fixed-row-vs-barrier-row).
     var usesSystemContainer: Bool {
-        guard Self.systemContainerIsCompiled, !usesHandle, !hasLockedRows else { return false }
+        guard Self.systemContainerIsCompiled, !usesHandle, !hasLockedRows, !hasFixedRows else { return false }
         if #available(iOS 27.0, *) { return true }
         return false
     }
@@ -68,18 +73,20 @@ public struct CollectionReorder {
         #endif
     }
 
-    /// Report a move, as every path does: a valid move only (the vectors' `drop`: inside the rows, real, not of or
-    /// past a locked row). A release is clamped short of a locked row before it gets here (releaseReport).
-    func report(section: Int, from: Int, to: Int, count: Int, locked: Set<Int>) {
-        guard isEnabled, CollectionReorderRule.isValidMove(from: from, to: to, count: count, locked: locked) else { return }
+    /// Report a move, as every path does: a valid move only (the vectors' `drop`: inside the rows, real, not of a
+    /// locked or fixed row, not past a locked one). A release is clamped short of a locked row before it gets here
+    /// (releaseReport).
+    func report(section: Int, from: Int, to: Int, count: Int, locked: Set<Int>, fixed: Set<Int> = []) {
+        guard isEnabled,
+              CollectionReorderRule.isValidMove(from: from, to: to, count: count, locked: locked, fixed: fixed) else { return }
         onReorder(section, from, to)
     }
 
     /// A release that SwiftUI placed (iOS 27's container, List.onMove): like the library's drag, it stops short of
     /// a locked row in its way (the vectors' `release`), then is reported.
-    func releaseReport(section: Int, from: Int, to: Int, count: Int, locked: Set<Int>) {
-        guard let to = CollectionReorderRule.clampedTo(from: from, to: to, locked: locked) else { return }
-        report(section: section, from: from, to: to, count: count, locked: locked)
+    func releaseReport(section: Int, from: Int, to: Int, count: Int, locked: Set<Int>, fixed: Set<Int> = []) {
+        guard let to = CollectionReorderRule.clampedTo(from: from, to: to, locked: locked, fixed: fixed) else { return }
+        report(section: section, from: from, to: to, count: count, locked: locked, fixed: fixed)
     }
 }
 
@@ -109,6 +116,7 @@ public struct CollectionReorderItem: Identifiable, Hashable, Sendable, Transfera
 final class CollectionReorderRegistry {
     var order: [Int: [String]] = [:]
     var locked: [Int: Set<Int>] = [:]
+    var fixed: [Int: Set<Int>] = [:]
     /// The container's frame in window coordinates: a release outside it cancels (the library's drag).
     var containerFrame: CGRect?
 
@@ -197,7 +205,8 @@ private struct CollectionReorderContainerModifier: ViewModifier {
             before = nil
         }
         let to = CollectionReorderRule.toIndex(from: from, beforeIndex: before, count: count)
-        reorder.releaseReport(section: section, from: from, to: to, count: count, locked: registry.locked[section] ?? [])
+        reorder.releaseReport(section: section, from: from, to: to, count: count, locked: registry.locked[section] ?? [],
+                              fixed: registry.fixed[section] ?? [])
     }
     #endif
 
@@ -205,7 +214,9 @@ private struct CollectionReorderContainerModifier: ViewModifier {
     private static func draggable(_ id: String, registry: CollectionReorderRegistry) -> [CollectionReorderItem] {
         for (section, ids) in registry.order {
             guard let index = ids.firstIndex(of: id) else { continue }
-            if registry.locked[section]?.contains(index) == true { return [] }
+            if registry.locked[section]?.contains(index) == true || registry.fixed[section]?.contains(index) == true {
+                return []
+            }
             let key = String(id.split(separator: "\u{1F}", maxSplits: 1).last ?? "")
             return [CollectionReorderItem(section: section, key: key)]
         }
@@ -221,11 +232,14 @@ public enum CollectionReorderStyle {
 }
 
 /// One section's rows. `ids` are the rows' own ids (cellIdProperty) in the order drawn; `locked` the indexes that do
-/// not move (reorderLockedProperty). Without a `reorder` (or with it off) the rows are a plain ForEach.
+/// not move and are not passed (reorderLockedProperty); `fixed` the ones that do not move and are passed
+/// (reorderFixedProperty). With a reorderHandle, a row whose handle is not drawn is fixed too. Without a `reorder`
+/// (or with it off) the rows are a plain ForEach.
 public struct CollectionReorderRows<Content: View>: View {
     let section: Int
     let ids: [String]
     let locked: Set<Int>
+    let fixed: Set<Int>
     let reorder: CollectionReorder?
     let style: CollectionReorderStyle
     let content: (Int) -> Content
@@ -233,11 +247,12 @@ public struct CollectionReorderRows<Content: View>: View {
     @Environment(\.collectionReorderRegistry) private var registry
     @StateObject private var drag = CollectionReorderDrag()
 
-    public init(section: Int, ids: [String], locked: Set<Int> = [], reorder: CollectionReorder?,
+    public init(section: Int, ids: [String], locked: Set<Int> = [], fixed: Set<Int> = [], reorder: CollectionReorder?,
                 style: CollectionReorderStyle = .stack, @ViewBuilder content: @escaping (Int) -> Content) {
         self.section = section
         self.ids = ids
         self.locked = locked
+        self.fixed = fixed
         self.reorder = reorder
         self.style = style
         self.content = content
@@ -263,13 +278,14 @@ public struct CollectionReorderRows<Content: View>: View {
     private func listRows(_ reorder: CollectionReorder) -> some View {
         ForEach(Array(items.enumerated()), id: \.element.id) { index, _ in
             content(index)
-                .moveDisabled(locked.contains(index))
-                .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked, reorder: reorder)
+                .moveDisabled(locked.contains(index) || fixed.contains(index))
+                .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked,
+                                                fixed: fixed, reorder: reorder)
         }
         .onMove { source, destination in
             guard source.count == 1, let from = source.first else { return }
             let to = CollectionReorderRule.toIndex(fromOnMove: from, destination: destination)
-            reorder.releaseReport(section: section, from: from, to: to, count: ids.count, locked: locked)
+            reorder.releaseReport(section: section, from: from, to: to, count: ids.count, locked: locked, fixed: fixed)
         }
     }
 
@@ -282,7 +298,8 @@ public struct CollectionReorderRows<Content: View>: View {
             ForEach(items) { item in
                 let index = ids.firstIndex(of: item.key) ?? 0
                 content(index)
-                    .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked, reorder: reorder)
+                    .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked,
+                                                    fixed: fixed, reorder: reorder)
             }
             .reorderable(collectionID: section)
         } else {
@@ -296,22 +313,35 @@ public struct CollectionReorderRows<Content: View>: View {
     // The library's own drag (below iOS 27, with a handle or locked rows, or a build without iOS 27's container).
     @ViewBuilder
     private func libraryRows(_ reorder: CollectionReorder) -> some View {
-        let _ = drag.configure(section: section, ids: items.map(\.id), locked: locked, reorder: reorder, registry: registry)
+        let fixedNow = libraryFixed(reorder)
+        let _ = drag.configure(section: section, ids: items.map(\.id), locked: locked, fixed: fixedNow, reorder: reorder,
+                               registry: registry)
         ForEach(Array(items.enumerated()), id: \.element.id) { index, _ in
             content(index)
                 .modifier(CollectionReorderDraggedRow(drag: drag, index: index, id: items[index].id))
-                .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked, reorder: reorder)
+                .collectionReorderAccessibility(section: section, index: index, count: ids.count, locked: locked,
+                                                fixed: fixedNow, reorder: reorder)
         }
+    }
+
+    /// The fixed rows of the library's drag: the declared ones, and with a handle every row whose handle is not drawn
+    /// now (gone, hidden or invisible, or not in the cell at all).
+    private func libraryFixed(_ reorder: CollectionReorder) -> Set<Int> {
+        guard reorder.usesHandle else { return fixed }
+        let ids = items.map(\.id)
+        return fixed.union(ids.indices.filter { !drag.handleDrawn.contains(ids[$0]) })
     }
 
     private func register() {
         guard let registry else { return }
         let order = items.map(\.id)
         let lockedNow = locked
+        let fixedNow = fixed
         let section = section
         MainActor.assumeIsolated {
             registry.order[section] = order
             registry.locked[section] = lockedNow
+            registry.fixed[section] = fixedNow
         }
     }
 }
@@ -321,10 +351,10 @@ public struct CollectionReorderRows<Content: View>: View {
 private extension View {
     /// "Move up" / "Move down" on a row, only those the rule allows: VoiceOver lists what the row can do. The list
     /// is CollectionReorderAccessibility.actions, applied as it stands.
-    func collectionReorderAccessibility(section: Int, index: Int, count: Int, locked: Set<Int>,
+    func collectionReorderAccessibility(section: Int, index: Int, count: Int, locked: Set<Int>, fixed: Set<Int>,
                                         reorder: CollectionReorder) -> some View {
         let actions = CollectionReorderAccessibility.actions(section: section, index: index, count: count,
-                                                             locked: locked, reorder: reorder)
+                                                             locked: locked, fixed: fixed, reorder: reorder)
         return self.accessibilityActions {
             ForEach(actions.indices, id: \.self) { i in
                 Button(actions[i].name, action: actions[i].perform)
@@ -340,30 +370,47 @@ enum CollectionReorderAccessibility {
         let perform: () -> Void
     }
 
-    static func actions(section: Int, index: Int, count: Int, locked: Set<Int>, reorder: CollectionReorder) -> [Action] {
-        let moves = CollectionReorderRule.accessibilityMoves(index: index, count: count, locked: locked)
+    static func actions(section: Int, index: Int, count: Int, locked: Set<Int>, fixed: Set<Int> = [],
+                        reorder: CollectionReorder) -> [Action] {
+        let moves = CollectionReorderRule.accessibilityMoves(index: index, count: count, locked: locked, fixed: fixed)
         var out: [Action] = []
         if moves.up {
             out.append(Action(name: CollectionReorderText.moveUp) {
-                reorder.report(section: section, from: index, to: index - 1, count: count, locked: locked)
+                reorder.report(section: section, from: index, to: index - 1, count: count, locked: locked, fixed: fixed)
             })
         }
         if moves.down {
             out.append(Action(name: CollectionReorderText.moveDown) {
-                reorder.report(section: section, from: index, to: index + 1, count: count, locked: locked)
+                reorder.report(section: section, from: index, to: index + 1, count: count, locked: locked, fixed: fixed)
             })
         }
         return out
     }
 }
 
-/// The library's words for the two actions, in the app's language (ja, else en).
+/// The two actions' names: the app's strings.json keys jsonui.reorder_move_up / reorder_move_down (Localizable
+/// jsonui_reorder_move_up / _down) in the running language when the app has them, else the library's own words in
+/// Japanese or English (ticket jui-collection-reorder-accessibility-action-names-only-ja-en).
 enum CollectionReorderText {
-    static var isJapanese: Bool {
-        (Bundle.main.preferredLocalizations.first ?? Locale.current.identifier).hasPrefix("ja")
+    static var language: String {
+        String.currentLanguage ?? Bundle.main.preferredLocalizations.first ?? Locale.current.identifier
     }
-    static var moveUp: String { isJapanese ? "上へ移動" : "Move up" }
-    static var moveDown: String { isJapanese ? "下へ移動" : "Move down" }
+    static var isJapanese: Bool { language.hasPrefix("ja") }
+    static var moveUp: String { appWord("jsonui_reorder_move_up") ?? (isJapanese ? "上へ移動" : "Move up") }
+    static var moveDown: String { appWord("jsonui_reorder_move_down") ?? (isJapanese ? "下へ移動" : "Move down") }
+
+    /// The app's word for `key` in the running language (the in-app language's .lproj when it has one, as
+    /// String.localized reads it), nil when the app does not have the key.
+    static func appWord(_ key: String, in bundle: Bundle = .main) -> String? {
+        var table = bundle
+        if let current = String.currentLanguage, let path = bundle.path(forResource: current, ofType: "lproj"),
+           let lproj = Bundle(path: path) {
+            table = lproj
+        }
+        let missing = "\u{1F}jsonui-missing"
+        let word = NSLocalizedString(key, tableName: nil, bundle: table, value: missing, comment: "")
+        return word == missing || word == key || word.isEmpty ? nil : word
+    }
 }
 
 // MARK: - The library's drag
@@ -379,6 +426,8 @@ final class CollectionReorderDrag: ObservableObject {
     /// Each row's handle, in the row's own coordinates, by the row's id: a row that moves keeps its handle's place in
     /// it, so nothing depends on the handle reporting again after the rows swap (the row's frame places it).
     var handleFrames: [String: CGRect] = [:]
+    /// The rows (by id) whose handle is drawn now: a row whose handle is gone, hidden or invisible is fixed.
+    @Published var handleDrawn: Set<String> = []
     var ids: [String] = []
     var startY: CGFloat = 0
     var scrolled: CGFloat = 0
@@ -488,8 +537,23 @@ private final class CollectionReorderDisplayLinkTarget: NSObject {
 /// The handle a cell declares (reorderHandle): the element the drag starts from. Generated cell code and Dynamic put
 /// `.collectionReorderHandle()` on it; outside a reorderable row it does nothing.
 public extension View {
-    func collectionReorderHandle() -> some View {
-        modifier(CollectionReorderHandleModifier())
+    /// `hidden`: the handle's own `hidden` (generated code passes it); invisible and gone are read from the
+    /// visibility wrappers around it.
+    func collectionReorderHandle(hidden: Bool = false) -> some View {
+        modifier(CollectionReorderHandleModifier(hidden: hidden))
+    }
+}
+
+private struct JsonUINotDrawnKey: EnvironmentKey {
+    static let defaultValue = false
+}
+
+public extension EnvironmentValues {
+    /// Inside a view that keeps its place but is not drawn (visibility invisible, hidden): set by VisibilityWrapper
+    /// and the Dynamic visibility wrappers. A reorderable row's handle reads it.
+    var jsonuiNotDrawn: Bool {
+        get { self[JsonUINotDrawnKey.self] }
+        set { self[JsonUINotDrawnKey.self] = newValue }
     }
 }
 
@@ -520,26 +584,31 @@ struct CollectionReorderHandleMark: ViewModifier {
 }
 
 private struct CollectionReorderHandleKey: EnvironmentKey {
-    static let defaultValue: ((CGRect) -> Void)? = nil
+    static let defaultValue: ((CGRect?) -> Void)? = nil
 }
 
 extension EnvironmentValues {
-    /// Where a row's handle reports its frame.
-    var collectionReorderHandleFrame: ((CGRect) -> Void)? {
+    /// Where a row's handle reports its frame; nil when it is not drawn (or leaves the row).
+    var collectionReorderHandleFrame: ((CGRect?) -> Void)? {
         get { self[CollectionReorderHandleKey.self] }
         set { self[CollectionReorderHandleKey.self] = newValue }
     }
 }
 
 private struct CollectionReorderHandleModifier: ViewModifier {
+    let hidden: Bool
     @Environment(\.collectionReorderHandleFrame) private var report
+    @Environment(\.jsonuiNotDrawn) private var notDrawn
     func body(content: Content) -> some View {
         if let report {
+            let drawn = !hidden && !notDrawn
             content.background(GeometryReader { proxy in
                 let frame = proxy.frame(in: .named(CollectionReorderDraggedRow.space))
                 Color.clear
-                    .onAppear { report(frame) }
-                    .onChange(of: frame) { _, frame in report(frame) }
+                    .onAppear { report(drawn ? frame : nil) }
+                    .onChange(of: frame) { _, frame in report(drawn ? frame : nil) }
+                    .onChange(of: drawn) { _, drawn in report(drawn ? frame : nil) }
+                    .onDisappear { report(nil) }
             })
         } else {
             content
@@ -575,7 +644,12 @@ private struct CollectionReorderDraggedRow: ViewModifier {
     func body(content: Content) -> some View {
         let isDragged = drag.dragging == index
         content
-            .environment(\.collectionReorderHandleFrame) { [id] frame in drag.handleFrames[id] = frame }
+            .environment(\.collectionReorderHandleFrame) { [id] frame in
+                drag.handleFrames[id] = frame
+                if (frame != nil) != drag.handleDrawn.contains(id) {
+                    if frame != nil { drag.handleDrawn.insert(id) } else { drag.handleDrawn.remove(id) }
+                }
+            }
             .coordinateSpace(name: Self.space)
             .background(GeometryReader { proxy in
                 Color.clear
@@ -686,9 +760,9 @@ private struct CollectionReorderTouchHost: UIViewRepresentable {
 }
 
 extension CollectionReorderDrag {
-    /// The pick-up test (a row, its handle when the Collection declares one, never a locked row) and the release
-    /// (inside the container, else cancelled) for the rows as they are drawn now.
-    func configure(section: Int, ids: [String], locked: Set<Int>, reorder: CollectionReorder,
+    /// The pick-up test (a row, its handle when the Collection declares one, never a locked or a fixed row) and the
+    /// release (inside the container, else cancelled) for the rows as they are drawn now.
+    func configure(section: Int, ids: [String], locked: Set<Int>, fixed: Set<Int> = [], reorder: CollectionReorder,
                    registry: CollectionReorderRegistry?) {
         let count = ids.count
         self.count = count
@@ -696,7 +770,7 @@ extension CollectionReorderDrag {
         lockedNow = locked
         pickable = { [weak self] point in
             guard let self, reorder.isEnabled, self.dragging == nil else { return nil }
-            for i in 0..<count where CollectionReorderRule.canPickUp(i, locked: locked) {
+            for i in 0..<count where CollectionReorderRule.canPickUp(i, locked: locked, fixed: fixed) {
                 guard let row = self.frames[i] else { continue }
                 let area: CGRect?
                 if reorder.usesHandle {
@@ -717,7 +791,7 @@ extension CollectionReorderDrag {
                           height: (spans.last?.bottom ?? 0) - (spans.first?.top ?? 0))
             guard CollectionReorderRule.releaseCommits(fingerY: released, containerTop: container.minY,
                                                        containerBottom: container.maxY) else { return }
-            reorder.report(section: section, from: from, to: to, count: count, locked: locked)
+            reorder.report(section: section, from: from, to: to, count: count, locked: locked, fixed: fixed)
         }
     }
 }
