@@ -3,7 +3,7 @@
 //  SwiftJsonUITests
 //
 //  The reorder rule (ticket jui-collection-drag-to-reorder) as written in the ruling and in jsonui-cli's
-//  shared/core/reorder_rule.py: centre crossing, locked rows as walls, a release off the rows cancels, onMove's
+//  shared/core/reorder_rule.py: edge crossing, locked rows as walls, a release off the rows cancels, onMove's
 //  destination and iOS 27's ReorderDifference turned into the index after the move, the edge band's auto-scroll, and
 //  the accessibility moves a row offers.
 //
@@ -17,11 +17,17 @@ final class CollectionReorderRuleTests: XCTestCase {
     /// Six rows 56 tall with 4 between: tops 0, 60, 120, …; centres 28, 88, 148, 208, 268, 328.
     private let rows: [Rule.RowSpan] = (0..<6).map { Rule.RowSpan(top: CGFloat($0) * 60, bottom: CGFloat($0) * 60 + 56) }
 
-    func testARowPassesEveryCentreItsOwnCentreCrossed() {
+    /// A row is passed when the dragged centre crosses its edge on the dragged row's side — the top of a row below,
+    /// the bottom of a row above — so the gap is under the dragged centre, as iOS 27's standard draws it (ticket
+    /// jui-collection-reorder-target-lags-one-row-behind-finger).
+    func testARowPassesEveryEdgeItsOwnCentreCrossed() {
         XCTAssertEqual(Rule.target(from: 0, dy: 0, rows: rows, locked: []), 0)
-        XCTAssertEqual(Rule.target(from: 0, dy: 59, rows: rows, locked: []), 0, "28 + 59 = 87 is short of row 1's 88")
-        XCTAssertEqual(Rule.target(from: 0, dy: 60, rows: rows, locked: []), 0, "exactly on the centre is not past it")
-        XCTAssertEqual(Rule.target(from: 0, dy: 61, rows: rows, locked: []), 1)
+        XCTAssertEqual(Rule.target(from: 0, dy: 31, rows: rows, locked: []), 0, "28 + 31 = 59 is short of row 1's top 60")
+        XCTAssertEqual(Rule.target(from: 0, dy: 32, rows: rows, locked: []), 0, "exactly on the edge is not past it")
+        XCTAssertEqual(Rule.target(from: 0, dy: 33, rows: rows, locked: []), 1)
+        XCTAssertEqual(Rule.target(from: 0, dy: 61, rows: rows, locked: []), 1, "the old centre rule's first step: one row, not two")
+        XCTAssertEqual(Rule.target(from: 4, dy: -32, rows: rows, locked: []), 4, "268 - 32 = 236 is row 3's bottom: not past")
+        XCTAssertEqual(Rule.target(from: 4, dy: -33, rows: rows, locked: []), 3)
         XCTAssertEqual(Rule.target(from: 0, dy: 185, rows: rows, locked: []), 3)
         XCTAssertEqual(Rule.target(from: 0, dy: 5000, rows: rows, locked: []), 5, "past the last row is the last row")
         XCTAssertEqual(Rule.target(from: 4, dy: -121, rows: rows, locked: []), 2)
