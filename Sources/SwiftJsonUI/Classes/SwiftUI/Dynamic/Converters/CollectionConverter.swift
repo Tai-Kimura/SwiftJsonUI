@@ -1423,12 +1423,15 @@ public struct CollectionConverter {
     /// (Collection_cellWidth/cellHeight__static parity d=50/41, run
     /// 31202080745; web anchors at the leading edge and hides the overflow).
     /// The grid path sizes its cells through GridItem and its own frame and
-    /// does not use this. The pager does (PagingCollectionWrapperView, hence
-    /// fileprivate): the frame is laid in the middle of its page, as sjui's
-    /// add_paging_cell frames it (apply_cell_frame) and the page centres it.
-    /// Until SwiftJsonUI 10.41.0 the pager drew each cell its own size and
-    /// the declared cellWidth / cellHeight went unread (ticket
-    /// collection-cellwidth-cellheight-unread-on-some-routes, paging).
+    /// does not use this. Every other route does. The flow, lazy and
+    /// `lazy: none`, and the `lazy: none` stacks: until SwiftJsonUI 10.40.0
+    /// those three drew each cell its own size and the declared cellWidth /
+    /// cellHeight went unread (ticket
+    /// collection-cellwidth-cellheight-unread-on-some-routes). The pager
+    /// (PagingCollectionWrapperView, hence fileprivate): the frame is laid in
+    /// the middle of its page, as sjui's add_paging_cell frames it
+    /// (apply_cell_frame) and the page centres it; until SwiftJsonUI 10.41.0
+    /// it too drew each cell its own size (the same ticket, paging).
     fileprivate static func applyDeclaredCellFrame(
         _ view: AnyView,
         component: DynamicComponent
@@ -2013,15 +2016,18 @@ public struct CollectionConverter {
                                 verticalSpacing: gaps.lines
                             ) {
                                 ForEach(items) { cell in
-                                    buildCellView(
-                                        cellClassName: cellName,
-                                        cellData: cell.data,
-                                        cellIndex: cell.index,
-                                        cellAddress: cell.address,
-                                        component: component,
-                                        data: data,
-                                        viewId: viewId,
-                                        onItemAppear: onItemAppear
+                                    applyDeclaredCellFrame(
+                                        AnyView(buildCellView(
+                                            cellClassName: cellName,
+                                            cellData: cell.data,
+                                            cellIndex: cell.index,
+                                            cellAddress: cell.address,
+                                            component: component,
+                                            data: data,
+                                            viewId: viewId,
+                                            onItemAppear: onItemAppear
+                                        )),
+                                        component: component
                                     )
                                     .id(cell.id)
                                 }
@@ -2149,15 +2155,18 @@ public struct CollectionConverter {
                                 verticalSpacing: flowSpacing(component).lines
                             ) {
                                 ForEach(items) { cell in
-                                    buildCellView(
-                                        cellClassName: cellName,
-                                        cellData: cell.data,
-                                        cellIndex: cell.index,
-                                        cellAddress: cell.address,
-                                        component: component,
-                                        data: data,
-                                        viewId: viewId,
-                                        onItemAppear: onItemAppear
+                                    applyDeclaredCellFrame(
+                                        AnyView(buildCellView(
+                                            cellClassName: cellName,
+                                            cellData: cell.data,
+                                            cellIndex: cell.index,
+                                            cellAddress: cell.address,
+                                            component: component,
+                                            data: data,
+                                            viewId: viewId,
+                                            onItemAppear: onItemAppear
+                                        )),
+                                        component: component
                                     )
                                     .id(cell.id)
                                 }
@@ -2208,15 +2217,18 @@ public struct CollectionConverter {
                         } else {
                             reorderableRows(items: items, section: sectionIndex, component: component,
                                             cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .stack) { cell in
-                                buildCellView(
-                                    cellClassName: cellName,
-                                    cellData: cell.data,
-                                    cellIndex: cell.index,
+                                applyDeclaredCellFrame(
+                                    AnyView(buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
                                         cellAddress: cell.address,
-                                    component: component,
-                                    data: data,
-                                    viewId: viewId,
-                                    onItemAppear: onItemAppear
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )),
+                                    component: component
                                 )
                                 .id(cell.id)
                             }

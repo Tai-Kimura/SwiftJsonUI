@@ -233,6 +233,7 @@ struct ConformanceRootView: View {
         if arguments.contains("-pressedBackgroundProbe") { return AnyView(PressedBackgroundProbeView()) }
         if arguments.contains("-bindFoldProbe") { return AnyView(BindFoldProbeView()) }
         if arguments.contains("-pagingAddressProbe") { return AnyView(PagingAddressProbeView()) }
+        if arguments.contains("-cellFrameRoutesProbe") { return AnyView(CellFrameRoutesProbeView()) }
         if arguments.contains("-sectionScrollProbe") { return AnyView(SectionScrollProbeView()) }
         if arguments.contains("-scrollRuleProbe") { return AnyView(ScrollRuleProbeView(grid: false)) }
         if arguments.contains("-sectionGridProbe") { return AnyView(ScrollRuleProbeView(grid: true)) }
