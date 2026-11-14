@@ -31,4 +31,15 @@ public extension View {
             self
         }
     }
+
+    /// A control's accessibilityLabel on the leaf the identifier goes on (nil or empty: none), for the same reason:
+    /// a name on a wrapper names no element (ControlAccessibility; a Dynamic TextField's field).
+    @ViewBuilder
+    func leafAccessibilityLabel(_ label: String?) -> some View {
+        if let label, !label.isEmpty {
+            self.accessibilityLabel(Text(label))
+        } else {
+            self
+        }
+    }
 }

@@ -294,6 +294,7 @@ struct ConformanceRootView: View {
         if arguments.contains("-pagerIdentityProbeCodegen") { return AnyView(PagerIdentityProbeView(codegen: true)) }
         if arguments.contains("-pagerHeightProbe") { return AnyView(PagerHeightProbeView(codegen: false)) }
         if arguments.contains("-pagerHeightProbeCodegen") { return AnyView(PagerHeightProbeView(codegen: true)) }
+        if arguments.contains("-controlA11yProbe") { return AnyView(ControlA11yProbeView()) }
         if arguments.contains("-labelHeightProbe") { return AnyView(LabelHeightProbeView(codegen: false, noScroll: arguments.contains("-labelHeightNoScroll"))) }
         if arguments.contains("-labelHeightProbeCodegen") { return AnyView(LabelHeightProbeView(codegen: true, noScroll: arguments.contains("-labelHeightNoScroll"))) }
         if arguments.contains("-scrollHeightProbe") { return AnyView(ScrollHeightProbeView(codegen: false)) }
