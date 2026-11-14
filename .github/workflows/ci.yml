@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: e6317edf165a25312e7cf9f938bb190b3f9d2aa4 # jsonui-cli fix/date-selectbox-caret-attributes (moves to the integrate head, then the tag)
+      JSONUI_CLI_MANIFEST_REF: v2.5.37 # jsonui-cli v2.5.37: reorder follow-ups and callbacks, accessibilitySelected, SelectBox caret
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
