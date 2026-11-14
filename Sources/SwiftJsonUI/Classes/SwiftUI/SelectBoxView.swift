@@ -111,9 +111,9 @@ public struct SelectBoxView: View {
         /// The caret's box. Nil keeps the glyph's own size on that axis.
         public var width: CGFloat?
         public var height: CGFloat?
-        /// Applies to the default glyph, and to a template `src`. A
-        /// full-colour asset keeps its colours — the rendering mode is the
-        /// asset's, not forced here.
+        /// Applies to the default glyph only. A `src` picture keeps its own
+        /// colours, template asset or not (drawn `.original`; the
+        /// requester's ruling 2026-11-14, the three faces alike).
         public var tintColor: Color?
         /// Fills the caret's box (width × height), not the select.
         public var background: Color?
@@ -524,13 +524,14 @@ public struct SelectBoxView: View {
     /// The fixed chevron, or the declared caret.
     ///
     /// The declared form is a box of `width` × `height` (each nil axis keeps
-    /// the glyph's size) filled with `background`, holding the glyph tinted
-    /// `tintColor` (gray when absent, as before), whose trailing edge sits
+    /// the glyph's size) filled with `background`, holding the app's `src`
+    /// picture in its own colours, or the default chevron tinted `tintColor`
+    /// (gray when absent, as before), whose trailing edge sits
     /// `rightMargin` (0 when absent) from the select's trailing edge.
     @ViewBuilder
     private var caretView: some View {
         if let caret {
-            caretGlyph(caret)
+            Self.caretGlyph(caret)
                 .frame(width: caret.width ?? Self.caretBox, height: caret.height ?? Self.caretBox)
                 .background(caret.background ?? Color.clear)
         } else {
@@ -541,14 +542,20 @@ public struct SelectBoxView: View {
         }
     }
 
+    /// The picture a caret's `src` names (the app's asset, in the current
+    /// colour mode). A seam for the tests, which have no asset catalog.
+    static var caretPicture: (String) -> Image = { Image(jsonUIAsset: $0) }
+
     @ViewBuilder
-    private func caretGlyph(_ caret: CaretAttributes) -> some View {
+    static func caretGlyph(_ caret: CaretAttributes) -> some View {
         if let src = caret.src {
-            // The asset's own rendering mode decides whether the tint lands
-            // — a template asset takes it, a full-colour one keeps its
-            // colours. Forcing `.template` here would recolour the latter.
-            Image(jsonUIAsset: src)
-                .foregroundColor(caret.tintColor ?? .gray)
+            // The app's own picture keeps its own colours, whatever the
+            // asset's rendering mode: tintColor paints the default chevron
+            // only (the requester's ruling 2026-11-14, the three faces alike;
+            // ticket kjui-date-selectbox-caret-attributes-not-emitted). A
+            // template asset took the tint, or gray without one.
+            caretPicture(src)
+                .renderingMode(.original)
         } else {
             Image(systemName: "chevron.down")
                 .foregroundColor(caret.tintColor ?? .gray)
