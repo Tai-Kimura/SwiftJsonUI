@@ -1423,8 +1423,13 @@ public struct CollectionConverter {
     /// (Collection_cellWidth/cellHeight__static parity d=50/41, run
     /// 31202080745; web anchors at the leading edge and hides the overflow).
     /// The grid path sizes its cells through GridItem and its own frame and
-    /// does not use this.
-    private static func applyDeclaredCellFrame(
+    /// does not use this. The pager does (PagingCollectionWrapperView, hence
+    /// fileprivate): the frame is laid in the middle of its page, as sjui's
+    /// add_paging_cell frames it (apply_cell_frame) and the page centres it.
+    /// Until SwiftJsonUI 10.41.0 the pager drew each cell its own size and
+    /// the declared cellWidth / cellHeight went unread (ticket
+    /// collection-cellwidth-cellheight-unread-on-some-routes, paging).
+    fileprivate static func applyDeclaredCellFrame(
         _ view: AnyView,
         component: DynamicComponent
     ) -> AnyView {
@@ -2648,14 +2653,21 @@ private struct PagingCollectionWrapperView: View {
                 // 2026-09-26, round 8). `page.index` is the page's place among
                 // all the pages, across the sections, as sjui's page tag and
                 // KotlinJsonUI's pager address count.
-                CollectionConverter.buildCellView(
-                    cellClassName: page.cellClassName,
-                    cellData: page.data,
-                    cellIndex: page.index,
-                    component: component,
-                    data: data,
-                    viewId: viewId,
-                    onItemAppear: onItemAppearCallback
+                // The declared cellWidth / cellHeight frame the cell, and the
+                // page lays that frame in its middle — sjui's add_paging_cell
+                // frames it the same (apply_cell_frame) before the page's
+                // padding.
+                CollectionConverter.applyDeclaredCellFrame(
+                    AnyView(CollectionConverter.buildCellView(
+                        cellClassName: page.cellClassName,
+                        cellData: page.data,
+                        cellIndex: page.index,
+                        component: component,
+                        data: data,
+                        viewId: viewId,
+                        onItemAppear: onItemAppearCallback
+                    )),
+                    component: component
                 )
                 .padding(pageInsets ?? EdgeInsets())
                 .padding(.horizontal, itemSpacing > 0 ? itemSpacing / 2 : 0)
