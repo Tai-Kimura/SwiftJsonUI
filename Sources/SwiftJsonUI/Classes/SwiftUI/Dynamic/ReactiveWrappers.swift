@@ -30,6 +30,8 @@ public struct ReactiveVisibilityWrapper<Content: View>: View {
             // (matches VisibilityWrapper semantics)
             content()
                 .opacity(0)
+                // A reorderable row's handle in here is not drawn: its row is fixed.
+                .environment(\.jsonuiNotDrawn, true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
                 // Out of the UI-test tree too (VisibilityWrapper .invisible).
@@ -57,6 +59,8 @@ public struct ReactiveHiddenWrapper: View {
         if isHidden {
             content
                 .opacity(0)
+                // A reorderable row's handle in here is not drawn: its row is fixed.
+                .environment(\.jsonuiNotDrawn, true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
                 // Out of the UI-test tree too (VisibilityWrapper .invisible).

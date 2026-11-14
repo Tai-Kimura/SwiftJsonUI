@@ -29,6 +29,7 @@ final class CollectionReorderVectorTests: XCTestCase {
 
     private func num(_ value: Any?) -> CGFloat { CGFloat((value as? NSNumber)?.doubleValue ?? 0) }
     private func locked(_ c: [String: Any]) -> Set<Int> { Set((c["locked"] as? [Int]) ?? []) }
+    private func fixed(_ c: [String: Any]) -> Set<Int> { Set((c["fixed"] as? [Int]) ?? []) }
 
     /// Rows laid one after another from `top` (each span includes the spacing after it, as the vectors say).
     private func spans(_ heights: [CGFloat], from top: CGFloat = 0) -> [Rule.RowSpan] {
@@ -41,10 +42,10 @@ final class CollectionReorderVectorTests: XCTestCase {
             let heights = (c["heights"] as? [NSNumber] ?? []).map { CGFloat($0.doubleValue) }
             let from = c["from"] as! Int
             guard let to = c["to"] as? Int else {
-                XCTAssertFalse(Rule.canPickUp(from, locked: locked(c)), "\(c["name"] ?? ""): not picked up")
+                XCTAssertFalse(Rule.canPickUp(from, locked: locked(c), fixed: fixed(c)), "\(c["name"] ?? ""): not picked up")
                 continue
             }
-            XCTAssertTrue(Rule.canPickUp(from, locked: locked(c)), "\(c["name"] ?? "")")
+            XCTAssertTrue(Rule.canPickUp(from, locked: locked(c), fixed: fixed(c)), "\(c["name"] ?? "")")
             XCTAssertEqual(Rule.target(from: from, dy: num(c["dy"]), rows: spans(heights), locked: locked(c)), to, "\(c["name"] ?? "")")
         }
     }
@@ -53,7 +54,7 @@ final class CollectionReorderVectorTests: XCTestCase {
         for c in try cases("drop") {
             let rows = c["rows"] as! [String]
             let from = c["from"] as! Int, to = c["to"] as! Int
-            let valid = Rule.isValidMove(from: from, to: to, count: rows.count, locked: locked(c))
+            let valid = Rule.isValidMove(from: from, to: to, count: rows.count, locked: locked(c), fixed: fixed(c))
             if c["refused"] != nil {
                 XCTAssertFalse(valid, "\(c["name"] ?? ""): refused (\(c["refused"] ?? ""))")
             } else {
@@ -87,6 +88,11 @@ final class CollectionReorderVectorTests: XCTestCase {
             let name = "\(c["name"] ?? "")"
             if c["cancelled"] as? Bool == true {
                 XCTAssertFalse(commits, name)
+            } else if c["to"] == nil || c["to"] is NSNull {
+                // Inside the container, but the row is not picked up (locked or fixed).
+                XCTAssertTrue(commits, name)
+                XCTAssertFalse(Rule.canPickUp(from, locked: locked(c), fixed: fixed(c)), name)
+                XCTAssertNil(Rule.clampedTo(from: from, to: from, locked: locked(c), fixed: fixed(c)), name)
             } else {
                 XCTAssertTrue(commits, name)
                 XCTAssertEqual(Rule.target(from: from, dy: dy, rows: rows, locked: locked(c)), c["to"] as? Int, name)
@@ -103,7 +109,8 @@ final class CollectionReorderVectorTests: XCTestCase {
 
     func testAccessibility() throws {
         for c in try cases("a11y") {
-            let moves = Rule.accessibilityMoves(index: c["from"] as! Int, count: c["rows"] as! Int, locked: locked(c))
+            let moves = Rule.accessibilityMoves(index: c["from"] as! Int, count: c["rows"] as! Int, locked: locked(c),
+                                                fixed: fixed(c))
             let offered = (c["action"] as? String) == "up" ? moves.up : moves.down
             let name = "\(c["name"] ?? "")"
             if let to = c["to"] as? Int {
@@ -115,10 +122,20 @@ final class CollectionReorderVectorTests: XCTestCase {
         }
     }
 
-    /// The one place iOS 27's own reorderContainer reads the rule differently is written down, not hidden.
-    func testTheKnownDifferenceIsIOS27sCentre() throws {
+    /// iOS 27's own reorderContainer and the rule agree on the drag: both pass a row at its edge (ticket
+    /// jui-collection-reorder-target-lags-one-row-behind-finger). The entry that read the standard as the centre
+    /// rule measured one release exactly on a centre and is gone; no drag difference is written down.
+    func testNoDragDifferenceFromIOS27sStandard() throws {
         let known = try XCTUnwrap(vectors["knownDifferences"] as? [[String: Any]])
-        XCTAssertEqual(known.count, 1)
-        XCTAssertTrue("\(known[0])".contains("27"))
+        XCTAssertFalse(known.contains { ($0["rule"] as? String) == "drag" }, "\(known)")
+    }
+
+    func testItemsChange() throws {
+        for c in try cases("itemsChange") {
+            let start = try XCTUnwrap(c["start"] as? [String: Any]), now = try XCTUnwrap(c["release"] as? [String: Any])
+            let changed = Rule.itemsChanged(startIds: start["ids"] as! [String], startLocked: locked(start), startFixed: fixed(start),
+                                            nowIds: now["ids"] as! [String], nowLocked: locked(now), nowFixed: fixed(now))
+            XCTAssertEqual(changed, c["cancelled"] as? Bool, "\(c["name"] ?? "")")
+        }
     }
 }

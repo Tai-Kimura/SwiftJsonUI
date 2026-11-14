@@ -54,6 +54,8 @@ public struct VisibilityWrapper<Content: View>: View {
             // found by its id. Drawing and the opacity animation are unchanged.
             content
                 .opacity(0)
+                // A reorderable row's handle in here is not drawn: its row is fixed.
+                .environment(\.jsonuiNotDrawn, true)
                 .accessibilityElement(children: .ignore)
                 .accessibilityHidden(true)
                 .accessibilityRepresentation { EmptyView() }

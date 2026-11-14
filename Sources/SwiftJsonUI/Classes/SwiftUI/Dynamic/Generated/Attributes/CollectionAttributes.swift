@@ -103,9 +103,12 @@ public struct CollectionAttributes {
         "listStyle",
         "onItemAppear",
         "onReorder",
+        "onReorderEnd",
+        "onReorderStart",
         "onValueChange",
         "orientation",
         "paging",
+        "reorderFixedProperty",
         "reorderHandle",
         "reorderLockedProperty",
         "reorderable",
@@ -232,6 +235,12 @@ public struct CollectionAttributes {
     /// Called when a dragged row is released at a new place: `@{handler}` with (section: Int, from: Int, to: Int) — Swift `(Int, Int, Int) -> Void`, Kotlin `(Int, Int, Int) -> Unit`, TS `(section: number, from: number, to: number) => void`. `to` is the row's index in the order AFTER the move (iOS onMove's destination, counted before the row is taken out, is converted by the library). Same section only (v1: no move across sections); a single-section Collection is section 0. Not called when the row is released where it started. The screen reader's move up / move down call it with to = from - 1 / from + 1 (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13).
     public let onReorder: AttrValue<Any>?
 
+    /// Called once when a drag that onReorderStart began is over: `@{handler}` with (section: Int) — Swift `(Int) -> Void`, Kotlin `(Int) -> Unit`, TS `(section: number) => void`. It follows onReorder when the row moved, and comes alone when the row was let go where it started, outside the Collection, or the drag was cancelled because the rows changed under it (shared/core/reorder_vectors.json rule.itemsChange). The screen reader's move up / move down call it right after their onReorder (ticket jui-collection-reorder-start-callback-missing).
+    public let onReorderEnd: AttrValue<Any>?
+
+    /// Called when a row is picked up to be reordered: `@{handler}` with (section: Int, index: Int) — Swift `(Int, Int) -> Void`, Kotlin `(Int, Int) -> Unit`, TS `(section: number, index: number) => void`. `index` is the row's index when it is picked up. A ViewModel that rebuilds its rows by time can hold the rebuild until onReorderEnd. The screen reader's move up / move down call it right before their onReorder (ticket jui-collection-reorder-start-callback-missing, the requester's instruction 2026-11-14).
+    public let onReorderStart: AttrValue<Any>?
+
     /// Collection page/selection change handler. Canonical; prefer over onPageChanged. Called when the page changes — by a swipe, a scrollTo or a currentPage write — with the new page; not called when the pager first appears (ruling 2026-10-02). [aliases: onValueChanged, onPageChanged; binding: one-way]
     public let onValueChange: AttrValue<String>?
 
@@ -240,6 +249,9 @@ public struct CollectionAttributes {
 
     /// Enable paging
     public let paging: Bool?
+
+    /// A key of the cell data: a row whose value for it is true does not move and has no screen reader move up / down, but other rows are moved past it (a cancelled or skipped row). A row of a Collection with a reorderHandle whose handle is not drawn is fixed the same way. reorderLockedProperty wins when a row is both (ticket jui-collection-reorder-fixed-row-vs-barrier-row, ruling 2026-11-14).
+    public let reorderFixedProperty: String?
 
     /// The id of an element in the cell layout that starts the drag when long-pressed (e.g. a grip at the row's right edge). Without it, a long press anywhere on the row starts it. The rest of the row keeps its taps (ticket jui-collection-drag-to-reorder, ruling B 2026-11-13).
     public let reorderHandle: String?
@@ -315,9 +327,12 @@ public struct CollectionAttributes {
         self.listStyle = Self.parseListStyle(AttrCoerce.lookup(json, "listStyle"))
         self.onItemAppear = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onItemAppear"), AttrCoerce.string)
         self.onReorder = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onReorder"))
+        self.onReorderEnd = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onReorderEnd"))
+        self.onReorderStart = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onReorderStart"))
         self.onValueChange = AttrCoerce.attrValue(AttrCoerce.lookup(json, "onValueChange", ["onValueChanged", "onPageChanged"], canonicalOnly: canonicalOnly), AttrCoerce.string)
         self.orientation = Self.parseOrientation(AttrCoerce.lookup(json, "orientation"))
         self.paging = AttrCoerce.boolean(AttrCoerce.lookup(json, "paging"))
+        self.reorderFixedProperty = AttrCoerce.string(AttrCoerce.lookup(json, "reorderFixedProperty"))
         self.reorderHandle = AttrCoerce.string(AttrCoerce.lookup(json, "reorderHandle"))
         self.reorderLockedProperty = AttrCoerce.string(AttrCoerce.lookup(json, "reorderLockedProperty"))
         self.reorderable = AttrCoerce.attrValue(AttrCoerce.lookup(json, "reorderable"), AttrCoerce.boolean)
