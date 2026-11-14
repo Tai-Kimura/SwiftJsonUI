@@ -763,6 +763,7 @@ public struct CollectionConverter {
                         cellClassName: cellName,
                         cellData: cell.data,
                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                         component: component,
                         data: data,
                         viewId: viewId,
@@ -846,6 +847,7 @@ public struct CollectionConverter {
                             cellClassName: cellName,
                             cellData: cell.data,
                             cellIndex: cell.index,
+                                        cellAddress: cell.address,
                             component: component,
                             data: data,
                             viewId: viewId,
@@ -930,18 +932,38 @@ public struct CollectionConverter {
     /// cell with no key at 3 and a cell keyed "3" in one section were one id,
     /// as two cells of one section with one key were, and which of them a
     /// scroll reached was SwiftUI's choice.
+    /// `firstAddress`: the cells of the drawn sections before `section`
+    /// (cellsBefore) — a cell's `address` is that plus its index.
     static func identifiedItems(
         from cellsData: [[String: Any]],
         cellIdProperty: String?,
-        section: Int
+        section: Int,
+        firstAddress: Int = 0
     ) -> [CollectionCellItem] {
         var seen = Set<String>()
         return cellsData.enumerated().map { index, data in
             if let key = cellKey(data, cellIdProperty: cellIdProperty), seen.insert(key).inserted {
-                return CollectionCellItem(id: AnyHashable(CollectionCellItem.Key(section: section, key: key)), index: index, data: data)
+                return CollectionCellItem(id: AnyHashable(CollectionCellItem.Key(section: section, key: key)), index: index,
+                                          address: firstAddress + index, data: data)
             }
-            return CollectionCellItem(id: AnyHashable(IndexPath(item: index, section: section)), index: index, data: data)
+            return CollectionCellItem(id: AnyHashable(IndexPath(item: index, section: section)), index: index,
+                                      address: firstAddress + index, data: data)
         }
+    }
+
+    /// The cells of the drawn sections before `section`: a declared section
+    /// is drawn when it names a cell (`sections`), the class-list shape
+    /// (`sections` nil) draws every data section. The scrollTo Int counts
+    /// the same cells (scrollID), as a pager's page does.
+    static func cellsBefore(_ section: Int, sections: [[String: Any]]?, dataSource: CollectionDataSource) -> Int {
+        var count = 0
+        for index in 0..<min(section, dataSource.sections.count) {
+            if let sections {
+                guard index < sections.count, sections[index]["cell"] is String else { continue }
+            }
+            count += dataSource.sections[index].cells?.data.count ?? 0
+        }
+        return count
     }
 
     // Guard so we only log the misconfiguration once per component id per launch.
@@ -1239,7 +1261,8 @@ public struct CollectionConverter {
                         // Cells
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))
                             // A section that declares its own `columns` > 1
                             // is a grid of them (sectionOwnGridColumns).
                             if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
@@ -1260,6 +1283,7 @@ public struct CollectionConverter {
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -1338,7 +1362,8 @@ public struct CollectionConverter {
 
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))
                             // A section that declares its own `columns` > 1
                             // is a grid of them (sectionOwnGridColumns).
                             if let ownColumns = sectionOwnGridColumns(sectionConfig, component: component) {
@@ -1359,6 +1384,7 @@ public struct CollectionConverter {
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -1453,7 +1479,8 @@ public struct CollectionConverter {
         let cells = AnyView(
             ForEach(0..<dataSource.sections.count, id: \.self) { sectionIndex in
                 if let cellName, let cellsData = dataSource.sections[sectionIndex].cells {
-                    let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                    let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: nil, dataSource: dataSource))
                     reorderableRows(items: items, section: sectionIndex, component: component,
                                     cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .list) { cell in
                         applyDeclaredCellFrame(
@@ -1461,6 +1488,7 @@ public struct CollectionConverter {
                                 cellClassName: cellName,
                                 cellData: cell.data,
                                 cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                 component: component,
                                 data: data,
                                 viewId: viewId,
@@ -1606,7 +1634,8 @@ public struct CollectionConverter {
 
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))
                             // `columns` on a horizontal Collection is its lanes
                             // (horizontalLanes); one lane keeps the stack.
                             if let lanes = horizontalLanes(sectionConfig, globalColumns: globalColumns, columnsIsBinding: columnsIsBinding) {
@@ -1626,6 +1655,7 @@ public struct CollectionConverter {
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -1879,13 +1909,15 @@ public struct CollectionConverter {
                                 repeating: GridItem(gridItemSize, spacing: itemSpacing),
                                 count: sectionColumns
                             )
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))
                             LazyVGrid(columns: gridColumns, spacing: lineSpacing) {
                                 ForEach(items) { cell in
                                     buildCellView(
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -1968,7 +2000,8 @@ public struct CollectionConverter {
 
                         if let cellName = sectionConfig["cell"] as? String,
                            let cellsData = sectionData.cells {
-                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                            let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))
                             FlowLayout(
                                 alignment: getFlowAlignment(from: component),
                                 horizontalSpacing: gaps.cells,
@@ -1979,6 +2012,7 @@ public struct CollectionConverter {
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -2032,11 +2066,13 @@ public struct CollectionConverter {
                 ForEach(0..<sectionCount, id: \.self) { sectionIndex in
                     if let cellName = sections[sectionIndex]["cell"] as? String,
                        let cellsData = dataSource.sections[sectionIndex].cells {
-                        ForEach(identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)) { cell in
+                        ForEach(identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))) { cell in
                             buildCellView(
                                 cellClassName: cellName,
                                 cellData: cell.data,
                                 cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                 component: component,
                                 data: data,
                                 viewId: viewId,
@@ -2097,7 +2133,8 @@ public struct CollectionConverter {
 
                     if let cellName = sectionConfig["cell"] as? String,
                        let cellsData = sectionData.cells {
-                        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex)
+                        let items = identifiedItems(from: cellsData.data, cellIdProperty: cellIdProperty, section: sectionIndex,
+                                        firstAddress: cellsBefore(sectionIndex, sections: sections, dataSource: dataSource))
                         if isFlow {
                             // The declared gaps as declared, 0 included
                             // (flowSpacing; the blocks are the VStack below).
@@ -2111,6 +2148,7 @@ public struct CollectionConverter {
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -2152,6 +2190,7 @@ public struct CollectionConverter {
                                         cellClassName: cellName,
                                         cellData: cell.data,
                                         cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                         component: component,
                                         data: data,
                                         viewId: viewId,
@@ -2168,6 +2207,7 @@ public struct CollectionConverter {
                                     cellClassName: cellName,
                                     cellData: cell.data,
                                     cellIndex: cell.index,
+                                        cellAddress: cell.address,
                                     component: component,
                                     data: data,
                                     viewId: viewId,
@@ -2345,6 +2385,7 @@ public struct CollectionConverter {
         cellClassName: String,
         cellData: [String: Any],
         cellIndex: Int = 0,
+        cellAddress: Int? = nil,
         component: DynamicComponent,
         data: [String: Any],
         viewId: String?,
@@ -2399,7 +2440,9 @@ public struct CollectionConverter {
         // cell run through THIS renderer, so they are what decides it — see
         // the report for 2026-09-05.
         .accessibilityElement(children: .contain)
-        .accessibilityIdentifier(cellAccessibilityIdentifier(component: component, cellIndex: cellIndex))
+        // The address counts across the drawn sections (cellAddress); the
+        // index given to onItemAppear stays the cell's place in its section.
+        .accessibilityIdentifier(cellAccessibilityIdentifier(component: component, cellIndex: cellAddress ?? cellIndex))
         .onAppear {
             onItemAppear?(cellIndex)
         }
@@ -2514,8 +2557,19 @@ struct CollectionCellItem: Identifiable {
     }
 
     let id: AnyHashable
+    /// Its place in its section (what onItemAppear is called with).
     let index: Int
+    /// Its place among the cells of every drawn section — the n of
+    /// `{collectionId}_item_{n}` and of scrollTo's Int.
+    var address: Int = 0
     let data: [String: Any]
+
+    init(id: AnyHashable, index: Int, address: Int? = nil, data: [String: Any]) {
+        self.id = id
+        self.index = index
+        self.address = address ?? index
+        self.data = data
+    }
 }
 
 // MARK: - Paging Collection Wrapper View
