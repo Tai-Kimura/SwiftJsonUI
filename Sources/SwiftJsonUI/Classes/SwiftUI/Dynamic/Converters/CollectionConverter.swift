@@ -1423,8 +1423,13 @@ public struct CollectionConverter {
     /// (Collection_cellWidth/cellHeight__static parity d=50/41, run
     /// 31202080745; web anchors at the leading edge and hides the overflow).
     /// The grid path sizes its cells through GridItem and its own frame and
-    /// does not use this.
-    private static func applyDeclaredCellFrame(
+    /// does not use this. Every other route does — the pager's pages
+    /// (PagingCollectionWrapperView, hence fileprivate), the flow, lazy and
+    /// `lazy: none`, and the `lazy: none` stacks: until SwiftJsonUI 10.40.0
+    /// those four drew each cell its own size and the declared cellWidth /
+    /// cellHeight went unread (ticket
+    /// collection-cellwidth-cellheight-unread-on-some-routes).
+    fileprivate static func applyDeclaredCellFrame(
         _ view: AnyView,
         component: DynamicComponent
     ) -> AnyView {
@@ -2008,15 +2013,18 @@ public struct CollectionConverter {
                                 verticalSpacing: gaps.lines
                             ) {
                                 ForEach(items) { cell in
-                                    buildCellView(
-                                        cellClassName: cellName,
-                                        cellData: cell.data,
-                                        cellIndex: cell.index,
-                                        cellAddress: cell.address,
-                                        component: component,
-                                        data: data,
-                                        viewId: viewId,
-                                        onItemAppear: onItemAppear
+                                    applyDeclaredCellFrame(
+                                        AnyView(buildCellView(
+                                            cellClassName: cellName,
+                                            cellData: cell.data,
+                                            cellIndex: cell.index,
+                                            cellAddress: cell.address,
+                                            component: component,
+                                            data: data,
+                                            viewId: viewId,
+                                            onItemAppear: onItemAppear
+                                        )),
+                                        component: component
                                     )
                                     .id(cell.id)
                                 }
@@ -2144,15 +2152,18 @@ public struct CollectionConverter {
                                 verticalSpacing: flowSpacing(component).lines
                             ) {
                                 ForEach(items) { cell in
-                                    buildCellView(
-                                        cellClassName: cellName,
-                                        cellData: cell.data,
-                                        cellIndex: cell.index,
-                                        cellAddress: cell.address,
-                                        component: component,
-                                        data: data,
-                                        viewId: viewId,
-                                        onItemAppear: onItemAppear
+                                    applyDeclaredCellFrame(
+                                        AnyView(buildCellView(
+                                            cellClassName: cellName,
+                                            cellData: cell.data,
+                                            cellIndex: cell.index,
+                                            cellAddress: cell.address,
+                                            component: component,
+                                            data: data,
+                                            viewId: viewId,
+                                            onItemAppear: onItemAppear
+                                        )),
+                                        component: component
                                     )
                                     .id(cell.id)
                                 }
@@ -2203,15 +2214,18 @@ public struct CollectionConverter {
                         } else {
                             reorderableRows(items: items, section: sectionIndex, component: component,
                                             cellIdProperty: cellIdProperty, reorder: reorderDecl, style: .stack) { cell in
-                                buildCellView(
-                                    cellClassName: cellName,
-                                    cellData: cell.data,
-                                    cellIndex: cell.index,
+                                applyDeclaredCellFrame(
+                                    AnyView(buildCellView(
+                                        cellClassName: cellName,
+                                        cellData: cell.data,
+                                        cellIndex: cell.index,
                                         cellAddress: cell.address,
-                                    component: component,
-                                    data: data,
-                                    viewId: viewId,
-                                    onItemAppear: onItemAppear
+                                        component: component,
+                                        data: data,
+                                        viewId: viewId,
+                                        onItemAppear: onItemAppear
+                                    )),
+                                    component: component
                                 )
                                 .id(cell.id)
                             }
@@ -2648,14 +2662,20 @@ private struct PagingCollectionWrapperView: View {
                 // 2026-09-26, round 8). `page.index` is the page's place among
                 // all the pages, across the sections, as sjui's page tag and
                 // KotlinJsonUI's pager address count.
-                CollectionConverter.buildCellView(
-                    cellClassName: page.cellClassName,
-                    cellData: page.data,
-                    cellIndex: page.index,
-                    component: component,
-                    data: data,
-                    viewId: viewId,
-                    onItemAppear: onItemAppearCallback
+                // The declared cellWidth / cellHeight frame the cell inside
+                // its page, before the page's padding — sjui's
+                // add_paging_cell frames it the same (apply_cell_frame).
+                CollectionConverter.applyDeclaredCellFrame(
+                    AnyView(CollectionConverter.buildCellView(
+                        cellClassName: page.cellClassName,
+                        cellData: page.data,
+                        cellIndex: page.index,
+                        component: component,
+                        data: data,
+                        viewId: viewId,
+                        onItemAppear: onItemAppearCallback
+                    )),
+                    component: component
                 )
                 .padding(pageInsets ?? EdgeInsets())
                 .padding(.horizontal, itemSpacing > 0 ? itemSpacing / 2 : 0)
