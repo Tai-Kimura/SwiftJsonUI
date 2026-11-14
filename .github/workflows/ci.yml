@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.39 # jsonui-cli v2.5.39: a cell address counts across sections, branch-tests orphans, lint-strings
+      JSONUI_CLI_MANIFEST_REF: v2.5.40 # jsonui-cli v2.5.40: content inset overlap, lazy grid row height, cellWidth / cellHeight on every route
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
