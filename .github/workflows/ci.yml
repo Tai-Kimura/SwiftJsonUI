@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.36 # jsonui-cli v2.5.36: fontScaling / maxFontScale on the text components, the SelectBox defaults on three faces
+      JSONUI_CLI_MANIFEST_REF: 011faa000c4f29c5dc100950074afc4ede703bec # jsonui-cli integrate/2.5.37 (moves to v2.5.37 at the tag)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
