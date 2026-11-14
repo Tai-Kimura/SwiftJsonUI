@@ -199,6 +199,9 @@ struct ConformanceRootView: View {
         if arguments.contains("-screenMarkerShrinkProbe") { return AnyView(ScreenMarkerShrinkProbeView()) }
         if arguments.contains("-offsetProbe") { return AnyView(OffsetHitTargetProbeView()) }
         if arguments.contains("-pagerCellFrameProbe") { return AnyView(PagerCellFrameProbeView()) }
+        if let i = arguments.firstIndex(of: "-networkImageRetryProbe"), i + 1 < arguments.count {
+            return AnyView(NetworkImageRetryProbeView(url: arguments[i + 1]))
+        }
         if arguments.contains("-confirmationDialogProbe") { return AnyView(ConfirmationDialogProbeView()) }
         if arguments.contains("-duplicateIdentifierProbe") { return AnyView(DuplicateIdentifierProbeView()) }
         if arguments.contains("-decorativeImageProbe") { return AnyView(DecorativeImageProbeView()) }

@@ -52,11 +52,20 @@ public final class SwiftUIImageCache {
         failedURLs[key] = Date()
         failedLock.unlock()
     }
+
+    /// Lift a URL's failed mark before its cooldown runs out. Only a tap on
+    /// the failed image does (NetworkImageLoader.retry): every other load of
+    /// the URL still waits the cooldown out.
+    public func clearFailed(_ key: String) {
+        failedLock.lock()
+        failedURLs.removeValue(forKey: key)
+        failedLock.unlock()
+    }
 }
 
 // MARK: - Image Loader (ObservableObject to avoid re-triggering on parent redraw)
 
-private final class NetworkImageLoader: ObservableObject {
+final class NetworkImageLoader: ObservableObject {
     @Published var loadedImage: UIImage?
     @Published var isLoading = false
     @Published var hasFailed = false
@@ -111,7 +120,12 @@ private final class NetworkImageLoader: ObservableObject {
 
     func retry(url: String?, headers: [String: String]) {
         guard let urlString = url else { return }
-        // Clear failed state to allow retry
+        // Clear failed state to allow retry. The tap lifts the URL's failed
+        // mark too: the failed image shows after the 2s + 4s retries, inside
+        // the mark's 30s cooldown, so a tap that kept the mark went straight
+        // back to failed without a request (until SwiftJsonUI 10.41.0, ticket
+        // sjui-networkimage-retry-tap-blocked-by-failed-mark).
+        SwiftUIImageCache.shared.clearFailed(urlString)
         currentUrl = nil
         loadedImage = nil
         hasFailed = false
