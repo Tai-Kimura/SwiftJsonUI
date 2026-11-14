@@ -83,7 +83,12 @@ final class ReorderProbeUITests: XCTestCase {
         let app = try launch("handle")
         let badge = row(app, 0).descendants(matching: .any)["within_badge"].firstMatch
         XCTAssertTrue(badge.waitForExistence(timeout: 5))
-        XCTAssertEqual(drag(app, from: center(badge), to: center(row(app, 3), dy: 0.75)), "BCDAEF")
+        // The rule reads the dragged row's centre, not the finger: held by its corner, the row's centre is
+        // (row centre - badge centre) from the finger, so the finger lets go that far from where the row's centre
+        // lands - D's lower quarter, short of E's top (a row is passed when the centre crosses its edge).
+        let grip = row(app, 0).frame.midY - badge.frame.midY
+        let end = center(row(app, 3), dy: 0.75).withOffset(CGVector(dx: 0, dy: -grip))
+        XCTAssertEqual(drag(app, from: center(badge), to: end), "BCDAEF")
     }
 
     func testReleasingOverTheFooterIsTheLastPlaceAndOutsideIsCancelled() throws {
