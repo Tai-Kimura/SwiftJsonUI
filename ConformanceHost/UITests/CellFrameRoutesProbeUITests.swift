@@ -7,8 +7,7 @@
 //  frame's top leading corner, so the frame is read off where the next cell
 //  starts: the list's and the `lazy: none` vertical stack's cells 40 apart,
 //  the horizontal stack's 150, the flow's two a line 160 apart (gap 10) and
-//  the third 50 down; the pager's cell where a 150 × 40 frame centred in its
-//  200 × 60 page puts it. NOT opt-in.
+//  the third 50 down. NOT opt-in.
 //
 
 import XCTest
@@ -54,14 +53,6 @@ final class CellFrameRoutesProbeUITests: XCTestCase {
             check(route, "item_1.y - item_0.y", c1.minY - c0.minY, 0)
             check(route, "item_2.x - item_0.x", c2.minX - c0.minX, 0)
             check(route, "item_2.y - item_0.y", c2.minY - c0.minY, 50)
-        }
-        // The pager: the page is 200 × 60, its cell's 150 × 40 frame centred
-        // in it, the cell at the frame's top leading corner.
-        do {
-            let pager = element(app, "cw_pager_frame").frame
-            let c0 = cell("cw_pager", 0)
-            check("cw_pager", "item_0.x - pager.x", c0.minX - pager.minX, 25)
-            check("cw_pager", "item_0.y - pager.y", c0.minY - pager.minY, 10)
         }
         report.forEach { print($0) }
         let attachment = XCTAttachment(string: report.joined(separator: "\n"))

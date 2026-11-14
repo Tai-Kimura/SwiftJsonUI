@@ -13,16 +13,15 @@
 //  leading corner and the frame shows in where the NEXT cell starts):
 //  - `cw_list`: the lazy vertical list, which read them already — the
 //    control: its cells 40 apart.
-//  - `cw_pager`: a 200 × 60 pager; each page's cell framed 150 × 40 inside
-//    the page.
 //  - `cw_flow` / `cw_flow_none`: a 320-wide flow, lazy and `lazy: none`,
 //    gaps 10: two cells a line (160 apart), the third on the next (50 down).
 //  - `cw_none_v` / `cw_none_h`: the `lazy: none` stacks, vertical and
 //    horizontal: 40 / 150 apart.
 //  Until SwiftJsonUI 10.40.0 all but the list drew each cell its own size
 //  (ticket collection-cellwidth-cellheight-unread-on-some-routes): the flow
-//  four 60pt cells a line, the stacks 28 / 60 apart, the pager its cell
-//  unframed.
+//  four 60pt cells a line, the stacks 28 / 60 apart. The pager is not here:
+//  where a cell smaller than its page sits is not settled yet (the same
+//  ticket, paging).
 //
 
 import SwiftUI
@@ -40,7 +39,6 @@ struct CellFrameRoutesProbeView: View {
 
     static let routes: [(id: String, extra: String)] = [
         ("cw_list", #", "width": 320, "height": 130"#),
-        ("cw_pager", #", "layout": "horizontal", "paging": true, "width": 200, "height": 60"#),
         ("cw_flow", #", "layout": "flow", "width": 320, "height": 100, "columnSpacing": 10, "lineSpacing": 10"#),
         ("cw_flow_none", #", "layout": "flow", "lazy": "none", "width": 320, "height": 100, "columnSpacing": 10, "lineSpacing": 10"#),
         ("cw_none_v", #", "lazy": "none", "width": 320, "height": 130"#),
