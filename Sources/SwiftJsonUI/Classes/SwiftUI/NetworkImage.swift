@@ -2,11 +2,17 @@
 //  NetworkImage.swift
 //  SwiftJsonUI
 //
-//  SwiftUI implementation of network image loading with retry and caching
+//  SwiftUI implementation of network image loading with retry and caching.
+//  The reads are NetworkImageLoadTable's (one per URL, shared by the frames
+//  showing it, stopped when none does); a frame naming a loadingRenderer
+//  draws it while the image is read, and the image fades in over
+//  transitionDuration (ticket jui-networkimage-load-listener, the
+//  requester's ruling 2026-11-15).
 //
 
 import SwiftUI
 import Combine
+import QuartzCore
 
 // MARK: - Network Image Cache (shared)
 
@@ -18,8 +24,20 @@ public final class SwiftUIImageCache {
     /// How long a failed URL stays blacklisted before allowing retry
     private let failedCooldown: TimeInterval = 30
 
+    /// The default byte budget of the decoded images held (64 MiB).
+    public static let defaultTotalCostLimit = 64 * 1024 * 1024
+
     private init() {
         cache.countLimit = 200
+        cache.totalCostLimit = Self.defaultTotalCostLimit
+    }
+
+    /// The byte budget of the decoded images held: the images are kept
+    /// prepared for display (decoded), and each costs its decoded bytes.
+    /// `countLimit` 200 stays as well.
+    public var totalCostLimit: Int {
+        get { cache.totalCostLimit }
+        set { cache.totalCostLimit = newValue }
     }
 
     public func get(_ key: String) -> UIImage? {
@@ -27,11 +45,17 @@ public final class SwiftUIImageCache {
     }
 
     public func set(_ key: String, image: UIImage) {
-        cache.setObject(image, forKey: key as NSString)
+        cache.setObject(image, forKey: key as NSString, cost: Self.decodedBytes(image))
         // Clear from failed list on success
         failedLock.lock()
         failedURLs.removeValue(forKey: key)
         failedLock.unlock()
+    }
+
+    /// The decoded size of `image` in bytes (4 a pixel when it has no CGImage).
+    static func decodedBytes(_ image: UIImage) -> Int {
+        if let cg = image.cgImage { return cg.bytesPerRow * cg.height }
+        return Int(image.size.width * image.scale * image.size.height * image.scale * 4)
     }
 
     /// Returns true if this URL recently failed and should not be retried yet
@@ -65,142 +89,199 @@ public final class SwiftUIImageCache {
 
 // MARK: - Image Loader (ObservableObject to avoid re-triggering on parent redraw)
 
+/// A frame's view of its URL's load: the three states its body draws,
+/// written on a change only (progress never touches them, so it never
+/// redraws the body), the loading renderer's layer view while one is named,
+/// and the frame's onLoadStateChange / onLoadEvent.
+@MainActor
 final class NetworkImageLoader: ObservableObject {
     @Published var loadedImage: UIImage?
     @Published var isLoading = false
     @Published var hasFailed = false
+    /// The frame draws its layer view (the renderer, then the image fading in).
+    @Published var hostActive = false
+    /// How the error image comes in.
+    @Published var errorFade: NetworkImageFade = .none
 
-    private var currentUrl: String?
-    private var loadTask: Task<Void, Never>?
+    private(set) var currentUrl: String?
+    private var headers: [String: String] = [:]
+    private(set) var load: NetworkImageLoad?
+    private var observation: NetworkImageObservation?
+    private weak var host: NetworkImageLayerView?
+    private var reportedState: String?
+    /// The shown image came from the memory cache (no fade, no renderer).
+    private(set) var fromMemory = false
+
+    // The frame's declaration, refreshed by the view.
+    var rendererFactory: (() -> NetworkImageLoadingRenderer)?
+    var loadingDelay: CFTimeInterval = 0.2
+    var transition: CFTimeInterval = 0
+    var gravity: CALayerContentsGravity = .resizeAspect
+    var onLoadStateChange: ((String) -> Void)?
+    var onLoadEvent: ((NetworkImageLoadEvent) -> Void)?
+
+    init() {}
 
     func loadIfNeeded(url: String?, headers: [String: String]) {
         guard let urlString = url, !urlString.isEmpty,
-              URL(string: urlString) != nil else { return }
+              let requestUrl = URL(string: urlString) else { return }
 
-        // Already loaded this exact URL — no-op
-        if currentUrl == urlString && loadedImage != nil { return }
-
-        // Already failed this exact URL — don't retry automatically
-        if currentUrl == urlString && hasFailed { return }
-
-        // URL changed — cancel previous and start new
-        if currentUrl != urlString {
-            loadTask?.cancel()
+        if currentUrl == urlString {
+            // Loaded, failed, or reading: nothing to start.
+            if loadedImage != nil || hasFailed || load != nil { return }
+        } else {
+            stop()
             loadedImage = nil
             hasFailed = false
+            isLoading = false
+            hostActive = false
+            reportedState = nil
         }
-
         currentUrl = urlString
+        self.headers = headers
 
-        // Check cache synchronously
         if let cached = SwiftUIImageCache.shared.get(urlString) {
+            fromMemory = true
             loadedImage = cached
             isLoading = false
             hasFailed = false
+            report("loaded")
+            onLoadEvent?(.finished(source: .memory))
             return
         }
 
-        // Skip recently failed URLs
+        // A URL that failed a moment ago is not read again by itself (30 s);
+        // a tap on the failed image is (retry).
         if SwiftUIImageCache.shared.isRecentlyFailed(urlString) {
+            errorFade = .none
             isLoading = false
             hasFailed = true
+            report("failed")
             return
         }
 
-        // Already loading this URL
-        if isLoading { return }
+        start(urlString, url: requestUrl)
+    }
 
-        isLoading = true
+    private func start(_ urlString: String, url: URL) {
+        let load = NetworkImageLoadTable.shared.acquire(urlString, url: url, headers: headers)
+        self.load = load
+        fromMemory = false
         hasFailed = false
+        isLoading = true
+        if rendererFactory != nil { hostActive = true }
+        report("loading")
+        observation = load.observe { [weak self] event in self?.handle(event) }
+        if let host { attachHost(host, colorScheme: nil) }
+    }
 
-        loadTask = Task { [weak self] in
-            await self?.performLoad(urlString: urlString, headers: headers)
+    private func handle(_ event: NetworkImageLoadEvent) {
+        onLoadEvent?(event)
+        switch event {
+        case .finished(let source): finish(source)
+        case .failed: fail()
+        default: break
         }
     }
 
+    private func finish(_ source: NetworkImageSource) {
+        guard let urlString = currentUrl, let image = SwiftUIImageCache.shared.get(urlString) else {
+            fail()
+            return
+        }
+        letGo()
+        if hostActive, let host {
+            host.finish(image: image, source: source) { [weak self] in self?.hostActive = false }
+            isLoading = false
+            loadedImage = image
+        } else {
+            let fade = NetworkImageFade.fade(.image, transition: transition, rendererNamed: rendererFactory != nil,
+                                             rendererAttached: false, fromMemory: false)
+            let apply = {
+                self.hostActive = false
+                self.isLoading = false
+                self.loadedImage = image
+            }
+            if fade.duration > 0 { withAnimation(fade.swiftUIAnimation, apply) } else { apply() }
+        }
+        report("loaded")
+    }
+
+    private func fail() {
+        letGo()
+        if hostActive, let host {
+            errorFade = host.fail { [weak self] in self?.hostActive = false }
+        } else {
+            errorFade = NetworkImageFade.fade(.error, transition: transition, rendererNamed: rendererFactory != nil,
+                                              rendererAttached: false, fromMemory: false)
+            hostActive = false
+        }
+        let apply = {
+            self.isLoading = false
+            self.hasFailed = true
+        }
+        if errorFade.duration > 0 { withAnimation(errorFade.swiftUIAnimation, apply) } else { apply() }
+        report("failed")
+    }
+
+    /// A tap on the failed image: a new read of the URL, its failed mark and
+    /// its entry gone (level 0, attempt 0).
     func retry(url: String?, headers: [String: String]) {
         guard let urlString = url else { return }
-        // Clear failed state to allow retry. The tap lifts the URL's failed
-        // mark too: the failed image shows after the 2s + 4s retries, inside
-        // the mark's 30s cooldown, so a tap that kept the mark went straight
-        // back to failed without a request (until SwiftJsonUI 10.41.0, ticket
-        // sjui-networkimage-retry-tap-blocked-by-failed-mark).
-        SwiftUIImageCache.shared.clearFailed(urlString)
+        NetworkImageLoadTable.shared.forget(urlString, headers: headers)
+        stop()
         currentUrl = nil
         loadedImage = nil
         hasFailed = false
         loadIfNeeded(url: urlString, headers: headers)
     }
 
-    private func performLoad(urlString: String, headers: [String: String]) async {
-        guard let requestUrl = URL(string: urlString) else {
-            await MainActor.run { isLoading = false }
-            return
-        }
+    /// The frame left the screen: stop watching (the read stops when no frame
+    /// watches it). The state stays "loading"; coming back reads again.
+    func disappear() {
+        guard let load, !load.isDone else { return }
+        stop()
+        host?.takeOff()
+    }
 
-        let shortUrl = urlString.suffix(40)
-        Logger.debug("[NetworkImage] start loading ...\(shortUrl)")
+    private func letGo() {
+        observation?.cancel()
+        observation = nil
+        if let load { NetworkImageLoadTable.shared.release(load) }
+        load = nil
+    }
 
-        let maxRetries = 2
-        for attempt in 0...maxRetries {
-            if Task.isCancelled { return }
+    private func stop() {
+        letGo()
+        host?.takeOff()
+    }
 
-            if attempt > 0 {
-                Logger.debug("[NetworkImage] retry \(attempt)/\(maxRetries) ...\(shortUrl)")
-                try? await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
-                if Task.isCancelled { return }
-            }
+    private func report(_ state: String) {
+        guard reportedState != state else { return }
+        reportedState = state
+        onLoadStateChange?(state)
+    }
 
-            do {
-                var request = URLRequest(url: requestUrl)
-                for (key, value) in headers {
-                    request.setValue(value, forHTTPHeaderField: key)
-                }
+    private var lastScheme: ColorScheme = .light
 
-                // Network + decode on background
-                let (data, _) = try await URLSession.shared.data(for: request)
-                if Task.isCancelled { return }
-
-                let uiImage = UIImage(data: data)
-                if Task.isCancelled { return }
-
-                if let uiImage = uiImage {
-                    Logger.debug("[NetworkImage] success ...\(shortUrl) size=\(uiImage.size)")
-                    SwiftUIImageCache.shared.set(urlString, image: uiImage)
-
-                    // UI update on MainActor only
-                    await MainActor.run {
-                        guard currentUrl == urlString else { return }
-                        loadedImage = uiImage
-                        isLoading = false
-                    }
-                    return
-                }
-            } catch {
-                if Task.isCancelled { return }
-                Logger.debug("[NetworkImage] error ...\(shortUrl): \(error.localizedDescription)")
-                // A permanent failure cannot be retried into success — an
-                // unresolvable host (NXDOMAIN) or malformed URL stays that
-                // way, and the 2s+4s backoff only delayed the error face
-                // past any observer (the errorImage fixture captured the
-                // loading blank instead of the error render).
-                if let urlError = error as? URLError,
-                   [.cannotFindHost, .unsupportedURL, .badURL].contains(urlError.code) {
-                    break
-                }
-            }
-        }
-
-        Logger.debug("[NetworkImage] failed after retries ...\(shortUrl)")
-        SwiftUIImageCache.shared.markFailed(urlString)
-        await MainActor.run {
-            isLoading = false
-            hasFailed = true
-        }
+    /// The layer view is up: it waits for the renderer on the load.
+    func attachHost(_ view: NetworkImageLayerView, colorScheme: ColorScheme?) {
+        host = view
+        if let colorScheme { lastScheme = colorScheme }
+        guard let load, !load.isDone, let factory = rendererFactory else { return }
+        view.begin(load: load, factory: factory, delay: loadingDelay, transition: transition,
+                   gravity: gravity, colorScheme: lastScheme)
     }
 
     deinit {
-        loadTask?.cancel()
+        let load = self.load
+        let observation = self.observation
+        let host = self.host
+        Task { @MainActor in
+            observation?.cancel()
+            if let load { NetworkImageLoadTable.shared.release(load) }
+            host?.takeOff()
+        }
     }
 }
 
@@ -217,6 +298,11 @@ public struct NetworkImage: View {
     let contentMode: ContentMode
     let renderingMode: Image.TemplateRenderingMode?
     let headers: [String: String]
+    let loadingRenderer: String?
+    let loadingDelay: Int?
+    let transitionDuration: Int?
+    let onLoadStateChange: ((String) -> Void)?
+    let onLoadEvent: ((NetworkImageLoadEvent) -> Void)?
 
     @StateObject private var loader = NetworkImageLoader()
 
@@ -236,6 +322,16 @@ public struct NetworkImage: View {
         case right
     }
 
+    /// - Parameters:
+    ///   - loadingRenderer: a renderer registered with
+    ///     `NetworkImageLoadingRenderers.register`, drawn while the image is
+    ///     read from disk or the network, after `loadingDelay`; nil, "" or an
+    ///     unregistered name draws the loading state as before.
+    ///   - loadingDelay: milliseconds before the renderer is made (0-2000, 200).
+    ///   - transitionDuration: T, the milliseconds the fades into the image and
+    ///     the error image are measured from (0-1000; 240 with a renderer, 0 without).
+    ///   - onLoadStateChange: "loading", "loaded", "failed", on a change only.
+    ///   - onLoadEvent: every event of the frame's load (progress thinned).
     public init(
         url: String? = nil,
         placeholder: String? = nil,
@@ -244,7 +340,12 @@ public struct NetworkImage: View {
         loadingImage: String? = nil,
         contentMode: ContentMode = .fit,
         renderingMode: Image.TemplateRenderingMode? = nil,
-        headers: [String: String] = [:]
+        headers: [String: String] = [:],
+        loadingRenderer: String? = nil,
+        loadingDelay: Int? = nil,
+        transitionDuration: Int? = nil,
+        onLoadStateChange: ((String) -> Void)? = nil,
+        onLoadEvent: ((NetworkImageLoadEvent) -> Void)? = nil
     ) {
         self.url = url
         // Kept distinct from defaultImage: the no-src state shows
@@ -258,14 +359,48 @@ public struct NetworkImage: View {
         self.contentMode = contentMode
         self.renderingMode = renderingMode
         self.headers = headers
+        self.loadingRenderer = loadingRenderer
+        self.loadingDelay = loadingDelay
+        self.transitionDuration = transitionDuration
+        self.onLoadStateChange = onLoadStateChange
+        self.onLoadEvent = onLoadEvent
+    }
+
+    /// Hands the frame's declaration to its loader (plain properties: setting
+    /// them redraws nothing).
+    private func configureLoader() {
+        let factory = NetworkImageLoadingRenderers.factory(for: loadingRenderer)
+        loader.rendererFactory = factory
+        loader.loadingDelay = NetworkImageTiming.loadingDelay(loadingDelay)
+        loader.transition = NetworkImageTiming.transition(transitionDuration, rendererFound: factory != nil)
+        loader.gravity = contentMode.layerGravity
+        loader.onLoadStateChange = onLoadStateChange
+        loader.onLoadEvent = onLoadEvent
     }
 
     public var body: some View {
-        Group {
-            if let image = loader.loadedImage {
+        configureLoader()
+        return Group {
+            if loader.hostActive {
+                // The renderer's layers, then the image fading in on its
+                // layer. One image element for VoiceOver (the alt goes on it
+                // from outside); the layers themselves are hidden.
+                ZStack {
+                    NetworkImageLayerHost(loader: loader)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityAddTraits(.isImage)
+                    if loader.hasFailed {
+                        failedView
+                            .transition(.opacity)
+                    }
+                }
+            } else if let image = loader.loadedImage {
                 styledImage(Image(uiImage: image))
+                    .transition(.opacity)
             } else if loader.isLoading {
-                if let loadingImage = loadingImage {
+                if loader.rendererFactory != nil {
+                    Color.clear
+                } else if let loadingImage = loadingImage {
                     styledImage(Image(jsonUIAsset: loadingImage))
                 } else if let placeholder = placeholder {
                     styledImage(Image(jsonUIAsset: placeholder))
@@ -276,27 +411,8 @@ public struct NetworkImage: View {
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             } else if loader.hasFailed {
-                Button {
-                    loader.retry(url: url, headers: headers)
-                } label: {
-                    if let errorImage = errorImage {
-                        styledImage(Image(jsonUIAsset: errorImage))
-                    } else if let defaultImage = defaultImage {
-                        // error falls back to defaultImage (canonical chain).
-                        styledImage(Image(jsonUIAsset: defaultImage))
-                    } else if let placeholder = placeholder {
-                        styledImage(Image(jsonUIAsset: placeholder))
-                    } else {
-                        VStack(spacing: 4) {
-                            Image(systemName: "arrow.clockwise")
-                                .foregroundColor(.gray)
-                            Image(systemName: "photo")
-                                .foregroundColor(.gray)
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-                .buttonStyle(.plain)
+                failedView
+                    .transition(.opacity)
             } else {
                 // No src at all: defaultImage first (canonical
                 // networkImage.noSrc = defaultImage), then placeholder.
@@ -312,12 +428,40 @@ public struct NetworkImage: View {
         .onAppear {
             loader.loadIfNeeded(url: url, headers: headers)
         }
+        .onDisappear {
+            loader.disappear()
+        }
         // Two-parameter form (iOS 17). The old value is not needed: `loadIfNeeded`
         // compares against its OWN `currentUrl` and no-ops when the string is
         // unchanged, so the previous value adds nothing here.
         .onChange(of: url) { _, newUrl in
             loader.loadIfNeeded(url: newUrl, headers: headers)
         }
+    }
+
+    /// The failed image: a button that reads the URL again.
+    private var failedView: some View {
+        Button {
+            loader.retry(url: url, headers: headers)
+        } label: {
+            if let errorImage = errorImage {
+                styledImage(Image(jsonUIAsset: errorImage))
+            } else if let defaultImage = defaultImage {
+                // error falls back to defaultImage (canonical chain).
+                styledImage(Image(jsonUIAsset: defaultImage))
+            } else if let placeholder = placeholder {
+                styledImage(Image(jsonUIAsset: placeholder))
+            } else {
+                VStack(spacing: 4) {
+                    Image(systemName: "arrow.clockwise")
+                        .foregroundColor(.gray)
+                    Image(systemName: "photo")
+                        .foregroundColor(.gray)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .buttonStyle(.plain)
     }
 
     /// Applies `.aspectRatio` only when a SwiftUI ContentMode exists —

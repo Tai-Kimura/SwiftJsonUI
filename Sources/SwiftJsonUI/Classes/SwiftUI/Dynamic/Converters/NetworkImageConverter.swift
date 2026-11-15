@@ -44,6 +44,16 @@ public struct NetworkImageConverter {
         return src
     }
 
+    /// onLoadStateChange's call, by the closure the data holds — `()`,
+    /// `(String)` the state, `(String, String)` the viewId and the state —
+    /// as every Dynamic event is called (DynamicEventHelper.callWithValue).
+    static func stateHandler(_ declared: AttrValue<Any>?, id: String?, data: [String: Any]) -> ((String) -> Void)? {
+        guard let expression = declared?.bindingExpression else { return nil }
+        return { state in
+            DynamicEventHelper.callWithValue(expression, id: id, value: state, data: data)
+        }
+    }
+
     /// Convert DynamicComponent to SwiftUI NetworkImage
     /// Matches network_image_converter.rb convert method exactly
     public static func convert(
@@ -74,6 +84,17 @@ public struct NetworkImageConverter {
         // headers
         let headers = component.headers ?? [:]
 
+        // The loading renderer seat and the load state (ticket
+        // jui-networkimage-load-listener, the requester's ruling 2026-11-15):
+        // what network_image_converter.rb writes for the same four.
+        let attrs = component.typedAttributes(NetworkImageAttributes.self)
+        let loadingRenderer = component.string(NetworkImageAttributes.self, \.loadingRenderer)
+            .map { raw -> String in
+                guard let inner = DynamicBindingResolver.inner(of: raw) else { return raw }
+                return DynamicBindingResolver.resolveString(expression: inner, data: data) ?? ""
+            }
+        let onLoadStateChange = stateHandler(attrs.onLoadStateChange, id: component.id, data: data)
+
         var result = AnyView(
             NetworkImage(
                 url: urlString,
@@ -83,7 +104,11 @@ public struct NetworkImageConverter {
                 loadingImage: component.loadingImage,
                 contentMode: contentMode,
                 renderingMode: renderingMode,
-                headers: headers
+                headers: headers,
+                loadingRenderer: loadingRenderer,
+                loadingDelay: attrs.loadingDelay.map { Int($0) },
+                transitionDuration: attrs.transitionDuration.map { Int($0) },
+                onLoadStateChange: onLoadStateChange
             )
         )
 

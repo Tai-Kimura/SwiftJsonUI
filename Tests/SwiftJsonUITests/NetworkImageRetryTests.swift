@@ -46,6 +46,7 @@ private final class RetryCountingProtocol: URLProtocol {
     override func stopLoading() {}
 }
 
+@MainActor
 final class NetworkImageRetryTests: XCTestCase {
     override func setUp() {
         super.setUp()
