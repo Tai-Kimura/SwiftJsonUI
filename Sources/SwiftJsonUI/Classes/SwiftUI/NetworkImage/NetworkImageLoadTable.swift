@@ -6,7 +6,7 @@
 //  showing a URL while it is read shares its NetworkImageLoad, and the read
 //  stops — the network and the wait before a retry — only when no frame
 //  watches it any more (ticket jui-networkimage-load-listener, the
-//  requester's ruling 2026-11-15). Before SwiftJsonUI 10.42.0 every frame
+//  requester's ruling 2026-11-15). Before SwiftJsonUI 10.41.0 every frame
 //  read its URL on its own, two frames of one URL read it twice, and a frame
 //  that left the screen kept reading.
 //
