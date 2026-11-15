@@ -213,6 +213,102 @@ final class NetworkImageLoadTests: XCTestCase {
         NetworkImageLoadTable.shared.release(load)
     }
 
+    // MARK: - No src (networkImage.noSrc = defaultImage)
+
+    /// What a frame shows: defaultImage for no src, errorImage for a read
+    /// that failed (the body's face; the renderer's layer view shows the
+    /// error image over itself once failed).
+    private func shown(_ loader: NetworkImageLoader) -> String {
+        switch loader.face {
+        case .noSrc: return "defaultImage"
+        case .failed: return "errorImage"
+        case .image: return "image"
+        case .loading: return "loading"
+        case .renderer: return loader.hasFailed ? "errorImage" : (loader.loadedImage != nil ? "image" : "renderer")
+        }
+    }
+
+    /// The urls a frame is given in turn (the first at onAppear, the rest at
+    /// onChange, as the body calls loadIfNeeded), with a renderer named.
+    private func run(_ urls: [String?]) -> (shown: String, states: [String], events: [String], renderers: Int) {
+        let loader = NetworkImageLoader()
+        loader.rendererFactory = NetworkImageLoadingRenderers.factory(for: "counting")
+        var states: [String] = []
+        var events: [String] = []
+        loader.onLoadStateChange = { states.append($0) }
+        loader.onLoadEvent = { if !$0.isProgress { events.append(self.name($0)) } }
+        for (i, url) in urls.enumerated() {
+            loader.loadIfNeeded(url: url, headers: [:])
+            spin(until: { loader.load == nil || loader.load!.isDone }, timeout: 5)
+            if i < urls.count - 1 { spin(until: { false }, timeout: 0.05) }
+        }
+        spin(until: { false }, timeout: 0.1)
+        let made = CountingRenderer.made
+        loader.disappear()
+        return (shown(loader), states, events, made)
+    }
+
+    private func dynamicURL(_ json: String, _ data: [String: Any]) throws -> String? {
+        let c = try JSONDecoder().decode(DynamicComponent.self, from: json.data(using: .utf8)!)
+        return NetworkImageConverter.declaredURL(c, data: data)
+    }
+
+    func testNoSrcFamily() throws {
+        NetworkImageLoadTable.retryStepNanoseconds = 10_000_000
+        let good = freshURL("good")
+        var rows: [(String, [String?])] = [
+            ("static nil", [nil]),
+            ("static \"\"", [""]),
+            ("static blank", ["   "]),
+            ("static bound \"\"", [String?.some("")]),
+            ("static url then \"\"", [good, ""]),
+            ("static url then blank", [freshURL("good2"), "  "]),
+            ("static url then nil", [freshURL("good3"), nil]),
+        ]
+        let base = #"{ "type": "NetworkImage", "defaultImage": "d", "errorImage": "e""#
+        rows += [
+            ("dynamic absent", [try dynamicURL(base + "}", [:])]),
+            ("dynamic \"\"", [try dynamicURL(base + #", "src": "" }"#, [:])]),
+            ("dynamic blank", [try dynamicURL(base + #", "src": "   " }"#, [:])]),
+            ("dynamic @{img} \"\"", [try dynamicURL(base + #", "src": "@{img}" }"#, ["img": ""])]),
+            ("dynamic @{img} missing", [try dynamicURL(base + #", "src": "@{img}" }"#, [:])]),
+            ("dynamic @{img} url then \"\"", [try dynamicURL(base + #", "src": "@{img}" }"#, ["img": freshURL("good4")]),
+                                               try dynamicURL(base + #", "src": "@{img}" }"#, ["img": ""])]),
+        ]
+        for (label, urls) in rows {
+            SlowImageProtocol.reset()
+            CountingRenderer.made = 0
+            let r = run(urls)
+            print("NOSRC \(label) | shown=\(r.shown) | states=\(r.states.joined(separator: ",")) | events=\(r.events.joined(separator: ",")) | renderers=\(r.renderers) | requests=\(SlowImageProtocol.requests.count)")
+            // No src draws defaultImage and tells nothing; a src that went
+            // away drops the image it had and tells nothing more.
+            XCTAssertEqual(r.shown, "defaultImage", label)
+            if urls.count == 1 {
+                XCTAssertEqual(r.states, [], label)
+                XCTAssertEqual(r.events, [], label)
+                XCTAssertEqual(SlowImageProtocol.requests.count, 0, label)
+            } else {
+                XCTAssertEqual(r.states, ["loading", "loaded"], label)
+                XCTAssertEqual(r.events, ["requesting", "responded", "finished(network)"], label)
+            }
+        }
+        SlowImageProtocol.reset()
+        SlowImageProtocol.statuses = [404]
+        CountingRenderer.made = 0
+        let failed = run([freshURL("nf")])
+        print("NOSRC failed read | shown=\(failed.shown) | states=\(failed.states.joined(separator: ",")) | events=\(failed.events.joined(separator: ",")) | renderers=\(failed.renderers) | requests=\(SlowImageProtocol.requests.count)")
+        XCTAssertEqual(failed.shown, "errorImage", "a read that failed draws errorImage")
+        XCTAssertEqual(failed.states, ["loading", "failed"])
+    }
+
+    /// A src that goes away and comes back is read and reported again.
+    func testASrcThatComesBackIsReportedFromLoading() {
+        let url = freshURL("back")
+        let r = run([url, "", url])
+        XCTAssertEqual(r.shown, "image")
+        XCTAssertEqual(r.states, ["loading", "loaded", "loaded"], "back from the memory cache: loaded again")
+    }
+
     func testTwoFramesOfOneURLShareOneRead() {
         let urlString = freshURL()
         let url = URL(string: urlString)!

@@ -108,6 +108,20 @@ final class NetworkImageLoader: ObservableObject {
     /// How the error image comes in.
     @Published var errorFade: NetworkImageFade = .none
 
+    /// What the frame draws, in the order its body decides: the renderer's
+    /// layer view, the image, the loading state, the error image (errorImage,
+    /// else defaultImage, else placeholder), or the no-src state (defaultImage,
+    /// else placeholder — networkImage.noSrc = defaultImage).
+    enum Face: String { case renderer, image, loading, failed, noSrc }
+
+    var face: Face {
+        if hostActive { return .renderer }
+        if loadedImage != nil { return .image }
+        if isLoading { return .loading }
+        if hasFailed { return .failed }
+        return .noSrc
+    }
+
     private(set) var currentUrl: String?
     private var headers: [String: String] = [:]
     private(set) var load: NetworkImageLoad?
@@ -127,9 +141,29 @@ final class NetworkImageLoader: ObservableObject {
 
     init() {}
 
+    /// No src: nil, "" or only whitespace (which URL(string:) would otherwise
+    /// percent-encode into a URL that fails, drawing the error image).
+    static func isNoSrc(_ url: String?) -> Bool {
+        url?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+    }
+
     func loadIfNeeded(url: String?, headers: [String: String]) {
-        guard let urlString = url, !urlString.isEmpty,
-              let requestUrl = URL(string: urlString) else { return }
+        if Self.isNoSrc(url) {
+            // networkImage.noSrc = defaultImage. A frame whose src went away
+            // drops the read and the image it had and draws the no-src state;
+            // nothing is reported (no state name for it), and a src that
+            // comes back is reported afresh (loading, or loaded from memory).
+            guard currentUrl != nil else { return }
+            stop()
+            currentUrl = nil
+            loadedImage = nil
+            hasFailed = false
+            isLoading = false
+            hostActive = false
+            reportedState = nil
+            return
+        }
+        guard let urlString = url, let requestUrl = URL(string: urlString) else { return }
 
         if currentUrl == urlString {
             // Loaded, failed, or reading: nothing to start.
@@ -386,7 +420,8 @@ public struct NetworkImage: View {
     public var body: some View {
         configureLoader()
         return Group {
-            if loader.hostActive {
+            switch loader.face {
+            case .renderer:
                 // The renderer's layers, then the image fading in on its
                 // layer. One image element for VoiceOver (the alt goes on it
                 // from outside); the layers themselves are hidden.
@@ -399,10 +434,12 @@ public struct NetworkImage: View {
                             .transition(.opacity)
                     }
                 }
-            } else if let image = loader.loadedImage {
-                styledImage(Image(uiImage: image))
-                    .transition(.opacity)
-            } else if loader.isLoading {
+            case .image:
+                if let image = loader.loadedImage {
+                    styledImage(Image(uiImage: image))
+                        .transition(.opacity)
+                }
+            case .loading:
                 if loader.rendererFactory != nil {
                     Color.clear
                 } else if let loadingImage = loadingImage {
@@ -415,10 +452,10 @@ public struct NetworkImage: View {
                     ProgressView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-            } else if loader.hasFailed {
+            case .failed:
                 failedView
                     .transition(.opacity)
-            } else {
+            case .noSrc:
                 // No src at all: defaultImage first (canonical
                 // networkImage.noSrc = defaultImage), then placeholder.
                 if let defaultImage = defaultImage {
