@@ -35,6 +35,8 @@ public final class NetworkImageLoadTable {
 
     /// How many tries a read gets (the first and 2 retries, 2 s and 4 s apart).
     nonisolated static let maxRetries = 2
+    /// The wait before retry n is n × this (2 s); tests shorten it.
+    nonisolated(unsafe) static var retryStepNanoseconds: UInt64 = 2_000_000_000
 
     init() {}
 
@@ -130,7 +132,7 @@ public final class NetworkImageLoadTable {
             if attempt > 0 {
                 relay.send(.retrying(attempt: attempt))
                 do {
-                    try await Task.sleep(nanoseconds: UInt64(attempt) * 2_000_000_000)
+                    try await Task.sleep(nanoseconds: UInt64(attempt) * retryStepNanoseconds)
                 } catch {
                     relay.send(.cancelled); return
                 }
@@ -166,6 +168,19 @@ public final class NetworkImageLoadTable {
         relay.send(.failed(lastError))
     }
 
+    /// The status code of an HTTP answer that is not the image — anything
+    /// but 2xx and 304 (a revalidated cache entry; URLSession hands it over
+    /// as the stored 200) — and nil for an image answer or a non-HTTP one.
+    /// Such an answer is never told to the renderer as `responded` or
+    /// progress, and its body is never decoded: the attempt fails (retrying,
+    /// then failed), as a network error does (ticket
+    /// jui-networkimage-error-response-reported-as-progress).
+    nonisolated static func rejectedStatus(_ response: URLResponse?) -> Int? {
+        guard let http = response as? HTTPURLResponse else { return nil }
+        let code = http.statusCode
+        return (200..<300).contains(code) || code == 304 ? nil : code
+    }
+
     /// One attempt: a data task whose response and received bytes are
     /// watched through KVO. Cancelling the Swift task cancels the data task,
     /// also when the cancel comes before the task exists (the box's mark).
@@ -173,10 +188,14 @@ public final class NetworkImageLoadTable {
         let box = TaskBox()
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Data, Error>) in
-                let task = URLSession.shared.dataTask(with: request) { data, _, error in
+                let task = URLSession.shared.dataTask(with: request) { data, response, error in
                     box.stopWatching()
                     if let error {
                         continuation.resume(throwing: error)
+                    } else if let code = rejectedStatus(response) {
+                        // An answer that is not the image: its body is an
+                        // error page, never shown and never told as progress.
+                        continuation.resume(throwing: URLError(.badServerResponse, userInfo: ["statusCode": code]))
                     } else {
                         relay.finalProgress()
                         continuation.resume(returning: data ?? Data())
@@ -187,11 +206,13 @@ public final class NetworkImageLoadTable {
                     return
                 }
                 let responded = task.observe(\.response, options: [.new]) { task, _ in
-                    guard let response = task.response else { return }
+                    guard let response = task.response, rejectedStatus(response) == nil else { return }
                     let length = response.expectedContentLength
                     relay.responded(expected: length >= 0 ? length : nil)
                 }
                 let bytes = task.observe(\.countOfBytesReceived, options: [.new]) { task, _ in
+                    // No response yet, or one that is not the image: no progress.
+                    guard let response = task.response, rejectedStatus(response) == nil else { return }
                     let expected = task.countOfBytesExpectedToReceive
                     relay.bytes(task.countOfBytesReceived, expected: expected > 0 ? expected : nil)
                 }

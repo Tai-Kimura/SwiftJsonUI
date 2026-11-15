@@ -58,6 +58,11 @@ public final class SwiftUIImageCache {
         return Int(image.size.width * image.scale * image.size.height * image.scale * 4)
     }
 
+    /// Drop `key`'s image from memory (the next load reads the URL again).
+    func remove(_ key: String) {
+        cache.removeObject(forKey: key as NSString)
+    }
+
     /// Returns true if this URL recently failed and should not be retried yet
     public func isRecentlyFailed(_ key: String) -> Bool {
         failedLock.lock()
