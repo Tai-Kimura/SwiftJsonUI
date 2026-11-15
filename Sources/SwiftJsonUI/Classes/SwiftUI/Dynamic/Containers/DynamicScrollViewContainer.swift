@@ -19,17 +19,23 @@ import SwiftUI
 
 
 // MARK: - ScrollView Container
-/// The scroll's content at its own height (before the frame stretches it to
-/// the viewport), written down; nothing when the ScrollView is not wrapContent.
-private struct ScrollContentHeight: ViewModifier {
-    let enabled: Bool
-    @SwiftUI.Binding var height: CGFloat?
+/// The scroll's content at its own size (before the frame stretches it to
+/// the viewport), written down on each wrapContent axis; nothing on an axis
+/// that is not wrapContent.
+private struct ScrollContentSize: ViewModifier {
+    let width: Bool
+    let height: Bool
+    @SwiftUI.Binding var measuredWidth: CGFloat?
+    @SwiftUI.Binding var measuredHeight: CGFloat?
 
     func body(content: Content) -> some View {
-        if enabled {
+        if width || height {
             content
-                .fixedSize(horizontal: false, vertical: true)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height = $0 }
+                .fixedSize(horizontal: width, vertical: height)
+                .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                    if width { measuredWidth = size.width }
+                    if height { measuredHeight = size.height }
+                }
         } else {
             content
         }
@@ -52,6 +58,17 @@ public struct DynamicScrollViewContainer: View {
     /// row is its content's height. sjui codegen's scrollview_converter
     /// content_fit_height emits the same.
     @State private var contentHeight: CGFloat? = nil
+    /// The scroll axis's own wrapContent — a vertical ScrollView of height
+    /// wrapContent, a horizontal one of width wrapContent: its content's
+    /// length along the scroll (nil until measured). The same reader offers
+    /// its ideal length, 10pt, to a parent that asks (a wrapContent View with
+    /// a maxHeight: a legend panel drew its scroll 10pt tall), and takes all
+    /// the length it is offered otherwise (a 200pt content in a 778pt
+    /// ScrollView). Framed at it — ideal and at most the content, less when
+    /// the parent offers less, scrolling inside — as KotlinJsonUI and web
+    /// draw it (jsonui-cli ticket sjui-vertical-scrollview-wrapcontent-height-is-10pt).
+    /// sjui codegen's scrollview_converter content_fit emits the same.
+    @State private var contentLength: CGFloat? = nil
 
     public init(component: DynamicComponent, data: [String: Any], viewId: String? = nil) {
         self.component = component
@@ -129,6 +146,11 @@ public struct DynamicScrollViewContainer: View {
         if isHorizontal && component.heightRaw == "wrapContent" {
             result = AnyView(result.frame(height: contentHeight))
         }
+        if wrapsAlongScroll(isHorizontal: isHorizontal) {
+            result = isHorizontal
+                ? AnyView(result.frame(idealWidth: contentLength, maxWidth: contentLength))
+                : AnyView(result.frame(idealHeight: contentLength, maxHeight: contentLength))
+        }
 
         if DynamicHelpers.resolveBool(
             component.typedAttributes(ScrollViewAttributes.self).scrollEnabled,
@@ -195,6 +217,11 @@ public struct DynamicScrollViewContainer: View {
         return result
     }
 
+    /// The ScrollView is wrapContent along its scroll axis.
+    private func wrapsAlongScroll(isHorizontal: Bool) -> Bool {
+        isHorizontal ? component.widthRaw == "wrapContent" : component.heightRaw == "wrapContent"
+    }
+
     // MARK: - Scroll Content
 
     @ViewBuilder
@@ -211,7 +238,12 @@ public struct DynamicScrollViewContainer: View {
                 }
                 Spacer(minLength: 0)
             }
-            .modifier(ScrollContentHeight(enabled: component.heightRaw == "wrapContent", height: $contentHeight))
+            .modifier(ScrollContentSize(
+                width: wrapsAlongScroll(isHorizontal: true),
+                height: component.heightRaw == "wrapContent",
+                measuredWidth: $contentLength,
+                measuredHeight: $contentHeight
+            ))
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             .environment(\.jsonuiScrollingAncestor, true)
         } else {
@@ -234,6 +266,14 @@ public struct DynamicScrollViewContainer: View {
                 }
                 Spacer(minLength: 0)
             }
+            // Its own height, before the frame stretches it to the viewport:
+            // a ScrollView of height wrapContent is framed at it (contentLength).
+            .modifier(ScrollContentSize(
+                width: false,
+                height: wrapsAlongScroll(isHorizontal: false),
+                measuredWidth: .constant(nil),
+                measuredHeight: $contentLength
+            ))
             // At the top, across where the stack is aligned: without an
             // alignment the frame centred the stack, so a 150-wide child of a
             // 200-wide ScrollView drew at x 25 where Android and web drew 0
