@@ -162,10 +162,10 @@ public final class NetworkImageLoadTable {
                    [.cannotFindHost, .unsupportedURL, .badURL].contains(urlError.code) {
                     break
                 }
-                // A 4xx answer is the request's own fault and is the same
-                // the next time: no retry (ruling 2026-11-15). 408 (timeout)
-                // and 429 (too many requests) are passing, as 5xx and a cut
-                // connection are, and are retried.
+                // Only a passing failure is retried (ruling 2026-11-15): 5xx,
+                // 408 (timeout), 429 (too many requests) and a cut connection.
+                // Any other answer that is not the image — a 4xx, a 304
+                // nobody asked for — is the same the next time: no retry.
                 if let code = Self.statusCode(of: error), Self.isPermanent(status: code) {
                     break
                 }
@@ -190,9 +190,9 @@ public final class NetworkImageLoadTable {
         return urlError.userInfo["statusCode"] as? Int
     }
 
-    /// A status no retry can change: 4xx, but for 408 and 429.
+    /// A rejected status no retry can change: all but 5xx, 408 and 429.
     nonisolated static func isPermanent(status: Int) -> Bool {
-        (400..<500).contains(status) && status != 408 && status != 429
+        !((500..<600).contains(status) || status == 408 || status == 429)
     }
 
     nonisolated static func rejectedStatus(_ response: URLResponse?) -> Int? {

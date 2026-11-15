@@ -201,13 +201,14 @@ final class NetworkImageLoadTests: XCTestCase {
         NetworkImageLoadTable.shared.release(load)
     }
 
-    /// Ruling 2026-11-15: a 4xx but 408 and 429 fails at once; 408, 429, 5xx
-    /// and a cut connection are retried twice (retrying 1, 2), and the
+    /// Ruling 2026-11-15: 408, 429, 5xx and a cut connection are retried twice
+    /// (retrying 1, 2); any other rejected answer (a 4xx, a 304 nobody asked
+    /// for, an unfollowed 3xx) fails at once; the
     /// ViewModel is told loading until the end either way.
     func testOnlyAPassingFailureIsRetried() {
         NetworkImageLoadTable.retryStepNanoseconds = 10_000_000
         var cases: [(String, Int?, URLError?, Int)] = []
-        for code in [400, 401, 403, 404, 410, 451] { cases.append(("\(code)", code, nil, 1)) }
+        for code in [400, 401, 403, 404, 410, 451, 304] { cases.append(("\(code)", code, nil, 1)) }
         for code in [408, 429, 500, 502, 503] { cases.append(("\(code)", code, nil, 3)) }
         cases.append(("connection lost", nil, URLError(.networkConnectionLost), 3))
         cases.append(("timed out", nil, URLError(.timedOut), 3))
@@ -237,8 +238,8 @@ final class NetworkImageLoadTests: XCTestCase {
     }
 
     func testWhichStatusesArePermanent() {
-        for code in [400, 401, 403, 404, 405, 410, 422, 451, 499] { XCTAssertTrue(NetworkImageLoadTable.isPermanent(status: code), "\(code)") }
-        for code in [408, 429, 500, 502, 503, 504, 302, 304] { XCTAssertFalse(NetworkImageLoadTable.isPermanent(status: code), "\(code)") }
+        for code in [100, 300, 302, 304, 400, 401, 403, 404, 405, 410, 422, 451, 499] { XCTAssertTrue(NetworkImageLoadTable.isPermanent(status: code), "\(code)") }
+        for code in [408, 429, 500, 502, 503, 504, 599] { XCTAssertFalse(NetworkImageLoadTable.isPermanent(status: code), "\(code)") }
     }
 
     /// 503 then 200: only the attempt that brings the image is told as
