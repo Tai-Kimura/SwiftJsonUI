@@ -148,7 +148,10 @@ public final class NetworkImageLoadTable {
                     relay.send(.finished(source: source))
                     return
                 }
+                // A 2xx body that is not an image is the same the next
+                // time: not a passing failure, so no retry.
                 lastError = URLError(.cannotDecodeContentData)
+                break
             } catch {
                 if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled {
                     relay.send(.cancelled); return

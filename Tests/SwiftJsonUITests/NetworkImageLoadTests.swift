@@ -22,6 +22,8 @@ private final class SlowImageProtocol: URLProtocol {
     private static var _requests: [String] = []
     private static var _stops: [String] = []
     static var chunks = 8
+    /// The body of a 200 answer; nil sends the image.
+    static var okBody: Data? = nil
     /// The status of each answer in turn (the last repeats); 200 by default.
     static var statuses: [Int] = [200]
     /// The body of an answer that is not 200; nil sends the image.
@@ -40,7 +42,7 @@ private final class SlowImageProtocol: URLProtocol {
     }()
     static var requests: [String] { lock.lock(); defer { lock.unlock() }; return _requests }
     static var stops: [String] { lock.lock(); defer { lock.unlock() }; return _stops }
-    static func reset() { lock.lock(); _requests = []; _stops = []; statuses = [200]; errorBody = nil; failWith = nil; lock.unlock() }
+    static func reset() { lock.lock(); _requests = []; _stops = []; statuses = [200]; errorBody = nil; failWith = nil; okBody = nil; lock.unlock() }
 
     private var stopped = false
     private let stateLock = NSLock()
@@ -56,7 +58,7 @@ private final class SlowImageProtocol: URLProtocol {
             return
         }
         let status = Self.statuses[min(n, Self.statuses.count) - 1]
-        let body = status == 200 ? Self.png : (Self.errorBody ?? Self.png)
+        let body = status == 200 ? (Self.okBody ?? Self.png) : (Self.errorBody ?? Self.png)
         let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1",
                                        headerFields: ["Content-Type": "image/png", "Content-Length": "\(body.count)"])!
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
@@ -235,6 +237,27 @@ final class NetworkImageLoadTests: XCTestCase {
             XCTAssertEqual(SlowImageProtocol.requests.count, tries, label)
             NetworkImageLoadTable.shared.release(load)
         }
+    }
+
+    /// A 200 whose body is not an image is told as it came (responded,
+    /// progress) and fails at once: the same body comes the next time.
+    func testA2xxBodyThatIsNotAnImageIsNotRetried() {
+        NetworkImageLoadTable.retryStepNanoseconds = 10_000_000
+        SlowImageProtocol.okBody = Data("<html>not an image</html>".utf8)
+        let urlString = freshURL("html")
+        let load = NetworkImageLoadTable.shared.acquire(urlString, url: URL(string: urlString)!, headers: [:])
+        var events: [String] = []
+        let observation = load.observe { e in if !e.isProgress || events.last != "progress" { events.append(self.name(e)) } }
+        let loader = NetworkImageLoader()
+        var states: [String] = []
+        loader.onLoadStateChange = { states.append($0) }
+        loader.loadIfNeeded(url: urlString, headers: [:])
+        spin(until: { load.isDone && states.last == "failed" })
+        observation.cancel()
+        XCTAssertEqual(events, ["requesting", "responded", "progress", "failed"])
+        XCTAssertEqual(states, ["loading", "failed"])
+        XCTAssertEqual(SlowImageProtocol.requests.count, 1)
+        NetworkImageLoadTable.shared.release(load)
     }
 
     func testWhichStatusesArePermanent() {
