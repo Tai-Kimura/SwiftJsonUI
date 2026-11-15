@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.41 # jsonui-cli v2.5.41: ScrollView wrap along its scroll axis, a pager cell in the middle of its page, NetworkImage retry and load listener
+      JSONUI_CLI_MANIFEST_REF: v2.5.43 # jsonui-cli v2.5.43: NetworkImage status codes and empty src
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
