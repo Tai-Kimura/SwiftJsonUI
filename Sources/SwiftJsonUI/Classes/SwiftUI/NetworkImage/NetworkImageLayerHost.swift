@@ -34,6 +34,14 @@ final class NetworkImageLayerView: UIView {
 
     var rendererAttached: Bool { renderer != nil }
 
+    static let noImplicitActions: [String: CAAction] = [
+        "contents": NSNull(), "opacity": NSNull(), "contentsScale": NSNull(), "contentsGravity": NSNull(),
+        "bounds": NSNull(), "position": NSNull(),
+    ]
+
+    /// The image layer (tests read its animations).
+    var imageLayerForTesting: CALayer { imageLayer }
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         isAccessibilityElement = false
@@ -41,6 +49,12 @@ final class NetworkImageLayerView: UIView {
         isUserInteractionEnabled = false
         clipsToBounds = true
         layer.addSublayer(rendererLayer)
+        // The image layer moves only by the fade added in finish: a bare
+        // CALayer would also animate its contents and opacity by itself for
+        // 0.25 s, and a fade shorter than that (T/2 when the load was done
+        // before the renderer came) ended with the image dimmed for a frame
+        // and fading in again.
+        imageLayer.actions = NetworkImageLayerView.noImplicitActions
         imageLayer.opacity = 0
         imageLayer.masksToBounds = true
         layer.addSublayer(imageLayer)
