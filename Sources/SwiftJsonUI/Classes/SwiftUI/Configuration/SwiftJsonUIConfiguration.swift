@@ -23,12 +23,6 @@ public class SwiftJsonUIConfiguration: ObservableObject {
     /// Color configuration
     public let colors = Colors()
 
-    /// TextField configuration
-    public let textField = TextFieldConfig()
-
-    /// Button configuration
-    public let button = ButtonConfig()
-
     /// Font configuration
     public let font = FontConfig()
 
@@ -70,54 +64,6 @@ public class SwiftJsonUIConfiguration: ObservableObject {
 
         /// Get SwiftUI Color from UIColor
         public func swiftUI(_ keyPath: KeyPath<Colors, UIColor>) -> Color {
-            Color(self[keyPath: keyPath])
-        }
-    }
-
-    // MARK: - TextField Configuration
-
-    public class TextFieldConfig {
-        /// Default background color
-        public var backgroundColor: UIColor = .systemGray6
-
-        /// Default text color
-        public var textColor: UIColor = .label
-
-        /// Default placeholder color
-        public var placeholderColor: UIColor = .placeholderText
-
-        /// Default border color
-        public var borderColor: UIColor = .separator
-
-        /// Default corner radius
-        public var cornerRadius: CGFloat = 8.0
-
-        /// Default border width
-        public var borderWidth: CGFloat = 1.0
-
-        /// Get SwiftUI Color from UIColor
-        public func swiftUI(_ keyPath: KeyPath<TextFieldConfig, UIColor>) -> Color {
-            Color(self[keyPath: keyPath])
-        }
-    }
-
-    // MARK: - Button Configuration
-
-    public class ButtonConfig {
-        /// Default background color
-        public var backgroundColor: UIColor = .systemBlue
-
-        /// Default text color
-        public var textColor: UIColor = .white
-
-        /// Default corner radius
-        public var cornerRadius: CGFloat = 8.0
-
-        /// Default padding
-        public var padding: EdgeInsets = EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-
-        /// Get SwiftUI Color from UIColor
-        public func swiftUI(_ keyPath: KeyPath<ButtonConfig, UIColor>) -> Color {
             Color(self[keyPath: keyPath])
         }
     }
@@ -273,20 +219,6 @@ public class SwiftJsonUIConfiguration: ObservableObject {
         colors.disabled = .secondaryLabel
         colors.disabledBackground = .systemGray5
 
-        // TextField
-        textField.backgroundColor = .systemGray6
-        textField.textColor = .label
-        textField.placeholderColor = .placeholderText
-        textField.borderColor = .separator
-        textField.cornerRadius = 8.0
-        textField.borderWidth = 1.0
-
-        // Button
-        button.backgroundColor = .systemBlue
-        button.textColor = .white
-        button.cornerRadius = 8.0
-        button.padding = EdgeInsets(top: 12, leading: 16, bottom: 12, trailing: 16)
-
         // Font
         font.size = 17.0
         font.weight = .regular
@@ -437,8 +369,6 @@ public extension SwiftJsonUIConfiguration {
         colors.background = .black
         colors.text = .white
         colors.placeholder = .lightGray
-        textField.backgroundColor = .darkGray
-        textField.borderColor = .gray
     }
 
     /// Configure for a light theme
@@ -446,15 +376,10 @@ public extension SwiftJsonUIConfiguration {
         colors.background = .white
         colors.text = .black
         colors.placeholder = .darkGray
-        textField.backgroundColor = .systemGray6
-        textField.borderColor = .systemGray4
     }
 
     /// Configure for high contrast
     func applyHighContrast() {
         font.weight = .semibold
-        button.backgroundColor = .black
-        button.textColor = .white
-        textField.borderColor = .black
     }
 }
