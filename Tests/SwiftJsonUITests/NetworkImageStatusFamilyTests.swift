@@ -29,7 +29,31 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
 
     /// One load of `path`: the events, folded so a run of progress reads as
     /// one `progress×n`, the loader's states, and the largest progress.
-    private func measure(_ urlString: String) -> (events: String, states: String, maxBytes: Int64) {
+    /// Whether the events came in the order a renderer is promised: each try
+    /// opens with `requesting`; `responded` comes at most once a try and
+    /// before any progress; the try ends with retrying, finished or failed,
+    /// and nothing follows the end.
+    static func inOrder(_ events: [String]) -> Bool {
+        var opened = false, responded = false, ended = false
+        for e in events {
+            if ended { return false }
+            switch e {
+            case "requesting":
+                opened = true; responded = false
+            case "responded":
+                if !opened || responded { return false }
+                responded = true
+            case "progress":
+                if !opened || !responded { return false }
+            default:
+                if !opened { return false }
+                if e.hasPrefix("retrying") { opened = false } else { ended = true }
+            }
+        }
+        return ended
+    }
+
+    private func measure(_ urlString: String) -> (events: String, states: String, maxBytes: Int64, inOrder: Bool) {
         let load = NetworkImageLoadTable.shared.acquire(urlString, url: URL(string: urlString)!, headers: [:])
         var events: [NetworkImageLoadEvent] = []
         let observation = load.observe { events.append($0) }
@@ -49,7 +73,19 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
         }
         if run > 0 { folded.append("progress×\(run)") }
         let maxBytes = events.compactMap { e -> Int64? in if case .progress(let r, _) = e { return r }; return nil }.max() ?? 0
-        return (folded.joined(separator: " "), states.joined(separator: " "), maxBytes)
+        return (folded.joined(separator: " "), states.joined(separator: " "), maxBytes, Self.inOrder(events.map(name)))
+    }
+
+    /// The order check itself, so a broken order is known to read as broken.
+    func testTheOrderCheckReadsABrokenOrder() {
+        XCTAssertTrue(Self.inOrder(["requesting", "responded", "progress", "progress", "finished(network)"]))
+        XCTAssertTrue(Self.inOrder(["requesting", "retrying(1)", "requesting", "responded", "progress", "finished(disk)"]))
+        XCTAssertTrue(Self.inOrder(["requesting", "retrying(1)", "requesting", "failed"]))
+        XCTAssertFalse(Self.inOrder(["progress", "requesting", "responded", "finished(network)"]), "progress first")
+        XCTAssertFalse(Self.inOrder(["requesting", "progress", "responded", "finished(network)"]), "progress before responded")
+        XCTAssertFalse(Self.inOrder(["requesting", "responded", "responded", "finished(network)"]), "responded twice")
+        XCTAssertFalse(Self.inOrder(["requesting", "finished(network)", "progress"]), "after the end")
+        XCTAssertFalse(Self.inOrder(["requesting", "responded"]), "no end")
     }
 
     func testTheStatusFamily() throws {
@@ -57,17 +93,20 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
             throw XCTSkip("NW_STATUS_SERVER is not set: the status family runs against a local server")
         }
         let run = UUID().uuidString.prefix(8)
-        for c in ["ok", "html200", "moved", "movednf", "nf", "nfbig", "nfpng", "err", "flaky", "nm"] {
+        for c in ["ok", "fast", "nffast", "html200", "moved", "movednf", "nf", "nfbig", "nfpng", "err", "flaky", "nm"] {
             let r = measure("\(server)/\(c)/\(run)")
-            print("FAMILY \(c) | \(r.events) | \(r.states) | maxBytes=\(r.maxBytes)")
+            print("FAMILY \(c) | \(r.events) | \(r.states) | maxBytes=\(r.maxBytes) | order=\(r.inOrder ? "ok" : "BROKEN")")
+            XCTAssertTrue(r.inOrder, "\(c): \(r.events)")
         }
         // 304: the first load stores the image with its ETag; the second,
         // with the memory cache emptied, revalidates and the server says 304.
         let etag = "\(server)/etag/\(run)"
         let first = measure(etag)
-        print("FAMILY etag-first | \(first.events) | \(first.states) | maxBytes=\(first.maxBytes)")
+        print("FAMILY etag-first | \(first.events) | \(first.states) | maxBytes=\(first.maxBytes) | order=\(first.inOrder ? "ok" : "BROKEN")")
+        XCTAssertTrue(first.inOrder, first.events)
         SwiftUIImageCache.shared.remove(etag)
         let second = measure(etag)
-        print("FAMILY etag-304 | \(second.events) | \(second.states) | maxBytes=\(second.maxBytes)")
+        print("FAMILY etag-304 | \(second.events) | \(second.states) | maxBytes=\(second.maxBytes) | order=\(second.inOrder ? "ok" : "BROKEN")")
+        XCTAssertTrue(second.inOrder, second.events)
     }
 }
