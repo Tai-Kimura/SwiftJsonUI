@@ -148,7 +148,10 @@ public final class NetworkImageLoadTable {
                     relay.send(.finished(source: source))
                     return
                 }
+                // A 2xx body that is not an image is the same the next
+                // time: not a passing failure, so no retry.
                 lastError = URLError(.cannotDecodeContentData)
+                break
             } catch {
                 if Task.isCancelled || error is CancellationError || (error as? URLError)?.code == .cancelled {
                     relay.send(.cancelled); return
@@ -160,6 +163,13 @@ public final class NetworkImageLoadTable {
                 // past any observer.
                 if let urlError = error as? URLError,
                    [.cannotFindHost, .unsupportedURL, .badURL].contains(urlError.code) {
+                    break
+                }
+                // Only a passing failure is retried (ruling 2026-11-15): 5xx,
+                // 408 (timeout), 429 (too many requests) and a cut connection.
+                // Any other answer that is not the image — a 4xx, a 304
+                // nobody asked for — is the same the next time: no retry.
+                if let code = Self.statusCode(of: error), Self.isPermanent(status: code) {
                     break
                 }
             }
@@ -177,6 +187,17 @@ public final class NetworkImageLoadTable {
     /// progress, and its body is never decoded: the attempt fails (retrying,
     /// then failed), as a network error does (ticket
     /// jui-networkimage-error-response-reported-as-progress).
+    /// The status code a rejected answer failed with (rejectedStatus).
+    nonisolated static func statusCode(of error: Error) -> Int? {
+        guard let urlError = error as? URLError, urlError.code == .badServerResponse else { return nil }
+        return urlError.userInfo["statusCode"] as? Int
+    }
+
+    /// A rejected status no retry can change: all but 5xx, 408 and 429.
+    nonisolated static func isPermanent(status: Int) -> Bool {
+        !((500..<600).contains(status) || status == 408 || status == 429)
+    }
+
     nonisolated static func rejectedStatus(_ response: URLResponse?) -> Int? {
         guard let http = response as? HTTPURLResponse else { return nil }
         let code = http.statusCode

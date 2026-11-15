@@ -10,6 +10,8 @@ import XCTest
 /// case.
 @MainActor
 final class NetworkImageStatusFamilyTests: XCTestCase {
+    private var lastWaits = ""
+
     private func name(_ e: NetworkImageLoadEvent) -> String {
         switch e {
         case .requesting: return "requesting"
@@ -56,7 +58,8 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
     private func measure(_ urlString: String) -> (events: String, states: String, maxBytes: Int64, inOrder: Bool) {
         let load = NetworkImageLoadTable.shared.acquire(urlString, url: URL(string: urlString)!, headers: [:])
         var events: [NetworkImageLoadEvent] = []
-        let observation = load.observe { events.append($0) }
+        var times: [(String, Date)] = []
+        let observation = load.observe { events.append($0); times.append((self.name($0), Date())) }
         let loader = NetworkImageLoader()
         var states: [String] = []
         loader.onLoadStateChange = { states.append($0) }
@@ -73,6 +76,14 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
         }
         if run > 0 { folded.append("progress×\(run)") }
         let maxBytes = events.compactMap { e -> Int64? in if case .progress(let r, _) = e { return r }; return nil }.max() ?? 0
+        // The wait before each retry: from `retrying` to the next `requesting`.
+        var waits: [String] = []
+        for (i, t) in times.enumerated() where t.0.hasPrefix("retrying") {
+            if let next = times[(i + 1)...].first(where: { $0.0 == "requesting" }) {
+                waits.append(String(format: "%.1fs", next.1.timeIntervalSince(t.1)))
+            }
+        }
+        lastWaits = waits.joined(separator: ",")
         return (folded.joined(separator: " "), states.joined(separator: " "), maxBytes, Self.inOrder(events.map(name)))
     }
 
@@ -93,9 +104,9 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
             throw XCTSkip("NW_STATUS_SERVER is not set: the status family runs against a local server")
         }
         let run = UUID().uuidString.prefix(8)
-        for c in ["ok", "fast", "nffast", "html200", "moved", "movednf", "nf", "nfbig", "nfpng", "err", "flaky", "nm"] {
+        for c in ["ok", "fast", "nffast", "html200", "moved", "movednf", "nf", "nfbig", "nfpng", "err", "flaky", "nm", "s400", "s408", "s429", "s503", "drop"] {
             let r = measure("\(server)/\(c)/\(run)")
-            print("FAMILY \(c) | \(r.events) | \(r.states) | maxBytes=\(r.maxBytes) | order=\(r.inOrder ? "ok" : "BROKEN")")
+            print("FAMILY \(c) | \(r.events) | \(r.states) | maxBytes=\(r.maxBytes) | order=\(r.inOrder ? "ok" : "BROKEN") | waits=\(lastWaits)")
             XCTAssertTrue(r.inOrder, "\(c): \(r.events)")
         }
         // 304: the first load stores the image with its ETag; the second,
