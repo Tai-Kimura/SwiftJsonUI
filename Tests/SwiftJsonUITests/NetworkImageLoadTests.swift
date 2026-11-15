@@ -158,11 +158,11 @@ final class NetworkImageLoadTests: XCTestCase {
         XCTAssertEqual(SlowImageProtocol.requests.count, 1)
     }
 
-    func testOnlyA2xxOr304AnswerIsTheImage() {
-        for code in [200, 204, 299, 304] {
+    func testOnlyA2xxAnswerIsTheImage() {
+        for code in [200, 204, 299] {
             XCTAssertNil(NetworkImageLoadTable.rejectedStatus(HTTPURLResponse(url: URL(string: "https://a.test/")!, statusCode: code, httpVersion: nil, headerFields: nil)), "\(code)")
         }
-        for code in [100, 301, 302, 400, 404, 410, 429, 500, 503] {
+        for code in [100, 301, 302, 304, 400, 404, 410, 429, 500, 503] {
             XCTAssertEqual(NetworkImageLoadTable.rejectedStatus(HTTPURLResponse(url: URL(string: "https://a.test/")!, statusCode: code, httpVersion: nil, headerFields: nil)), code)
         }
         XCTAssertNil(NetworkImageLoadTable.rejectedStatus(URLResponse(url: URL(string: "file:///a.png")!, mimeType: "image/png", expectedContentLength: 1, textEncodingName: nil)), "not HTTP")

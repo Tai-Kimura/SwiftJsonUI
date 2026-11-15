@@ -169,8 +169,10 @@ public final class NetworkImageLoadTable {
     }
 
     /// The status code of an HTTP answer that is not the image — anything
-    /// but 2xx and 304 (a revalidated cache entry; URLSession hands it over
-    /// as the stored 200) — and nil for an image answer or a non-HTTP one.
+    /// but 2xx — and nil for an image answer or a non-HTTP one. A 304 is
+    /// never the image here: the revalidation URLSession makes itself is
+    /// handed over as the stored 200, so a 304 that reaches the task is one
+    /// nobody asked the cache for, with no body.
     /// Such an answer is never told to the renderer as `responded` or
     /// progress, and its body is never decoded: the attempt fails (retrying,
     /// then failed), as a network error does (ticket
@@ -178,7 +180,7 @@ public final class NetworkImageLoadTable {
     nonisolated static func rejectedStatus(_ response: URLResponse?) -> Int? {
         guard let http = response as? HTTPURLResponse else { return nil }
         let code = http.statusCode
-        return (200..<300).contains(code) || code == 304 ? nil : code
+        return (200..<300).contains(code) ? nil : code
     }
 
     /// One attempt: a data task whose response and received bytes are

@@ -57,7 +57,7 @@ final class NetworkImageStatusFamilyTests: XCTestCase {
             throw XCTSkip("NW_STATUS_SERVER is not set: the status family runs against a local server")
         }
         let run = UUID().uuidString.prefix(8)
-        for c in ["ok", "html200", "moved", "movednf", "nf", "nfbig", "nfpng", "err", "flaky"] {
+        for c in ["ok", "html200", "moved", "movednf", "nf", "nfbig", "nfpng", "err", "flaky", "nm"] {
             let r = measure("\(server)/\(c)/\(run)")
             print("FAMILY \(c) | \(r.events) | \(r.states) | maxBytes=\(r.maxBytes)")
         }
