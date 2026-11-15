@@ -198,6 +198,9 @@ struct ConformanceRootView: View {
         if arguments.contains("-screenMarkerOverlayProbe") { return AnyView(ScreenMarkerOverlayProbeView()) }
         if arguments.contains("-screenMarkerShrinkProbe") { return AnyView(ScreenMarkerShrinkProbeView()) }
         if arguments.contains("-offsetProbe") { return AnyView(OffsetHitTargetProbeView()) }
+        if let i = arguments.firstIndex(of: "-networkImageRendererProbe"), i + 1 < arguments.count {
+            return AnyView(NetworkImageRendererProbeView(base: arguments[i + 1]))
+        }
         if arguments.contains("-pagerCellFrameProbe") { return AnyView(PagerCellFrameProbeView()) }
         if let i = arguments.firstIndex(of: "-scrollWrapKeyboardProbe"), i + 1 < arguments.count {
             return AnyView(ScrollWrapKeyboardProbeView(height: arguments[i + 1] == "wrap" ? "wrapContent" : "matchParent"))
