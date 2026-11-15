@@ -49,12 +49,16 @@ public struct NetworkImageAttributes {
         "headers",
         "hint",
         "loading",
+        "loadingDelay",
         "loadingImage",
+        "loadingRenderer",
+        "onLoadStateChange",
         "placeholder",
         "renderingMode",
         "size",
         "src",
         "timeout",
+        "transitionDuration",
         "url",
     ])
 
@@ -103,8 +107,17 @@ public struct NetworkImageAttributes {
     /// Loading behavior
     public let loading: AttrEnum<Loading>?
 
+    /// Milliseconds a load must take before the loadingRenderer is made (0-2000). Default 200 when loadingRenderer is named, and read only then. A load done before it shows the image with transitionDuration and no renderer at all (ticket jui-networkimage-load-listener, the requester's ruling 2026-11-15).
+    public let loadingDelay: Double?
+
     /// Loading image name
     public let loadingImage: String?
+
+    /// The name of a loading renderer the app registered (iOS NetworkImageLoadingRenderers.register, Android KjuiLoadingRenderers.register): a native drawer laid over the frame only while the image is read from disk or the network, after loadingDelay, and told the bytes received as they arrive. Progress reaches the renderer only, never the ViewModel, so the screen is not redrawn by it. While a renderer is named, neither placeholder / hint / loadingImage nor the built-in progress spinner is drawn for the loading state; errorImage / defaultImage keep their states. An image the memory cache already holds is drawn from the first frame and no renderer is made. Absent, "" (a binding may hand "" to turn it off per frame) or a name nothing registered draws the loading state as before (the placeholder chain); an unregistered name is logged once in DEBUG. The library hides the renderer from screen readers; alt stays on the image. Not declared for react: a web face draws placeholder, there being no native renderer on the web (ticket jui-networkimage-load-listener, the requester's ruling 2026-11-15). [binding: one-way]
+    public let loadingRenderer: AttrValue<String>?
+
+    /// Called on the main thread when the image's load state changes - binding only (@{functionName}), with the state as a String: "loading" when a read from disk or the network starts, "loaded" when the image is decoded and shown, "failed" when it is given up (after the retries on iOS). Handler shapes as for other events: () -> Void, (String) -> Void for the state, (String, String) -> Void for viewId + state (Kotlin -> Unit; TS (state: string) => void). At most three calls per image and only on a change: an image the memory cache holds calls "loaded" alone; a load cancelled because the frame left the screen calls nothing (the next appearance ends it with loaded / failed). Progress is never sent here (the renderer gets it); where the image came from (memory / disk / network) is on the native onLoadEvent. Web: "loading" when src is set, then the <img>'s load / error events (ticket jui-networkimage-load-listener, the requester's ruling 2026-11-15). [binding: one-way]
+    public let onLoadStateChange: AttrValue<Any>?
 
     /// Placeholder image name (alias for hint)
     public let placeholder: String?
@@ -120,6 +133,9 @@ public struct NetworkImageAttributes {
 
     /// Download timeout in seconds
     public let timeout: Double?
+
+    /// T, the milliseconds the fades into the loaded image or the error image are measured from (0-1000). Default 240 when a loadingRenderer was found at run time, otherwise 0 (no fade, as before); a written value applies with or without a renderer. With a renderer on the frame the image fades in over T (ease-in-out cubic, cubic-bezier(0.65, 0, 0.35, 1)) and the error image waits T/6 then fades in over 5T/6 (same curve); a load done before the renderer was put on (within loadingDelay, or waiting its turn among the frames that start in one frame) fades the image or the error image in over T/2 (ease-out quadratic, 1-(1-t)^2); with no renderer named, a written T fades over T (ease-out quadratic). Never applied to an image the memory cache already holds: that is drawn at full opacity from the first frame. The fades run the same with reduce motion on (Android: not scaled by the animator duration scale). iOS: Core Animation on the image's layer, capped at 60 fps; Android: the image's graphicsLayer alpha; web: a CSS opacity transition on the <img>, ease-out over T (ticket jui-networkimage-load-listener, the requester's ruling 2026-11-15).
+    public let transitionDuration: Double?
 
     /// Image URL (alias, can be data binding). `source` folds here (sjui network_image_converter.rb:14 reads `url || source || src`). [aliases: source]
     public let url: AttrValue<String>?
@@ -137,12 +153,16 @@ public struct NetworkImageAttributes {
         self.headers = AttrCoerce.object(AttrCoerce.lookup(json, "headers"))
         self.hint = AttrCoerce.string(AttrCoerce.lookup(json, "hint"))
         self.loading = Self.parseLoading(AttrCoerce.lookup(json, "loading"))
+        self.loadingDelay = AttrCoerce.number(AttrCoerce.lookup(json, "loadingDelay"))
         self.loadingImage = AttrCoerce.string(AttrCoerce.lookup(json, "loadingImage"))
+        self.loadingRenderer = AttrCoerce.attrValue(AttrCoerce.lookup(json, "loadingRenderer"), AttrCoerce.string)
+        self.onLoadStateChange = AttrCoerce.bindingValue(AttrCoerce.lookup(json, "onLoadStateChange"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))
         self.renderingMode = Self.parseRenderingMode(AttrCoerce.lookup(json, "renderingMode"))
         self.size = AttrCoerce.number(AttrCoerce.lookup(json, "size"))
         self.src = AttrCoerce.attrValue(AttrCoerce.lookup(json, "src"), AttrCoerce.string)
         self.timeout = AttrCoerce.number(AttrCoerce.lookup(json, "timeout"))
+        self.transitionDuration = AttrCoerce.number(AttrCoerce.lookup(json, "transitionDuration"))
         self.url = AttrCoerce.attrValue(AttrCoerce.lookup(json, "url", ["source"], canonicalOnly: canonicalOnly), AttrCoerce.string)
     }
 

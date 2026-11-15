@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.39 # jsonui-cli v2.5.39: a cell address counts across sections, branch-tests orphans, lint-strings
+      JSONUI_CLI_MANIFEST_REF: 0083b55854088c7029f077c68de6877f572e865f # jsonui-cli feat/networkimage-load-listener (2.5.42): NetworkImage loadingRenderer, loadingDelay, transitionDuration, onLoadStateChange
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
