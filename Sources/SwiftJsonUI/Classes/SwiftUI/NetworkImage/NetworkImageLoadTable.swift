@@ -162,6 +162,13 @@ public final class NetworkImageLoadTable {
                    [.cannotFindHost, .unsupportedURL, .badURL].contains(urlError.code) {
                     break
                 }
+                // A 4xx answer is the request's own fault and is the same
+                // the next time: no retry (ruling 2026-11-15). 408 (timeout)
+                // and 429 (too many requests) are passing, as 5xx and a cut
+                // connection are, and are retried.
+                if let code = Self.statusCode(of: error), Self.isPermanent(status: code) {
+                    break
+                }
             }
         }
         SwiftUIImageCache.shared.markFailed(urlString)
@@ -177,6 +184,17 @@ public final class NetworkImageLoadTable {
     /// progress, and its body is never decoded: the attempt fails (retrying,
     /// then failed), as a network error does (ticket
     /// jui-networkimage-error-response-reported-as-progress).
+    /// The status code a rejected answer failed with (rejectedStatus).
+    nonisolated static func statusCode(of error: Error) -> Int? {
+        guard let urlError = error as? URLError, urlError.code == .badServerResponse else { return nil }
+        return urlError.userInfo["statusCode"] as? Int
+    }
+
+    /// A status no retry can change: 4xx, but for 408 and 429.
+    nonisolated static func isPermanent(status: Int) -> Bool {
+        (400..<500).contains(status) && status != 408 && status != 429
+    }
+
     nonisolated static func rejectedStatus(_ response: URLResponse?) -> Int? {
         guard let http = response as? HTTPURLResponse else { return nil }
         let code = http.statusCode
