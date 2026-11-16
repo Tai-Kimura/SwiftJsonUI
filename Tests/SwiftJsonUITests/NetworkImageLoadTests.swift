@@ -432,6 +432,31 @@ final class NetworkImageLoadTests: XCTestCase {
         sub.cancel()
     }
 
+    /// The layer view's fade over, the SwiftUI Image goes under it first and
+    /// only then does the layer view go: inside a container that crossfades
+    /// the change (a paged TabView) the swap from one to the other dimmed the
+    /// image by a quarter for about 0.3 s (ticket
+    /// sjui-networkimage-load-complete-flickers, the paged viewer).
+    func testTheImageIsUnderTheLayerViewBeforeTheLayerViewGoes() {
+        SlowImageProtocol.chunks = 4
+        SlowImageProtocol.gap = 0.01
+        let urlString = freshURL()
+        let loader = NetworkImageLoader()
+        loader.rendererFactory = NetworkImageLoadingRenderers.factory(for: "counting")
+        let window = UIWindow(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        let view = NetworkImageLayerView(frame: window.bounds)
+        window.addSubview(view)
+        var steps: [String] = []
+        let a = loader.$imageUnderLayer.removeDuplicates().dropFirst().sink { steps.append("under=\($0)") }
+        let b = loader.$hostActive.removeDuplicates().dropFirst().sink { steps.append("host=\($0)") }
+        loader.loadIfNeeded(url: urlString, headers: [:])
+        loader.attachHost(view, colorScheme: .dark)
+        spin(until: { loader.loadedImage != nil && !loader.hostActive && !loader.imageUnderLayer })
+        a.cancel(); b.cancel()
+        XCTAssertEqual(steps, ["host=true", "under=true", "host=false", "under=false"])
+        XCTAssertEqual(loader.face, .image)
+    }
+
     func testAnImageTheMemoryCacheHoldsIsLoadedAloneWithNoRenderer() {
         let urlString = freshURL()
         SwiftUIImageCache.shared.set(urlString, image: UIImage(data: SlowImageProtocol.png)!)

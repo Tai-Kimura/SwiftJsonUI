@@ -107,6 +107,10 @@ final class NetworkImageLoader: ObservableObject {
     @Published var hostActive = false
     /// How the error image comes in.
     @Published var errorFade: NetworkImageFade = .none
+    /// The SwiftUI Image is drawn under the layer view (which shows the same
+    /// image) before the layer view goes, so a container that crossfades the
+    /// change never shows the ground through.
+    @Published var imageUnderLayer = false
 
     /// What the frame draws, in the order its body decides: the renderer's
     /// layer view, the image, the loading state, the error image (errorImage,
@@ -161,6 +165,7 @@ final class NetworkImageLoader: ObservableObject {
             isLoading = false
             hostActive = false
             reportedState = nil
+            if imageUnderLayer { imageUnderLayer = false }
             return
         }
         guard let urlString = url, let requestUrl = URL(string: urlString) else { return }
@@ -175,6 +180,7 @@ final class NetworkImageLoader: ObservableObject {
             isLoading = false
             hostActive = false
             reportedState = nil
+            if imageUnderLayer { imageUnderLayer = false }
         }
         currentUrl = urlString
         self.headers = headers
@@ -230,7 +236,7 @@ final class NetworkImageLoader: ObservableObject {
         }
         letGo()
         if hostActive, let host {
-            host.finish(image: image, source: source) { [weak self] in self?.hostActive = false }
+            host.finish(image: image, source: source) { [weak self] in self?.handOver() }
             isLoading = false
             loadedImage = image
         } else {
@@ -244,6 +250,17 @@ final class NetworkImageLoader: ObservableObject {
             if fade.duration > 0 { withAnimation(fade.swiftUIAnimation, apply) } else { apply() }
         }
         report("loaded")
+    }
+
+    /// The layer view's fade is over: the SwiftUI Image goes under it first,
+    /// and once that is on screen the layer view goes.
+    private func handOver() {
+        imageUnderLayer = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
+            guard let self, self.imageUnderLayer else { return }
+            self.hostActive = false
+            self.imageUnderLayer = false
+        }
     }
 
     private func fail() {
@@ -419,7 +436,13 @@ public struct NetworkImage: View {
 
     public var body: some View {
         configureLoader()
-        return Group {
+        return ZStack {
+            // The image's own slot: the same view while the layer view is
+            // above it and after the layer view goes.
+            if let image = loader.loadedImage, loader.face == .image || loader.imageUnderLayer {
+                styledImage(Image(uiImage: image))
+                    .transition(.opacity)
+            }
             switch loader.face {
             case .renderer:
                 // The renderer's layers, then the image fading in on its
@@ -435,10 +458,7 @@ public struct NetworkImage: View {
                     }
                 }
             case .image:
-                if let image = loader.loadedImage {
-                    styledImage(Image(uiImage: image))
-                        .transition(.opacity)
-                }
+                EmptyView()
             case .loading:
                 if loader.rendererFactory != nil {
                     Color.clear
