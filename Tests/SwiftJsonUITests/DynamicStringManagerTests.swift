@@ -5,10 +5,10 @@
 //  Pins the localize() resolution order: declared-key membership wins over
 //  the value reverse-lookup and over any spelling heuristic. The extractor
 //  truncates long ASCII text to 31 chars, which can leave a trailing
-//  underscore ("dont_have_an_account_apply_for_") — a spelling the old
+//  underscore ("foo_bar_") — a spelling the old
 //  snake_case gate rejected, while a legacy poison entry whose VALUE is that
 //  raw key hijacked the value lookup, so the dynamic face rendered the key
-//  itself (downstream login screen, 2026-08-09).
+//  itself (a downstream app's login screen, 2026-08-09).
 //
 //  In the test host there is no Localizable.strings, so `.localized()`
 //  passes the key through — asserting the PREFIXED key spelling proves
@@ -25,16 +25,16 @@ final class DynamicStringManagerTests: XCTestCase {
         super.setUp()
         DynamicStringManager.shared.loadStrings(fromParsed: [
             "login": [
-                "dont_have_an_account_apply_for_": [
-                    "en": "Don't have an account? Apply for Membership",
-                    "ja": "アカウントをお持ちでない方は会員登録"
+                "foo_bar_": [
+                    "en": "Foo bar",
+                    "ja": "あいうえ"
                 ],
                 // Legacy poison: a key whose value IS the other key's spelling.
-                "dont_have_an_account_apply_for": "dont_have_an_account_apply_for_",
+                "foo_bar": "foo_bar_",
                 "email_address": "Email address",
-                "apply_for_membership": [
-                    "en": "Apply for Membership",
-                    "ja": "会員登録"
+                "foo_baz": [
+                    "en": "Foo baz",
+                    "ja": "かきく"
                 ]
             ]
         ])
@@ -47,18 +47,18 @@ final class DynamicStringManagerTests: XCTestCase {
 
     func testDeclaredTrailingUnderscoreKeyResolvesAsKey() {
         XCTAssertEqual(
-            "dont_have_an_account_apply_for_".dynamicLocalized(),
-            "login_dont_have_an_account_apply_for_"
+            "foo_bar_".dynamicLocalized(),
+            "login_foo_bar_"
         )
     }
 
     func testKeyMembershipWinsOverPoisonedValueLookup() {
-        // The poison entry maps the VALUE "dont_have_an_account_apply_for_"
-        // to "login_dont_have_an_account_apply_for" (no trailing underscore).
+        // The poison entry maps the VALUE "foo_bar_"
+        // to "login_foo_bar" (no trailing underscore).
         // Key-first ordering must pick the declared key instead.
-        let resolved = "dont_have_an_account_apply_for_".dynamicLocalized()
-        XCTAssertNotEqual(resolved, "login_dont_have_an_account_apply_for")
-        XCTAssertEqual(resolved, "login_dont_have_an_account_apply_for_")
+        let resolved = "foo_bar_".dynamicLocalized()
+        XCTAssertNotEqual(resolved, "login_foo_bar")
+        XCTAssertEqual(resolved, "login_foo_bar_")
     }
 
     func testValueLookupStillResolvesDisplayText() {
@@ -70,8 +70,8 @@ final class DynamicStringManagerTests: XCTestCase {
 
     func testDeclaredPlainSnakeCaseKeyResolves() {
         XCTAssertEqual(
-            "apply_for_membership".dynamicLocalized(),
-            "login_apply_for_membership"
+            "foo_baz".dynamicLocalized(),
+            "login_foo_baz"
         )
     }
 
@@ -81,23 +81,23 @@ final class DynamicStringManagerTests: XCTestCase {
 
     // A bare key declared in several sections resolves through the section
     // the RENDERING layout owns — flat iteration order picked one by chance
-    // (downstream bar: home.open=営業中 vs store_info.open=開店, the home tab
-    // rendered 開店 on the dynamic face, 2026-08-10).
+    // (a downstream app: home.open="A" vs info.open="B", the home tab
+    // rendered "B" on the dynamic face, 2026-08-10).
     func testOwnSectionWinsForCollidingBareKey() {
         DynamicStringManager.shared.loadStrings(fromParsed: [
-            "home": ["open": ["en": "Open", "ja": "営業中"]],
-            "store_info": ["open": ["en": "Open", "ja": "開店"]]
+            "home": ["open": ["en": "Open", "ja": "A"]],
+            "info": ["open": ["en": "Open", "ja": "B"]]
         ])
         DynamicStringManager.shared.beginLayout("home")
         XCTAssertEqual("open".dynamicLocalized(), "home_open")
-        DynamicStringManager.shared.beginLayout("store_info")
-        XCTAssertEqual("open".dynamicLocalized(), "store_info_open")
+        DynamicStringManager.shared.beginLayout("info")
+        XCTAssertEqual("open".dynamicLocalized(), "info_open")
     }
 
     func testFlatFallbackStillResolvesForeignKeys() {
         DynamicStringManager.shared.loadStrings(fromParsed: [
-            "home": ["open": ["en": "Open", "ja": "営業中"]],
-            "settings": ["logout": ["en": "Log out", "ja": "ログアウト"]]
+            "home": ["open": ["en": "Open", "ja": "A"]],
+            "settings": ["logout": ["en": "Log out", "ja": "C"]]
         ])
         // home renders a key it does not own — the flat map still answers.
         DynamicStringManager.shared.beginLayout("home")
@@ -107,7 +107,7 @@ final class DynamicStringManagerTests: XCTestCase {
     func testOwnSectionValueLookupWins() {
         DynamicStringManager.shared.loadStrings(fromParsed: [
             "home": ["open": "Open"],
-            "store_info": ["open_hours": "Open"]
+            "info": ["open_hours": "Open"]
         ])
         DynamicStringManager.shared.beginLayout("home")
         XCTAssertEqual("Open".dynamicLocalized(), "home_open")

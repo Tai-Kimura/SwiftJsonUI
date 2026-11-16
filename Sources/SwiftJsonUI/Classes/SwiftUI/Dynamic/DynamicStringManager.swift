@@ -22,7 +22,7 @@ public class DynamicStringManager {
 
     /// strings.json sections owned by the layout currently rendering, most
     /// specific first. A bare key like "open" exists in as many sections as
-    /// declare it ({home: 営業中, store_info: 開店} in downstream bar), and the
+    /// declare it ({home: "A", info: "B"} in a downstream app), and the
     /// flat maps above resolve it by dictionary iteration order — i.e. by
     /// chance. The codegen face resolves through the layout's OWN section
     /// (StringManagerHelper.current_namespaces), and the UIKit face through
@@ -141,11 +141,11 @@ public class DynamicStringManager {
         //    membership in the SSoT is what makes something a key, not how it
         //    is spelled. The extractor truncates long ASCII text to 31 chars,
         //    which can leave a trailing underscore
-        //    ("dont_have_an_account_apply_for_") — a spelling the snake_case
+        //    ("foo_bar_") — a spelling the snake_case
         //    gate below rejects, and the value lookup can be poisoned by a
         //    legacy entry whose VALUE is that raw key, so this label rendered
         //    its key on the dynamic face while codegen resolved it
-        //    (downstream login screen, 2026-08-09). KJUI's ResourceCache.resolveString
+        //    (a downstream app's login screen, 2026-08-09). KJUI's ResourceCache.resolveString
         //    has always been key-first; this aligns the faces.
         if let key = textToKey[text] {
             return key.localized()
@@ -184,7 +184,7 @@ public class DynamicStringManager {
     private func isSnakeCase(_ text: String) -> Bool {
         // Same spelling the extractor's should_extract_string? skips
         // (string_manager_core.rb), trailing underscore included — the
-        // extractor emits truncation keys like "…_apply_for_" and every
+        // extractor emits truncation keys like "foo_bar_" and every
         // resolver must accept what the extractor produces.
         let pattern = "^[a-z][a-z0-9]*(_[a-z0-9]+)*_?$"
         return text.range(of: pattern, options: .regularExpression) != nil
