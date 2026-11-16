@@ -57,8 +57,9 @@ public struct SegmentConverter {
         let click = DynamicEventHelper.operationClick(component, data: data)
 
         // Picker with .segmented style
+        let fitsItsLabels = Self.fitsItsLabels(component)
         let buildPicker: (SwiftUI.Binding<Int>) -> AnyView = { selection in
-            AnyView(
+            let picker = AnyView(
                 Picker("", selection: DynamicEventHelper.calling(click, after: selection)) {
                     ForEach(Array(items.enumerated()), id: \.offset) { index, item in
                         Text(item.dynamicLocalized()).tag(index)
@@ -75,6 +76,7 @@ public struct SegmentConverter {
                     )
                 }
             )
+            return fitsItsLabels ? AnyView(picker.segmentFitsItsLabels()) : picker
         }
         // Its handlers' viewId: the id, else the drawn type and the position
         // (LayoutPath.viewId — `segment` for every id-less one before).
@@ -117,6 +119,19 @@ public struct SegmentConverter {
 
         return result
     }
+    /// A Segment whose width is wrapContent, or not written and not weighted,
+    /// is as wide as its labels, capped at the width it is given
+    /// (segmentFitsItsLabels). matchParent, a number, a bound width and a
+    /// weight keep the width they give.
+    static func fitsItsLabels(_ component: DynamicComponent) -> Bool {
+        let common = component.typedAttributes(CommonAttributes.self)
+        if common.weight != nil || common.widthWeight != nil { return false }
+        guard let width = common.width else { return component.widthRaw == nil }
+        if case .wrapContent? = width.value { return true }
+        // The wider layout spellings codegen accepts (wrap_content).
+        return width.value == nil && component.widthRaw.map { $0.lowercased().replacingOccurrences(of: "_", with: "") } == "wrapcontent"
+    }
+
     /// `component` without its cornerRadius, a size class's included. A Segment reads none (the
     /// requester's ruling 2026-11-16, jsonui-cli ticket rjui-selectbox-default-corner-overrides-
     /// declared): its track and selected fill are the segmented control's capsules on every
