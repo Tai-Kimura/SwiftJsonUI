@@ -5,10 +5,14 @@
 //  The UIView a NetworkImage frame with a loading renderer draws while its
 //  image is read from disk or the network (an image the memory cache holds
 //  never makes one): the renderer's layers, put on after loadingDelay, and
-//  the image on a CALayer faded in by Core Animation in the same
-//  CATransaction the renderer is told to finish in. Once the fade is over the
-//  frame draws its SwiftUI Image again and this view goes (ticket
-//  jui-networkimage-load-listener, the requester's ruling 2026-11-15).
+//  the image on a CALayer above them, faded in by Core Animation in the same
+//  CATransaction the renderer is told to finish in. The renderer's layers
+//  stay under the fading image until the fade is over; then the renderer is
+//  taken off, the frame puts its SwiftUI Image under this view (which shows
+//  the same picture) and this view goes 50 ms later, so a container that
+//  crossfades the change shows nothing through (ticket
+//  jui-networkimage-load-listener, the requester's ruling 2026-11-15; ticket
+//  sjui-networkimage-load-complete-flickers).
 //
 //  Hidden from VoiceOver: the NetworkImage stays one image element carrying
 //  its alt, made by the SwiftUI around it.
@@ -131,7 +135,8 @@ final class NetworkImageLayerView: UIView {
     }
 
     /// The image is ready: tell the renderer and fade the image in, in one
-    /// CATransaction. `done` runs when the fade is over.
+    /// CATransaction. When the fade is over the renderer is taken off, then
+    /// `done` runs.
     func finish(image: UIImage, source: NetworkImageSource, done: @escaping () -> Void) {
         guard !ended else { return }
         ended = true

@@ -44,12 +44,23 @@ public protocol NetworkImageLoadingRenderer: AnyObject {
     func resize(to size: CGSize)
     /// The image is about to fade in over `transition` seconds: called inside
     /// the CATransaction that adds the image's animation, so the renderer's
-    /// own animations start on the same frame.
+    /// own animations start on the same frame. The image fades in on a layer
+    /// ABOVE the renderer's, and the renderer's layers stay on the frame until
+    /// that fade ends (`detach()` comes then): keep something under the image
+    /// until the fade ends. A renderer that empties the frame sooner — removes
+    /// or hides its layers here, or animates them out faster than the fade —
+    /// lets the half-faded image show what is behind the frame (on a dark
+    /// ground, the image dims and comes back). Nothing is called on each
+    /// frame: the renderer's own Core Animation runs on.
     func finish(source: NetworkImageSource, transition: CFTimeInterval)
     /// The load failed; the error image fades in after `transition` / 6, over
-    /// 5 × `transition` / 6.
+    /// 5 × `transition` / 6, drawn above the renderer's layers, which stay on
+    /// the frame until it is in (`detach()` comes then).
     func fail(transition: CFTimeInterval)
-    /// Taken off the frame: remove the layers and stop watching.
+    /// Taken off the frame: remove the layers and stop watching. Called when
+    /// the image's fade ends (the frame then draws the image itself, with
+    /// nothing under it that shows), when the error image is in, and when the
+    /// frame leaves the screen or its URL changes mid-load.
     func detach()
 }
 

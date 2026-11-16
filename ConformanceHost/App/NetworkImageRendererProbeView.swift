@@ -66,12 +66,9 @@ final class FillBoxRenderer: NetworkImageLoadingRenderer {
         level(load?.displayLevel ?? 0, animated: false)
     }
 
-    func finish(source: NetworkImageSource, transition: CFTimeInterval) {
-        let out = CABasicAnimation(keyPath: "opacity")
-        out.fromValue = 1; out.toValue = 0; out.duration = transition
-        box.add(out, forKey: "out")
-        box.opacity = 0
-    }
+    /// The box stays under the image until the fade ends and the renderer is
+    /// taken off: faded out with the image, it let the ground show through.
+    func finish(source: NetworkImageSource, transition: CFTimeInterval) {}
 
     func fail(transition: CFTimeInterval) {
         let out = CABasicAnimation(keyPath: "opacity")
