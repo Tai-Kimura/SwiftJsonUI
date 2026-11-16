@@ -1,0 +1,501 @@
+//
+//  JSONLayoutLoader.swift
+//  SwiftJsonUI
+//
+//  JSON layout loader for SwiftUI
+//
+
+import Foundation
+import SwiftUI
+
+// MARK: - JSON Loader
+public class JSONLayoutLoader {
+
+    private static var layoutsDirectoryName: String = "Layouts"
+    private static var hasLoadedConfiguration = false
+
+    #if DEBUG
+    // MARK: - Component Cache (DEBUG only)
+    /// Cache for parsed DynamicComponent to avoid repeated JSON parsing
+    private static var componentCache: [String: DynamicComponent] = [:]
+    private static let cacheLock = NSLock()
+
+    // MARK: - JSON Dictionary Cache (for responsive resolution)
+    /// Cache for processed JSON dictionaries (styles applied, includes expanded,
+    /// but responsive NOT yet resolved). This allows DynamicView to resolve
+    /// responsive overrides at runtime based on the current size class.
+    private static var jsonDictCache: [String: [String: Any]] = [:]
+
+    /// Load and cache a DynamicComponent by name
+    /// Returns cached component if available, otherwise loads and parses JSON
+    public static func loadComponent(named name: String) -> DynamicComponent? {
+        cacheLock.lock()
+        if let cached = componentCache[name] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
+        // Load and parse
+        guard let data = loadJSON(named: name) else { return nil }
+
+        do {
+            if var jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                // `$jui` L1 marker: alias spellings were already
+                // canonicalized by `jui build` — strip the marker and
+                // take the canonical-only path
+                let normalized = JsonUINormalization.consumeMarker(&jsonObject)
+
+                // Apply styles first
+                var processedJSON = StyleProcessor.processStyles(jsonObject)
+
+                // Expand includes inline with ID prefix support
+                let baseDir = getLayoutFileDirPath()
+                processedJSON = IncludeExpander.shared.processIncludes(processedJSON, baseDir: baseDir)
+                // Each node's position (LayoutPath), on the tree sjui build
+                // stamps: styles merged, includes expanded.
+                processedJSON = LayoutPath.stamp(processedJSON)
+                // `bind` folded on the tree drawn (BindFold). This path has
+                // no responsive branch (DynamicView takes it only then).
+                processedJSON = BindFold.fold(processedJSON)
+
+                let processedData = try JSONSerialization.data(withJSONObject: processedJSON, options: [])
+                let decoder = JSONDecoder()
+                JsonUINormalization.apply(to: decoder, normalized: normalized)
+                let component = try decoder.decode(DynamicComponent.self, from: processedData)
+
+                // Cache the result
+                cacheLock.lock()
+                componentCache[name] = component
+                cacheLock.unlock()
+
+                return component
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error parsing component \(name): \(error)")
+        }
+        return nil
+    }
+
+    /// Load the processed JSON dictionary for a layout by name.
+    /// Returns the dictionary with styles applied and includes expanded,
+    /// but without responsive resolution (that happens at the view level).
+    public static func loadProcessedJSON(named name: String) -> [String: Any]? {
+        cacheLock.lock()
+        if let cached = jsonDictCache[name] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
+        guard let data = loadJSON(named: name) else { return nil }
+
+        do {
+            if let jsonObject = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any] {
+                var processedJSON = StyleProcessor.processStyles(jsonObject)
+                let baseDir = getLayoutFileDirPath()
+                processedJSON = IncludeExpander.shared.processIncludes(processedJSON, baseDir: baseDir)
+                // Each node's position (LayoutPath) — before the responsive
+                // resolution at the view level, so a resolved branch keeps it.
+                processedJSON = LayoutPath.stamp(processedJSON)
+
+                cacheLock.lock()
+                jsonDictCache[name] = processedJSON
+                cacheLock.unlock()
+
+                return processedJSON
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error loading JSON dict \(name): \(error)")
+        }
+        return nil
+    }
+
+    /// Decode a processed JSON dictionary into a DynamicComponent.
+    /// Honors the `$jui` L1 normalization marker (stripped before
+    /// decoding; nested components expose `isNormalized`).
+    /// A component decoded without the loader — an app's own decode handed
+    /// to DynamicView(component:) — carries no position: it is decoded again
+    /// from its own raw tree (the root's rawData holds the whole tree),
+    /// stamped by the rule the loader stamps with (LayoutPath), with its
+    /// normalization kept. Its id-less Radios fell back to `radio_0`, all one
+    /// option. A stamped component, or one whose tree does not decode again,
+    /// is returned as it is.
+    static func stamped(_ component: DynamicComponent) -> DynamicComponent {
+        guard !LayoutPath.isStamped(component.rawData) else { return component }
+        do {
+            let data = try JSONSerialization.data(withJSONObject: BindFold.fold(LayoutPath.stamp(component.rawData)), options: [])
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: component.isNormalized)
+            return try decoder.decode(DynamicComponent.self, from: data)
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Could not stamp a component handed over decoded: \(error)")
+            return component
+        }
+    }
+
+    /// A component the app decoded itself, through the stages the loader
+    /// runs on a dictionary before it decodes — styles, includes, the
+    /// responsive overrides for the given size classes — then stamped
+    /// (LayoutPath), as every other entry is. A tree with no style, include
+    /// or responsive block left is only stamped (`stamped`). It was only
+    /// stamped whatever it held: styles, includes and responsive overrides
+    /// were skipped, silently, on this entry alone (the orchestrator's ruling on the
+    /// entries that skip stages, 1.9.0). The stages are idempotent
+    /// (EntryPipelineIdempotenceTests), so a tree the app already styled —
+    /// ConformanceHost's FixtureLoader — comes out as it went in.
+    static func prepared(
+        _ component: DynamicComponent,
+        horizontalSizeClass: UserInterfaceSizeClass?,
+        verticalSizeClass: UserInterfaceSizeClass?,
+        windowWidth: CGFloat? = nil
+    ) -> DynamicComponent {
+        guard hasUnresolvedStages(component.rawData) else { return stamped(component) }
+        var json = StyleProcessor.processStyles(component.rawData)
+        json = IncludeExpander.shared.processIncludes(json, baseDir: getLayoutFileDirPath())
+        if ResponsiveResolver.jsonContainsResponsive(json) {
+            json = ResponsiveResolver(horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass,
+                                      windowWidth: windowWidth)
+                .resolveTree(json)
+        }
+        if !LayoutPath.isStamped(json) { json = LayoutPath.stamp(json) }
+        let normalized = JsonUINormalization.consumeMarker(&json) || component.isNormalized
+        do {
+            let data = try JSONSerialization.data(withJSONObject: json, options: [])
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: normalized)
+            return try decoder.decode(DynamicComponent.self, from: data)
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Could not prepare a component handed over decoded: \(error)")
+            return stamped(component)
+        }
+    }
+
+    /// A `style`, an `include` or a `responsive` block anywhere the stages
+    /// walk (child / children, and a TabView's tabs for responsive).
+    static func hasUnresolvedStages(_ node: [String: Any]) -> Bool {
+        if node["style"] is String || node["include"] != nil || node["responsive"] != nil { return true }
+        for field in ["child", "children"] {
+            if let list = node[field] as? [[String: Any]], list.contains(where: hasUnresolvedStages) { return true }
+            if let one = node[field] as? [String: Any], hasUnresolvedStages(one) { return true }
+        }
+        return ResponsiveResolver.jsonContainsResponsive(node)
+    }
+
+    /// Decode a dictionary as the loader's entries do: stamped (LayoutPath)
+    /// if it is not already. Start here — or from `DynamicView(jsonName:)` —
+    /// with a dictionary of your own: styles, includes and responsive
+    /// overrides are resolved by the caller first (as FixtureLoader and
+    /// `DynamicView.rootComponent` do), or by `DynamicView(component:)`.
+    public static func decodeComponent(from json: [String: Any]) -> DynamicComponent? {
+        do {
+            // A tree the loader did not stamp (a caller's own dictionary) is
+            // stamped here, from its root, so an id-less node is named by its
+            // position on this path too (LayoutPath).
+            var json = LayoutPath.isStamped(json) ? json : LayoutPath.stamp(json)
+            // `bind` folded on the tree drawn, its responsive branch resolved
+            // by the caller (BindFold).
+            json = BindFold.fold(json)
+            let normalized = JsonUINormalization.consumeMarker(&json)
+            let data = try JSONSerialization.data(withJSONObject: json, options: [])
+            let decoder = JSONDecoder()
+            JsonUINormalization.apply(to: decoder, normalized: normalized)
+            return try decoder.decode(DynamicComponent.self, from: data)
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error decoding component: \(error)")
+            return nil
+        }
+    }
+
+    /// Clear the component cache (call when JSON files are updated)
+    public static func clearComponentCache() {
+        cacheLock.lock()
+        componentCache.removeAll()
+        jsonDictCache.removeAll()
+        variantExistsCache.removeAll()
+        cacheLock.unlock()
+    }
+
+    /// Clear specific component from cache
+    public static func clearComponentCache(for name: String) {
+        cacheLock.lock()
+        componentCache.removeValue(forKey: name)
+        jsonDictCache.removeValue(forKey: name)
+        variantExistsCache.removeValue(forKey: name)
+        cacheLock.unlock()
+    }
+
+    // MARK: - Responsive variant files (home@regular.json)
+
+    /// Existence probes are cached; HotLoader updates invalidate through
+    /// clearComponentCache so a variant delivered over hot reload starts
+    /// winning without an app restart.
+    private static var variantExistsCache: [String: Bool] = [:]
+
+    /// True when a layout with this name is loadable (cache dir in DEBUG,
+    /// bundle otherwise) — used only for variant probing.
+    static func layoutExists(named name: String) -> Bool {
+        cacheLock.lock()
+        if let cached = variantExistsCache[name] {
+            cacheLock.unlock()
+            return cached
+        }
+        cacheLock.unlock()
+
+        let exists = loadJSON(named: name) != nil
+        cacheLock.lock()
+        variantExistsCache[name] = exists
+        cacheLock.unlock()
+        return exists
+    }
+
+    /// Resolve the effective layout for the current horizontal size class
+    /// (responsive variant files, 06 track). Regular tier → `<name>@regular`
+    /// when present; compact tier → `<name>@compact`, else `<name>@medium`
+    /// (iOS has no medium size class — the fold mirrors the inline
+    /// `responsive` resolution), else the base. No cross-tier promotion.
+    public static func resolveVariantLayoutName(
+        _ name: String,
+        horizontalSizeClass: UserInterfaceSizeClass?
+    ) -> String {
+        guard !name.contains("@") else { return name }
+        let candidates = horizontalSizeClass == .regular
+            ? ["\(name)@regular"]
+            : ["\(name)@compact", "\(name)@medium"]
+        for candidate in candidates where layoutExists(named: candidate) {
+            return candidate
+        }
+        return name
+    }
+    #endif
+
+    private static func loadConfigurationIfNeeded() {
+        guard !hasLoadedConfiguration else { return }
+
+        if let configURL = Bundle.main.url(forResource: "sjui.config", withExtension: "json"),
+           let data = try? Data(contentsOf: configURL),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if let layoutsDir = json["layouts_directory"] as? String {
+                layoutsDirectoryName = layoutsDir
+                Logger.debug("[JSONLayoutLoader] Loaded layouts_directory from config: \(layoutsDir)")
+            }
+        }
+        hasLoadedConfiguration = true
+    }
+
+    public static func getLayoutFileDirPath() -> String {
+        loadConfigurationIfNeeded()
+        let paths = NSSearchPathForDirectoriesInDomains(.cachesDirectory, .userDomainMask, true)
+        let cachesDirPath = paths[0]
+        return "\(cachesDirPath)/\(layoutsDirectoryName)"
+    }
+
+    #if DEBUG
+    public static func copyResourcesToCache() {
+        loadConfigurationIfNeeded()
+        let fm = FileManager.default
+        let layoutFileDirPath = getLayoutFileDirPath()
+
+        do {
+            // Create cache directory if needed
+            if !fm.fileExists(atPath: layoutFileDirPath) {
+                try fm.createDirectory(atPath: layoutFileDirPath, withIntermediateDirectories: true, attributes: nil)
+                Logger.debug("[JSONLayoutLoader] Created cache directory: \(layoutFileDirPath)")
+            }
+
+            // Copy all JSON files from bundle to cache
+            var layoutURLs: [URL] = []
+
+            // Try to get layout files from the layouts directory
+            if let layoutsDirURL = Bundle.main.url(forResource: layoutsDirectoryName, withExtension: nil) {
+                if let enumerator = fm.enumerator(at: layoutsDirURL, includingPropertiesForKeys: nil) {
+                    for case let fileURL as URL in enumerator {
+                        if fileURL.pathExtension == "json" {
+                            layoutURLs.append(fileURL)
+                        }
+                    }
+                }
+            }
+
+            // Fallback to urls(forResourcesWithExtension:subdirectory:)
+            if layoutURLs.isEmpty, let urls = Bundle.main.urls(forResourcesWithExtension: "json", subdirectory: layoutsDirectoryName) {
+                layoutURLs = urls
+            }
+
+            if !layoutURLs.isEmpty {
+                Logger.debug("[JSONLayoutLoader] Found \(layoutURLs.count) layout files to copy")
+
+                // Get the base layouts directory URL for calculating relative paths
+                let layoutsDirURL = Bundle.main.url(forResource: layoutsDirectoryName, withExtension: nil)
+
+                for url in layoutURLs {
+                    // Calculate relative path from Layouts directory
+                    var relativePath = url.lastPathComponent
+                    if let basePath = layoutsDirURL?.path {
+                        let fullPath = url.path
+                        if fullPath.hasPrefix(basePath) {
+                            // Get path relative to Layouts directory (e.g., "home/activity_item.json")
+                            relativePath = String(fullPath.dropFirst(basePath.count + 1)) // +1 for "/"
+                        }
+                    }
+
+                    let toPath = "\(layoutFileDirPath)/\(relativePath)"
+
+                    // Create subdirectory if needed
+                    let toDir = (toPath as NSString).deletingLastPathComponent
+                    if !fm.fileExists(atPath: toDir) {
+                        try fm.createDirectory(atPath: toDir, withIntermediateDirectories: true, attributes: nil)
+                    }
+
+                    if fm.fileExists(atPath: toPath) {
+                        try fm.removeItem(atPath: toPath)
+                    }
+                    try fm.copyItem(at: url, to: URL(fileURLWithPath: toPath))
+                    Logger.debug("[JSONLayoutLoader] Copied \(relativePath) to cache")
+                }
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error copying files to cache: \(error)")
+        }
+
+        // Also copy style files to cache
+        StyleProcessor.copyStylesToCache()
+    }
+    #endif
+
+    // Clear all cached JSON files
+    public static func clearCache() {
+        let fm = FileManager.default
+        let layoutFileDirPath = getLayoutFileDirPath()
+
+        do {
+            if fm.fileExists(atPath: layoutFileDirPath) {
+                let contents = try fm.contentsOfDirectory(atPath: layoutFileDirPath)
+                for file in contents {
+                    if file.hasSuffix(".json") {
+                        let filePath = "\(layoutFileDirPath)/\(file)"
+                        try fm.removeItem(atPath: filePath)
+                        Logger.debug("[JSONLayoutLoader] Removed cached file: \(file)")
+                    }
+                }
+                Logger.debug("[JSONLayoutLoader] Cache cleared successfully")
+            } else {
+                Logger.debug("[JSONLayoutLoader] Cache directory does not exist")
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error clearing cache: \(error)")
+        }
+    }
+
+    // Clear specific cached JSON file
+    public static func clearCache(for name: String) {
+        let fm = FileManager.default
+        let cacheFilePath = "\(getLayoutFileDirPath())/\(name).json"
+
+        do {
+            if fm.fileExists(atPath: cacheFilePath) {
+                try fm.removeItem(atPath: cacheFilePath)
+                Logger.debug("[JSONLayoutLoader] Removed cached file: \(name).json")
+            } else {
+                Logger.debug("[JSONLayoutLoader] Cached file not found: \(name).json")
+            }
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error removing cached file: \(error)")
+        }
+    }
+
+    #if DEBUG
+    // DEBUGビルドではキャッシュまたはHotLoaderから取得
+    public static func loadJSON(named name: String) -> Data? {
+        let layoutFileDirPath = getLayoutFileDirPath()
+        let fm = FileManager.default
+
+        // Log all files in cache directory for debugging
+        print("[JSONLayoutLoader] === Looking for: \(name).json ===")
+        print("[JSONLayoutLoader] Cache directory: \(layoutFileDirPath)")
+        if let enumerator = fm.enumerator(atPath: layoutFileDirPath) {
+            print("[JSONLayoutLoader] Files in cache:")
+            for case let file as String in enumerator {
+                print("[JSONLayoutLoader]   - \(file)")
+            }
+        } else {
+            print("[JSONLayoutLoader] Could not enumerate cache directory")
+        }
+
+        // First, try direct path (for files without subdirectory or with explicit path)
+        let cacheFilePath = "\(layoutFileDirPath)/\(name).json"
+        print("[JSONLayoutLoader] Trying direct path: \(cacheFilePath)")
+        if let cacheData = try? Data(contentsOf: URL(fileURLWithPath: cacheFilePath)) {
+            print("[JSONLayoutLoader] ✅ Loaded from cache: \(name)")
+            return cacheData
+        }
+        print("[JSONLayoutLoader] ❌ Direct path not found")
+
+        // Search in subdirectories
+        print("[JSONLayoutLoader] Searching in subdirectories...")
+        if let enumerator = fm.enumerator(atPath: layoutFileDirPath) {
+            for case let file as String in enumerator {
+                if file.hasSuffix("/\(name).json") || file == "\(name).json" {
+                    let fullPath = "\(layoutFileDirPath)/\(file)"
+                    print("[JSONLayoutLoader] Found match: \(file)")
+                    if let cacheData = try? Data(contentsOf: URL(fileURLWithPath: fullPath)) {
+                        print("[JSONLayoutLoader] ✅ Loaded from cache subdirectory: \(file)")
+                        return cacheData
+                    }
+                }
+            }
+        }
+        print("[JSONLayoutLoader] ❌ Not found in subdirectories")
+
+        // Fallback to bundle
+        print("[JSONLayoutLoader] Falling back to bundle: \(name)")
+        return loadFromBundle(named: name)
+    }
+    #else
+    // リリースビルドではバンドルから読み込み
+    public static func loadJSON(named name: String) -> Data? {
+        return loadFromBundle(named: name)
+    }
+    #endif
+
+    private static func loadFromBundle(named name: String) -> Data? {
+        // Bundle.main.url(forResource:) treats the whole string as a resource
+        // name, so passing "item_detail/hero_section" never matches a file
+        // called "hero_section.json" at the bundle root (typical result when
+        // Layouts is added as a Xcode group — files are flattened). Accept any
+        // of: literal-name lookup, subdirectory split, or last-component
+        // fallback so sub-layout includes resolve in both folder-reference and
+        // group-reference bundlings.
+        let candidates: [URL]
+        if name.contains("/") {
+            let components = name.split(separator: "/").map(String.init)
+            let basename = components.last!
+            let subdirectory = components.dropLast().joined(separator: "/")
+            candidates = [
+                Bundle.main.url(forResource: name, withExtension: "json"),
+                Bundle.main.url(forResource: basename, withExtension: "json", subdirectory: subdirectory),
+                Bundle.main.url(forResource: basename, withExtension: "json")
+            ].compactMap { $0 }
+        } else {
+            // Folder-reference bundlings keep the Layouts/ subdirectory in
+            // the bundle (group-reference bundlings flatten to the root), so
+            // try both. Android mirrors this with assets/Layouts/<name>.json.
+            candidates = [
+                Bundle.main.url(forResource: name, withExtension: "json"),
+                Bundle.main.url(forResource: name, withExtension: "json", subdirectory: layoutsDirectoryName)
+            ].compactMap { $0 }
+        }
+
+        guard let url = candidates.first else {
+            Logger.debug("[JSONLayoutLoader] File not found: \(name).json")
+            return nil
+        }
+
+        do {
+            return try Data(contentsOf: url)
+        } catch {
+            Logger.debug("[JSONLayoutLoader] Error loading file: \(error)")
+            return nil
+        }
+    }
+}

@@ -1,0 +1,54 @@
+{
+  "type": "View",
+  "id": "cg_po_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_po_lr",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "background": "#DDDDDD",
+      "paddings": [
+        0,
+        40,
+        0,
+        4
+      ],
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_po_lr_child",
+          "width": 20,
+          "height": 20,
+          "background": "#3366CC"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_po_tb",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "background": "#DDDDDD",
+      "paddings": [
+        6,
+        0,
+        30,
+        0
+      ],
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_po_tb_child",
+          "width": 20,
+          "height": 20,
+          "background": "#3366CC"
+        }
+      ]
+    }
+  ],
+  "spacing": 8
+}

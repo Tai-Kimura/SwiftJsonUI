@@ -1,0 +1,236 @@
+{
+  "type": "View",
+  "id": "cg_lv_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 6,
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_lv_mw_top",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_mw_top_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "matchParent",
+          "height": 44,
+          "gravity": "top"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_mw_bottom",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_mw_bottom_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "matchParent",
+          "height": 44,
+          "gravity": "bottom"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_ww_top",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_ww_top_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "wrapContent",
+          "height": 44,
+          "gravity": "top"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_w200_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_w200_left_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": 200,
+          "height": 44,
+          "gravity": "left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_w200_right",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_w200_right_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": 200,
+          "height": 44,
+          "gravity": "right"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_w200_bottom",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_w200_bottom_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": 200,
+          "height": 44,
+          "gravity": "bottom"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_w200_cv",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_w200_cv_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": 200,
+          "height": 44,
+          "gravity": "centerVertical"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_fill_none",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": 60,
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_fill_none_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "matchParent",
+          "height": "matchParent"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_minh_none",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_minh_none_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "matchParent",
+          "minHeight": 60
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_mw_none",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_mw_none_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": "matchParent",
+          "height": 44
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_w200_top",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_w200_top_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": 200,
+          "height": 44,
+          "gravity": "top"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_lv_w200_center_tac",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "type": "Label",
+          "id": "cg_lv_w200_center_tac_label",
+          "text": "Go",
+          "fontColor": "#000000",
+          "width": 200,
+          "height": 44,
+          "gravity": "center",
+          "textAlign": "center"
+        }
+      ]
+    }
+  ]
+}

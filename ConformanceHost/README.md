@@ -1,0 +1,139 @@
+# ConformanceHost
+
+A minimal SwiftUI host app + XCUITest runner that executes the JsonUI
+renderer-conformance fixture suite (`jui conformance generate`) against
+**SwiftJsonUI Dynamic mode** (runtime JSON interpretation, DEBUG-only) and
+writes a `RESULTS_SCHEMA.md`-conformant `ios.results.json`.
+
+## Layout
+
+```
+ConformanceHost/
+├── App/                    host app: renders one fixture via DynamicView
+├── UITests/
+│   ├── ConformanceUITests.swift   manifest-driven suite runner
+│   └── Vendor/JsonUITestRunner/   jsonui-test-runner iOS driver (synced, gitignored)
+├── Resources/              fixtures + manifest (synced, gitignored)
+├── scripts/                sync / generate / run / collect
+└── ConformanceHost.xcodeproj      generated (gitignored)
+```
+
+The Xcode project is **generated** (via the `xcodeproj` gem, bundled with
+CocoaPods) because the UITest target compiles driver sources that only exist
+after syncing. Nothing machine-specific is committed; all external locations
+come in through environment variables.
+
+## Run the suite
+
+```bash
+cd ConformanceHost
+
+# 1. Sync fixtures + vendor the iOS driver
+CONFORMANCE_DIR=/path/to/conformance \
+JSONUI_TEST_RUNNER_PATH=/path/to/jsonui-test-runner \
+  ./scripts/sync_fixtures.sh
+
+# 2. Generate the Xcode project + shared scheme
+ruby ./scripts/generate_project.rb
+
+# 3. Build, run headless on a simulator, collect results
+CONFORMANCE_DIR=/path/to/conformance ./scripts/run_conformance.sh
+```
+
+- `CONFORMANCE_DIR` is the directory produced by `jui conformance generate`
+  (contains `fixtures/`, `manifest.json`). Results land in
+  `$CONFORMANCE_DIR/results/ios.results.json`, screenshots in
+  `$CONFORMANCE_DIR/artifacts/ios/`.
+- `SIMULATOR_NAME` (default `iPhone 16 Pro`) picks the destination. The run is
+  fully headless (`xcodebuild test`); no Xcode UI or booted-Simulator app is
+  required, so it is CI-ready.
+- `CONFORMANCE_FILTER=<substring>` runs a subset; all other fixtures are
+  reported as `skipped` / `not executed in this run` (the results file always
+  contains one entry per manifest fixture).
+- `SIMULATOR_UDID=<udid>` pins an exact device when several share a name.
+  The run script freezes that simulator's status bar (clock → 9:41, full
+  signal/battery) before capturing screenshots; the live clock is otherwise
+  the largest source of visual-baseline noise (measured distance up to 31 vs
+  ≤6 frozen — see `conformance/baselines/README.md`).
+- The run script also turns the keyboard's candidate bar off on that simulator
+  and marks the "slide to type" card as shown, both in
+  `com.apple.keyboard.preferences`, so the two fixtures that take the focus draw
+  the same keyboard every time. The settings stay on the device.
+- A simulator takes its language from the Mac. To compare with `baselines/ci`,
+  set the device to `en_US` first, or a Japanese Mac's device draws the kana
+  keyboard in those two pictures.
+- `CONFORMANCE_KEYBOARD_DELAY=3` runs the specimen for the keyboard wait
+  (`App/KeyboardDelaySpecimen.swift`).
+- The script always uses the `test` action: `TEST_RUNNER_*` variables only
+  reach the runner when the test action evaluates them from xcodebuild's own
+  environment (a repeat run with no source changes rebuilds incrementally
+  and is fast).
+
+## Optional pre-push check: Swift 6.2 type-check
+
+CI builds this host with Xcode 26.3 (Swift 6.2); local Xcodes are 26.5+
+(Swift 6.3+), which type-check some expressions that 6.2 gives up on
+("unable to type-check this expression in reasonable time"). A local build
+cannot see that failure. `scripts/typecheck_swift62.sh` can:
+
+```bash
+./scripts/typecheck_swift62.sh fetch   # once: swift.org Swift 6.2.4 toolchain, sha256 + signature checked, not installed
+DEVELOPER_DIR=/Applications/Xcode-26.5.0.app/Contents/Developer ./scripts/typecheck_swift62.sh
+```
+
+It type-checks SwiftJsonUI's `Sources/` (every function body, with the
+`Bundle.module` accessor SwiftPM generates for a target with resources —
+written as a shim under `build/`, never into the package), `App/`
+(dynamic-only, or with `CodegenStaging/` when present) and `UITests/` (when
+the driver is vendored) with Swift 6.2.4, exits 1 on any error and lists everything slower than `THRESHOLD_MS`
+(default 300). Measured wall time: about 2 minutes dynamic-only; with
+`CodegenStaging/` (~1,900 files) 2.5-11 minutes before the library step
+(about 1 minute) was added; both depend on load. It first
+checks a control: the expression that failed CI, standalone, must fail, or
+the run stops. It is not Xcode 26.3 (open-source 6.2.4 build, the SDK of an
+installed Xcode rather than CI's 26.2) — the script's header says what it
+does and does not prove.
+
+## How it works
+
+- **Host app** (`App/ConformanceHostApp.swift`): takes `-fixtureId <id>` or a
+  comma-separated `CONFORMANCE_FIXTURE_IDS` batch, loads the bundled
+  `fixtures/<id>.layout.json`, applies `StyleProcessor`, decodes a
+  `DynamicComponent` and renders it with `DynamicView` — the same pipeline
+  Dynamic mode uses in real apps. Requires a Debug build (`#if DEBUG`).
+- **Interactive fixtures** (`App/ConformanceStateProvider.swift`): the one
+  generic state mechanism from `conformance/INTERACTIVE_HOST_CONTRACT.md`.
+  For every `class: interactive` fixture it reads the manifest `state`
+  declaration and injects, into the DynamicView data dictionary: a
+  `SwiftUI.Binding<String>` per var (initial value from the layout `data`
+  section defaults, two-way write-back for input-bound vars) and a
+  `() -> Void` closure per declared handler (sets one var to a literal;
+  callback payloads ignored). Zero per-fixture code.
+- **Batching**: one app launch serves up to 40 fixtures. The UITest runner
+  advances the app to the next fixture by posting the Darwin notification
+  `jsonui.conformance.advance`; the app confirms by exposing an invisible
+  `conformance_current_<id>` accessibility marker. A crash mid-batch marks
+  the current fixture `error` and relaunches with the remainder.
+- **Driver**: the UITest target compiles the jsonui-test-runner iOS driver
+  sources verbatim from `UITests/Vendor/JsonUITestRunner/` (synced from
+  `$JSONUI_TEST_RUNNER_PATH`, gitignored). Local fixes, if ever needed, live
+  as `scripts/driver-patches/*.patch` and are applied at sync time.
+- **Assertion capture**: the driver reports assertion failures through
+  `XCTAssert*`. The test case overrides `record(_:)` to capture those issues
+  per step, so one failing fixture becomes `"status": "fail"` instead of
+  aborting the suite. Thrown driver errors (element not found, timeout)
+  become `"status": "error"`.
+- **Skips**: fixtures whose `platforms` lack `ios` → `not applicable to ios`;
+  fixtures with a `mode` that does not include `swiftui` (e.g. `uikit`) →
+  `mode <m> not hosted (SwiftUI dynamic host)`. Never silently dropped.
+- **Output**: the UITest process writes `ios.results.json` (with
+  `manifestHash` = SHA-256 of the manifest bytes it ran against) and PNG
+  screenshots to a staging dir on the shared simulator/host filesystem
+  (a directory of the run's own, `/tmp/jsonui-conformance-ios.<pid>.XXXXXX`,
+  removed when the run succeeds; or the one `CONFORMANCE_STAGING` names),
+  and `scripts/collect_results.sh` copies them into `$CONFORMANCE_DIR`.
+
+## Assets
+
+The app bundles the `conformance_sample` image asset that image-typed
+fixtures reference (fixture convention from `RESULTS_SCHEMA.md`).

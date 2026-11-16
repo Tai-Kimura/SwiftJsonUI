@@ -1,0 +1,341 @@
+{
+  "type": "View",
+  "id": "cg_route4_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Button",
+      "id": "cg_route_go_auto_raw",
+      "text": "cg auto go k3",
+      "onClick": "@{onAutoRaw}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_auto_enriched",
+      "text": "cg auto go k3~",
+      "onClick": "@{onAutoEnriched}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_auto_list",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{keyedRows}",
+      "cellIdProperty": "key",
+      "autoChangeTrackingId": true,
+      "scrollTo": "@{autoKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false,
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_auto_class",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{keyedRows}",
+      "cellIdProperty": "key",
+      "autoChangeTrackingId": true,
+      "scrollTo": "@{autoKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false,
+      "cellClasses": [
+        "conformance_cell"
+      ]
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_auto_pager",
+      "width": 200,
+      "height": 40,
+      "background": "#DDDDDD",
+      "items": "@{keyedRows}",
+      "cellIdProperty": "key",
+      "autoChangeTrackingId": true,
+      "scrollTo": "@{autoKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false,
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "layout": "horizontal",
+      "paging": true
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_cellid2_c2",
+      "text": "cg cellid2 go c2",
+      "onClick": "@{onCellIdC2}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_cellid2_13",
+      "text": "cg cellid2 go 1:3",
+      "onClick": "@{onCellId13}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_route_go_cellid2_e4",
+      "text": "cg cellid2 go e4",
+      "onClick": "@{onCellIdE4}"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_cellid2",
+      "width": 200,
+      "height": 84,
+      "background": "#DDDDDD",
+      "items": "@{cellIdRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "scrollTo": "@{cellIdKey}",
+      "scrollAnchor": "top",
+      "scrollAnimated": false
+    }
+  ],
+  "data": [
+    {
+      "name": "keyedRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "a0",
+                "key": "k0"
+              },
+              {
+                "title": "a1",
+                "key": "k1"
+              },
+              {
+                "title": "a2",
+                "key": "k2"
+              },
+              {
+                "title": "a3",
+                "key": "k3"
+              },
+              {
+                "title": "a4",
+                "key": "k4"
+              },
+              {
+                "title": "a5",
+                "key": "k5"
+              },
+              {
+                "title": "a6",
+                "key": "k6"
+              },
+              {
+                "title": "a7",
+                "key": "k7"
+              },
+              {
+                "title": "a8",
+                "key": "k8"
+              },
+              {
+                "title": "a9",
+                "key": "k9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "b0",
+                "key": "k3"
+              },
+              {
+                "title": "b1",
+                "key": "x1"
+              },
+              {
+                "title": "b2",
+                "key": "x2"
+              },
+              {
+                "title": "b3",
+                "key": "x3"
+              },
+              {
+                "title": "b4",
+                "key": "x4"
+              },
+              {
+                "title": "b5",
+                "key": "x5"
+              },
+              {
+                "title": "b6",
+                "key": "x6"
+              },
+              {
+                "title": "b7",
+                "key": "x7"
+              },
+              {
+                "title": "b8",
+                "key": "x8"
+              },
+              {
+                "title": "b9",
+                "key": "x9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "cellIdRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "c0",
+                "cellId": "c0"
+              },
+              {
+                "title": "c1",
+                "cellId": "c1"
+              },
+              {
+                "title": "c2",
+                "cellId": "c2"
+              },
+              {
+                "title": "c3",
+                "cellId": "c3"
+              },
+              {
+                "title": "c4",
+                "cellId": "c4"
+              },
+              {
+                "title": "c5",
+                "cellId": "c2"
+              },
+              {
+                "title": "c6",
+                "cellId": "c6"
+              },
+              {
+                "title": "c7"
+              },
+              {
+                "title": "c8",
+                "cellId": "c8"
+              },
+              {
+                "title": "c9",
+                "cellId": "c9"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "d0",
+                "cellId": "e0"
+              },
+              {
+                "title": "d1",
+                "cellId": "e1"
+              },
+              {
+                "title": "d2",
+                "cellId": "e2"
+              },
+              {
+                "title": "d3",
+                "cellId": "e3"
+              },
+              {
+                "title": "d4",
+                "cellId": "e4"
+              },
+              {
+                "title": "d5",
+                "cellId": "e5"
+              },
+              {
+                "title": "d6",
+                "cellId": "e6"
+              },
+              {
+                "title": "d7",
+                "cellId": "e7"
+              },
+              {
+                "title": "d8",
+                "cellId": "e8"
+              },
+              {
+                "title": "d9",
+                "cellId": "e9"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "autoKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "cellIdKey",
+      "class": "String",
+      "defaultValue": ""
+    },
+    {
+      "name": "onAutoRaw",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onAutoEnriched",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onCellIdC2",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onCellId13",
+      "class": "() -> Void"
+    },
+    {
+      "name": "onCellIdE4",
+      "class": "() -> Void"
+    }
+  ]
+}

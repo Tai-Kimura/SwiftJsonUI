@@ -1,0 +1,30 @@
+[
+  {
+    "name": "onNoKey3",
+    "set": {
+      "var": "noKey",
+      "value": "3"
+    }
+  },
+  {
+    "name": "onNoKeyPlace",
+    "set": {
+      "var": "noKey",
+      "value": "1:7"
+    }
+  },
+  {
+    "name": "onNoKeyLoopId",
+    "set": {
+      "var": "noKey",
+      "value": "1:y2"
+    }
+  },
+  {
+    "name": "onNoKeyY6",
+    "set": {
+      "var": "noKey",
+      "value": "y6"
+    }
+  }
+]

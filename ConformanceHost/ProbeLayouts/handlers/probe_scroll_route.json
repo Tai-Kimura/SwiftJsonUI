@@ -1,0 +1,30 @@
+[
+  {
+    "name": "onFlowIndex",
+    "set": {
+      "var": "flowIndex",
+      "value": 6
+    }
+  },
+  {
+    "name": "onFlowKey",
+    "set": {
+      "var": "flowKey",
+      "value": "k3"
+    }
+  },
+  {
+    "name": "onListIndex",
+    "set": {
+      "var": "listIndex",
+      "value": 6
+    }
+  },
+  {
+    "name": "onListKey",
+    "set": {
+      "var": "listKey",
+      "value": "k3"
+    }
+  }
+]

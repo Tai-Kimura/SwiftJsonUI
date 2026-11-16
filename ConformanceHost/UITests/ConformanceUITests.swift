@@ -1,0 +1,1368 @@
+//
+//  ConformanceUITests.swift
+//  ConformanceHostUITests
+//
+//  Manifest-driven conformance runner.
+//
+//  Reads conformance/manifest.json (bundled by scripts/sync_fixtures.sh),
+//  iterates every fixture, executes the fixture's .test.json steps via the
+//  jsonui-test-runner iOS driver (vendored into UITests/Vendor/), captures
+//  screenshots for visual fixtures, and writes a RESULTS_SCHEMA-conformant
+//  ios.results.json.
+//
+//  Output goes to a staging directory on the host filesystem (simulator
+//  processes share the host FS):
+//      <staging>/results/ios.results.json
+//      <staging>/artifacts/ios/<Section>_<attr>__<case>.png
+//  Default staging dir: /tmp/jsonui-conformance-ios
+//  Override with env CONFORMANCE_STAGING_DIR (pass through xcodebuild as
+//  TEST_RUNNER_CONFORMANCE_STAGING_DIR). scripts/collect_results.sh copies
+//  staging output into $CONFORMANCE_DIR.
+//
+//  Batching: fixtures run in batches of `batchSize` per app launch. The app
+//  advances to the next fixture when this runner posts the Darwin
+//  notification "jsonui.conformance.advance" (see ConformanceHostApp.swift),
+//  so one launch serves a whole batch. A crash/hang inside a batch marks the
+//  current fixture as "error" and relaunches for the remainder.
+//
+
+import XCTest
+import CryptoKit
+
+// MARK: - Manifest model (subset of jui conformance generate output)
+
+struct ConformanceManifest: Decodable {
+    struct Fixture: Decodable {
+        let id: String
+        let component: String
+        /// The component whose view actually hosts this fixture. ⚠️ NOT the
+        /// same as `component`: a control's component is `__control` while its
+        /// host is the component it controls, so counting web-bearing fixtures
+        /// by `component` silently drops `__control/Web`, which renders a web
+        /// view exactly like the fixture it is the control for. Measured on
+        /// the 1099-fixture manifest: host=="Web" gives 5 (2 runnable on ios),
+        /// component=="Web" gives 4 (1 on ios).
+        let host: String
+        // null for __control fixtures — a control view belongs to no attribute
+        let attribute: String?
+        let `case`: String
+        let `class`: String
+        let aliasOf: String?
+        let platforms: [String]
+        let mode: Mode?
+        let layout: String
+        let test: String
+        /// Only `afterFirstDraw` is read here (jsonui-cli
+        /// INTERACTIVE_HOST_CONTRACT.md "afterFirstDraw"): the host fires
+        /// it, this runner waits for the stamp and the landing.
+        let state: State?
+    }
+
+    struct State: Decodable {
+        struct AfterFirstDraw: Decodable { let name: String }
+        let afterFirstDraw: AfterFirstDraw?
+    }
+
+    /// mode is null | "swiftui" | "uikit" | ... | ["swiftui", "compose", ...]
+    enum Mode: Decodable {
+        case single(String)
+        case multiple([String])
+
+        init(from decoder: Decoder) throws {
+            let container = try decoder.singleValueContainer()
+            if let s = try? container.decode(String.self) {
+                self = .single(s)
+            } else {
+                self = .multiple(try container.decode([String].self))
+            }
+        }
+
+        var values: [String] {
+            switch self {
+            case .single(let s): return [s]
+            case .multiple(let m): return m
+            }
+        }
+    }
+
+    let schemaVersion: Int
+    let fixtures: [Fixture]
+}
+
+// MARK: - Result model (RESULTS_SCHEMA.md)
+
+struct FixtureResult: Encodable {
+    let id: String
+    let status: String
+    let detail: String
+    let screenshot: String?
+    /// `artifacts/ios/<screenshot name>.frames.json` (RESULTS_SCHEMA.md,
+    /// `frames`): where each element carrying an id was drawn, relative to
+    /// the root, for `jui conformance gate --frame-parity`. Absent when the
+    /// fixture took no screenshot or the record could not be written.
+    var frames: String? = nil
+    /// RESULTS_SCHEMA.md `afterFirstDraw`: what the host stamped and how the
+    /// picture came to rest, for a fixture that declares one.
+    var afterFirstDraw: AfterFirstDrawResult? = nil
+    /// Why a screenshot has no frames record (`root-not-fill`,
+    /// `canvas-marker-missing`, `error: <reason>`), never beside `frames`:
+    /// the gate counts it as a reason of its own, apart from a missing file.
+    var framesUnrecorded: String? = nil
+    /// RESULTS_SCHEMA.md `retap`: the fixture passed on a SECOND tap — the
+    /// first touch was not delivered (jsonui-cli ticket 2026-10-24-ios-
+    /// conformance-tap-not-delivered-recurred, the requester's choice B: a
+    /// retry that names itself, at most once per fixture; the gate counts
+    /// them). Absent when every tap took on the first try.
+    var retap: RetapResult? = nil
+}
+
+/// What the one retap of a fixture met: the tap, when it landed, the element
+/// before it and after it, and the screenshot taken when the first tap had no
+/// effect.
+struct RetapResult: Encodable {
+    let reason: String
+    let tap: String
+    let at: Double
+    let before: String
+    let after: String
+    let screenshot: String?
+}
+
+/// 🔻 A RUN-LEVEL CENSUS OF THE WEB LOAD-MARKER PATH, BECAUSE THE WAIT'S OWN
+/// FAILURE WEARS THE FACE OF THE BUG IT FIXES.
+///
+/// A web view exists the instant it is made, so a capture taken mid-load is
+/// blank — and a blank fixture still DIFFERS from its control, so control_diff
+/// calls the attribute active and a re-bake of the same race calls itself a
+/// pass. No arm that looks at pixels can separate "waited and painted" from
+/// "did not wait". Only the host knows, so the host counts.
+///
+/// ⚠️ THE FIRST VERSION OF THIS COUNTED THE WRONG THING AND REPORTED A FALSE
+/// ALARM ON ITS FIRST REAL RUN. It used the presence of the PENDING marker as
+/// the detector for "this fixture has a web view". Pending is a TRANSIENT
+/// state: `loadHTMLString` is local and settles before the runner's first
+/// query, so the tree already carried `sjui_web_loaded` and never
+/// `sjui_web_pending`. Measured 2026-09-15 by dumping the element tree at the
+/// exact query point — the 1x1 marker was present, as a child of the WebView,
+/// already flipped to loaded, with the page's own StaticText beside it. The
+/// census said 0 of 2 and the pictures were byte-identical to the baseline.
+///
+/// So the detector is now the DECLARED fact (`manifest.host == "Web"`, which is
+/// stable and names the control too) and the markers are used only as the
+/// wait's terminating condition. Every bucket below has an unambiguous zero.
+struct AfterFirstDrawResult: Encodable {
+    let name: String
+    let status: String
+    var firedAtMs: Int? = nil
+    var appliedAtMs: Int? = nil
+    let landing: String
+}
+
+struct WebMarkerCensus: Encodable {
+    /// Runnable fixtures hosted by the Web component, from the manifest.
+    /// Informational: a fixture that errors before its screen comes up never
+    /// reaches the check, so this is not the denominator.
+    var webFixturesRunnable = 0
+    /// Web-hosted fixtures that reached the capture point. THE DENOMINATOR —
+    /// the four buckets below sum to exactly this.
+    var webFixturesReachedCapture = 0
+    /// Already carrying the loaded marker on arrival: the page painted before
+    /// the runner could look. Correct, and the common case locally.
+    var alreadySettled = 0
+    /// Found pending, then loaded arrived within the budget: the wait did work.
+    var waitedThenSettled = 0
+    /// Found pending, loaded never arrived. NOT a failure — the capture is
+    /// still judged by fixture-vs-control, which is readable; a hang is not.
+    var timedOut = 0
+    /// Neither marker ever appeared, through the whole budget. This is the one
+    /// that means the mechanism is gone — the env flag never reached the app,
+    /// the linked library predates the markers, or they stopped surfacing.
+    var markerAbsent = 0
+}
+
+/// What one shard of a run covered (CONFORMANCE_SHARD=index/count), written
+/// into its results file so the merge can prove the shards partition the run:
+/// every shard counted the same `runnable` total, and every runnable fixture
+/// is in exactly one shard's `executed`.
+struct ShardRecord: Encodable {
+    /// The detail a shard writes for a runnable fixture another shard runs.
+    static let elsewhere = "in another shard"
+
+    let index: Int
+    let count: Int
+    let runnable: Int
+    let executed: [String]
+}
+
+// MARK: - Runner
+
+final class ConformanceUITests: XCTestCase {
+
+    /// Fixtures per app launch. Batching is relaunch-free within a batch via
+    /// the Darwin advance notification.
+    private let batchSize = 40
+
+    /// Accumulated across every batch and relaunch; written into the results.
+    private var webMarkerCensus = WebMarkerCensus()
+
+    /// Seconds to wait for the fixture marker element after launch/advance.
+    private let markerTimeout: TimeInterval = 15.0
+
+    /// How long a Web fixture may take to finish painting after its screen is
+    /// on. Local `loadHTMLString` with no network settles in milliseconds; the
+    /// budget is generous because a timeout here is not an error, only a
+    /// capture taken without the guarantee.
+    ///
+    /// ⚠️ AN EARLIER VERSION OF THIS COMMENT CITED A CONFOUNDED MEASUREMENT,
+    /// and the number was carried into a commit message, a tag body and a
+    /// closed bug report before the confound was noticed. It compared the wall
+    /// clock of a run against a run with the LIBRARY MUTATED — and the wall
+    /// clock includes the build, so a recompile sits inside the delta. It was
+    /// evidence for "the wait blocks" only if build time is constant, which
+    /// was never measured.
+    ///
+    /// The claim is now carried by a variant that cannot recompile anything:
+    /// `CONFORMANCE_WEB_MARKERS_OFF=1` withholds the flag, so the same binary
+    /// runs and the library simply builds no marker. Measured 2026-09-15:
+    ///
+    ///     markers ON   31.772s   markerAbsent=0   TEST SUCCEEDED
+    ///     markers OFF  52.011s   markerAbsent=2   XCTAssertEqual failed
+    ///
+    /// +20.2s is two fixtures x this timeout, with no build in the delta.
+    private let webLoadTimeout: TimeInterval = 10.0
+
+    /// 🔻 THE LOAD MARKER SAYS "LOADED", NOT "DRAWN". It flips on the web
+    /// view's didFinish, and a WKWebView draws in its own process: run
+    /// 38470376663 captured Web/html__static after the marker had flipped
+    /// (waitedThenSettled) and the picture was blank — ink 0, where the codegen
+    /// face drew 533. So before a Web fixture's screenshot the host also waits
+    /// for the web view's region of the screen to be more than one colour,
+    /// reading the screen itself (the same screenshot it is about to take).
+    /// Polled every `webPaintPoll`; at `webPaintTimeout` the capture is taken
+    /// anyway and the result says why (`web_settle: timeout`) — a page that
+    /// never draws is an answer to read, not a hang. The specimen that makes
+    /// the race happen on a fast machine is the host's WebPaintDelaySpecimen
+    /// (CONFORMANCE_WEB_PAINT_DELAY): without this wait it captures a blank
+    /// web view.
+    private let webPaintTimeout: TimeInterval = 10.0
+    private let webPaintPoll: TimeInterval = 0.25
+
+    /// A Web fixture whose correct picture IS one colour — the paint wait
+    /// would run to its timeout on every run. Declared, never derived: an
+    /// absent id means the page must draw. None today (Web/html__static and
+    /// __control/Web both draw).
+    static let webBlankIsCorrect: [String: String] = [:]
+
+    /// How each Web capture's paint wait ended, printed at the end of the run.
+    private var webPaint = (atOnce: 0, waited: 0, timedOut: 0, declaredBlank: 0)
+
+    /// 🔻 A FIXTURE THAT TAKES THE FOCUS DRAWS A KEYBOARD, AND THE KEYBOARD IS
+    /// STILL ARRIVING WHEN THE MARKER IS ALREADY THERE. The marker says the
+    /// screen is on; the keyboard slides up afterwards in its own process. So
+    /// TextField/autoFocus__true was captured at whatever moment that was: on
+    /// the CI runner (Xcode 26.3, iOS 26.2) distance 92 / vertical 160 against
+    /// the baseline with the keyboard a few points short of its place and its
+    /// candidates half faded in (run 41426977222, codegen), and distance 37 with
+    /// the candidate bar empty (runs 40094279447, 40109924320, 41041200904).
+    /// Neither is the library's drawing.
+    ///
+    /// So before the screenshot of a fixture whose layout declares autoFocus
+    /// true, the host waits for the keyboard's region of the screen to hold more
+    /// than one grey level and to read the same `keyboardSettleReadings` times
+    /// in a row. The region alone, because the caret blinks and would never
+    /// hold still. The element's frame is no signal: it is the resting place
+    /// from the start of the slide. The run script turns the candidates off
+    /// (run_conformance.sh), so what is left to wait for is the slide. At
+    /// `keyboardSettleTimeout` the capture is taken anyway and the result says
+    /// why (`keyboard_settle: timeout`), and the picture is there to read.
+    /// The specimen that makes the race happen on a fast machine is the host's
+    /// KeyboardDelaySpecimen (CONFORMANCE_KEYBOARD_DELAY): without this wait it
+    /// captures the screen with no keyboard.
+    private let keyboardSettleTimeout: TimeInterval = 10.0
+    private let keyboardSettlePoll: TimeInterval = 0.2
+    private let keyboardSettleReadings = 3
+
+    /// How each keyboard wait ended, printed at the end of the run.
+    /// `moved` counts the settled pictures that differ from the wait's first
+    /// reading: the captures this wait changed.
+    private var keyboardSettle = (settled: 0, moved: 0, timedOut: 0)
+
+    /// Optional filter for debugging: run only fixtures whose id contains one
+    /// of these comma-separated substrings
+    /// (env CONFORMANCE_FILTER via TEST_RUNNER_CONFORMANCE_FILTER).
+    private var idFilters: [String] {
+        guard let raw = ProcessInfo.processInfo.environment["CONFORMANCE_FILTER"] else { return [] }
+        return raw.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+    }
+
+    private var stagingDir: URL { TapDiagnosis.stagingDir }
+
+    // Issue capturing: driver assertions use XCTAssert*, which records
+    // XCTIssues instead of throwing. While a fixture step runs we suppress
+    // recording and collect the issues so a single assertion failure marks
+    // that one fixture "fail" instead of aborting the whole suite.
+    private var suppressIssues = false
+    private var capturedIssues: [String] = []
+
+    override func record(_ issue: XCTIssue) {
+        if suppressIssues {
+            capturedIssues.append(issue.compactDescription)
+            return
+        }
+        super.record(issue)
+    }
+
+    override func setUp() {
+        super.setUp()
+        continueAfterFailure = true
+    }
+
+    // MARK: Main entry
+
+    func testConformanceSuite() throws {
+        let manifestData = try loadBundledData(relativePath: "manifest.json")
+        let manifest = try JSONDecoder().decode(ConformanceManifest.self, from: manifestData)
+        let manifestHash = SHA256.hash(data: manifestData)
+            .map { String(format: "%02x", $0) }.joined()
+
+        var results: [String: FixtureResult] = [:]
+        var runnable: [ConformanceManifest.Fixture] = []
+
+        for fixture in manifest.fixtures {
+            if let skip = skipReason(for: fixture) {
+                results[fixture.id] = FixtureResult(
+                    id: fixture.id, status: "skipped", detail: skip, screenshot: nil)
+            } else if !idFilters.isEmpty, !idFilters.contains(where: { fixture.id.contains($0) }) {
+                results[fixture.id] = FixtureResult(
+                    id: fixture.id, status: "skipped", detail: "not executed in this run", screenshot: nil)
+            } else {
+                runnable.append(fixture)
+            }
+        }
+
+        // 🔻 ONE CONTIGUOUS SLICE OF THE RUNNABLE FIXTURES, when the run is a
+        // shard (CONFORMANCE_SHARD=k/n). Not CONFORMANCE_FILTER: it matches by
+        // substring, and 241 of the runnable ids are substrings of another id
+        // (common/hidden__binding of common/hidden__binding_negation), so a
+        // filter made of ids runs some fixtures in two shards. The slice is
+        // taken after every skip rule, so the shards of one run cut the same
+        // list; the record written beside the results lets the merge prove
+        // that every runnable fixture ran in exactly one of them.
+        var shardRecord: ShardRecord? = nil
+        if let shard = try shardFromEnvironment() {
+            let total = runnable.count
+            let slice = shard.slice(total)
+            for (i, fixture) in runnable.enumerated() where !slice.contains(i) {
+                results[fixture.id] = FixtureResult(
+                    id: fixture.id, status: "skipped", detail: ShardRecord.elsewhere, screenshot: nil)
+            }
+            runnable = Array(runnable[slice])
+            shardRecord = ShardRecord(index: shard.index, count: shard.count, runnable: total,
+                                      executed: runnable.map { $0.id })
+            print("[conformance] shard \(shard.index)/\(shard.count): fixtures \(slice.lowerBound)..<\(slice.upperBound) of \(total)")
+        }
+
+        webMarkerCensus.webFixturesRunnable =
+            runnable.filter { $0.host == "Web" }.count
+
+        try prepareStagingDirectories()
+
+        var index = 0
+        while index < runnable.count {
+            let batch = Array(runnable[index..<min(index + batchSize, runnable.count)])
+            let batchResults = runBatch(batch)
+            for result in batchResults {
+                results[result.id] = result
+            }
+            index += batch.count
+        }
+
+        // One entry per manifest fixture, in manifest order.
+        let ordered = manifest.fixtures.compactMap { results[$0.id] }
+        XCTAssertEqual(ordered.count, manifest.fixtures.count,
+                       "every manifest fixture must have exactly one result")
+
+        try writeResults(ordered, manifestHash: manifestHash, webMarkers: webMarkerCensus, shard: shardRecord)
+
+        // Two invariants, and they fail for different reasons.
+        //
+        // Conservation first: every Web-hosted fixture that reached capture
+        // landed in exactly one bucket. Without this, a future branch that
+        // falls through all four would shrink the population silently and the
+        // check below would pass by having nothing to judge.
+        let bucketed = webMarkerCensus.alreadySettled + webMarkerCensus.waitedThenSettled
+            + webMarkerCensus.timedOut + webMarkerCensus.markerAbsent
+        XCTAssertEqual(
+            bucketed, webMarkerCensus.webFixturesReachedCapture,
+            "web load-marker census does not add up: \(bucketed) bucketed vs "
+            + "\(webMarkerCensus.webFixturesReachedCapture) reached capture")
+
+        // Then the judgment. A timeout is deliberately NOT a failure — the
+        // capture is still judged by fixture-vs-control, and failing here would
+        // make a slow page indistinguishable from a broken marker. Never having
+        // had a marker at all IS the failure.
+        XCTAssertEqual(
+            webMarkerCensus.markerAbsent, 0,
+            "\(webMarkerCensus.markerAbsent) Web fixture(s) presented no load "
+            + "marker at all, so their captures carry the blank-page race the "
+            + "marker exists to remove. Check that "
+            + "JSONUI_CONFORMANCE_WEB_MARKERS reached the app and that the "
+            + "linked SwiftJsonUI is v10.23.0 or newer.")
+
+        print("[conformance] web paint: drawn at once \(webPaint.atOnce), drawn after waiting \(webPaint.waited), "
+              + "timed out \(webPaint.timedOut), declared blank \(webPaint.declaredBlank)")
+        print("[conformance] keyboard settle: settled \(keyboardSettle.settled), moved while waiting "
+              + "\(keyboardSettle.moved), timed out \(keyboardSettle.timedOut)")
+
+        let counts = Dictionary(grouping: ordered, by: { $0.status }).mapValues { $0.count }
+        print("[conformance] finished: \(counts) webMarkers: "
+              + "runnable=\(webMarkerCensus.webFixturesRunnable) "
+              + "reachedCapture=\(webMarkerCensus.webFixturesReachedCapture) "
+              + "alreadySettled=\(webMarkerCensus.alreadySettled) "
+              + "waitedThenSettled=\(webMarkerCensus.waitedThenSettled) "
+              + "timedOut=\(webMarkerCensus.timedOut) "
+              + "markerAbsent=\(webMarkerCensus.markerAbsent)")
+    }
+
+    // MARK: Shards
+
+    /// CONFORMANCE_SHARD=k/n (via TEST_RUNNER_CONFORMANCE_SHARD): run the k-th
+    /// of n contiguous slices of the runnable fixtures. Unset or empty is the
+    /// whole run. A value that does not read as k/n with 1 <= k <= n throws —
+    /// running everything instead would put every fixture in every shard.
+    private func shardFromEnvironment() throws -> (index: Int, count: Int, slice: (Int) -> Range<Int>)? {
+        let raw = (ProcessInfo.processInfo.environment["CONFORMANCE_SHARD"] ?? "")
+            .trimmingCharacters(in: .whitespaces)
+        if raw.isEmpty { return nil }
+        let parts = raw.split(separator: "/").map { Int($0) }
+        guard parts.count == 2, let k = parts[0], let n = parts[1], n >= 1, k >= 1, k <= n else {
+            throw NSError(domain: "ConformanceUITests", code: 2, userInfo: [
+                NSLocalizedDescriptionKey: "CONFORMANCE_SHARD must read k/n with 1 <= k <= n, got \"\(raw)\""])
+        }
+        return (k, n, { total in (total * (k - 1) / n)..<(total * k / n) })
+    }
+
+    // MARK: Skip policy
+
+    /// codegen host mode (CONFORMANCE_HOST_MODE=codegen, forwarded to the app
+    /// at launch): the fixture renders through the sjui-GENERATED SwiftUI view
+    /// instead of DynamicView. Parity of the two pipelines is judged outside
+    /// the run (`jui conformance parity`).
+    private var isCodegenHostMode: Bool {
+        ProcessInfo.processInfo.environment["CONFORMANCE_HOST_MODE"] == "codegen"
+    }
+
+    /// Fixture ids the codegen generator actually staged, with the reasons it
+    /// skipped the rest (`codegen-map.json`, written next to the fixtures).
+    /// Nil when the file is absent — a dynamic-mode run never needs it.
+    private lazy var codegenMap: (hosted: Set<String>, skipped: [String: String])? = {
+        guard let data = try? loadBundledData(relativePath: "codegen-map.json"),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+        else { return nil }
+        let hosted = Set((root["fixtures"] as? [String: Any])?.keys.map { $0 } ?? [])
+        var reasons: [String: String] = [:]
+        for entry in (root["skipped"] as? [[String: Any]]) ?? [] {
+            if let id = entry["id"] as? String {
+                reasons[id] = (entry["reason"] as? String) ?? "not staged"
+            }
+        }
+        return (hosted, reasons)
+    }()
+
+    /// This host renders SwiftUI dynamic mode only.
+    private func skipReason(for fixture: ConformanceManifest.Fixture) -> String? {
+        if !fixture.platforms.contains("ios") {
+            return "not applicable to ios"
+        }
+        // The generator decides what can run here, and this asks it. There is
+        // deliberately no second predicate on this side: the staging rule reads
+        // each fixture's steps for driver verbs (tap / input / swipe /
+        // longPress / selectOption), and a copy of that verb list here would be
+        // a second opinion that can disagree — staging a fixture this skips, or
+        // the reverse, with the counts still adding up on both sides.
+        //
+        // A fixture the generator did not stage cannot be rendered here, and
+        // attempting it produces "layout failed to load/decode in host" —
+        // which reads as a defect in the layout instead of a fixture that
+        // was never built. Ask the generator's own record.
+        if isCodegenHostMode {
+            // Absent map = the harness is misassembled, and the first version
+            // of this guard failed OPEN: `let map = codegenMap` simply did not
+            // match, every fixture fell through, and the run looked exactly
+            // like one where nothing was excluded. Say it instead.
+            guard let map = codegenMap else {
+                return "codegen-map.json not bundled — regenerate the project (scripts/generate_project.rb)"
+            }
+            if !map.hosted.contains(fixture.id) {
+                return "not staged for the codegen host: \(map.skipped[fixture.id] ?? "excluded by the generator")"
+            }
+        }
+        if let mode = fixture.mode {
+            let values = mode.values
+            if !values.isEmpty && !values.contains("swiftui") {
+                return "mode \(values.joined(separator: ",")) not hosted (SwiftUI dynamic host)"
+            }
+        }
+        return nil
+    }
+
+    // MARK: Batch execution
+
+    private func runBatch(_ batch: [ConformanceManifest.Fixture]) -> [FixtureResult] {
+        var results: [FixtureResult] = []
+        var remaining = batch[...]
+
+        while !remaining.isEmpty {
+            let app = XCUIApplication()
+            app.launchEnvironment["CONFORMANCE_FIXTURE_IDS"] =
+                remaining.map { $0.id }.joined(separator: ",")
+            if isCodegenHostMode {
+                app.launchEnvironment["CONFORMANCE_HOST_MODE"] = "codegen"
+            }
+            // 🔻 A HOOK FOR THE CENSUS'S OWN CONTROL, ON BY DEFAULT. The
+            // `markerAbsent` bucket claims to detect "the marker mechanism is
+            // gone", and a check nobody has ever seen fail is a claim, not a
+            // gate. Withholding this flag is the one cheap way to produce that
+            // state deliberately: the library builds no marker, every Web
+            // fixture lands in `markerAbsent`, and the suite must go red.
+            // Permanent rather than a temporary edit, so re-running the control
+            // later costs one env var instead of rediscovering how.
+            // The paint-delay specimen (App/WebPaintDelaySpecimen.swift), when the run declares one.
+            if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_WEB_PAINT_DELAY"] {
+                app.launchEnvironment["CONFORMANCE_WEB_PAINT_DELAY"] = delay
+            }
+            // The keyboard-delay specimen (App/KeyboardDelaySpecimen.swift), when the run declares one.
+            if let delay = ProcessInfo.processInfo.environment["CONFORMANCE_KEYBOARD_DELAY"] {
+                app.launchEnvironment["CONFORMANCE_KEYBOARD_DELAY"] = delay
+            }
+            if ProcessInfo.processInfo.environment["CONFORMANCE_WEB_MARKERS_OFF"] != "1" {
+                app.launchEnvironment["JSONUI_CONFORMANCE_WEB_MARKERS"] = "1"
+            }
+            // INTERACTIVE_HOST_CONTRACT.md §6 job 1: one payload for every
+            // testBridge fixture left in this launch, keyed by this face's
+            // screen id for each.
+            let launchId = UUID().uuidString
+            var bridgeScreens: [String: [String: Any]] = [:]
+            for fixture in remaining {
+                if let values = testBridge[fixture.id]?.initialState {
+                    bridgeScreens[bridgeScreenId(fixture)] = values
+                }
+            }
+            if !bridgeScreens.isEmpty,
+               let payload = InitialStatePayload.encode(screens: bridgeScreens, launchId: launchId) {
+                app.launchEnvironment[LaunchEnvironment.initialState] = payload
+            }
+            app.launch()
+
+            var crashed = false
+            while let current = remaining.first {
+                let marker = "conformance_current_\(current.id.replacingOccurrences(of: "/", with: "_"))"
+                let markerElement = app.descendants(matching: .any)
+                    .matching(identifier: marker).firstMatch
+
+                guard markerElement.waitForExistence(timeout: markerTimeout) else {
+                    if app.state != .runningForeground {
+                        results.append(FixtureResult(
+                            id: current.id, status: "error",
+                            detail: "app not running (crash?) before fixture rendered",
+                            screenshot: nil))
+                        remaining = remaining.dropFirst()
+                        crashed = true
+                        break // relaunch with the rest of the batch
+                    }
+                    results.append(FixtureResult(
+                        id: current.id, status: "error",
+                        detail: "fixture marker did not appear within \(Int(markerTimeout))s",
+                        screenshot: nil))
+                    remaining = remaining.dropFirst()
+                    advanceFixture()
+                    continue
+                }
+
+                // 🔻 THE FIXTURE MARKER ANSWERS "the screen is on", NOT "the
+                // content painted". A WKWebView exists the instant it is made,
+                // so a Web fixture was screenshotted mid-load — and committed
+                // baselines carry both sides of that race (the fixture blank in
+                // one bake, its control blank in an earlier one). `control_diff`
+                // called the fixture ACTIVE either way, because a race does
+                // produce a difference; it just is not the attribute's.
+                //
+                // Self-describing rather than driven off the fixture id: only a
+                // web view stamps `sjui_web_pending`, so a fixture without one
+                // costs a single existence query. A timeout does NOT fail the
+                // fixture — the capture proceeds and the fixture-vs-control arm
+                // judges what was drawn, which is readable. Hanging is not.
+                // 🔻 DRIVEN OFF THE DECLARED FACT, NOT OFF A TRANSIENT MARKER.
+                // `host == "Web"` comes from the manifest, is stable, and names
+                // the control (`__control/Web`, whose component is `__control`)
+                // as well as the attribute fixtures. Only these fixtures pay
+                // anything: 2 of 1099 on iOS, so the cheap-probe-for-everyone
+                // design the transient detector was bought with is not needed.
+                if current.host == "Web" {
+                    webMarkerCensus.webFixturesReachedCapture += 1
+                    let loaded = app.descendants(matching: .any)
+                        .matching(identifier: "sjui_web_loaded").firstMatch
+                    let pending = app.descendants(matching: .any)
+                        .matching(identifier: "sjui_web_pending").firstMatch
+                    if loaded.exists {
+                        webMarkerCensus.alreadySettled += 1
+                    } else if pending.exists {
+                        if loaded.waitForExistence(timeout: webLoadTimeout) {
+                            webMarkerCensus.waitedThenSettled += 1
+                        } else {
+                            webMarkerCensus.timedOut += 1
+                        }
+                    } else if loaded.waitForExistence(timeout: webLoadTimeout) {
+                        // Neither marker yet: the representable's makeUIView may
+                        // simply not have run at the instant the fixture marker
+                        // appeared. Waiting for loaded covers that.
+                        webMarkerCensus.waitedThenSettled += 1
+                    } else {
+                        // The whole budget with neither marker ever present. A
+                        // page that never arrives would have shown pending the
+                        // entire time, so this is the mechanism being gone.
+                        webMarkerCensus.markerAbsent += 1
+                    }
+                }
+
+                let loadError = app.descendants(matching: .any)
+                    .matching(identifier: "conformance_load_error").firstMatch
+                if loadError.exists {
+                    results.append(FixtureResult(
+                        id: current.id, status: "error",
+                        detail: "layout failed to load/decode in host",
+                        screenshot: nil))
+                } else if let bridgeFailure = prepareTestBridge(current, app: app, launchId: launchId) {
+                    results.append(bridgeFailure)
+                } else {
+                    results.append(runFixture(current, app: app))
+                }
+
+                remaining = remaining.dropFirst()
+                if remaining.first != nil {
+                    advanceFixture()
+                }
+            }
+
+            if !crashed {
+                app.terminate()
+                break
+            }
+            // crashed: loop relaunches with `remaining`
+        }
+
+        return results
+    }
+
+    /// Ask the host app to show the next fixture in the batch.
+    private func advanceFixture() {
+        let center = CFNotificationCenterGetDarwinNotifyCenter()
+        CFNotificationCenterPostNotification(
+            center,
+            CFNotificationName("jsonui.conformance.advance" as CFString),
+            nil, nil, true
+        )
+    }
+
+    // MARK: testBridge (INTERACTIVE_HOST_CONTRACT.md §6)
+
+    struct TestBridgeExpectation {
+        let initialState: [String: Any]?
+        let applied: Set<String>?
+        let rejected: Set<String>?
+        let remount: Bool
+    }
+
+    /// `testBridge` per fixture id, read with JSONSerialization: the values
+    /// are typed (Int, Bool, null).
+    private lazy var testBridge: [String: TestBridgeExpectation] = {
+        guard let data = try? loadBundledData(relativePath: "manifest.json"),
+              let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let fixtures = root["fixtures"] as? [[String: Any]] else { return [:] }
+        var out: [String: TestBridgeExpectation] = [:]
+        for fixture in fixtures {
+            guard let id = fixture["id"] as? String, let bridge = fixture["testBridge"] as? [String: Any] else { continue }
+            let receipt = bridge["receipt"] as? [String: Any]
+            out[id] = TestBridgeExpectation(
+                initialState: bridge["initialState"] as? [String: Any],
+                applied: (receipt?["applied"] as? [String]).map(Set.init),
+                rejected: (receipt?["rejected"] as? [[String: String]]).map { Set($0.map { "\($0["key"] ?? "")|\($0["reason"] ?? "")" }) },
+                remount: bridge["remount"] as? Bool ?? false
+            )
+        }
+        return out
+    }()
+
+    /// The screen id this face gives a fixture's screen: the staged layout's
+    /// on the codegen face (codegen-map.json), the host's own spelling on the
+    /// Dynamic face (App/TestBridgeFixture.swift, TestBridgeDecl.screenId).
+    private func bridgeScreenId(_ fixture: ConformanceManifest.Fixture) -> String {
+        if isCodegenHostMode {
+            guard let data = try? loadBundledData(relativePath: "codegen-map.json"),
+                  let root = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let entry = (root["fixtures"] as? [String: Any])?[fixture.id] as? [String: Any],
+                  let screenId = entry["screenId"] as? String else { return "" }
+            return screenId
+        }
+        return "conformance_\(fixture.id.replacingOccurrences(of: "/", with: "_"))"
+    }
+
+    /// §6 jobs 2 and 4: compare the screen's receipt with the manifest's, then
+    /// remount when asked. Nil when the fixture may run its steps.
+    private func prepareTestBridge(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication,
+                                   launchId: String) -> FixtureResult? {
+        guard let expectation = testBridge[fixture.id] else { return nil }
+        let screenId = bridgeScreenId(fixture)
+        if expectation.initialState != nil {
+            let deadline = Date().addingTimeInterval(15)
+            var reading = StateBridge.Reading.absent
+            var got: StateBridge.Receipt?
+            repeat {
+                reading = StateBridge.read(screenId, in: app)
+                if case .bridge(let bridgeLaunch, let receipt?, _) = reading, bridgeLaunch == launchId {
+                    got = receipt
+                    break
+                }
+                Thread.sleep(forTimeInterval: 0.2)
+            } while Date() < deadline
+            guard let got else {
+                return FixtureResult(id: fixture.id, status: "error",
+                                     detail: "testBridge: " + StateBridge.noReceiptMessage(
+                                        screenId: screenId, timeout: 15, lastReading: reading),
+                                     screenshot: nil)
+            }
+            let applied = Set(got.applied)
+            let rejected = Set(got.rejected.map { "\($0.key)|\($0.reason)" })
+            if applied != (expectation.applied ?? []) || rejected != (expectation.rejected ?? []) {
+                return FixtureResult(id: fixture.id, status: "fail",
+                                     detail: "testBridge receipt: applied \(applied.sorted()) rejected \(rejected.sorted()); "
+                                        + "expected applied \((expectation.applied ?? []).sorted()) rejected \((expectation.rejected ?? []).sorted())",
+                                     screenshot: nil)
+            }
+        }
+        if expectation.remount {
+            let center = CFNotificationCenterGetDarwinNotifyCenter()
+            CFNotificationCenterPostNotification(
+                center, CFNotificationName("jsonui.conformance.remount" as CFString), nil, nil, true)
+            // The steps' own auto-wait carries the rest: they expect the
+            // defaults, which only the rebuilt instance shows.
+            Thread.sleep(forTimeInterval: 0.5)
+        }
+        return nil
+    }
+
+    // MARK: Single fixture execution
+
+    private func runFixture(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication) -> FixtureResult {
+        let screenTest: ScreenTest
+        do {
+            // fixture.test is relative to the conformance dir, e.g.
+            // "fixtures/Label/text__static.test.json" — same layout inside the bundle.
+            let data = try loadBundledData(relativePath: fixture.test)
+            screenTest = try JSONDecoder().decode(ScreenTest.self, from: data)
+        } catch {
+            return FixtureResult(
+                id: fixture.id, status: "error",
+                detail: "could not load test json: \(error.localizedDescription)",
+                screenshot: nil)
+        }
+
+        let actionExecutor = XCUITestActionExecutor(platform: "ios")
+        let assertionExecutor = XCUITestAssertionExecutor()
+        // §6 job 3: `state` reads this fixture's screen.
+        if testBridge[fixture.id] != nil {
+            assertionExecutor.setStateScreen(bridgeScreenId(fixture))
+        }
+        var screenshotPath: String? = nil
+        var framesPath: String? = nil
+        var framesUnrecorded: String? = nil
+        var afterFirstDraw: AfterFirstDrawResult? = nil
+        // The last tap of this fixture and what XCTest said about its target
+        // just before it — so an assertion that fails after a tap names
+        // itself (ticket ios-dynamic-interactive-fixture-tap-not-delivered-
+        // intermittently: twice a post-tap assert saw the pre-tap value, and
+        // the run kept nothing but "Expected X, Actual 'ready'").
+        let fixtureStart = Date()
+        var lastTap: (step: TestStep, before: String, at: TimeInterval)? = nil
+        // When the last action (a step that can change the screen) began, and
+        // how many taps this fixture has made: a second or third tap of a
+        // multi-step fixture is late from the marker by the steps before it
+        // (Embed's pop after a push), not because the tap was slow.
+        var lastActionStart = fixtureStart
+        var tapCount = 0
+        // The fixture's one retap, if a step passed only on a second tap.
+        var retap: RetapResult? = nil
+        // `web_settle: timeout …` when a Web capture's paint wait ran out.
+        var settleNote = ""
+
+        // A fixture that declares afterFirstDraw but takes no screenshot (an
+        // interactive one: TestBridge's bridge_follows asserts the changed
+        // value) has no screenshot step to wait at, so it waits before its
+        // first step: the steps then run against the changed value, and every
+        // result below carries the stamp (the gate fails a declaring fixture
+        // whose result has none — after_first_draw.py).
+        let takesScreenshot = screenTest.cases.contains { $0.steps.contains { $0.action == "screenshot" } }
+        if let declared = fixture.state?.afterFirstDraw, !takesScreenshot {
+            afterFirstDraw = awaitAfterFirstDraw(declared.name, fixture: fixture, app: app)
+        }
+
+        for testCase in screenTest.cases {
+            if testCase.skip == true { continue }
+            if let platform = testCase.platform, !platform.includes("ios") { continue }
+
+            for step in testCase.steps {
+                // Screenshot steps are handled here (the driver only attaches
+                // to the xcresult; conformance needs a stable artifact file).
+                if step.action == "screenshot", let name = step.name {
+                    if fixture.host == "Web" {
+                        settleNote = waitForWebPaint(fixture, app: app)
+                    }
+                    if declaresAutoFocus(fixture) {
+                        settleNote = waitForKeyboardSettled(fixture, app: app)
+                    }
+                    if let declared = fixture.state?.afterFirstDraw, afterFirstDraw == nil {
+                        afterFirstDraw = awaitAfterFirstDraw(declared.name, fixture: fixture, app: app)
+                    }
+                    do {
+                        screenshotPath = try captureScreenshot(named: name, app: app)
+                        (framesPath, framesUnrecorded) = recordFrames(named: name, fixture: fixture, app: app)
+                    } catch {
+                        return FixtureResult(
+                            id: fixture.id, status: "error",
+                            detail: "screenshot failed: \(error.localizedDescription)",
+                            screenshot: nil)
+                    }
+                    continue
+                }
+
+                capturedIssues = []
+                suppressIssues = true
+                defer { suppressIssues = false }
+
+                if step.action == "tap", let id = step.id {
+                    let now = Date()
+                    tapCount += 1
+                    lastTap = (step, elementState(id, in: app), now.timeIntervalSince(fixtureStart))
+                    // One line per tap, read by jsonui-cli's record step into a
+                    // distribution: how soon after the fixture was shown each
+                    // tap lands (+marker), how soon after the last action that
+                    // could change the screen (prev=, the marker for the first
+                    // tap), and which tap of the fixture it is (n=). A number
+                    // to look at, not a wait.
+                    if let tap = lastTap {
+                        let prev = now.timeIntervalSince(lastActionStart)
+                        print("TAP_TIMING \(fixture.id) \(id) +\(String(format: "%.3f", tap.at))s "
+                              + "prev=+\(String(format: "%.3f", prev))s n=\(tapCount) \(tap.before)")
+                    }
+                }
+                // A wait or a read does not change the screen, so it does not
+                // restart the clock.
+                if step.isAction, !["waitFor", "waitForAny", "wait", "readText"].contains(step.action ?? "") {
+                    lastActionStart = Date()
+                }
+
+                do {
+                    if step.isAction {
+                        try actionExecutor.execute(step: step, in: app)
+                    } else if step.isAssertion {
+                        try assertionExecutor.execute(step: step, in: app)
+                    }
+                } catch {
+                    suppressIssues = false
+                    if retap == nil, let taken = selectOptionRetap(step, error: error, fixture: fixture, app: app,
+                                                                  actions: actionExecutor, since: fixtureStart) {
+                        retap = taken
+                        continue
+                    }
+                    let diagnosis = postTapDiagnosis(after: lastTap, failed: step, fixture: fixture, app: app,
+                                                     actions: actionExecutor, asserts: assertionExecutor, retapped: retap != nil)
+                    if let taken = diagnosis.retap {   // the step passed on the second tap: named, and the fixture goes on
+                        retap = taken
+                        continue
+                    }
+                    return FixtureResult(
+                        id: fixture.id, status: "error",
+                        detail: stepLabel(step) + ": " + shortError(error) + diagnosis.text,
+                        screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
+                }
+                suppressIssues = false
+
+                if !capturedIssues.isEmpty {
+                    let issues = capturedIssues.joined(separator: " | ")
+                    let diagnosis = postTapDiagnosis(after: lastTap, failed: step, fixture: fixture, app: app,
+                                                     actions: actionExecutor, asserts: assertionExecutor, retapped: retap != nil)
+                    if let taken = diagnosis.retap {
+                        retap = taken
+                        continue
+                    }
+                    return FixtureResult(
+                        id: fixture.id, status: "fail",
+                        detail: stepLabel(step) + ": " + issues + diagnosis.text,
+                        screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded)
+                }
+            }
+        }
+
+        if let taken = retap {
+            print("RETAP \(fixture.id) \(taken.tap) +\(String(format: "%.3f", taken.at))s \(taken.reason)")
+        }
+        return FixtureResult(id: fixture.id, status: "pass", detail: settleNote, screenshot: screenshotPath, frames: framesPath, afterFirstDraw: afterFirstDraw, framesUnrecorded: framesUnrecorded, retap: retap)
+    }
+
+    /// afterFirstDraw (jsonui-cli INTERACTIVE_HOST_CONTRACT.md): the host
+    /// fires the declared change after the first presented frame and stamps
+    /// `conformance_after_first_draw` with `fired=<ms> applied=<ms>`
+    /// (App/AfterFirstDraw.swift). Wait for `applied=` (budget 10 s), then read
+    /// where every element carrying a declared id — the Collection's cell
+    /// addresses `<id>_item_<n>` included — is drawn until the reading has
+    /// stood still for 1 s (Landing.wait, budget 10 s): a bounded read, never a
+    /// fixed sleep. A host that never stamps is `not-fired`, which the gate
+    /// fails, so a first-draw screenshot cannot pass as the fixture.
+    private func awaitAfterFirstDraw(_ name: String, fixture: ConformanceManifest.Fixture,
+                                     app: XCUIApplication) -> AfterFirstDrawResult {
+        let marker = app.descendants(matching: .any).matching(identifier: "conformance_after_first_draw").firstMatch
+        let deadline = Date().addingTimeInterval(10)
+        var stamp = ""
+        while Date() < deadline {
+            if marker.exists, let value = marker.value as? String {
+                stamp = value
+                if value.contains("applied=") { break }
+            }
+            Thread.sleep(forTimeInterval: 0.05)
+        }
+        func ms(_ key: String) -> Int? {
+            stamp.split(separator: " ").first { $0.hasPrefix("\(key)=") }
+                .flatMap { Int($0.dropFirst(key.count + 1)) }
+        }
+        guard let applied = ms("applied") else {
+            let line = "AFTER_FIRST_DRAW \(fixture.id): not-fired (stamp \(stamp.isEmpty ? "absent" : stamp) after 10 s)"
+            print(line)
+            return AfterFirstDrawResult(name: name, status: "not-fired", landing: line)
+        }
+        let ids = declaredIds(fixture).filter { $0 != "root" }
+        let landing = Landing.wait("afterFirstDraw \(fixture.id)", still: 1, budget: 10) {
+            var parts: [String] = []
+            for id in ids {
+                let query = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", id))
+                for element in query.allElementsBoundByIndex {
+                    let f = element.frame
+                    parts.append("\(element.identifier)@\(Int(f.minX)),\(Int(f.minY))")
+                }
+            }
+            return parts.sorted().joined(separator: " ")
+        }
+        return AfterFirstDrawResult(name: name, status: "fired", firedAtMs: ms("fired"), appliedAtMs: applied, landing: landing)
+    }
+
+    /// Every `id` the fixture's layout declares, in document order.
+    private func declaredIds(_ fixture: ConformanceManifest.Fixture) -> [String] {
+        guard let data = try? loadBundledData(relativePath: "fixtures/\(fixture.id).layout.json"),
+              let layout = try? JSONSerialization.jsonObject(with: data) else { return [] }
+        var declared: [String] = []
+        func collect(_ node: Any?) {
+            if let object = node as? [String: Any] {
+                if let id = object["id"] as? String { declared.append(id) }
+                object.values.forEach(collect)
+            } else if let array = node as? [Any] {
+                array.forEach(collect)
+            }
+        }
+        collect(layout)
+        return declared
+    }
+
+    /// Waits until the web view's region of the screen holds more than one
+    /// colour (webPaintTimeout). Returns "" when it did, the reason otherwise.
+    private func waitForWebPaint(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication) -> String {
+        if Self.webBlankIsCorrect[fixture.id] != nil {
+            webPaint.declaredBlank += 1
+            return ""
+        }
+        let start = Date()
+        var polls = 0
+        while true {
+            polls += 1
+            if webRegionHasInk(app) {
+                if polls == 1 { webPaint.atOnce += 1 } else { webPaint.waited += 1 }
+                if polls > 1 {
+                    print(String(format: "[conformance] %@: the web view drew %.2fs after the load marker", fixture.id,
+                                 Date().timeIntervalSince(start)))
+                }
+                return ""
+            }
+            if Date().timeIntervalSince(start) >= webPaintTimeout {
+                webPaint.timedOut += 1
+                return "web_settle: timeout — the web view's region stayed one colour for \(Int(webPaintTimeout))s after the load marker"
+            }
+            Thread.sleep(forTimeInterval: webPaintPoll)
+        }
+    }
+
+    /// Whether the screen inside the web view's frame (the app's frame below
+    /// the status bar when there is no web view element) has more than one
+    /// grey level — the gate's own "ink" (baseline.ink_file), so a region it
+    /// would call blank is one this calls blank.
+    private func webRegionHasInk(_ app: XCUIApplication) -> Bool {
+        let web = app.webViews.firstMatch
+        var region = web.exists ? web.frame : app.frame
+        if !web.exists { region = region.inset(by: UIEdgeInsets(top: 54, left: 0, bottom: 0, right: 0)) }
+        let image = app.screenshot().image
+        guard let cg = image.cgImage, region.width > 1, region.height > 1 else { return true }
+        let scale = image.scale
+        let px = CGRect(x: region.minX * scale, y: region.minY * scale,
+                        width: region.width * scale, height: region.height * scale).integral
+            .intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        guard let cropped = cg.cropping(to: px) else { return true }
+        let w = cropped.width, h = cropped.height
+        var grey = [UInt8](repeating: 0, count: w * h)
+        guard let ctx = CGContext(data: &grey, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+        else { return true }
+        ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let first = grey[0]
+        return grey.contains { $0 != first }
+    }
+
+    /// Whether the fixture's layout declares `autoFocus: true` on any node. The
+    /// declaration is the source, not the fixture's name, so a new fixture of
+    /// the shape waits without anyone listing it.
+    private func declaresAutoFocus(_ fixture: ConformanceManifest.Fixture) -> Bool {
+        guard let data = try? loadBundledData(relativePath: "fixtures/\(fixture.id).layout.json"),
+              let layout = try? JSONSerialization.jsonObject(with: data) else { return false }
+        func declares(_ node: Any) -> Bool {
+            if let object = node as? [String: Any] {
+                if object["autoFocus"] as? Bool == true { return true }
+                return object.values.contains(where: declares)
+            }
+            if let array = node as? [Any] { return array.contains(where: declares) }
+            return false
+        }
+        return declares(layout)
+    }
+
+    /// Waits until the keyboard's region of the screen has held still (see
+    /// keyboardSettleTimeout). Returns "" when it did, the reason otherwise.
+    private func waitForKeyboardSettled(_ fixture: ConformanceManifest.Fixture, app: XCUIApplication) -> String {
+        let start = Date()
+        var first: [UInt8]? = nil
+        var last: [UInt8]? = nil
+        var same = 0
+        while Date().timeIntervalSince(start) < keyboardSettleTimeout {
+            if let reading = keyboardRegionReading(app) {
+                if first == nil { first = reading }
+                same = (reading == last) ? same + 1 : 1
+                last = reading
+                if same >= keyboardSettleReadings {
+                    keyboardSettle.settled += 1
+                    if reading != first { keyboardSettle.moved += 1 }
+                    print(String(format: "[conformance] %@: the keyboard settled %.2fs after the marker%@", fixture.id,
+                                 Date().timeIntervalSince(start), reading != first ? " (it moved while waiting)" : ""))
+                    return ""
+                }
+            } else {
+                same = 0
+                last = nil
+            }
+            Thread.sleep(forTimeInterval: keyboardSettlePoll)
+        }
+        keyboardSettle.timedOut += 1
+        return "keyboard_settle: timeout — the keyboard's region did not hold still with something drawn in it for "
+            + "\(Int(keyboardSettleTimeout))s after the marker"
+    }
+
+    /// The grey levels of the keyboard's region of the screen; nil when there is
+    /// no keyboard yet or the region is one colour (the slide has not reached it).
+    private func keyboardRegionReading(_ app: XCUIApplication) -> [UInt8]? {
+        let keyboard = app.keyboards.firstMatch
+        guard keyboard.exists else { return nil }
+        let region = keyboard.frame
+        let image = app.screenshot().image
+        guard let cg = image.cgImage, region.width > 1, region.height > 1 else { return nil }
+        let scale = image.scale
+        let px = CGRect(x: region.minX * scale, y: region.minY * scale,
+                        width: region.width * scale, height: region.height * scale).integral
+            .intersection(CGRect(x: 0, y: 0, width: cg.width, height: cg.height))
+        guard let cropped = cg.cropping(to: px) else { return nil }
+        let w = cropped.width, h = cropped.height
+        var grey = [UInt8](repeating: 0, count: w * h)
+        guard let ctx = CGContext(data: &grey, width: w, height: h, bitsPerComponent: 8, bytesPerRow: w,
+                                  space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue)
+        else { return nil }
+        ctx.draw(cropped, in: CGRect(x: 0, y: 0, width: w, height: h))
+        let firstGrey = grey[0]
+        return grey.contains { $0 != firstGrey } ? grey : nil
+    }
+
+    /// `exists / hittable / frame` of the first element with this identifier.
+    private func elementState(_ id: String, in app: XCUIApplication) -> String {
+        TapDiagnosis.elementState(id, in: app)
+    }
+
+    /// What the post-tap diagnosis found: the words for the detail, and the
+    /// retap when the second tap made the failed assertion pass.
+    struct PostTapOutcome {
+        var text = ""
+        var retap: RetapResult? = nil
+    }
+
+    /// Only for an ASSERTION that fails after a tap in the same fixture: what
+    /// the tapped element looked like before the tap and now, a screenshot,
+    /// and whether a SECOND tap makes the same assertion pass. A second tap
+    /// that fires separates "the touch was not delivered" (timing, the
+    /// screen still settling) from "the handler is not wired" (it would not
+    /// fire either).
+    ///
+    /// A second tap that makes it pass is the fixture's retap (jsonui-cli
+    /// ticket 2026-10-24-ios-conformance-tap-not-delivered-recurred, the
+    /// requester's choice B): the step counts as passed and the result names
+    /// it (`retap`), never silently — the gate fails the same fixture retapping
+    /// on two runs in a row and more than two in a run. One per fixture: a
+    /// fixture that already retapped (`retapped`) and needs a second one keeps
+    /// the failure, the diagnosis in its detail.
+    private func postTapDiagnosis(
+        after lastTap: (step: TestStep, before: String, at: TimeInterval)?,
+        failed step: TestStep, fixture: ConformanceManifest.Fixture, app: XCUIApplication,
+        actions: XCUITestActionExecutor, asserts: XCUITestAssertionExecutor, retapped: Bool
+    ) -> PostTapOutcome {
+        guard let tap = lastTap, let id = tap.step.id,
+              step.isAssertion || TapDiagnosis.waitsForAnEffect(step.action) else { return PostTapOutcome() }
+        let now = elementState(id, in: app)
+        var parts = ["after tap(\(id)) at +\(String(format: "%.2f", tap.at))s",
+                     "before: \(tap.before)",
+                     "now: \(now)",
+                     "app: \(app.state.rawValue)"]
+        let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))" + TapDiagnosis.failureMarker
+        let path = try? captureScreenshot(named: shot, app: app)
+        if let path {
+            parts.append("screenshot: \(path)")
+        }
+        // A wait after a tap leaves what it met and is not tapped again: whether
+        // a second tap may turn this red green is decided from what these lines
+        // show (jsonui-cli ticket 2026-11-06-ios-conformance-embed-push-error-
+        // and-statenames-retap-twice: this error left no line and no picture).
+        if !step.isAssertion {
+            if let waited = step.id { parts.append("waited for \(waited): \(elementState(waited, in: app))") }
+            parts.append("not tapped again")
+            return PostTapOutcome(text: " — [post-tap] " + parts.joined(separator: "; "))
+        }
+        capturedIssues = []
+        suppressIssues = true
+        // The fixture's assertion is the check: a fixture tap sets a value
+        // (idempotent), so the same expectation judges the second tap.
+        let second = TapDiagnosis.secondTap(
+            { try actions.execute(step: tap.step, in: app) },
+            effectShows: {
+                try asserts.execute(step: step, in: app)
+                return capturedIssues.isEmpty ? nil : capturedIssues.joined(separator: " | ")
+            })
+        suppressIssues = false
+        capturedIssues = []
+        if second == TapDiagnosis.deliveredOnSecondTap && !retapped {
+            return PostTapOutcome(retap: RetapResult(reason: "touch not delivered", tap: id, at: tap.at,
+                                                     before: tap.before, after: now, screenshot: path))
+        }
+        parts.append(second + (second == TapDiagnosis.deliveredOnSecondTap ? " — but this fixture already retapped once" : ""))
+        return PostTapOutcome(text: " — [post-tap] " + parts.joined(separator: "; "))
+    }
+
+    /// A `selectOption` whose picker sheet never appeared is sent once more:
+    /// the driver taps the SelectBox once and waits for the sheet, so a tap
+    /// that was not delivered fails the step as "Picker sheet did not appear"
+    /// (jsonui-cli ticket 2026-11-02-ios-selectoption-picker-sheet-timeout-
+    /// recurred: the weekly run of 2026-11-01 failed SelectBox/onValueChange__
+    /// callback_fire so, on inputs that passed before and after). If the
+    /// second one passes, it is the fixture's retap — the same named retry as
+    /// postTapDiagnosis's (choice B), counted by the same gate; a sheet that
+    /// does not appear on the second one either keeps the error.
+    private func selectOptionRetap(
+        _ step: TestStep, error: Error, fixture: ConformanceManifest.Fixture, app: XCUIApplication,
+        actions: XCUITestActionExecutor, since fixtureStart: Date
+    ) -> RetapResult? {
+        guard step.action == "selectOption", let id = step.id,
+              shortError(error).contains("Picker sheet did not appear") else { return nil }
+        let at = Date().timeIntervalSince(fixtureStart)
+        let before = "selectOption: " + shortError(error) + "; " + elementState(id, in: app)
+        // A diagnostic, not a capture: the name carries `__post_tap_failure`
+        // (TapDiagnosis.failureMarker) so the report leaves it out of the
+        // dynamic/codegen comparison and CI's tap-repro upload picks it up.
+        // `<fixture>__select_option_no_sheet.png` was read as a capture only
+        // the dynamic host drew (jsonui-cli ticket 2026-11-02-ios-
+        // selectoption-retap-shot-counted-as-a-render, run 41426977222).
+        let shot = "\(fixture.id.replacingOccurrences(of: "/", with: "_"))__select_option_no_sheet"
+            + TapDiagnosis.failureMarker
+        let path = try? captureScreenshot(named: shot, app: app)
+        print("SELECT_OPTION_RETAP \(fixture.id) \(id) +\(String(format: "%.3f", at))s — the picker sheet did not appear; sent once more")
+        capturedIssues = []
+        suppressIssues = true
+        defer { suppressIssues = false }
+        do {
+            try actions.execute(step: step, in: app)
+        } catch {
+            print("SELECT_OPTION_RETAP \(fixture.id) \(id): the second did not open the sheet either — the error stands")
+            return nil
+        }
+        guard capturedIssues.isEmpty else { return nil }
+        return RetapResult(reason: "touch not delivered", tap: id, at: at, before: before,
+                           after: elementState(id, in: app), screenshot: path)
+    }
+
+    private func stepLabel(_ step: TestStep) -> String {
+        if let action = step.action {
+            return "action \(action)" + (step.id.map { "(\($0))" } ?? "")
+        }
+        if let assertion = step.assert {
+            return "assert \(assertion)" + (step.id.map { "(\($0))" } ?? "")
+        }
+        return "step"
+    }
+
+    private func shortError(_ error: Error) -> String {
+        TapDiagnosis.shortError(error)
+    }
+
+    // MARK: Artifacts / results IO
+
+    private func prepareStagingDirectories() throws {
+        let fileManager = FileManager.default
+        for sub in ["results", "artifacts/ios"] {
+            try fileManager.createDirectory(
+                at: stagingDir.appendingPathComponent(sub),
+                withIntermediateDirectories: true)
+        }
+    }
+
+    /// Returns the artifact path relative to the conformance dir.
+    private func captureScreenshot(named name: String, app: XCUIApplication) throws -> String {
+        try TapDiagnosis.screenshot(named: name, app: app)
+    }
+
+    /// Writes `artifacts/ios/<name>.frames.json` beside the screenshot — every
+    /// element carrying an id the layout declares, relative to the root, one
+    /// query per id (the driver's FrameRecorder; jsonui-cli conformance
+    /// frames.schema.json) — and returns that relative path.
+    ///
+    /// The root's frame is the canvas, read from the host's two corner
+    /// markers (conformance_origin, conformance_current_<id>): the element
+    /// carrying the `root` id reports the box around its children, not its
+    /// frame. The canvas is the root only when the root fills it, so a root
+    /// that is not matchParent on both axes (4 of 1131 fixtures on 2026-10-05,
+    /// sized and centred by the canvas) is not recorded. The host's own
+    /// markers are not layout ids and are left out.
+    ///
+    /// A record that cannot be made leaves the fixture's verdict alone. Its
+    /// reason goes in results[].framesUnrecorded (`root-not-fill`,
+    /// `canvas-marker-missing`, `error: <reason>`), which the gate counts as
+    /// its own not-compared reason, and is printed as
+    /// `FRAMES_UNRECORDED <fixture> <reason>`.
+    private func recordFrames(named name: String, fixture: ConformanceManifest.Fixture,
+                              app: XCUIApplication) -> (path: String?, unrecorded: String?) {
+        func unrecorded(_ reason: String) -> (path: String?, unrecorded: String?) {
+            print("FRAMES_UNRECORDED \(fixture.id) \(reason)")
+            return (nil, reason)
+        }
+        do {
+            let layout = try JSONSerialization.jsonObject(
+                with: loadBundledData(relativePath: "fixtures/\(fixture.id).layout.json")) as? [String: Any]
+            guard layout?["width"] as? String == "matchParent", layout?["height"] as? String == "matchParent" else {
+                return unrecorded("root-not-fill")
+            }
+            // One query per id the layout declares (and the two markers), never
+            // a hierarchy snapshot: a snapshot drew the home indicator into
+            // the next screenshot (FrameRecorder.elements(of:ids:)). Each id
+            // is read from its `frame:<id>` measuring element, the layout box;
+            // an id read from its own element instead is named in `fallbacks`
+            // (FrameRecorder.layoutElements(of:ids:)).
+            var declared: [String] = []
+            func collect(_ node: Any?) {
+                if let object = node as? [String: Any] {
+                    if let id = object["id"] as? String { declared.append(id) }
+                    object.values.forEach(collect)
+                } else if let array = node as? [Any] {
+                    array.forEach(collect)
+                }
+            }
+            collect(layout)
+            let marker = "conformance_current_\(fixture.id.replacingOccurrences(of: "/", with: "_"))"
+            let markers = FrameRecorder.elements(of: app, ids: ["conformance_origin", marker])
+            guard let origin = markers.first(where: { $0.id == "conformance_origin" })?.frame,
+                  let corner = markers.first(where: { $0.id == marker })?.frame else {
+                return unrecorded("canvas-marker-missing")
+            }
+            let canvas = CGRect(x: origin.minX, y: origin.minY,
+                                width: corner.maxX - origin.minX, height: corner.maxY - origin.minY)
+            // The root is the canvas (above), so its own reading is not used.
+            let probed = FrameRecorder.layoutElements(of: app, ids: declared.filter { $0 != "root" })
+            let record = try FrameRecorder.record(
+                fixture: fixture.id, elements: probed.elements, rootFrame: canvas,
+                source: FrameRecorder.layoutProbeSource, fallbacks: probed.fallbacks)
+            let relative = "artifacts/ios/\(name).frames.json"
+            let url = TapDiagnosis.stagingDir.appendingPathComponent(relative)
+            try FileManager.default.createDirectory(at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            try FrameRecorder.encode(record).write(to: url, options: .atomic)
+            return (relative, nil)
+        } catch {
+            return unrecorded("error: \(shortError(error))")
+        }
+    }
+
+    private func writeResults(_ results: [FixtureResult], manifestHash: String,
+                              webMarkers: WebMarkerCensus, shard: ShardRecord?) throws {
+        // Build JSON by hand-encodable structure to guarantee key order stability
+        // is not required by the schema; standard JSONEncoder output is fine.
+        struct ResultsFile: Encodable {
+            struct Runner: Encodable {
+                let name: String
+                let version: String
+            }
+            let platform: String
+            let manifestHash: String
+            let runner: Runner
+            let webMarkers: WebMarkerCensus
+            /// Present only on a shard (CONFORMANCE_SHARD); an unsharded run's
+            /// file is what it always was.
+            let shard: ShardRecord?
+            let results: [FixtureResult]
+        }
+
+        let file = ResultsFile(
+            platform: "ios",
+            manifestHash: manifestHash,
+            runner: .init(name: "xcuitest", version: xcTestFrameworkVersion()),
+            webMarkers: webMarkers,
+            shard: shard,
+            results: results
+        )
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+        var data = try encoder.encode(file)
+        data.append(0x0A) // trailing newline per RESULTS_SCHEMA
+        let url = stagingDir.appendingPathComponent("results/ios.results.json")
+        try data.write(to: url, options: .atomic)
+        print("[conformance] wrote \(url.path)")
+    }
+
+    private func xcTestFrameworkVersion() -> String {
+        let os = ProcessInfo.processInfo.operatingSystemVersion
+        return "ios-\(os.majorVersion).\(os.minorVersion)"
+    }
+
+    // MARK: Bundle resources
+
+    /// Load a file bundled into the UITest bundle. `relativePath` is relative
+    /// to the conformance dir (e.g. "manifest.json", "fixtures/Label/x.test.json");
+    /// sync_fixtures.sh mirrors that layout into the bundle resources.
+    private func loadBundledData(relativePath: String) throws -> Data {
+        let bundle = Bundle(for: ConformanceUITests.self)
+        if let resourceURL = bundle.resourceURL {
+            let direct = resourceURL.appendingPathComponent(relativePath)
+            if FileManager.default.fileExists(atPath: direct.path) {
+                return try Data(contentsOf: direct)
+            }
+        }
+        throw NSError(
+            domain: "ConformanceUITests", code: 1,
+            userInfo: [NSLocalizedDescriptionKey:
+                "bundled resource not found: \(relativePath) — run scripts/sync_fixtures.sh and regenerate the project"])
+    }
+}

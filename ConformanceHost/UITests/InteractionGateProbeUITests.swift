@@ -1,0 +1,164 @@
+import XCTest
+
+/// What `userInteractionEnabled: false` and a bound `enabled` stop on a view
+/// with a tap of its own (InteractionGateProbeView): per
+/// attribute_definitions.json, `userInteractionEnabled` enables user
+/// interaction and `enabled` enables the component, so under either gate
+/// neither the view's own handler nor its child's is called. The rows with
+/// no gate are the controls: they say the tap and the press reach.
+///
+/// Opt-in, like the other probes: TEST_RUNNER_INTERACTION_GATE_PROBE=1.
+final class InteractionGateProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("InteractionGate")
+    /// Handler calls expected after one tap (or press) on each element.
+    private let calls: [String: Int] = [
+        "parPlain": 1, "kidPlain": 1,
+        "parUieFalse": 0, "kidUieFalse": 0,
+        // the parent as emitted before, `.allowsHitTesting` inside its own
+        // tap: its handler ran for the padding tap and the one in the child's
+        // frame, and the child's did not
+        "parUieOld": 2, "kidUieOld": 0,
+        "parUieBound": 0, "kidUieBound": 0,
+        "parEnBoundNoId": 0, "kidEnBoundNoId": 0,
+        "lblUieFalse": 0, "lblEnBoundNoId": 0,
+        "lpPlain": 1, "lpUieFalse": 0,
+        "dynViewPlain": 1, "dynViewUieFalse": 0, "dynViewUieBound": 0, "dynViewEnBound": 0,
+        "dynLblUieFalse": 0,
+        "dynLpPlain": 1, "dynLpUieFalse": 0,
+        "dynParUieFalse": 0, "dynKidUieFalse": 0,
+    ]
+    /// Whether each Switch switched after one tap.
+    private let switched: [String: Bool] = [
+        "swUiePlain": true, "swUieFalse": false, "dynSwPlain": true, "dynSwUieFalse": false,
+    ]
+
+    func testTheGatesStopTheViewsOwnHandler() throws {
+        guard ProcessInfo.processInfo.environment["INTERACTION_GATE_PROBE"] == "1" else {
+            throw XCTSkip("interaction gate probe: run with the guard lifted, as the other probes are")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-interactionGateProbe"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["gate_probe_ready"].waitForExistence(timeout: 15), "probe did not start")
+        XCTAssertFalse(app.staticTexts["gate_decode_failed"].exists, "the dynamic layout did not decode")
+        let window = app.windows.firstMatch.frame
+        let origin = app.coordinate(withNormalizedOffset: .zero)
+
+        func frame(_ query: XCUIElementQuery, _ name: String) -> CGRect {
+            let e = query.firstMatch
+            XCTAssertTrue(e.waitForExistence(timeout: 5), "\(name) exists")
+            XCTAssertTrue(window.contains(e.frame), "\(name) on screen: \(e.frame)")
+            return e.frame
+        }
+        func byId(_ id: String) -> CGRect {
+            frame(app.descendants(matching: .any).matching(identifier: id), id)
+        }
+        func byLabel(_ label: String) -> CGRect {
+            frame(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", label)), label)
+        }
+        func tap(_ r: CGRect) { origin.withOffset(CGVector(dx: r.midX, dy: r.midY)).tap() }
+        func press(_ r: CGRect) {
+            origin.withOffset(CGVector(dx: r.midX, dy: r.midY)).press(forDuration: 1.2)
+        }
+        // A row with no gate says a touch reaches, so a lost one is sent again (ProbeRetap). The gated rows use
+        // tap and press above, once only.
+        func reached(_ row: String, _ touch: () -> Void) {
+            let readout = app.staticTexts["gate_readout"]
+            retap.tap(row, until: { readout.label.contains("\(row)=") }, touch)
+        }
+
+        // A parent is tapped in its padding, 8 pt right of its child (the
+        // parent without an id is found through its child).
+        for name in ["Plain", "UieFalse", "UieBound", "EnBoundNoId", "UieOld"] {
+            let kid = byId("kid\(name)")
+            if name == "Plain" {
+                reached("parPlain") { origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap() }
+                reached("kidPlain") { tap(kid) }
+            } else {
+                origin.withOffset(CGVector(dx: kid.maxX + 8, dy: kid.midY)).tap()
+                tap(kid)
+            }
+        }
+        tap(byLabel("lblUieFalse"))
+        tap(byLabel("lblEnBoundNoId"))
+        let lpPlain = byId("lpPlain")
+        reached("lpPlain") { press(lpPlain) }
+        press(byId("lpUieFalse"))
+        let dynViewPlain = byId("dynViewPlain")
+        reached("dynViewPlain") { tap(dynViewPlain) }
+        for id in ["dynViewUieFalse", "dynViewUieBound", "dynViewEnBound"] {
+            tap(byId(id))
+        }
+        tap(byLabel("dynLblUieFalse"))
+        let dynLpPlain = byId("dynLpPlain")
+        reached("dynLpPlain") { press(dynLpPlain) }
+        press(byId("dynLpUieFalse"))
+        let dynKid = byId("dynKidUieFalse")
+        origin.withOffset(CGVector(dx: dynKid.maxX + 8, dy: dynKid.midY)).tap()
+        tap(dynKid)
+        // The control rows' switches (no gate) say a tap reaches: one the simulator lost is tapped once more, and
+        // said (the 10-18 weekly run lost one tap on swUiePlain at its centre; 13 runs of the same build did not).
+        // The gated rows are tapped once only — a second tap must never be the reason a gate reads as holding.
+        var retapped: [String] = []
+        for id in ["swUiePlain", "swUieFalse", "dynSwPlain", "dynSwUieFalse"] {
+            let r = byId(id)
+            guard switched[id] == true else { tap(r); continue }
+            let element = app.descendants(matching: .any).matching(identifier: id).firstMatch
+            if Self.tapControl(id, read: { element.value as? String }, tap: { tap(r) }, log: { print($0) }) {
+                retapped.append(id)
+            }
+        }
+        XCTAssertTrue(retapped.allSatisfy { switched[$0] == true }, "a gated switch was tapped twice: \(retapped)")
+        sleep(1)
+
+        let text = app.staticTexts["gate_readout"].label
+        print("GATE_PROBE readout=\(text)")
+        guard let start = text.range(of: "counts[")?.upperBound,
+              let end = text[start...].firstIndex(of: "]") else {
+            return XCTFail("no counts in the readout: \(text)")
+        }
+        var counts: [String: Int] = [:]
+        for part in text[start..<end].split(separator: ",") {
+            let kv = part.split(separator: "=", maxSplits: 1)
+            if kv.count == 2 { counts[String(kv[0])] = Int(kv[1]) }
+        }
+        let unknown = Set(counts.keys).subtracting(calls.keys)
+        XCTAssertTrue(unknown.isEmpty, "counted but not expected: \(unknown.sorted())")
+        for (name, want) in calls.sorted(by: { $0.key < $1.key }) {
+            let got = counts[name] ?? 0
+            print("GATE_PROBE \(name) calls=\(got) want=\(want)")
+            XCTAssertEqual(got, want, "\(name) handler calls")
+        }
+        guard let swStart = text.range(of: "sw[")?.upperBound,
+              let swEnd = text[swStart...].firstIndex(of: "]") else { return XCTFail("no sw in the readout") }
+        var sw: [String: String] = [:]
+        for part in text[swStart..<swEnd].split(separator: ",") {
+            let kv = part.split(separator: "=", maxSplits: 1)
+            if kv.count == 2 { sw[String(kv[0])] = String(kv[1]) }
+        }
+        for (name, want) in switched.sorted(by: { $0.key < $1.key }) {
+            print("GATE_PROBE \(name) switched=\(sw[name] ?? "nil") want=\(want)")
+            XCTAssertEqual(sw[name], "\(want)", "\(name) switched")
+        }
+    }
+
+    /// Taps a control row's switch and waits up to `wait` seconds for its value to change; when it did not, taps it
+    /// once more and says so (`GATE_PROBE retap <id> …`). Returns whether it tapped again. Only for the rows with
+    /// no gate: their job is to say the tap reaches, and a lost tap is the simulator's, not the gate's.
+    @discardableResult
+    static func tapControl(_ id: String, read: () -> String?, tap: () -> Void, wait: TimeInterval = 2,
+                           log: (String) -> Void) -> Bool {
+        let before = read()
+        tap()
+        let deadline = Date().addingTimeInterval(wait)
+        while Date() < deadline {
+            if read() != before { return false }
+            Thread.sleep(forTimeInterval: min(0.2, wait / 4))
+        }
+        if read() != before { return false }
+        log("GATE_PROBE retap \(id): its value stayed \(before ?? "nil") \(wait)s after one tap — tapped once more")
+        tap()
+        return true
+    }
+}
+

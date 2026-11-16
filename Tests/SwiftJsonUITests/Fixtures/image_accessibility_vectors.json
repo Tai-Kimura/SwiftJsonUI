@@ -1,0 +1,170 @@
+{
+  "_comment": "The role each image of a layout gets from its alt and from the tappable around it: label (alt is read), decorative (skipped), control (no alt and it operates a control: it keeps the id / asset name and the build names it). One table for the sjui / kjui codegen (shared/core/image_accessibility.rb) and the KotlinJsonUI / SwiftJsonUI Dynamic runtimes, which copy this file byte for byte. `roles` maps every image id in the case to its role.",
+  "cases": [
+    {
+      "name": "an image with no alt that operates nothing is decorative",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "hero", "src": "hero" } ] },
+      "roles": { "hero": "decorative" }
+    },
+    {
+      "name": "an alt is read",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "logo", "src": "logo", "alt": "app_logo_label" } ] },
+      "roles": { "logo": "label" }
+    },
+    {
+      "name": "an empty alt is decorative, even on a tappable image",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "chevron", "src": "chevron", "alt": "", "onClick": "@{onOpen}" } ] },
+      "roles": { "chevron": "decorative" }
+    },
+    {
+      "name": "a tappable image with no alt is a control",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "close_icon", "src": "close", "onClick": "@{onClose}" } ] },
+      "roles": { "close_icon": "control" }
+    },
+    {
+      "name": "a tappable image with an alt is read",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "close_icon", "src": "close", "alt": "close_label", "onClick": "@{onClose}" } ] },
+      "roles": { "close_icon": "label" }
+    },
+    {
+      "name": "the only content of a tappable with no text is a control",
+      "layout": { "type": "View", "onClick": "@{onMenu}", "child": [ { "type": "Image", "id": "menu_icon", "src": "menu" } ] },
+      "roles": { "menu_icon": "control" }
+    },
+    {
+      "name": "an image beside the text of a tappable is decorative",
+      "layout": { "type": "View", "onClick": "@{onEdit}", "child": [ { "type": "Image", "id": "edit_icon", "src": "edit" }, { "type": "Label", "text": "edit_label" } ] },
+      "roles": { "edit_icon": "decorative" }
+    },
+    {
+      "name": "text bound at run time still names the tappable",
+      "layout": { "type": "View", "onClick": "@{onRow}", "child": [ { "type": "Image", "id": "row_icon", "src": "row" }, { "type": "Label", "text": "@{title}" } ] },
+      "roles": { "row_icon": "decorative" }
+    },
+    {
+      "name": "a labelled image names the tappable for the image beside it",
+      "layout": { "type": "View", "onClick": "@{onShare}", "child": [ { "type": "Image", "id": "share_icon", "src": "share", "alt": "share_label" }, { "type": "Image", "id": "share_badge", "src": "badge" } ] },
+      "roles": { "share_icon": "label", "share_badge": "decorative" }
+    },
+    {
+      "name": "the tappable counts however deep the image sits",
+      "layout": { "type": "View", "onClick": "@{onCamera}", "child": [ { "type": "View", "child": [ { "type": "Image", "id": "camera_icon", "src": "camera" } ] } ] },
+      "roles": { "camera_icon": "control" }
+    },
+    {
+      "name": "the nearest tappable decides, not an outer one with text",
+      "layout": { "type": "View", "onClick": "@{onCard}", "child": [ { "type": "Label", "text": "card_title" }, { "type": "View", "onClick": "@{onDelete}", "child": [ { "type": "Image", "id": "delete_icon", "src": "delete" } ] } ] },
+      "roles": { "delete_icon": "control" }
+    },
+    {
+      "name": "a long press and a selector onclick are taps too",
+      "layout": { "type": "View", "child": [ { "type": "View", "onLongPress": "@{onHold}", "child": [ { "type": "NetworkImage", "id": "avatar", "url": "@{avatarUrl}" } ] }, { "type": "View", "onclick": "openSearch", "child": [ { "type": "Image", "id": "search_icon", "src": "search" } ] } ] },
+      "roles": { "avatar": "control", "search_icon": "control" }
+    },
+    {
+      "name": "the alias spellings are alt",
+      "layout": { "type": "View", "onClick": "@{onPhoto}", "child": [ { "type": "Image", "id": "photo", "src": "photo", "contentDescription": "photo_label" }, { "type": "CircleImage", "id": "divider", "src": "divider", "accessibilityLabel": "" } ] },
+      "roles": { "photo": "label", "divider": "decorative" }
+    },
+    {
+      "name": "a bound alt is read",
+      "layout": { "type": "View", "child": [ { "type": "NetworkImage", "id": "item_photo", "url": "@{photoUrl}", "alt": "@{photoTitle}" } ] },
+      "roles": { "item_photo": "label" }
+    },
+    {
+      "name": "a type alias of Image is an image",
+      "layout": { "type": "View", "onClick": "@{onPortrait}", "child": [ { "type": "CircleImage", "id": "portrait", "src": "portrait" } ] },
+      "roles": { "portrait": "control" }
+    },
+    {
+      "name": "a placeholder image name is not text",
+      "layout": { "type": "View", "onClick": "@{onThumb}", "child": [ { "type": "NetworkImage", "id": "thumb", "url": "@{thumbUrl}", "placeholder": "thumb_placeholder" } ] },
+      "roles": { "thumb": "control" }
+    },
+    {
+      "name": "an empty onClick is no tap, so the image is decorative",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "empty_tap", "src": "empty_tap", "onClick": "" } ] },
+      "roles": { "empty_tap": "decorative" }
+    },
+    {
+      "name": "a blank, an empty binding and an empty onclick array are no tap either",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "blank_tap", "src": "blank_tap", "onClick": "   " }, { "type": "Image", "id": "empty_binding", "src": "empty_binding", "onClick": "@{}" }, { "type": "Image", "id": "empty_array", "src": "empty_array", "onclick": [] }, { "type": "Image", "id": "blank_array", "src": "blank_array", "onclick": [ "" ] } ] },
+      "roles": { "blank_tap": "decorative", "empty_binding": "decorative", "empty_array": "decorative", "blank_array": "decorative" }
+    },
+    {
+      "name": "a tap disabled by enabled: false is no tap",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "disabled_tap", "src": "disabled_tap", "onClick": "@{onOpen}", "enabled": false } ] },
+      "roles": { "disabled_tap": "decorative" }
+    },
+    {
+      "name": "a tap gated shut by canTap: false is no tap",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "shut_tap", "src": "shut_tap", "onClick": "@{onOpen}", "canTap": false } ] },
+      "roles": { "shut_tap": "decorative" }
+    },
+    {
+      "name": "a bound canTap still taps: the gate opens at run time",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "gated_tap", "src": "gated_tap", "onClick": "@{onOpen}", "canTap": "@{canOpen}" } ] },
+      "roles": { "gated_tap": "control" }
+    },
+    {
+      "name": "an empty, disabled or shut tappable around the image is not its control",
+      "layout": { "type": "View", "child": [ { "type": "View", "onClick": "", "child": [ { "type": "Image", "id": "in_empty", "src": "in_empty" } ] }, { "type": "View", "onClick": "@{onOpen}", "enabled": false, "child": [ { "type": "Image", "id": "in_disabled", "src": "in_disabled" } ] }, { "type": "View", "onClick": "@{onOpen}", "canTap": false, "child": [ { "type": "Image", "id": "in_shut", "src": "in_shut" } ] } ] },
+      "roles": { "in_empty": "decorative", "in_disabled": "decorative", "in_shut": "decorative" }
+    },
+    {
+      "name": "the nearest tappable that taps decides, past a shut one",
+      "layout": { "type": "View", "onClick": "@{onOpen}", "child": [ { "type": "Label", "text": "open_label" }, { "type": "View", "onClick": "@{onInner}", "canTap": false, "child": [ { "type": "Image", "id": "past_shut", "src": "past_shut" } ] } ] },
+      "roles": { "past_shut": "decorative" }
+    },
+    {
+      "name": "a blank or disabled long press is no action",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "blank_hold", "src": "blank_hold", "onLongPress": "   " }, { "type": "Image", "id": "disabled_hold", "src": "disabled_hold", "onLongPress": "@{onHold}", "enabled": false } ] },
+      "roles": { "blank_hold": "decorative", "disabled_hold": "decorative" }
+    },
+    {
+      "name": "a tap stopped by userInteractionEnabled: false is no tap, on the image and inside a node with it",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "stopped_tap", "src": "stopped_tap", "onClick": "@{onOpen}", "userInteractionEnabled": false }, { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "Image", "id": "in_stopped", "src": "in_stopped", "onClick": "@{onOpen}" } ] } ] },
+      "roles": { "stopped_tap": "decorative", "in_stopped": "decorative" }
+    },
+    {
+      "name": "a tappable inside a node with userInteractionEnabled: false is not the image's control",
+      "layout": { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "View", "onClick": "@{onOpen}", "child": [ { "type": "Image", "id": "under_stopped", "src": "under_stopped" } ] } ] },
+      "roles": { "under_stopped": "decorative" }
+    },
+    {
+      "name": "the tappable around a node with userInteractionEnabled: false is still the image's control",
+      "layout": { "type": "View", "onClick": "@{onOpen}", "child": [ { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "Image", "id": "past_stopped", "src": "past_stopped" } ] } ] },
+      "roles": { "past_stopped": "control" }
+    },
+    {
+      "name": "a bound userInteractionEnabled still taps: the gate opens at run time",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "bound_stop", "src": "bound_stop", "onClick": "@{onOpen}", "userInteractionEnabled": "@{isActive}" } ] },
+      "roles": { "bound_stop": "control" }
+    },
+    {
+      "name": "a long press stopped by userInteractionEnabled: false is no action, on the image and inside a node with it",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "stopped_hold", "src": "stopped_hold", "onLongPress": "@{onHold}", "userInteractionEnabled": false }, { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "Image", "id": "hold_in_stopped", "src": "hold_in_stopped", "onLongPress": "@{onHold}" } ] } ] },
+      "roles": { "stopped_hold": "decorative", "hold_in_stopped": "decorative" }
+    },
+    {
+      "name": "a long press inside a node with userInteractionEnabled: false is not the image's control",
+      "layout": { "type": "View", "userInteractionEnabled": false, "child": [ { "type": "View", "onLongPress": "@{onHold}", "child": [ { "type": "Image", "id": "under_stopped_hold", "src": "under_stopped_hold" } ] } ] },
+      "roles": { "under_stopped_hold": "decorative" }
+    },
+    {
+      "name": "a long press under a bound userInteractionEnabled still operates: the gate opens at run time",
+      "layout": { "type": "View", "child": [ { "type": "Image", "id": "bound_hold", "src": "bound_hold", "onLongPress": "@{onHold}", "userInteractionEnabled": "@{isActive}" } ] },
+      "roles": { "bound_hold": "control" }
+    },
+    {
+      "name": "an AsyncImage with no alt that operates a tap is a control: an AsyncImage is drawn as a NetworkImage (type_synonyms.json)",
+      "layout": { "type": "View", "child": [ { "type": "AsyncImage", "id": "async_tap", "url": "https://example.invalid/x.png", "onClick": "@{onOpen}" } ] },
+      "roles": { "async_tap": "control" }
+    },
+    {
+      "name": "a NetworkImageView with an alt is labelled: a NetworkImageView is drawn as a NetworkImage",
+      "layout": { "type": "View", "child": [ { "type": "NetworkImageView", "id": "labelled_view", "url": "https://example.invalid/x.png", "alt": "Logo" } ] },
+      "roles": { "labelled_view": "label" }
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "type": "View",
+  "id": "cg_ir_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 6,
+  "child": [
+    {
+      "data": [
+        {
+          "name": "rows",
+          "class": "CollectionDataSource",
+          "defaultValue": {
+            "sections": [
+              {
+                "cells": [
+                  {
+                    "title": "i0"
+                  },
+                  {
+                    "title": "i1"
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_io_list_none_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_io_list_none",
+          "layout": "vertical",
+          "width": 300,
+          "height": 100,
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "listStyle": "plain"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_io_list_start30_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_io_list_start30",
+          "layout": "vertical",
+          "width": 300,
+          "height": 100,
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "listStyle": "plain",
+          "insets": [
+            0,
+            0,
+            0,
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_io_list_top10_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_io_list_top10",
+          "layout": "vertical",
+          "width": 300,
+          "height": 100,
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "listStyle": "plain",
+          "insets": [
+            10,
+            0,
+            0,
+            0
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_io_listclass_none_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_io_listclass_none",
+          "layout": "vertical",
+          "width": 300,
+          "height": 100,
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "cellClasses": [
+            "conformance_cell"
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_io_listclass_start30_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_io_listclass_start30",
+          "layout": "vertical",
+          "width": 300,
+          "height": 100,
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "cellClasses": [
+            "conformance_cell"
+          ],
+          "insets": [
+            0,
+            0,
+            0,
+            30
+          ]
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_io_pager_start30_box",
+      "orientation": "vertical",
+      "width": 300,
+      "height": "wrapContent",
+      "child": [
+        {
+          "type": "Collection",
+          "id": "cg_io_pager_start30",
+          "layout": "horizontal",
+          "width": 300,
+          "height": 44,
+          "background": "#CCE0FF",
+          "items": "@{rows}",
+          "sections": [
+            {
+              "cell": "conformance_cell"
+            }
+          ],
+          "paging": true,
+          "insets": [
+            0,
+            0,
+            0,
+            30
+          ]
+        }
+      ]
+    }
+  ]
+}

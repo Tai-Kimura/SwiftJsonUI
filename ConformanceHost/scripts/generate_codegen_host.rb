@@ -1,0 +1,498 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+#
+# generate_codegen_host.rb — build the CODEGEN side of the conformance host.
+#
+# The dynamic host renders fixture layouts through DynamicView at runtime;
+# production apps ship sjui-GENERATED SwiftUI code. This script makes the
+# generated pipeline hostable so `jui conformance parity` can prove
+# dynamic ≡ codegen per fixture:
+#
+#   1. Stages every ios-applicable VISUAL fixture layout under
+#      CodegenStaging/Layouts/ as fx_NNNN.json (stable synthetic names —
+#      fixture ids collide as Swift type names, indices never do; the web
+#      host established the pattern in conformance/hosts/web).
+#   2. Runs `sjui build` (sjui_tools — the exact production SwiftUI codegen
+#      path) over the staging dir: View/FxNNNN/FxNNNNGeneratedView.swift,
+#      Data/FxNNNNData.swift, ResourceManager/{String,Color}Manager.swift.
+#   3. Emits CodegenStaging/CodegenFixtureRegistry.swift — fixture id →
+#      generated view — which scripts/generate_project.rb compiles into the
+#      app INSTEAD of the default nil registry, plus codegen-map.json for
+#      diagnostics.
+#
+# Environment:
+#   CONFORMANCE_DIR   conformance directory (manifest.json, fixtures/) [required]
+#   SJUI_TOOLS_PATH   sjui_tools checkout (default: $CONFORMANCE_DIR/../sjui_tools)
+#
+# Everything under CodegenStaging/ is a build artifact (@generated, gitignored).
+#
+
+require 'fileutils'
+require 'json'
+require 'set'
+require_relative 'codegen_host_emit'
+require_relative 'codegen_build_dir'
+
+host_dir = File.expand_path('..', __dir__)
+conformance_dir = ENV['CONFORMANCE_DIR'] or abort 'error: CONFORMANCE_DIR is not set'
+sjui_tools = ENV['SJUI_TOOLS_PATH'] || File.expand_path('../sjui_tools', conformance_dir)
+sjui_bin = File.join(sjui_tools, 'bin', 'sjui')
+abort "error: sjui_tools not found: #{sjui_bin} (set SJUI_TOOLS_PATH)" unless File.file?(sjui_bin)
+
+manifest_path = File.join(conformance_dir, 'manifest.json')
+abort "error: manifest not found: #{manifest_path}" unless File.file?(manifest_path)
+manifest = JSON.parse(File.read(manifest_path))
+
+# The sjui build runs in a NEUTRAL tmp dir: ProjectFinder walks parents for
+# an .xcodeproj before honoring a cwd Package.swift, so any staging inside
+# ConformanceHost/ would resolve the source root to the host itself
+# (observed: "No JSON files found in .../ConformanceHost/Layouts"). Build
+# where no ancestor carries a project file, then copy the outputs in-tree.
+# A directory of this run's own (codegen_build_dir.rb): it was one fixed
+# /tmp path, and two runs at once emptied each other's.
+build_dir, owned_build_dir = CodegenBuildDir.for_run
+at_exit { FileUtils.rm_rf(build_dir) if owned_build_dir }
+staging = File.join(host_dir, 'CodegenStaging')
+FileUtils.rm_rf(staging)
+layouts_dir = File.join(build_dir, 'Layouts')
+FileUtils.mkdir_p(layouts_dir)
+FileUtils.mkdir_p(staging)
+
+# ---------------------------------------------------------------- selection
+# Parity is a visual question: codegen screenshot vs the dynamic baseline.
+# - class visual only (interactive drives dynamic bindings; assertable has
+#   no screenshot; controls ARE class visual and carry baseline hashes).
+# - Embed companions resolve screens through the dynamic loader — hosting
+#   them in codegen needs the generated-screen resolution story from the
+#   navigation layer. Skipped with a recorded reason; the parity ledger
+#   carries them as 'missing' entries with this justification.
+# Fixtures are staged unless something about them cannot run here. CLASS is
+# not that something.
+#
+# The class filter excluded `declaration-only` and `interactive` wholesale, on
+# the stated grounds that interactive "drives bindings". Measured against the
+# manifest, that reason does not describe what it excluded: of 36 interactive
+# fixtures 20 drive nothing at all — they are `waitFor` plus an assertion, and
+# 12 of those carry no state vars either. Three of them
+# (`common/visibility__binding_{visible,invisible,gone}`) were measured passing
+# on the dynamic face while being unrunnable here, which is the shape of a
+# fixture kept out by a rationale that does not fit it.
+#
+# So the predicate is what it was always meant to be: a fixture that needs a
+# DRIVER (tap / input / swipe / longPress / selectOption) cannot run on a host
+# with no driver, and everything else can. Class is left to describe what a
+# fixture claims, not where it may run.
+DRIVER_ACTIONS = %w[tap longPress swipe input selectOption].freeze
+
+# Whether this fixture's steps ask for an interaction the codegen host cannot
+# perform. Read from the test file rather than inferred from `class`, because
+# the class turned out not to predict it.
+def drives_input?(conformance_dir, fixture)
+  rel = fixture['test'].to_s
+  return false if rel.empty?
+
+  path = File.join(conformance_dir, rel)
+  return false unless File.file?(path)
+
+  test = JSON.parse(File.read(path))
+  (test['cases'] || []).any? do |kase|
+    (kase['steps'] || []).any? { |step| DRIVER_ACTIONS.include?(step['action']) }
+  end
+rescue JSON::ParserError
+  # Unreadable is not "drives nothing" — stage it and let the run say so,
+  # rather than dropping it here where the output would not mention it.
+  false
+end
+
+entries = []
+skipped = []
+# Counted, not just skipped. `skipped` below records the fixtures this host
+# CHOSE not to stage for a stated reason; the class filter used to drop
+# whole classes with no trace at all, so the summary said "skipped 0" while
+# 86 fixtures were never hosted. A denominator nobody prints is a
+# denominator nobody checks: the cell-address contract turned out to be
+# asserted only on the dynamic face, and nothing in this output said so.
+by_class_excluded = Hash.new(0)
+manifest.fetch('fixtures', []).each do |fixture|
+  next unless (fixture['platforms'] || []).include?('ios')
+  # `assertable` too: those fixtures state their own expectation in steps,
+  # and the UITest side runs steps through the same executor whatever the
+  # class. Excluding them left the cell-address contract — the corpus's only
+  # `tapItem` among them — asserted on the dynamic face alone, with no way to
+  # get a codegen-side gate.
+  #
+  # `interactive` is NOT kept out either, despite what this comment said until
+  # the predicate below replaced the class filter. It said interactive "drives
+  # bindings through the dynamic state store", which stopped describing the
+  # code and left a false reason sitting next to a correct one.
+  if drives_input?(conformance_dir, fixture)
+    by_class_excluded[fixture['class'].to_s] += 1
+    skipped << { 'id' => fixture['id'],
+                 'reason' => 'needs driver interaction (tap/input/swipe/longPress/selectOption)' }
+    next
+  end
+  mode = fixture['mode']
+  mode_values =
+    case mode
+    when String then [mode]
+    when Hash then mode.values.flatten
+    else []
+    end
+  if !mode_values.empty? && !mode_values.include?('swiftui')
+    skipped << { 'id' => fixture['id'], 'reason' => "mode #{mode_values.join(',')} not hosted" }
+    next
+  end
+  # Companions split by directory: __screens/ layouts are Embed screens the
+  # generated code cannot resolve by name (dynamic-loader navigation story) —
+  # still skipped. __cells/ layouts are Collection cell views: staging them
+  # under their bare name is all codegen needs — sjui build generates
+  # ConformanceCellView from conformance_cell.json and the collection code
+  # references exactly that struct.
+  screen_companions = (fixture['companions'] || []).reject { |c| c.include?('__cells/') }
+  if screen_companions.any?
+    skipped << { 'id' => fixture['id'], 'reason' => 'embed-companion resolution not hosted in codegen yet' }
+    next
+  end
+  # Handlers are the second half of the interactive contract
+  # (INTERACTIVE_HOST_CONTRACT.md §2). `set` is wired below. `embed` drives
+  # the EmbedNavigatorRegistry stack, which this face has no path to — its
+  # embed companions are already unhosted, just above.
+  #
+  # Recorded rather than hosted-and-silently-dead: a fixture whose handler
+  # never fires still renders, still asserts, and reports the PRE-handler
+  # value. That is exactly how the first hosted handler fixture failed —
+  # `Expected 'fired', Actual 'ready'` — and nothing in the staging summary
+  # said the handler had no wiring.
+  unless CodegenHostEmit.wirable?((fixture['state'] || {})['handlers'])
+    skipped << { 'id' => fixture['id'],
+                 'reason' => 'handler kind not wired on the codegen face (only `set` is)' }
+    next
+  end
+  entries << fixture
+end
+
+entries.each_with_index do |fixture, i|
+  FileUtils.cp(
+    File.join(conformance_dir, fixture['layout']),
+    File.join(layouts_dir, format('fx_%04d.json', i + 1))
+  )
+end
+
+cell_companions = entries
+  .flat_map { |f| f['companions'] || [] }
+  .select { |c| c.include?('__cells/') }
+  .uniq
+  .sort
+cell_companions.each do |companion|
+  src = File.join(conformance_dir, companion)
+  abort "error: cell companion layout missing: #{companion}" unless File.file?(src)
+  bare = File.basename(companion).sub(/\.layout\.json\z/, '') + '.json'
+  FileUtils.cp(src, File.join(layouts_dir, bare))
+end
+puts "[codegen-host] staged #{entries.size} fixture layout(s) + #{cell_companions.size} cell companion(s), skipped #{skipped.size}"
+
+# Probe layouts (ProbeLayouts/*.json) are not fixtures — no baseline, no parity
+# entry. They are built here so a probe's UI test measures the sjui-GENERATED
+# shape as well as the Dynamic one (TapIdentifierOnceView asks
+# probeView(named:) for its generated half). Staged under their own names,
+# which cannot collide with fx_NNNN.
+probe_layouts = Dir[File.join(host_dir, 'ProbeLayouts', '*.json')].sort
+probe_layouts.each { |src| FileUtils.cp(src, File.join(layouts_dir, File.basename(src))) }
+# A probe's Collection cells (ProbeLayouts/cells/<cell>.json): staged beside
+# the probes under their bare names, as a fixture's __cells/ companions are,
+# so sjui build generates the cell and the <Cell>View its Collection calls.
+# Not probes themselves — no probeView case, no host.
+probe_cells = Dir[File.join(host_dir, 'ProbeLayouts', 'cells', '*.json')].sort
+probe_cells.each do |src|
+  dest = File.join(layouts_dir, File.basename(src))
+  abort "error: probe cell #{File.basename(src)} collides with a staged layout" if File.exist?(dest)
+
+  FileUtils.cp(src, dest)
+end
+puts "[codegen-host] staged #{probe_layouts.size} probe layout(s) + #{probe_cells.size} probe cell layout(s)"
+# The tool names its own denominator, per PREDICATE rather than as one total.
+# `skipped N` alone says how many were dropped and nothing about why, and a
+# reader cannot tell a deliberate exclusion from a fixture that fell through —
+# which is how 120 came to be unhosted while the summary read "skipped 0".
+unless skipped.empty?
+  skipped.group_by { |s| s['reason'] }.sort_by { |reason, rows| [-rows.size, reason] }
+         .each do |reason, rows|
+    puts "[codegen-host]   not hosted: #{rows.size} — #{reason}"
+  end
+  puts "[codegen-host]   ^ these run on the dynamic face only; whatever they assert is unmeasured here"
+end
+unless by_class_excluded.empty?
+  breakdown = by_class_excluded.sort.map { |cls, n| "#{cls} #{n}" }.join(', ')
+  puts "[codegen-host]   driver-requiring fixtures by class: #{breakdown} " \
+       "(class does not decide hosting any more — it is recorded to show WHICH classes still need a driver)"
+end
+
+# ------------------------------------------------------- L1 canonicalization
+# Production codegen never sees L0: `jui build` distributes layouts
+# L1-canonicalized (alias → canonical rewrite + $jui marker; build_cmd.py
+# _distribute_layouts, default ON since SSoT phase 14). This staging fed the
+# RAW fixture files straight to sjui build, so a declared attribute ALIAS
+# reached the converters unresolved — the dynamic host tolerates L0 (the
+# typed extraction carries alias fallbacks), codegen by contract does not.
+# Measured: SafeAreaView_safeAreaInsetPositions__alias_edges emitted no
+# .safeAreaPadding at all on this path (ios parity, run 4, distance 10)
+# while the __static spelling emitted it — a parity red that was really the
+# harness feeding codegen input outside its contract.
+#
+# Same normalizer, same tables: jui_tools is checked out next to the
+# conformance dir in every environment that runs this script.
+jui_tools = ENV['JUI_TOOLS_PATH'] || File.expand_path('../jui_tools', conformance_dir)
+if File.directory?(jui_tools)
+  norm = system('python3', '-c', <<~PY)
+    import glob, json, sys
+    sys.path.insert(0, #{jui_tools.inspect})
+    from jui_cli.core.normalizer import Canonicalizer
+    from jui_cli.core.normalizer.alias_table import AliasTable
+    table = AliasTable.from_file()
+    if table.is_empty():
+        # Marker-only stamping corrupts canonical-only consumers (same
+        # refusal as build_cmd.py) — leave the staging L0 and say so.
+        sys.exit('attribute_definitions.json not found near jui_tools')
+    canonicalizer = Canonicalizer(table)
+    for path in sorted(glob.glob(#{File.join(layouts_dir, '*.json').inspect})):
+        with open(path) as f:
+            tree = json.load(f)
+        tree, warnings = canonicalizer.canonicalize(tree, source=path)
+        for warning in warnings:
+            print(f"  WARNING [normalize]: {warning}")
+        with open(path, 'w') as f:
+            json.dump(tree, f, ensure_ascii=False, indent=2)
+            f.write('\\n')
+    print(f"[codegen-host] L1-canonicalized {len(glob.glob(#{File.join(layouts_dir, '*.json').inspect}))} staged layout(s)")
+  PY
+  abort 'error: L1 canonicalization of staged layouts failed' unless norm
+else
+  abort "error: jui_tools not found: #{jui_tools} (set JUI_TOOLS_PATH) — " \
+        'staging must be L1-canonicalized before sjui build'
+end
+
+# ---------------------------------------------------------------- sjui build
+File.write(File.join(build_dir, 'sjui.config.json'), JSON.pretty_generate(
+  'mode' => 'swiftui',
+  'project_name' => 'ConformanceCodegen',
+  'source_directory' => '',
+  'layouts_directory' => 'Layouts',
+  'styles_directory' => 'Styles',
+  'resources_directory' => 'Resources',
+  'resource_manager_directory' => 'ResourceManager',
+  # The generated views resolve text through StringManager →
+  # NSLocalizedString; without a bundled .strings table every label
+  # renders its KEY (measured: 338/499 parity mismatches, all
+  # "fx_0013_sample"-style). The extractor only writes tables that
+  # already exist, so seed one and bundle it into the host app.
+  'string_files' => ['Resources/Localizable.strings'],
+  # Each id hands its layout box up to the host's `frame:<id>` measuring
+  # element (SwiftJsonUI jsonUIConformanceFrame), which the frames gate
+  # reads. sjui emits `.jsonUIConformanceFrame(id)` only with this key, so
+  # an app's generated code does not carry it.
+  'conformance_frames' => true,
+  'swiftui' => { 'output_directory' => 'Generated' }
+) + "\n")
+FileUtils.mkdir_p(File.join(build_dir, 'Resources'))
+File.write(File.join(build_dir, 'Resources', 'Localizable.strings'), "")
+# sjui build refuses to run without a project file; the staging dir is not a
+# real app, so a marker package satisfies the lookup.
+File.write(File.join(build_dir, 'Package.swift'), <<~SWIFT)
+  // swift-tools-version:5.9
+  // marker so sjui build accepts this staging dir as a project root
+  import PackageDescription
+  let package = Package(name: "ConformanceCodegenStaging")
+SWIFT
+
+# Custom components a probe layout uses (ProbeLayouts/extensions/
+# components.json: [{"name", "mode": "container"|"leaf"|absent, "attributes"}]).
+# A project scaffolds these with `sjui g converter`, which writes the converter
+# into the tool's own views/extensions — so the tool is COPIED into the build
+# dir (links dereferenced) and scaffolded there, and the build runs that copy.
+# The checkout named by SJUI_TOOLS_PATH is never written to. The Swift views
+# the converters call are compiled into the app from App/ (the same files the
+# Dynamic adapters draw).
+build_bin = sjui_bin
+components_file = File.join(host_dir, 'ProbeLayouts', 'extensions', 'components.json')
+if File.file?(components_file)
+  tool_copy = File.join(build_dir, 'sjui_tools')
+  FileUtils.mkdir_p(tool_copy)
+  %w[bin lib].each do |d|
+    system('cp', '-RL', File.join(sjui_tools, d), tool_copy) or abort "error: could not copy sjui_tools/#{d}"
+  end
+  build_bin = File.join(tool_copy, 'bin', 'sjui')
+  components = JSON.parse(File.read(components_file))
+  components.each do |c|
+    flag = { 'container' => ['--container'], 'leaf' => ['--no-container'] }.fetch(c['mode'], [])
+    attrs = c['attributes'] ? ['--attributes', c['attributes']] : []
+    ok = system({ 'PWD' => build_dir }, RbConfig.ruby, build_bin, 'g', 'converter', c['name'], *flag, *attrs, '--force',
+                chdir: build_dir, out: File::NULL, err: File::NULL)
+    abort "error: sjui g converter #{c['name']} failed" unless ok
+  end
+  puts "[codegen-host] scaffolded #{components.size} custom component(s) into a copy of sjui_tools"
+end
+
+puts "[codegen-host] running sjui build (#{sjui_tools})"
+build_log = File.join(host_dir, 'codegen-build.log')
+ok = system({ 'PWD' => build_dir }, RbConfig.ruby, build_bin, 'build',
+            chdir: build_dir, out: build_log, err: %i[child out])
+unless ok
+  abort "error: sjui build failed — see #{build_log}"
+end
+
+# Copy build outputs into the (gitignored) in-tree staging so the generated
+# xcodeproj references stable repo-relative paths. ViewModel holds what
+# sjui build scaffolds for a cell layout from jsonui-cli 1.9.6 (the cell
+# View it writes calls <Cell>ViewModel); an older sjui leaves it absent.
+%w[View Data ViewModel ResourceManager].each do |dir|
+  src = File.join(build_dir, dir)
+  FileUtils.cp_r(src, File.join(staging, dir)) if File.directory?(src)
+end
+strings_table = File.join(build_dir, 'Resources', 'Localizable.strings')
+if File.file?(strings_table)
+  FileUtils.mkdir_p(File.join(staging, 'Resources'))
+  FileUtils.cp(strings_table, File.join(staging, 'Resources', 'Localizable.strings'))
+end
+
+# ---------------------------------------------------------------- registry
+generated = 0
+lines = []
+lines << '// @generated by scripts/generate_codegen_host.rb — DO NOT EDIT'
+lines << '// Fixture id → sjui-generated SwiftUI view (production codegen pipeline).'
+lines << '// Compiled in place of CodegenFixtureRegistryDefault.swift by generate_project.rb.'
+lines << ''
+lines << 'import SwiftUI'
+lines << 'import SwiftJsonUI'
+lines << ''
+hosts = []
+cases = []
+entries.each_with_index do |fixture, i|
+  name = format('Fx%04d', i + 1)
+  view_file = File.join(staging, 'View', name, "#{name}GeneratedView.swift")
+  has_view = File.file?(view_file)
+  # screenId: the screen id sjui gives the staged layout (its basename) —
+  # the key a testBridge payload and `state` use on this face
+  # (INTERACTIVE_HOST_CONTRACT.md section 6).
+  fixture['_codegen'] = { 'component' => name, 'generated' => has_view, 'screenId' => format('fx_%04d', i + 1) }
+  next unless has_view
+
+  generated += 1
+  layout_data = JSON.parse(File.read(File.join(conformance_dir, fixture['layout'])))['data']
+  hosts << CodegenHostEmit.host_source(
+    name, CodegenHostEmit.with_arity((fixture['state'] || {})['handlers'], layout_data),
+    after_first_draw: (fixture['state'] || {})['afterFirstDraw'], fixture_id: fixture['id']
+  )
+  cases << "        case #{fixture['id'].inspect}: return AnyView(#{name}Host())"
+end
+
+lines << 'enum CodegenFixtureRegistry {'
+lines << '    // Same launch contract real consumers wire: named colors resolve'
+lines << '    // through SwiftJsonUIConfiguration → the generated ColorManager.'
+lines << '    static func activate() {'
+lines << '        SwiftJsonUIConfiguration.shared.colorProvider = { key in'
+lines << '            guard let key = key as? String else { return nil }'
+lines << '            return ColorManager.swiftui.color(for: key)'
+lines << '        }'
+lines << '    }'
+lines << ''
+lines << '    static func view(for fixtureId: String) -> AnyView? {'
+lines << '        switch fixtureId {'
+lines.concat(cases)
+lines << '        default: return nil'
+lines << '        }'
+lines << '    }'
+lines << ''
+lines << '    /// Probe layouts (ProbeLayouts/), by file name without `.json`.'
+lines << '    static func probeView(named name: String) -> AnyView? {'
+lines << '        switch name {'
+probe_layouts.each do |src|
+  base = File.basename(src, '.json')
+  pascal = base.split('_').map(&:capitalize).join
+  unless File.file?(File.join(staging, 'View', pascal, "#{pascal}GeneratedView.swift"))
+    abort "error: probe layout #{File.basename(src)} produced no generated view (View/#{pascal}/)"
+  end
+  # A probe's handlers (ProbeLayouts/handlers/<probe>.json): the manifest's
+  # `state.handlers` shape — its buttons set data the way a fixture's do — or
+  # an object that also counts and watches through the probe's link
+  # (CodegenHostEmit.probe_manifest, App/ProbeHostLink.swift).
+  handlers_file = File.join(host_dir, 'ProbeLayouts', 'handlers', File.basename(src))
+  manifest = CodegenHostEmit.probe_manifest(File.file?(handlers_file) ? JSON.parse(File.read(handlers_file)) : [])
+  handlers = CodegenHostEmit.with_arity(manifest['handlers'], JSON.parse(File.read(src))['data'])
+  hosts << CodegenHostEmit.host_source(pascal, handlers, watch: manifest['watch'], writes: manifest['writes'])
+  lines << "        case #{base.inspect}: return AnyView(#{pascal}Host())"
+end
+lines << '        default: return nil'
+lines << '        }'
+lines << '    }'
+lines << '}'
+lines << ''
+lines.concat(hosts)
+
+# Cell companion wrappers. sjui build emits <Cell>GeneratedView + <Cell>Data;
+# the `<Cell>View(data: Any)` wrapper the generated collection code calls is
+# consumer scaffold (user-owned in real projects), so the host synthesizes
+# the standard minimal shape: map the cell dictionary through
+# Data.update(dictionary:), hand a Binding to the generated view. Equatable
+# is required — the collection call site chains .equatable().
+#
+# From jsonui-cli 1.9.6 sjui build scaffolds that wrapper itself when no
+# Swift file declares it (sjui-build-does-not-scaffold-cell-views-for-hand-
+# written-cell-layouts), so a staging built by it already has
+# View/<Cell>/<Cell>View.swift; synthesizing a second one made every
+# codegen run fail with "invalid redeclaration of 'ConformanceCellView'"
+# (measured 2026-10-03). The wrapper is written only where the build did
+# not declare one, so the pinned (older) and newer sjui both stage.
+declared_in_staging = Dir.glob(File.join(staging, '**', '*.swift')).flat_map do |path|
+  File.read(path).scan(/^\s*(?:public\s+)?struct\s+([A-Za-z_][A-Za-z0-9_]*)\b/).flatten
+end.to_set
+cell_companions.each do |companion|
+  pascal = File.basename(companion).sub(/\.layout\.json\z/, '').split('_').map(&:capitalize).join
+  if declared_in_staging.include?("#{pascal}View")
+    puts "[codegen-host] #{pascal}View declared by sjui build; not synthesized"
+    next
+  end
+  lines << ''
+  lines << <<~SWIFT
+    struct #{pascal}View: View, Equatable {
+        @State private var data: #{pascal}Data
+        private let cellKey: String
+        init(data: Any) {
+            var d = #{pascal}Data()
+            if let dict = data as? [String: Any] { d.update(dictionary: dict) }
+            _data = State(initialValue: d)
+            cellKey = String(describing: data)
+        }
+        static func == (lhs: Self, rhs: Self) -> Bool { lhs.cellKey == rhs.cellKey }
+        var body: some View { #{pascal}GeneratedView(data: $data) }
+    }
+  SWIFT
+end
+File.write(File.join(staging, 'CodegenFixtureRegistry.swift'), lines.join("\n"))
+
+map = {
+  'generated' => generated,
+  'staged' => entries.size,
+  'skipped' => skipped,
+  'fixtures' => entries.map { |f| [f['id'], f['_codegen']] }.to_h
+}
+File.write(File.join(staging, 'codegen-map.json'), JSON.pretty_generate(map) + "\n")
+
+# Also into Resources/, so the UITest can read it at run time. Staging and
+# the test used to judge "is this fixture hosted?" by different means: this
+# script drops fixtures for recorded reasons (embed companions, unhosted
+# modes), while the test decided by class alone. Widening the class filter
+# exposed the gap — 7 fixtures the generator had deliberately skipped were
+# still attempted, and failed as "layout failed to load/decode in host",
+# which reads like a defect in the layout rather than a fixture that was
+# never staged. One file, read by both, ends that.
+FileUtils.mkdir_p(File.join(host_dir, 'Resources'))
+File.write(File.join(host_dir, 'Resources', 'codegen-map.json'), JSON.pretty_generate(map) + "\n")
+
+missing = entries.reject { |f| f.dig('_codegen', 'generated') }
+puts "[codegen-host] #{generated}/#{entries.size} generated views; registry written"
+unless missing.empty?
+  puts "[codegen-host] fixtures WITHOUT a generated view (parity will report them as missing):"
+  missing.each { |f| puts "  - #{f['id']}" }
+end
+puts "[codegen-host] next: ruby scripts/generate_project.rb && HOST_MODE=codegen scripts/run_conformance.sh"

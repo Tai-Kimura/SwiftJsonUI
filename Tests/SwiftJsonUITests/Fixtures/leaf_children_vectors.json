@@ -1,0 +1,94 @@
+{
+  "_comment": "What Dynamic shows in a leaf's place when a layout gives it children — SwiftJsonUI LeafChildren.rejection and the Dynamic wrapper `kjui g converter <Name> --no-container` writes. One sentence on both platforms; this table binds them (SwiftJsonUI copies it byte-identical into Tests/SwiftJsonUITests/Fixtures/; kjui_tools/spec/compose/generators/leaf_wrapper_message_spec.rb runs the generated Kotlin against it). The build's own refusal (LayoutValidator.check_leaf_children) says the same with 'would be dropped'. Ticket sjui-leaf-custom-component-cannot-reject-children.",
+  "cases": [
+    {
+      "name": "an id, two children — one with an id, one an include",
+      "component": {
+        "type": "Leaf",
+        "id": "map",
+        "child": [
+          {
+            "type": "Label",
+            "id": "pin",
+            "text": "x"
+          },
+          {
+            "include": "badge"
+          }
+        ]
+      },
+      "expected": "'Leaf' (id=map) takes no children — it is declared a leaf, so child[0] (id=pin), child[1] are not drawn. Remove the children, or regenerate the component with --container."
+    },
+    {
+      "name": "no id, the children key",
+      "component": {
+        "type": "Leaf",
+        "children": [
+          {
+            "type": "Label",
+            "id": "pin",
+            "text": "x"
+          }
+        ]
+      },
+      "expected": "'Leaf' takes no children — it is declared a leaf, so children[0] (id=pin) is not drawn. Remove the children, or regenerate the component with --container."
+    },
+    {
+      "name": "a data definition beside a child is not a child",
+      "component": {
+        "type": "Leaf",
+        "id": "a",
+        "child": [
+          {
+            "data": [
+              {
+                "name": "x",
+                "class": "String"
+              }
+            ]
+          },
+          {
+            "type": "Label",
+            "text": "x"
+          }
+        ]
+      },
+      "expected": "'Leaf' (id=a) takes no children — it is declared a leaf, so child[1] is not drawn. Remove the children, or regenerate the component with --container."
+    },
+    {
+      "name": "no children",
+      "component": {
+        "type": "Leaf",
+        "id": "a"
+      },
+      "expected": null
+    },
+    {
+      "name": "an empty list",
+      "component": {
+        "type": "Leaf",
+        "id": "a",
+        "child": []
+      },
+      "expected": null
+    },
+    {
+      "name": "only a data definition",
+      "component": {
+        "type": "Leaf",
+        "id": "a",
+        "child": [
+          {
+            "data": [
+              {
+                "name": "x",
+                "class": "String"
+              }
+            ]
+          }
+        ]
+      },
+      "expected": null
+    }
+  ]
+}

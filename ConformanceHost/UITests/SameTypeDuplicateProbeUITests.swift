@@ -1,0 +1,219 @@
+//
+//  SameTypeDuplicateProbeUITests.swift
+//  ConformanceHostUITests
+//
+//  Opt-in: TEST_RUNNER_SAME_TYPE_PROBE=1 in the xcodebuild process
+//  environment (the prefix is stripped before the runner sees it), and the
+//  `test` action — `test-without-building` ignores TEST_RUNNER_*.
+//
+//  Closes the half of the 1.9.5 -> 1.9.6 equivalence that reading the source
+//  cannot: with several same-typed elements under one identifier, 1.9.5
+//  takes the first of a TYPE-FILTERED enumeration and 1.9.6+ takes the first
+//  winner in the UNFILTERED `.any` enumeration. Whether those two
+//  enumerations agree is an internal property of XCTest, so it is measured.
+//
+//  ⚠️ `UITests/Vendor/` is gitignored: a result from this file means nothing
+//  unless reported with the vendored driver's tag and SHA. Run it against
+//  1.9.5, 1.9.6 and 1.9.7 — 1.9.5's answer is being MEASURED, not assumed
+//  correct, so the baseline is a reading rather than a premise.
+//
+//  Reading a failure:
+//    * self-checks fail          -> the fixture stopped isolating the axis
+//    * only the resolution fails -> the versions disagree; the printed
+//                                   DUP2_PROBE_RESULT names which element
+//                                   this version picked
+//
+
+import XCTest
+
+final class SameTypeDuplicateProbeUITests: XCTestCase {
+    private let retap = ProbeRetap("SameTypeDuplicate")
+
+    private let sharedIdentifier = "same_type_target"
+    private let expectedMatches = 4
+    /// The eight-candidate bound. Asserted to be OUT of play here so a
+    /// failure cannot be confused with fixture 1's axis.
+    private let bound = 8
+
+    private func result(_ app: XCUIApplication) -> String {
+        app.staticTexts["same_type_probe_result"].label
+    }
+
+    func testAllVersionsResolveTheSameOfSeveralSameTypedMatches() throws {
+        guard ProcessInfo.processInfo.environment["SAME_TYPE_PROBE"] == "1" else {
+            throw XCTSkip("same-type duplicate probe: run with the guard lifted, as the other probes are")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-sameTypeDuplicateProbe"]
+        app.launch()
+        XCTAssertTrue(
+            app.staticTexts["same_type_probe_result"].waitForExistence(timeout: 10),
+            "probe did not start")
+
+        let matches = app.descendants(matching: .any).matching(identifier: sharedIdentifier)
+        let total = matches.count
+
+        // ---- self-checks: is this arm still isolating the same-type axis? ----
+        XCTAssertEqual(
+            total, expectedMatches,
+            "FIXTURE: expected \(expectedMatches) elements sharing '\(sharedIdentifier)', found \(total)")
+        XCTAssertLessThanOrEqual(
+            total, bound,
+            "FIXTURE: \(total) matches exceeds the bound of \(bound) — a failure would be ambiguous "
+            + "between this axis and fixture 1's")
+
+        var types: [UInt] = []
+        var frames: [CGRect] = []
+        for index in 0..<total {
+            let element = matches.element(boundBy: index)
+            types.append(element.elementType.rawValue)
+            frames.append(element.frame)
+        }
+        print("DUP2_PROBE_TYPES total=\(total) types=\(types)")
+        print("DUP2_PROBE_FRAMES \(frames)")
+
+        // All one type: with no rank differences, only enumeration order can
+        // decide the winner, which is the question being asked.
+        XCTAssertTrue(
+            types.allSatisfy { $0 == XCUIElement.ElementType.button.rawValue },
+            "FIXTURE: expected every match to be .button so type cannot decide the winner; got \(types)")
+        // Identity must be observable, or "which one" is unanswerable.
+        XCTAssertEqual(
+            Set(frames.map { "\($0)" }).count, total,
+            "FIXTURE: matches do not occupy distinct frames, so the resolved one cannot be identified")
+
+        // ---- the measurement ----
+        retap.tap("same_type_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["same_type_probe_reset"].tap() }
+        XCTAssertEqual(result(app), "tapped: none", "reset did not take")
+
+        let executor = XCUITestActionExecutor(platform: "ios")
+        try executor.execute(step: TestStep(action: "tap", id: sharedIdentifier), in: app)
+
+        var fired = result(app)
+        if fired == "tapped: none", retap.spend("the driver's tap") {
+            try executor.execute(step: TestStep(action: "tap", id: sharedIdentifier), in: app)
+            fired = result(app)
+        }
+        print("DUP2_PROBE_RESULT \(fired)")
+
+        // Both rules reduce to "the first interactive element in tree order",
+        // so every version should land on index 0. Stated before running; a
+        // failure on ANY version — 1.9.5 included — is the finding.
+        XCTAssertEqual(
+            fired, "tapped: btn0",
+            "RESOLUTION: this driver picked \(fired) rather than the first match in tree order. "
+            + "If versions disagree here, 1.9.6's single-query rewrite is NOT equivalent to 1.9.5 "
+            + "for same-typed duplicates, and 1.9.7 does not fix it either")
+    }
+
+    /// The flat test above varies only SIBLING order. If the two
+    /// enumerations can diverge at all it is where document order and tree
+    /// depth disagree, so this arm puts the three matches at depths 2, 0
+    /// and 1 in that document order.
+    ///
+    /// It also compares the enumerations DIRECTLY rather than only through
+    /// the driver: 1.9.5 asks `descendants(matching: .button)`, 1.9.6+ asks
+    /// `descendants(matching: .any)` and picks the first winner. Those two
+    /// queries are run here side by side, which measures the open question
+    /// without depending on which driver is vendored.
+    func testEnumerationsAgreeWhenTheDuplicatesSitAtDifferentDepths() throws {
+        guard ProcessInfo.processInfo.environment["SAME_TYPE_PROBE"] == "1" else {
+            throw XCTSkip("same-type duplicate probe: run with the guard lifted, as the other probes are")
+        }
+        let identifier = "nested_type_target"
+        let app = XCUIApplication()
+        app.launchArguments = ["-sameTypeDuplicateProbe"]
+        app.launch()
+        XCTAssertTrue(
+            app.staticTexts["same_type_probe_result"].waitForExistence(timeout: 10),
+            "probe did not start")
+
+        let anyMatches = app.descendants(matching: .any).matching(identifier: identifier)
+        let total = anyMatches.count
+        XCTAssertEqual(total, 3, "FIXTURE: expected 3 nested matches, found \(total)")
+
+        var types: [UInt] = []
+        var frames: [CGRect] = []
+        for index in 0..<total {
+            let element = anyMatches.element(boundBy: index)
+            types.append(element.elementType.rawValue)
+            frames.append(element.frame)
+        }
+        print("DUP2_NESTED_TYPES total=\(total) types=\(types)")
+        print("DUP2_NESTED_FRAMES \(frames)")
+        XCTAssertTrue(
+            types.allSatisfy { $0 == XCUIElement.ElementType.button.rawValue },
+            "FIXTURE: expected every nested match to be .button; got \(types)")
+        XCTAssertEqual(
+            Set(frames.map { "\($0)" }).count, total,
+            "FIXTURE: nested matches do not occupy distinct frames, so identity is unobservable")
+
+        // Does the tree actually HAVE differing depths here? SwiftUI is free
+        // to flatten wrapper stacks that carry no accessibility role, and if
+        // it does, this arm is the flat arm again under another name. Depth
+        // is read from the snapshot's indentation, which is the only place
+        // XCUITest exposes it.
+        let depths = app.debugDescription
+            .split(separator: "\n")
+            .filter { $0.contains("identifier: '\(identifier)'") }
+            .map { $0.prefix { $0 == " " }.count }
+        print("DUP2_NESTED_DEPTHS \(depths)")
+        XCTAssertEqual(
+            depths.count, total,
+            "FIXTURE: found \(depths.count) snapshot lines for '\(identifier)' but \(total) matches; "
+            + "the depth reading is not describing the same elements")
+        XCTAssertGreaterThan(
+            Set(depths).count, 1,
+            "FIXTURE: all \(total) matches sit at the same tree depth \(depths) — SwiftUI flattened "
+            + "the wrapper stacks, so this arm is the flat sibling case again and says nothing new "
+            + "about depth")
+
+        // The two enumerations, side by side. This is the property that
+        // source reading could not settle.
+        let firstOfAny = anyMatches.element(boundBy: 0).frame
+        let firstOfTyped = app.descendants(matching: .button).matching(identifier: identifier).firstMatch.frame
+        print("DUP2_NESTED_ENUMERATIONS any[0]=\(firstOfAny) buttons.firstMatch=\(firstOfTyped)")
+        XCTAssertEqual(
+            firstOfAny, firstOfTyped,
+            "ENUMERATION: `.any` and `.button` disagree on which match comes first when the "
+            + "duplicates sit at different depths. 1.9.5 resolves via the typed query and 1.9.6+ "
+            + "via the unfiltered one, so they would tap DIFFERENT elements here")
+
+        // End to end: the vendored driver resolves the same one.
+        retap.tap("same_type_probe_reset", until: { result(app) == "tapped: none" }) { app.buttons["same_type_probe_reset"].tap() }
+        XCTAssertEqual(result(app), "tapped: none", "reset did not take")
+
+        let executor = XCUITestActionExecutor(platform: "ios")
+        try executor.execute(step: TestStep(action: "tap", id: identifier), in: app)
+
+        var fired = result(app)
+        if fired == "tapped: none", retap.spend("the driver's tap") {
+            try executor.execute(step: TestStep(action: "tap", id: identifier), in: app)
+            fired = result(app)
+        }
+        print("DUP2_NESTED_RESULT \(fired)")
+
+        // ⚠️ NOT asserted against a hardcoded index. Once real containers
+        // exist, XCUITest does not enumerate in document order: measured
+        // depths [16, 14, 16] with the FLAT sibling (y=340) enumerated
+        // before the deeper one drawn above it (y=300). That is a property
+        // of XCUITest, not a driver defect, and hardcoding "the topmost one"
+        // would assert the wrong thing.
+        //
+        // The invariant that matters is that the driver lands on the element
+        // both enumerations agree is first — whichever that turns out to be.
+        let firedIndex = fired.replacingOccurrences(of: "tapped: nested", with: "")
+        let firedElement = (0..<total)
+            .map { anyMatches.element(boundBy: $0) }
+            .first { $0.label.contains("nested \(firedIndex)") }
+        XCTAssertNotNil(
+            firedElement,
+            "FIXTURE: '\(fired)' does not name any of the nested matches, so the resolution cannot "
+            + "be checked against the enumeration")
+        XCTAssertEqual(
+            firedElement?.frame, firstOfAny,
+            "RESOLUTION: the driver tapped \(fired) at \(firedElement?.frame.debugDescription ?? "nil"), "
+            + "but both enumerations put \(firstOfAny) first. The driver is not resolving to the "
+            + "head of the enumeration it queries")
+    }
+}

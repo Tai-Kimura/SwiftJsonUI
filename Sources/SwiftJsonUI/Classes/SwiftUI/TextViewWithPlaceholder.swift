@@ -1,0 +1,337 @@
+//
+//  TextViewWithPlaceholder.swift
+//  SwiftJsonUI
+//
+//  SwiftUI implementation of TextView with placeholder support
+//
+
+import SwiftUI
+
+// PreferenceKey for height calculation
+struct HeightPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
+public struct TextViewWithPlaceholder: View {
+    /// The layout id, put on the TextEditor itself — not around the hint,
+    /// which would take it too (see View.leafAccessibilityIdentifier).
+    private let accessibilityIdentifier: String?
+    @SwiftUI.Binding var text: String
+    let hint: String?
+    let hintColor: Color
+    let hintFont: FontSpec
+    let hintFontSize: CGFloat?
+    let hintLineSpacing: CGFloat
+    let hideOnFocused: Bool
+    let fontSize: CGFloat
+    let fontColor: Color
+    let font: FontSpec
+    let backgroundColor: Color
+    let cornerRadius: CGFloat
+    let containerInset: EdgeInsets
+    let flexible: Bool
+    let minHeight: CGFloat?
+    let maxHeight: CGFloat?
+    
+    @FocusState private var isFocused: Bool
+    @State private var textHeight: CGFloat = 0
+
+    /// Optional external focus binding (e.g. the generated `data.<id>IsFocused`)
+    /// kept in two-way sync with the internal `@FocusState`, so a ViewModel can
+    /// drive focus (`data.xIsFocused = true` → focus + keyboard) and observe it.
+    private let externalFocus: SwiftUI.Binding<Bool>?
+    /// `autoFocus`: take the focus when the view appears (Dynamic's TextView;
+    /// the generated code sets its own `isFocused` binding on appear instead).
+    private let autoFocus: Bool
+
+    public init(
+        text: SwiftUI.Binding<String>,
+        hint: String? = nil,
+        hintColor: Color = Color.gray.opacity(0.6),
+        hintFont: String? = nil,
+        hintFontSize: CGFloat? = nil,
+        hintLineHeightMultiple: CGFloat? = nil,
+        hideOnFocused: Bool = true,
+        fontSize: CGFloat = 16,
+        fontColor: Color = .primary,
+        fontName: String? = nil,
+        backgroundColor: Color = Color(UIColor.systemBackground),
+        cornerRadius: CGFloat = 0,
+        containerInset: EdgeInsets = EdgeInsets(top: 8, leading: 5, bottom: 8, trailing: 5),
+        flexible: Bool = false,
+        minHeight: CGFloat? = nil,
+        maxHeight: CGFloat? = nil,
+        isFocused: SwiftUI.Binding<Bool>? = nil,
+        accessibilityIdentifier: String? = nil,
+        autoFocus: Bool = false
+    ) {
+        self.accessibilityIdentifier = accessibilityIdentifier
+        self.autoFocus = autoFocus
+        self._text = text
+        self.externalFocus = isFocused
+        self.hint = hint
+        self.hintColor = hintColor
+        self.hintFontSize = hintFontSize
+        self.hideOnFocused = hideOnFocused
+        self.fontSize = fontSize
+        self.fontColor = fontColor
+        self.backgroundColor = backgroundColor
+        self.cornerRadius = cornerRadius
+        self.containerInset = containerInset
+        self.flexible = flexible
+        self.minHeight = minHeight
+        self.maxHeight = maxHeight
+
+        // Calculate hint line spacing from lineHeightMultiple
+        // UIKit formula: lineSpacing = (lineHeightMultiple - 1) * fontSize
+        let effectiveHintFontSize = hintFontSize ?? fontSize
+        if let lineHeightMultiple = hintLineHeightMultiple, lineHeightMultiple > 1 {
+            self.hintLineSpacing = (lineHeightMultiple - 1) * effectiveHintFontSize
+        } else {
+            self.hintLineSpacing = 0
+        }
+
+        // Font construction goes through the configuration's `FontSpec`
+        // resolver, the same entry point Label's path uses.
+        //
+        // `fontFamily` is declared as "passed as the `family` field of
+        // `FontSpec` to `Configuration.Font.fontProvider`"
+        // (shared/core/attribute_definitions.json), and building
+        // `.custom(name, size:)` here bypassed the provider entirely: an app
+        // shipping a family through `fontProvider` had it honoured on a Label
+        // and ignored on a TextView. Without a provider `defaultFont(for:)`
+        // builds exactly the `.custom` / `.system` this used to, so the
+        // no-provider rendering is unchanged.
+        //
+        // Only `"bold"` is treated as a weight keyword, which is narrower than
+        // the vocabulary DynamicDecodingHelper accepts for Label
+        // (semibold/medium/light/…). That divergence is untouched here and
+        // reported separately — it is not the family gap this fixes.
+        // Specs, drawn through sjuiFont at the body (the provider and the text size rule, 2026-11-13).
+        func resolveFont(_ name: String?, size: CGFloat) -> FontSpec {
+            if name == "bold" {
+                return FontSpec(family: nil, weight: .bold, size: size)
+            }
+            return FontSpec(family: name, weight: nil, size: size)
+        }
+
+        self.hintFont = resolveFont(hintFont, size: effectiveHintFontSize)
+        self.font = resolveFont(fontName, size: fontSize)
+    }
+    
+    public var body: some View {
+        ZStack(alignment: .topLeading) {
+            // ヒント（プレースホルダー）
+            if let hint = hint, shouldShowHint {
+                Text(hint)
+                    .sjuiFont(hintFont)
+                    .foregroundColor(hintColor)
+                    .lineSpacing(hintLineSpacing)
+                    .padding(EdgeInsets(
+                        top: containerInset.top + 2,
+                        leading: containerInset.leading + 4,
+                        bottom: containerInset.bottom,
+                        trailing: containerInset.trailing
+                    ))
+                    .allowsHitTesting(false) // タップイベントを通過させる
+                    // Drawn only. The layout id goes on this composite as a
+                    // whole, and SwiftUI hands an identifier on a non-element
+                    // to EVERY element inside: the hint was the second
+                    // element carrying the TextView's id, so a `text` read
+                    // of an empty TextView returned the hint (ticket
+                    // sjui-a-composite-leaf-gives-its-id-to-every-element-inside).
+                    // The TextEditor carries the hint for VoiceOver instead.
+                    .accessibilityHidden(true)
+            }
+            
+            if flexible {
+                // Flexible mode: 高さを動的に計算
+                // 非表示のTextでサイズを計算
+                Text(text.isEmpty ? " " : text)
+                    .sjuiFont(font)
+                    .padding(containerInset)
+                    .opacity(0)
+                    .accessibilityHidden(true) // a sizing copy, not content
+                    .background(GeometryReader { geometry in
+                        Color.clear.preference(key: HeightPreferenceKey.self, value: geometry.size.height)
+                    })
+                    .onPreferenceChange(HeightPreferenceKey.self) { height in
+                        textHeight = height
+                    }
+                
+                // TextEditor
+                TextEditor(text: $text)
+                    .sjuiFont(font)
+                    .foregroundColor(fontColor)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .focused($isFocused)
+                    .accessibilityHint(hint ?? "")
+                    .leafAccessibilityIdentifier(accessibilityIdentifier)
+                    .modifier(EditorInset(containerInset: containerInset))
+                    .frame(height: calculateHeight())
+            } else {
+                // Normal mode: 固定高さ
+                TextEditor(text: $text)
+                    .sjuiFont(font)
+                    .foregroundColor(fontColor)
+                    .scrollContentBackground(.hidden)
+                    .background(Color.clear)
+                    .focused($isFocused)
+                    .accessibilityHint(hint ?? "")
+                    .leafAccessibilityIdentifier(accessibilityIdentifier)
+                    .modifier(EditorInset(containerInset: containerInset))
+            }
+        }
+        .if(!flexible && minHeight != nil) { view in
+            view.frame(minHeight: minHeight!, maxHeight: maxHeight ?? .infinity)
+        }
+        .background(backgroundColor)
+        .cornerRadius(cornerRadius)
+        // Two-way sync between the internal FocusState and the optional
+        // external binding (guarded both ways to avoid update loops).
+        .onChange(of: isFocused) { _, newValue in
+            if let externalFocus, externalFocus.wrappedValue != newValue {
+                externalFocus.wrappedValue = newValue
+            }
+        }
+        .onChange(of: externalFocus?.wrappedValue) { _, newValue in
+            if let newValue, isFocused != newValue {
+                isFocused = newValue
+            }
+        }
+        .onAppear {
+            if externalFocus?.wrappedValue == true {
+                isFocused = true
+            }
+            // The next run loop turn, as the generated code sets it: a
+            // FocusState set in the view's first appearance is dropped inside
+            // a navigation transition.
+            if autoFocus {
+                DispatchQueue.main.async { isFocused = true }
+            }
+        }
+    }
+    
+    private func calculateHeight() -> CGFloat {
+        var height = textHeight
+        
+        if let minHeight = minHeight {
+            height = max(height, minHeight)
+        }
+        
+        if let maxHeight = maxHeight {
+            height = min(height, maxHeight)
+        }
+        
+        return height
+    }
+    
+    private var shouldShowHint: Bool {
+        if hideOnFocused && isFocused {
+            return false
+        }
+        return text.isEmpty
+    }
+}
+
+// Helper extension for conditional modifiers
+extension View {
+    @ViewBuilder
+    func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
+}
+
+// MARK: - Preview
+struct TextViewWithPlaceholder_Previews: PreviewProvider {
+    @State static var text1 = ""
+    @State static var text2 = "Hello, World!"
+    @State static var text3 = ""
+    
+    static var previews: some View {
+        VStack(spacing: 20) {
+            Text("Basic with hint")
+            TextViewWithPlaceholder(
+                text: $text1,
+                hint: "Enter your message here...",
+                fontSize: 16,
+                backgroundColor: Color.gray.opacity(0.1),
+                cornerRadius: 8
+            )
+            .frame(height: 100)
+            
+            Text("With custom hint color and font")
+            TextViewWithPlaceholder(
+                text: $text2,
+                hint: "Description",
+                hintColor: .blue.opacity(0.5),
+                hintFont: "bold",
+                fontSize: 14,
+                fontColor: .blue
+            )
+            .frame(height: 80)
+            
+            Text("Flexible height")
+            TextViewWithPlaceholder(
+                text: $text3,
+                hint: "Type here (flexible height)",
+                fontSize: 18,
+                backgroundColor: Color.yellow.opacity(0.1),
+                cornerRadius: 12,
+                flexible: true,
+                minHeight: 50,
+                maxHeight: 150
+            )
+        }
+        .padding()
+    }
+}
+
+/// The container inset beyond TextEditor's own (8 top and bottom, 5 at the
+/// sides: UITextView's textContainerInset and lineFragmentPadding). It went
+/// on as `.padding` outside the editor, and the editor's frame is the box its
+/// identifier names, so a larger inset shrank the id box: a 100 x 40 TextView
+/// with padding 8 read (28,10,94,40) (ticket ios-a-textviews-id-box-shrinks-
+/// by-its-container-inset; the padding is the element, user ruling
+/// 2026-10-06). The part beyond the default now goes INSIDE the editor, as
+/// its scroll content's margin, so the frame stays the element's box. A part
+/// below the default (an inset smaller than the editor's own) still goes
+/// outside as before: a margin cannot be negative.
+struct EditorInset: ViewModifier {
+    let containerInset: EdgeInsets
+
+    private static let editorDefault = EdgeInsets(top: 8, leading: 5, bottom: 8, trailing: 5)
+
+    private var beyond: EdgeInsets {
+        let d = Self.editorDefault
+        return EdgeInsets(top: max(containerInset.top - d.top, 0),
+                          leading: max(containerInset.leading - d.leading, 0),
+                          bottom: max(containerInset.bottom - d.bottom, 0),
+                          trailing: max(containerInset.trailing - d.trailing, 0))
+    }
+
+    private var below: EdgeInsets {
+        let d = Self.editorDefault
+        return EdgeInsets(top: min(containerInset.top - d.top, 0),
+                          leading: min(containerInset.leading - d.leading, 0),
+                          bottom: min(containerInset.bottom - d.bottom, 0),
+                          trailing: min(containerInset.trailing - d.trailing, 0))
+    }
+
+    func body(content: Content) -> some View {
+        content
+            .contentMargins(.top, beyond.top, for: .scrollContent)
+            .contentMargins(.leading, beyond.leading, for: .scrollContent)
+            .contentMargins(.bottom, beyond.bottom, for: .scrollContent)
+            .contentMargins(.trailing, beyond.trailing, for: .scrollContent)
+            .padding(below)
+    }
+}

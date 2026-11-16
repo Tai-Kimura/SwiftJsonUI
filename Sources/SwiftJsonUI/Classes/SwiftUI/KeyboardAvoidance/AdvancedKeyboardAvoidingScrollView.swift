@@ -1,0 +1,254 @@
+//
+//  AdvancedKeyboardAvoidingScrollView.swift
+//  SwiftJsonUI
+//
+//  Created by SwiftJsonUI on 2025/01/11.
+//
+
+import SwiftUI
+
+/// Advanced ScrollView with automatic scrolling to focused fields and SelectBox support
+public struct AdvancedKeyboardAvoidingScrollView<Content: View>: View {
+    @StateObject private var keyboardResponder = KeyboardResponder.shared
+    @StateObject private var sheetResponder = SelectBoxSheetResponder.shared
+    @StateObject private var focusTracker = FocusedFieldTracker.shared
+    @State private var scrollOffset: CGFloat = 0
+    @State private var scrollProxy: ScrollViewProxy?
+    @State private var selectBoxPadding: CGFloat = 0
+    @State private var scrollViewBox = EnclosingScrollViewBox()
+    /// A text input inside this ScrollView is being edited (EditingInsideScrollView).
+    @State private var isEditingInside = false
+    @Namespace private var scrollSpace
+    
+    private let axes: Axis.Set
+    private let showsIndicators: Bool
+    private let configuration: KeyboardAvoidanceConfiguration
+    private let keyboardDismissMode: String?
+    private let content: Content
+
+    public init(
+        _ axes: Axis.Set = .vertical,
+        showsIndicators: Bool = true,
+        configuration: KeyboardAvoidanceConfiguration = .default,
+        keyboardDismissMode: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.axes = axes
+        self.showsIndicators = showsIndicators
+        self.configuration = configuration
+        self.keyboardDismissMode = keyboardDismissMode
+        self.content = content()
+    }
+
+    /// JSON `keyboardDismissMode` (UIKit value names) → SwiftUI mode.
+    /// Default none/.never — scrolling never dismisses the keyboard unless
+    /// the layout opts in. (SwiftUI's own ScrollView default measures as
+    /// never-dismissing, so unset stays behavior-identical.)
+    private var scrollDismissMode: ScrollDismissesKeyboardMode {
+        switch keyboardDismissMode {
+        case "interactive": return .interactively
+        case "onDrag": return .immediately
+        default: return .never
+        }
+    }
+    
+    /// Scrolls along x only — its cross axis is the height.
+    private var isHorizontalOnly: Bool { axes == .horizontal }
+
+    public var body: some View {
+        GeometryReader { geometry in
+            ScrollViewReader { proxy in
+                ScrollView(axes, showsIndicators: showsIndicators) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        content
+                            .environment(\.selectBoxScrollProxy, proxy)
+                            .background(EnclosingScrollViewReader(box: scrollViewBox))
+                            .background(
+                                GeometryReader { contentGeometry in
+                                    Color.clear
+                                        .preference(
+                                            key: ContentFramePreferenceKey.self,
+                                            value: contentGeometry.frame(in: .global)
+                                        )
+                                }
+                            )
+                        
+                        // Dynamic spacer that adjusts to keyboard height or SelectBox sheet
+                        if configuration.isEnabled {
+                            Spacer()
+                                .frame(height: calculateSpacerHeight(in: geometry))
+                                .id("keyboard_spacer")
+                        }
+                        
+                        // Additional padding for SelectBox sheet
+                        if selectBoxPadding > 0 {
+                            Spacer()
+                                .frame(height: selectBoxPadding)
+                                .id("selectbox_spacer")
+                        }
+                    }
+                    // The content starts at the top of a viewport it does not
+                    // fill (attribute_semantics gravityDefaults: top|start). The
+                    // frame's default alignment is the centre, so a content
+                    // shorter than the viewport that did not stretch itself drew
+                    // in the vertical middle — a consumer's book page put its
+                    // first line ~74pt down once its footer grew (iPhone 17 Pro,
+                    // iOS 27; ticket sjui-vertical-scrollview-centres-a-short-content).
+                    .frame(minHeight: isHorizontalOnly ? nil : geometry.size.height, alignment: .topLeading)
+                    // A horizontal ScrollView's cross axis is its height, and
+                    // SwiftUI centres content of any other height on it: a
+                    // 600-high content in a 200-high ScrollView drew at
+                    // y -200, and a short one in the middle. The content
+                    // starts at the top (attribute_semantics gravityDefaults:
+                    // top|start on every container; ticket
+                    // sjui-horizontal-scrollview-centres-its-content-on-the-cross-axis):
+                    // laid in a frame exactly the viewport's height, from its
+                    // top edge, a taller content runs past the bottom.
+                    .frame(height: isHorizontalOnly ? geometry.size.height : nil, alignment: .topLeading)
+                }
+                .scrollDismissesKeyboard(scrollDismissMode)
+                // 🚨 THE ONE PLACE `additionalPadding` REACHES THE SCREEN.
+                //
+                // Reported 2026-09-22 from a real device: a focused field
+                // sat flush against (40px under, in fact) the fixed footer
+                // below its ScrollView, and the layout had no way to ask for
+                // room. `additionalPadding` (default 20) existed in the
+                // configuration and did nothing: `scrollToFocusedField`
+                // needs `focusTracker.focusedFieldId`, which only
+                // `trackFocus(id:)` sets, and nothing in this library or in
+                // generated code calls it; `calculateSpacerHeight` adds it
+                // only when the ScrollView itself extends under the keyboard,
+                // which a footer-and-scroll layout never does (the footer
+                // takes the keyboard's safe area, the ScrollView ends at the
+                // footer's top). What placed the field was SwiftUI's own
+                // focus scrolling, which stops at the visible edge — 0.
+                //
+                // So while the keyboard is up, the ScrollView's bottom safe
+                // area grows by `additionalPadding`. SwiftUI's focus
+                // scrolling keeps a focused field inside the SAFE region, so
+                // the field stops that far above whatever the visible edge
+                // is — the footer's top here, the keyboard's top where the
+                // ScrollView meets the keyboard directly. One definition for
+                // both shapes: the clearance from the visible bottom.
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    Color.clear.frame(height: keyboardClearance)
+                }
+                .coordinateSpace(name: scrollSpace)
+                .onAppear {
+                    self.scrollProxy = proxy
+                }
+                .onReceive(EditingInsideScrollView.changes) { change in
+                    guard EditingInsideScrollView.isInside(change.input, scrollViewBox.scrollView) else { return }
+                    isEditingInside = change.editing
+                }
+                .onPreferenceChange(ContentFramePreferenceKey.self) { _ in
+                    // Content frame changed
+                }
+                .onChange(of: keyboardResponder.isKeyboardVisible) { _, isVisible in
+                    handleKeyboardVisibilityChange(isVisible: isVisible, proxy: proxy, geometry: geometry)
+                }
+                .onChange(of: focusTracker.focusedFieldId) { _, fieldId in
+                    if fieldId != nil && keyboardResponder.isKeyboardVisible {
+                        scrollToFocusedField(proxy: proxy, geometry: geometry)
+                    }
+                }
+                .onChange(of: sheetResponder.presentingSelectBoxId) { _, selectBoxId in
+                    if let id = selectBoxId {
+                        // Scroll to SelectBox when sheet is about to present
+                        scrollToSelectBox(id: id, proxy: proxy)
+                    } else {
+                        // Sheet was dismissed, remove padding
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectBoxPadding = 0
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    /// `additionalPadding` while an input inside is being edited or the
+    /// keyboard is visible, and avoidance is on; 0 otherwise — the bottom
+    /// safe-area inset the focus scrolling respects.
+    ///
+    /// From the start of editing, not from keyboardWillShow alone: the focus
+    /// scroll runs as the keyboard comes up, and an inset that grew after it
+    /// left the field short of the padding (EditingInsideScrollView).
+    /// Known difference: with a hardware keyboard (no software keyboard
+    /// shown) the inset is there while an input inside is edited.
+    private var keyboardClearance: CGFloat {
+        guard configuration.isEnabled, isEditingInside || keyboardResponder.isKeyboardVisible else { return 0 }
+        return configuration.additionalPadding
+    }
+
+    private func calculateSpacerHeight(in geometry: GeometryProxy) -> CGFloat {
+        guard keyboardResponder.isKeyboardVisible else { return 0 }
+        
+        // Calculate the overlap between keyboard and scroll view
+        let scrollViewBottom = geometry.frame(in: .global).maxY
+        let keyboardTop = keyboardResponder.keyboardFrame.minY
+        
+        guard keyboardTop < scrollViewBottom else { return 0 }
+        
+        let overlap = scrollViewBottom - keyboardTop
+        return overlap + configuration.additionalPadding
+    }
+    
+    private func handleKeyboardVisibilityChange(isVisible: Bool, proxy: ScrollViewProxy, geometry: GeometryProxy) {
+        guard configuration.autoScrollToFocused else { return }
+        
+        if isVisible {
+            // Delay slightly to ensure keyboard frame is updated
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                scrollToFocusedField(proxy: proxy, geometry: geometry)
+            }
+        }
+    }
+    
+    private func scrollToFocusedField(proxy: ScrollViewProxy, geometry: GeometryProxy) {
+        guard let focusedFieldId = focusTracker.focusedFieldId,
+              configuration.autoScrollToFocused else { return }
+        
+        let focusedFrame = focusTracker.focusedFieldFrame
+        let keyboardTop = keyboardResponder.keyboardFrame.minY
+        let fieldBottom = focusedFrame.maxY + configuration.additionalPadding
+        
+        // Check if field is hidden by keyboard
+        if fieldBottom > keyboardTop {
+            withAnimation(.easeOut(duration: keyboardResponder.animationDuration)) {
+                // Try to scroll to the field ID if it exists, otherwise scroll to spacer
+                proxy.scrollTo(focusedFieldId, anchor: .bottom)
+            }
+        }
+    }
+    
+    private func scrollToSelectBox(id: String, proxy: ScrollViewProxy) {
+        // Add padding based on sheet height
+        // sheetResponder.currentHeight has the actual sheet height
+        let padding = sheetResponder.currentHeight > 0 ? sheetResponder.currentHeight : 300
+        selectBoxPadding = padding + 50 // Add extra padding for better centering
+        
+        // Scroll will be triggered by SelectBoxView after sheet is presented
+    }
+}
+
+/// Environment key for SelectBox scroll proxy
+private struct SelectBoxScrollProxyKey: EnvironmentKey {
+    static let defaultValue: ScrollViewProxy? = nil
+}
+
+public extension EnvironmentValues {
+    var selectBoxScrollProxy: ScrollViewProxy? {
+        get { self[SelectBoxScrollProxyKey.self] }
+        set { self[SelectBoxScrollProxyKey.self] = newValue }
+    }
+}
+
+/// PreferenceKey for tracking content frame
+private struct ContentFramePreferenceKey: PreferenceKey {
+    static var defaultValue: CGRect = .zero
+    
+    static func reduce(value: inout CGRect, nextValue: () -> CGRect) {
+        value = nextValue()
+    }
+}

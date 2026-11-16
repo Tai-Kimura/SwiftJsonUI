@@ -1,0 +1,111 @@
+{
+  "type": "View",
+  "id": "cg_cdr_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_cdr_cellid",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_cellid}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "cellId"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_cdr_key",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_key}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "key"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_cdr_tracked",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_tracked}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "cellId",
+      "autoChangeTrackingId": true
+    },
+    {
+      "type": "Collection",
+      "id": "cg_cdr_none",
+      "layout": "vertical",
+      "width": "matchParent",
+      "height": 150,
+      "items": "@{rows_none}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "name": "rows_cellid",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "rows_key",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "rows_tracked",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "rows_none",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    }
+  ]
+}

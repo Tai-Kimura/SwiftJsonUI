@@ -1,0 +1,4 @@
+[
+  { "name": "LeafProbeAuto", "attributes": "title:String" },
+  { "name": "LeafProbeShelf", "mode": "container", "attributes": "title:String" }
+]

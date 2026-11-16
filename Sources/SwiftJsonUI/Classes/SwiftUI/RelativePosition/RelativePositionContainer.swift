@@ -1,0 +1,789 @@
+import SwiftUI
+
+/// Container that manages relative positioning of child views using Layout protocol
+@available(iOS 16.0, *)
+public struct RelativePositionContainer: View {
+    public let children: [RelativeChildConfig]
+    public let alignment: Alignment
+    public let backgroundColor: Color?
+    public let parentPadding: EdgeInsets
+    /// The CONTAINER's own size intent, i.e. the parent view's declared
+    /// `width` / `height`.
+    ///
+    /// Without it the layout could only expand when a CHILD asked to fill,
+    /// so a `matchParent` parent collapsed to its content size — and every
+    /// parent-relative constraint (`alignTop`, `centerVertical`, …) then
+    /// resolved inside a box exactly as big as the child, which is why all
+    /// seven of them measured inert on iOS while the view-relative ones
+    /// worked. Defaults keep the pre-existing wrap-content behaviour for
+    /// callers that do not pass them.
+    public let containerWidthMode: RelativeSizeMode
+    public let containerHeightMode: RelativeSizeMode
+
+    public init(
+        children: [RelativeChildConfig],
+        alignment: Alignment = .topLeading,
+        backgroundColor: Color? = nil,
+        parentPadding: EdgeInsets = .init(),
+        containerWidthMode: RelativeSizeMode = .wrapContent,
+        containerHeightMode: RelativeSizeMode = .wrapContent
+    ) {
+        self.children = children
+        self.alignment = alignment
+        self.backgroundColor = backgroundColor
+        self.parentPadding = parentPadding
+        self.containerWidthMode = containerWidthMode
+        self.containerHeightMode = containerHeightMode
+    }
+
+    /// The children laid out: a gone child is left out — it takes no size
+    /// and no position — and a constraint that names it does not apply, so
+    /// the child it constrained is placed as it would be without it
+    /// (attribute_semantics goneModel, 2026-11-10; ticket
+    /// relative-constraint-to-gone-anchor-keeps-its-place). A gone anchor
+    /// used to keep the box its own constraints placed, and a sibling was
+    /// linked to it as if it were there.
+    var laidOutChildren: [RelativeChildConfig] {
+        let gone = Set(children.filter { $0.isGone }.map { $0.id })
+        guard !gone.isEmpty else { return children }
+        return children.filter { !$0.isGone }.map { $0.withoutConstraints(naming: gone) }
+    }
+
+    public var body: some View {
+        let _ = Logger.debug("[RelativePositionContainer] body called with \(children.count) children: \(children.map { $0.id })")
+        let children = laidOutChildren
+        RelativePositionLayout(
+            children: children,
+            alignment: alignment,
+            parentPadding: parentPadding,
+            containerWidthMode: containerWidthMode,
+            containerHeightMode: containerHeightMode
+        ) {
+            ForEach(children) { child in
+                child.view
+                    .layoutValue(key: ChildIdKey.self, value: child.id)
+            }
+        }
+        .background(backgroundColor ?? Color.clear)
+    }
+}
+
+// Layout value key for passing child ID to layout
+private struct ChildIdKey: LayoutValueKey {
+    static let defaultValue: String = ""
+}
+
+/// Custom Layout that handles relative positioning
+@available(iOS 16.0, *)
+struct RelativePositionLayout: Layout {
+    let children: [RelativeChildConfig]
+    let alignment: Alignment
+    let parentPadding: EdgeInsets
+    var containerWidthMode: RelativeSizeMode = .wrapContent
+    var containerHeightMode: RelativeSizeMode = .wrapContent
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let childIds = children.map { $0.id }
+        Logger.debug("[RelativePositionLayout] sizeThatFits children=\(childIds), proposal: \(proposal.width ?? -1), \(proposal.height ?? -1)")
+
+        // Take the proposed size when the CONTAINER itself fills, not only
+        // when a child does: a `matchParent` parent that collapsed to content
+        // size left every parent-relative constraint nothing to resolve
+        // against (see `containerWidthMode`).
+        let hasWidthMatchParent =
+            isMatchParent(containerWidthMode)
+            || children.contains { if case .matchParent = $0.widthMode { return true } else { return false } }
+        let hasHeightMatchParent =
+            isMatchParent(containerHeightMode)
+            || children.contains { if case .matchParent = $0.heightMode { return true } else { return false } }
+
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+
+        // If matchParent is used, take the proposed size. That size is the
+        // whole box, padding included: the padding is laid out inside it
+        // (calculatePositions), never added on top. Added on top, a filling
+        // container came out wider and taller than its parent by the padding
+        // twice, and a matchParent child got the full width back and only
+        // moved by the padding — past the screen's edge at padding 40.
+        var widthFromProposal = false
+        var heightFromProposal = false
+        if hasWidthMatchParent, let proposedWidth = proposal.width, proposedWidth > 0 && !proposedWidth.isInfinite {
+            width = proposedWidth
+            widthFromProposal = true
+        }
+        if hasHeightMatchParent, let proposedHeight = proposal.height, proposedHeight > 0 && !proposedHeight.isInfinite {
+            height = proposedHeight
+            heightFromProposal = true
+        }
+        // A fixed container is its declared size, padding included, whatever
+        // its children ask: it is the whole box, as the proposal is for a
+        // filling one. Measured from the children instead, a container 180
+        // high reported the child's height, sat at the top of its frame, and
+        // alignBottom / centerVertical resolved inside a box as tall as the
+        // child (the same across for a fixed width and alignRight).
+        let fixedWidth = fixedSize(containerWidthMode)
+        let fixedHeight = fixedSize(containerHeightMode)
+        if let fixedWidth {
+            width = fixedWidth
+            widthFromProposal = true
+        }
+        if let fixedHeight {
+            height = fixedHeight
+            heightFromProposal = true
+        }
+
+        let subviewsById = subviewsByChildId(subviews)
+        // The room a wrapContent child may take across, when the proposal
+        // bounds the container: a child wider than that wraps (as Android's
+        // wrap_content is capped by its parent) instead of overflowing.
+        let proposedWidth: CGFloat? = {
+            guard let w = proposal.width, w > 0, !w.isNaN, !w.isInfinite else { return nil }
+            return w
+        }()
+
+        // Width: from the children unless the container fills or is fixed.
+        if !hasWidthMatchParent && fixedWidth == nil {
+            for child in children {
+                guard let subview = subviewsById[child.id] else { continue }
+                var childWidth: CGFloat = 0
+                switch child.widthMode {
+                case .fixed(let fixedWidth):
+                    childWidth = fixedWidth
+                case .wrapContent:
+                    childWidth = wrapContentWidth(child, subview: subview, containerWidth: proposedWidth) ?? 0
+                case .matchParent:
+                    break
+                }
+                childWidth += child.margins.leading + child.margins.trailing
+                width = max(width, childWidth)
+            }
+        }
+        // The width this container reports — the bounds placeSubviews will
+        // lay the children in: the proposal as it is, or the children's
+        // width plus the padding.
+        let reportedWidth = widthFromProposal ? width : width + parentPadding.leading + parentPadding.trailing
+
+        // Height: each wrapContent child measured at the width it will be
+        // placed with — the container's width less margins and padding, a
+        // fixed width, or a capped wrapContent width — not unconstrained,
+        // which measured a text one line short of what it wraps into.
+        let measureWidth: CGFloat? = width > 0 ? reportedWidth : nil
+        let measured = measuredSizes(
+            containerSize: CGSize(width: measureWidth ?? 0, height: proposal.height.flatMap { $0.isFinite ? $0 : nil } ?? 0),
+            subviewsById: subviewsById,
+            widthKnown: measureWidth != nil
+        )
+        for child in children {
+            guard subviewsById[child.id] != nil else { continue }
+            let childSize = measured[child.id] ?? .zero
+            Logger.debug("[RelativePositionLayout] sizeThatFits child '\(child.id)' measured: \(childSize), widthMode: \(child.widthMode), heightMode: \(child.heightMode)")
+
+            // Height calculation
+            if !hasHeightMatchParent && fixedHeight == nil {
+                var childHeight: CGFloat = 0
+                switch child.heightMode {
+                case .fixed(let fixedHeight):
+                    childHeight = fixedHeight
+                case .wrapContent:
+                    if !childSize.height.isNaN && !childSize.height.isInfinite && childSize.height > 0 {
+                        childHeight = childSize.height
+                    }
+                case .matchParent:
+                    // Already handled above
+                    break
+                }
+                childHeight += child.margins.top + child.margins.bottom
+                height = max(height, childHeight)
+            }
+        }
+
+        // Add parent padding around content-sized axes only (see above)
+        if !widthFromProposal {
+            width += parentPadding.leading + parentPadding.trailing
+        }
+        if !heightFromProposal {
+            height += parentPadding.top + parentPadding.bottom
+        }
+
+        // Ensure we return valid values (minimum 1x1)
+        let safeWidth = (width.isNaN || width.isInfinite || width <= 0) ? 100 : width
+        let safeHeight = (height.isNaN || height.isInfinite || height <= 0) ? 100 : height
+
+        Logger.debug("[RelativePositionLayout] sizeThatFits returning: \(safeWidth), \(safeHeight)")
+
+        return CGSize(width: safeWidth, height: safeHeight)
+    }
+
+    private func isMatchParent(_ mode: RelativeSizeMode) -> Bool {
+        if case .matchParent = mode { return true }
+        return false
+    }
+
+    private func fixedSize(_ mode: RelativeSizeMode) -> CGFloat? {
+        if case .fixed(let size) = mode, size > 0, size.isFinite { return size }
+        return nil
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let childIds = children.map { $0.id }
+        Logger.debug("[RelativePositionLayout] placeSubviews children=\(childIds), bounds: \(bounds)")
+
+        // Guard against invalid bounds
+        guard bounds.width > 0 && bounds.height > 0 &&
+              !bounds.width.isNaN && !bounds.height.isNaN &&
+              !bounds.width.isInfinite && !bounds.height.isInfinite else {
+            Logger.debug("[RelativePositionLayout] placeSubviews: invalid bounds, returning early")
+            return
+        }
+
+        // Sizes to lay out with: widths as before, and every wrapContent
+        // height measured at the width the child will actually be placed
+        // with (see measuredSizes).
+        var viewSizes = measuredSizes(
+            containerSize: bounds.size,
+            subviewsById: subviewsByChildId(subviews),
+            widthKnown: true
+        )
+
+        // Calculate positions based on constraints (this also updates matchParent sizes)
+        let positions = calculatePositions(
+            containerSize: bounds.size,
+            viewSizes: &viewSizes
+        )
+
+        // Place each subview
+        for subview in subviews {
+            let childId = subview[ChildIdKey.self]
+            if !childId.isEmpty {
+                let size = viewSizes[childId] ?? CGSize(width: 10, height: 10)
+                let relativePos = positions[childId] ?? .zero
+
+                Logger.debug("[RelativePositionLayout] placeSubviews child '\(childId)' relativePos: \(relativePos), bounds.mid: (\(bounds.midX), \(bounds.midY))")
+
+                // Convert relative position to absolute position
+                let absoluteX = bounds.midX + relativePos.x
+                let absoluteY = bounds.midY + relativePos.y
+
+                Logger.debug("[RelativePositionLayout] placeSubviews child '\(childId)' absolutePos: (\(absoluteX), \(absoluteY))")
+
+                // Guard against NaN/infinite - use center as fallback
+                let safeX = (absoluteX.isNaN || absoluteX.isInfinite) ? bounds.midX : absoluteX
+                let safeY = (absoluteY.isNaN || absoluteY.isInfinite) ? bounds.midY : absoluteY
+
+                // Final validation
+                let finalX = safeX.isNaN ? bounds.midX : safeX
+                let finalY = safeY.isNaN ? bounds.midY : safeY
+
+                Logger.debug("[RelativePositionLayout] placeSubviews child '\(childId)' finalPos: (\(finalX), \(finalY)), size: \(size)")
+
+                subview.place(
+                    at: CGPoint(x: finalX, y: finalY),
+                    anchor: .center,
+                    proposal: ProposedViewSize(size)
+                )
+            }
+        }
+    }
+
+    private func subviewsByChildId(_ subviews: Subviews) -> [String: LayoutSubview] {
+        var out: [String: LayoutSubview] = [:]
+        for subview in subviews {
+            let childId = subview[ChildIdKey.self]
+            if !childId.isEmpty { out[childId] = subview }
+        }
+        return out
+    }
+
+    private func isUsable(_ value: CGFloat) -> Bool {
+        !value.isNaN && !value.isInfinite && value > 0
+    }
+
+    /// A wrapContent child's width: its natural width, capped at the room the
+    /// container leaves it (`containerWidth` less its margins and the
+    /// parent's padding). Capped by measuring at that room, so a text wraps
+    /// there; a child that fits keeps its natural width (it is not stretched,
+    /// which a finite proposal would do to a flexible view). Nil when the
+    /// natural width is unusable.
+    private func wrapContentWidth(_ child: RelativeChildConfig, subview: LayoutSubview, containerWidth: CGFloat?) -> CGFloat? {
+        let natural = subview.sizeThatFits(.unspecified).width
+        guard isUsable(natural) else { return nil }
+        guard let containerWidth else { return natural }
+        let room = containerWidth - child.margins.leading - child.margins.trailing
+            - parentPadding.leading - parentPadding.trailing
+        guard room > 0, natural > room else { return natural }
+        let capped = subview.sizeThatFits(ProposedViewSize(width: room, height: nil)).width
+        return isUsable(capped) ? capped : natural
+    }
+
+    /// The size each child is laid out with before constraints move it.
+    ///
+    /// Widths are what they always were — a matchParent placeholder that the
+    /// constraints then settle, a fixed width, a wrapContent width (now
+    /// capped by the room it has). Heights of wrapContent children are
+    /// measured at the width the child ends up with: the constraints are
+    /// solved once to learn the final widths (a horizontal edge never depends
+    /// on a height, so solving again with the new heights keeps them), and
+    /// each wrapContent height is measured with that width proposed. Measured
+    /// unconstrained, a text was one line short of what it wraps into at its
+    /// placed width, and the last line was cut.
+    ///
+    /// `widthKnown` false (a filling container with no usable proposal) keeps
+    /// the unconstrained measure: there is no width to propose.
+    private func measuredSizes(
+        containerSize: CGSize,
+        subviewsById: [String: LayoutSubview],
+        widthKnown: Bool
+    ) -> [String: CGSize] {
+        var sizes: [String: CGSize] = [:]
+        var wrapHeights: [String] = []
+        for child in children {
+            let subview = subviewsById[child.id]
+            let natural = subview?.sizeThatFits(.unspecified) ?? .zero
+
+            var width: CGFloat = 0
+            switch child.widthMode {
+            case .matchParent:
+                // Settled by the constraints in calculatePositions
+                width = containerSize.width - child.margins.leading - child.margins.trailing
+            case .wrapContent:
+                if let subview, let w = wrapContentWidth(child, subview: subview, containerWidth: widthKnown ? containerSize.width : nil) {
+                    width = w
+                } else {
+                    width = containerSize.width
+                }
+            case .fixed(let fixedWidth):
+                width = fixedWidth
+            }
+
+            var height: CGFloat = 0
+            switch child.heightMode {
+            case .matchParent:
+                // Settled by the constraints in calculatePositions
+                height = containerSize.height - child.margins.top - child.margins.bottom
+            case .wrapContent:
+                height = isUsable(natural.height) ? natural.height : containerSize.height
+                if subview != nil { wrapHeights.append(child.id) }
+            case .fixed(let fixedHeight):
+                height = fixedHeight
+            }
+            sizes[child.id] = CGSize(width: width, height: height)
+        }
+
+        guard widthKnown, !wrapHeights.isEmpty else { return sizes }
+        var settled = sizes
+        _ = calculatePositions(containerSize: containerSize, viewSizes: &settled)
+        for id in wrapHeights {
+            guard let subview = subviewsById[id], let placedWidth = settled[id]?.width, isUsable(placedWidth) else { continue }
+            let height = subview.sizeThatFits(ProposedViewSize(width: placedWidth, height: nil)).height
+            if isUsable(height) {
+                sizes[id]?.height = height
+            }
+            Logger.debug("[RelativePositionLayout] measuredSizes child '\(id)' height \(height) at placed width \(placedWidth)")
+        }
+        return sizes
+    }
+
+    private func calculatePositions(
+        containerSize: CGSize,
+        viewSizes: inout [String: CGSize]
+    ) -> [String: CGPoint] {
+        var localPositions: [String: CGPoint] = [:]
+
+        // Process views in dependency order
+        var processedViews = Set<String>()
+        var remainingChildren = children
+
+        // First, process views with only parent constraints OR no constraints (empty)
+        let parentOnlyViews = children.filter { child in
+            child.constraints.isEmpty || child.constraints.allSatisfy { constraint in
+                [.parentTop, .parentBottom, .parentLeft, .parentRight,
+                 .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
+                    .contains(constraint.type)
+            }
+        }
+
+        // Process parent-only constrained views first
+        for child in parentOnlyViews {
+            let position = calculateChildPosition(
+                child: child,
+                localPositions: localPositions,
+                containerSize: containerSize,
+                viewSizes: &viewSizes
+            )
+            localPositions[child.id] = position
+            processedViews.insert(child.id)
+        }
+
+        // Remove processed views from remaining
+        remainingChildren.removeAll { processedViews.contains($0.id) }
+
+        // Process remaining views that depend on other views
+        var iterationCount = 0
+        let maxIterations = remainingChildren.count + 1
+
+        while !remainingChildren.isEmpty && iterationCount < maxIterations {
+            iterationCount += 1
+            var processedInThisIteration = [RelativeChildConfig]()
+
+            for child in remainingChildren {
+                // Check if all dependencies are already processed
+                let canProcess = child.constraints.isEmpty || child.constraints.allSatisfy { constraint in
+                    if [.parentTop, .parentBottom, .parentLeft, .parentRight,
+                        .parentCenterHorizontal, .parentCenterVertical, .parentCenter]
+                        .contains(constraint.type) {
+                        return true
+                    }
+                    return constraint.targetId.isEmpty || processedViews.contains(constraint.targetId)
+                }
+
+                if canProcess {
+                    let position = calculateChildPosition(
+                        child: child,
+                        localPositions: localPositions,
+                        containerSize: containerSize,
+                        viewSizes: &viewSizes
+                    )
+                    localPositions[child.id] = position
+                    processedViews.insert(child.id)
+                    processedInThisIteration.append(child)
+                }
+            }
+
+            remainingChildren.removeAll { view in
+                processedInThisIteration.contains { $0.id == view.id }
+            }
+
+            if processedInThisIteration.isEmpty && !remainingChildren.isEmpty {
+                // Circular dependency - process remaining anyway
+                for child in remainingChildren {
+                    let position = calculateChildPosition(
+                        child: child,
+                        localPositions: localPositions,
+                        containerSize: containerSize,
+                        viewSizes: &viewSizes
+                    )
+                    localPositions[child.id] = position
+                }
+                break
+            }
+        }
+
+        return localPositions
+    }
+
+    private func calculateChildPosition(
+        child: RelativeChildConfig,
+        localPositions: [String: CGPoint],
+        containerSize: CGSize,
+        viewSizes: inout [String: CGSize]
+    ) -> CGPoint {
+        Logger.debug("[RelativePositionLayout] calculateChildPosition for '\(child.id)', constraints: \(child.constraints.map { "\($0.type):\($0.targetId)" })")
+
+        var childSize = viewSizes[child.id] ?? .zero
+
+        Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' childSize: \(childSize), containerSize: \(containerSize)")
+
+        // Guard against NaN/infinite sizes
+        if childSize.width.isNaN || childSize.width.isInfinite {
+            Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' width is NaN/infinite, setting to 0")
+            childSize.width = 0
+        }
+        if childSize.height.isNaN || childSize.height.isInfinite {
+            Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' height is NaN/infinite, setting to 0")
+            childSize.height = 0
+        }
+
+        // Default position based on container alignment
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+
+        // Edge positions for matchParent calculation
+        // These track where the view's edges should be positioned
+        var topEdge: CGFloat? = nil      // If set, top edge is fixed at this position
+        var bottomEdge: CGFloat? = nil   // If set, bottom edge is fixed at this position
+        var leftEdge: CGFloat? = nil     // If set, left edge is fixed at this position
+        var rightEdge: CGFloat? = nil    // If set, right edge is fixed at this position
+
+        // Set default positions based on alignment. An axis no constraint
+        // places starts inside the padding and the child's own margin, as the
+        // constrained axes do (parentLeft adds both): a child with only
+        // alignBottom was drawn at x 0 in a container with padding 10 and a
+        // leftMargin of 8, where Android and the web draw it at 18 (ticket
+        // swiftjsonui-relative-unconstrained-axis-ignores-parent-padding).
+        let left = -containerSize.width / 2 + childSize.width / 2 + child.margins.leading + parentPadding.leading
+        let right = containerSize.width / 2 - childSize.width / 2 - child.margins.trailing - parentPadding.trailing
+        let top = -containerSize.height / 2 + childSize.height / 2 + child.margins.top + parentPadding.top
+        let bottom = containerSize.height / 2 - childSize.height / 2 - child.margins.bottom - parentPadding.bottom
+        switch alignment {
+        case .topLeading:
+            x = left
+            y = top
+        case .top:
+            x = 0
+            y = top
+        case .topTrailing:
+            x = right
+            y = top
+        case .leading:
+            x = left
+            y = 0
+        case .center:
+            x = 0
+            y = 0
+        case .trailing:
+            x = right
+            y = 0
+        case .bottomLeading:
+            x = left
+            y = bottom
+        case .bottom:
+            x = 0
+            y = bottom
+        case .bottomTrailing:
+            x = right
+            y = bottom
+        default:
+            x = 0
+            y = 0
+        }
+
+        for constraint in child.constraints {
+            let isParentConstraint = [
+                .parentTop, .parentBottom, .parentLeft, .parentRight,
+                .parentCenterHorizontal, .parentCenterVertical, .parentCenter,
+            ].contains(constraint.type)
+
+            var anchorChild: RelativeChildConfig? = nil
+            var anchorSize = CGSize.zero
+
+            if !isParentConstraint && !constraint.targetId.isEmpty {
+                anchorChild = children.first { $0.id == constraint.targetId }
+                if let anchor = anchorChild {
+                    anchorSize = viewSizes[anchor.id] ?? .zero
+                } else {
+                    continue
+                }
+            }
+
+            // Safe size calculations
+            let safeAnchorWidth = (anchorSize.width.isNaN || anchorSize.width.isInfinite) ? 0 : anchorSize.width
+            let safeAnchorHeight = (anchorSize.height.isNaN || anchorSize.height.isInfinite) ? 0 : anchorSize.height
+            let safeChildWidth = (childSize.width.isNaN || childSize.width.isInfinite) ? 0 : childSize.width
+            let safeChildHeight = (childSize.height.isNaN || childSize.height.isInfinite) ? 0 : childSize.height
+
+            switch constraint.type {
+            case .alignTop:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                y = anchorPos.y - safeAnchorHeight / 2 + safeChildHeight / 2 + child.margins.top
+            case .alignBottom:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                y = anchorPos.y + safeAnchorHeight / 2 - safeChildHeight / 2 - child.margins.bottom
+            case .alignLeft:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                x = anchorPos.x - safeAnchorWidth / 2 + safeChildWidth / 2 + child.margins.leading
+            case .alignRight:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                x = anchorPos.x + safeAnchorWidth / 2 - safeChildWidth / 2 - child.margins.trailing
+            // The four FACING links meet the box the anchor DRAWS.
+            // `localPositions` already holds that box — the anchor's own
+            // margin was applied when it was placed — so the anchor's margin
+            // is not applied again here. Doing so put a 50-high target at
+            // y -50 against an anchor drawn at 120 (topMargin 120), where
+            // Android and web draw 70 (ticket
+            // sjui-relative-facing-link-measures-the-anchor-with-its-margin;
+            // KotlinJsonUI 2.43.4 fixed the same shape).
+            case .above:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                let anchorTopY = anchorPos.y - safeAnchorHeight / 2
+                // Child's bottom edge should be at anchor's top - child's bottom margin
+                bottomEdge = anchorTopY - child.margins.bottom
+                y = anchorTopY - safeChildHeight / 2 - child.margins.bottom
+            case .below:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                // Calculate anchor's bottom edge in absolute coordinates (relative to container center)
+                let anchorBottomY = anchorPos.y + safeAnchorHeight / 2
+                // Child's top edge should be at anchor's bottom + child's top margin
+                let childTopY = anchorBottomY + child.margins.top
+                // Store the top edge position for later matchParent calculation
+                topEdge = childTopY
+                // Child center is at child's top + half of child's height (will be recalculated after matchParent)
+                y = childTopY + safeChildHeight / 2
+            case .leftOf:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                let anchorLeftX = anchorPos.x - safeAnchorWidth / 2
+                // Child's right edge should be at anchor's left - child's right margin
+                rightEdge = anchorLeftX - child.margins.trailing
+                x = anchorLeftX - safeChildWidth / 2 - child.margins.trailing
+            case .rightOf:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                let anchorRightX = anchorPos.x + safeAnchorWidth / 2
+                // Child's left edge should be at anchor's right + child's left margin
+                leftEdge = anchorRightX + child.margins.leading
+                x = anchorRightX + safeChildWidth / 2 + child.margins.leading
+            case .centerVertical:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                y = anchorPos.y
+            case .centerHorizontal:
+                let anchorPos = anchorChild != nil ? localPositions[anchorChild!.id] ?? .zero : .zero
+                x = anchorPos.x
+            case .parentTop:
+                topEdge = -containerSize.height / 2 + child.margins.top + parentPadding.top
+                y = -containerSize.height / 2 + safeChildHeight / 2 + child.margins.top + parentPadding.top
+            case .parentBottom:
+                bottomEdge = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
+                y = containerSize.height / 2 - safeChildHeight / 2 - child.margins.bottom - parentPadding.bottom
+            case .parentLeft:
+                leftEdge = -containerSize.width / 2 + child.margins.leading + parentPadding.leading
+                x = -containerSize.width / 2 + safeChildWidth / 2 + child.margins.leading + parentPadding.leading
+            case .parentRight:
+                rightEdge = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
+                x = containerSize.width / 2 - safeChildWidth / 2 - child.margins.trailing - parentPadding.trailing
+            case .parentCenterHorizontal:
+                x = 0
+            case .parentCenterVertical:
+                y = 0
+            case .parentCenter:
+                x = 0
+                y = 0
+            }
+        }
+
+        // Now handle matchParent size calculation based on edge constraints
+        // This must happen after all constraints are processed
+        if case .matchParent = child.widthMode {
+            // Calculate available width based on edge constraints
+            let containerLeft = -containerSize.width / 2 + child.margins.leading + parentPadding.leading
+            let containerRight = containerSize.width / 2 - child.margins.trailing - parentPadding.trailing
+
+            let effectiveLeft = leftEdge ?? containerLeft
+            let effectiveRight = rightEdge ?? containerRight
+
+            let availableWidth = effectiveRight - effectiveLeft
+            if availableWidth > 0 {
+                childSize.width = availableWidth
+                // Center x between the edges
+                x = (effectiveLeft + effectiveRight) / 2
+                Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' matchParent width: \(childSize.width), x: \(x)")
+            }
+        }
+
+        if case .matchParent = child.heightMode {
+            // Calculate available height based on edge constraints
+            let containerTop = -containerSize.height / 2 + child.margins.top + parentPadding.top
+            let containerBottom = containerSize.height / 2 - child.margins.bottom - parentPadding.bottom
+
+            let effectiveTop = topEdge ?? containerTop
+            let effectiveBottom = bottomEdge ?? containerBottom
+
+            let availableHeight = effectiveBottom - effectiveTop
+            if availableHeight > 0 {
+                childSize.height = availableHeight
+                // Center y between the edges
+                y = (effectiveTop + effectiveBottom) / 2
+                Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' matchParent height: \(childSize.height), y: \(y)")
+            }
+        }
+
+        // Update viewSizes with final calculated size
+        viewSizes[child.id] = childSize
+
+        Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' raw result: (\(x), \(y)), size: \(childSize)")
+
+        // Guard against NaN values
+        let safeX = x.isNaN || x.isInfinite ? 0 : x
+        let safeY = y.isNaN || y.isInfinite ? 0 : y
+
+        if x.isNaN || x.isInfinite || y.isNaN || y.isInfinite {
+            Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' NaN/infinite detected! x.isNaN=\(x.isNaN), x.isInfinite=\(x.isInfinite), y.isNaN=\(y.isNaN), y.isInfinite=\(y.isInfinite)")
+        }
+
+        Logger.debug("[RelativePositionLayout] calculateChildPosition '\(child.id)' final result: (\(safeX), \(safeY))")
+
+        return CGPoint(x: safeX, y: safeY)
+    }
+}
+
+/// Helper to create child configurations from JSON-like dictionaries
+extension RelativeChildConfig {
+    public static func from(
+        dict: [String: Any],
+        view: AnyView
+    ) -> RelativeChildConfig? {
+        guard let id = dict["id"] as? String else { return nil }
+
+        var constraints: [RelativePositionConstraint] = []
+
+        // Check for parent alignment constraints first
+        if dict["centerInParent"] as? Bool == true {
+            constraints.append(
+                RelativePositionConstraint(type: .parentCenter, targetId: "")
+            )
+        } else {
+            if dict["alignTop"] as? Bool == true {
+                constraints.append(RelativePositionConstraint(type: .parentTop, targetId: ""))
+            } else if dict["alignBottom"] as? Bool == true {
+                constraints.append(RelativePositionConstraint(type: .parentBottom, targetId: ""))
+            }
+
+            if dict["alignLeft"] as? Bool == true {
+                constraints.append(RelativePositionConstraint(type: .parentLeft, targetId: ""))
+            } else if dict["alignRight"] as? Bool == true {
+                constraints.append(RelativePositionConstraint(type: .parentRight, targetId: ""))
+            }
+
+            if dict["centerHorizontal"] as? Bool == true {
+                constraints.append(RelativePositionConstraint(type: .parentCenterHorizontal, targetId: ""))
+            }
+
+            if dict["centerVertical"] as? Bool == true {
+                constraints.append(RelativePositionConstraint(type: .parentCenterVertical, targetId: ""))
+            }
+        }
+
+        // Check for alignment constraints to other views
+        let constraintMappings: [(String, RelativePositionConstraint.ConstraintType)] = [
+            ("alignTopOfView", .above),
+            ("alignBottomOfView", .below),
+            ("alignLeftOfView", .leftOf),
+            ("alignRightOfView", .rightOf),
+            ("alignTopView", .alignTop),
+            ("alignBottomView", .alignBottom),
+            ("alignLeftView", .alignLeft),
+            ("alignRightView", .alignRight),
+        ]
+
+        for (key, type) in constraintMappings {
+            if let targetId = dict[key] as? String {
+                constraints.append(RelativePositionConstraint(type: type, targetId: targetId))
+            }
+        }
+
+        // Parse margins
+        let topMargin = CGFloat(dict["topMargin"] as? Double ?? 0)
+        let bottomMargin = CGFloat(dict["bottomMargin"] as? Double ?? 0)
+        let leftMargin = CGFloat(dict["leftMargin"] as? Double ?? 0)
+        let rightMargin = CGFloat(dict["rightMargin"] as? Double ?? 0)
+
+        let margins = EdgeInsets(
+            top: topMargin,
+            leading: leftMargin,
+            bottom: bottomMargin,
+            trailing: rightMargin
+        )
+
+        // Parse size if specified
+        var size: CGSize? = nil
+        if let width = dict["width"] as? Double, let height = dict["height"] as? Double {
+            size = CGSize(width: width, height: height)
+        }
+
+        return RelativeChildConfig(
+            id: id,
+            view: view,
+            constraints: constraints,
+            margins: margins,
+            size: size
+        )
+    }
+}

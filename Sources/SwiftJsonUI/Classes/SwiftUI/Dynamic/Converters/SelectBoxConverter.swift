@@ -1,0 +1,464 @@
+//
+//  SelectBoxConverter.swift
+//  SwiftJsonUI
+//
+//  Dynamic mode equivalent of selectbox_converter.rb
+//  Creates SelectBoxView matching tool-generated code exactly.
+//
+//  Modifier order (matches selectbox_converter.rb):
+//    1. SelectBoxView(...) creation
+//       - id, prompt, fontSize, fontColor, backgroundColor, cornerRadius, caret
+//       - selectItemType, items (normal) OR datePickerMode/datePickerStyle/dateStringFormat/
+//         minimumDate/maximumDate/minuteInterval/selectedDate (date)
+//       - selectedIndex, padding, onValueChange (the pick: onValueChange,
+//         then onClick)
+//    2. (no .onChange: onValueChange is the user's pick only)
+//    3. apply_frame_constraints + apply_frame_size
+//    4. .overlay (border)
+//    5. apply_margins
+//    6. .opacity / .hidden
+//    7. accessibilityIdentifier
+//
+
+import SwiftUI
+#if DEBUG
+
+public struct SelectBoxConverter {
+
+    /// A date picker for `selectItemType` "Date", as declared
+    /// (attribute_definitions.json SelectBox.selectItemType: "Normal" | "Date"),
+    /// a list otherwise — the spelling the codegen compares (the orchestrator's ruling,
+    /// 1.9.0). "date" was a date picker on this path only.
+    static func itemType(of component: DynamicComponent) -> SelectBoxView.SelectItemType {
+        component.selectItemType == "Date" ? .date : .normal
+    }
+
+    /// onValueChange's call for a pick, by the closure the data holds for it
+    /// (the orchestrator's ruling on control-onclick-is-called-differently-on-every-path,
+    /// 1.9.0; selectbox_converter.rb's pick_invocation reads the same from the
+    /// declaration): `(String)` — the picked item, even with selectedIndex
+    /// bound; `(String, Int)` — the viewId and the index; `(String, String)` —
+    /// the viewId and the item; `(Int)` — the index; `()` — nothing. `index`
+    /// is the item's place in `items` (the bound selectedIndex once
+    /// SelectBoxView has written it), -1 for the prompt. A date has none: a
+    /// handler taking an Int is not called for it, and is named once in DEBUG
+    /// (the orchestrator's ruling, 1.9.0; the build names it too —
+    /// BindingValidatorCore.date_pick_handler_problem — and sjui writes an
+    /// `// ERROR:` comment where the call would be).
+    ///
+    /// It was `callWithValue` with the index where selectedIndex is bound and
+    /// the item otherwise, which tries `(String, T)`, `(T)`, `()`: a
+    /// `(String)` handler over a bound index, a `(String, String)` one over a
+    /// bound index and a `(String, Int)` one over anything else were not
+    /// called.
+    static func reportPick(_ handler: String, id: String, picked: String, index: Int?, data: [String: Any]) {
+        guard let name = DynamicEventHelper.handlerName(from: handler) else { return }
+        switch data[name] {
+        case let call as (String) -> Void: call(picked)
+        case let call as (String, String) -> Void: call(id, picked)
+        case let call as (String, Int) -> Void:
+            if let index { call(id, index) } else { warnOnce(id: id, handler: name) }
+        case let call as (Int) -> Void:
+            if let index { call(index) } else { warnOnce(id: id, handler: name) }
+        case let call as () -> Void: call()
+        default: break
+        }
+    }
+
+    /// The sentence the build says for the same declaration
+    /// (BindingValidatorCore::DATE_PICK_HAS_NO_INDEX).
+    static let datePickHasNoIndex = "a date SelectBox has no index: declare onValueChange as (String) or (String, String)"
+
+    /// Hook for tests / apps; defaults to Logger.debug.
+    public static var warningHandler: ((String) -> Void)?
+
+    /// One warning per (viewId, handler) per process — a box is re-rendered
+    /// and picked again; the declaration does not change.
+    private static var reported = Set<String>()
+    private static let lock = NSLock()
+
+    private static func warnOnce(id: String, handler: String) {
+        lock.lock()
+        let firstTime = reported.insert("\(id).\(handler)").inserted
+        lock.unlock()
+        guard firstTime else { return }
+        let message = "[SelectBox] \(id): onValueChange '\(handler)' is not called: \(datePickHasNoIndex)"
+        if let warningHandler {
+            warningHandler(message)
+        } else {
+            Logger.debug(message)
+        }
+    }
+
+    /// Convert DynamicComponent to SwiftUI SelectBoxView
+    /// Matches selectbox_converter.rb convert method exactly
+    /// The SelectBox's insets, side by side (ruling 2026-11-13, ticket
+    /// kjui-selectbox-fixed-56dp-ignores-wrap-content-height; selectbox_converter.rb the same): SelectBoxView's
+    /// default (0 above and below, 12 at the sides), then `padding` on every side, then `paddings`, then each side's
+    /// own key. A side nothing names keeps the default. Nil when nothing is declared (SelectBoxView's default).
+    static func padding(_ component: DynamicComponent, data: [String: Any]) -> EdgeInsets? {
+        func edge(_ keyPath: KeyPath<CommonAttributes, AttrValue<Double>?>) -> CGFloat? {
+            component.number(CommonAttributes.self, keyPath, data: data)
+        }
+        var insets = EdgeInsets(top: 0, leading: 12, bottom: 0, trailing: 12)
+        var declared = false
+        if let all = edge(\.padding) {
+            insets = EdgeInsets(top: all, leading: all, bottom: all, trailing: all)
+            declared = true
+        }
+        if let edges = DynamicHelpers.resolveEdgeValues(component.paddings, data: data) {
+            insets = DynamicDecodingHelper.edgeInsetsFromArray(edges)
+            declared = true
+        }
+        if let v = edge(\.paddingTop) ?? edge(\.topPadding) { insets.top = v; declared = true }
+        if let v = edge(\.paddingBottom) ?? edge(\.bottomPadding) { insets.bottom = v; declared = true }
+        if let v = edge(\.paddingStart) ?? edge(\.paddingLeft) ?? edge(\.leftPadding) { insets.leading = v; declared = true }
+        if let v = edge(\.paddingEnd) ?? edge(\.paddingRight) ?? edge(\.rightPadding) { insets.trailing = v; declared = true }
+        // insets / insetHorizontal / insetVertical add to it, as getPadding adds them for every component.
+        if let extra = DynamicDecodingHelper.insetsFromAnyCodable(component.insets) {
+            insets.top += extra.top; insets.leading += extra.leading
+            insets.bottom += extra.bottom; insets.trailing += extra.trailing
+            declared = true
+        }
+        if let value = component.insetHorizontal { insets.leading += value; insets.trailing += value; declared = true }
+        if let value = component.insetVertical { insets.top += value; insets.bottom += value; declared = true }
+        return declared ? insets : nil
+    }
+
+    /// Whether the SelectBox takes its content's height: no height (or wrapContent), no min / max height, and no
+    /// weighted or `distribution: fill` parent sizing it vertically.
+    static func needsContentHeight(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        guard component.declaredHeight == nil else { return false }
+        let common = component.typedAttributes(CommonAttributes.self)
+        if DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data) != nil
+            || DynamicHelpers.resolveNumber(common.maxHeight, legacy: nil, data: data) != nil { return false }
+        let weighted = data["__isWeightedChild"] as? Bool == true && data["__weightedParentOrientation"] as? String == "vertical"
+        return !weighted && data["__distributionFillOrientation"] as? String != "vertical"
+    }
+
+    public static func convert(
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> AnyView {
+        let attrs = component.typedAttributes(SelectBoxAttributes.self)
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `selectBox` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
+
+        // --- 1. Build SelectBoxView ---
+
+        // prompt
+        let prompt = (component.prompt ?? component.hint ?? component.placeholder)?.dynamicLocalized()
+
+        // `labelAttributes` styles the closed-state label. The nested keys win
+        // over the component-level spellings — the cascade rule adjudicated in
+        // 49-F #7, and what selectbox_converter.rb:36-45, the rjui converter
+        // and the Compose one all implement.
+        let labelAttributes = attrs.labelAttributes
+
+        // fontSize
+        let fontSize = (labelAttributes?["fontSize"] as? Double).map { CGFloat($0) }
+            ?? (labelAttributes?["fontSize"] as? Int).map { CGFloat($0) }
+            ?? attrs.fontSize.map { CGFloat($0) }
+            ?? 16
+
+        // fontColor
+        let fontColor: Color = DynamicHelpers.getColor(
+            (labelAttributes?["fontColor"] as? String)
+                ?? component.typedAttributes(SelectBoxAttributes.self).fontColor, data: data
+        ) ?? .primary
+
+        // hintColor — the placeholder colour, shown while nothing is picked
+        // (SelectBoxView applies it at :201/:209 and defaults to .gray). The
+        // codegen has passed it since SelectBoxView 10.10.1; this path never
+        // named the parameter, so a declared hint colour did nothing here.
+        // Through `rawRepresentation` + `getColor(_:data:)` so the bound
+        // spelling resolves as well — the route thumbTintColor takes.
+        let hintColor: Color? = DynamicHelpers.getColor(
+            attrs.hintColor?.rawRepresentation as? String, data: data
+        )
+
+        // font — the label family (or "bold"). SelectBoxView hard-wired
+        // .font(.system(size:)) inside itself, so a declared font had
+        // nowhere to land; the view now takes the name.
+        //
+        // Same cascade as fontSize / fontColor above.
+        let fontName: String? = (labelAttributes?["font"] as? String)
+            ?? component.typedAttributes(SelectBoxAttributes.self).font
+
+        // backgroundColor
+        let backgroundColor: Color = DynamicHelpers.getColor(component.commonString(\.background), data: data) ?? Color(UIColor.systemGray6)
+
+        // cornerRadius
+        let cornerRadius = component.number(CommonAttributes.self, \.cornerRadius, data: data) ?? 8
+
+        // selectItemType
+        let selectItemType = SelectBoxConverter.itemType(of: component)
+
+        // items (for normal type) - with binding support
+        let items: [String] = {
+            if let staticItems = component.stringList(SelectBoxAttributes.self, \.items), !staticItems.isEmpty {
+                return staticItems
+            }
+            // Binding items
+            if let propName = attrs.items?.bindingExpression {
+                if let dataItems = data[propName] as? [String] {
+                    return dataItems
+                }
+            }
+            return []
+        }()
+
+        // datePickerMode
+        let datePickerMode: SelectBoxView.DatePickerMode = {
+            guard let mode = component.datePickerMode else { return .date }
+            switch DeclaredSpelling.lowered(mode, in: SelectBoxAttributes.DatePickerMode.declaredSpellings) {
+            case "time": return .time
+            case "datetime", "dateandtime": return .dateTime
+            default: return .date
+            }
+        }()
+
+        // datePickerStyle
+        let datePickerStyle: SelectBoxView.DatePickerStyle = {
+            guard let style = component.datePickerStyle else { return .wheel }
+            switch DeclaredSpelling.lowered(style, in: SelectBoxAttributes.DatePickerStyle.declaredSpellings) {
+            case "automatic": return .automatic
+            case "compact": return .compact
+            case "graphical", "inline": return .graphical
+            default: return .wheel
+            }
+        }()
+
+        // dateStringFormat
+        let dateStringFormat = component.dateStringFormat ?? "yyyy-MM-dd"
+
+        // minimumDate / maximumDate / selectedDate
+        // The fixed internal shape, read the same on every device (a device
+        // on the Japanese calendar used to read "2026-10-04" as the imperial
+        // year 2026).
+        let dateFormatter = AppLanguageDateFormat.posixFormatter("yyyy-MM-dd")
+        // All three are string|binding: interpolate before parsing, or a
+        // bound date reaches DateFormatter as the literal "@{expr}".
+        func parseDate(_ attr: AttrValue<String>?) -> Date? {
+            guard let raw = attr?.rawRepresentation as? String else { return nil }
+            return dateFormatter.date(from: DynamicHelpers.processText(raw, data: data))
+        }
+        let minimumDate = parseDate(attrs.minimumDate)
+        let maximumDate = parseDate(attrs.maximumDate)
+        let selectedDate = parseDate(attrs.selectedDate)
+
+        // minuteInterval
+        let minuteInterval = component.minuteInterval ?? 1
+
+        // selectedIndex (value for initial, binding for two-way sync)
+        // `selectedValue` seeds the initial selection by resolving its index
+        // in items (33 cross-effect: ios ignored it while the selectedIndex
+        // spelling worked).
+        //
+        // The bound form used to be excluded outright, but the SSoT declares
+        // it `["string","binding"]` and says "binding for two-way" — the web
+        // converter and the Compose one both read it. Resolving it here is
+        // what the declaration asks for.
+        //
+        // `selectedItem` is the other spelling of the same seed and wins over
+        // `selectedValue` — kjui's SelectBox has taken that precedence since
+        // it was written, and the codegen took it after the same bug was
+        // found there (selectbox_converter.rb:300-308: reading only
+        // `selectedValue` opened the picker with nothing selected). This path
+        // still read one spelling.
+        let selectedValueIndex: Int? = {
+            let declared = attrs.selectedItem?.rawRepresentation as? String
+                ?? attrs.selectedValue?.rawRepresentation as? String
+            guard let raw = declared else { return nil }
+            let resolved = DynamicHelpers.processText(raw, data: data)
+            return items.firstIndex(of: resolved)
+        }()
+        let selectedIndex = component.int(SelectBoxAttributes.self, \.selectedIndex, data: data) ?? selectedValueIndex
+        let selectedIndexBinding: SwiftUI.Binding<Int>? = {
+            if let si = attrs.selectedIndex?.bindingString {
+                let binding = DynamicBindingHelper.int(si, data: data, fallback: selectedIndex ?? 0)
+                return binding
+            }
+            // A bound selectedItem / selectedValue — declared two-way — is the
+            // same selection as the item's index: read through `items`, so the
+            // box follows the view model, and written back through them when the
+            // data holds a two-way Binding<String> (a plain value is only read).
+            // It was taken once, as the seed above, and never followed nor
+            // written (ticket selectbox-selected-item-binding-is-read-once).
+            let itemExpr = attrs.selectedItem?.bindingString ?? attrs.selectedValue?.bindingString
+            guard let itemExpr, DynamicEventHelper.extractPropertyName(from: itemExpr) != nil else { return nil }
+            let twoWay: SwiftUI.Binding<String>? = DynamicBindingHelper.twoWay(itemExpr, data: data)
+            let current = DynamicBindingHelper.string(itemExpr, data: data).wrappedValue
+            return SwiftUI.Binding<Int>(
+                get: { items.firstIndex(of: twoWay?.wrappedValue ?? current) ?? -1 },
+                set: { index in twoWay?.wrappedValue = items.indices.contains(index) ? items[index] : "" }
+            )
+        }()
+
+        // padding (internal padding for SelectBoxView)
+        let padding = SelectBoxConverter.padding(component, data: data)
+
+        // caretAttributes — the closed-state caret. Absent: SelectBoxView
+        // keeps its fixed chevron, the picture every layout drew before the
+        // object was promoted from UIKit-only to every face (jsonui-cli
+        // 1.8.101). Present: the view draws the caret from the keys. The
+        // codegen (selectbox_converter.rb) emits the same struct.
+        let caret = SelectBoxConverter.caret(from: attrs, data: data)
+
+        // onValueChange handler (+ onValueChanged alias)
+        let handlerExpr: String? = component.onValueChangeSpelling()
+            ?? component.onValueChangedSpelling()
+
+        // onValueChange from the user's pick — after the selection is written
+        // (SelectBoxView writes the index binding, and this closure the date,
+        // first) and before onClick — with what the handler's parameters ask
+        // for (reportPick). Not from the view model's own writes: an
+        // `.onChange(of:)` on the bound value reported those too, on the next
+        // update and so after the call (the orchestrator's ruling: the control's update,
+        // then onValueChange, then onClick, all from the user's operation). A
+        // box bound to a plain value had neither: nothing was observed, and
+        // the pick was not passed on.
+        let isDate = selectItemType == .date
+        let report: ((String) -> Void)? = {
+            guard let handler = handlerExpr, DynamicEventHelper.handlerName(from: handler) != nil else { return nil }
+            return { picked in
+                reportPick(handler, id: id, picked: picked,
+                           index: isDate ? nil : items.firstIndex(of: picked) ?? -1, data: data)
+            }
+        }()
+        // A date bound to a two-way Binding<String> is written back on a pick —
+        // it followed the view model but a pick never reached it (ticket
+        // selectbox-selected-item-binding-is-read-once).
+        let dateBinding: SwiftUI.Binding<String>? = selectItemType == .date
+            ? DynamicBindingHelper.twoWay(attrs.selectedDate?.bindingString, data: data) : nil
+        // The declared onClick, called from the user's pick — after the
+        // selection is written and onValueChange — and from nothing else: no
+        // tap around the box, whose own tap opens the picker
+        // (DynamicEventHelper.operationClick). SelectBoxView reports a pick
+        // through this closure and only a pick.
+        let click = DynamicEventHelper.operationClick(component, data: data)
+        let onPick: ((String) -> Void)? = dateBinding == nil && report == nil && click == nil ? nil : { newValue in
+            dateBinding?.wrappedValue = newValue
+            report?(newValue)
+            click?()
+        }
+
+        var result = AnyView(
+            SelectBoxView(
+                id: id,
+                prompt: prompt,
+                doneButtonText: attrs.doneButtonText?.dynamicLocalized(),
+                fontSize: fontSize,
+                fontColor: fontColor,
+                fontName: fontName,
+                hintColor: hintColor ?? .gray,
+                backgroundColor: backgroundColor,
+                cornerRadius: cornerRadius,
+                caret: caret,
+                selectItemType: selectItemType,
+                items: items,
+                datePickerMode: datePickerMode,
+                datePickerStyle: datePickerStyle,
+                dateStringFormat: dateStringFormat,
+                minimumDate: minimumDate,
+                maximumDate: maximumDate,
+                minuteInterval: minuteInterval,
+                selectedIndex: selectedIndex,
+                selectedIndexBinding: selectedIndexBinding,
+                selectedDate: selectedDate,
+                padding: padding,
+                onValueChange: onPick
+            )
+        )
+
+        // --- 3. apply_frame_constraints + apply_frame_size ---
+        // SelectBoxView handles padding/background/cornerRadius internally
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
+        result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
+        // No height or wrapContent: the content's height (ticket
+        // kjui-selectbox-fixed-56dp-ignores-wrap-content-height; selectbox_converter.rb the same).
+        // SelectBoxView fills the height it is offered, and a stack offered it all the free height.
+        // A min / max already sized it (applyFrameConstraints); a weighted / fill parent sizes it.
+        if needsContentHeight(component, data: data) {
+            result = AnyView(result.fixedSize(horizontal: false, vertical: true))
+        }
+
+        // --- 4. .overlay (border) ---
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
+
+        // shadow — the standard order's place, after the border (standardOrder:
+        // border, shadow). This chain does not run applyStandardModifiers, where
+        // the shadow stage lives, so a declared shadow never drew here while
+        // codegen drew it (ticket 2026-11-07-declared-binding-slots-and-dynamic-shadow).
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
+
+        // --- 5. apply_margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
+        // The offset, at the standard order's place (standardOrder: conformance
+        // frame, offset, margins). This chain does not run
+        // applyStandardModifiers, and until 10.29.7 it had no offset stage, so
+        // offsetX / offsetY moved nothing here while codegen and Android moved
+        // the view (ticket sjui-dynamic-offsetx-is-not-applied-to-label-button-
+        // and-textview).
+        result = DynamicModifierHelper.applyOffset(result, component: component, data: data)
+        result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
+
+        // --- 6. .opacity / .hidden ---
+        result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
+        result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
+
+        // userInteractionEnabled (the standard chain's
+        // hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
+        // enabled — the standard chain's disabled stages, inside and outside
+        // the accessibility element, which this hand-built chain did not run
+        // either: `enabled: false` still opened the picker and took a pick
+        // (ConformanceHost OnClickProbeUITests, both paths).
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
+
+        // --- 7. accessibilityIdentifier ---
+        result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
+        return result
+    }
+
+    /// `caretAttributes` as the view's struct, or nil when the layout did
+    /// not declare the object — the absent/present distinction the SSoT
+    /// makes ("absent: native indicator; present: the face draws it").
+    ///
+    /// Read through the typed struct (`[String: Any]?`, coerced by the
+    /// generated table), the route `labelAttributes` takes above. Numbers
+    /// arrive as Double or Int depending on how the JSON spelled them, so
+    /// both are accepted; colours resolve through `getColor(_:data:)` so
+    /// the `@color/…` and bound spellings work here as they do everywhere.
+    static func caret(
+        from attrs: SelectBoxAttributes,
+        data: [String: Any]
+    ) -> SelectBoxView.CaretAttributes? {
+        guard let raw = attrs.caretAttributes else { return nil }
+        func number(_ key: String) -> CGFloat? {
+            if let d = raw[key] as? Double { return CGFloat(d) }
+            if let i = raw[key] as? Int { return CGFloat(i) }
+            return nil
+        }
+        return SelectBoxView.CaretAttributes(
+            src: raw["src"] as? String,
+            width: number("width"),
+            height: number("height"),
+            tintColor: DynamicHelpers.getColor(raw["tintColor"] as? String, data: data),
+            background: DynamicHelpers.getColor(raw["background"] as? String, data: data),
+            rightMargin: number("rightMargin")
+        )
+    }
+}
+#endif // DEBUG

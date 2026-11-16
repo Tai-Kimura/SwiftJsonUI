@@ -1,0 +1,92 @@
+{
+  "version": 1,
+  "title": "JsonUI include ids — snake_case to camelCase, shared test vectors",
+  "notes": "The spelling an include gives the ids inside it, as codegen writes it: sjui_tools/lib/swiftui/include_expander.rb and kjui_tools/lib/compose/include_expander.rb (to_camel_case, combine_with_prefix) — the ids a generated screen has, so every other reader agrees with them. Each part after the first is Ruby's String#capitalize: its first letter up, the REST DOWN, so an upper-case part is not kept (verify_2FA_form -> verify2faForm). Columns: camel = to_camel_case(input), an include's own id with no prefix above it; combined = combine_with_prefix(prefix, input), an id inside an include (or a nested include's id) under a prefix, whose first letter goes up only when it is a-z; unprefixed = combine_with_prefix(null, input), an id under no prefix, left alone. Written by running the two Ruby functions (they agree on every row); their specs hold them to it. Read by: jui_tools' normalizer (jui_tools/tests/test_camel_case_vectors.py), the sjui/kjui include_expander and rjui snake_to_camel_id specs, the SwiftJsonUI and KotlinJsonUI dynamic IncludeExpander tests, and the web include-id helper.",
+  "prefix": "hero",
+  "cases": [
+    {
+      "input": "email_verify_view",
+      "camel": "emailVerifyView",
+      "combined": "heroEmailVerifyView",
+      "unprefixed": "email_verify_view"
+    },
+    {
+      "input": "header1_title_label",
+      "camel": "header1TitleLabel",
+      "combined": "heroHeader1TitleLabel",
+      "unprefixed": "header1_title_label"
+    },
+    {
+      "input": "verify_2FA_form",
+      "camel": "verify2faForm",
+      "combined": "heroVerify2faForm",
+      "unprefixed": "verify_2FA_form"
+    },
+    {
+      "input": "clear_URL_button",
+      "camel": "clearUrlButton",
+      "combined": "heroClearUrlButton",
+      "unprefixed": "clear_URL_button"
+    },
+    {
+      "input": "info_URL",
+      "camel": "infoUrl",
+      "combined": "heroInfoUrl",
+      "unprefixed": "info_URL"
+    },
+    {
+      "input": "URL_field",
+      "camel": "URLField",
+      "combined": "heroURLField",
+      "unprefixed": "URL_field"
+    },
+    {
+      "input": "iOS_version",
+      "camel": "iOSVersion",
+      "combined": "heroIOSVersion",
+      "unprefixed": "iOS_version"
+    },
+    {
+      "input": "item_2",
+      "camel": "item2",
+      "combined": "heroItem2",
+      "unprefixed": "item_2"
+    },
+    {
+      "input": "step2_done",
+      "camel": "step2Done",
+      "combined": "heroStep2Done",
+      "unprefixed": "step2_done"
+    },
+    {
+      "input": "a__b",
+      "camel": "aB",
+      "combined": "heroAB",
+      "unprefixed": "a__b"
+    },
+    {
+      "input": "trailing_",
+      "camel": "trailing",
+      "combined": "heroTrailing",
+      "unprefixed": "trailing_"
+    },
+    {
+      "input": "_leading",
+      "camel": "Leading",
+      "combined": "heroLeading",
+      "unprefixed": "_leading"
+    },
+    {
+      "input": "alreadyCamel",
+      "camel": "alreadyCamel",
+      "combined": "heroAlreadyCamel",
+      "unprefixed": "alreadyCamel"
+    },
+    {
+      "input": "single",
+      "camel": "single",
+      "combined": "heroSingle",
+      "unprefixed": "single"
+    }
+  ]
+}

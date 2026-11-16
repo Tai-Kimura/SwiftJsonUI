@@ -1,0 +1,265 @@
+//
+//  DynamicView.swift
+//  SwiftJsonUI
+//
+//  Main dynamic view entry point
+//
+
+import SwiftUI
+import Combine
+
+#if DEBUG
+
+// MARK: - Dynamic View
+public struct DynamicView: View {
+    @State private var refreshId = UUID()
+    /// Each unbound group of single Radios on this screen (DynamicRadioGroups).
+    @StateObject private var radioGroups = DynamicRadioGroups()
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+    /// The window's width, for responsive `minWidth:N` / `maxWidth:N`.
+    @StateObject private var windowWidth = SJUIWindowWidth()
+    private let data: [String: Any]
+    private let viewId: String
+    private let jsonName: String?
+    private let directComponent: DynamicComponent?
+
+    public init(jsonName: String, viewId: String? = nil, data: [String: Any] = [:]) {
+        self.jsonName = jsonName
+        self.data = data
+        self.viewId = viewId ?? jsonName
+        self.directComponent = nil
+    }
+
+    /// A component the app decoded itself goes through the stages the loader
+    /// runs — styles, includes, the responsive overrides for this view's
+    /// size classes — and is stamped (JSONLayoutLoader.prepared), so it is
+    /// drawn as `DynamicView(jsonName:)` draws the same layout. It was only
+    /// stamped, and its styles and responsive overrides were skipped.
+    public init(component: DynamicComponent, viewId: String? = nil, data: [String: Any] = [:]) {
+        self.jsonName = nil
+        // Stamped here when nothing is left to resolve; otherwise in body,
+        // where the size classes are known (root).
+        self.directComponent = JSONLayoutLoader.hasUnresolvedStages(component.rawData)
+            ? component : JSONLayoutLoader.stamped(component)
+        self.data = data
+        self.viewId = viewId ?? "component"
+    }
+
+    /// Load component from cache or disk - called in body to get fresh data after HotLoader updates.
+    /// When a JSON layout contains `responsive` blocks, resolution is performed at
+    /// the dictionary level using the current size classes BEFORE decoding into
+    /// DynamicComponent, so individual converters remain unaware of responsive logic.
+    ///
+    /// `tracksWindowWidth`: the tree has a responsive width condition
+    /// (minWidth:N / maxWidth:N), and the view keeps its SJUIWindowWidth on
+    /// its window. Only then: the tracking puts a probe behind the view, and
+    /// on every DynamicView — a Collection's cells are DynamicViews — that
+    /// probe changed what the cell's accessibility element covers (its id's
+    /// frame became the cell's outer box, padding included:
+    /// CellIdBoxProbeUITests, SwiftJsonUI 10.29.12's release candidate).
+    private var root: (component: DynamicComponent, tracksWindowWidth: Bool)? {
+        if let component = directComponent {
+            let prepared = JSONLayoutLoader.prepared(
+                component, horizontalSizeClass: horizontalSizeClass, verticalSizeClass: verticalSizeClass,
+                windowWidth: windowWidth.value)
+            return (prepared, ResponsiveResolver.jsonContainsWidthConditions(component.rawData))
+        }
+        if let baseName = jsonName {
+            // Responsive variant files (home@regular.json): swap the whole
+            // tree for the current size-class tier; the caller-owned data
+            // dictionary (VM state) survives the swap. Size-class changes
+            // recompute this body, hot-reload updates invalidate the
+            // existence cache via clearComponentCache.
+            let name = JSONLayoutLoader.resolveVariantLayoutName(
+                baseName, horizontalSizeClass: horizontalSizeClass
+            )
+            // Try loading the processed JSON dictionary so we can resolve
+            // responsive overrides based on the current size class environment.
+            if let processedJSON = JSONLayoutLoader.loadProcessedJSON(named: name) {
+                if ResponsiveResolver.jsonContainsResponsive(processedJSON) {
+                    let resolver = ResponsiveResolver(
+                        horizontalSizeClass: horizontalSizeClass,
+                        verticalSizeClass: verticalSizeClass,
+                        windowWidth: windowWidth.value
+                    )
+                    let resolvedJSON = resolver.resolveTree(processedJSON)
+                    return JSONLayoutLoader.decodeComponent(from: resolvedJSON).map {
+                        ($0, ResponsiveResolver.jsonContainsWidthConditions(processedJSON))
+                    }
+                }
+            }
+            // Fallback: no responsive blocks, use the standard cached component path
+            return JSONLayoutLoader.loadComponent(named: name).map { ($0, false) }
+        }
+        return nil
+    }
+
+    @ViewBuilder
+    public var body: some View {
+        let _ = Logger.debug("[DynamicView] body called for: \(jsonName ?? "unknown")")
+        // Strings resolve while the converters below build this layout's
+        // subtree; announce whose sections own bare keys first (the codegen
+        // face's current_namespaces, the UIKit face's currentFilePrefix).
+        let _ = jsonName.map { DynamicStringManager.shared.beginLayout($0) }
+        if let root {
+            let component = root.component
+            let mergedData = DynamicView.mergeDataDefaults(component: component, externalData: data)
+            DynamicComponentBuilder(
+                component: component,
+                data: mergedData,
+                viewId: viewId
+            )
+            .id(refreshId)
+            .environment(\.dynamicRadioGroups, radioGroups)
+            // The screen's Collection scrollTo memory (CollectionScrollMemory):
+            // the outermost DynamicView provides it, an included one shares it.
+            .providesCollectionScrollMemory()
+            .modifier(WindowWidthTracking(width: windowWidth, active: root.tracksWindowWidth))
+            .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("layoutFileDidChanged"))) { _ in
+                DynamicStringManager.shared.reload()
+                refreshId = UUID()
+            }
+        } else {
+            Text("Failed to load: \(jsonName ?? "unknown")")
+                .foregroundColor(.gray)
+        }
+    }
+
+    /// `.sjuiTracksWindowWidth` where the tree has a width condition, and
+    /// nothing otherwise.
+    private struct WindowWidthTracking: ViewModifier {
+        let width: SJUIWindowWidth
+        let active: Bool
+
+        func body(content: Content) -> some View {
+            if active { content.sjuiTracksWindowWidth(width) } else { content }
+        }
+    }
+
+    /// Extract defaultValue entries from the JSON data section and merge with external data.
+    /// External data takes priority over defaults (matching generated code behavior where
+    /// Data struct properties have default values that can be overridden).
+    ///
+    /// The data section comes in two shapes:
+    /// - canonical: `"data": [ {name, class, defaultValue} ]` directly on the
+    ///   root node (what codegen layouts and `jui conformance generate` emit)
+    /// - legacy dynamic: a type-less child element carrying only a data array
+    /// Both are read; the root-level array wins on duplicate names.
+    /// (KotlinJsonUI's applyDataSectionDefaults had the same child-only scan
+    /// bug — see docs/bugs 2026-07-02 root-level data section defaults.)
+    static func mergeDataDefaults(component: DynamicComponent, externalData: [String: Any]) -> [String: Any] {
+        var dataEntries: [AnyCodable] = []
+
+        // Legacy shape: data section child (no type, has data array)
+        if let children = component.childComponents {
+            Logger.debug("[DynamicView:mergeDefaults] children count=\(children.count), types=\(children.map { $0.type ?? "(nil)" })")
+            if let dataChild = children.first(where: { $0.type == nil && $0.data != nil }),
+               let childEntries = dataChild.data {
+                dataEntries.append(contentsOf: childEntries)
+            }
+        }
+
+        // Canonical shape: data array on the node itself (appended last so
+        // root-level entries win on duplicate names)
+        if let rootEntries = component.data {
+            dataEntries.append(contentsOf: rootEntries)
+        }
+
+        guard !dataEntries.isEmpty else {
+            Logger.debug("[DynamicView:mergeDefaults] No data section found (root-level or data-only child)")
+            return externalData
+        }
+
+        var merged = [String: Any]()
+        var defaultCount = 0
+
+        // Extract default values from data section
+        for entry in dataEntries {
+            guard let dict = entry.value as? [String: Any],
+                  let name = dict["name"] as? String else {
+                Logger.debug("[DynamicView:mergeDefaults] Skipping entry: value type=\(type(of: entry.value))")
+                continue
+            }
+
+            if let declared = dict["defaultValue"] {
+                // The value for this platform (DataDefaultValue — the code
+                // generators' reading, measured against the shared vectors).
+                let className = DataDefaultValue.className(dict["class"])
+                guard let value = DataDefaultValue.select(declared) else {
+                    // Written per platform with no `swift` entry: the class's
+                    // vocabulary value, as the generated Data model has it.
+                    let given = (declared as? [String: Any]).map { $0.keys.sorted() } ?? []
+                    Logger.log("[SwiftJsonUI] WARNING: " + DataDefaultValue.missingPlatformWarning(
+                        name: name, given: given, className: className))
+                    if let vocabulary = DataDefaultValue.vocabulary(className) {
+                        merged[name] = vocabulary
+                        defaultCount += 1
+                    }
+                    continue
+                }
+                // A String's or String?'s spelling ('' / "…" / '…' / bare) read
+                // as its text.
+                if DataDefaultValue.isText(className), let spelling = value as? String {
+                    merged[name] = DataDefaultValue.text(spelling)
+                } else {
+                    merged[name] = value
+                }
+                defaultCount += 1
+            }
+        }
+
+        Logger.debug("[DynamicView:mergeDefaults] Extracted \(defaultCount) defaults from \(dataEntries.count) data entries")
+
+        // Log visibility-related defaults
+        let visibilityDefaults = merged.filter { $0.key.lowercased().contains("visibility") }
+        if !visibilityDefaults.isEmpty {
+            Logger.debug("[DynamicView:mergeDefaults] Visibility defaults: \(visibilityDefaults)")
+        }
+
+        // External data overrides defaults
+        let externalVisibility = externalData.filter { $0.key.lowercased().contains("visibility") }
+        if !externalVisibility.isEmpty {
+            Logger.debug("[DynamicView:mergeDefaults] External visibility overrides: \(externalVisibility)")
+        }
+
+        for (key, value) in externalData {
+            merged[key] = value
+        }
+
+        Logger.debug("[DynamicView:mergeDefaults] Final merged keys count=\(merged.count)")
+        let finalVisibility = merged.filter { $0.key.lowercased().contains("visibility") }
+        if !finalVisibility.isEmpty {
+            Logger.debug("[DynamicView:mergeDefaults] Final visibility values: \(finalVisibility)")
+        }
+
+        return merged
+    }
+}
+
+// MARK: - Preview Helper
+public struct DynamicViewPreview: View {
+    let jsonName: String
+
+    public init(jsonName: String) {
+        self.jsonName = jsonName
+    }
+
+    public var body: some View {
+        DynamicView(jsonName: jsonName)
+            .onAppear {
+                #if DEBUG
+                HotLoader.instance.isHotLoadEnabled = true
+                #endif
+            }
+    }
+}
+
+// MARK: - Force re-evaluation when data dictionary changes
+// Dictionary<String, Any> doesn't conform to Equatable, so SwiftUI's internal
+// comparison may fail to detect changes. Always returning false ensures body
+// is re-evaluated whenever the parent re-renders with new data.
+extension DynamicView: Equatable {
+    public static func == (lhs: DynamicView, rhs: DynamicView) -> Bool { false }
+}
+#endif // DEBUG

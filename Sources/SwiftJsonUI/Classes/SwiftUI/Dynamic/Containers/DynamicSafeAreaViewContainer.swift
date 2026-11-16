@@ -1,0 +1,245 @@
+//
+//  DynamicSafeAreaViewContainer.swift
+//  SwiftJsonUI
+//
+//  Dynamic mode equivalent of view_converter.rb for SafeAreaView type.
+//  Same as DynamicViewContainer but applies safe area insets after modifiers.
+//
+//  Modifier order (matches view_converter.rb):
+//    1. Container content (same as DynamicViewContainer)
+//    2. applyStandardModifiers
+//    3. gradient (if set)
+//    4. safe area insets (safeAreaInsetPositions)
+//
+
+import SwiftUI
+#if DEBUG
+
+
+// MARK: - SafeAreaView Container
+public struct DynamicSafeAreaViewContainer: View {
+    let component: DynamicComponent
+    let data: [String: Any]
+    let viewId: String?
+
+    public init(component: DynamicComponent, data: [String: Any], viewId: String? = nil) {
+        self.component = component
+        self.data = data
+        self.viewId = viewId
+    }
+
+    /// Data with weighted child flags stripped (for building children only)
+    private var childData: [String: Any] {
+        var d = data
+        d.removeValue(forKey: "__isWeightedChild")
+        d.removeValue(forKey: "__weightedParentOrientation")
+        d.removeValue(forKey: "__distributionFillOrientation")
+        return d
+    }
+
+    public var body: some View {
+        buildBody()
+    }
+
+    private func buildBody() -> AnyView {
+        let children = getChildren()
+        // With no child, a SafeAreaView is an empty View: the View's empty
+        // content (a background is its fill, a size or a weight a clear box).
+        // It was EmptyView here, which lays out nothing, so a sized
+        // SafeAreaView with a background drew nothing while Android and the
+        // web drew the box (ticket 2026-11-08-ios-dynamic-empty-view-bound-
+        // background). The insets are in the shared chain, which the View
+        // container runs too.
+        if children.isEmpty {
+            return AnyView(DynamicViewContainer(component: component, data: data, viewId: viewId))
+        }
+        let orientation = component.orientation
+        let needsRelativePositioning = orientation == nil &&
+            RelativePositionConverter.childrenNeedRelativePositioning(children)
+
+        // --- 1. Build container content ---
+        var result: AnyView
+
+        if children.isEmpty {
+            result = AnyView(EmptyView())
+        } else if needsRelativePositioning {
+            result = AnyView(RelativePositioningContainer(
+                children: children,
+                parentComponent: component,
+                data: childData,
+                viewId: viewId
+            ))
+        } else {
+            let hasWeights = children.contains { child in
+                (DynamicHelpers.resolveWeight(from: child, data: data) ?? 0) > 0
+                    || (child.number(CommonAttributes.self, \.widthWeight, data: data) ?? 0) > 0
+                    || (child.number(CommonAttributes.self, \.heightWeight, data: data) ?? 0) > 0
+            }
+
+            if hasWeights && (orientation == "horizontal" || orientation == "vertical") {
+                result = AnyView(
+                    WeightedStackContainer(
+                        orientation: orientation!,
+                        children: children,
+                        component: component,
+                        data: childData,
+                        viewId: viewId
+                    )
+                )
+            } else if orientation == "horizontal" {
+                // Gravity-driven spacers, same as DynamicViewContainer (and
+                // view_converter.rb): default gravity is left|top, so an
+                // expanding stack pins content to the leading/top edge with a
+                // trailing Spacer. Without them SwiftUI centered the stack —
+                // measured as SafeAreaView_orientation__* parity d=50/73.
+                let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
+                let widthExpands = component.widthRaw == "matchParent" || component.widthRaw == "-1" ||
+                    component.declaredWidth == .infinity || component.declaredWidth == -1
+                let hGravity = Self.extractHorizontalFromGravity(component.gravity)
+                // rightToLeft with no horizontal gravity starts at the right
+                // edge, as a View does (DirectionStart; user ruling
+                // 2026-10-05). The children were reversed and laid from the left.
+                let startEdge = DirectionStart.edge(of: component)
+                result = AnyView(
+                    HStack(alignment: getVerticalAlignment(), spacing: spacingValue) {
+                        if widthExpands && (hGravity == "right" || startEdge == "right") {
+                            Spacer(minLength: 0)
+                        }
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                            DynamicComponentBuilder(
+                                component: child,
+                                data: childData,
+                                viewId: viewId,
+                                parentOrientation: "horizontal"
+                            )
+                        }
+                        if widthExpands && hGravity == "left" && startEdge == nil {
+                            Spacer(minLength: 0)
+                        }
+                    }
+                )
+            } else if orientation == "vertical" {
+                let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
+                let heightExpands = component.heightRaw == "matchParent" || component.heightRaw == "-1" ||
+                    component.declaredHeight == .infinity || component.declaredHeight == -1
+                let vGravity = Self.extractVerticalFromGravity(component.gravity)
+                // bottomToTop with no vertical gravity starts at the bottom
+                // edge, as a View does (DirectionStart): three 40s in a
+                // full-height SafeAreaView sat at 80 / 40 / 0 where Android
+                // and web stack them from the bottom.
+                let startEdge = DirectionStart.edge(of: component)
+                result = AnyView(
+                    VStack(alignment: getHorizontalAlignment(), spacing: spacingValue) {
+                        if heightExpands && (vGravity == "bottom" || startEdge == "bottom") {
+                            Spacer(minLength: 0)
+                        }
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                            DynamicComponentBuilder(
+                                component: child,
+                                data: childData,
+                                viewId: viewId,
+                                parentOrientation: "vertical"
+                            )
+                        }
+                        if heightExpands && vGravity == "top" && startEdge == nil {
+                            Spacer(minLength: 0)
+                        }
+                    }
+                )
+            } else {
+                result = AnyView(
+                    ZStack(alignment: component.alignment ?? .topLeading) {
+                        ForEach(Array(children.enumerated()), id: \.offset) { _, child in
+                            DynamicComponentBuilder(component: child, data: childData, viewId: viewId)
+                        }
+                    }
+                )
+            }
+        }
+
+        // --- 2. applyStandardModifiers ---
+        // `gradient` beats `background` on the same face (canon:
+        // attribute_semantics.json backgroundFill): skip the colour fill
+        // exactly when a gradient is drawable, same as DynamicViewContainer.
+        // SafeAreaView declares `gradient` but no `gradientDirection`, so the
+        // direction is the declared Vertical default.
+        let gradientRaw = component.typedAttributes(SafeAreaViewAttributes.self).gradient
+        let paintsGradient = DynamicGradientPainter.gradientColors(component, colorsRaw: gradientRaw) != nil
+        result = DynamicModifierHelper.applyStandardModifiers(
+            result,
+            component: component,
+            data: data,
+            skipPadding: needsRelativePositioning,
+            skipBackground: paintsGradient
+        )
+
+        // --- 2.5 gradient ---
+        if paintsGradient {
+            result = DynamicGradientPainter.apply(
+                result,
+                component: component,
+                colorsRaw: gradientRaw,
+                direction: nil
+            )
+        }
+
+        // --- 3. Safe area insets ---
+        // Applied by the shared chain above (DynamicModifierHelper
+        // applySafeAreaInsets), because codegen applies it to every component
+        // rather than only to SafeAreaView. This block used to read
+        // `rawData[...]` directly AND used `.ignoresSafeArea`, which reserves
+        // nothing — the opposite of what the attribute means.
+
+        return result
+    }
+
+    private func getChildren() -> [DynamicComponent] {
+        guard let children = component.childComponents else { return [] }
+        let filtered = children.filter { $0.isValid || $0.include != nil }
+        // `direction` reverses the children along the orientation axis —
+        // bottomToTop on a vertical stack, rightToLeft on a horizontal one,
+        // natural order otherwise (the axis gate every other reader applies:
+        // kotlin DynamicSafeAreaViewComponent, view_converter.rb). Nothing
+        // here read it, so the declaration was inert on this face
+        // (SafeAreaView/direction__bottomtotop, run 31243724782
+        // cross-effect: android and web active, ios inert).
+        let direction = DeclaredSpelling.lowered(component.direction, in: SafeAreaViewAttributes.Direction.declaredSpellings)
+        let orientation = component.orientation
+        if (direction == "bottomtotop" && orientation == "vertical") ||
+           (direction == "righttoleft" && orientation == "horizontal") {
+            return filtered.reversed()
+        }
+        return filtered
+    }
+
+    private func getVerticalAlignment() -> VerticalAlignment {
+        switch component.alignment {
+        case .top, .topLeading, .topTrailing: return .top
+        case .bottom, .bottomLeading, .bottomTrailing: return .bottom
+        default: return .center
+        }
+    }
+
+    private func getHorizontalAlignment() -> HorizontalAlignment {
+        switch component.alignment {
+        case .leading, .topLeading, .bottomLeading: return .leading
+        case .trailing, .topTrailing, .bottomTrailing: return .trailing
+        default: return .center
+        }
+    }
+
+    /// Matches Ruby extract_horizontal_from_gravity (default left).
+    static func extractHorizontalFromGravity(_ gravity: [String]?) -> String {
+        GravityAxes.horizontal(gravity)
+    }
+
+    /// Matches Ruby extract_vertical_from_gravity (default top).
+    static func extractVerticalFromGravity(_ gravity: [String]?) -> String {
+        GravityAxes.vertical(gravity)
+    }
+}
+// MARK: - Force re-evaluation when data dictionary changes
+extension DynamicSafeAreaViewContainer: Equatable {
+    public static func == (lhs: DynamicSafeAreaViewContainer, rhs: DynamicSafeAreaViewContainer) -> Bool { false }
+}
+#endif // DEBUG

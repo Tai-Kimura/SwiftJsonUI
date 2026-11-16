@@ -1,0 +1,305 @@
+import SwiftUI
+
+// Custom button style for state-aware buttons
+// All styling (background, cornerRadius, border) is applied inside the button
+struct StateAwareButtonStyle: ButtonStyle {
+    let backgroundColor: Color
+    let cornerRadius: CGFloat
+    let borderWidth: CGFloat?
+    let borderColor: Color?
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(backgroundColor.opacity(configuration.isPressed ? 0.8 : 1.0))
+            .cornerRadius(cornerRadius)
+            .overlay(
+                Group {
+                    if let borderWidth = borderWidth, borderWidth > 0, let borderColor = borderColor {
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .stroke(borderColor, lineWidth: borderWidth)
+                    }
+                }
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+    }
+}
+
+// State-aware button for Static mode
+// Tracks pressed and disabled states for visual feedback
+public struct StateAwareButtonView: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
+    let text: String
+    let partialAttributes: [PartialAttribute]?
+    let action: () -> Void
+    let fontSize: CGFloat?
+    let fontWeight: Font.Weight?
+    /// Font family name (`fontFamily`). Routed into the label's
+    /// `PartialAttributedText`, whose FontSpec path hands family + weight +
+    /// size to `SwiftJsonUIConfiguration.fontProvider` — the same seam the
+    /// Label face uses.
+    let fontFamily: String?
+    let fontColor: Color?
+    let backgroundColor: Color?
+    let tapBackground: Color?
+    let highlightColor: Color?
+    let disabledFontColor: Color?
+    let disabledBackground: Color?
+    let cornerRadius: CGFloat?
+    let borderWidth: CGFloat?
+    let borderColor: Color?
+    let padding: EdgeInsets?
+    let isEnabled: Bool
+    let width: CGFloat?
+    let height: CGFloat?
+    /// Asset name of the button's icon (`image`), or nil for a text-only button.
+    let image: String?
+    /// Icon tint (`tintColor`). nil draws the asset as authored — a template
+    /// rendering mode would flatten a multi-colour asset to a single colour.
+    let imageTint: Color?
+    /// Where the label sits across the button (`textAlign`): the SSoT places
+    /// a Button's text horizontally by textAlign alone, default centre; its
+    /// gravity positions it vertically only (4f ruling 2026-09-27). Until
+    /// SwiftJsonUI 10.29.0 the label stood in the middle whatever textAlign
+    /// said.
+    let textAlignment: HorizontalAlignment
+
+    /// Gap between the icon and the label, matching the other platforms'
+    /// button converters.
+    private static let iconLabelSpacing: CGFloat = 8
+    /// Icon box when no font size is set, matching Android's default.
+    private static let defaultIconSize: CGFloat = 18
+
+    @State private var isPressed = false
+
+    public init(
+        text: String,
+        partialAttributes: [PartialAttribute]? = nil,
+        action: @escaping () -> Void,
+        fontSize: CGFloat? = nil,
+        fontWeight: Font.Weight? = nil,
+        fontFamily: String? = nil,
+        fontColor: Color? = nil,
+        backgroundColor: Color? = nil,
+        tapBackground: Color? = nil,
+        highlightColor: Color? = nil,
+        disabledFontColor: Color? = nil,
+        disabledBackground: Color? = nil,
+        cornerRadius: CGFloat? = nil,
+        borderWidth: CGFloat? = nil,
+        borderColor: Color? = nil,
+        padding: EdgeInsets? = nil,
+        isEnabled: Bool = true,
+        width: CGFloat? = nil,
+        height: CGFloat? = nil,
+        image: String? = nil,
+        imageTint: Color? = nil,
+        textAlignment: HorizontalAlignment = .center
+    ) {
+        self.text = text
+        self.partialAttributes = partialAttributes
+        self.action = action
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.fontFamily = fontFamily
+        self.fontColor = fontColor
+        self.backgroundColor = backgroundColor
+        self.tapBackground = tapBackground
+        self.highlightColor = highlightColor
+        self.disabledFontColor = disabledFontColor
+        self.disabledBackground = disabledBackground
+        self.cornerRadius = cornerRadius
+        self.borderWidth = borderWidth
+        self.borderColor = borderColor
+        self.padding = padding
+        self.isEnabled = isEnabled
+        self.width = width
+        self.height = height
+        self.image = image
+        self.imageTint = imageTint
+        self.textAlignment = textAlignment
+    }
+
+    /// Convenience initializer for backward compatibility with string fontWeight
+    public init(
+        text: String,
+        partialAttributes: [PartialAttribute]? = nil,
+        action: @escaping () -> Void,
+        fontSize: CGFloat? = nil,
+        fontWeight: String,
+        fontFamily: String? = nil,
+        fontColor: Color? = nil,
+        backgroundColor: Color? = nil,
+        tapBackground: Color? = nil,
+        highlightColor: Color? = nil,
+        disabledFontColor: Color? = nil,
+        disabledBackground: Color? = nil,
+        cornerRadius: CGFloat? = nil,
+        borderWidth: CGFloat? = nil,
+        borderColor: Color? = nil,
+        padding: EdgeInsets? = nil,
+        isEnabled: Bool = true,
+        width: CGFloat? = nil,
+        height: CGFloat? = nil,
+        image: String? = nil,
+        imageTint: Color? = nil,
+        textAlignment: HorizontalAlignment = .center
+    ) {
+        self.init(
+            text: text,
+            partialAttributes: partialAttributes,
+            action: action,
+            fontSize: fontSize,
+            fontWeight: Font.Weight.from(string: fontWeight),
+            fontFamily: fontFamily,
+            fontColor: fontColor,
+            backgroundColor: backgroundColor,
+            tapBackground: tapBackground,
+            highlightColor: highlightColor,
+            disabledFontColor: disabledFontColor,
+            disabledBackground: disabledBackground,
+            cornerRadius: cornerRadius,
+            borderWidth: borderWidth,
+            borderColor: borderColor,
+            padding: padding,
+            isEnabled: isEnabled,
+            width: width,
+            height: height,
+            image: image,
+            imageTint: imageTint,
+            textAlignment: textAlignment
+        )
+    }
+    
+    // Get text color based on state
+    private var textColor: Color {
+        if !isEnabled {
+            // Use disabledFontColor if available
+            return disabledFontColor ?? .gray
+        } else if isPressed {
+            // Use highlightColor if available when pressed
+            return highlightColor ?? fontColor ?? .white
+        } else {
+            // Normal state - use fontColor
+            return fontColor ?? .white
+        }
+    }
+    
+    // Get background color based on state
+    private var backgroundColorComputed: Color {
+        if !isEnabled {
+            // Use disabledBackground if available
+            return disabledBackground ?? Color.gray.opacity(0.3)
+        } else if isPressed {
+            // Use tapBackground if available when pressed
+            if let tapBg = tapBackground {
+                return tapBg
+            }
+            // Darken the normal background when pressed
+            return (backgroundColor ?? .blue).opacity(0.8)
+        } else {
+            // Normal state
+            return backgroundColor ?? .blue
+        }
+    }
+    
+    /// The label is the icon, the text, or both. An icon-only button carries
+    /// its accessible name on the icon (a `Button` whose only child is a
+    /// decorative image has no accessible name at all); alongside text the
+    /// icon is decorative.
+    @ViewBuilder
+    private var label: some View {
+        if let image = image, !image.isEmpty {
+            // Scales with the label like the web converter's 1.25em box, and
+            // lands on Android's 18pt default for an unsized button.
+            let iconSize = fontSize.map { $0 * 1.25 } ?? Self.defaultIconSize
+            HStack(spacing: text.isEmpty ? 0 : Self.iconLabelSpacing) {
+                Image(jsonUIAsset: image)
+                    .renderingMode(imageTint == nil ? .original : .template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: iconSize, height: iconSize)
+                    .foregroundColor(imageTint)
+                    .accessibilityHidden(!text.isEmpty)
+                if !text.isEmpty {
+                    textLabel
+                }
+            }
+        } else {
+            textLabel
+        }
+    }
+
+    private var textLabel: some View {
+        PartialAttributedText(
+            text,
+            partialAttributes: partialAttributes ?? [],
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+            fontFamily: fontFamily,
+            fontColor: textColor
+        )
+        .modifier(ButtonTextLineAlignment(alignment: textAlignment))
+    }
+
+    public var body: some View {
+        Button(action: action) {
+            label
+            .padding(padding ?? EdgeInsets())
+            .frame(
+                minWidth: nil,
+                idealWidth: nil,
+                maxWidth: width == nil ? nil : (width == -1 ? .infinity : width),
+                minHeight: nil,
+                idealHeight: nil,
+                maxHeight: height == nil ? nil : (height == -1 ? .infinity : height),
+                alignment: Alignment(horizontal: textAlignment, vertical: .center)
+            )
+            // Apply fixed height if specified (not -1/infinity)
+            .frame(height: (height != nil && height != -1) ? height : nil)
+        }
+        .buttonStyle(StateAwareButtonStyle(
+            backgroundColor: backgroundColorComputed,
+            cornerRadius: cornerRadius ?? 0,
+            borderWidth: borderWidth,
+            borderColor: borderColor
+        ))
+        .onLongPressGesture(minimumDuration: .infinity, maximumDistance: .infinity,
+            pressing: { pressing in
+                withAnimation(.easeInOut(duration: 0.1)) {
+                    isPressed = pressing
+                }
+            },
+            perform: {}
+        )
+        .simultaneousGesture(
+            TapGesture()
+                .onEnded { _ in
+                    // Handle tap
+                }
+        )
+        // .disabled must come after the gesture modifiers: applied before them,
+        // the gesture wrappers re-enable interaction on the composed view and
+        // the accessibility element loses its "not enabled" state (XCUITest
+        // isEnabled stayed true for disabled buttons). Applying it last also
+        // disables the wrapping gestures themselves.
+        .disabled(!isEnabled)
+    }
+}
+
+/// A multi-line label's lines follow textAlignment when it is the start or
+/// the end; the centre leaves the environment's multilineTextAlignment as it
+/// was (a caller's `.multilineTextAlignment` still reaches the Text).
+private struct ButtonTextLineAlignment: ViewModifier {
+    let alignment: HorizontalAlignment
+
+    func body(content: Content) -> some View {
+        if alignment == .leading {
+            content.multilineTextAlignment(.leading)
+        } else if alignment == .trailing {
+            content.multilineTextAlignment(.trailing)
+        } else {
+            content
+        }
+    }
+}

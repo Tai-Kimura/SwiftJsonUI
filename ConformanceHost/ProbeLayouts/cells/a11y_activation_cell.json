@@ -1,0 +1,10 @@
+{
+  "type": "View",
+  "id": "cgCell",
+  "child": [
+    {"type": "Label", "id": "cgCellLbl", "text": "cgCellLbl", "onClick": "@{onRow}"}
+  ],
+  "data": [
+    {"name": "onRow", "class": "() -> Void"}
+  ]
+}

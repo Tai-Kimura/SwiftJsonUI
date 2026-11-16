@@ -1,0 +1,593 @@
+//
+//  DynamicHelpers.swift
+//  SwiftJsonUI
+//
+//  Helper functions for dynamic views
+//
+
+import SwiftUI
+#if DEBUG
+
+
+// MARK: - Helper Functions
+public struct DynamicHelpers {
+
+    // MARK: - Keyboard type
+
+    /// `input` -> `UIKeyboardType`.
+    ///
+    /// Shared between TextField and TextView for the same reason the codegen
+    /// half lives in `text_style_helper.rb` rather than in one converter:
+    /// both components declare `input` and both must answer alike. TextView
+    /// had NO answer at all here — `input` was declared, honoured by codegen
+    /// (`.keyboardType(...)` appended in textview_converter.rb) and read by
+    /// nobody on this face.
+    ///
+    /// 🔻 THREE DECLARED SPELLINGS LANDED ON `.default`, NEXT TO THE VALUE
+    /// THAT MEANS DEFAULT — which is the shape that makes a reader look like
+    /// it read the attribute when it did not. `alphabet`, its declared typo
+    /// alias `allphabet`, and `signedDecimal` had no case. The codegen face
+    /// carried the same defect for `alphabet` / `phone` / `url`, fixed it, and
+    /// this face was never re-measured against the declaration afterwards.
+    ///
+    /// ⚠️ `signedDecimal` is NOT `.decimalPad`: that pad has no minus key, so
+    /// it cannot type the sign the value is named for. `.numbersAndPunctuation`
+    /// is the narrowest UIKit type that offers one — member name taken from
+    /// UITextInputTraits.h and matching the codegen table, not from the plan
+    /// (the Android lane lost an hour to a member name that does not exist).
+    ///
+    /// The date family is spelled out rather than left to fall through,
+    /// because `.default` is the DECLARED answer for it and not an accident:
+    /// attribute_definitions.json says "iOS: UIKeyboardType has no member for
+    /// the date family, so they fall back to .default". Written as cases so a
+    /// reader can tell the two kinds of `.default` apart.
+    ///
+    /// Only the declared spellings are read, case and all (jsonui-cli 1.9.0,
+    /// DeclaredSpelling). The nine this table used to accept beyond the
+    /// declaration — `emailaddress`, `numeric`, `phonenumber`, `decimalpad`,
+    /// `weburl`, `ascii`, `twitter`, `websearch`, `namephonepad` (the last
+    /// three are TextView keyboardType's) — draw the default now, as the
+    /// validator names them. Measured before they went (2026-09-26): 0 of
+    /// 8,814 literal enum values on the nine consumer faces are declared in
+    /// no case, the instrument checked against a layout holding three.
+    static func keyboardType(
+        forInput input: String?,
+        in spellings: [String] = TextFieldAttributes.Input.declaredSpellings
+    ) -> UIKeyboardType {
+        switch DeclaredSpelling.lowered(input, in: spellings) {
+        case "email": return .emailAddress
+        case "number": return .numberPad
+        case "phone": return .phonePad
+        case "decimal": return .decimalPad
+        case "signeddecimal": return .numbersAndPunctuation
+        case "alphabet", "allphabet": return .asciiCapable
+        case "url": return .URL
+        // Declared, read, and answered `.default` on purpose:
+        //   password              — the secure entry is a SecureField, not a keyboard
+        //   date / time / datetime — UIKeyboardType has no member for them
+        //   default                — says so
+        case "password", "date", "time", "datetime", "default": return .default
+        default: return .default
+        }
+    }
+
+    // MARK: - Variable Processing (moved from DynamicViewModel)
+
+    /// Process text with @{} variable placeholders.
+    /// Canonical mixed-text interpolation (binding_semantics.json `text`
+    /// context) — flat-first / dot-path / bracket-index lookup, `??`
+    /// defaults, empty string per unresolved occurrence. One implementation:
+    /// DynamicBindingResolver.interpolate.
+    public static func processText(_ text: String?, data: [String: Any]) -> String {
+        guard let text = text else { return "" }
+        return DynamicBindingResolver.interpolate(text, data: data)
+    }
+
+    /// Process any value that might contain @{} reference
+    /// Automatically unwraps SwiftUI.Binding<T> from data dictionary
+    public static func processValue<T>(_ value: Any?, data: [String: Any]) -> T? {
+        guard let value = value else { return nil }
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveTyped(expression: inner, data: data)
+        }
+        return value as? T
+    }
+
+    public static func processBool(_ value: Any?, data: [String: Any]) -> Bool {
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveBool(expression: inner, data: data) ?? false
+        }
+        return DynamicBindingResolver.coerceBool(value) ?? false
+    }
+
+    public static func processDouble(_ value: Any?, data: [String: Any]) -> Double {
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveDouble(expression: inner, data: data) ?? 0.0
+        }
+        return DynamicBindingResolver.coerceDouble(value) ?? 0.0
+    }
+
+    public static func processInt(_ value: Any?, data: [String: Any]) -> Int {
+        if let stringValue = value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            return DynamicBindingResolver.resolveInt(expression: inner, data: data) ?? 0
+        }
+        if let int = value as? Int { return int }
+        return DynamicBindingResolver.coerceDouble(value).flatMap { Int(exactly: $0.rounded()) } ?? 0
+    }
+
+    public static func processString(_ value: Any?, data: [String: Any]) -> String? {
+        guard let value = value else { return nil }
+        if let stringValue = value as? String {
+            if let inner = DynamicBindingResolver.inner(of: stringValue) {
+                return DynamicBindingResolver.resolveString(expression: inner, data: data)
+            }
+            return stringValue
+        }
+        return value as? String
+    }
+
+    /// Handle action by posting notification
+    public static func handleAction(_ action: String?) {
+        guard let action = action else { return }
+        Logger.debug("[DynamicView] Action: \(action)")
+        NotificationCenter.default.post(
+            name: Notification.Name("DynamicViewAction"),
+            object: nil,
+            userInfo: ["action": action]
+        )
+    }
+
+    // MARK: - Wrapper methods for JSON data transformations (delegate to DynamicDecodingHelper)
+
+    public static func fontFromComponent(_ component: DynamicComponent) -> Font? {
+        return DynamicDecodingHelper.fontFromComponent(component)
+    }
+
+    /// Get font from component with data binding support for the `font` attribute.
+    /// If `font` is a binding expression like @{fontProp}, resolves the font name/weight from data.
+    public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]) -> Font? {
+        fontSpecFromComponent(component, data: data).map { SwiftJsonUIConfiguration.shared.resolveFont($0) }
+    }
+
+    /// The component's font as a spec, with the `font` binding resolved (see fontFromComponent). Drawn through
+    /// `sjuiFont`: the app's fontProvider and the text size rule.
+    public static func fontSpecFromComponent(_ component: DynamicComponent, data: [String: Any]) -> FontSpec? {
+        // Check if font attribute is a binding expression
+        if let fontInner = component.typedAttributes(LabelAttributes.self)
+            .font?.bindingExpression {
+            // Canonical value-context resolution (flat / dot-path / default);
+            // Binding<String> unwraps at the value layer.
+            let resolvedFontName = DynamicBindingResolver.resolveString(
+                expression: fontInner, data: data)
+
+            if let fontName = resolvedFontName {
+                let config = SwiftJsonUIConfiguration.shared
+                let size = DynamicHelpers.resolveNumber(
+                    component.typedAttributes(LabelAttributes.self).fontSize,
+                    legacy: nil, data: data
+                ) ?? config.font.size
+
+                // Weight-only font names
+                let weightNames = ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black", "normal", "regular"]
+                let fontWeight: Font.Weight = {
+                    switch fontName.lowercased() {
+                    case "bold": return .bold
+                    case "semibold": return .semibold
+                    case "medium": return .medium
+                    case "light": return .light
+                    case "thin": return .thin
+                    case "ultralight": return .ultraLight
+                    case "heavy": return .heavy
+                    case "black": return .black
+                    case "normal", "regular": return .regular
+                    default: return config.font.weight
+                    }
+                }()
+
+                if weightNames.contains(fontName.lowercased()) {
+                    return FontSpec(weight: fontWeight, size: size)
+                } else {
+                    return FontSpec(family: fontName, size: size)
+                }
+            }
+        }
+
+        // No binding or binding not resolved, fall back to standard resolution
+        // — with data, so a bound `fontSize` on an otherwise-static font
+        // still resolves (the font-binding branch above never runs for it).
+        return DynamicDecodingHelper.fontSpecFromComponent(component, data: data)
+    }
+
+    public static func getColor(_ identifier: String?) -> Color? {
+        return DynamicDecodingHelper.getColor(identifier)
+    }
+
+    /// Get color with data binding support
+    /// If identifier is a binding expression like @{propertyName}, resolves from data dictionary
+    public static func getColor(_ identifier: String?, data: [String: Any]) -> Color? {
+        guard let identifier = identifier else { return nil }
+
+        // Check if it's a binding expression
+        if let inner = DynamicBindingResolver.inner(of: identifier) {
+            let expression = DynamicBindingResolver.parse(inner)
+            if !expression.negated,
+               let raw = DynamicBindingResolver.lookupRaw(path: expression.path, in: data) {
+                // Color-typed values are checked at the value layer (they
+                // have no canonical string form).
+                if let binding = raw as? SwiftUI.Binding<Color> {
+                    return binding.wrappedValue
+                }
+                if let color = DynamicBindingResolver.unwrap(raw) as? Color {
+                    return color
+                }
+                if let colorString = DynamicBindingResolver.stringify(raw) {
+                    return DynamicDecodingHelper.getColor(colorString)
+                }
+            }
+            if case .string(let fallback)? = expression.defaultLiteral {
+                return DynamicDecodingHelper.getColor(fallback)
+            }
+            return nil
+        }
+
+        // Not a binding, use normal color resolution
+        return DynamicDecodingHelper.getColor(identifier)
+    }
+
+    /// A declared colour off a generated table, bound spelling included.
+    ///
+    /// The one-line idiom for `AttrValue<String>` colours. `.value` reads
+    /// only the literal half — four converters used it and every bound
+    /// colour silently rendered the default (run-4 `?.value` sweep:
+    /// Progress tint/track, TabView unselectedColor, Web background).
+    /// `rawRepresentation` carries the `"@{expr}"` spelling and getColor
+    /// resolves it from data, same as every other colour read.
+    public static func resolveColor(
+        _ attr: AttrValue<String>?, data: [String: Any]
+    ) -> Color? {
+        (attr?.rawRepresentation as? String).flatMap { getColor($0, data: data) }
+    }
+
+    public static func getContentMode(from component: DynamicComponent, data: [String: Any] = [:]) -> ContentMode {
+        return DynamicDecodingHelper.toContentMode(
+            component.enumString(ImageAttributes.self, \.contentMode, data: data)
+        )
+    }
+
+    public static func getNetworkImageContentMode(from component: DynamicComponent, data: [String: Any] = [:]) -> NetworkImage.ContentMode {
+        return DynamicDecodingHelper.toNetworkImageContentMode(
+            component.enumString(NetworkImageAttributes.self, \.contentMode, data: data)
+        )
+    }
+
+    public static func getRenderingMode(from component: DynamicComponent) -> Image.TemplateRenderingMode? {
+        return DynamicDecodingHelper.toRenderingMode(component.renderingMode)
+    }
+
+    public static func getIconPosition(from component: DynamicComponent) -> IconLabelView.IconPosition {
+        return DynamicDecodingHelper.toIconPosition(component.iconPosition)
+    }
+
+    public static func getTextAlignment(from component: DynamicComponent, data: [String: Any] = [:]) -> TextAlignment {
+        return DynamicDecodingHelper.toTextAlignment(component.textAlignSpelling(data: data))
+    }
+
+    // Keep old methods for backward compatibility (deprecated)
+    @available(*, deprecated, renamed: "getContentMode(from:)")
+    public static func contentModeFromString(_ mode: String?) -> ContentMode {
+        return DynamicDecodingHelper.toContentMode(mode)
+    }
+
+    @available(*, deprecated, renamed: "getNetworkImageContentMode(from:)")
+    public static func networkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
+        return DynamicDecodingHelper.toNetworkImageContentMode(mode)
+    }
+
+    @available(*, deprecated, renamed: "getRenderingMode(from:)")
+    public static func renderingModeFromString(_ mode: String?) -> Image.TemplateRenderingMode? {
+        return DynamicDecodingHelper.toRenderingMode(mode)
+    }
+
+    @available(*, deprecated, renamed: "getIconPosition(from:)")
+    public static func iconPositionFromString(_ position: String?) -> IconLabelView.IconPosition {
+        return DynamicDecodingHelper.toIconPosition(position)
+    }
+
+    @available(*, deprecated, renamed: "getTextAlignment(from:)")
+    public static func textAlignmentFromString(_ alignment: String?) -> TextAlignment {
+        return DynamicDecodingHelper.toTextAlignment(alignment)
+    }
+
+    /// `padding` / `paddings` declared as a binding, resolved to edge values.
+    ///
+    /// Both spellings are declared `number|binding` (`padding`) and
+    /// `array|binding` (`paddings`), but they are carried as `AnyCodable`, so
+    /// a bound declaration arrives as the STRING `"@{expr}"`.
+    /// `anyCodableToFloatArray` answers nil for a string, which is how a bound
+    /// padding inset nothing at all on this path while the codegen resolved it
+    /// (`spacing_helper.rb#padding_value`, plan 49: "`.to_i` on a binding is 0,
+    /// which is how every bound padding froze to `.padding(.top, 0)`").
+    public static func resolveEdgeValues(
+        _ value: AnyCodable?, data: [String: Any]
+    ) -> [CGFloat]? {
+        if let literal = DynamicDecodingHelper.anyCodableToFloatArray(value) {
+            return literal
+        }
+        guard let expression = value?.value as? String,
+              let inner = DynamicBindingResolver.inner(of: expression) else {
+            return nil
+        }
+        // A bound uniform padding is the common shape; a bound array is
+        // declared too (`paddings`), so both are accepted from the resolved
+        // value rather than only the number.
+        if let number = DynamicBindingResolver.resolveDouble(expression: inner, data: data) {
+            return [CGFloat(number)]
+        }
+        if let raw = DynamicBindingResolver.unwrap(
+            DynamicBindingResolver.lookupRaw(
+                path: DynamicBindingResolver.parse(inner).path, in: data
+            )
+        ) {
+            return DynamicDecodingHelper.anyCodableToFloatArray(AnyCodable(raw))
+        }
+        return nil
+    }
+
+    // Unified method to get padding EdgeInsets from component
+    // skipInsetPadding: When true, insetHorizontal/insetVertical are not added to padding (for Collection which handles them separately)
+    public static func getPadding(
+        from component: DynamicComponent,
+        skipInsetPadding: Bool = false,
+        data: [String: Any] = [:]
+    ) -> EdgeInsets {
+        var resultPadding = EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+
+        // Check for paddings array or value（UIKitに合わせてpaddingsに統一）
+        if let edges = resolveEdgeValues(component.paddings, data: data) {
+            resultPadding = DynamicDecodingHelper.edgeInsetsFromArray(edges)
+        } else {
+            // Fallback to individual padding properties (UIKitに合わせてpaddingTop形式に統一)
+            // RTL-aware: paddingStart/paddingEnd take precedence over paddingLeft/paddingRight
+            // `topPadding` etc. are DECLARED aliases, carried as their own
+            // fields in the generated table rather than folded into the
+            // canonical name, so the fallback the hand-decode used to do
+            // has to survive here.
+            // `number(_:_:data:)`, not `commonNumber`: the latter reads the
+            // literal half only, so a bound per-edge padding fell to 0 the
+            // same way the uniform spelling did.
+            func edge(_ keyPath: KeyPath<CommonAttributes, AttrValue<Double>?>) -> CGFloat? {
+                component.number(CommonAttributes.self, keyPath, data: data)
+            }
+            let top = edge(\.paddingTop) ?? edge(\.topPadding) ?? 0
+            let leading = edge(\.paddingStart)
+                ?? edge(\.paddingLeft)
+                ?? edge(\.leftPadding) ?? 0
+            let bottom = edge(\.paddingBottom) ?? edge(\.bottomPadding) ?? 0
+            let trailing = edge(\.paddingEnd)
+                ?? edge(\.paddingRight)
+                ?? edge(\.rightPadding) ?? 0
+
+            resultPadding = EdgeInsets(
+                top: top,
+                leading: leading,
+                bottom: bottom,
+                trailing: trailing
+            )
+        }
+
+        // Apply insets if present (additive) - skip if skipInsetPadding is true
+        if !skipInsetPadding {
+            if let insetInsets = DynamicDecodingHelper.insetsFromAnyCodable(component.insets) {
+                resultPadding.top += insetInsets.top
+                resultPadding.leading += insetInsets.leading
+                resultPadding.bottom += insetInsets.bottom
+                resultPadding.trailing += insetInsets.trailing
+            }
+
+            // Apply insetHorizontal if present (additive)
+            if let value = component.insetHorizontal {
+                resultPadding.leading += value
+                resultPadding.trailing += value
+            }
+
+            // Apply insetVertical if present (additive)
+            if let value = component.insetVertical {
+                resultPadding.top += value
+                resultPadding.bottom += value
+            }
+        }
+
+        return resultPadding
+    }
+
+    // Unified method to get margins EdgeInsets from component
+    // Supports binding expressions like @{propertyName} which can be resolved via data dictionary
+    public static func getMargins(from component: DynamicComponent, data: [String: Any] = [:]) -> EdgeInsets {
+        // Check for margins array or value
+        if let marginInsets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(component.margins) {
+            return marginInsets
+        }
+
+        // Fallback to individual margin properties
+        // RTL-aware: startMargin/endMargin take precedence over leftMargin/rightMargin
+        let top = component.margin(.topMargin, data: data)
+        let leading = component.hasMargin(.startMargin)
+            ? component.margin(.startMargin, data: data)
+            : component.margin(.leftMargin, data: data)
+        let bottom = component.margin(.bottomMargin, data: data)
+        let trailing = component.hasMargin(.endMargin)
+            ? component.margin(.endMargin, data: data)
+            : component.margin(.rightMargin, data: data)
+
+        return EdgeInsets(
+            top: top,
+            leading: leading,
+            bottom: bottom,
+            trailing: trailing
+        )
+    }
+
+    // Get background color from component
+    public static func getBackground(from component: DynamicComponent) -> Color {
+        return DynamicDecodingHelper.getColor(component.commonString(\.background)) ?? .clear
+    }
+
+    // Get opacity from component
+    public static func getOpacity(from component: DynamicComponent) -> Double {
+        if let opacity = component.commonNumber(\.opacity) {
+            return Double(opacity)
+        }
+        if let alpha = component.alpha {
+            return Double(alpha)
+        }
+        return 1.0
+    }
+
+    // Check if component should be hidden
+    public static func isHidden(_ component: DynamicComponent, data: [String: Any] = [:]) -> Bool {
+        let hidden = resolveBool(
+            component.typedAttributes(CommonAttributes.self).hidden, legacy: nil, data: data
+        )
+        return hidden == true || component.visibilitySpelling() == "gone"
+    }
+
+    // Convert font weight string to Font.Weight
+    public static func fontWeightFromString(_ weight: String?) -> Font.Weight {
+        // The numeric spellings live in ONE table (`Font.Weight.numeric`,
+        // release-compiled) — round 5 caught "600" fixed in one weight
+        // vocabulary while the fixtures' converters read the other two.
+        if let weight, let numeric = Font.Weight.numeric(weight) {
+            return numeric
+        }
+        switch weight?.lowercased() {
+        case "bold":
+            return .bold
+        case "semibold":
+            return .semibold
+        case "medium":
+            return .medium
+        case "light":
+            return .light
+        case "thin":
+            return .thin
+        case "ultralight":
+            return .ultraLight
+        case "heavy":
+            return .heavy
+        case "black":
+            return .black
+        default:
+            return .regular
+        }
+    }
+
+    // MARK: - Binding-capable common-attribute resolution
+    //
+    // The generated `CommonAttributes` (built from the component's raw JSON via
+    // `component.typedAttributes(...)`) exposes number|binding / boolean|binding
+    // attrs as `AttrValue<Double>?` / `AttrValue<Bool>?`. When the layout wrote
+    // a `@{binding}` string, the legacy typed slot on `DynamicComponent` is nil
+    // (the tolerant decode swallowed the type mismatch); the binding must be
+    // resolved from `data` at render time. These mirror
+    // CollectionConverter.resolveGlobalColumns' `.value` / `.binding` handling.
+
+    /// Resolve an `AttrValue<Double>?` (number|binding) to a CGFloat.
+    /// - `.value(n)`   → the literal.
+    /// - `.binding(e)` → `data[e]` unwrapped (Double / CGFloat / Int / NSNumber /
+    ///   `SwiftUI.Binding<Double>`), or `legacy` when the binding is unresolved.
+    /// - `nil`         → `legacy` (the value the legacy typed decode captured for
+    ///   a plain-number layout).
+    public static func resolveNumber(
+        _ attr: AttrValue<Double>?,
+        legacy: CGFloat?,
+        data: [String: Any]
+    ) -> CGFloat? {
+        switch attr {
+        case .some(.value(let number)):
+            return CGFloat(number)
+        case .some(.binding(let expression)):
+            if let resolved = DynamicBindingResolver.resolveDouble(expression: expression, data: data) {
+                return CGFloat(resolved)
+            }
+            return legacy
+        case nil:
+            return legacy
+        }
+    }
+
+    /// Resolve an `AttrValue<Bool>?` (boolean|binding) to a Bool?.
+    /// Same shape as `resolveNumber`; a `@{!prop}` negation is honored.
+    public static func resolveBool(
+        _ attr: AttrValue<Bool>?,
+        legacy: Bool?,
+        data: [String: Any]
+    ) -> Bool? {
+        switch attr {
+        case .some(.value(let flag)):
+            return flag
+        case .some(.binding(let expression)):
+            if let resolved = DynamicBindingResolver.resolveBool(expression: expression, data: data) {
+                return resolved
+            }
+            return legacy
+        case nil:
+            return legacy
+        }
+    }
+
+    /// Unwrap a data-dictionary value to a Double (Binding / numeric types).
+    private static func unwrapDouble(_ raw: Any?) -> Double? {
+        guard let value = DynamicBindingResolver.unwrap(raw) else { return nil }
+        if let f = value as? CGFloat { return Double(f) }
+        if let n = value as? NSNumber, CFGetTypeID(n) != CFBooleanGetTypeID() {
+            return n.doubleValue
+        }
+        // `weight` is declared `number|string|binding` — the STRING spelling
+        // ("weight": "1") is as declared as the number. codegen reads it with
+        // `.to_f > 0` (label_converter.rb:329), so a numeric string weighs;
+        // returning nil here made dynamic drop it (run-4 type sweep).
+        if let s = value as? String { return Double(s.trimmingCharacters(in: .whitespaces)) }
+        return nil
+    }
+
+    /// Resolve the effective `weight` (number|binding) for a component.
+    /// `CommonAttributes.weight` is `AttrValue<Any>?` (passthrough coercion),
+    /// so a literal number arrives as `.value(<NSNumber/Int/Double>)` and a
+    /// `@{binding}` as `.binding(expr)`. Returns the resolved CGFloat, or the
+    /// legacy typed `component.weight` when there is no binding / it is
+    /// unresolved. Mirrors the weight read the WeightedStack / converters do.
+    public static func resolveWeight(from component: DynamicComponent, data: [String: Any]) -> CGFloat? {
+        let weightAttr = component.typedAttributes(CommonAttributes.self).weight
+        switch weightAttr {
+        case .some(.value(let raw)):
+            if let number = unwrapDouble(raw) { return CGFloat(number) }
+            return nil
+        case .some(.binding(let expression)):
+            if let number = DynamicBindingResolver.resolveDouble(expression: expression, data: data) {
+                return CGFloat(number)
+            }
+            return nil
+        case nil:
+            return nil
+        }
+    }
+}
+
+// MARK: - Conditional View Extension
+extension View {
+    /// Apply a transform only when the optional value is non-nil
+    @ViewBuilder
+    func ifLet<T, Result: View>(_ value: T?, @ViewBuilder transform: (Self, T) -> Result) -> some View {
+        if let value = value {
+            transform(self, value)
+        } else {
+            self
+        }
+    }
+}
+
+#endif // DEBUG

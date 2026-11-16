@@ -1,0 +1,132 @@
+{
+  "type": "SafeAreaView",
+  "id": "cg_lh_root",
+  "width": "matchParent",
+  "height": "matchParent",
+  "orientation": "vertical",
+  "child": [
+    {
+      "type": "ScrollView",
+      "id": "cg_lh_scroll",
+      "width": "matchParent",
+      "weight": 1,
+      "orientation": "vertical",
+      "child": [
+        {
+          "type": "View",
+          "id": "cg_lh_page",
+          "width": "matchParent",
+          "height": "wrapContent",
+          "orientation": "vertical",
+          "child": [
+            {
+              "type": "View",
+              "width": "matchParent",
+              "height": 120,
+              "background": "#CCCCCC"
+            },
+            {
+              "type": "View",
+              "id": "cg_lh_content",
+              "width": "matchParent",
+              "height": "wrapContent",
+              "orientation": "vertical",
+              "gravity": "center",
+              "leftMargin": 24,
+              "rightMargin": 24,
+              "topMargin": 16,
+              "child": [
+                {
+                  "type": "Label",
+                  "id": "cg_lh_title",
+                  "width": "wrapContent",
+                  "height": "wrapContent",
+                  "text": "Title",
+                  "fontSize": 24,
+                  "textAlign": "center"
+                },
+                {
+                  "type": "Label",
+                  "id": "cg_lh_text",
+                  "width": "matchParent",
+                  "height": "wrapContent",
+                  "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+                  "fontSize": 15,
+                  "textAlign": "center",
+                  "topMargin": 8
+                },
+                {
+                  "type": "View",
+                  "id": "cg_lh_question_box",
+                  "width": "matchParent",
+                  "height": "wrapContent",
+                  "orientation": "vertical",
+                  "topMargin": 16,
+                  "child": [
+                    {
+                      "type": "Label",
+                      "id": "cg_lh_question",
+                      "width": "matchParent",
+                      "height": "wrapContent",
+                      "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+                      "fontSize": 18,
+                      "textAlign": "center",
+                      "font": "bold"
+                    },
+                    {
+                      "type": "View",
+                      "width": "matchParent",
+                      "height": 56,
+                      "background": "#CCCCCC",
+                      "topMargin": 16
+                    }
+                  ]
+                },
+                {
+                  "type": "Label",
+                  "id": "cg_lh_margined",
+                  "width": "matchParent",
+                  "height": "wrapContent",
+                  "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+                  "fontSize": 16,
+                  "textAlign": "center",
+                  "topMargin": 32
+                },
+                {
+                  "type": "View",
+                  "id": "cg_lh_box",
+                  "width": 200,
+                  "height": 44,
+                  "topMargin": 16,
+                  "background": "#FFCC66",
+                  "child": [
+                    {
+                      "type": "Label",
+                      "id": "cg_lh_boxed",
+                      "width": "wrapContent",
+                      "height": "wrapContent",
+                      "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+                      "fontSize": 16,
+                      "textAlign": "center"
+                    }
+                  ]
+                },
+                {
+                  "type": "Label",
+                  "id": "cg_lh_one_line",
+                  "width": "matchParent",
+                  "height": "wrapContent",
+                  "text": "Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)? Would you like to continue (outside the listed regions, the rules of the place you live in apply)?",
+                  "fontSize": 16,
+                  "textAlign": "center",
+                  "lines": 1,
+                  "topMargin": 16
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

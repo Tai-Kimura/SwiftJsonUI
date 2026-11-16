@@ -1,0 +1,67 @@
+{
+  "type": "View",
+  "id": "cg_dc_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "data": [
+    {
+      "name": "on",
+      "class": "Bool",
+      "defaultValue": true
+    },
+    {
+      "name": "bg",
+      "class": "String",
+      "defaultValue": "#0000FF"
+    },
+    {
+      "name": "fg",
+      "class": "String",
+      "defaultValue": "#123456"
+    },
+    {
+      "name": "onOff",
+      "class": "(() -> Void)?"
+    }
+  ],
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_dc_view",
+      "width": 120,
+      "height": 60,
+      "topMargin": 8,
+      "background": "@{bg}",
+      "disabledBackground": "#999999",
+      "enabled": "@{on}"
+    },
+    {
+      "type": "View",
+      "id": "cg_dc_view_fixed",
+      "width": 120,
+      "height": 60,
+      "topMargin": 8,
+      "background": "#0000FF",
+      "disabledBackground": "#999999",
+      "enabled": "@{on}"
+    },
+    {
+      "type": "Label",
+      "id": "cg_dc_label",
+      "text": "MMMM",
+      "fontSize": 40,
+      "topMargin": 8,
+      "fontColor": "@{fg}",
+      "disabledFontColor": "#555555",
+      "enabled": "@{on}"
+    },
+    {
+      "type": "Button",
+      "id": "cg_dc_off",
+      "text": "off",
+      "topMargin": 8,
+      "onClick": "@{onOff}"
+    }
+  ]
+}

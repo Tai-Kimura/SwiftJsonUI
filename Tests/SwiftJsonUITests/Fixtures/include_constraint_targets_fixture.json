@@ -1,0 +1,353 @@
+{
+  "version": 1,
+  "title": "JsonUI include constraint targets — a constraint inside an include names its target as the target is spelled after expansion",
+  "notes": "Ticket rjui-include-root-sibling-constraint-dropped, row D4. An include with an id prefixes the ids inside it (shared/core/include_ids_fixture.json, camelCase-joined as shared/core/camel_case_vectors.json); a relative constraint (align*OfView / align*View / alignCenter*View) between two elements of the same partial named its target by the unprefixed id, so the target was not found (sjui: constraint ignored; kjui: an unresolved ref that does not compile; the Dynamic runtimes: ignored). The rule: a target that names an element the partial declares itself (not inside a partial it includes, not an include node's id) takes the same prefix; any other target — and every attribute the include node itself carries, which lands on the partial's root — names the including layout's element and stays as written. `expected` maps each constrained element's expanded id to its constraint attributes and their expanded targets (elements without a constraint are not listed). Read by jsonui-cli (test_tools/tests/test_include_constraint_targets_on_every_platform.py: the sjui and kjui expanders) and, copied byte-identical, by SwiftJsonUI (Tests/SwiftJsonUITests/IncludeConstraintTargetsSharedFixtureTests.swift) and KotlinJsonUI (library-dynamic IncludeConstraintTargetsSharedFixtureTest.kt). The web (rjui) draws an include as a component and reads the same rule at run time: rjui_tools/spec/cli/include_root_sibling_constraint_spec.rb.",
+  "screen": "include_constraints.json",
+  "constraint_keys": [
+    "alignTopOfView",
+    "alignBottomOfView",
+    "alignLeftOfView",
+    "alignRightOfView",
+    "alignTopView",
+    "alignBottomView",
+    "alignLeftView",
+    "alignRightView",
+    "alignCenterVerticalView",
+    "alignCenterHorizontalView"
+  ],
+  "specimens": {
+    "inside_the_partial_every_key": {
+      "layouts": {
+        "include_constraints.json": {
+          "type": "View",
+          "id": "root",
+          "width": "matchParent",
+          "height": "matchParent",
+          "child": [
+            {
+              "include": "parts/panel",
+              "id": "card"
+            }
+          ]
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel",
+          "width": 100,
+          "height": 100,
+          "child": [
+            {
+              "type": "View",
+              "id": "s0",
+              "width": 10,
+              "height": 10,
+              "alignTopOfView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s1",
+              "width": 10,
+              "height": 10,
+              "alignBottomOfView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s2",
+              "width": 10,
+              "height": 10,
+              "alignLeftOfView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s3",
+              "width": 10,
+              "height": 10,
+              "alignRightOfView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s4",
+              "width": 10,
+              "height": 10,
+              "alignTopView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s5",
+              "width": 10,
+              "height": 10,
+              "alignBottomView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s6",
+              "width": 10,
+              "height": 10,
+              "alignLeftView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s7",
+              "width": 10,
+              "height": 10,
+              "alignRightView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s8",
+              "width": 10,
+              "height": 10,
+              "alignCenterVerticalView": "a"
+            },
+            {
+              "type": "View",
+              "id": "s9",
+              "width": 10,
+              "height": 10,
+              "alignCenterHorizontalView": "a"
+            },
+            {
+              "type": "View",
+              "id": "a",
+              "width": 10,
+              "height": 10
+            }
+          ]
+        }
+      },
+      "expected": {
+        "cardS0": {
+          "alignTopOfView": "cardA"
+        },
+        "cardS1": {
+          "alignBottomOfView": "cardA"
+        },
+        "cardS2": {
+          "alignLeftOfView": "cardA"
+        },
+        "cardS3": {
+          "alignRightOfView": "cardA"
+        },
+        "cardS4": {
+          "alignTopView": "cardA"
+        },
+        "cardS5": {
+          "alignBottomView": "cardA"
+        },
+        "cardS6": {
+          "alignLeftView": "cardA"
+        },
+        "cardS7": {
+          "alignRightView": "cardA"
+        },
+        "cardS8": {
+          "alignCenterVerticalView": "cardA"
+        },
+        "cardS9": {
+          "alignCenterHorizontalView": "cardA"
+        }
+      }
+    },
+    "inside_the_partial_no_include_id": {
+      "layouts": {
+        "include_constraints.json": {
+          "type": "View",
+          "id": "root",
+          "width": "matchParent",
+          "height": "matchParent",
+          "child": [
+            {
+              "include": "parts/panel"
+            }
+          ]
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel",
+          "width": 100,
+          "height": 100,
+          "child": [
+            {
+              "type": "View",
+              "id": "s",
+              "width": 10,
+              "height": 10,
+              "alignTopOfView": "a"
+            },
+            {
+              "type": "View",
+              "id": "a",
+              "width": 10,
+              "height": 10
+            }
+          ]
+        }
+      },
+      "expected": {
+        "s": {
+          "alignTopOfView": "a"
+        }
+      }
+    },
+    "root_names_the_including_layout": {
+      "layouts": {
+        "include_constraints.json": {
+          "type": "View",
+          "id": "root",
+          "width": "matchParent",
+          "height": "matchParent",
+          "child": [
+            {
+              "include": "parts/badge",
+              "id": "card"
+            },
+            {
+              "type": "View",
+              "id": "anchor",
+              "width": 10,
+              "height": 10
+            }
+          ]
+        },
+        "parts/badge.json": {
+          "type": "View",
+          "id": "badge",
+          "width": 10,
+          "height": 10,
+          "alignLeftView": "anchor"
+        }
+      },
+      "expected": {
+        "cardBadge": {
+          "alignLeftView": "anchor"
+        }
+      }
+    },
+    "include_node_attribute_is_the_including_layouts": {
+      "layouts": {
+        "include_constraints.json": {
+          "type": "View",
+          "id": "root",
+          "width": "matchParent",
+          "height": "matchParent",
+          "child": [
+            {
+              "include": "parts/panel",
+              "id": "card",
+              "alignTopOfView": "anchor"
+            },
+            {
+              "type": "View",
+              "id": "anchor",
+              "width": 10,
+              "height": 10
+            }
+          ]
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel",
+          "width": 100,
+          "height": 100,
+          "child": [
+            {
+              "type": "View",
+              "id": "anchor",
+              "width": 10,
+              "height": 10
+            },
+            {
+              "type": "View",
+              "id": "s",
+              "width": 10,
+              "height": 10,
+              "alignBottomOfView": "anchor"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "cardPanel": {
+          "alignTopOfView": "anchor"
+        },
+        "cardS": {
+          "alignBottomOfView": "cardAnchor"
+        }
+      }
+    },
+    "nested_includes": {
+      "layouts": {
+        "include_constraints.json": {
+          "type": "View",
+          "id": "root",
+          "width": "matchParent",
+          "height": "matchParent",
+          "child": [
+            {
+              "include": "parts/outer",
+              "id": "outer"
+            }
+          ]
+        },
+        "parts/outer.json": {
+          "type": "View",
+          "id": "outer_box",
+          "width": 100,
+          "height": 100,
+          "child": [
+            {
+              "type": "View",
+              "id": "x",
+              "width": 10,
+              "height": 10,
+              "alignRightOfView": "y"
+            },
+            {
+              "type": "View",
+              "id": "y",
+              "width": 10,
+              "height": 10
+            },
+            {
+              "include": "parts/inner",
+              "id": "inner",
+              "alignTopOfView": "y"
+            }
+          ]
+        },
+        "parts/inner.json": {
+          "type": "View",
+          "id": "inner_box",
+          "width": 50,
+          "height": 50,
+          "child": [
+            {
+              "type": "View",
+              "id": "s",
+              "width": 10,
+              "height": 10,
+              "alignCenterVerticalView": "a"
+            },
+            {
+              "type": "View",
+              "id": "a",
+              "width": 10,
+              "height": 10
+            }
+          ]
+        }
+      },
+      "expected": {
+        "outerX": {
+          "alignRightOfView": "outerY"
+        },
+        "outerInnerInnerBox": {
+          "alignTopOfView": "outerY"
+        },
+        "outerInnerS": {
+          "alignCenterVerticalView": "outerInnerA"
+        }
+      }
+    }
+  }
+}

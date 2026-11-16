@@ -1,0 +1,116 @@
+//
+//  WebConverter.swift
+//  SwiftJsonUI
+//
+//  Converts DynamicComponent to SwiftUI WebView.
+//  Rewritten to match web_converter.rb modifier order.
+//
+//  Modifier order (matching Ruby converter):
+//  1. WebView(url:, html:, backgroundColor:, onLoadFailed:, reloadToken:)
+//  2. applyStandardModifiers()
+//
+
+import SwiftUI
+#if DEBUG
+
+public struct WebConverter {
+
+    public static func convert(
+        component: DynamicComponent,
+        data: [String: Any],
+        viewId: String? = nil
+    ) -> AnyView {
+        let attrs = component.typedAttributes(WebAttributes.self)
+        // Resolve URL - supports both static string and @{binding} expression
+        let urlString: String? = {
+            // `src` is not declared on Web (the SSoT spelling is `url`, read
+            // just below); Image carries the widest declared form and the
+            // extraction reads the spelling for any component.
+            if let src = component.string(ImageAttributes.self, \.src) {
+                return resolveUrlString(src, data: data)
+            }
+            // Fallback: 'url' attribute (Ruby converter spelling)
+            if let urlRaw = attrs.url?.rawString {
+                return resolveUrlString(urlRaw, data: data)
+            }
+            return nil
+        }()
+
+        // `url` wins over `html`, matching web_converter.rb and the web
+        // platform's own precedence (iframe src over srcdoc).
+        let htmlString: String? = attrs.html.map {
+            DynamicHelpers.processText($0, data: data)
+        }
+
+        let url = urlString.flatMap { URL(string: $0) }
+        guard url != nil || htmlString != nil else {
+            return AnyView(
+                Text("Invalid URL")
+                    .foregroundColor(.gray)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            )
+        }
+
+        // Resolve background color
+        let bgColor: UIColor? = {
+            // The bound spelling resolves through the same colour path every
+            // other background uses; `.value` alone dropped it (run-4 sweep).
+            if let color = DynamicHelpers.resolveColor(attrs.common.background, data: data) {
+                return UIColor(color)
+            }
+            return nil
+        }()
+
+        // onLoadFailed / reloadToken — binding-only on both, as in the
+        // codegen (web_converter.rb): a bare string names nothing.
+        let onLoadFailed: (() -> Void)? = attrs.onLoadFailed?.bindingExpression.map { expr in
+            { DynamicEventHelper.callWithId("@{\(expr)}", id: LayoutPath.viewId(of: component), data: data) }
+        }
+        let reloadToken: AnyHashable? = attrs.reloadToken?.bindingExpression.flatMap { expr in
+            let expression = DynamicBindingResolver.parse(expr)
+            return DynamicBindingResolver.unwrap(
+                DynamicBindingResolver.lookupRaw(path: expression.path, in: data)
+            ) as? AnyHashable
+        }
+
+        // 1. WebView(url:, html:, backgroundColor:, onLoadFailed:, reloadToken:)
+        var result = AnyView(WebView(
+            url: url,
+            html: htmlString,
+            backgroundColor: bgColor,
+            onLoadFailed: onLoadFailed,
+            reloadToken: reloadToken
+        ))
+
+        // 2. applyStandardModifiers()
+        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
+
+        return result
+    }
+
+    // MARK: - Private Helpers
+
+    /// Resolve a URL string that may contain @{binding} expression
+    private static func resolveUrlString(_ value: String, data: [String: Any]) -> String {
+        if let inner = DynamicBindingResolver.inner(of: value) {
+            let expression = DynamicBindingResolver.parse(inner)
+            if !expression.negated,
+               let raw = DynamicBindingResolver.lookupRaw(path: expression.path, in: data) {
+                // URL-typed values are checked at the value layer
+                if let resolvedUrl = DynamicBindingResolver.unwrap(raw) as? URL {
+                    return resolvedUrl.absoluteString
+                }
+                if let resolved = DynamicBindingResolver.stringify(raw) {
+                    return resolved
+                }
+            }
+            if case .string(let fallback)? = expression.defaultLiteral {
+                return fallback
+            }
+            return value
+        }
+        return value
+    }
+}
+
+#endif // DEBUG

@@ -1,0 +1,80 @@
+{
+  "handlers": [
+    {
+      "name": "onLblPlain",
+      "count": "cgLblPlain"
+    },
+    {
+      "name": "onBtnPlain",
+      "count": "cgBtnPlain"
+    },
+    {
+      "name": "onBtnInFalse",
+      "count": "cgBtnInFalse"
+    },
+    {
+      "name": "onLblInFalse",
+      "count": "cgLblInFalse"
+    },
+    {
+      "name": "onViewInFalse",
+      "count": "cgViewInFalse"
+    },
+    {
+      "name": "onBtnInBound",
+      "count": "cgBtnInBound"
+    },
+    {
+      "name": "onLblInBound",
+      "count": "cgLblInBound"
+    },
+    {
+      "name": "onViewInBound",
+      "count": "cgViewInBound"
+    },
+    {
+      "name": "onBtnSelfFalse",
+      "count": "cgBtnSelfFalse"
+    }
+  ],
+  "watch": [
+    {
+      "var": "swPlain",
+      "count": "cgSwPlain"
+    },
+    {
+      "var": "swInFalse",
+      "count": "cgSwInFalse"
+    },
+    {
+      "var": "swInBound",
+      "count": "cgSwInBound"
+    },
+    {
+      "var": "swSelfFalse",
+      "count": "cgSwSelfFalse"
+    },
+    {
+      "var": "segPlain",
+      "count": "cgSegPlain"
+    },
+    {
+      "var": "radPlain",
+      "count": "cgRadPlain"
+    },
+    {
+      "var": "segInFalse",
+      "count": "cgSegInFalse"
+    },
+    {
+      "var": "radInFalse",
+      "count": "cgRadInFalse"
+    }
+  ],
+  "writes": [
+    "gateOpen",
+    "rows",
+    "segPlain",
+    "radPlain"
+  ]
+}

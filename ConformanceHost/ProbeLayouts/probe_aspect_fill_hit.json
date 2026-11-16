@@ -1,0 +1,191 @@
+{
+  "type": "View",
+  "id": "cg_afh_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_afh_fill_row",
+      "orientation": "horizontal",
+      "width": "matchParent",
+      "height": 60,
+      "child": [
+        {
+          "type": "TextField",
+          "id": "cg_afh_fill_field",
+          "width": 120,
+          "height": 60,
+          "hint": "f",
+          "background": "#EEEEEE"
+        },
+        {
+          "type": "View",
+          "id": "cg_afh_fill_spine",
+          "width": 16,
+          "height": "matchParent",
+          "background": "#FFFFFF",
+          "child": [
+            {
+              "type": "Image",
+              "id": "cg_afh_fill_img",
+              "width": "matchParent",
+              "height": "matchParent",
+              "src": "conformance_sample",
+              "contentMode": "AspectFill"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "id": "cg_afh_fill_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": 20
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_afh_gap1",
+      "width": 10,
+      "height": 40
+    },
+    {
+      "type": "View",
+      "id": "cg_afh_fit_row",
+      "orientation": "horizontal",
+      "width": "matchParent",
+      "height": 60,
+      "child": [
+        {
+          "type": "TextField",
+          "id": "cg_afh_fit_field",
+          "width": 120,
+          "height": 60,
+          "hint": "f",
+          "background": "#EEEEEE"
+        },
+        {
+          "type": "View",
+          "id": "cg_afh_fit_spine",
+          "width": 16,
+          "height": "matchParent",
+          "background": "#FFFFFF",
+          "child": [
+            {
+              "type": "Image",
+              "id": "cg_afh_fit_img",
+              "width": "matchParent",
+              "height": "matchParent",
+              "src": "conformance_sample",
+              "contentMode": "AspectFit"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "id": "cg_afh_fit_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": 20
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_afh_gap2",
+      "width": 10,
+      "height": 40
+    },
+    {
+      "type": "View",
+      "id": "cg_afh_narrow_row",
+      "orientation": "horizontal",
+      "width": "matchParent",
+      "height": 60,
+      "child": [
+        {
+          "type": "TextField",
+          "id": "cg_afh_narrow_field",
+          "width": 30,
+          "height": 60,
+          "hint": "f",
+          "background": "#EEEEEE"
+        },
+        {
+          "type": "View",
+          "id": "cg_afh_narrow_spine",
+          "width": 16,
+          "height": "matchParent",
+          "background": "#FFFFFF",
+          "child": [
+            {
+              "type": "Image",
+              "id": "cg_afh_narrow_img",
+              "width": "matchParent",
+              "height": "matchParent",
+              "src": "conformance_sample",
+              "contentMode": "AspectFill"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "id": "cg_afh_narrow_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": 20
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_afh_gap3",
+      "width": 10,
+      "height": 40
+    },
+    {
+      "type": "View",
+      "id": "cg_afh_narrowfit_row",
+      "orientation": "horizontal",
+      "width": "matchParent",
+      "height": 60,
+      "child": [
+        {
+          "type": "TextField",
+          "id": "cg_afh_narrowfit_field",
+          "width": 30,
+          "height": 60,
+          "hint": "f",
+          "background": "#EEEEEE"
+        },
+        {
+          "type": "View",
+          "id": "cg_afh_narrowfit_spine",
+          "width": 16,
+          "height": "matchParent",
+          "background": "#FFFFFF",
+          "child": [
+            {
+              "type": "Image",
+              "id": "cg_afh_narrowfit_img",
+              "width": "matchParent",
+              "height": "matchParent",
+              "src": "conformance_sample",
+              "contentMode": "AspectFit"
+            }
+          ]
+        },
+        {
+          "type": "Label",
+          "id": "cg_afh_narrowfit_after",
+          "text": "after",
+          "width": "wrapContent",
+          "height": 20
+        }
+      ]
+    }
+  ]
+}

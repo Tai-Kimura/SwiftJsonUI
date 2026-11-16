@@ -1,0 +1,219 @@
+//
+//  ImageViewConverter.swift
+//  SwiftJsonUI
+//
+//  Dynamic mode equivalent of image_converter.rb
+//  Creates Image view matching tool-generated code exactly.
+//
+//  Modifier order (matches image_converter.rb):
+//    1. Image(...) creation
+//    2. .resizable()
+//    3. .aspectRatio(contentMode:)
+//    4. .clipShape(Circle()) for CircleImage
+//    5. what VoiceOver reads (ImageAccessibilityModifier)
+//    6. the standard chain (applyStandardModifiers) — padding, frame, background,
+//       …, events, accessibilityIdentifier, in the order every other Dynamic
+//       component runs
+//
+
+import SwiftUI
+#if DEBUG
+
+public struct ImageViewConverter {
+
+    /// Convert DynamicComponent to SwiftUI Image
+    /// Matches image_converter.rb convert method exactly
+    public static func convert(
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> AnyView {
+        // --- 1. Image creation ---
+        // srcName takes priority (direct asset name)
+        // --- 1 & 2. Image creation + .resizable() ---
+        let image: Image
+        if let srcName = component.typedAttributes(ImageAttributes.self)
+            .srcName?.rawRepresentation as? String {
+            // srcName is string|binding: the raw representation of a bound
+            // spelling IS the literal "@{expr}", which matches no asset and
+            // rendered nothing. Resolve it the same way `src` and
+            // `highlightSrc` already do.
+            image = Image(jsonUIAsset: DynamicHelpers.processText(srcName, data: data))
+        } else if let src = component.string(ImageAttributes.self, \.src) {
+            let processedSrc = DynamicHelpers.processText(src, data: data)
+            // systemIcon reinterprets `src` as an SF Symbol name rather than
+            // an asset name — a different Image initializer, decided here
+            // (mirrors image_converter.rb).
+            if component.systemIcon == true {
+                image = Image(systemName: processedSrc)
+            } else {
+                image = Image(jsonUIAsset: processedSrc)
+            }
+        } else if let fallback = component.defaultImage
+            ?? component.errorImage ?? component.loadingImage {
+            // Fallback imagery when no src resolves. A static Image never
+            // loads over the network, so errorImage/loadingImage cannot mean
+            // in-flight states here — they join the chain behind defaultImage
+            // (image_converter.rb:36-43 makes the same call). Better an
+            // intended asset than the photo glyph.
+            image = Image(jsonUIAsset: fallback)
+        } else {
+            image = Image(systemName: "photo")
+        }
+
+        // --- 3. .renderingMode + .aspectRatio(contentMode:) ---
+        // renderingMode is an Image-level modifier: template tints via
+        // .foregroundColor/tint, original suppresses tinting (mirrors
+        // image_converter.rb, which emits it before .resizable()).
+        let renderedImage: Image
+        if let renderingMode = DynamicHelpers.getRenderingMode(from: component) {
+            renderedImage = image.renderingMode(renderingMode)
+        } else {
+            renderedImage = image
+        }
+        // fill/scaleToFill are the stretch (canonical image.fill = stretch,
+        // shared/core/attribute_semantics.json): resizable WITHOUT an
+        // aspectRatio modifier fills the frame on both axes — the same
+        // branch image_converter.rb emits.
+        // contentMode is string|binding. The hand-decoded slot holds the
+        // layout spelling, so `@{mode}` matched no branch and fell through to
+        // the `.fit` default — the bound face could not select any mode at
+        // all, least of all the stretch, which is spelled as the ABSENCE of
+        // `.aspectRatio` and so cannot be chosen by a ternary. That absence
+        // is why this goes through Image.imageContentMode rather than
+        // branching here (image_converter.rb names the same seam).
+        //
+        // Read through `enumString`, NOT `rawRepresentation as? String`:
+        // `contentMode` is `AttrValue<AttrEnum<ContentMode>>`, so the
+        // `.value` case carries an `AttrEnum`, not a String, and the cast
+        // returned nil for EVERY literal spelling while a binding — whose
+        // rawRepresentation IS the `"@{expr}"` string — kept working. That is
+        // the inverse of the usual failure and is why the bound fixture
+        // stayed active while all fifteen literal ones went inert (run 4).
+        let contentModeIntent = Self.contentModeIntent(for: component, data: data)
+        let declaredSize: (width: CGFloat, height: CGFloat)? = {
+            guard let w = component.declaredWidth, w.isFinite,
+                  let h = component.declaredHeight, h.isFinite else { return nil }
+            return (w, h)
+        }()
+        var result = AnyView(
+            renderedImage.imageContentMode(contentModeIntent, size: declaredSize)
+        )
+
+        // --- 3b. highlightSrc (pressed-state image) ---
+        // `DynamicComponent` has decoded this all along and nothing read it.
+        // The swap goes on before clipShape/frame so both images are cropped
+        // and sized identically — image_converter.rb emits it in the same slot.
+        if let highlightSrc = component.typedAttributes(ImageAttributes.self)
+            .highlightSrc?.rawRepresentation as? String {
+            let resolved = DynamicHelpers.processText(highlightSrc, data: data)
+            let highlightImage = component.systemIcon == true
+                ? Image(systemName: resolved)
+                : Image(jsonUIAsset: resolved)
+            let base = result
+            result = AnyView(
+                HighlightableImage(
+                    base: { base },
+                    highlight: {
+                        highlightImage
+                            .resizable()
+                            .aspectRatio(contentMode: DynamicHelpers.getContentMode(from: component))
+                    }
+                )
+            )
+        }
+
+        // --- 3c. Inside the frame ---
+        // AspectFill is the crop (attribute_semantics.json image.ruling), but
+        // SwiftUI's `.fill` is fill-and-overflow, and a positional mode with
+        // no declared size draws the image unscaled and whole: both were
+        // drawn past the frame, over the neighbours (jsonui-cli ticket
+        // sjui-aspectfill-image-is-not-cropped-to-its-frame; measured on the
+        // ConformanceHost aspect-fill probe). On each axis the layout sizes,
+        // the image takes the offered size instead of its own, and what is
+        // drawn past it is clipped. A wrapContent axis keeps the image's size.
+        if let alignment = Self.cropAlignment(contentModeIntent, hasDeclaredSize: declaredSize != nil) {
+            let sizedWidth = component.declaredWidth != nil
+            let sizedHeight = component.declaredHeight != nil
+            if sizedWidth || sizedHeight {
+                let image = result
+                result = AnyView(
+                    image
+                        .frame(minWidth: sizedWidth ? 0 : nil, maxWidth: sizedWidth ? .infinity : nil,
+                               minHeight: sizedHeight ? 0 : nil, maxHeight: sizedHeight ? .infinity : nil,
+                               alignment: alignment)
+                        .clipped()
+                        // Drawing only is clipped; the hit shape is the frame
+                        // (sjui-aspectfill-image-takes-touches-outside-its-frame).
+                        .contentShape(Rectangle())
+                )
+            }
+        }
+
+        // --- 4. .clipShape(Circle()) for CircleImage (CircleImageView arrives
+        // as CircleImage: TypeSynonyms `render_as`) ---
+        if component.type?.lowercased() == "circleimage" {
+            result = AnyView(result.clipShape(Circle()))
+        }
+
+        // --- 5. What VoiceOver reads ---
+        // The alt, nothing (decorative), or — for an image that operates a
+        // control with no alt — the asset name as before. Innermost, right
+        // after the image itself: codegen emits it there (before `.padding`),
+        // so the standard chain's traits and identifier land on top of it.
+        result = AnyView(result.modifier(ImageAccessibilityModifier(component: component, data: data)))
+
+        // --- 6. The standard chain ---
+        // Every stage codegen emits for an image, through the same chain every
+        // other Dynamic component runs: image_converter.rb reaches them through
+        // apply_modifiers (modifier_bag.rb), not a list of its own. This chain
+        // used to be hand-picked (frameSize, padding, background, cornerRadius,
+        // border, margins, opacity, hidden), and each stage it left out was
+        // simply not drawn: the border until it was restored on its own, the
+        // events until the fix before this one, and shadow, offset, zIndex,
+        // min / max frame, tint and safeAreaInsetPositions until now (measured
+        // by `dump` against a View through this chain). Padding now sits
+        // INSIDE the frame, as codegen puts it (`.padding` before `.frame`);
+        // the hand-picked chain framed first and padded outside.
+        result = DynamicModifierHelper.applyStandardModifiers(result, component: component, data: data)
+
+        return result
+    }
+
+    /// The resolved `contentMode`.
+    ///
+    /// Internal rather than inlined so the READ has a unit test: the AnyView
+    /// it lands on cannot be inspected, and the defect this replaces lived in
+    /// the read, not in the mapping. A test that exercises
+    /// `ImageContentModeIntent.from` directly stays green while the converter
+    /// feeds it nil — which is exactly what happened before run 4.
+    ///
+    /// `enumString`, NOT `rawRepresentation as? String`: `contentMode` is
+    /// `AttrValue<AttrEnum<ContentMode>>`, so `.value` carries an `AttrEnum`
+    /// and the String cast is nil for EVERY literal spelling, while a
+    /// binding — whose rawRepresentation IS `"@{expr}"` — keeps working.
+    /// All fifteen literal fixtures went inert on ios; the bound one did not.
+    /// Where an image that would be drawn past its frame is placed before
+    /// it is cropped: AspectFill centred; a positional mode with no declared
+    /// size (the seam crops one that has a size) at its own alignment. Nil
+    /// for the modes that stay inside their frame.
+    static func cropAlignment(_ intent: ImageContentModeIntent, hasDeclaredSize: Bool) -> Alignment? {
+        switch intent {
+        case .aspectFill: return .center
+        case .positional(let alignment): return hasDeclaredSize ? nil : alignment
+        case .fit, .stretch: return nil
+        }
+    }
+
+    static func contentModeIntent(
+        for component: DynamicComponent,
+        data: [String: Any]
+    ) -> ImageContentModeIntent {
+        let spelling = DynamicHelpers.processText(
+            component.enumString(ImageAttributes.self, \.contentMode, data: data),
+            data: data
+        )
+        return ImageContentModeIntent.from(spelling)
+    }
+
+}
+#endif // DEBUG

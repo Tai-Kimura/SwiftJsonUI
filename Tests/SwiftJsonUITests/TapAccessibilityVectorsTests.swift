@@ -1,0 +1,91 @@
+//
+//  TapAccessibilityVectorsTests.swift
+//  SwiftJsonUITests
+//
+//  The tap shapes, run against jsonui-cli's shared table
+//  (shared/core/tap_accessibility_vectors.json, copied byte-identical into
+//  Fixtures/; CI's vendored-attr-guard compares the copy with the file at the
+//  pinned jsonui-cli ref). Each layout is decoded the way the Dynamic runtime
+//  decodes it (JSONLayoutLoader.decodeComponent), and the rule runs on the
+//  DynamicComponent tree the converters see. The two type lists are held
+//  equal to the table's, which carries component_metadata.json's
+//  `interactive` declaration — a list edited here alone, or a declaration
+//  changed there alone, is red.
+//
+
+import XCTest
+import SwiftUI
+@testable import SwiftJsonUI
+
+#if DEBUG
+final class TapAccessibilityVectorsTests: XCTestCase {
+
+    private func table() throws -> [String: Any] {
+        let data = try TestFixtures.loadJSON(named: "tap_accessibility_vectors")
+        return try XCTUnwrap(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+    }
+
+    /// Each component inside one with `userInteractionEnabled: false` marked
+    /// as DynamicComponentBuilder marks it (`markedStopped`).
+    private func shapes(_ decoded: DynamicComponent, stopped: Bool = false, into out: inout [String: String?]) {
+        let component = stopped ? decoded.markedStopped() : decoded
+        if let id = component.id {
+            out[id] = TapAccessibility.shape(of: component)?.rawValue
+        }
+        for child in component.childComponents ?? [] {
+            shapes(child, stopped: stopped || TapAccessibility.stops(decoded), into: &out)
+        }
+    }
+
+    func testTheTypeListsAreTheTablesDeclaration() throws {
+        let root = try table()
+        XCTAssertEqual(TapAccessibility.interactiveTypes.sorted(), try XCTUnwrap(root["interactive_types"] as? [String]))
+        XCTAssertEqual(TapAccessibility.knownTypes.sorted(), try XCTUnwrap(root["known_types"] as? [String]))
+    }
+
+    /// Which nodes are controls (`controls`): isControl answers each case as
+    /// jsonui-cli's `control?` does, the app's own spellings registered as the
+    /// case says (an adapter per type, as an app registers its components).
+    func testEveryControlCaseIsAnsweredAsTheTableGives() throws {
+        let controls = try XCTUnwrap(try table()["controls"] as? [String: Any])
+        XCTAssertEqual(TapAccessibility.stopContainerTypes.sorted(), try XCTUnwrap(controls["stop_container_types"] as? [String]))
+        let cases = try XCTUnwrap(controls["cases"] as? [[String: Any]])
+        XCTAssertEqual(Set(cases.compactMap { $0["control"] as? Bool }), [true, false])
+        defer { CustomComponentRegistry.shared.reset() }
+        for c in cases {
+            let type = try XCTUnwrap(c["type"] as? String)
+            let apps = c["app_types"] as? [String] ?? []
+            CustomComponentRegistry.shared.reset()
+            CustomComponentRegistry.shared.registerAll(apps.map { VectorAppComponent(componentType: $0) })
+            XCTAssertEqual(TapAccessibility.isControl(type), c["control"] as? Bool, "\(type), app types \(apps)")
+        }
+    }
+
+    func testEveryCaseGetsTheShapesTheTableGives() throws {
+        let cases = try XCTUnwrap(try table()["cases"] as? [[String: Any]])
+        XCTAssertFalse(cases.isEmpty, "the table has no cases")
+        var seen = Set<String>()
+        for vector in cases {
+            let name = vector["name"] as? String ?? "?"
+            let layout = try XCTUnwrap(vector["layout"] as? [String: Any], name)
+            let expected = try XCTUnwrap(vector["shapes"] as? [String: Any], name)
+            let component = try XCTUnwrap(JSONLayoutLoader.decodeComponent(from: layout), "\(name): did not decode")
+            var got: [String: String?] = [:]
+            shapes(component, into: &got)
+            for (id, want) in expected {
+                XCTAssertEqual(got[id] ?? nil, want as? String, "\(name): \(id)")
+                if let want = want as? String { seen.insert(want) }
+            }
+        }
+        XCTAssertEqual(seen, ["button", "combine", "none"])
+    }
+}
+
+/// An app's own component, registered under a spelling a case names.
+private struct VectorAppComponent: CustomComponentAdapter {
+    let componentType: String
+    func buildView(component: DynamicComponent, data: [String: Any], viewId: String?, parentOrientation: String?) -> AnyView {
+        AnyView(EmptyView())
+    }
+}
+#endif

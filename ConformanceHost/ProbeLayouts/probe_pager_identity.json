@@ -1,0 +1,49 @@
+{
+  "type": "View",
+  "id": "cg_pid_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_pid_pager",
+      "layout": "horizontal",
+      "paging": true,
+      "width": "matchParent",
+      "height": 200,
+      "items": "@{rows}",
+      "currentPage": "@{page}",
+      "onPageChanged": "@{onPageChanged}",
+      "cellIdProperty": "key",
+      "autoChangeTrackingId": true,
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        }
+      ]
+    }
+  ],
+  "data": [
+    {
+      "name": "rows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": []
+          }
+        ]
+      }
+    },
+    {
+      "name": "page",
+      "class": "Int",
+      "defaultValue": 0
+    },
+    {
+      "name": "onPageChanged",
+      "class": "((Int) -> Void)?"
+    }
+  ]
+}

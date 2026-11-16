@@ -1,0 +1,9 @@
+[
+  {
+    "name": "onOff",
+    "set": {
+      "var": "on",
+      "value": false
+    }
+  }
+]

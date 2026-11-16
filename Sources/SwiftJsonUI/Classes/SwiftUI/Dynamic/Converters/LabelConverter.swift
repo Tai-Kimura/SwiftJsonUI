@@ -1,0 +1,626 @@
+//
+//  LabelConverter.swift
+//  SwiftJsonUI
+//
+//  Dynamic mode equivalent of label_converter.rb
+//  Creates PartialAttributedText matching tool-generated code exactly.
+//
+//  Modifier order (matches label_converter.rb):
+//    1. PartialAttributedText(...)
+//    2. .truncationMode (lineBreakMode)
+//    3. .minimumScaleFactor (autoShrink)
+//    4. .padding (edgeInset - internal label padding)
+//    5. weight frame (.frame(maxWidth: .infinity))
+//    6. apply_padding (paddings/paddingTop etc.)
+//    7. apply_frame_size (width/height)
+//    8. apply_frame_constraints (minWidth/maxWidth/minHeight/maxHeight)
+//    9. .background
+//   10. .cornerRadius
+//   11. apply_margins
+//   12. .opacity / .hidden / .disabled
+//   13. accessibilityIdentifier
+//
+
+import SwiftUI
+#if DEBUG
+
+public struct LabelConverter {
+
+    /// Convert DynamicComponent to SwiftUI PartialAttributedText
+    /// Matches label_converter.rb convert method exactly
+    public static func convert(
+        component: DynamicComponent,
+        data: [String: Any],
+        parentOrientation: String? = nil
+    ) -> AnyView {
+        let attrs = component.typedAttributes(LabelAttributes.self)
+        // --- 1. Build PartialAttributedText ---
+        // `processText` returns a non-optional String, so the `?? ""` that used to be
+        // here could never be reached.
+        let processedText = DynamicHelpers.processText(
+            attrs.text?.rawRepresentation as? String, data: data
+        )
+
+        // hint / hintAttributes — the Label placeholder. UIKit's SJUILabel
+        // swaps in the styled hint when the text is empty and requires BOTH
+        // keys; `placeholder` is the declared alias of `hint`, and
+        // hintAttributes.fontColor wins over the flat hintColor. Nothing on
+        // this path read any of it, so a Label carrying only a hint rendered
+        // empty while the generated code rendered the hint
+        // (label_converter.rb#label_hint_config).
+        let hint = labelHint(component: component, attrs: attrs, data: data)
+        let showsHint = hint != nil && processedText.isEmpty
+        let text = (showsHint ? hint!.text : processedText).dynamicLocalized()
+
+        // Build partialAttributes from component if present
+        let partialAttributes = buildPartialAttributes(component: component, data: data)
+
+        // Font properties. The hint carries its own size and colour while it
+        // is showing — that is the whole point of hintAttributes.
+        let fontSize = showsHint
+            ? (hint?.size ?? DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data))
+            : DynamicHelpers.resolveNumber(attrs.fontSize, legacy: nil, data: data)
+        // Resolve font from binding if present (e.g., @{fontProp})
+        let resolvedFont: String? = {
+            if showsHint, let hintFont = labelHintFont(attrs) { return hintFont }
+            if let expr = attrs.font?.bindingExpression {
+                // Canonical string value context (Binding<String> unwraps)
+                if let fontString = DynamicBindingResolver.resolveString(expression: expr, data: data) {
+                    return fontString
+                }
+            }
+            return attrs.font?.rawRepresentation as? String
+        }()
+        let fontWeight: String? = {
+            if let fw = component.fontWeightSpelling() { return fw }
+            guard let font = resolvedFont?.lowercased() else { return nil }
+            let weightNames = ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black", "normal", "regular"]
+            return weightNames.contains(font) ? font : nil
+        }()
+
+        // fontColor with binding support
+        let fontColor: Color? = {
+            if component.commonBool(\.enabled) == false,
+               let disabledColor = component.string(ButtonAttributes.self, \.disabledFontColor) {
+                return DynamicHelpers.getColor(disabledColor, data: data)
+            }
+            if showsHint, let hintColor = hint?.color { return hintColor }
+            return DynamicHelpers.getColor(attrs.fontColor?.rawRepresentation as? String, data: data)
+        }()
+
+        // lineHeightMultiple goes to the text as it is — the spacing is
+        // (m - 1) x the font's line, which PartialAttributedText measures
+        // from the font in force (ruling B; the first line stays L on iOS). Either may be bound: a hand-decoded slot is
+        // nil for `@{expr}`, and a bound multiple produced no spacing at all.
+        // A showing hint's own lineHeightMultiple wins, as its size and font
+        // do (labelHintLineHeightMultiple); nothing read it.
+        let lineHeightMultiple: CGFloat? = (showsHint ? labelHintLineHeightMultiple(attrs) : nil)
+            ?? DynamicHelpers.resolveNumber(attrs.lineHeightMultiple, legacy: nil, data: data)
+        let lineSpacing: CGFloat? = lineHeightMultiple != nil ? nil : DynamicHelpers.resolveNumber(
+            attrs.lineSpacing, legacy: nil, data: data
+        )
+
+        // lineLimit
+        let resolvedLines = DynamicHelpers.resolveNumber(
+            attrs.lines, legacy: nil, data: data
+        ).map { Int($0) }
+        let lineLimit: Int? = {
+            if let lines = resolvedLines {
+                return lines == 0 ? nil : lines
+            }
+            if component.autoShrink == true {
+                return 1
+            }
+            return nil  // nil means no lineLimit specified
+        }()
+        let hasLineLimit = resolvedLines != nil || component.autoShrink == true
+
+        // textAlignment
+        // The lines follow the Label rule (textAlign, else gravity's
+        // horizontal part, else the start).
+        let textAlignment = DynamicModifierHelper.labelTextAlignment(component, data: data)
+
+        // linkable
+        let linkable = DynamicHelpers.resolveBool(
+            attrs.linkable, legacy: nil, data: data
+        ) == true
+
+        let fontWeightValue: Font.Weight? = fontWeight.flatMap { Font.Weight.from(string: $0) }
+
+        // fontFamily with binding support
+        let fontFamily: String? = {
+            if let expr = attrs.fontFamily?.bindingExpression {
+                // Canonical string value context (Binding<String> unwraps)
+                if let family = DynamicBindingResolver.resolveString(expression: expr, data: data) {
+                    return family
+                }
+                return nil
+            }
+            return attrs.fontFamily?.rawRepresentation as? String
+        }()
+
+        // highlightAttributes / highlightColor, driven by `selected`
+        let highlight = buildHighlight(component: component, attrs: attrs, data: data)
+        let isHighlighted = DynamicHelpers.resolveBool(attrs.selected, legacy: nil, data: data) ?? false
+
+        var result = AnyView(
+            PartialAttributedText(
+                text,
+                partialAttributes: partialAttributes ?? [],
+                fontSize: fontSize,
+                fontWeight: fontWeightValue,
+                fontFamily: fontFamily,
+                fontColor: fontColor,
+                underline: component.decorationFlag(\.underline),
+                strikethrough: component.decorationFlag(\.strikethrough),
+                underlineDecoration: component.decorationStyle(\.underline, data: data),
+                strikethroughDecoration: component.decorationStyle(\.strikethrough, data: data),
+                lineSpacing: lineSpacing,
+                lineHeightMultiple: lineHeightMultiple,
+                lineLimit: hasLineLimit ? lineLimit : nil,
+                textAlignment: textAlignment,
+                linkable: linkable,
+                highlightAttributes: highlight,
+                isHighlighted: isHighlighted
+            )
+        )
+
+        // --- 2. truncationMode (lineBreakMode) ---
+        if let lineBreakMode = component.lineBreakMode {
+            let mode: Text.TruncationMode? = {
+                switch lineBreakMode {
+                case "Head": return .head
+                case "Middle": return .middle
+                case "Tail", "Clip": return .tail
+                default: return nil
+                }
+            }()
+            if let mode = mode {
+                result = AnyView(result.truncationMode(mode))
+            }
+        }
+
+        // --- 3. minimumScaleFactor (autoShrink) ---
+        let resolvedScaleFactor = DynamicHelpers.resolveNumber(
+            attrs.minimumScaleFactor, legacy: nil, data: data
+        )
+        if component.autoShrink == true {
+            result = AnyView(result.minimumScaleFactor(resolvedScaleFactor ?? 0.5))
+        } else if let scaleFactor = resolvedScaleFactor {
+            result = AnyView(result.minimumScaleFactor(scaleFactor))
+        }
+
+        // --- 4. edgeInset (internal label padding) ---
+        if let edgeInset = component.edgeInset {
+            result = AnyView(result.padding(parseEdgeInset(edgeInset)))
+        }
+
+        // --- 5. weight frame ---
+        // weight is number|binding — resolve a `@{binding}` from data.
+        if let weight = DynamicHelpers.resolveWeight(from: component, data: data), weight > 0 {
+            let effectiveOrientation = parentOrientation
+                ?? component.rawAttribute("parent_orientation") as? String
+            if effectiveOrientation == "horizontal" {
+                // Map textAlign to frame alignment
+                // By the Label rule: textAlign, else gravity's horizontal
+                // part, else the start (DynamicModifierHelper.labelHorizontal).
+                let frameAlignment = Alignment(horizontal: DynamicModifierHelper.labelHorizontal(component, data: data), vertical: .center)
+                result = AnyView(result.frame(maxWidth: CGFloat.infinity, alignment: frameAlignment))
+            } else if effectiveOrientation == "vertical" {
+                result = AnyView(result.frame(maxHeight: CGFloat.infinity))
+            }
+        }
+
+        // --- 6. apply_padding (paddings/paddingTop etc.) ---
+        result = DynamicModifierHelper.applyPadding(result, component: component, data: data)
+
+        // --- 6b. height wrapContent keeps its lines (frame_helper.rb apply_label_wrap_height) ---
+        if LabelWrapHeight.applies(to: component, parentOrientation: parentOrientation, data: data) {
+            result = AnyView(result.modifier(LabelWrapHeight()))
+        }
+
+        // --- 7. apply_frame_size (width/height) ---
+        result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
+
+        // --- 8. apply_frame_constraints (minWidth/maxWidth etc.) ---
+        result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
+
+        // --- 9. background ---
+        result = DynamicModifierHelper.applyBackground(result, component: component, data: data)
+
+        // --- 10. cornerRadius ---
+        result = DynamicModifierHelper.applyCornerRadius(result, component: component, data: data)
+
+        // --- borderWidth + borderColor ---
+        // 🔻 THIS STEP WAS MISSING, AND THE OMISSION SHIPPED. A hand-rolled
+        // chain here mirrors the generator's modifier order, and the generator
+        // registers `:border` immediately after `:corner_radius`
+        // (label_converter.rb: "ボーダー（cornerRadius の直後、margins の前に適用）").
+        // The copy stopped at cornerRadius, so a declared border simply did not
+        // draw in dynamic mode while codegen drew it — measured 2026-09-16 on a
+        // consumer's chip: `type: Label, borderWidth: 1, borderColor: gold`
+        // rendered with a gold outline from the generated view and with none at
+        // all from the dynamic renderer, on the same screen.
+        //
+        // ⚠️ The standard pipeline HAS a border stage. Only the converters that
+        // opt out of it and re-implement the order by hand could lose this, and
+        // all four of them had (Label, Image, NetworkImage, Text).
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
+
+        // shadow — the standard order's place, after the border (standardOrder:
+        // border, shadow). This chain does not run applyStandardModifiers, where
+        // the shadow stage lives, so a declared shadow never drew here while
+        // codegen drew it (ticket 2026-11-07-declared-binding-slots-and-dynamic-shadow).
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
+
+        // --- 10b. textShadow — { color:, blur:, offset: [x, y] } (or a bare
+        // color string, UIKit default 1pt blur). Mirrors label_converter.rb
+        // apply_text_shadow; the dynamic path never read it (33 cross-effect:
+        // ios rendered flat for a declared shadow).
+        if let shadow = attrs.textShadow {
+            if let colorName = shadow as? String,
+               let color = DynamicHelpers.getColor(colorName) {
+                result = AnyView(result.shadow(color: color, radius: 1, x: 0, y: 1))
+            } else if let dict = shadow as? [String: Any] {
+                let color = (dict["color"] as? String).flatMap { DynamicHelpers.getColor($0) }
+                    ?? Color.black.opacity(0.3)
+                let blur = (dict["blur"] as? Double) ?? (dict["blur"] as? Int).map(Double.init) ?? 1
+                var x: Double = 0, y: Double = 1
+                if let offset = dict["offset"] as? [Any], offset.count >= 2 {
+                    x = (offset[0] as? Double) ?? (offset[0] as? Int).map(Double.init) ?? 0
+                    y = (offset[1] as? Double) ?? (offset[1] as? Int).map(Double.init) ?? 1
+                }
+                result = AnyView(result.shadow(color: color, radius: blur, x: x, y: y))
+            }
+        }
+
+        // --- 11. margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
+        // The tap, inside the offset and the margins (standardOrder: events and
+        // hitTesting after conformanceFrame): its receiver is the id box, margin
+        // out (jsonui-cli ticket sjui-a-combined-taps-id-box-takes-its-margin-in).
+        // --- 13. onClick ---
+        result = DynamicEventHelper.applyOnClick(result, component: component, data: data)
+
+        // userInteractionEnabled, outside the tap (the standard chain's hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
+        // The offset, at the standard order's place (standardOrder: conformance
+        // frame, offset, margins). This chain does not run
+        // applyStandardModifiers, and until 10.29.7 it had no offset stage, so
+        // offsetX / offsetY moved nothing here while codegen and Android moved
+        // the view (ticket sjui-dynamic-offsetx-is-not-applied-to-label-button-
+        // and-textview).
+        result = DynamicModifierHelper.applyOffset(result, component: component, data: data)
+        result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
+
+        // --- 12. opacity / hidden / disabled ---
+        result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
+        result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
+
+        // --- 14. accessibilityIdentifier ---
+        result = DynamicModifierHelper.applyAccessibilityId(result, component: component)
+
+        return result
+    }
+
+    // MARK: - Highlight builder
+
+    /// `highlightAttributes` / `highlightColor` -> the styling that takes over
+    /// while `selected` is true.
+    ///
+    /// Mirrors `label_converter.rb#emit_highlight_attributes` and, through it,
+    /// the UIKit precedence in SJUILabel's creator: a non-empty attribute object
+    /// wins, an object with no recognised key falls through to `highlightColor`.
+    private static func buildHighlight(
+        component: DynamicComponent,
+        attrs: LabelAttributes,
+        data: [String: Any]
+    ) -> TextHighlightAttributes? {
+        var highlight = TextHighlightAttributes()
+        var recognised = false
+
+        if let dict = attrs.highlightAttributes {
+            if let font = dict["font"] as? String {
+                // UIKit resolves the literal name "bold" to the bold system
+                // font rather than to a family.
+                if font.lowercased() == "bold" {
+                    highlight.fontWeight = .bold
+                } else {
+                    highlight.fontFamily = font
+                }
+                recognised = true
+            }
+            if let size = dict["fontSize"] as? NSNumber {
+                highlight.fontSize = CGFloat(size.doubleValue)
+                recognised = true
+            }
+            if let color = dict["fontColor"] as? String,
+               let resolved = DynamicHelpers.getColor(color, data: data) {
+                highlight.fontColor = resolved
+                recognised = true
+            }
+            if let multiple = dict["lineHeightMultiple"] as? NSNumber {
+                highlight.lineHeightMultiple = CGFloat(multiple.doubleValue)
+                recognised = true
+            }
+            if let align = dict["textAlign"] as? String {
+                // The highlight's own declaration (Left / Right / Center).
+                switch DeclaredSpelling.lowered(align, in: LabelAttributes.HighlightAttributes.TextAlign.declaredSpellings) {
+                case "left": highlight.textAlignment = .leading
+                case "center": highlight.textAlignment = .center
+                case "right": highlight.textAlignment = .trailing
+                default: break
+                }
+                recognised = highlight.textAlignment != nil || recognised
+            }
+        }
+
+        if recognised {
+            return highlight
+        }
+        if let color = DynamicHelpers.getColor(
+            attrs.highlightColor?.rawRepresentation as? String, data: data
+        ) {
+            return TextHighlightAttributes(fontColor: color)
+        }
+        return nil
+    }
+
+    // MARK: - PartialAttributes builder
+
+    /// A range's handler name, from either declared spelling: `onClick` (the
+    /// canonical one) first, then `onclick` (its alias), each a binding or
+    /// the method's name. From jsonui-cli 1.9.0 the normalizer folds
+    /// `onclick` into `onClick`, and `jui build` distributes the folded (L1)
+    /// layouts, so a name arrives in onClick. A value that names no method,
+    /// or is neither a binding nor a name (`"@{a} b"`), passes to the next
+    /// spelling (jsonui-cli shared/core/tap_accessibility.rb `range_handler`).
+    static func partialHandlerName(_ dict: [String: Any]) -> String? {
+        for key in ["onClick", "onclick"] {
+            guard let value = dict[key] as? String, TapAccessibility.namesAMethod(value) else { continue }
+            if let name = DynamicEventHelper.extractPropertyName(from: value) { return name }
+            if !value.hasPrefix("@{") { return value }
+        }
+        return nil
+    }
+
+    /// The ranges the Label draws, for tests.
+    static func partialAttributesForTest(component: DynamicComponent, data: [String: Any]) -> [PartialAttribute] {
+        buildPartialAttributes(component: component, data: data) ?? []
+    }
+
+    private static func buildPartialAttributes(
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> [PartialAttribute]? {
+        guard let rawAttrs = component.partialAttributes,
+              let attrsArray = rawAttrs.value as? [[String: Any]], !attrsArray.isEmpty else {
+            return nil
+        }
+        return attrsArray.compactMap { dict -> PartialAttribute? in
+            // Resolve onClick closure from data dictionary
+            var onClickClosure: (() -> Void)? = nil
+            let handlerName = partialHandlerName(dict)
+            if let propName = handlerName {
+                onClickClosure = data[propName] as? () -> Void
+            }
+
+            // EVERY value slot resolves `@{...}` first: the partial map is raw
+            // JSON, and `as? String` handed the SPELLING to the pattern match
+            // and the colour parser — a bound `range` never matched (the
+            // partial silently vanished) and a bound fontColor styled nothing,
+            // while the codegen path interpolates `\(data.x)` at render time
+            // (a downstream app's row cell, 2026-08-08).
+
+            // Parse fontSize from CGFloat, Int, or a bound number
+            var fontSize: CGFloat? = nil
+            if let fs = dict["fontSize"] as? CGFloat {
+                fontSize = fs
+            } else if let fs = dict["fontSize"] as? Int {
+                fontSize = CGFloat(fs)
+            } else if let bound = resolvePartialString(dict["fontSize"], data: data),
+                      let n = Double(bound) {
+                fontSize = CGFloat(n)
+            }
+
+            // Parse fontWeight (static spelling or bound)
+            var fontWeight: Font.Weight? = nil
+            if let fw = resolvePartialString(dict["fontWeight"], data: data)
+                ?? resolvePartialString(dict["font"], data: data) {
+                fontWeight = Font.Weight.from(string: fw)
+            }
+
+            let fontColor = resolvePartialString(dict["fontColor"], data: data)
+                .flatMap { DynamicHelpers.getColor($0, data: data) }
+            let background = resolvePartialString(dict["background"], data: data)
+                .flatMap { DynamicHelpers.getColor($0, data: data) }
+
+            // Use range-based or textPattern-based init
+            if let rangeArray = dict["range"] as? [Int], rangeArray.count == 2, rangeArray[0] < rangeArray[1] {
+                return PartialAttribute(
+                    range: rangeArray[0]..<rangeArray[1],
+                    fontColor: fontColor,
+                    fontSize: fontSize,
+                    fontWeight: fontWeight,
+                    underline: drawsLine(dict["underline"]),
+                    strikethrough: drawsLine(dict["strikethrough"]),
+                    backgroundColor: background,
+                    onClick: onClickClosure,
+                    onClickActionName: dict["onClick"] as? String ?? dict["onclick"] as? String
+                )
+            } else if let rawPattern = dict["range"] as? String,
+                      let pattern = resolvePartialString(rawPattern, data: data),
+                      !pattern.isEmpty {
+                // An empty resolved pattern (the VM's "no highlight" value)
+                // builds no partial rather than a zero-width one.
+                return PartialAttribute(
+                    textPattern: pattern.dynamicLocalized(),
+                    fontColor: fontColor,
+                    fontSize: fontSize,
+                    fontWeight: fontWeight,
+                    underline: drawsLine(dict["underline"]),
+                    strikethrough: drawsLine(dict["strikethrough"]),
+                    backgroundColor: background,
+                    onClick: onClickClosure,
+                    onClickActionName: dict["onClick"] as? String ?? dict["onclick"] as? String
+                )
+            } else {
+                return nil
+            }
+        }
+    }
+
+    /// A partial-map value slot: `@{expr}` resolves against the data map
+    /// through the same canonical resolver every Label-level binding uses;
+    /// a plain string passes through; an unresolvable binding yields nil
+    /// (slot absent), never the spelling.
+    static func resolvePartialString(_ raw: Any?, data: [String: Any]) -> String? {
+        guard let s = raw as? String else { return nil }
+        guard let inner = DynamicBindingResolver.inner(of: s) else { return s }
+        return DynamicBindingResolver.resolveString(expression: inner, data: data)
+    }
+
+    /// Whether a declared partial `underline` / `strikethrough` draws a line.
+    /// Same `textDecoration` contract as the Label body: the boolean face is
+    /// itself, the OBJECT face draws unless `lineStyle: "None"`, a non-empty
+    /// array is a presence statement. `as? Bool` alone forced every styled
+    /// object to false (the android mirror fixed the same read in 4a4a810).
+    static func drawsLine(_ declared: Any?) -> Bool {
+        switch declared {
+        case nil: return false
+        case let b as Bool: return b
+        case let m as [String: Any]:
+            return DeclaredSpelling.lowered(m["lineStyle"] as? String, in: LabelAttributes.Underline.LineStyle.declaredSpellings) != "none"
+        case let a as [Any]: return !a.isEmpty
+        default: return false
+        }
+    }
+
+    // MARK: - Edge Inset Parser
+
+    /// Parse edgeInset from AnyCodable (single value, array [top,right,bottom,left], or pipe-separated string)
+    /// The Label placeholder: text, and the size/colour it carries.
+    ///
+    /// A `hint` shows on its own (2026-10-05 user ruling 3): it needed
+    /// `hintAttributes` beside it, as UIKit's SJUILabel did, so a Label with
+    /// only a hint drew nothing. Without a declared colour it is drawn in the
+    /// configuration's placeholder colour (`colors.placeholder`, the system's
+    /// placeholderText by default) — the ruling's light default; it drew in the
+    /// text colour. `placeholder` is the declared alias of `hint`, and the
+    /// nested `hintAttributes.fontColor` wins over the flat `hintColor`, which
+    /// is the cascade adjudicated for TextField's hintAttributes. Same rule as
+    /// `label_converter.rb#label_hint_config`.
+    static func labelHint(
+        component: DynamicComponent,
+        attrs: LabelAttributes,
+        data: [String: Any]
+    ) -> (text: String, color: Color?, size: CGFloat?)? {
+        guard let raw = attrs.hint ?? component.placeholder,
+              !raw.isEmpty else { return nil }
+        let nested = attrs.hintAttributes ?? [:]
+
+        let colorSpelling = (nested["fontColor"] as? String)
+            ?? (attrs.hintColor?.rawRepresentation as? String)
+        let size = (nested["fontSize"] as? Double).map { CGFloat($0) }
+            ?? (nested["fontSize"] as? Int).map { CGFloat($0) }
+
+        return (
+            text: DynamicHelpers.processText(raw, data: data),
+            color: DynamicHelpers.getColor(colorSpelling, data: data)
+                ?? Color(SwiftJsonUIConfiguration.shared.colors.placeholder),
+            size: size
+        )
+    }
+
+    /// The font the placeholder is drawn in while it shows:
+    /// `hintAttributes.font` (a weight name such as `bold`, or a family),
+    /// read the way the Label's own `font` is. labelHint carried the colour
+    /// and the size only, so `hintAttributes: {font: bold, fontSize: 24}`
+    /// drew a regular-weight hint that fit one line where Android and web
+    /// wrap a bold one onto two (frame-parity Label/hintAttributes__static,
+    /// 2026-10-05). label_converter.rb#label_hint_config reads it the same way.
+    static func labelHintFont(_ attrs: LabelAttributes) -> String? {
+        attrs.hintAttributes?["font"] as? String
+    }
+
+    /// `hintAttributes.lineHeightMultiple`, applied while the hint shows the
+    /// way the Label's own is (ruling B: each line m x the line of the hint's
+    /// size; the iOS first line stays L). Read by nothing on either iOS face,
+    /// so a hint at fontSize 24 with 1.5 kept its plain line.
+    /// label_converter.rb#label_hint_config reads it the same way.
+    static func labelHintLineHeightMultiple(_ attrs: LabelAttributes) -> CGFloat? {
+        let value = attrs.hintAttributes?["lineHeightMultiple"]
+        if let d = value as? Double { return CGFloat(d) }
+        if let i = value as? Int { return CGFloat(i) }
+        return nil
+    }
+
+    private static func parseEdgeInset(_ edgeInset: AnyCodable) -> EdgeInsets {
+        let value = edgeInset.value
+
+        // Single numeric value
+        if let single = value as? CGFloat {
+            return EdgeInsets(top: single, leading: single, bottom: single, trailing: single)
+        }
+        if let single = value as? Double {
+            let v = CGFloat(single)
+            return EdgeInsets(top: v, leading: v, bottom: v, trailing: v)
+        }
+        if let single = value as? Int {
+            let v = CGFloat(single)
+            return EdgeInsets(top: v, leading: v, bottom: v, trailing: v)
+        }
+
+        // Array format [top, right, bottom, left] (UIKit order)
+        if let array = value as? [Any] {
+            let values = array.compactMap { item -> CGFloat? in
+                if let d = item as? Double { return CGFloat(d) }
+                if let i = item as? Int { return CGFloat(i) }
+                if let f = item as? CGFloat { return f }
+                return nil
+            }
+            switch values.count {
+            case 1:
+                return EdgeInsets(top: values[0], leading: values[0], bottom: values[0], trailing: values[0])
+            case 2:
+                return EdgeInsets(top: values[0], leading: values[1], bottom: values[0], trailing: values[1])
+            case 3:
+                return EdgeInsets(top: values[0], leading: values[1], bottom: values[2], trailing: values[1])
+            case 4:
+                // UIKit order: [top, right, bottom, left] -> SwiftUI: [top, leading(=left), bottom, trailing(=right)]
+                return EdgeInsets(top: values[0], leading: values[3], bottom: values[2], trailing: values[1])
+            default:
+                return EdgeInsets()
+            }
+        }
+
+        // Pipe-separated string "top|right|bottom|left"
+        if let str = value as? String, str.contains("|") {
+            let parts = str.split(separator: "|").compactMap { CGFloat(Double($0) ?? 0) }
+            switch parts.count {
+            case 1:
+                return EdgeInsets(top: parts[0], leading: parts[0], bottom: parts[0], trailing: parts[0])
+            case 2:
+                return EdgeInsets(top: parts[0], leading: parts[1], bottom: parts[0], trailing: parts[1])
+            case 3:
+                return EdgeInsets(top: parts[0], leading: parts[1], bottom: parts[2], trailing: parts[1])
+            case 4:
+                return EdgeInsets(top: parts[0], leading: parts[3], bottom: parts[2], trailing: parts[1])
+            default:
+                return EdgeInsets()
+            }
+        }
+
+        return EdgeInsets()
+    }
+}
+#endif // DEBUG

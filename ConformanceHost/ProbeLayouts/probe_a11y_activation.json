@@ -1,0 +1,51 @@
+{
+  "type": "View",
+  "id": "cgRoot",
+  "orientation": "vertical",
+  "spacing": 6,
+  "child": [
+    {"type": "Label", "id": "cgLblPlain", "text": "cgLblPlain", "onClick": "@{onLblPlain}"},
+    {"type": "Button", "id": "cgBtnPlain", "text": "cgBtnPlain", "onClick": "@{onBtnPlain}"},
+    {"type": "Switch", "id": "cgSwPlain", "isOn": "@{swPlain}"},
+    {"type": "Segment", "id": "cgSegPlain", "items": ["a", "b"], "selectedIndex": "@{segPlain}"},
+    {"type": "Radio", "id": "cgRadPlain", "items": ["a", "b"], "selectedValue": "@{radPlain}"},
+    {"type": "View", "id": "cgParFalse", "orientation": "vertical", "spacing": 4, "userInteractionEnabled": false, "child": [
+      {"type": "Button", "id": "cgBtnInFalse", "text": "cgBtnInFalse", "onClick": "@{onBtnInFalse}"},
+      {"type": "Label", "id": "cgLblInFalse", "text": "cgLblInFalse", "onClick": "@{onLblInFalse}"},
+      {"type": "View", "id": "cgViewInFalse", "width": 80, "height": 30, "background": "#3366CC", "onClick": "@{onViewInFalse}"},
+      {"type": "Switch", "id": "cgSwInFalse", "isOn": "@{swInFalse}"},
+      {"type": "Segment", "id": "cgSegInFalse", "items": ["a", "b"], "selectedIndex": "@{segInFalse}"},
+      {"type": "Radio", "id": "cgRadInFalse", "items": ["a", "b"], "selectedValue": "@{radInFalse}"}
+    ]},
+    {"type": "View", "id": "cgParBound", "orientation": "vertical", "spacing": 4, "userInteractionEnabled": "@{gateOpen}", "child": [
+      {"type": "Button", "id": "cgBtnInBound", "text": "cgBtnInBound", "onClick": "@{onBtnInBound}"},
+      {"type": "Label", "id": "cgLblInBound", "text": "cgLblInBound", "onClick": "@{onLblInBound}"},
+      {"type": "View", "id": "cgViewInBound", "width": 80, "height": 30, "background": "#3366CC", "onClick": "@{onViewInBound}"},
+      {"type": "Switch", "id": "cgSwInBound", "isOn": "@{swInBound}"},
+      {"type": "Collection", "id": "cgListBound", "items": "@{rows}", "width": 200, "height": 40, "layout": "horizontal", "sections": [{"cell": "a11y_activation_cell"}]}
+    ]},
+    {"type": "Button", "id": "cgBtnSelfFalse", "text": "cgBtnSelfFalse", "onClick": "@{onBtnSelfFalse}", "userInteractionEnabled": false},
+    {"type": "Switch", "id": "cgSwSelfFalse", "isOn": "@{swSelfFalse}", "userInteractionEnabled": false}
+  ],
+  "data": [
+    {"name": "gateOpen", "class": "Bool", "defaultValue": true},
+    {"name": "swPlain", "class": "Bool", "defaultValue": false},
+    {"name": "swInFalse", "class": "Bool", "defaultValue": false},
+    {"name": "swInBound", "class": "Bool", "defaultValue": false},
+    {"name": "swSelfFalse", "class": "Bool", "defaultValue": false},
+    {"name": "segPlain", "class": "Int", "defaultValue": 0},
+    {"name": "segInFalse", "class": "Int", "defaultValue": 0},
+    {"name": "radPlain", "class": "String", "defaultValue": "a"},
+    {"name": "radInFalse", "class": "String", "defaultValue": "a"},
+    {"name": "rows", "class": "CollectionDataSource", "defaultValue": {"sections": [{"cells": []}]}},
+    {"name": "onLblPlain", "class": "() -> Void"},
+    {"name": "onBtnPlain", "class": "() -> Void"},
+    {"name": "onBtnInFalse", "class": "() -> Void"},
+    {"name": "onLblInFalse", "class": "() -> Void"},
+    {"name": "onViewInFalse", "class": "() -> Void"},
+    {"name": "onBtnInBound", "class": "() -> Void"},
+    {"name": "onLblInBound", "class": "() -> Void"},
+    {"name": "onViewInBound", "class": "() -> Void"},
+    {"name": "onBtnSelfFalse", "class": "() -> Void"}
+  ]
+}

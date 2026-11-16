@@ -1,0 +1,580 @@
+//
+//  DynamicDecodingHelper.swift
+//  SwiftJsonUI
+//
+//  Helper for decoding dynamic component values
+//
+
+import Foundation
+import SwiftUI
+#if DEBUG
+
+
+public struct DynamicDecodingHelper {
+
+    // MARK: - Alias Coalescing
+
+    /// Return the first non-nil value from the variadic list. Used to bridge
+    /// attribute-name variations the tool may emit (e.g. `minimumValue` vs
+    /// `minimum`, `selectedIndex` vs `selectedTabIndex`) until the backfill
+    /// catalog declares `aliases` and loaders normalize up front.
+    public static func firstNonNil<T>(_ values: T?...) -> T? {
+        for value in values {
+            if let value = value { return value }
+        }
+        return nil
+    }
+
+    // MARK: - Bool-or-Binding
+
+    /// Resolve a value that may be either a Boolean or a `@{propertyName}`
+    /// binding string. Falls back to `default` when nothing usable is found.
+    /// Covers attributes like `enabled`, `disabled`, `isOn`, `checked`,
+    /// `scrollEnabled` where both shapes are valid per the shared catalog.
+    public static func resolveBoolOrBinding(
+        _ value: AnyCodable?,
+        data: [String: Any] = [:],
+        default defaultValue: Bool = false
+    ) -> Bool {
+        guard let value = value else { return defaultValue }
+
+        if let stringValue = value.value as? String,
+           let inner = DynamicBindingResolver.inner(of: stringValue) {
+            // Canonical bool value context (one coercion table, negation,
+            // dot-path / bracket-index lookup, typed `??` default).
+            return DynamicBindingResolver.resolveBool(expression: inner, data: data) ?? defaultValue
+        }
+        // Literal: same canonical coercion table (Bool; Int != 0;
+        // "true"/"1"/"false"/"0" case-insensitive).
+        return DynamicBindingResolver.coerceBool(value.value) ?? defaultValue
+    }
+
+    // MARK: - Visibility
+
+    /// Resolve effective visibility for a component considering both the
+    /// legacy `hidden` boolean and the `visibility` three-state string.
+    /// `hidden == true` always wins; otherwise the `visibility` value is
+    /// returned as-is (`"visible"`, `"invisible"`, `"gone"`). Returns
+    /// `"visible"` when neither is present.
+    public static func resolveVisibility(
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> String {
+        if DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).hidden, legacy: nil, data: data
+        ) == true {
+            return "gone"
+        }
+        switch component.visibilitySpelling() {
+        case "gone", "invisible", "visible":
+            return component.visibilitySpelling() ?? "visible"
+        default:
+            return "visible"
+        }
+    }
+
+    /// Decode width or height value from JSON
+    /// Returns: CGFloat value where .infinity = matchParent, nil = wrapContent, or specific value
+    public static func decodeSizeValue(from container: KeyedDecodingContainer<DynamicComponent.CodingKeys>,
+                                       forKey key: DynamicComponent.CodingKeys) -> (value: CGFloat?, raw: String?) {
+        // Try to decode as string first
+        if let stringValue = try? container.decode(String.self, forKey: key) {
+            switch stringValue.lowercased() {
+            case "matchparent", "match_parent":
+                return (.infinity, stringValue)
+            case "wrapcontent", "wrap_content":
+                return (nil, stringValue)
+            default:
+                // Try to parse as number (including "0" or "0.0")
+                let numericValue = Double(stringValue).map { CGFloat($0) }
+                return (numericValue, stringValue)
+            }
+        }
+
+        // Try to decode as Double
+        if let doubleValue = try? container.decode(Double.self, forKey: key) {
+            return (CGFloat(doubleValue), nil)
+        }
+
+        // Try to decode as Int
+        if let intValue = try? container.decode(Int.self, forKey: key) {
+            return (CGFloat(intValue), nil)
+        }
+
+        // No value found
+        return (nil, nil)
+    }
+
+    /// Convert AnyCodable to array of CGFloat values
+    public static func anyCodableToFloatArray(_ value: AnyCodable?) -> [CGFloat]? {
+        guard let value = value else { return nil }
+
+        if let array = value.value as? [Any] {
+            return array.compactMap { item in
+                // Handle nested AnyCodable
+                if let anyCodable = item as? AnyCodable {
+                    if let value = anyCodable.value as? CGFloat {
+                        return value
+                    } else if let value = anyCodable.value as? Double {
+                        return CGFloat(value)
+                    } else if let value = anyCodable.value as? Int {
+                        return CGFloat(value)
+                    }
+                }
+                // Handle direct values
+                else if let value = item as? CGFloat {
+                    return value
+                } else if let value = item as? Double {
+                    return CGFloat(value)
+                } else if let value = item as? Int {
+                    return CGFloat(value)
+                }
+                return nil
+            }
+        } else if let value = value.value as? CGFloat {
+            return [value]
+        } else if let value = value.value as? Double {
+            return [CGFloat(value)]
+        } else if let value = value.value as? Int {
+            return [CGFloat(value)]
+        }
+
+        return nil
+    }
+
+    /// Convert array of padding/margin values to EdgeInsets
+    public static func edgeInsetsFromArray(_ values: [CGFloat]) -> EdgeInsets {
+        switch values.count {
+        case 1:
+            // All edges same value
+            let value = values[0]
+            return EdgeInsets(top: value, leading: value, bottom: value, trailing: value)
+        case 2:
+            // [Vertical, Horizontal]
+            let vValue = values[0]
+            let hValue = values[1]
+            return EdgeInsets(top: vValue, leading: hValue, bottom: vValue, trailing: hValue)
+        case 4:
+            // [Top, Right, Bottom, Left]
+            return EdgeInsets(top: values[0], leading: values[3], bottom: values[2], trailing: values[1])
+        default:
+            return EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0)
+        }
+    }
+
+    /// Convert AnyCodable to EdgeInsets (handles arrays and single values)
+    public static func edgeInsetsFromAnyCodable(_ value: AnyCodable?) -> EdgeInsets? {
+        guard let value = value else { return nil }
+
+        if let array = anyCodableToFloatArray(value) {
+            return edgeInsetsFromArray(array)
+        }
+
+        return nil
+    }
+
+    /// A Collection's `insets` / `contentInsets`: `edgeInsetsFromAnyCodable`,
+    /// and the `|`-separated string form ("8", "8|16", "8|16|8|16"). The SSoT
+    /// names it (Collection.insets, jsonui-cli 1.9.0: "1, 2 or 4 values, an
+    /// array or a string separated by `|`"); until SwiftJsonUI 10.29.0 this
+    /// read it as nothing where the codegen padded by it. A string with a part
+    /// that is not a number pads nothing — a bound `"@{expr}"` stays nil here,
+    /// as before.
+    public static func insetsFromAnyCodable(_ value: AnyCodable?) -> EdgeInsets? {
+        if let string = value?.value as? String {
+            let parts = string.split(separator: "|", omittingEmptySubsequences: false)
+                .map { Double($0.trimmingCharacters(in: .whitespaces)) }
+            guard !parts.isEmpty, parts.allSatisfy({ $0 != nil }) else { return nil }
+            return edgeInsetsFromArray(parts.map { CGFloat($0!) })
+        }
+        return edgeInsetsFromAnyCodable(value)
+    }
+
+    // MARK: - Decode-Failure Containment
+
+    /// Component type of the synthetic node a failed child decode degrades
+    /// into. Rendered by `DynamicComponentBuilder` as a debug-visible error
+    /// placeholder — a malformed child must never silently vanish and
+    /// reshape its parent layout.
+    public static let decodeErrorType = "__jui_decode_error__"
+
+    /// Synthesize an error-placeholder component for a child whose decode
+    /// threw. Carries the original `type` / `id` (when recoverable) and the
+    /// decode error text via underscore-prefixed rawData keys (ignored by
+    /// the attribute audit).
+    static func makeDecodeErrorPlaceholder(
+        rawJSON: [String: Any]?,
+        error: Error?
+    ) -> DynamicComponent? {
+        var dict: [String: Any] = ["type": decodeErrorType]
+        if let originalType = rawJSON?["type"] as? String {
+            dict["_originalType"] = originalType
+        }
+        if let originalId = rawJSON?["id"] as? String {
+            dict["id"] = originalId
+        }
+        if let error = error {
+            dict["_decodeError"] = String(describing: error)
+        }
+        guard let data = try? JSONSerialization.data(withJSONObject: dict),
+              let placeholder = try? JSONDecoder().decode(DynamicComponent.self, from: data) else {
+            return nil
+        }
+        return placeholder
+    }
+
+    private static func warnDroppedChild(rawJSON: [String: Any]?, error: Error?) {
+        let type = rawJSON?["type"] as? String ?? "?"
+        let id = rawJSON?["id"] as? String ?? "?"
+        Logger.log(
+            "[SwiftJsonUI] ERROR: failed to decode child component "
+            + "(type=\(type), id=\(id)) — rendering an error placeholder "
+            + "instead of dropping it: \(error.map { String(describing: $0) } ?? "unknown error")"
+        )
+    }
+
+    /// Decode child components from JSON
+    /// Handles both single component and array of components
+    /// Keeps all components including those without type (include, data, etc.) for later filtering
+    ///
+    /// A child whose decode throws is contained to that child: it becomes a
+    /// `decodeErrorType` placeholder (visible in DEBUG rendering + console
+    /// warning) so sibling layout never collapses.
+    public static func decodeChildren(from container: KeyedDecodingContainer<DynamicComponent.CodingKeys>,
+                                     forKey key: DynamicComponent.CodingKeys) -> [DynamicComponent]? {
+        // Absent or explicit-null key: no children (not an error)
+        guard container.contains(key),
+              (try? container.decodeNil(forKey: key)) != true else { return nil }
+
+        // Try to decode as array first (FailableDecodable contains failures per element)
+        if let childArray = try? container.decode([FailableDecodable<DynamicComponent>].self, forKey: key) {
+            let components = childArray.compactMap { element -> DynamicComponent? in
+                if let value = element.value { return value }
+                warnDroppedChild(rawJSON: element.rawJSON, error: element.decodingError)
+                return makeDecodeErrorPlaceholder(rawJSON: element.rawJSON, error: element.decodingError)
+            }
+            return components.isEmpty ? nil : components
+        }
+
+        // Try to decode as single component; degrade a failure to a placeholder
+        do {
+            return [try container.decode(DynamicComponent.self, forKey: key)]
+        } catch {
+            let rawJSON = (try? container.decode(AnyCodable.self, forKey: key))?.value as? [String: Any]
+            warnDroppedChild(rawJSON: rawJSON, error: error)
+            return makeDecodeErrorPlaceholder(rawJSON: rawJSON, error: error).map { [$0] }
+        }
+    }
+
+    /// Convert gravity string array to SwiftUI Alignment
+    /// `alignment` is the declared string alternative to `gravity`
+    /// (attribute_definitions common.alignment, "Resolves to SwiftUI
+    /// Alignment / Compose Arrangement+Alignment"), read as the gravity it
+    /// names when a View declares no gravity. Nothing read it on this face:
+    /// a 200 box with `alignment: bottom` kept its children at the top left,
+    /// where Android places them bottom centre (frame-parity common/alignment,
+    /// 2026-10-05). The same table as the kjui codegen
+    /// (container_component.rb ALIGNMENT_GRAVITY) and KotlinJsonUI
+    /// ModifierBuilder.parseAlignmentString.
+    static let alignmentGravity: [String: [String]] = [
+        "topleading": ["top", "left"],
+        "top": ["top", "centerHorizontal"],
+        "toptrailing": ["top", "right"],
+        "leading": ["centerVertical", "left"],
+        "center": ["center"],
+        "trailing": ["centerVertical", "right"],
+        "bottomleading": ["bottom", "left"],
+        "bottom": ["bottom", "centerHorizontal"],
+        "bottomtrailing": ["bottom", "right"]
+    ]
+
+    public static func alignmentAsGravity(_ alignment: String?) -> [String]? {
+        guard let alignment = alignment,
+              let declared = DeclaredSpelling.lowered(alignment, in: CommonAttributes.Alignment.declaredSpellings)
+        else { return nil }
+        return alignmentGravity[declared]
+    }
+
+    public static func gravityToAlignment(_ gravity: [String]?) -> Alignment? {
+        guard let gravity = gravity, !gravity.isEmpty else { return nil }
+
+        var horizontal: HorizontalAlignment = .leading
+        var vertical: VerticalAlignment = .top
+
+        // Each value by its declared spelling (CommonAttributes.Gravity), case
+        // and all — jsonui-cli 1.9.0. The switch compared the lowercased value
+        // with `centerHorizontal` / `centerVertical`, which a lowercased value
+        // never equals, so those two were dropped here while GravityAxes and
+        // the codegen honour them; `start` / `end` / `center_horizontal` /
+        // `center_vertical` are declared nowhere.
+        for value in gravity {
+            switch DeclaredSpelling.lowered(value, in: CommonAttributes.Gravity.declaredSpellings) {
+            // Horizontal
+            case "left":
+                horizontal = .leading
+            case "right":
+                horizontal = .trailing
+            case "centerhorizontal":
+                horizontal = .center
+
+            // Vertical
+            case "top":
+                vertical = .top
+            case "bottom":
+                vertical = .bottom
+            case "centervertical":
+                vertical = .center
+
+            // Combined
+            case "center":
+                horizontal = .center
+                vertical = .center
+
+            default:
+                break
+            }
+        }
+
+        // Convert to Alignment
+        switch (horizontal, vertical) {
+        case (.leading, .top):
+            return .topLeading
+        case (.center, .top):
+            return .top
+        case (.trailing, .top):
+            return .topTrailing
+        case (.leading, .center):
+            return .leading
+        case (.center, .center):
+            return .center
+        case (.trailing, .center):
+            return .trailing
+        case (.leading, .bottom):
+            return .bottomLeading
+        case (.center, .bottom):
+            return .bottom
+        case (.trailing, .bottom):
+            return .bottomTrailing
+        default:
+            return .topLeading
+        }
+    }
+
+    /// Decode gravity value from JSON
+    /// Can be string, array of strings, or pipe-separated string (e.g., "top|center")
+    public static func decodeGravity(from container: KeyedDecodingContainer<DynamicComponent.CodingKeys>) -> [String]? {
+        // Try to decode as array of strings
+        if let gravityArray = try? container.decode([String].self, forKey: .gravity) {
+            return gravityArray
+        }
+
+        // Try to decode as single string
+        if let gravityString = try? container.decode(String.self, forKey: .gravity) {
+            // Check if it's pipe-separated
+            if gravityString.contains("|") {
+                return gravityString.split(separator: "|").map { String($0) }
+            } else {
+                return [gravityString]
+            }
+        }
+
+        return nil
+    }
+
+    // MARK: - String to Type Conversion Methods (JSON Data Transformations)
+
+    /// Get color from identifier using SwiftJsonUIConfiguration
+    /// This supports both hex colors and color resource keys
+    public static func getColor(_ identifier: String?) -> Color? {
+        guard let identifier = identifier else { return nil }
+
+        // Use SwiftJsonUIConfiguration to get color
+        // This will check colorProvider first, then fall back to hex conversion
+        return SwiftJsonUIConfiguration.shared.getColor(for: identifier)
+    }
+
+    /// The component's declared font as a spec (family / weight / size), nil when it declares none. Drawn through
+    /// `sjuiFont`, so the app's fontProvider and the text size rule apply (ticket sjui-label-font-size-ignores-dynamic-type).
+    public static func fontSpecFromComponent(_ component: DynamicComponent, data: [String: Any]? = nil) -> FontSpec? {
+        // Return nil if no font attributes are specified
+        // `fontSize` is declared on eleven tables; the widest declared form
+        // is Label's `AttrValue<Double>?`, and the extraction only coerces
+        // rawData, so it reads the spelling for any of them. Without `data`
+        // a bound size stays nil here — same as the slot it replaces, and
+        // LabelConverter resolves it with data on its own path. With `data`
+        // the bound size resolves — the data-less read dropped a declared
+        // `fontSize: "@{x}"` to the configured default while the codegen
+        // resolved it (Radio_fontSize__binding).
+        let label = component.typedAttributes(LabelAttributes.self)
+        let declaredFontSize: CGFloat? = {
+            if let data,
+               let resolved = DynamicHelpers.resolveNumber(label.fontSize, legacy: nil, data: data) {
+                return resolved
+            }
+            return label.fontSize?.value.map { CGFloat($0) }
+        }()
+        let declaredFont = label.font?.rawRepresentation as? String
+        let declaredFontFamily = label.fontFamily?.rawRepresentation as? String
+        guard declaredFontSize != nil || declaredFont != nil || component.fontWeightSpelling() != nil || declaredFontFamily != nil else {
+            return nil
+        }
+
+        let config = SwiftJsonUIConfiguration.shared
+        let size = declaredFontSize ?? config.font.size
+
+        // Weight-only font names that should resolve to system font weight
+        let weightNames = ["bold", "semibold", "medium", "light", "thin", "ultralight", "heavy", "black"]
+
+        // Resolve weight from explicit fontWeight first, then fall back to a
+        // weight keyword embedded in `font`. Returns nil when neither is
+        // present so the FontSpec doesn't lie about an unrequested weight.
+        let weightSource: String? = {
+            if let w = component.fontWeightSpelling()?.lowercased() { return w }
+            if let f = declaredFont?.lowercased(), weightNames.contains(f) { return f }
+            return nil
+        }()
+        let resolvedWeight: Font.Weight? = weightSource.flatMap { src in
+            // Numeric spellings come from the ONE shared table
+            // (`Font.Weight.numeric` — see its comment for the 900 rule).
+            if let numeric = Font.Weight.numeric(src) { return numeric }
+            switch src {
+            case "bold": return .bold
+            case "semibold": return .semibold
+            case "medium": return .medium
+            case "light": return .light
+            case "thin": return .thin
+            case "ultralight": return .ultraLight
+            case "heavy": return .heavy
+            case "black": return .black
+            case "regular", "normal": return .regular
+            default: return nil
+            }
+        }
+
+        // fontFamily takes highest priority: route through the unified
+        // FontSpec resolver so the app's `fontProvider` sees family + weight
+        // + size together.
+        if let fontFamily = declaredFontFamily {
+            return FontSpec(family: fontFamily, weight: resolvedWeight, size: size)
+        }
+
+        let fontName = declaredFont ?? config.font.name
+
+        // `font` carries either a family name or a weight keyword. When it's
+        // a real family name, treat it as `fontFamily` for resolution.
+        if let fontName = fontName, !weightNames.contains(fontName.lowercased()) {
+            return FontSpec(family: fontName, weight: resolvedWeight, size: size)
+        }
+
+        // Pure weight (or nothing) — still routed through the FontSpec
+        // resolver so a configured `fontProvider` sees every font the dynamic
+        // half draws. apply_font_modifiers (codegen) always goes through
+        // `resolveFont`; without a provider `defaultFont(family: nil)` is the
+        // same `.system(size:weight:)` this branch used to build directly,
+        // because size and weight are passed explicitly.
+        return FontSpec(family: nil, weight: resolvedWeight ?? config.font.weight, size: size)
+    }
+
+    /// Convert component properties to Font
+    public static func fontFromComponent(_ component: DynamicComponent, data: [String: Any]? = nil) -> Font? {
+        fontSpecFromComponent(component, data: data).map { SwiftJsonUIConfiguration.shared.resolveFont($0) }
+    }
+
+    /// Convert content mode string to ContentMode
+    public static func toContentMode(_ mode: String?) -> ContentMode {
+        switch DeclaredSpelling.lowered(mode, in: ImageAttributes.ContentMode.declaredSpellings) {
+        case "aspectfill":
+            return .fill
+        case "aspectfit":
+            return .fit
+        default:
+            return .fit
+        }
+    }
+
+    /// Positional contentModes (center/top/bottom/left/right): the image
+    /// draws UNSCALED, aligned inside the declared frame and cropped
+    /// (UIKit contentMode positions — 33 cross-effect measured both
+    /// mobile platforms dropping them to fit).
+    public static func positionalContentAlignment(
+        _ mode: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> Alignment? {
+        switch DeclaredSpelling.lowered(mode, in: spellings) {
+        case "center": return .center
+        case "top": return .top
+        case "bottom": return .bottom
+        case "left": return .leading
+        case "right": return .trailing
+        default: return nil
+        }
+    }
+
+    /// fill/scaleToFill are the stretch (canonical image.fill = stretch,
+    /// shared/core/attribute_semantics.json). SwiftUI's `ContentMode` has no
+    /// stretch member — `.resizable()` WITHOUT an `.aspectRatio` modifier is
+    /// the spelling, so converters branch on this before `toContentMode`.
+    public static func isStretchContentMode(
+        _ mode: String?,
+        in spellings: [String] = ImageAttributes.ContentMode.declaredSpellings
+    ) -> Bool {
+        switch DeclaredSpelling.lowered(mode, in: spellings) {
+        case "fill", "scaletofill":
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Convert content mode string to NetworkImage.ContentMode
+    public static func toNetworkImageContentMode(_ mode: String?) -> NetworkImage.ContentMode {
+        // One table: the non-DEBUG seam (ImageContentModeSeam) owns the
+        // spelling map, because the sjui-generated production code has to
+        // reach it too and this helper is #if DEBUG. A second copy here is
+        // exactly the two-implementations shape that froze the bound form.
+        return NetworkImage.ContentMode.from(mode)
+    }
+
+    /// Convert rendering mode string to Image.TemplateRenderingMode
+    public static func toRenderingMode(_ mode: String?) -> Image.TemplateRenderingMode? {
+        switch DeclaredSpelling.lowered(mode, in: ImageAttributes.RenderingMode.declaredSpellings) {
+        case "template":
+            return .template
+        case "original":
+            return .original
+        default:
+            return nil
+        }
+    }
+
+    /// Convert icon position string to IconLabelView.IconPosition
+    public static func toIconPosition(_ position: String?) -> IconLabelView.IconPosition {
+        switch DeclaredSpelling.lowered(position, in: IconLabelAttributes.IconPosition.declaredSpellings) {
+        case "top":
+            return .top
+        case "left":
+            return .left
+        case "right":
+            return .right
+        case "bottom":
+            return .bottom
+        default:
+            return .left
+        }
+    }
+
+    /// Convert text alignment string to TextAlignment
+    public static func toTextAlignment(_ alignment: String?) -> TextAlignment {
+        switch alignment {
+        case "Center", "center":
+            return .center
+        case "Left", "left":
+            return .leading
+        case "Right", "right":
+            return .trailing
+        default:
+            return .leading
+        }
+    }
+}
+#endif // DEBUG

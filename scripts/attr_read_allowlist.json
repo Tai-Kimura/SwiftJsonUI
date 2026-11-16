@@ -1,0 +1,168 @@
+{
+  "_comment": [
+    "scripts/check_attr_read_discipline.py の凍結宣言台帳。",
+    "",
+    "この配列は違反の『集合そのもの』であり、件数の pin ではない。",
+    "",
+    "  * ここに無い違反がある      -> fail(新規違反)",
+    "  * ここにあるが違反していない -> fail(直したので行を消すこと)",
+    "",
+    "owner が '—' の行は恒久的な正当例外。それ以外は owner の計画で解消し、",
+    "解消したら **この行を消す**(消し忘れは上の 2 つ目の規則で落ちる)。"
+  ],
+  "entries": [
+    {
+      "gate": "raw-read",
+      "file": "Containers/DynamicGradientPainter.swift",
+      "kind": "rawData",
+      "key": "gradient",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所) — the legacy dictionary face read moved with the shared painter (DynamicGradientPainter); the canonical array face goes through the typed tables."
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/ButtonConverter.swift",
+      "kind": "rawAttribute",
+      "key": "parent_orientation",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CheckboxConverter.swift",
+      "kind": "rawAttribute",
+      "key": "fontStyle",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/CollectionConverter.swift",
+      "kind": "rawAttribute",
+      "key": "lazy",
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "宣言も生成フィールド(AttrValue<AttrEnum<Lazy>>)もある。受理する値空間が宣言より広い族で、legacy な boolean 綴りも受けるため raw。旧理由『SSoT 未宣言』は誤り(2026-08-05 台帳監査で訂正) / 宣言された kind が、両面が実際に受ける値空間より狭い族。AttrCoerce を広げても直らない(直すには SSoT の kind 宣言を union に変える)ので 群 2 ではなく群 1 と同じ扱い — 生成テーブルが動くためリリース後"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/GradientViewConverter.swift",
+      "kind": "rawAttribute",
+      "key": "gradient",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/IconLabelConverter.swift",
+      "kind": "rawData",
+      "key": "isOn",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/LabelConverter.swift",
+      "kind": "rawAttribute",
+      "key": "parent_orientation",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "SSoT 未宣言の legacy キー(typed アクセサが生成されていない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "Converters/SegmentConverter.swift",
+      "kind": "rawAttribute",
+      "key": "backgroundColor",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "_originalType",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性ではないビルダ内部マーカー(SSoT に宣言が存在しない)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawAttribute",
+      "key": "highlighted",
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "View.highlighted の宣言は boolean のみ。生成側は AttrCoerce.boolean を直に当てるため `highlighted: \"@{isOn}\"` は typed 抽出で nil になる(実測: typed=nil / raw=\"@{isOn}\")。base_view_converter.rb:737 は is_binding? でバインドを受けるので、typed へ移すと codegen が描く状態を dynamic だけが落とす。宣言 kind を [boolean, binding] にするのが筋で、AttrCoerce の拡張では直らない"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "indexAbove",
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる / 宣言された kind が、両面が実際に受ける値空間より狭い族。AttrCoerce を広げても直らない(直すには SSoT の kind 宣言を union に変える)ので 群 2 ではなく群 1 と同じ扱い — 生成テーブルが動くためリリース後"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicModifierHelper.swift",
+      "kind": "rawData",
+      "key": "indexBelow",
+      "owner": "E",
+      "plan": "宣言 kind が狭い族(リリース後)",
+      "reason": "宣言は string だが magnitude() が NSNumber も受ける — 受理する値空間が宣言より広い族。typed 化すると数値指定が読めなくなる / 宣言された kind が、両面が実際に受ける値空間より狭い族。AttrCoerce を広げても直らない(直すには SSoT の kind 宣言を union に変える)ので 群 2 ではなく群 1 と同じ扱い — 生成テーブルが動くためリリース後"
+    },
+    {
+      "gate": "raw-read",
+      "file": "TypedAttributes.swift",
+      "kind": "rawData",
+      "key": "<key>",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "型付き抽出の実装本体(ここを禁止すると typed 抽出が書けない)"
+    },
+    {
+      "gate": "raw-read",
+      "key": "fontSize",
+      "file": "Converters/ToggleConverter.swift",
+      "owner": "E",
+      "plan": "SSoT 宣言漏れ 群 1-A(リリース後)",
+      "reason": "実装は codegen(sjui_tools)にもあるが SSoT に宣言が無い。consumer が書いても 他の 2 面に届かない可能性がある(E の edges alias と同型)。4 周目の直前に生成テーブルを動かさないため本リリースには入れない — 2026-08-05 裁定。群 1-A(49-F 走査、25 綴り/35 箇所)",
+      "kind": "rawAttribute"
+    },
+    {
+      "gate": "raw-read",
+      "file": "LayoutPath.swift",
+      "kind": "rawAttribute",
+      "key": "_layoutPath",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性ではなく JSONLayoutLoader が刻印する位置(jsonui-cli shared/core/layout_path.rb と同じ規則)。id の無い Radio の値に使う(ticket sjui-codegen-state-declarations-collide-by-name)"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "style",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性の値として読んでいない。UnresolvedStages.unresolved が、入口で解決されるはずの `style` が解決されないまま描画に来たかを検出して警告を出すための読み（解決済みなら生データに残らない）。型つき抽出には解決前のキーが無い。"
+    },
+    {
+      "gate": "raw-read",
+      "file": "DynamicComponentBuilder.swift",
+      "kind": "rawData",
+      "key": "responsive",
+      "owner": "—",
+      "plan": "恒久例外",
+      "reason": "属性の値として読んでいない。UnresolvedStages.unresolved が、入口で解決されるはずの `responsive` が解決されないまま描画に来たかを検出して警告を出すための読み（解決済みなら生データに残らない）。型つき抽出には解決前のキーが無い。"
+    }
+  ]
+}

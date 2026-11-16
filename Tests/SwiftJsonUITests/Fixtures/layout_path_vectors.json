@@ -1,0 +1,92 @@
+{
+  "_description": "The positions shared/core/layout_path.rb (JsonUIShared::LayoutPath) stamps — the table the kjui and sjui codegen both run, from byte-identical copies. Each case is a layout; `expect` maps a node's `id` (a label here — the path does not read ids) to its path. `includes`, when present, are the files the layout's `include` entries name, relative to the layouts root: expand them with the codegen's own include expander first, then stamp — the path is taken on the include-expanded tree. `before` / `after` pairs pin what moves a path and what does not.",
+  "cases": [
+    {
+      "name": "root and nested children",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "View", "id": "a", "child": [ { "type": "Label", "id": "a0" }, { "type": "Radio", "id": "a1" } ] },
+        { "type": "Label", "id": "b" }
+      ] },
+      "expect": { "r": "0", "a": "0_0", "a0": "0_0_0", "a1": "0_0_1", "b": "0_1" }
+    },
+    {
+      "name": "a single-object child is index 0",
+      "layout": { "type": "View", "id": "r", "child": { "type": "View", "id": "c", "child": { "type": "Radio", "id": "cc" } } },
+      "expect": { "r": "0", "c": "0_0", "cc": "0_0_0" }
+    },
+    {
+      "name": "child and children on one node count as one list, child first",
+      "layout": { "type": "View", "id": "r", "child": [ { "type": "Label", "id": "x" } ],
+                  "children": [ { "type": "Label", "id": "y" }, { "type": "Radio", "id": "z" } ] },
+      "expect": { "r": "0", "x": "0_0", "y": "0_1", "z": "0_2" }
+    },
+    {
+      "name": "a non-object entry and a data entry each take an index",
+      "layout": { "type": "View", "id": "r", "child": [ "stray", { "data": [] }, { "type": "Radio", "id": "s" } ] },
+      "expect": { "r": "0", "s": "0_2" }
+    },
+    {
+      "name": "an include takes the one index of the root it expands to",
+      "layout": { "type": "View", "id": "r", "child": [ { "include": "part" }, { "type": "Radio", "id": "after" } ] },
+      "includes": { "part": { "type": "View", "id": "p", "child": [ { "type": "Radio", "id": "p0" }, { "type": "Label", "id": "p1" } ] } },
+      "expect": { "r": "0", "p": "0_0", "p0": "0_0_0", "p1": "0_0_1", "after": "0_1" }
+    },
+    {
+      "name": "before: a node and its path",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "View", "id": "a", "child": [ { "type": "Radio", "id": "t" } ] },
+        { "type": "View", "id": "b", "child": [ { "type": "Label", "id": "u" } ] }
+      ] },
+      "expect": { "t": "0_0_0", "u": "0_1_0" }
+    },
+    {
+      "name": "after: a sibling added after an ancestor, and a node added in another subtree, do not move it",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "View", "id": "a", "child": [ { "type": "Radio", "id": "t" }, { "type": "Label", "id": "t2" } ] },
+        { "type": "View", "id": "b", "child": [ { "type": "Label", "id": "new" }, { "type": "Label", "id": "u" } ] },
+        { "type": "Label", "id": "c" }
+      ] },
+      "expect": { "t": "0_0_0", "t2": "0_0_1", "new": "0_1_0", "u": "0_1_1", "c": "0_2" }
+    },
+    {
+      "name": "after: a node inserted before an ancestor moves it",
+      "layout": { "type": "View", "id": "r", "child": [
+        { "type": "Label", "id": "new" },
+        { "type": "View", "id": "a", "child": [ { "type": "Radio", "id": "t" } ] },
+        { "type": "View", "id": "b", "child": [ { "type": "Label", "id": "u" } ] }
+      ] },
+      "expect": { "new": "0_0", "t": "0_1_0", "u": "0_2_0" }
+    }
+  ],
+  "_view_id_description": "The viewId a node's handlers are handed (JsonUIShared::LayoutPath.view_id): its `id`, else `<type>_<path>` — the type the renderer draws the node as (an `_alias_of` section as the section it names, a type_synonyms.json synonym as its `render_as`, else its `canonical`; any other spelling as written) with its first letter lowercased, and its position. Nodes are named here by `_label`, because the id is what is read. Stamp the layout, then read each labelled node's viewId.",
+  "view_id_cases": [
+    {
+      "name": "an explicit id is the viewId",
+      "layout": { "type": "View", "_label": "root", "child": [ { "type": "Switch", "id": "sw", "_label": "a" }, { "type": "Radio", "id": "r", "_label": "b" } ] },
+      "expect": { "root": "view_0", "a": "sw", "b": "r" }
+    },
+    {
+      "name": "no id: the type, its first letter lowercased, and the position",
+      "layout": { "type": "View", "_label": "root", "child": [
+        { "type": "Switch", "_label": "a" }, { "type": "CheckBox", "_label": "b" }, { "type": "SelectBox", "_label": "c" },
+        { "type": "TextField", "_label": "d" }, { "type": "View", "_label": "e", "child": [ { "type": "Radio", "_label": "f" } ] }
+      ] },
+      "expect": { "root": "view_0", "a": "switch_0_0", "b": "checkBox_0_1", "c": "selectBox_0_2", "d": "textField_0_3", "e": "view_0_4", "f": "radio_0_4_0" }
+    },
+    {
+      "name": "a section that is an alias draws as the section it names",
+      "layout": { "type": "View", "child": [ { "type": "Toggle", "_label": "a" }, { "type": "EditText", "_label": "b" }, { "type": "Input", "_label": "c" }, { "type": "Check", "_label": "d" } ] },
+      "expect": { "a": "switch_0_0", "b": "textField_0_1", "c": "textField_0_2", "d": "checkBox_0_3" }
+    },
+    {
+      "name": "a synonym draws as its render_as, else its canonical type",
+      "layout": { "type": "View", "child": [ { "type": "Picker", "_label": "a" }, { "type": "Text", "_label": "b" }, { "type": "CircleImage", "_label": "c" }, { "type": "Checkbox", "_label": "d" }, { "type": "WebView", "_label": "e" } ] },
+      "expect": { "a": "selectBox_0_0", "b": "label_0_1", "c": "circleImage_0_2", "d": "checkBox_0_3", "e": "web_0_4" }
+    },
+    {
+      "name": "any other spelling as it is written",
+      "layout": { "type": "View", "child": [ { "type": "MyWidget", "_label": "a" }, { "type": "Spacer", "_label": "b" } ] },
+      "expect": { "a": "myWidget_0_0", "b": "spacer_0_1" }
+    }
+  ]
+}

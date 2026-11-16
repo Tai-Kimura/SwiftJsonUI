@@ -1,0 +1,14 @@
+# Generated project (scripts/generate_project.rb)
+ConformanceHost.xcodeproj/
+
+# Synced inputs (scripts/sync_fixtures.sh) — never committed
+Resources/
+UITests/Vendor/
+
+# Build output
+build/
+DerivedData/
+
+# Codegen host output (scripts/generate_codegen_host.rb) — @generated
+CodegenStaging/
+codegen-build.log

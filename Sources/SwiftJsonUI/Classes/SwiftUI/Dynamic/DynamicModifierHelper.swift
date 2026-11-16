@@ -1,0 +1,1939 @@
+//
+//  DynamicModifierHelper.swift
+//  SwiftJsonUI
+//
+//  Individual modifier methods that converters call in their own order.
+//  Replaces CommonModifiers (unified application) with per-converter control.
+//
+
+import SwiftUI
+#if DEBUG
+
+public struct DynamicModifierHelper {
+
+    // MARK: - 1. Padding (internal spacing)
+
+    public static func applyPadding(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        var result = view
+
+        // 1. Base padding (paddings array or scalar "padding"/"paddings")
+        //    Tool: .padding(N) or .padding(.top, T).padding(.trailing, R)...
+        //
+        //    Read through `resolveEdgeValues`, which accepts the bound
+        //    spelling: `padding: "@{expr}"` arrives as an AnyCodable STRING
+        //    and the literal-only decode answered nil for it, so the
+        //    declaration inset nothing. The per-edge overrides below already
+        //    resolved bindings — only the base spelling did not, which is why
+        //    `common/padding__binding` measured inert here while the codegen
+        //    (spacing_helper.rb#padding_value) emits the resolved value.
+        if let edges = DynamicHelpers.resolveEdgeValues(component.paddings, data: data) {
+            switch edges.count {
+            case 1:
+                result = AnyView(result.padding(edges[0]))
+            case 2:
+                result = AnyView(
+                    result.padding(.horizontal, edges[1]).padding(.vertical, edges[0])
+                )
+            default:
+                result = AnyView(result.padding(DynamicDecodingHelper.edgeInsetsFromArray(edges)))
+            }
+        }
+
+        // 2. Individual padding overrides (STACKING, not replacing)
+        //    Tool: .padding(.leading, N) added separately after base padding.
+        //    Each override is number|binding — a `@{binding}` spelling left the
+        //    legacy typed slot nil during decode, so resolve it from the typed
+        //    CommonAttributes against `data` (falling back to the legacy value).
+        let common = component.typedAttributes(CommonAttributes.self)
+        let startPad = DynamicHelpers.resolveNumber(common.paddingStart, legacy: nil, data: data)
+        let endPad = DynamicHelpers.resolveNumber(common.paddingEnd, legacy: nil, data: data)
+        let leftPad = DynamicHelpers.resolveNumber(common.paddingLeft ?? common.leftPadding, legacy: nil, data: data)
+        let rightPad = DynamicHelpers.resolveNumber(common.paddingRight ?? common.rightPadding, legacy: nil, data: data)
+        let topPad = DynamicHelpers.resolveNumber(common.paddingTop ?? common.topPadding, legacy: nil, data: data)
+        let bottomPad = DynamicHelpers.resolveNumber(common.paddingBottom ?? common.bottomPadding, legacy: nil, data: data)
+
+        if let v = startPad ?? leftPad, v != 0 {
+            result = AnyView(result.padding(.leading, v))
+        }
+        if let v = endPad ?? rightPad, v != 0 {
+            result = AnyView(result.padding(.trailing, v))
+        }
+        if let v = topPad, v != 0 {
+            result = AnyView(result.padding(.top, v))
+        }
+        if let v = bottomPad, v != 0 {
+            result = AnyView(result.padding(.bottom, v))
+        }
+
+        return result
+    }
+
+    // MARK: - 2. Frame Size (width/height)
+
+    public static func applyFrameSize(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        var result = view
+
+        var width = component.declaredWidth
+        var height = component.declaredHeight
+
+        // WeightedStack: tool sets child's main-axis to matchParent before conversion.
+        // Replicate by forcing matchParent here (inside the modifier chain, before background).
+        let isWeightedChild = data["__isWeightedChild"] as? Bool ?? false
+        let weightedParentOrientation = data["__weightedParentOrientation"] as? String
+        if isWeightedChild {
+            if weightedParentOrientation == "horizontal" {
+                if width != .infinity && width != -1 {
+                    width = .infinity
+                }
+            } else if weightedParentOrientation == "vertical" {
+                if height != .infinity && height != -1 {
+                    height = .infinity
+                }
+            }
+        }
+
+        // `distribution: fill` on the parent — the SIZE half is carried to the
+        // child (canon: ".frame(maxWidth/maxHeight: .infinity) on each
+        // child"). Unlike the weighted main axis above, an EXPLICIT child size
+        // wins: `explicitChildSizeWins` puts distribution's size half at the
+        // bottom of the size topic's explicit > bounds > fill order, so only
+        // an undeclared axis (nil, i.e. wrapContent) grows.
+        switch data["__distributionFillOrientation"] as? String {
+        case "horizontal":
+            if width == nil { width = .infinity }
+        case "vertical":
+            if height == nil { height = .infinity }
+        default:
+            break
+        }
+
+        // Apply fixed frame (finite non-negative values). ZERO is a declared
+        // size, not an absent one: the codegen face emits .frame(height: 0)
+        // for a `height: 0` spacer, while the old `> 0` guard dropped the
+        // frame entirely and the unsized empty view swallowed 740pt of a
+        // weighted stack — a downstream registration screen rendered a black
+        // page with its content pushed one viewport down, dynamic face only
+        // (2026-08-10).
+        let fixedWidth = (width != nil && width != .infinity && width! >= 0 && width!.isFinite) ? width : nil
+        let fixedHeight = (height != nil && height != .infinity && height! >= 0 && height!.isFinite) ? height : nil
+
+        if fixedWidth != nil || fixedHeight != nil {
+            // When both dimensions are fixed, apply gravity-based alignment so a
+            // frame larger than its content honors gravity (matches frame_helper.rb:
+            // .frame(width:, height:, alignment: gravity_to_frame_alignment)).
+            let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
+            // A Label's text by the Label rule whatever it declares
+            // (labelHorizontal, labelVertical): with neither textAlign nor
+            // gravity it is at the start and in the middle. Until SwiftJsonUI
+            // 10.29.0 that case took no alignment and SwiftUI drew the text in
+            // the middle of a fixed width (the SSoT's Label.textAlign, 4f
+            // ruling 2026-09-27; frame_helper.rb's Label branches).
+            if fixedWidth != nil && fixedHeight != nil,
+               let alignment = frameAlignment(for: component, bothAxes: true) {
+                result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
+            } else if fixedWidth != nil, fixedHeight == nil, isTextComponent,
+                      let alignment = frameAlignment(for: component, bothAxes: false) {
+                // Fixed width + wrapContent height on a Label: the text at
+                // the Label rule's horizontal (textAlign, else gravity's
+                // horizontal part, else start) — frame_helper.rb's width-only
+                // branch, which emits it for every Label.
+                result = AnyView(result.frame(width: fixedWidth, alignment: alignment))
+            } else if isTextComponent, fixedWidth == nil, labelVertical(component) != .center {
+                // A Label of a fixed height: its text at the vertical its
+                // gravity names (labelVertical); centre is SwiftUI's own.
+                result = AnyView(result.frame(height: fixedHeight, alignment: Alignment(horizontal: .center, vertical: labelVertical(component))))
+            } else if !isTextComponent, let alignment = frameAlignment(for: component, bothAxes: true) {
+                // ONE fixed axis on a container (or a node with a declared
+                // gravity): the content smaller than it at top | start
+                // (gravityDefaults), as Compose and the web put it — the
+                // user's ruling of 2026-09-27; a declared center* gravity
+                // still centres. Until jsonui-cli 1.9.0 this frame had no
+                // alignment and SwiftUI centred the content on that axis
+                // (frame_helper.rb#single_axis_alignment, the codegen half).
+                result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
+            } else {
+                result = AnyView(result.frame(width: fixedWidth, height: fixedHeight))
+            }
+        }
+
+        // matchParent (-1 or .infinity) → maxWidth/maxHeight: .infinity
+        // For Label/Text, align based on textAlign (matches frame_helper.rb)
+        // For other components, align based on gravity
+        let isMatchParentWidth = (width == .infinity || width == -1)
+        let isMatchParentHeight = (height == .infinity || height == -1)
+
+        if component.type?.lowercased() == "collection" {
+            let _ = Logger.debug("[applyFrameSize] id=\(component.id ?? "?") width=\(String(describing: width)) height=\(String(describing: height)) isMatchW=\(isMatchParentWidth) isMatchH=\(isMatchParentHeight)")
+        }
+
+        // matchParent clamps to a declared max bound (canonical
+        // size.maxBoundsClampFill, shared/core/attribute_semantics.json):
+        // the fill frame carries the bound itself — .frame(maxWidth: 120)
+        // IS min(parent, 120) — so no modifier-order game can lose it.
+        // (applyFrameConstraints deliberately skips max bounds on
+        // matchParent axes for the same reason.)
+        let fillMaxWidth = DynamicHelpers.resolveNumber(
+            component.typedAttributes(CommonAttributes.self).maxWidth, legacy: nil, data: data
+        ) ?? .infinity
+        let fillMaxHeight = DynamicHelpers.resolveNumber(
+            component.typedAttributes(CommonAttributes.self).maxHeight, legacy: nil, data: data
+        ) ?? .infinity
+
+        if isMatchParentWidth && isMatchParentHeight {
+            if let alignment = frameAlignment(for: component, bothAxes: true) {
+                result = AnyView(result.frame(maxWidth: fillMaxWidth, maxHeight: fillMaxHeight, alignment: alignment))
+            } else {
+                result = AnyView(result.frame(maxWidth: fillMaxWidth, maxHeight: fillMaxHeight))
+            }
+        } else if isMatchParentWidth {
+            if let alignment = frameAlignment(for: component, bothAxes: false) {
+                result = AnyView(result.frame(maxWidth: fillMaxWidth, alignment: alignment))
+            } else {
+                result = AnyView(result.frame(maxWidth: fillMaxWidth))
+            }
+        } else if isMatchParentHeight {
+            // Filling the height alone: the content at top | start, as the
+            // single fixed axis above.
+            let isText = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
+            if !isText, let alignment = frameAlignment(for: component, bothAxes: true) {
+                result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: alignment))
+            } else if isText, labelVertical(component) != .center {
+                result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: Alignment(horizontal: .center, vertical: labelVertical(component))))
+            } else {
+                result = AnyView(result.frame(maxHeight: fillMaxHeight))
+            }
+        }
+
+        return result
+    }
+
+    // MARK: - 3. Frame Constraints (min/max/ideal)
+
+    /// min/max/ideal frame bounds.
+    ///
+    /// min and max are `number|binding`. This used to take no `data` at all,
+    /// so it could not have resolved a binding even in principle — the
+    /// hand-decoded slots are nil for `@{expr}` and the bound form fell to
+    /// the platform default. Same shape as the Compose `parseOptionalDp`
+    /// guard 49-G found: nothing crashed, nothing was measured either.
+    ///
+    /// `idealWidth`/`idealHeight` stay on the plain slots: the SSoT declares
+    /// them `number` with no binding form.
+    public static func applyFrameConstraints(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        var result = view
+        let common = component.typedAttributes(CommonAttributes.self)
+        // Where content smaller than a min / max box sits in it — the codegen's
+        // ResponsiveHelper.inner_frame_alignment: a container's gravity with
+        // the unnamed axis at top | start, and top | start when gravity is
+        // omitted (gravityDefaults); a leaf's declared gravity with the other
+        // axis centred; `.center` for an omitted gravity with a responsive
+        // align / center flag. A Label is not in this (its own text channel).
+        // Until SwiftJsonUI 10.29.0 these frames carried no alignment and
+        // SwiftUI centred the content.
+        let isText = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
+        // A Label: its vertical rule (labelVertical) on a height bound.
+        let textVertical: Alignment? = isText && labelVertical(component) != .center
+            ? Alignment(horizontal: .center, vertical: labelVertical(component)) : nil
+        let boundsAlignment = isText ? nil : constraintFrameAlignment(component, data: data)
+
+        if let mw = DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data) {
+            result = AnyView(boundsAlignment.map { result.frame(minWidth: mw, alignment: $0) } ?? result.frame(minWidth: mw))
+        }
+        if let mh = DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data) {
+            result = AnyView((boundsAlignment ?? textVertical).map { result.frame(minHeight: mh, alignment: $0) } ?? result.frame(minHeight: mh))
+        }
+        if let iw = component.idealWidth {
+            result = AnyView(result.frame(idealWidth: iw))
+        }
+        if let ih = component.idealHeight {
+            result = AnyView(result.frame(idealHeight: ih))
+        }
+
+        // maxWidth/maxHeight (only if not already handled by applyFrameSize for matchParent)
+        let width = component.declaredWidth
+        let height = component.declaredHeight
+        let isMatchParentWidth = (width == .infinity || width == -1)
+        let isMatchParentHeight = (height == .infinity || height == -1)
+
+        let resolvedMaxWidth = DynamicHelpers.resolveNumber(common.maxWidth, legacy: nil, data: data)
+        let resolvedMaxHeight = DynamicHelpers.resolveNumber(common.maxHeight, legacy: nil, data: data)
+        if let mw = resolvedMaxWidth, !isMatchParentWidth {
+            result = AnyView(boundsAlignment.map { result.frame(maxWidth: mw, alignment: $0) } ?? result.frame(maxWidth: mw))
+        }
+        if let mh = resolvedMaxHeight, !isMatchParentHeight {
+            result = AnyView((boundsAlignment ?? textVertical).map { result.frame(maxHeight: mh, alignment: $0) } ?? result.frame(maxHeight: mh))
+        }
+
+        // A wrapContent axis with a max sizes to its content, capped by the
+        // max (contentFit; the codegen emits the same after its bounds frame
+        // — the user's ruling of 2026-09-27). Until SwiftJsonUI 10.29.0 the
+        // max frame took the width it was offered: a chip with maxWidth 160
+        // and the text "chip" was 160 wide. Not an axis a weighted or
+        // `distribution: fill` parent sizes (applyFrameSize fills it).
+        func parentSizes(_ orientation: String) -> Bool {
+            (data["__isWeightedChild"] as? Bool == true && data["__weightedParentOrientation"] as? String == orientation)
+                || data["__distributionFillOrientation"] as? String == orientation
+        }
+        if resolvedMaxWidth != nil, width == nil, !parentSizes("horizontal") {
+            result = AnyView(result.contentFit(.horizontal))
+        }
+        if resolvedMaxHeight != nil, height == nil, !parentSizes("vertical") {
+            result = AnyView(result.contentFit(.vertical))
+        }
+
+        // fixedSize mirrors the codegen (frame_helper.rb apply_frame_constraints):
+        // only a component that declares a min/max constraint gets one, and an
+        // axis is fixed only when it is wrapContent WITHOUT its own max bound —
+        // the max already constrains that axis, and fixing it on top lays text
+        // out at its single-line ideal width so it overflows its background
+        // (`needs_h_fixed = width_is_wrap && !max_width`). The previous
+        // condition was the inverse (fixed only WITH maxWidth), which is how
+        // wrapContent+maxWidth text clipped in dynamic while codegen wrapped.
+        let resolvedMinWidth = DynamicHelpers.resolveNumber(common.minWidth, legacy: nil, data: data)
+        let resolvedMinHeight = DynamicHelpers.resolveNumber(common.minHeight, legacy: nil, data: data)
+        let hasMinMaxConstraint = resolvedMinWidth != nil || resolvedMaxWidth != nil
+            || resolvedMinHeight != nil || resolvedMaxHeight != nil
+        let needsHFixed = hasMinMaxConstraint && width == nil && resolvedMaxWidth == nil
+        let needsVFixed = hasMinMaxConstraint && height == nil && resolvedMaxHeight == nil
+        if needsHFixed || needsVFixed {
+            result = AnyView(result.fixedSize(
+                horizontal: needsHFixed,
+                vertical: needsVFixed
+            ))
+        }
+
+        return result
+    }
+
+    /// The min / max frames' alignment for a node that is not a Label (see
+    /// applyFrameConstraints).
+    static func constraintFrameAlignment(_ component: DynamicComponent, data: [String: Any]) -> Alignment? {
+        if component.gravity?.isEmpty == false {
+            return frameAlignment(for: component, bothAxes: true)
+        }
+        let common = component.typedAttributes(CommonAttributes.self)
+        let flags = [common.centerHorizontal, common.centerInParent, common.alignLeft, common.alignRight,
+                     common.centerVertical, common.alignTop, common.alignBottom]
+        if flags.contains(where: { DynamicHelpers.resolveBool($0, legacy: nil, data: data) == true }) {
+            return .center
+        }
+        return frameAlignment(for: component, bothAxes: true)
+    }
+
+    /// Where a Label's text sits across its frame: textAlign's position,
+    /// else the horizontal its gravity names (left / right /
+    /// centerHorizontal, center), else the start — the SSoT's
+    /// Label.textAlign (4f ruling 2026-09-27; frame_helper.rb's
+    /// label_horizontal, the codegen half). Until SwiftJsonUI 10.29.0 a
+    /// Label's gravity did not place its text across a frame wider than it.
+    public static func labelHorizontal(_ component: DynamicComponent, data: [String: Any] = [:]) -> HorizontalAlignment {
+        // Each by its declared spelling (DeclaredSpelling), as sjui's
+        // label_horizontal reads them (EnumSpelling.lowered): a textAlign in
+        // no declared spelling is the start; a gravity part in none names
+        // nothing.
+        if let spelling = component.textAlignSpelling(data: data) {
+            switch DeclaredSpelling.lowered(spelling, in: LabelAttributes.TextAlign.declaredSpellings) {
+            case "center": return .center
+            case "right", "trailing": return .trailing
+            default: return .leading
+            }
+        }
+        // center / centerHorizontal first, then right — the order sjui's
+        // label_horizontal and rjui's map_label_gravity read them in.
+        let parts = gravityNamed(component)
+        if parts.contains("center") || parts.contains("centerhorizontal") { return .center }
+        if parts.contains("right") { return .trailing }
+        return .leading
+    }
+
+    /// The gravity parts in a declared spelling, lowercased; a part in none
+    /// is dropped (sjui's `EnumSpelling.lowered(g, 'common', 'gravity')`).
+    static func gravityNamed(_ component: DynamicComponent) -> [String] {
+        (component.gravity ?? []).compactMap { DeclaredSpelling.lowered($0, in: CommonAttributes.Gravity.declaredSpellings) }
+    }
+
+    /// The lines of a multi-line Label follow the same rule.
+    public static func labelTextAlignment(_ component: DynamicComponent, data: [String: Any] = [:]) -> TextAlignment {
+        switch labelHorizontal(component, data: data) {
+        case .center: return .center
+        case .trailing: return .trailing
+        default: return .leading
+        }
+    }
+
+    /// A Label's vertical text position in a box taller than the text: the
+    /// vertical its gravity names (top, bottom, centerVertical / center), else
+    /// centre — the canon's leafOwnFrameChannel default for "a text block
+    /// smaller than its fixed box" (frame_helper.rb#label_vertical, the
+    /// codegen half). Until SwiftJsonUI 10.29.0 the Dynamic renderer put it
+    /// at the centre of a height-only frame whatever the gravity, and at the
+    /// top of a frame that sized both axes.
+    static func labelVertical(_ component: DynamicComponent) -> VerticalAlignment {
+        let parts = gravityNamed(component)
+        if parts.contains("top") { return .top }
+        if parts.contains("bottom") { return .bottom }
+        return .center
+    }
+
+    // MARK: - 4. Insets (insets, insetHorizontal, insetVertical)
+
+    public static func applyInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        var top: CGFloat = 0, leading: CGFloat = 0, bottom: CGFloat = 0, trailing: CGFloat = 0
+
+        if let insetInsets = DynamicDecodingHelper.insetsFromAnyCodable(component.insets) {
+            top += insetInsets.top
+            leading += insetInsets.leading
+            bottom += insetInsets.bottom
+            trailing += insetInsets.trailing
+        }
+
+        if let h = component.insetHorizontal {
+            leading += h
+            trailing += h
+        }
+        if let v = component.insetVertical {
+            top += v
+            bottom += v
+        }
+
+        if top != 0 || leading != 0 || bottom != 0 || trailing != 0 {
+            return AnyView(view.padding(EdgeInsets(top: top, leading: leading, bottom: bottom, trailing: trailing)))
+        }
+        return view
+    }
+
+    // MARK: - 5. Background
+
+    public static func applyBackground(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        applyBackground(view, base: backgroundColor(component: component, data: data), component: component, data: data)
+    }
+
+    /// The background slot with `base` as its colour. On a node with a tap
+    /// and a tapBackground the pressed colour replaces it while the node is
+    /// pressed (jsonui-cli 1.9.0; PressedBackground.swift) — applyOnClick
+    /// tracks the press.
+    static func applyBackground(_ view: AnyView, base: Color?, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        if let pressed = DynamicEventHelper.pressedBackgroundColor(component, data: data) {
+            return AnyView(view.pressedBackground(pressed, base: base))
+        }
+        guard let base else { return view }
+        return AnyView(view.background(base))
+    }
+
+    /// The background colour at rest: disabledBackground while disabled,
+    /// else background.
+    static func backgroundColor(component: DynamicComponent, data: [String: Any]) -> Color? {
+        // enabled=false + disabledBackground
+        // `disabledBackground` is string|binding: the raw String cast read a
+        // bound spelling as a literal colour name, which resolves to nothing.
+        if component.commonBool(\.enabled) == false,
+           let disabledBg = component.typedAttributes(CommonAttributes.self)
+               .disabledBackground?.rawRepresentation as? String,
+           let color = DynamicHelpers.getColor(disabledBg, data: data) {
+            return color
+        }
+
+        guard let background = component.commonString(\.background) else { return nil }
+
+        // Check binding — getColor already handles SwiftUI.Binding unwrapping,
+        // then the direct color name
+        return DynamicHelpers.getColor(background, data: data) ?? DynamicHelpers.getColor(background)
+    }
+
+    // MARK: - 5d. Glass (Liquid Glass, iOS 26+)
+
+    /// `common.glass`, applied through the one library helper.
+    ///
+    /// 🔻 THIS FACE WAS EMPTY UNTIL NOW, AND NOTHING SAID SO. The attribute
+    /// shipped with a codegen implementation and no Dynamic one; both faces
+    /// rendered an identical picture on iOS 18 because neither drew glass, so
+    /// the conformance comparison agreed for the wrong reason. It only became
+    /// visible when the iOS builds moved to an SDK that has Liquid Glass —
+    /// measured on run 34849471695, `common_glass__true.png`, hamming 151.
+    /// A parity gap that only one OS can see is not a gap the suite finds; the
+    /// OS move is what turned the instrument on.
+    ///
+    /// The value contract is the emitter's, read from
+    /// `base_view_converter.rb#apply_glass` rather than restated from the
+    /// declaration prose, because the emitter is what the other face actually
+    /// does:
+    ///
+    ///   absent / `false` / `"false"`   -> nothing applied (no call emitted)
+    ///   `true` (any other scalar)      -> `.sjuiGlassEffect()`, bare
+    ///   object                         -> each of the four keys, each optional
+    ///
+    /// ⚠️ `interactive` is passed only when the KEY IS PRESENT. `false` is a
+    /// written value, not an absent key, and the helper distinguishes them —
+    /// `Glass`'s own Equatable does not, which is why SJUIGlass.Plan exists.
+    /// Defaulting the optional here would erase exactly the distinction the
+    /// other face is careful to preserve.
+    ///
+    /// Shape spellings are NOT validated here. Codegen can see the spelling
+    /// statically and rejects an undeclared one at build time (`isKnown`);
+    /// Dynamic reads JSON at runtime, where the equivalent of rejecting is
+    /// crashing a screen, so an unknown spelling degrades to the SDK default
+    /// the same way `resolvedShape` already handles it.
+    /// What `applyGlass` decided, before the helper sees it.
+    ///
+    /// ⚠️ Exists for the same reason `SJUIGlass.Plan` does one layer down: the
+    /// applied result is an `AnyView`, and a view cannot be asked which
+    /// arguments it was built from. Without this, an arm could only check that
+    /// SOMETHING was applied — and the distinction the contract turns on
+    /// (`interactive: false` present vs absent) is invisible at that
+    /// resolution. The applied call is built FROM this value, so it is not a
+    /// parallel description that can drift from what runs.
+    struct GlassCall: Equatable {
+        /// false means no call is made at all — `absent`, `false`, `"false"`.
+        let applies: Bool
+        let style: String?
+        let tint: Color?
+        let interactive: Bool?
+        let shape: String?
+
+        static let none = GlassCall(applies: false, style: nil, tint: nil, interactive: nil, shape: nil)
+    }
+
+    static func glassCall(component: DynamicComponent, data: [String: Any] = [:]) -> GlassCall {
+        guard let value = component.typedAttributes(CommonAttributes.self).glass else { return .none }
+
+        if let flag = value as? Bool, flag == false { return .none }
+        if let text = value as? String, text.lowercased() == "false" { return .none }
+
+        guard let config = value as? [String: Any] else {
+            // `true`, or any other scalar the emitter also treats as truthy:
+            // the default treatment, which is the bare call.
+            return GlassCall(applies: true, style: nil, tint: nil, interactive: nil, shape: nil)
+        }
+
+        let interactive: Bool?
+        if let raw = config["interactive"] {
+            interactive = (raw as? Bool) == true || (raw as? String)?.lowercased() == "true"
+        } else {
+            interactive = nil
+        }
+
+        return GlassCall(
+            applies: true,
+            style: config["style"] as? String,
+            tint: (config["tint"] as? String).flatMap { DynamicHelpers.getColor($0, data: data) },
+            interactive: interactive,
+            shape: config["shape"] as? String
+        )
+    }
+
+    public static func applyGlass(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        let call = glassCall(component: component, data: data)
+        guard call.applies else { return view }
+        return AnyView(view.sjuiGlassEffect(style: call.style,
+                                            tint: call.tint,
+                                            interactive: call.interactive,
+                                            shape: call.shape))
+    }
+
+    // MARK: - 5e. effectStyle material (non-Blur nodes)
+
+    /// The spelling `common.effectStyle` draws on this node, or nil when it
+    /// draws nothing here.
+    ///
+    /// The attribute is declared on `common`, and android and web draw a
+    /// non-Blur node's material; this runtime read it only in BlurConverter,
+    /// so a View drew its control for every value. A Blur is left to its own
+    /// declaration (Light / Dark / ExtraLight), which BlurConverter applies
+    /// before `applyStandardModifiers` — reading it here too would draw it
+    /// twice. sjui codegen answers the same (`effect_style_line`).
+    ///
+    /// Returns `.some(nil)` for a declared value that is no spelling at all
+    /// (a binding): the material is still drawn, at the default — codegen
+    /// emits `.jsonUIVisualEffect(nil)` for it, and web draws Regular.
+    static func effectStyleSpelling(_ component: DynamicComponent) -> String?? {
+        guard let declared = component.typedAttributes(CommonAttributes.self).effectStyle else { return nil }
+        if let type = component.type, TypeSynonyms.drawnType(type).lowercased() == "blur" { return nil }
+        let spelling = declared.rawStringValue
+        if let raw = spelling, raw.hasPrefix("@{") { return .some(nil) }
+        return .some(spelling)
+    }
+
+    /// `common.effectStyle` on a non-Blur node: the declared material behind
+    /// the content, through the ONE library table (`jsonUIVisualEffect` /
+    /// `VisualEffectStyle`) BlurConverter calls — judged against common's
+    /// declaration, `Regular` for anything undeclared.
+    public static func applyEffectStyle(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let spelling = effectStyleSpelling(component) else { return view }
+        return AnyView(view.jsonUIVisualEffect(spelling))
+    }
+
+    /// The `glass` stage's body: the node's materials, in codegen's order for
+    /// the :glass slot — the effectStyle material first, then Liquid Glass
+    /// over it (`base_view_converter.rb#apply_glass`).
+    static func applyMaterials(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        applyGlass(applyEffectStyle(view, component: component), component: component, data: data)
+    }
+
+    // MARK: - 6. Corner Radius
+
+    /// Whether `component` is drawn in a capsule of its own, which its border, its declared fill and
+    /// so its shadow follow instead of a cornerRadius rectangle: a Segment (the orchestrator's
+    /// decision 2026-11-16, under the requester's ruling that a Segment reads no cornerRadius;
+    /// segment_converter.rb `outline_shape`).
+    static func drawnInACapsule(_ component: DynamicComponent) -> Bool {
+        component.type == "Segment"
+    }
+
+    /// The fills a capsule clips (the background stage's attributes; base_view_converter.rb
+    /// OUTLINED_FILLS).
+    static let outlinedFills = ["background", "backgroundColor", "gradient", "disabledBackground",
+                                "tapBackground", "highlightBackground"]
+
+    public static func applyCornerRadius(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        if drawnInACapsule(component) {
+            guard outlinedFills.contains(where: { component.rawData[$0] != nil }) else { return view }
+            return AnyView(view.clipShape(Capsule()))
+        }
+        // cornerRadius is number|binding — resolve a `@{binding}` from data
+        // (the legacy typed slot is nil for the binding spelling).
+        let common = component.typedAttributes(CommonAttributes.self)
+        guard let cornerRadius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: nil, data: data),
+              cornerRadius > 0 else { return view }
+        return AnyView(view.cornerRadius(cornerRadius))
+    }
+
+    // MARK: - 7. Border
+
+    /// - Parameter honorsBorderStyle: false for TextField, whose `borderStyle`
+    ///   is the UIKit chrome vocabulary (none / line / bezel / roundedRect),
+    ///   a DIFFERENT attribute from `common.borderStyle` (solid / dashed /
+    ///   dotted) handled by `applyTextFieldStyle`. Mirrors the generator's
+    ///   `style_source: nil` at textfield_converter.rb:338 — merging the two
+    ///   vocabularies is the mistake both halves are written to avoid.
+    public static func applyBorder(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:],
+        honorsBorderStyle: Bool = true
+    ) -> AnyView {
+        // borderWidth and cornerRadius are both number|binding — resolve any
+        // `@{binding}` spelling from data before drawing the stroke overlay.
+        let common = component.typedAttributes(CommonAttributes.self)
+        guard let borderWidth = DynamicHelpers.resolveNumber(common.borderWidth, legacy: nil, data: data),
+              borderWidth > 0 else { return view }
+        // Both attributes are required to draw: borderWidth alone means no
+        // border (the canonical cross-platform semantics — android draws
+        // nothing either). A declared-but-unresolvable color still falls
+        // back to gray rather than silently dropping a declared border.
+        guard component.commonString(\.borderColor) != nil else { return view }
+        let borderColor = DynamicHelpers.getColor(component.commonString(\.borderColor), data: data) ?? .gray
+        let radius = DynamicHelpers.resolveNumber(common.cornerRadius, legacy: nil, data: data) ?? 0
+        let style = honorsBorderStyle
+            ? strokeStyle(common.borderStyle, borderWidth: borderWidth)
+            : StrokeStyle(lineWidth: borderWidth)
+        if drawnInACapsule(component) {
+            return AnyView(view.overlay(Capsule().stroke(borderColor, style: style)))
+        }
+        return AnyView(view.overlay(
+            RoundedRectangle(cornerRadius: radius)
+                .stroke(borderColor, style: style)
+        ))
+    }
+
+    /// `common.borderStyle` as a `StrokeStyle`.
+    ///
+    /// The dash patterns are the generator's, which took them from Compose's
+    /// `DashedBorderModifier.kt` so one declared border is one border on
+    /// every platform: `[6, 3]` for dashed, `[width, width * 2]` with a round
+    /// cap for dotted (base_view_converter.rb#stroke_style_argument).
+    /// `solid`, undeclared, and an undeclared spelling are all a plain
+    /// stroke — `style` decorates a border the width/color pair requests, it
+    /// never summons one (shared/core/attribute_semantics.json → border).
+    ///
+    /// Switching on the enum rather than a string is deliberate: `AttrEnum`
+    /// canonicalises, so a string switch would stop matching the moment a
+    /// spelling gained an alias, and the compiler would not say so.
+    /// Internal rather than private so it has a unit test: the `AnyView`
+    /// the overlay lands on cannot be inspected.
+    static func strokeStyle(
+        _ declared: AttrEnum<CommonAttributes.BorderStyle>?,
+        borderWidth: CGFloat
+    ) -> StrokeStyle {
+        switch declared?.knownValue {
+        case .dashed:
+            return StrokeStyle(lineWidth: borderWidth, dash: [6, 3])
+        case .dotted:
+            return StrokeStyle(
+                lineWidth: borderWidth,
+                lineCap: .round,
+                dash: [borderWidth, borderWidth * 2]
+            )
+        case .solid, nil:
+            return StrokeStyle(lineWidth: borderWidth)
+        }
+    }
+
+    // MARK: - 8. Margins (external spacing)
+
+    public static func applyMargins(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        var result = view
+        // ZStack children get their individual margins as a full-margin
+        // offset from the parent container (DynamicViewContainer
+        // zStackContent, the codegen contract) — padding here on top of
+        // that double-applied them. The `margins` array is not part of the
+        // offset computation and keeps its padding on every path.
+        let offsetOwnsIndividuals = data["__zstackMarginChild"] as? Bool == true
+            && component.margins == nil
+        // Relative-position children: the container consumed the FULL
+        // individual margins when it placed the slot (buildMargins reads the
+        // same edges, start/end fallback included), so unlike the ZStack
+        // offset there is no shared remainder for padding to own — padding
+        // anything here re-applies it, and the centre-anchored slot turns
+        // the asymmetric part into a half-margin drift of the content
+        // (49-B: (+60,+60) on margins (120,0)). The `margins` array is not
+        // part of the slot computation and keeps its padding, same as the
+        // ZStack carve-out.
+        let slotOwnsAll = data["__relativeMarginChild"] as? Bool == true
+            && component.margins == nil
+        if slotOwnsAll {
+            // nothing to pad — the slot position IS the margin
+        } else if !offsetOwnsIndividuals {
+            let margins = DynamicHelpers.getMargins(from: component, data: data)
+            if margins.top != 0 || margins.leading != 0 || margins.bottom != 0 || margins.trailing != 0 {
+                result = AnyView(result.padding(margins))
+            }
+        } else {
+            let insets = offsetOwnedMarginInsets(component: component, data: data)
+            if insets.top != 0 || insets.leading != 0 || insets.bottom != 0 || insets.trailing != 0 {
+                result = AnyView(result.padding(insets))
+            }
+        }
+        return applyFlexibleMargins(result, component: component)
+    }
+
+    /// What a ZStack child still pads for itself once the parent's `.offset`
+    /// has taken the individual margins.
+    ///
+    /// The offset carries the DIFFERENCE of the two opposing margins and
+    /// nothing more, so that is all it can own: what the pair shares is a
+    /// plain inset and still belongs here. Suppressing this padding outright
+    /// annihilated symmetric margins — 10/10 offsets by zero, so the
+    /// declaration rendered as no margin at all.
+    ///
+    /// An axis the child centres is disabled by the same contract entry
+    /// (semantics.margins) and `zstackMarginOffset` zeroes it, so nothing is
+    /// lifted there. start/endMargin are not consumed by the offset on any
+    /// axis and keep their padding, re-derived alone — without the left/right
+    /// fallback `getMargins` would apply.
+    ///
+    /// Internal rather than private so the split has a unit test: the AnyView
+    /// it ends up on cannot be inspected.
+    static func offsetOwnedMarginInsets(component: DynamicComponent, data: [String: Any]) -> EdgeInsets {
+        let common = component.typedAttributes(CommonAttributes.self)
+        func centres(_ attr: AttrValue<Bool>?) -> Bool {
+            DynamicHelpers.resolveBool(attr, legacy: nil, data: data) == true
+        }
+        let centresInParent = centres(common.centerInParent)
+        let centersHorizontally = centresInParent || centres(common.centerHorizontal)
+        let centersVertically = centresInParent || centres(common.centerVertical)
+        let sharedHorizontal = centersHorizontally
+            ? 0 : sharedMargin(component, .leftMargin, .rightMargin, data: data)
+        let sharedVertical = centersVertically
+            ? 0 : sharedMargin(component, .topMargin, .bottomMargin, data: data)
+        let start = component.margin(.startMargin, data: data)
+        let end = component.margin(.endMargin, data: data)
+        // An axis the ZStack aligns to an edge takes no offset: the child
+        // pads both margins in full there (DynamicViewContainer
+        // zstackPadsAxes; ticket sjui-overlay-child-far-margin-moves-it-out).
+        let padsH = data["__zstackPadHorizontal"] as? Bool == true && !centersHorizontally
+        let padsV = data["__zstackPadVertical"] as? Bool == true && !centersVertically
+        let leading = padsH ? component.margin(.leftMargin, data: data) : sharedHorizontal
+        let trailing = padsH ? component.margin(.rightMargin, data: data) : sharedHorizontal
+        return EdgeInsets(
+            top: padsV ? component.margin(.topMargin, data: data) : sharedVertical,
+            leading: start != 0 ? start : leading,
+            bottom: padsV ? component.margin(.bottomMargin, data: data) : sharedVertical,
+            trailing: end != 0 ? end : trailing
+        )
+    }
+
+    /// The inset two opposing margins have in common — the part a
+    /// difference-carrying offset cannot express, and so the part that stays
+    /// with padding (`SpacingHelper#margin_padding` splits it the same way).
+    /// An undeclared opposite edge has nothing in common with anything, and
+    /// mixed signs share no inset: both keep the offset-owns-everything
+    /// behaviour by returning zero.
+    private static func sharedMargin(
+        _ component: DynamicComponent,
+        _ edge: DynamicComponent.MarginEdge,
+        _ opposite: DynamicComponent.MarginEdge,
+        data: [String: Any]
+    ) -> CGFloat {
+        guard component.hasMargin(edge), component.hasMargin(opposite) else { return 0 }
+        let a = component.margin(edge, data: data)
+        let b = component.margin(opposite, data: data)
+        return max(0, min(a, b))
+    }
+
+    /// min/max{Start,End}Margin — a bounded margin rather than a fixed inset.
+    /// A fixed margin on the same side wins, matching both UIKit and the
+    /// generated-code path (`SpacingHelper#apply_flexible_margins`); `margins`
+    /// covers every side, so it suppresses both.
+    private static func applyFlexibleMargins(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard component.margins == nil else { return view }
+        let common = component.typedAttributes(CommonAttributes.self)
+
+        let leadingFixed = component.hasMargin(.startMargin) || component.hasMargin(.leftMargin)
+        let trailingFixed = component.hasMargin(.endMargin) || component.hasMargin(.rightMargin)
+
+        let minStart = leadingFixed ? nil : common.minStartMargin
+        let maxStart = leadingFixed ? nil : common.maxStartMargin
+        let minEnd = trailingFixed ? nil : common.minEndMargin
+        let maxEnd = trailingFixed ? nil : common.maxEndMargin
+        guard minStart != nil || maxStart != nil || minEnd != nil || maxEnd != nil else { return view }
+
+        return AnyView(view.flexibleHorizontalMargin(
+            minStart: minStart.map { CGFloat($0) },
+            maxStart: maxStart.map { CGFloat($0) },
+            minEnd: minEnd.map { CGFloat($0) },
+            maxEnd: maxEnd.map { CGFloat($0) }
+        ))
+    }
+
+    // MARK: - 9. Opacity
+
+    public static func applyOpacity(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        // Only the bound spelling is a String; a literal opacity decodes as a
+        // number and falls through to the legacy path below. `alpha` needs no
+        // special case any more — 49-E made it a declared alias, so the
+        // generated lookup resolves it into `opacity` itself.
+        let opacityStr = component.typedAttributes(CommonAttributes.self)
+            .opacity?.rawRepresentation as? String
+        if let opacityStr = opacityStr,
+           let inner = DynamicBindingResolver.inner(of: opacityStr) {
+            let expression = DynamicBindingResolver.parse(inner)
+            let rawValue = expression.negated
+                ? nil
+                : DynamicBindingResolver.lookupRaw(path: expression.path, in: data)
+            // Reactive Binding<Double> keeps its wrapper
+            if let binding = rawValue as? SwiftUI.Binding<Double> {
+                return AnyView(ReactiveOpacityWrapper(opacity: binding, content: view))
+            }
+            // Canonical number value context (dot-path / default / coercion)
+            if let value = DynamicBindingResolver.resolveDouble(expression: inner, data: data) {
+                return AnyView(view.opacity(value))
+            }
+        }
+        if let opacity = component.commonNumber(\.opacity) {
+            return AnyView(view.opacity(Double(opacity)))
+        }
+        if let alpha = component.alpha, !component.isNormalized {
+            return AnyView(view.opacity(Double(alpha)))
+        }
+        if component.visibilitySpelling() == "invisible" {
+            // Full invisible mechanism, mirroring VisibilityWrapper /
+            // applyHidden: a bare .opacity(0) keeps the view findable by
+            // VoiceOver and UI tests. Normally the builder wraps first and
+            // this branch never fires — it must still agree on the
+            // semantics for builder-bypassing callers.
+            return AnyView(
+                view
+                    .opacity(0)
+                    // A reorderable row's handle in here is not drawn: its row is fixed.
+                    .environment(\.jsonuiNotDrawn, true)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityHidden(true)
+                    // Out of the UI-test tree too (VisibilityWrapper .invisible).
+                    .accessibilityRepresentation { EmptyView() }
+            )
+        }
+        return view
+    }
+
+    // MARK: - 10. Shadow
+
+    public static func applyShadow(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        guard let shadow = component.shadow else { return view }
+        // The declared STRING form is the UIKit pipe contract
+        // 'color|offsetX|offsetY|opacity|radius' — exactly five fields;
+        // anything else draws nothing (SJUIViewCreator's count == 5 guard,
+        // the canonical semantics all four render paths share).
+        guard let shadowDict = shadow.value as? [String: Any] else {
+            if let pipe = shadow.value as? String {
+                let parts = pipe.components(separatedBy: "|")
+                if parts.count == 5,
+                   let color = DynamicHelpers.getColor(parts[0]),
+                   let x = Double(parts[1]), let y = Double(parts[2]),
+                   let opacity = Double(parts[3]), let radius = Double(parts[4]) {
+                    return AnyView(view.shadow(
+                        color: color.opacity(opacity),
+                        radius: CGFloat(radius), x: CGFloat(x), y: CGFloat(y)
+                    ))
+                }
+            }
+            return view
+        }
+
+        // Object form mirrors sjui codegen (build_shadow_modifier): no
+        // declared opacity leaves the colour at full strength, and no
+        // declared colour falls through to SwiftUI's default shadow colour.
+        // Each field is a number or a `@{binding}`, as codegen reads it
+        // (number_slot, bound colour): a whole number ("radius": 8) is as
+        // declared as 8.5 — `as? Double` read it as absent — and a binding is
+        // read from data, as the other stages read theirs.
+        func number(_ key: String, _ alias: String) -> Double? {
+            for raw in [shadowDict[key], shadowDict[alias]] {
+                if let text = raw as? String {
+                    if let inner = DynamicBindingResolver.inner(of: text) {
+                        if let bound = DynamicBindingResolver.resolveDouble(expression: inner, data: data) { return bound }
+                        continue
+                    }
+                    if let number = Double(text.trimmingCharacters(in: .whitespaces)) { return number }
+                    continue
+                }
+                if let number = raw as? NSNumber, CFGetTypeID(number) != CFBooleanGetTypeID() { return number.doubleValue }
+                if let number = raw as? Double { return number }
+                if let number = raw as? Int { return Double(number) }
+                if let number = raw as? CGFloat { return Double(number) }
+            }
+            return nil
+        }
+        let colorName = shadowDict["color"] as? String ?? shadowDict["shadowColor"] as? String
+        let radius = CGFloat(number("radius", "shadowRadius") ?? 5.0)
+        let offsetX = CGFloat(number("offsetX", "shadowOffsetX") ?? 0.0)
+        let offsetY = CGFloat(number("offsetY", "shadowOffsetY") ?? 0.0)
+        let opacity = number("opacity", "shadowOpacity")
+
+        if let name = colorName {
+            // A colour that does not resolve falls back as codegen's does:
+            // a written one to black (get_swiftui_color's `?? Color.black`), a
+            // bound one to clear — no shadow (`?? Color.clear`).
+            let fallback = DynamicBindingResolver.inner(of: name) == nil ? Color.black : Color.clear
+            let color = DynamicHelpers.getColor(name, data: data) ?? fallback
+            let resolved = opacity.map { color.opacity($0) } ?? color
+            return AnyView(view.shadow(color: resolved, radius: radius, x: offsetX, y: offsetY))
+        }
+        return AnyView(view.shadow(radius: radius, x: offsetX, y: offsetY))
+    }
+
+    // MARK: - 11. Clipped
+
+    /// `clipToBounds` — literal or bound.
+    ///
+    /// The hand-decoded `component.clipToBounds` is nil for `@{expr}`, so a
+    /// bound declaration never clipped. The generated extraction carries
+    /// both forms, and `View.clipToBounds(_:)` is the same public seam the
+    /// generated code calls — one rule, both paths.
+    public static func applyClipped(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        let enabled = DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).clipToBounds,
+            legacy: nil,
+            data: data
+        ) ?? false
+        return AnyView(view.clipToBounds(enabled))
+    }
+
+    // MARK: - 11a. safeAreaInsetPositions
+
+    /// The edges that RESERVE the safe area.
+    ///
+    /// The name is the trap: `.ignoresSafeArea(edges:)` reads like the right
+    /// modifier and does the opposite — it lets content spill INTO the safe
+    /// area. `.safeAreaPadding` is the one that reserves it, which is what
+    /// the SSoT, the web converter's `env(safe-area-inset-*)` padding and
+    /// Compose's `windowInsetsPadding` all mean. 49-B moved
+    /// `base_view_converter.rb#apply_safe_area_insets_to_bag` onto
+    /// `.safeAreaPadding` for the same reason; this is the dynamic half,
+    /// landing together so the two paths never disagree.
+    ///
+    /// It sits in the shared chain, not in the SafeAreaView container, because
+    /// codegen applies it to EVERY component — the SSoT says so explicitly
+    /// ("every platform honours the attribute on a PLAIN view too").
+    public static func applySafeAreaInsets(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let positions = component.typedAttributes(ViewAttributes.self).safeAreaInsetPositions
+                ?? component.typedAttributes(SafeAreaViewAttributes.self).safeAreaInsetPositions,
+              let edges = safeAreaEdgeSet(positions) else { return view }
+        // Length 0: the safe area's own inset and nothing more. Without a
+        // length SwiftUI adds its default padding (16) on top, so a box that
+        // touches no screen edge moved its content 16 where Android and web
+        // moved it 0 (frame-parity, 2026-10-05; the declaration reserves the
+        // safe area — rjui pads by env(safe-area-inset-*)). sjui codegen:
+        // base_view_converter.rb#apply_safe_area_insets_to_bag.
+        return AnyView(view.safeAreaPadding(edges, 0))
+    }
+
+    /// The `Edge.Set` a declared position list selects, or nil when it selects
+    /// none. Each item by its declared spelling
+    /// (ViewAttributes.SafeAreaInsetPositions: top / bottom / leading /
+    /// trailing / vertical / all), as base_view_converter.rb SAFE_AREA_EDGES
+    /// reads it — `left` / `right` / `horizontal` are declared nowhere and
+    /// select no edge (jsonui-cli 1.9.0).
+    static func safeAreaEdgeSet(_ positions: [Any]) -> Edge.Set? {
+        let list = positions.compactMap { DeclaredSpelling.lowered($0 as? String, in: ViewAttributes.SafeAreaInsetPositions.declaredSpellings) }
+        if list.contains("all") { return .all }
+
+        var edges: Edge.Set = []
+        for position in list {
+            switch position {
+            case "top": edges.insert(.top)
+            case "bottom": edges.insert(.bottom)
+            case "leading": edges.insert(.leading)
+            case "trailing": edges.insert(.trailing)
+            case "vertical": edges.insert(.vertical)
+            default: break
+            }
+        }
+        return edges.isEmpty ? nil : edges
+    }
+
+    // MARK: - 11b. highlighted / highlightBackground
+
+    /// The pressed-or-selected appearance, driven by the `highlighted` flag.
+    ///
+    /// UIKit swaps to `highlightBackgroundColor` when the flag is set
+    /// (`SJUIView:187`). SwiftUI has no such state, so codegen emits the same
+    /// swap conditionally (`base_view_converter.rb#apply_highlighted_to_bag`)
+    /// — but nothing on the dynamic side read either half of the pair, even
+    /// though `DynamicComponent` decodes both.
+    ///
+    /// Both halves are required: a `highlightBackground` with no `highlighted`
+    /// describes a state that is never entered, which is why codegen returns
+    /// early on either being absent.
+    public static func applyHighlighted(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        guard let color = highlightedBackgroundColor(component: component, data: data) else {
+            return view
+        }
+        return AnyView(view.background(color))
+    }
+
+    /// The active highlight colour, or nil when the view is not highlighted.
+    ///
+    /// Both halves are required: a `highlightBackground` with no `highlighted`
+    /// describes a state that is never entered. The caller must use this to
+    /// SKIP the base background — `.background` layers BEHIND the view, so a
+    /// highlight applied after an opaque base background was invisible
+    /// (View_highlighted__true parity, run 31202080745). UIKit swaps
+    /// SJUIView's backgroundColor; the swap here is "highlight replaces
+    /// base", not "highlight behind base".
+    public static func highlightedBackgroundColor(
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> Color? {
+        let common = component.typedAttributes(CommonAttributes.self)
+        guard let background = common.highlightBackground?.rawRepresentation as? String,
+              let color = DynamicHelpers.getColor(background, data: data) else { return nil }
+        // `highlighted` is undeclared in the SSoT — codegen reads it anyway
+        // (`@component['highlighted']`), so it comes through the raw
+        // passthrough here. Flagged to 49-E; the declaration is the thing
+        // that is wrong, not the read.
+        guard DynamicBindingHelper.resolveBool(
+            component.rawAttribute("highlighted"), data: data, fallback: false
+        ) else { return nil }
+        return color
+    }
+
+    // MARK: - 12. Offset
+
+    public static func applyOffset(
+        _ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]
+    ) -> AnyView {
+        // Declared on `common` since plan 51-E; the raw read also missed every
+        // Double/Int spelling, since only an exact CGFloat cast succeeded.
+        let common = component.typedAttributes(CommonAttributes.self)
+        let x = DynamicHelpers.resolveNumber(common.offsetX, legacy: nil, data: data) ?? 0
+        let y = DynamicHelpers.resolveNumber(common.offsetY, legacy: nil, data: data) ?? 0
+        if x != 0 || y != 0 {
+            return AnyView(view.offset(x: x, y: y))
+        }
+        return view
+    }
+
+    // MARK: - 12b. zIndex (indexBelow / indexAbove)
+
+    public static func applyZIndex(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        // Mirrors base_view_converter.rb: a numeric value becomes ∓N, a
+        // view-ID reference degrades to ∓1 (SwiftUI has no relative z-order
+        // between named siblings, only zIndex).
+        func magnitude(_ raw: Any) -> Double {
+            if let n = raw as? NSNumber { return n.doubleValue }
+            if let s = raw as? String, let n = Double(s), s.range(of: #"^\d+$"#, options: .regularExpression) != nil {
+                return n
+            }
+            return 1
+        }
+        if let below = component.rawData["indexBelow"] {
+            return AnyView(view.zIndex(-magnitude(below)))
+        }
+        if let above = component.rawData["indexAbove"] {
+            return AnyView(view.zIndex(magnitude(above)))
+        }
+        return view
+    }
+
+    // MARK: - 13. Hidden
+
+    public static func applyHidden(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        if component.visibilitySpelling() == "gone" {
+            return AnyView(view.hidden())
+        }
+        // hidden == visibility:"invisible" (canonical spec): keep the layout
+        // space, draw nothing, leave the accessibility tree. Collapsing is
+        // "gone" only. This fallback is only reached off the builder path
+        // (DynamicComponentBuilder wraps hidden in VisibilityWrapper).
+        if component.commonBool(\.hidden) == true {
+            return invisible(view)
+        }
+
+        // Binding hidden: @{propertyName} or @{!propertyName}
+        if let expr = component.typedAttributes(CommonAttributes.self).hidden?.bindingExpression {
+            let hiddenValue = "@{\(expr)}"
+            // Try reactive SwiftUI.Binding<Bool> first
+            if let binding = DynamicBindingHelper.extractBoolBinding(from: hiddenValue, data: data) {
+                return AnyView(ReactiveHiddenWrapper(isHidden: binding, content: view))
+            }
+            // Plain value re-resolves on every data-driven rebuild.
+            let isHidden = DynamicBindingHelper.resolveBool(hiddenValue, data: data, fallback: false)
+            if isHidden {
+                return invisible(view)
+            }
+            return view
+        }
+
+        return view
+    }
+
+    /// visibility:"invisible" mechanics — mirrors VisibilityWrapper's
+    /// `.invisible` branch (space kept, not drawn, accessibility-hidden).
+    private static func invisible(_ view: AnyView) -> AnyView {
+        AnyView(
+            view
+                .opacity(0)
+                // A reorderable row's handle in here is not drawn: its row is fixed.
+                .environment(\.jsonuiNotDrawn, true)
+                .accessibilityElement(children: .ignore)
+                .accessibilityHidden(true)
+                // Out of the UI-test tree too (VisibilityWrapper .invisible).
+                .accessibilityRepresentation { EmptyView() }
+        )
+    }
+
+    // MARK: - 14. Tint
+
+    public static func applyTint(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        // `tintColor` is on CommonAttributes; `tint` is declared on
+        // Switch/Toggle only, and its table reads the spelling for any
+        // component (the extraction works off rawData).
+        guard let tintColor = component.commonString(\.tintColor)
+                ?? component.string(SwitchAttributes.self, \.tint),
+              // data-aware: string|binding — the binding face was inert here
+              // (TabView/tintColor__binding, run 31243724782 cross-effect).
+              let color = DynamicHelpers.getColor(tintColor, data: data) else { return view }
+        return AnyView(view.tint(color))
+    }
+
+    // MARK: - 15. Disabled
+
+    public static func applyDisabled(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        // A TabView's `enabled` stops its tab items, not the tab view: the
+        // TabView converter hands it to each tab (jsonuiTabItemsEnabled).
+        // `.disabled` here disabled the controls of the tab shown too (the orchestrator's
+        // ruling, jsonui-cli 1.9.0; measured, ConformanceHost
+        // -tabEnabledProbe).
+        if isTabView(component) { return view }
+        if component.commonBool(\.enabled) == false {
+            return AnyView(view.disabled(true))
+        }
+        // Binding: @{!isEnabled} or @{isEnabled}
+        if let expr = component.typedAttributes(CommonAttributes.self).enabled?.bindingExpression {
+            let enabledValue = "@{\(expr)}"
+            // Try reactive SwiftUI.Binding<Bool> — negate for disabled
+            if let enabledBinding = DynamicBindingHelper.extractBoolBinding(from: enabledValue, data: data) {
+                let disabledBinding = SwiftUI.Binding<Bool>(
+                    get: { !enabledBinding.wrappedValue },
+                    set: { enabledBinding.wrappedValue = !$0 }
+                )
+                return AnyView(ReactiveDisabledWrapper(isDisabled: disabledBinding, content: view))
+            }
+            // Fallback to plain value
+            let isEnabled = DynamicBindingHelper.resolveBool(enabledValue, data: data, fallback: true)
+            if !isEnabled {
+                return AnyView(view.disabled(true))
+            }
+        }
+        return view
+    }
+
+    static func isTabView(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type else { return false }
+        return TypeSynonyms.drawnType(type).lowercased() == "tabview"
+    }
+
+    /// A node's `enabled` as a value its tab items read: `.constant(false)`
+    /// for the literal false; for a bound one the binding (read where it is
+    /// applied, as ReactiveDisabledWrapper reads it) or its value now — true
+    /// too, so the items are enabled again when it turns true; nil when there
+    /// is nothing to read (none, or the literal true).
+    static func enabledBinding(_ component: DynamicComponent, data: [String: Any]) -> SwiftUI.Binding<Bool>? {
+        if component.commonBool(\.enabled) == false { return .constant(false) }
+        guard let expr = component.typedAttributes(CommonAttributes.self).enabled?.bindingExpression else { return nil }
+        let enabledValue = "@{\(expr)}"
+        if let binding = DynamicBindingHelper.extractBoolBinding(from: enabledValue, data: data) { return binding }
+        return .constant(DynamicBindingHelper.resolveBool(enabledValue, data: data, fallback: true))
+    }
+
+    // MARK: - 16. Hit Testing
+
+    public static func applyHitTesting(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any] = [:]
+    ) -> AnyView {
+        let stops = stopsHitTesting(component, data: data)
+        let result = stops ? AnyView(view.allowsHitTesting(false)) : view
+        // A control a stop holds: the hit-test stop keeps a touch out, and
+        // VoiceOver's activation still called its default action (measured,
+        // ConformanceHost -a11yActivationProbe: a Switch inside a stop
+        // switched). Its own flag, a stop around it (the mark), or one handed
+        // down (the environment, which the modifier reads itself).
+        guard TapAccessibility.isControl(component.type) else { return result }
+        return AnyView(result.jsonuiStoppedControl(stops || component.interactionStoppedAround,
+                                                   items: holdsItemElements(component)))
+    }
+
+    /// A control whose items are elements of their own, which the stopped
+    /// control's treatment has to reach as the control's representation
+    /// (JsonUIStoppedControl `items`): a Segment — a segmented Picker, whose
+    /// segments are UIKit's — and a Radio with items. A Radio group is ONE
+    /// element that contains its options (`.accessibilityElement(children:
+    /// .contain)`, RadioConverter), so the treatment put on it lands on the
+    /// group and not on the options: inside a stop each option still
+    /// responded (measured, ConformanceHost -a11yActivationProbe, iOS 26.5,
+    /// since 9768b01; before it the group was no element and the treatment
+    /// reached every option). Ticket sjui-dynamic-radio-item-operable-inside-a-stop.
+    /// The items test is RadioConverter's own (`items` non-empty).
+    static func holdsItemElements(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type else { return false }
+        switch TypeSynonyms.drawnType(type).lowercased() {
+        case "segment":
+            return true
+        case "radio":
+            return !(component.stringList(SelectBoxAttributes.self, \.items) ?? []).isEmpty
+        default:
+            return false
+        }
+    }
+
+    /// `userInteractionEnabled` false, or a binding resolving false — the
+    /// hand-decoded slot was nil for `@{expr}`, so a bound false never
+    /// disabled hit testing. touchDisabledState is not read: it is UIKit's
+    /// hit-test mode (SJUIView — none / onlyMe / viewsWithoutTouchEnabled /
+    /// viewsWithoutInList), SwiftUI has no peer, and any value of it, "none"
+    /// too, stopped the whole view here until jsonui-cli 1.9.0 (onlyMe keeps
+    /// the subviews tappable on UIKit). The build names it (a WARNING).
+    static func stopsHitTesting(_ component: DynamicComponent, data: [String: Any]) -> Bool {
+        DynamicHelpers.resolveBool(
+            component.typedAttributes(CommonAttributes.self).userInteractionEnabled,
+            legacy: nil,
+            data: data
+        ) == false
+    }
+
+    // MARK: - 17. Accessibility Identifier
+
+    /// Component types whose SwiftUI representation is a plain layout container
+    /// (HStack/VStack/ZStack/ScrollView wrapper) that does not become an
+    /// accessibility element on its own.
+    /// `embed` is included because EmbedContainer is a plain wrapper view: a
+    /// bare .accessibilityIdentifier on it is pushed down into the embedded
+    /// screen and clobbers the identifier of that screen's root container
+    /// (its nearest descendant element) — the embedded root id then never
+    /// resolves in XCUITest while pane leaves still do. An id-bearing Embed
+    /// always gets the merge-hazard anchor (subtree unknown, contribution 0).
+    /// Keep in sync with sjui_tools BaseViewConverter::
+    /// ACCESSIBILITY_CONTAINER_TYPES.
+    /// Drawn types only (downcased): a node is looked up by the type it is
+    /// drawn as (TypeSynonyms.drawnType), so an HStack is a view and a
+    /// Scroll a scrollview without a spelling of their own here.
+    private static let accessibilityContainerTypes: Set<String> = [
+        "view", "safeareaview", "scrollview",
+        "blur", "gradientview",
+        "embed"
+    ]
+
+    /// Component types guaranteed to surface at least one accessibility
+    /// element of their own when visible (text, controls, images — an image
+    /// only with a written alt, imageSurelyAnElement). Types not
+    /// listed (Collection, Table, Web, TabView, includes, bare decorative
+    /// views…) may yield zero elements at runtime and are conservatively not
+    /// counted by `accessibilityMergeHazard`.
+    /// Keep in sync with sjui_tools BaseViewConverter::
+    /// CERTAIN_ACCESSIBILITY_ELEMENT_TYPES.
+    /// Drawn types only (downcased), as accessibilityContainerTypes.
+    private static let certainAccessibilityElementTypes: Set<String> = [
+        "label", "iconlabel", "button",
+        "textfield", "textview",
+        "image", "circleimage", "networkimage",
+        "switch", "checkbox", "radio",
+        "segment", "progress", "slider", "indicator", "selectbox"
+    ]
+
+    /// DEPTH BUDGET: the invisible anchor overlay is a secondary-child
+    /// layout node; its evaluation recurses through the container content
+    /// inline, so each anchored ancestor on a nesting path stays on the
+    /// stack while descending (~2.4 KB per site measured at -Onone; AnyView
+    /// erasure does NOT break this chain — plain modifiers stay at a
+    /// constant stack cost, the overlay grows linearly). Emitted for every
+    /// id-bearing container this exhausted the device main-thread stack on
+    /// large screens (EXC_BAD_ACCESS code=2). The merge hazard the anchor
+    /// guards against only exists when the container can end up with fewer
+    /// than two accessibility children, so the anchor is only applied for
+    /// those containers.
+    ///
+    /// Conservative approximation, kept in sync with sjui_tools
+    /// BaseViewConverter#accessibility_merge_hazard?: a child contributes
+    /// only when it is guaranteed present (no visibility binding /
+    /// invisible / gone) and guaranteed to surface accessibility elements —
+    /// a certain element type contributes 1 (an image only with a written
+    /// alt, imageSurelyAnElement), an id-bearing container
+    /// contributes 1 (it becomes an explicit accessibility container
+    /// itself), an id-less plain container contributes its own guaranteed
+    /// children (promoted to the grandparent). Uncertainty errs toward
+    /// emitting the anchor, never toward dropping a needed one.
+    static func accessibilityMergeHazard(_ component: DynamicComponent) -> Bool {
+        return guaranteedAccessibleChildCount(component) < 2
+    }
+
+    private static func guaranteedAccessibleChildCount(_ component: DynamicComponent) -> Int {
+        return (component.childComponents ?? []).reduce(0) { count, child in
+            count + guaranteedAccessibilityContribution(child)
+        }
+    }
+
+    /// Whether the view this component RENDERS AS is an accessibility element
+    /// on its own.
+    ///
+    /// Type is enough for everything in `accessibilityContainerTypes`, whose
+    /// rendered shape is fixed. A Collection's is not: every lazy shape wraps
+    /// in a ScrollView (or List / TabView / CollectionStackView), which is an
+    /// element and takes the identifier itself, while `lazy: "none"` renders
+    /// a bare stack, which is not. Measured on the conformance host: with
+    /// `lazy: "none"` the cell addresses time out, with the default they
+    /// resolve.
+    ///
+    /// Collection is deliberately NOT added to `accessibilityContainerTypes`
+    /// — that set's own sentence is "types whose SwiftUI representation is a
+    /// plain layout container", which would become false for its scroll
+    /// shapes, and every one of them would gain a redundant element.
+    /// Mirrors sjui_tools CollectionConverter#accessibility_container?.
+    static func isAccessibilityContainer(_ component: DynamicComponent) -> Bool {
+        // the node as it is drawn: a child is read here as written
+        let typeName = component.type.map { TypeSynonyms.drawnType($0).lowercased() } ?? ""
+        if accessibilityContainerTypes.contains(typeName) { return true }
+        if isCustomContainer(component) { return true }
+        guard typeName == "collection" else { return false }
+        // Asked of the converter that renders the shape, not read here: `lazy`
+        // accepts a legacy boolean besides the declared enum, so it is a raw
+        // read, and the read-discipline allowlist carries exactly one row for
+        // it — in CollectionConverter. A second read here would be a second
+        // unlisted violation and a second chance to disagree with what is
+        // actually rendered.
+        return CollectionConverter.rendersWithoutScrollContainer(component)
+    }
+
+    /// A project's own component (drawn by a registered CustomComponentAdapter)
+    /// that the layout gives children. Its adapter draws them inside its own
+    /// view, which is no more an accessibility element than a VStack is, so a
+    /// bare identifier was pushed down onto them: measured (XCUITest, iOS 26.5,
+    /// 2026-09-25) a custom container with one child had its id found on the
+    /// child and the child's own id 0 times; with two, its id twice. The list
+    /// above names SwiftJsonUI's types and cannot name a project's.
+    /// sjui's BaseViewConverter answers the same for its extension converters.
+    static func isCustomContainer(_ component: DynamicComponent) -> Bool {
+        guard let type = component.type, CustomComponentRegistry.shared.adapter(for: type) != nil else { return false }
+        return (component.childComponents ?? []).contains { $0.isValid || $0.include != nil }
+    }
+
+    private static func guaranteedAccessibilityContribution(_ child: DynamicComponent) -> Int {
+        if child.include != nil { return 0 } // unknown subtree
+        if let visibility = child.visibilitySpelling(), visibility != "visible" { return 0 }
+        let typeName = child.type.map { TypeSynonyms.drawnType($0).lowercased() } ?? ""
+        if isAccessibilityContainer(child) {
+            // id-bearing container: becomes an explicit accessibility
+            // container (a single element) under applyAccessibilityId
+            if child.id != nil { return 1 }
+            // plain container: guaranteed descendants are promoted (2 is
+            // enough — the caller only compares against 2)
+            return min(guaranteedAccessibleChildCount(child), 2)
+        }
+        // An image is an element only while its alt keeps it one
+        // (imageSurelyAnElement).
+        if ImageAccessibility.isImage(child.rawData) { return imageSurelyAnElement(child) ? 1 : 0 }
+        return certainAccessibilityElementTypes.contains(typeName) ? 1 : 0
+    }
+
+    /// An image with no alt is decorative and hidden unless it operates a
+    /// control, which depends on the tappables around it (the environment
+    /// ImageAccessibilityModifier reads, not known here); one with alt "", or
+    /// a bound alt that resolves to "", is hidden too (ImageAccessibility).
+    /// Counted as a sure element, it made a container of a hidden image and
+    /// one tappable View read as two children, so the container took no
+    /// anchor and SwiftUI merged it into the View: the View's id read the
+    /// container's box, and from 10.29.7 a tap by that id landed on the box's
+    /// centre, on the container's own onClick (jsonui-cli ticket
+    /// sjui-a-tappable-elements-anchor-inside-its-tap-target-moves-the-tap-
+    /// point-off-it). So only an alt written as a non-empty string counts;
+    /// anything else errs toward the anchor. sjui_tools: BaseViewConverter
+    /// #image_surely_an_element?, the same rule.
+    static func imageSurelyAnElement(_ child: DynamicComponent) -> Bool {
+        // Read where every image's alt is read (ImageAccessibility), as a
+        // string only: sjui's rule counts only a string.
+        guard let alt = ImageAccessibility.writtenAlt(child.rawData) else { return false }
+        return !alt.isEmpty && !alt.contains("@{")
+    }
+
+    /// Hands the layout box up to the conformance gate's measuring element
+    /// (JsonUIConformanceFrame.swift). Applied just inside the margins: by the
+    /// `conformanceFrame` stage, and by each converter that runs its own chain
+    /// right before its own applyMargins (Label, Text, TextView, TextField,
+    /// SelectBox, Button). Makes nothing unless a conformance host sets
+    /// jsonuiConformanceFrameProbe.
+    public static func applyConformanceFrame(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let id = component.id, component.visibilitySpelling() != "invisible" else { return view }
+        return AnyView(view.jsonUIConformanceFrame(id))
+    }
+
+    public static func applyAccessibilityId(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        guard let id = component.id else { return view }
+        // Statically invisible components must not become accessibility
+        // elements at all — explicit accessibility containers ignore an
+        // ancestor's .accessibilityHidden(true), so creating one here would
+        // leave an invisible view findable by VoiceOver / UI tests.
+        // (VisibilityWrapper hides the rest of the subtree.)
+        if component.visibilitySpelling() == "invisible" {
+            return view
+        }
+        // A tappable combined into one button (TapAccessibility) is an element
+        // already: the identifier goes on it, and a container would split it
+        // back into its children.
+        if isAccessibilityContainer(component), TapAccessibility.shape(of: component) != .combine {
+            // Plain SwiftUI containers are not accessibility elements, so a bare
+            // .accessibilityIdentifier is pushed down onto the nearest descendant
+            // element — it never surfaces for the container itself and can
+            // clobber a child's own identifier (e.g. a screen root "root" View
+            // overwriting the id of the single control inside it).
+            // Make the container an explicit accessibility container first; this
+            // matches the UIKit path, where every UIView with an id is queryable
+            // by XCUITest, and keeps all descendant elements accessible.
+            //
+            // The invisible zero-ish anchor overlay prevents SwiftUI from
+            // merging two nested containers when the outer one has exactly one
+            // accessibility child (the merge drops the inner container's
+            // identifier): with the anchor the container has at least two
+            // children, so it is never collapsed into its single child.
+            // Only applied where that hazard exists — see
+            // accessibilityMergeHazard (device stack-depth budget).
+            // The anchor is already on, inside the offset and the margins
+            // (applyAccessibilityAnchor).
+            return AnyView(
+                makeAccessibilityContainer(view, component: component, anchored: false)
+                    .accessibilityIdentifier(id)
+            )
+        }
+        return AnyView(view.accessibilityIdentifier(id))
+    }
+
+    /// The container half of `applyAccessibilityId`: an explicit
+    /// accessibility container, anchored against the single-child merge
+    /// where that hazard exists, WITHOUT the identifier. Exposed for the one
+    /// shape the chain cannot recognise from the component alone — a flow
+    /// Collection rendered as its non-scroll container because a scrolling
+    /// ancestor takes the scrolling (CollectionConverter): made an element
+    /// here first, the chain's bare identifier then lands on it instead of
+    /// on its cells.
+    static func makeAccessibilityContainer(_ view: AnyView, component: DynamicComponent,
+                                           anchored: Bool = true) -> AnyView {
+        if anchored && accessibilityMergeHazard(component) {
+            return AnyView(anchor(view).accessibilityElement(children: .contain))
+        }
+        return AnyView(view.accessibilityElement(children: .contain))
+    }
+
+    /// The 0.5pt anchor against the single-child merge, at the top-left of
+    /// `view`.
+    static func anchor(_ view: AnyView) -> AnyView {
+        AnyView(view.overlay(alignment: .topLeading) {
+            SwiftUI.Color.clear
+                .frame(width: 0.5, height: 0.5)
+                .accessibilityElement(children: .ignore)
+        })
+    }
+
+    /// Whether this component takes the anchor: a container that will be
+    /// made an accessibility element (applyAccessibilityId), or a tappable
+    /// combined into one button (TapAccessibility), where the single-child
+    /// merge hazard exists.
+    static func takesAccessibilityAnchor(_ component: DynamicComponent) -> Bool {
+        guard accessibilityMergeHazard(component) else { return false }
+        if TapAccessibility.shape(of: component) == .combine { return true }
+        guard component.id != nil, component.visibilitySpelling() != "invisible" else { return false }
+        return isAccessibilityContainer(component)
+    }
+
+    /// The anchor's stage: inside the offset and the margins, the same box
+    /// as the frames gate's (conformanceFrame). A container's id box is the
+    /// union of its anchor and its content, so the anchor marks the layout
+    /// box's corner. Put on with the identifier, outside them, it sat at the
+    /// margin's corner and before the offset: a 100-wide View with offsetX 5
+    /// and leftMargin 20 in a vertical stack read an id box 105 wide from the
+    /// margin (ticket ios-container-id-box-starts-at-the-anchor-before-the-
+    /// offset). codegen: modifier_order.json `accessibility_anchor`, same place.
+    static func applyAccessibilityAnchor(_ view: AnyView, component: DynamicComponent) -> AnyView {
+        takesAccessibilityAnchor(component) ? anchor(view) : view
+    }
+
+    // MARK: - 18. ConfirmationDialog
+
+    /// A confirmationDialog `title` / `message`: resolved, then localized.
+    ///
+    /// The codegen path localizes the literal spelling through StringManager
+    /// (base_view_converter.rb#get_text_with_string_manager); this path
+    /// returned the raw key, so `title: "profile_title"` surfaced as the key
+    /// itself (10.14.2, f8fc559). Extracted from the dialog builder because it
+    /// is the ONLY regression device this behaviour can have: the conformance
+    /// generator gives the attribute a behavioural skip (a dialog is not on
+    /// the render surface), so no fixture can reach it — D measured that and
+    /// routed the cover here.
+    ///
+    /// A bound spelling resolves first and the resolved value is localized in
+    /// turn; a non-key string passes through `dynamicLocalized` unchanged.
+    static func confirmationDialogText(_ declared: Any?, data: [String: Any]) -> String? {
+        guard let value = declared as? String else { return nil }
+        if let resolved: String = DynamicBindingHelper.resolveValue(value, data: data) {
+            return resolved.dynamicLocalized()
+        }
+        // An UNRESOLVED binding must not surface as the expression itself.
+        // The codegen cannot produce this failure at all — it emits a typed
+        // `data.dialogTitle`, so a missing property is a compile error rather
+        // than "@{dialogTitle}" printed in the dialog. Answering nil gives the
+        // title an empty string and drops the message overload entirely, which
+        // is the same shape every other bound read takes when it cannot
+        // resolve: the default, never the spelling.
+        if DynamicBindingResolver.isBindingExpression(value) { return nil }
+        return value.dynamicLocalized()
+    }
+
+    @available(iOS 15.0, *)
+    public static func applyConfirmationDialog(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        applyPresentedDialog(view, component: component, data: data, style: .confirmationDialog)
+    }
+
+    /// `alert` is a separate attribute rather than a style on
+    /// `confirmationDialog`, because the two APIs do not render the same:
+    /// in a regular size class `.confirmationDialog` draws no cancel button
+    /// while `.alert` draws it in both classes (measured on iPhone 16 Pro /
+    /// iPad A16 / iPad Pro M4 with the same button set). The attribute is
+    /// spelled like the modifier it emits — a name that emits a different
+    /// API is a name that lies.
+    @available(iOS 15.0, *)
+    public static func applyAlert(_ view: AnyView, component: DynamicComponent, data: [String: Any]) -> AnyView {
+        applyPresentedDialog(view, component: component, data: data, style: .alert)
+    }
+
+    /// Which of the two presentation APIs a config drives. `.alert` takes no
+    /// titleVisibility — it always shows its title — which is why the SSoT
+    /// declares that property for `confirmationDialog` alone.
+    public enum PresentedDialogStyle {
+        case confirmationDialog
+        case alert
+    }
+
+    @available(iOS 15.0, *)
+    static func applyPresentedDialog(_ view: AnyView, component: DynamicComponent, data: [String: Any], style: PresentedDialogStyle) -> AnyView {
+        let attrs = component.typedAttributes(CommonAttributes.self)
+        let config: [String: Any]? = style == .alert ? attrs.alert : attrs.confirmationDialog
+        guard let dialogConfig = config,
+              let isPresentedBinding = dialogConfig["isPresented"] as? String,
+              let propName = DynamicEventHelper.extractPropertyName(from: isPresentedBinding),
+              let binding = data[propName] as? SwiftUI.Binding<Bool> else {
+            return view
+        }
+
+        // Title/message run through the string table after resolution — the
+        // codegen path localizes the literal spelling via StringManager
+        // (base_view_converter.rb get_text_with_string_manager); dynamic
+        // returned the raw key, so `title: "profile_title"` surfaced as the
+        // key itself. Same shape as LabelConverter: resolve, then
+        // dynamicLocalized (a non-key string passes through unchanged).
+        let title = confirmationDialogText(dialogConfig["title"], data: data) ?? ""
+
+        let titleVisibility: SwiftUI.Visibility = {
+            switch dialogConfig["titleVisibility"] as? String {
+            case "visible": return .visible
+            case "hidden": return .hidden
+            default: return .automatic
+            }
+        }()
+
+        let message = confirmationDialogText(dialogConfig["message"], data: data)
+
+        // Build actions content
+        let actionsContent: AnyView? = {
+            if let layout = dialogConfig["layout"] as? [String: Any],
+               let layoutName = layout["name"] as? String,
+               let layoutDataBinding = layout["data"] as? String,
+               let layoutDataVar = DynamicEventHelper.extractPropertyName(from: layoutDataBinding),
+               let layoutData = data[layoutDataVar] as? [String: Any] {
+                let jsonName = layoutName.hasSuffix(".json") ? String(layoutName.dropLast(5)) : layoutName
+                return AnyView(DynamicView(jsonName: jsonName, data: layoutData))
+            }
+            if let actionsBindingStr = dialogConfig["actions"] as? String,
+               let actionsVar = DynamicEventHelper.extractPropertyName(from: actionsBindingStr),
+               let actionsClosure = data[actionsVar] as? (() -> AnyView) {
+                return actionsClosure()
+            }
+            return nil
+        }()
+
+        guard let actions = actionsContent else { return view }
+
+        switch style {
+        case .alert:
+            if let msg = message {
+                return AnyView(
+                    view.alert(Text(title), isPresented: binding) {
+                        actions
+                    } message: {
+                        Text(msg)
+                    }
+                )
+            }
+            return AnyView(
+                view.alert(Text(title), isPresented: binding) {
+                    actions
+                }
+            )
+        case .confirmationDialog:
+            if let msg = message {
+                return AnyView(
+                    view.confirmationDialog(Text(title), isPresented: binding, titleVisibility: titleVisibility) {
+                        actions
+                    } message: {
+                        Text(msg)
+                    }
+                )
+            }
+            return AnyView(
+                view.confirmationDialog(Text(title), isPresented: binding, titleVisibility: titleVisibility) {
+                    actions
+                }
+            )
+        }
+    }
+
+    // MARK: - Standard Modifier Combination
+    // The order is codegen's: sjui's ModifierBag::MODIFIER_ORDER, then what
+    // BaseViewConverter writes after the bag. It is not restated here —
+    // StandardOrderFollowsCodegenTests reads it from jsonui-cli's
+    // modifier_order.json (vendored as Fixtures/swiftui_modifier_order.json,
+    // compared with jsonui-cli by CI) and fails when `standardOrder` departs
+    // from it.
+
+
+    /// One stage of the standard modifier chain: a name and what it does.
+    ///
+    /// The chain is DRIVEN by `standardOrder` rather than being a hand-written
+    /// sequence of calls, so the declaration and the application are the same
+    /// object. A stage that leaves the list stops being applied, and a stage in
+    /// the list is always applied — which is what makes the wiring assertable
+    /// in one test instead of one per stage. Removing any of these calls from
+    /// the old hand-written chain left all 1338 tests green (23-stage sweep,
+    /// 2026-09-01: 21 of 23 undetected; the 2 that were caught are incidental
+    /// pixel coverage from fixtures written for another purpose).
+    public struct Stage {
+        public let name: String
+        /// Whether this stage is part of the chain for these opt-outs. A
+        /// skipped stage is ABSENT from the applied sequence rather than
+        /// present-and-inert — the shape the hand-written `if` had, and the
+        /// difference the stage-A equivalence capture caught when the first
+        /// draft folded the skip into the body instead.
+        let appliesWhen: (Skips) -> Bool
+        let apply: (AnyView, DynamicComponent, [String: Any]) -> AnyView
+
+        init(_ name: String,
+             when appliesWhen: @escaping (Skips) -> Bool = { _ in true },
+             _ apply: @escaping (AnyView, DynamicComponent, [String: Any]) -> AnyView) {
+            self.name = name
+            self.appliesWhen = appliesWhen
+            self.apply = apply
+        }
+    }
+
+    /// The caller-supplied opt-outs. Each stage decides for itself whether a
+    /// skip applies to it, so the list stays a flat sequence.
+    public struct Skips {
+        let padding: Bool
+        let insets: Bool
+        let background: Bool
+    }
+
+    /// The standard chain, in application order. ORDER IS LOAD-BEARING —
+    /// see the per-stage notes; `disabled` genuinely appears twice.
+    public static let standardOrder: [Stage] = [
+        // padding (skipped for relative positioning containers)
+        Stage("padding", when: { !$0.padding }) { v, c, d in
+            applyPadding(v, component: c, data: d)
+        },
+        // insets (skipped for Collection, which handles insets with spacers).
+        // Codegen writes them into the same slot as padding, after it — inside
+        // the frame. They used to come after the frame here, which drew the
+        // box larger than declared.
+        Stage("insets", when: { !$0.insets }) { v, c, _ in
+            applyInsets(v, component: c)
+        },
+        Stage("frameConstraints") { v, c, d in
+            applyFrameConstraints(v, component: c, data: d)
+        },
+        Stage("frameSize") { v, c, d in applyFrameSize(v, component: c, data: d) },
+        // background (skipped when the caller already painted it — an empty
+        // View renders Rectangle().fill, the codegen leaf contract).
+        // highlighted → highlightBackground REPLACES the base background,
+        // exactly as UIKit swaps SJUIView's backgroundColor. `.background`
+        // layers behind the view, so painting the highlight after the opaque
+        // base hid it entirely. A pressed node's tapBackground replaces
+        // either (applyBackground).
+        Stage("background", when: { !$0.background }) { v, c, d in
+            applyBackground(
+                v,
+                base: highlightedBackgroundColor(component: c, data: d) ?? backgroundColor(component: c, data: d),
+                component: c, data: d
+            )
+        },
+        // glass — the Liquid Glass material. Slot fixed on BOTH faces, and
+        // the two were written from each other rather than each from the prose:
+        // codegen's MODIFIER_ORDER puts :glass after :background/:gradient and
+        // before :corner_radius, "so it sits after the two background entries
+        // and before :corner_radius, which clips the result rather than the
+        // glass". Same reasoning, same slot here — the material goes over the
+        // background, and the corner clip is applied to the result.
+        //
+        // NOT inside the background opt-out. That skip means "the caller
+        // already painted the background"; it says nothing about whether the
+        // caller applied glass, and folding glass into it would silently drop
+        // a declared attribute for every leaf that paints its own fill.
+        //
+        // The effectStyle material shares the slot, ahead of glass: codegen
+        // registers both in :glass (material first), so a new stage would
+        // need a codegen slot of its own (modifier_order.json) for no change
+        // in where it lands.
+        Stage("glass") { v, c, d in applyMaterials(v, component: c, data: d) },
+        Stage("cornerRadius") { v, c, d in applyCornerRadius(v, component: c, data: d) },
+        Stage("border") { v, c, d in applyBorder(v, component: c, data: d) },
+        Stage("shadow") { v, c, d in applyShadow(v, component: c, data: d) },
+        Stage("clipped") { v, c, d in applyClipped(v, component: c, data: d) },
+        Stage("opacity") { v, c, d in applyOpacity(v, component: c, data: d) },
+        Stage("hidden") { v, c, d in applyHidden(v, component: c, data: d) },
+        // The single-child merge anchor of a container or a combined tap:
+        // here, inside the offset and the margins, so the id box is the
+        // layout box (applyAccessibilityAnchor).
+        Stage("accessibilityAnchor") { v, c, _ in applyAccessibilityAnchor(v, component: c) },
+        // Hands the layout box up to the conformance gate's measuring element:
+        // inside the offset and the margins (JsonUIConformanceFrame.swift). Inside
+        // the offset because .offset moves the drawing, not the layout bounds:
+        // after it, the anchor read an offsetY 8 view at y = 0. Makes
+        // nothing unless a conformance host sets jsonuiConformanceFrameProbe.
+        // codegen: modifier_order.json `conformance_frame`, same place.
+        Stage("conformanceFrame") { v, c, _ in applyConformanceFrame(v, component: c) },
+        // The gestures, inside the offset and the margins where the anchor and
+        // the conformance frame are: the tap's receiver is the id box (margin
+        // out, padding in, moved by the offset — user ruling 2026-10-06), as
+        // Compose's clickable sits inside the margins. After the margins, the
+        // tap's content shape took the margin in: a tap in it ran the handler,
+        // and a combined tap's id read it (jsonui-cli ticket sjui-a-combined-
+        // taps-id-box-takes-its-margin-in). codegen: modifier_order.json,
+        // on_click … allows_hit_testing after conformance_frame.
+        // onClick, onLongPress, onPan, onPinch, onAppear / onDisappear
+        Stage("events") { v, c, d in
+            DynamicEventHelper.applyEvents(v, component: c, data: d)
+        },
+        // userInteractionEnabled stops the whole view, so
+        // hit testing wraps the view's own gestures: attached outside it, a
+        // View's onClick, onLongPress and a Label's tap still ran under
+        // `userInteractionEnabled: false` (measured, ConformanceHost
+        // -interactionGateProbe). codegen's order moved with it
+        // (modifier_order.json: allows_hit_testing after on_pinch).
+        Stage("hitTesting") { v, c, d in applyHitTesting(v, component: c, data: d) },
+        Stage("offset") { v, c, d in applyOffset(v, component: c, data: d) },
+        // margins — after the clip, the fade and the offset, as codegen writes
+        // them: a clip before them cuts at the view's own edge, not the
+        // margin's.
+        Stage("margins") { v, c, d in applyMargins(v, component: c, data: d) },
+        Stage("tint") { v, c, d in applyTint(v, component: c, data: d) },
+        Stage("confirmationDialog") { v, c, d in
+            guard #available(iOS 15.0, *) else { return v }
+            return applyConfirmationDialog(v, component: c, data: d)
+        },
+        Stage("alert") { v, c, d in
+            guard #available(iOS 15.0, *) else { return v }
+            return applyAlert(v, component: c, data: d)
+        },
+        // safeAreaInsetPositions — reserves the named edges. Inside the
+        // background opt-out, as it always has been; late in the chain, where
+        // codegen writes it.
+        Stage("safeAreaInsets", when: { !$0.background }) { v, c, _ in
+            applySafeAreaInsets(v, component: c)
+        },
+        // zIndex (indexBelow / indexAbove)
+        Stage("zIndex") { v, c, _ in applyZIndex(v, component: c) },
+        Stage("disabled") { v, c, d in applyDisabled(v, component: c, data: d) },
+        Stage("accessibilityId") { v, c, _ in applyAccessibilityId(v, component: c) },
+        // disabled again, OUTSIDE the accessibility element. The earlier
+        // `disabled` puts it inside the chain, but accessibilityId creates the
+        // container's a11y element on top of it — an element outside the
+        // disabled environment never gets the notEnabled trait, so XCUITest
+        // read the target as enabled (measured: the View-hosted
+        // enabled__false conformance fixture). Re-applying outermost puts the
+        // element inside the disabled environment. Double-application is
+        // harmless, and this entry is NOT a duplicate to be tidied away.
+        Stage("disabledOuter") { v, c, d in applyDisabled(v, component: c, data: d) },
+        // The control's screen-reader name and a Label's announcement, last,
+        // on the element the chain formed (ControlAccessibility). codegen:
+        // modifier_order.json after_bag `control_accessibility`.
+        Stage("controlAccessibility") { v, c, d in ControlAccessibility.apply(v, component: c, data: d) },
+    ]
+
+    public static func applyStandardModifiers(_ view: AnyView, component: DynamicComponent, data: [String: Any], skipPadding: Bool = false, skipInsets: Bool = false, skipBackground: Bool = false) -> AnyView {
+        // An app component's adapter applied them (AppComponentStages).
+        AppComponentStages.markApplied()
+        let skips = Skips(padding: skipPadding, insets: skipInsets, background: skipBackground)
+        return standardOrder
+            .filter { $0.appliesWhen(skips) }
+            .reduce(view) { partial, stage in
+                stage.apply(partial, component, data)
+            }
+    }
+
+    // MARK: - Frame Alignment Helper (matches frame_helper.rb)
+
+    /// Determine frame alignment for matchParent dimensions.
+    /// For Label/Text: based on textAlign (leading/center/trailing)
+    /// For other components: based on gravity
+    private static func frameAlignment(for component: DynamicComponent, bothAxes: Bool) -> Alignment? {
+        let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
+
+        if isTextComponent {
+            // Match frame_helper.rb: Label/Text use textAlign across, and on
+            // both axes the Label's vertical rule (labelVertical) down — until
+            // SwiftUI 10.29.0 it was always the top.
+            let horizontal = labelHorizontal(component)
+            return bothAxes ? Alignment(horizontal: horizontal, vertical: labelVertical(component)) : Alignment(horizontal: horizontal, vertical: .center)
+        }
+
+        // Non-text components: use gravity. An omitted gravity resolves to the
+        // container default (top | start) rather than dropping the argument —
+        // see gravityToFrameAlignment.
+        //
+        // SCOPE (mirrors frame_helper.rb#container_content_node?): the
+        // gravityDefaults canon says "on every CONTAINER". A leaf's own-frame
+        // content — a fit image's bitmap, a custom component's internals — is
+        // a different channel whose platform truth is Center (Compose's
+        // Image/extension alignment default, which kjui never overrides).
+        // Injecting the container default on leaves pinned every fit photo to
+        // the top-left on ios only. A DECLARED gravity still applies anywhere.
+        // A Collection lays out its cells, not `child`: it is a container
+        // (4f ruling 2026-09-27) — its frame fell to `.center`, so a
+        // `lazy: none` column narrower than a matchParent Collection stood in
+        // the middle, where the lazy route's cells start at the leading edge.
+        let hasChildren = !(component.childComponents?.isEmpty ?? true)
+        let isCollection = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "collection" } ?? false
+        let isContainer = hasChildren || isCollection
+        if component.gravity?.isEmpty != false {
+            guard isContainer else { return nil }
+        }
+        // A leaf (text returned above): the axis its gravity does not name
+        // stays centred — see gravityToFrameAlignment(centredCrossAxis:).
+        let alignment = gravityToFrameAlignment(component.gravity, bothAxes: bothAxes, centredCrossAxis: !isContainer)
+        guard isContainer, let alignment else { return alignment }
+        return DirectionStart.alignment(alignment, component: component)
+    }
+
+    /// Convert gravity array to SwiftUI Alignment (matches frame_helper.rb gravity_to_frame_alignment)
+    ///
+    /// An OMITTED gravity is not "no alignment". `gravityDefaults` (ruled
+    /// 2026-08-07) puts the container default at top | start, and
+    /// `omittedEntirely` states this case outright: if a partial gravity fills
+    /// its unnamed axis with the default, an absent one fills both. Returning
+    /// nil dropped the argument and left SwiftUI's own `.center` — the
+    /// deviation the 2026-08-03 ruling named ("a platform centering by default
+    /// is the deviant"). The axis defaults below were already right; the early
+    /// return was what stopped them being reached. Same shape as B's codegen
+    /// half (frame_helper.rb, ba5e6d1), landed in the same train so the two
+    /// ios paths cannot answer differently.
+    ///
+    /// The axis a gravity does not name: a container's is the canon default
+    /// (top | start); a LEAF's (`centredCrossAxis`: a TextField, an Image —
+    /// no children, a Label aside) stays centred. A leaf's partial gravity
+    /// fixes only its own axis: Compose and the web centre a TextField's and a
+    /// Button's text vertically in a 44pt frame whatever the gravity
+    /// (measured 2026-09-27). Until jsonui-cli 1.9.0 a leaf's `left` filled
+    /// the vertical axis with `top`, and a TextField's text sat at the top of
+    /// a 44pt frame (frame_helper.rb#centred_cross_axis?, the codegen half).
+    private static func gravityToFrameAlignment(_ gravity: [String]?, bothAxes: Bool, centredCrossAxis: Bool = false) -> Alignment? {
+        let parts = gravity ?? []
+
+        var h: String? = nil
+        var v: String? = nil
+        for g in parts {
+            // By its declared spelling (CommonAttributes.Gravity), case and
+            // all — jsonui-cli 1.9.0; `start` / `end` / `center_*` are
+            // declared nowhere.
+            switch DeclaredSpelling.lowered(g, in: CommonAttributes.Gravity.declaredSpellings) {
+            case "right": h = "trailing"
+            case "left": h = "leading"
+            case "centerhorizontal": h = "center"
+            case "top": v = "top"
+            case "bottom": v = "bottom"
+            case "centervertical": v = "center"
+            case "center":
+                h = "center"
+                v = "center"
+            default: break
+            }
+        }
+
+        if centredCrossAxis {
+            h = h ?? "center"
+            v = v ?? "center"
+        }
+        if bothAxes {
+            let ha: HorizontalAlignment = {
+                switch h {
+                case "trailing": return .trailing
+                case "center": return .center
+                default: return .leading
+                }
+            }()
+            let va: VerticalAlignment = {
+                switch v {
+                case "bottom": return .bottom
+                case "center": return .center
+                default: return .top
+                }
+            }()
+            return Alignment(horizontal: ha, vertical: va)
+        } else {
+            switch h {
+            case "trailing": return .trailing
+            case "center": return .center
+            default: return .leading
+            }
+        }
+    }
+}
+#endif // DEBUG

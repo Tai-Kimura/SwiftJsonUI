@@ -1,0 +1,44 @@
+[
+  {
+    "name": "onAutoRaw",
+    "set": {
+      "var": "autoKey",
+      "value": "k3"
+    }
+  },
+  {
+    "name": "onAutoEnriched",
+    "set": {
+      "var": "autoKey",
+      "autoId": {
+        "from": {
+          "title": "a3",
+          "key": "k3"
+        },
+        "primaryKey": "key",
+        "fallbackIndex": 3
+      }
+    }
+  },
+  {
+    "name": "onCellIdC2",
+    "set": {
+      "var": "cellIdKey",
+      "value": "c2"
+    }
+  },
+  {
+    "name": "onCellId13",
+    "set": {
+      "var": "cellIdKey",
+      "value": "1:3"
+    }
+  },
+  {
+    "name": "onCellIdE4",
+    "set": {
+      "var": "cellIdKey",
+      "value": "e4"
+    }
+  }
+]

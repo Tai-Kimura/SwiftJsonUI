@@ -1,0 +1,149 @@
+{
+  "type": "View",
+  "id": "cg_bt_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "spacing": 6,
+  "child": [
+    {
+      "type": "View",
+      "id": "cg_bt_w200_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_w200_left_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": 200,
+          "textAlign": "Left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_bt_w200_right",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_w200_right_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": 200,
+          "textAlign": "Right"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_bt_mw_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_mw_left_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": "matchParent",
+          "textAlign": "Left"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_bt_mw_right",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_mw_right_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": "matchParent",
+          "textAlign": "Right"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_bt_w200_center",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_w200_center_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": 200,
+          "textAlign": "Center"
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_bt_w200_none",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_w200_none_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": 200
+        }
+      ]
+    },
+    {
+      "type": "View",
+      "id": "cg_bt_w200_gravity_left",
+      "orientation": "vertical",
+      "width": "matchParent",
+      "height": "wrapContent",
+      "background": "#FFFFFF",
+      "child": [
+        {
+          "id": "cg_bt_w200_gravity_left_button",
+          "text": "Go",
+          "fontColor": "#000000",
+          "background": "#DDDDDD",
+          "height": 44,
+          "type": "Button",
+          "width": 200,
+          "gravity": "left"
+        }
+      ]
+    }
+  ]
+}

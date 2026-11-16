@@ -1,0 +1,50 @@
+{
+    "type": "View",
+    "id": "container",
+    "width": "matchParent",
+    "height": "wrapContent",
+    "background": "#FFFFFF",
+    "paddings": [16, 16, 16, 16],
+    "child": [
+        {
+            "type": "Label",
+            "id": "header",
+            "text": "Header",
+            "fontSize": 24,
+            "fontColor": "#000000"
+        },
+        {
+            "type": "View",
+            "id": "content",
+            "orientation": "horizontal",
+            "spacing": 8,
+            "child": [
+                {
+                    "type": "Image",
+                    "id": "icon",
+                    "src": "icon_user",
+                    "width": 48,
+                    "height": 48,
+                    "contentMode": "AspectFit"
+                },
+                {
+                    "type": "Label",
+                    "id": "description",
+                    "text": "Description text goes here",
+                    "fontSize": 14,
+                    "fontColor": "#666666"
+                }
+            ]
+        },
+        {
+            "type": "Button",
+            "id": "actionButton",
+            "text": "Click Me",
+            "onClick": "handleButtonClick",
+            "background": "#007AFF",
+            "fontColor": "#FFFFFF",
+            "cornerRadius": 8,
+            "paddings": [12, 24, 12, 24]
+        }
+    ]
+}

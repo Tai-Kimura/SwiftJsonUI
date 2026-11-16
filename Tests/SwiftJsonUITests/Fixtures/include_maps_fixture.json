@@ -1,0 +1,237 @@
+{
+  "version": 1,
+  "title": "JsonUI include maps — what an included layout reads, the same on every platform",
+  "notes": "Ruling 2026-10-02 (the SSoT's common/include, common/data, common/shared_data): an included layout reads the including layout's data as it is, with the include node's object maps over it — shared_data first, then data. A map key is a name the included layout binds; its value is a literal or a binding read in the including layout's scope (so it takes no prefix of the include's id). An array data is declarations, not a map. Each specimen is a screen (`screen.json`) and its partials, keyed by their path from the layouts root; `expected` is, for every node of the include-expanded screen that carries a `text` or a `visibility`, that value — a whole binding replaced by a literal keeps the literal's JSON type (false stays false), one inside a longer string becomes its text. Read by jsonui-cli (jui_tools/tests/test_include_maps_agree_on_every_expander.py: the Python normalizer, sjui, kjui and rjui expanders) and, as a copy checked against this file, by the SwiftJsonUI / KotlinJsonUI dynamic expanders' tests. Until jsonui-cli 1.9.6 (SwiftJsonUI 10.29.2, KotlinJsonUI 2.43.1) every expander dropped an object map.",
+  "screen": "screen.json",
+  "specimens": {
+    "a_data_map": {
+      "layouts": {
+        "screen.json": {
+          "type": "View",
+          "id": "root",
+          "child": [
+            {
+              "include": "parts/panel",
+              "data": {
+                "title": "@{pageTitle}",
+                "count": 3,
+                "shown": false
+              }
+            }
+          ]
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel_root",
+          "data": [
+            {
+              "name": "title",
+              "class": "String"
+            }
+          ],
+          "child": [
+            {
+              "type": "Label",
+              "id": "t",
+              "text": "@{title}"
+            },
+            {
+              "type": "Label",
+              "id": "n",
+              "text": "Hi @{name} (@{count})"
+            },
+            {
+              "type": "View",
+              "id": "v",
+              "visibility": "@{shown}"
+            },
+            {
+              "type": "Label",
+              "id": "i",
+              "text": "@{item.title}"
+            },
+            {
+              "include": "parts/inner",
+              "data": {
+                "deep": "@{title}"
+              }
+            }
+          ]
+        },
+        "parts/inner.json": {
+          "type": "Label",
+          "id": "inner",
+          "text": "@{deep}"
+        }
+      },
+      "expected": {
+        "t": "@{pageTitle}",
+        "n": "Hi @{name} (3)",
+        "v": false,
+        "i": "@{item.title}",
+        "inner": "@{pageTitle}"
+      }
+    },
+    "data_over_shared_data_under_an_id": {
+      "layouts": {
+        "screen.json": {
+          "type": "View",
+          "id": "root",
+          "child": [
+            {
+              "include": "parts/panel",
+              "id": "side",
+              "shared_data": {
+                "title": "@{a}",
+                "name": "from shared"
+              },
+              "data": {
+                "title": "@{b}"
+              }
+            }
+          ]
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel_root",
+          "data": [
+            {
+              "name": "title",
+              "class": "String"
+            }
+          ],
+          "child": [
+            {
+              "type": "Label",
+              "id": "t",
+              "text": "@{title}"
+            },
+            {
+              "type": "Label",
+              "id": "n",
+              "text": "Hi @{name} (@{count})"
+            },
+            {
+              "type": "View",
+              "id": "v",
+              "visibility": "@{shown}"
+            },
+            {
+              "type": "Label",
+              "id": "i",
+              "text": "@{item.title}"
+            },
+            {
+              "include": "parts/inner",
+              "data": {
+                "deep": "@{title}"
+              }
+            }
+          ]
+        },
+        "parts/inner.json": {
+          "type": "Label",
+          "id": "inner",
+          "text": "@{deep}"
+        }
+      },
+      "expected": {
+        "sideT": "@{b}",
+        "sideN": "Hi from shared (@{sideCount})",
+        "sideV": "@{sideShown}",
+        "sideI": "@{item.title}",
+        "sideInner": "@{b}"
+      }
+    },
+    "no_map": {
+      "layouts": {
+        "screen.json": {
+          "type": "View",
+          "id": "root",
+          "child": [
+            {
+              "include": "parts/panel"
+            }
+          ]
+        },
+        "parts/panel.json": {
+          "type": "View",
+          "id": "panel_root",
+          "data": [
+            {
+              "name": "title",
+              "class": "String"
+            }
+          ],
+          "child": [
+            {
+              "type": "Label",
+              "id": "t",
+              "text": "@{title}"
+            },
+            {
+              "type": "Label",
+              "id": "n",
+              "text": "Hi @{name} (@{count})"
+            },
+            {
+              "type": "View",
+              "id": "v",
+              "visibility": "@{shown}"
+            },
+            {
+              "type": "Label",
+              "id": "i",
+              "text": "@{item.title}"
+            },
+            {
+              "include": "parts/inner",
+              "data": {
+                "deep": "@{title}"
+              }
+            }
+          ]
+        },
+        "parts/inner.json": {
+          "type": "Label",
+          "id": "inner",
+          "text": "@{deep}"
+        }
+      },
+      "expected": {
+        "t": "@{title}",
+        "n": "Hi @{name} (@{count})",
+        "v": "@{shown}",
+        "i": "@{item.title}",
+        "inner": "@{title}"
+      }
+    },
+    "an_array_data_declares": {
+      "layouts": {
+        "screen.json": {
+          "type": "View",
+          "id": "root",
+          "child": [
+            {
+              "include": "parts/inner",
+              "data": [
+                {
+                  "name": "deep",
+                  "class": "String"
+                }
+              ]
+            }
+          ]
+        },
+        "parts/inner.json": {
+          "type": "Label",
+          "id": "inner",
+          "text": "@{deep}"
+        }
+      },
+      "expected": {
+        "inner": "@{deep}"
+      }
+    }
+  }
+}

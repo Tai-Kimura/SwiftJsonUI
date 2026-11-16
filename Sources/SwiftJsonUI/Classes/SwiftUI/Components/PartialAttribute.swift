@@ -1,0 +1,226 @@
+import SwiftUI
+
+/// Represents a partial text attribute that can be applied to a range of text
+public struct PartialAttribute {
+    /// The range of characters to apply the attributes to (start, end)
+    public let range: Range<Int>
+    
+    /// Optional text pattern to search for (alternative to numeric range)
+    public let textPattern: String?
+    
+    /// Optional font color for this range
+    public let fontColor: Color?
+    
+    /// Optional font size for this range
+    public let fontSize: CGFloat?
+    
+    /// Optional font weight for this range
+    public let fontWeight: Font.Weight?
+    
+    /// Whether to underline this range
+    public let underline: Bool
+    
+    /// Whether to strikethrough this range
+    public let strikethrough: Bool
+
+    /// The OBJECT face of the same two attributes, per span. Nil for the
+    /// boolean face, which keeps its plain line.
+    public let underlineDecoration: TextDecoration?
+    public let strikethroughDecoration: TextDecoration?
+    
+    /// Optional background color for this range
+    public let backgroundColor: Color?
+    
+    /// Optional onclick action closure for this range
+    public let onClick: (() -> Void)?
+    
+    /// Store the action name when initialized from dictionary (for code generation)
+    public let onClickActionName: String?
+    
+    /// Calculate the actual range in the given text
+    /// Returns nil if textPattern is not found in the text
+    public func calculateRange(in text: String) -> Range<Int>? {
+        if let pattern = textPattern {
+            // Find the pattern in the text
+            if let range = text.range(of: pattern) {
+                let startOffset = text.distance(from: text.startIndex, to: range.lowerBound)
+                let endOffset = text.distance(from: text.startIndex, to: range.upperBound)
+                return startOffset..<endOffset
+            }
+            return nil
+        } else {
+            // Use the numeric range directly
+            return range
+        }
+    }
+    
+    public init(
+        range: Range<Int>,
+        fontColor: Color? = nil,
+        fontSize: CGFloat? = nil,
+        fontWeight: Font.Weight? = nil,
+        underline: Bool = false,
+        strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
+        backgroundColor: Color? = nil,
+        onClick: (() -> Void)? = nil,
+        onClickActionName: String? = nil
+    ) {
+        self.range = range
+        self.textPattern = nil
+        self.fontColor = fontColor
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.underline = underline
+        self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
+        self.backgroundColor = backgroundColor
+        self.onClick = onClick
+        self.onClickActionName = onClickActionName
+    }
+    
+    /// Initialize with text pattern instead of numeric range
+    public init(
+        textPattern: String,
+        fontColor: Color? = nil,
+        fontSize: CGFloat? = nil,
+        fontWeight: Font.Weight? = nil,
+        underline: Bool = false,
+        strikethrough: Bool = false,
+        underlineDecoration: TextDecoration? = nil,
+        strikethroughDecoration: TextDecoration? = nil,
+        backgroundColor: Color? = nil,
+        onClick: (() -> Void)? = nil,
+        onClickActionName: String? = nil
+    ) {
+        self.range = 0..<0  // Placeholder, will be calculated from text
+        self.textPattern = textPattern
+        self.fontColor = fontColor
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.underline = underline
+        self.strikethrough = strikethrough
+        self.underlineDecoration = underlineDecoration
+        self.strikethroughDecoration = strikethroughDecoration
+        self.backgroundColor = backgroundColor
+        self.onClick = onClick
+        self.onClickActionName = onClickActionName
+    }
+    
+    /// Initialize from dictionary (for backward compatibility)
+    /// Note: onClick will be nil when initialized from dictionary.
+    public init?(from dictionary: [String: Any]) {
+        // Parse range - can be either [Int, Int] array or String pattern
+        if let rangeArray = dictionary["range"] as? [Int],
+           rangeArray.count == 2,
+           rangeArray[0] < rangeArray[1] {
+            self.range = rangeArray[0]..<rangeArray[1]
+            self.textPattern = nil
+        } else if let pattern = dictionary["range"] as? String {
+            self.range = 0..<0  // Placeholder, will be calculated from text
+            self.textPattern = pattern
+        } else {
+            return nil
+        }
+        
+        // Parse fontColor
+        if let colorHex = dictionary["fontColor"] as? String {
+            self.fontColor = Color(hex: colorHex)
+        } else {
+            self.fontColor = nil
+        }
+        
+        // Parse fontSize
+        self.fontSize = dictionary["fontSize"] as? CGFloat
+        
+        // Parse fontWeight
+        if let weightString = dictionary["fontWeight"] as? String {
+            self.fontWeight = Font.Weight.from(string: weightString)
+        } else {
+            self.fontWeight = nil
+        }
+        
+        // Parse underline / strikethrough. Both are declared `boolean|object`:
+        // the object face carries lineStyle / color (/ lineOffset for
+        // underline), and a declared `None` asks for no line at all — the
+        // convention the ios codegen settled on (51-B), so the two ios paths
+        // answer the same. Any other object means the decoration is on, which
+        // is what the boolean face has always meant.
+        let underlineDeclared = dictionary["underline"]
+        let strikethroughDeclared = dictionary["strikethrough"]
+        self.underlineDecoration = TextDecoration(from: underlineDeclared)
+        self.strikethroughDecoration = TextDecoration(from: strikethroughDeclared)
+        self.underline = TextDecoration.draws(underlineDeclared)
+        self.strikethrough = TextDecoration.draws(strikethroughDeclared)
+        
+        // Parse backgroundColor
+        if let bgHex = dictionary["background"] as? String {
+            self.backgroundColor = Color(hex: bgHex)
+        } else {
+            self.backgroundColor = nil
+        }
+        
+        // Store action name for URL-based handling
+        self.onClickActionName = dictionary["onclick"] as? String
+        self.onClick = nil  // Will be set in code generation
+    }
+}
+
+// MARK: - Font.Weight Extension
+extension Font.Weight {
+    /// The numeric weight spellings, from shared/core/font_weight_mapping.json
+    /// (css → swift; the generator's numeric_weight_table synthesizes 400/700
+    /// from the "normal"/"bold" css words and keeps the FIRST entry for a
+    /// duplicated css value, which is why 900 is heavy rather than black).
+    ///
+    /// This is the ONE numeric table. Round 5 caught the alternative: 0995c12
+    /// taught `fontFromComponent`'s switch the numerics, but Button reads
+    /// `DynamicHelpers.fontWeightFromString` and Label reads `from(string:)`
+    /// — neither knew "600", so the fixture stayed red under a green
+    /// regression test. Every weight vocabulary consults this before its own
+    /// keyword cases.
+    static func numeric(_ spelling: String) -> Font.Weight? {
+        switch spelling {
+        case "100": return .thin
+        case "200": return .ultraLight
+        case "300": return .light
+        case "400": return .regular
+        case "500": return .medium
+        case "600": return .semibold
+        case "700": return .bold
+        case "900": return .heavy
+        default: return nil
+        }
+    }
+
+    static func from(string: String) -> Font.Weight {
+        if let numeric = numeric(string) {
+            return numeric
+        }
+        switch string.lowercased() {
+        case "ultralight":
+            return .ultraLight
+        case "thin":
+            return .thin
+        case "light":
+            return .light
+        case "regular":
+            return .regular
+        case "medium":
+            return .medium
+        case "semibold":
+            return .semibold
+        case "bold":
+            return .bold
+        case "heavy":
+            return .heavy
+        case "black":
+            return .black
+        default:
+            return .regular
+        }
+    }
+}
+

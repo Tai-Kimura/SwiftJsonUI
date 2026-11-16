@@ -1,0 +1,13 @@
+{
+  "type": "View",
+  "id": "cg_tf_root",
+  "orientation": "vertical",
+  "spacing": 6,
+  "child": [
+    {"type": "TextField", "id": "cg_tf_plain", "width": 160, "height": 36, "text": "abc", "clearButtonMode": "always"},
+    {"type": "View", "id": "cg_tf_par_false", "orientation": "vertical", "userInteractionEnabled": false, "child": [
+      {"type": "TextField", "id": "cg_tf_infalse", "width": 160, "height": 36, "text": "abc", "clearButtonMode": "always"}
+    ]},
+    {"type": "TextField", "id": "cg_tf_selffalse", "width": 160, "height": 36, "text": "abc", "clearButtonMode": "always", "userInteractionEnabled": false}
+  ]
+}

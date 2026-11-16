@@ -1,0 +1,446 @@
+# SwiftJsonUI library CI — unit tests on an iOS Simulator.
+#
+# `swift build` does NOT work on macOS (UIKit dependency): tests run via
+# xcodebuild against an iOS Simulator, same as local release verification
+# (e.g. 10.5.0: xcodebuild test -scheme SwiftJsonUI on an iPad simulator).
+#
+# This job is also the CI consumer of the shared binding vectors
+# (Tests/SwiftJsonUITests/Fixtures/binding_vectors.json, vendored from
+# jsonui-cli shared/core/binding_vectors.json) via BindingVectorTests.
+#
+# Budget: local full suite ~6 min wall incl. build; CI runners are 5-7x
+# slower => ~30-40 min worst case. timeout 60 min leaves headroom without
+# masking hangs for a week (weekly cron matches conformance-mobile).
+
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  schedule:
+    - cron: '0 18 * * 0' # weekly (Sunday 18:00 UTC), same slot as conformance-mobile
+
+jobs:
+  # ------------------------------------------------------------------ #
+  # Vendored attr tables ↔ jsonui-cli manifest. The Dynamic/Generated/
+  # Attributes tree is hand-rsynced from jsonui-cli's attr-codegen emit;
+  # this job is the gate that the rsync discipline used to be. It fetches
+  # build/attr_codegen/manifest.json at the pinned jsonui-cli ref and
+  # compares sha256 bidirectionally (mismatch, missing, or stray file all
+  # fail). PIN BUMP: the commit that re-vendors the tables updates
+  # JSONUI_CLI_MANIFEST_REF in the SAME commit — prefer a release tag
+  # once the next jsonui-cli release lands (manifest exists from 2299153
+  # onward; tags v1.2.1 and earlier predate it).
+  # ------------------------------------------------------------------ #
+  vendored-attr-guard:
+    name: Vendored attr tables match jsonui-cli manifest
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      JSONUI_CLI_MANIFEST_REF: v2.5.47 # jsonui-cli v2.5.47: a Segment with no width or wrapContent is as wide as its labels (segmentWidth)
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify sha256 against pinned manifest
+        run: |
+          python3 - <<'EOF'
+          import hashlib, json, os, sys, urllib.request
+
+          ref = os.environ["JSONUI_CLI_MANIFEST_REF"]
+          url = (
+              "https://raw.githubusercontent.com/Tai-Kimura/jsonui-cli/"
+              f"{ref}/build/attr_codegen/manifest.json"
+          )
+          manifest = json.load(urllib.request.urlopen(url))
+          vendored = "Sources/SwiftJsonUI/Classes/SwiftUI/Dynamic/Generated/Attributes"
+          # skipped_attributes.json is emit metadata and is deliberately
+          # not vendored into the library repos.
+          expected = {
+              name.split("/", 1)[1]: sha
+              for name, sha in manifest["files"].items()
+              if name.startswith("swift/")
+              and not name.endswith("skipped_attributes.json")
+          }
+          # Three exit codes, so that blinding this guard can never look
+          # like passing it: 0 compared and agreed, 1 compared and
+          # diverged, 2 could not compare at all.
+          #
+          # An empty expected set satisfies all three checks below, so
+          # without this the guard would print "match (0 files)" and exit 0
+          # having compared NOTHING. Reachable on a day the pin moves far:
+          # if the manifest ever renames the `swift/` prefix or reshapes
+          # `files`, this selection quietly yields nothing, and a same-day
+          # empty vendored dir would then be certified rather than caught.
+          # Either side empty ALONE still fails (every file reads as stray
+          # or missing); it is the pair that is silent.
+          if not expected:
+              print(
+                  f"cannot certify: manifest at {ref} has no swift/ entries "
+                  "— there was nothing to compare, so this guard did not run. "
+                  "This is NOT 'compared and agreed'."
+              )
+              sys.exit(2)
+          actual = {
+              entry: hashlib.sha256(
+                  open(os.path.join(vendored, entry), "rb").read()
+              ).hexdigest()
+              for entry in sorted(os.listdir(vendored))
+              if os.path.isfile(os.path.join(vendored, entry))
+          }
+          problems = [
+              f"missing from vendored dir: {n}" for n in expected if n not in actual
+          ] + [
+              f"hash mismatch (re-vendor + bump the pin together): {n}"
+              for n in expected
+              if n in actual and actual[n] != expected[n]
+          ] + [
+              f"not in manifest (stray or renamed): {n}" for n in actual if n not in expected
+          ]
+          if problems:
+              print(f"vendored attr tables diverge from jsonui-cli manifest @ {ref}:")
+              for p in problems:
+                  print(f"  - {p}")
+              sys.exit(1)
+          print(f"vendored attr tables match manifest @ {ref[:12]} ({len(expected)} files)")
+          EOF
+
+      # Read-discipline gate (plan 50). Runs in this job because it reads
+      # the vendored tables to learn which attributes are binding-capable:
+      # if the step above failed, this one's input is untrustworthy and its
+      # verdict would be meaningless.
+      - name: Attribute read discipline (raw reads + hand-written binding slots)
+        run: bash scripts/check_converter_raw_reads.sh
+
+      # Test fixtures copied from jsonui-cli, byte for byte. Each copy must
+      # hash the same as its source at JSONUI_CLI_MANIFEST_REF; re-copy and
+      # move the pin in the same commit. Nothing compared them before this
+      # step, and binding_vectors.json sat one case behind jsonui-cli from
+      # 2026-09-10 until it existed. It runs even when a step above failed:
+      # these files do not depend on the attr tables, and a second
+      # divergence should not wait for the first to be fixed.
+      - name: Vendored jsonui-cli test fixtures match the pinned ref
+        if: ${{ !cancelled() }}
+        run: |
+          python3 - <<'EOF'
+          import hashlib, os, sys, urllib.request
+
+          ref = os.environ["JSONUI_CLI_MANIFEST_REF"]
+          # (copy in this repo, source in jsonui-cli)
+          COPIES = [
+              ("Tests/SwiftJsonUITests/Fixtures/binding_vectors.json",
+               "shared/core/binding_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/include_ids_fixture.json",
+               "shared/core/include_ids_fixture.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/include_constraint_targets_fixture.json",
+               "shared/core/include_constraint_targets_fixture.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/include_maps_fixture.json",
+               "shared/core/include_maps_fixture.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/camel_case_vectors.json",
+               "shared/core/camel_case_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/responsive_resolution_vectors.json",
+               "shared/core/responsive_resolution_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/image_accessibility_vectors.json",
+               "shared/core/image_accessibility_vectors.json"),
+              # accessibilitySelected (ControlAccessibilitySelectedVectorsTests).
+              ("Tests/SwiftJsonUITests/Fixtures/control_accessibility_vectors.json",
+               "shared/core/control_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/tap_accessibility_vectors.json",
+               "shared/core/tap_accessibility_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/leaf_children_vectors.json",
+               "shared/core/leaf_children_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/string_default_vectors.json",
+               "shared/core/string_default_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/swiftui_modifier_order.json",
+               "sjui_tools/lib/swiftui/views/modifier_order.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/component_metadata.json",
+               "shared/core/component_metadata.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/layout_path_vectors.json",
+               "shared/core/layout_path_vectors.json"),
+              # The bind fold's cases (BindFoldTests), run by every path.
+              ("Tests/SwiftJsonUITests/Fixtures/bind_fold_vectors.json",
+               "shared/core/bind_fold_vectors.json"),
+              # The unknown-type sentence, the Ruby validator's own words for
+              # every known type in another case (TypeNameCaseVectorsTests).
+              ("Tests/SwiftJsonUITests/Fixtures/unknown_component_type_vectors.json",
+               "shared/core/unknown_component_type_vectors.json"),
+              # The declared image default (semantics.image.defaultContentMode)
+              # ImageContentModeDefaultTests binds the no-contentMode drawing to.
+              ("Tests/SwiftJsonUITests/Fixtures/attribute_semantics.json",
+               "shared/core/attribute_semantics.json"),
+              # initialState: class x JSON value -> applied / rejected
+              # (JsonUITestValue). jsonui-cli copies it from
+              # jsonui-test-runner specs/vectors/initial-state-coercion.json.
+              ("Tests/SwiftJsonUITests/Fixtures/initial_state_coercion_vectors.json",
+               "shared/core/initial_state_coercion_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/reorder_vectors.json",
+               "shared/core/reorder_vectors.json"),
+              ("Tests/SwiftJsonUITests/Fixtures/font_scale_vectors.json",
+               "shared/core/font_scale_vectors.json"),
+              # Not a fixture: the table Dynamic draws type synonyms with
+              # (TypeSynonyms), shipped in the package's resource bundle.
+              ("Sources/SwiftJsonUI/Resources/type_synonyms.json",
+               "shared/core/type_synonyms.json"),
+          ]
+          # Same three exit codes as the step above: 0 compared and agreed,
+          # 1 compared and diverged, 2 could not compare.
+          problems = []
+          for copy, source in COPIES:
+              url = f"https://raw.githubusercontent.com/Tai-Kimura/jsonui-cli/{ref}/{source}"
+              try:
+                  upstream = urllib.request.urlopen(url).read()
+              except Exception as error:
+                  print(f"cannot compare {copy}: {url} did not load ({error})")
+                  sys.exit(2)
+              if not os.path.isfile(copy):
+                  problems.append(f"missing copy: {copy}")
+                  continue
+              mine = hashlib.sha256(open(copy, "rb").read()).hexdigest()
+              theirs = hashlib.sha256(upstream).hexdigest()
+              if mine != theirs:
+                  problems.append(
+                      f"{copy} is not jsonui-cli {source} @ {ref[:12]} "
+                      f"(sha256 {mine[:12]} here, {theirs[:12]} there) "
+                      "— re-copy it and move the pin together"
+                  )
+              else:
+                  print(f"  {copy} == {source} ({theirs[:12]})")
+          if problems:
+              print(f"vendored test fixtures diverge from jsonui-cli @ {ref}:")
+              for p in problems:
+                  print(f"  - {p}")
+              sys.exit(1)
+          print(f"vendored test fixtures match jsonui-cli @ {ref[:12]} ({len(COPIES)} files)")
+          EOF
+
+  # ------------------------------------------------------------------ #
+  # TWO LEGS, AND NEITHER ONE ALONE IS THE GATE.
+  #
+  # SJUIGlass.swift names types that exist only in the iOS 26 SDK, behind
+  # `#if compiler(>=6.2)`. That guard has two ways to be wrong and they fail
+  # in OPPOSITE directions, so one leg cannot see both:
+  #
+  #   Xcode 26.3  the glass code is actually COMPILED. Without this leg the
+  #               guard would fold everywhere and an entire feature would ship
+  #               with no compiler ever reading it -- "warnings: 0" because
+  #               nothing was measured, the same shape that hid a KotlinJsonUI
+  #               break earlier in this train.
+  #   Xcode 16.4  the guard actually FOLDS and the package still builds without
+  #               the SDK. README promises "iOS 17 or later / Swift 5.8+", so a
+  #               consumer on 16.4 is inside the supported range. 10.21.0 broke
+  #               exactly this (run 34841647809, "Cannot find type 'Glass'").
+  #
+  # macos-15 carries BOTH (16.4 is its default; 26.0.1-26.3 are installed
+  # alongside), so this is one runner image and a `setup-xcode` selection --
+  # not a runner bump, which would have fixed CI and left consumers broken.
+  #
+  # 🔑 Each leg DECLARES which side it expects via SJUI_EXPECT_GLASS_SDK, and
+  # an arm compares that against a flag compiled inside the guard. The
+  # expectation therefore comes from outside the source: a `#if` in the test
+  # would merely restate the `#if` in the library and could never fail.
+  #
+  # ⚠️ The job name carries the matrix value on purpose. Two legs under one
+  # name made a run-wide grep read one leg's numbers as the other's earlier in
+  # this train.
+  # ------------------------------------------------------------------ #
+  unit-tests:
+    name: Library unit tests (Xcode ${{ matrix.xcode }}, iOS ${{ matrix.sim_os }} Simulator)
+    runs-on: macos-15
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - xcode: "26.3"
+            sim_os: "26"
+            expect_glass_sdk: "1"
+          - xcode: "16.4"
+            sim_os: "18"
+            expect_glass_sdk: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: ${{ matrix.xcode }}
+
+      - name: Show Xcode / Swift / scheme / simulator inventory
+        # `swift --version` is here because the guard's boundary is a claim
+        # about it that was transcribed from release notes, never compiled.
+        # Printing it puts the real number in every run's log.
+        run: |
+          xcodebuild -version
+          swift --version
+          xcodebuild -list 2>&1 | sed -n '/Schemes:/,$p' || true
+          # Which simulator runtimes the image has, next to which devices it
+          # lists: on the 26.3 leg the iOS 26.1 / 26.2 sections list no
+          # device and showdestinations offers no concrete iOS 26 one.
+          xcrun simctl list runtimes || true
+          xcrun simctl list devices available || true
+
+      - name: Run unit tests
+        # Shorter than the job's 60 so the log upload below still runs when
+        # this step is stopped; the watchdog inside stops a hang at 25 min
+        # with its own message long before this is reached.
+        timeout-minutes: 45
+        env:
+          # Forwarded to the test process with the prefix stripped; a plain
+          # env var does NOT reach a simulator test runner.
+          TEST_RUNNER_SJUI_EXPECT_GLASS_SDK: ${{ matrix.expect_glass_sdk }}
+        run: |
+          set -o pipefail
+          # Only SwiftJsonUITests.xcscheme is tracked; the "SwiftJsonUI"
+          # scheme is Xcode-local auto-generation and does NOT exist on a
+          # fresh checkout. Resolve dynamically, preferring the package
+          # scheme when present.
+          SCHEME=$(xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' \
+            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs || true)
+          if [ -z "$SCHEME" ]; then
+            echo "No usable scheme found:" >&2
+            xcodebuild -list >&2 || true
+            exit 1
+          fi
+          echo "Using scheme=$SCHEME"
+          # 🔻 THE DESTINATION'S OS IS PART OF THE GATE, NOT A DETAIL.
+          # Xcode 26.3 can also drive the iOS 18 runtimes that sit on this
+          # image, and picking one of those makes every `@available(iOS 26)`
+          # arm fail to RUN. Measured locally: three arms listed under
+          # "Failing tests:" while the summary line still said
+          # "Executed 649 tests, with 0 failures" -- the count does not
+          # include arms that never started. So the OS is required here and
+          # there is no fallback to "any simulator".
+          DESTS=$(xcodebuild -scheme "$SCHEME" -showdestinations 2>&1 \
+            | grep 'platform:iOS Simulator' | grep -v 'placeholder' || true)
+          WANT="OS:${{ matrix.sim_os }}."
+          echo "Eligible iOS Simulator destinations matching $WANT:"
+          echo "$DESTS" | grep -F "$WANT" || true
+          DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | grep 'name:iPhone' | head -1 || true)
+          if [ -z "$DEST_LINE" ]; then
+            DEST_LINE=$(echo "$DESTS" | grep -F "$WANT" | grep -v 'placeholder' | head -1 || true)
+          fi
+          DEST_ID=$(echo "$DEST_LINE" | sed -nE 's/.*id:([A-F0-9-]{8,}).*/\1/p' || true)
+          if [ -z "$DEST_ID" ]; then
+            # ⚠️ NOT a formatting nicety -- on Xcode 16.4 this is the ONLY path
+            # that works. Measured, job 103978410101: `-showdestinations` there
+            # lists the iOS Simulator PLACEHOLDER and no concrete device at all,
+            # so every filter over its output is empty whatever it asks for.
+            # Under Xcode 26.3 the same command does list devices. The original
+            # job survived on a simctl last-resort; requiring the OS removed the
+            # fallback along with the looseness, which is what broke this leg.
+            # UDIDs are shared between simctl and xcodebuild, so the id is
+            # usable either way.
+            #
+            # simctl groups devices under runtime headers ("-- iOS 18.5 --"), so
+            # the OS stays required here: the awk only emits lines inside a
+            # matching section. Verified locally against both sections present on
+            # a developer machine, plus a negative control (an absent "iOS 12"
+            # yields zero rather than falling through to another runtime).
+            echo "showdestinations gave no concrete device; asking simctl for an iOS ${{ matrix.sim_os }} one"
+            xcrun simctl list devices available | grep -E "^-- iOS" || true
+            DEST_ID=$(xcrun simctl list devices available \
+              | awk -v os="-- iOS ${{ matrix.sim_os }}" 'index($0,os)==1{f=1;next} /^-- /{f=0} f' \
+              | grep -m1 -E '^[[:space:]]+iPhone' \
+              | sed -nE 's/.*\(([A-F0-9-]{8,})\).*/\1/p' || true)
+            DEST_LINE=$(xcrun simctl list devices available | grep -F "$DEST_ID" | head -1 || true)
+          fi
+          if [ -z "$DEST_ID" ]; then
+            echo "::error::no iOS ${{ matrix.sim_os }} simulator for Xcode ${{ matrix.xcode }}; this leg cannot answer, so it fails rather than testing a different OS" >&2
+            xcodebuild -scheme "$SCHEME" -showdestinations >&2 || true
+            xcrun simctl list devices available >&2 || true
+            exit 1
+          fi
+          echo "Using destination: $DEST_LINE"
+          # Boot first, on its own limit and with its time printed. The
+          # destination is listed Shutdown on these runners, so a hang while
+          # booting and a hang in the tests would otherwise look the same.
+          # Run 36085845499's 26.3 leg then waited 600 s on "Waiting on
+          # BackBoard" booting a device that booted in earlier runs, so each
+          # attempt is limited and the next one tries another remedy (erase,
+          # then a new device on the newest iOS runtime); the log says which
+          # attempt booted. See scripts/ci_boot_simulator.sh.
+          DEST_ID=$(bash scripts/ci_boot_simulator.sh "$DEST_ID" "${{ matrix.sim_os }}" 240)
+          echo "Testing on: $(xcrun simctl list devices | grep -F "($DEST_ID)" | head -1)"
+          # The full log is kept for the gates below. It used to reach the
+          # job page only through `| tail -100`, which prints nothing until
+          # xcodebuild exits: run 36080760768's Xcode 26.3 leg was cancelled
+          # at 60 min with no test line at all. The watchdog prints progress
+          # while it runs, and stops a hang at 25 min (or 120 s after the
+          # suite's closing line) with the log's last lines, the processes
+          # and the booted simulators — see scripts/xcodebuild_watchdog.sh.
+          STATUS=0
+          bash scripts/xcodebuild_watchdog.sh xcodebuild-test.log 1500 120 -- \
+            xcodebuild test \
+              -scheme "$SCHEME" \
+              -destination "platform=iOS Simulator,id=$DEST_ID" || STATUS=$?
+          echo "::group::last 100 lines of xcodebuild-test.log"
+          tail -100 xcodebuild-test.log
+          echo "::endgroup::"
+          exit "$STATUS"
+
+      - name: Keep the xcodebuild log
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-test-log-xcode-${{ matrix.xcode }}
+          path: xcodebuild-test.log
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: The compile-time guard landed on the side this leg declared
+        # A skip here would make BOTH legs vacuous: the arm throws XCTSkip when
+        # SJUI_EXPECT_GLASS_SDK is absent, which is right on a developer machine
+        # and silent failure in CI. Measured, all four cases: declared=1 passes,
+        # declared=0 fails with both values printed, a bogus value fails, and an
+        # absent value SKIPS while the job stays green. This step closes that
+        # last one.
+        run: |
+          ARM=testTheCompileTimeGuardMatchesWhatThisLegDeclared
+          if grep -F "$ARM]' skipped" xcodebuild-test.log; then
+            echo "::error::the guard arm skipped -- SJUI_EXPECT_GLASS_SDK did not reach the test runner (TEST_RUNNER_ prefix?), so this leg proved nothing"
+            exit 1
+          fi
+          if ! grep -F "$ARM]' passed" xcodebuild-test.log; then
+            echo "::error::the guard arm did not pass on this leg; expected SJUI_EXPECT_GLASS_SDK=${{ matrix.expect_glass_sdk }}"
+            exit 1
+          fi
+          echo "guard arm ran and agreed with SJUI_EXPECT_GLASS_SDK=${{ matrix.expect_glass_sdk }}"
+
+      - name: Swift diagnostics gate (Optional.none)
+        # A bare `.none` against an `Optional<Enum>` parameter is
+        # `Optional.none` — nil — and the compiler only WARNS ("assuming you
+        # mean 'Optional<...>.none'"). One such warning made a dynamic
+        # Collection render the same shape on both arms of a switch (10.20.0,
+        # flow-under-scrolling-ancestor): unit tests green, device pictures
+        # byte-identical, found only by logging the branch that should have
+        # run. Deliberately narrow: the warning denominator is unmeasured
+        # (3 lines on 2026-09-03 — 2 compiler sites + 1 tool line), so only
+        # this one spelling fails the job; the total is printed for the day
+        # that decision is made.
+        run: |
+          echo "warning lines in xcodebuild-test.log: $(grep -c 'warning:' xcodebuild-test.log || true)"
+          if grep -n "assuming you mean" xcodebuild-test.log; then
+            echo "::error::a bare .none resolved to Optional.none — spell the enum case out (see the lines above)"
+            exit 1
+          fi
+          echo "Optional.none gate: OK"
+
+      - name: Release-configuration build
+        run: |
+          set -o pipefail
+          # The Dynamic implementation is #if DEBUG: a declaration that
+          # drifts outside the guard compiles everywhere above (tests and
+          # conformance run Debug) and fails ONLY here — a consumer's
+          # archive/distribution build is the first thing that breaks
+          # (10.14.1 shipped exactly that: the typed-attr extension landed
+          # after the #endif and every Release archive died).
+          SCHEME=$(xcodebuild -list 2>/dev/null | sed -n '/Schemes:/,$p' \
+            | grep -m1 -E '^\s+(SwiftJsonUI|SwiftJsonUITests)\s*$' | xargs || true)
+          if [ -z "$SCHEME" ]; then
+            echo "No usable scheme found" >&2
+            exit 1
+          fi
+          # generic destination: no device resolution needed for build-only
+          xcodebuild build \
+            -scheme "$SCHEME" \
+            -destination 'generic/platform=iOS Simulator' \
+            -configuration Release \
+            | tail -40

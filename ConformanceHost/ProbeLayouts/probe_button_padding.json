@@ -1,0 +1,82 @@
+{
+  "type": "View",
+  "id": "cg_bp_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Button",
+      "id": "cg_bp_ctl",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "text": "Go",
+      "fontSize": 16,
+      "background": "#DDDDDD",
+      "topMargin": 6
+    },
+    {
+      "type": "Button",
+      "id": "cg_bp_lr",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "text": "Go",
+      "fontSize": 16,
+      "background": "#DDDDDD",
+      "topMargin": 6,
+      "paddingLeft": 22,
+      "paddingRight": 22
+    },
+    {
+      "type": "Button",
+      "id": "cg_bp_uni",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "text": "Go",
+      "fontSize": 16,
+      "background": "#DDDDDD",
+      "topMargin": 6,
+      "padding": 10
+    },
+    {
+      "type": "Button",
+      "id": "cg_bp_se",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "text": "Go",
+      "fontSize": 16,
+      "background": "#DDDDDD",
+      "topMargin": 6,
+      "paddingStart": 5,
+      "paddingEnd": 6
+    },
+    {
+      "type": "Button",
+      "id": "cg_bp_tb",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "text": "Go",
+      "fontSize": 16,
+      "background": "#DDDDDD",
+      "topMargin": 6,
+      "topPadding": 3,
+      "paddingBottom": 4
+    },
+    {
+      "type": "Button",
+      "id": "cg_bp_p4",
+      "width": "wrapContent",
+      "height": "wrapContent",
+      "text": "Go",
+      "fontSize": 16,
+      "background": "#DDDDDD",
+      "topMargin": 6,
+      "paddings": [
+        1,
+        2,
+        3,
+        4
+      ]
+    }
+  ]
+}

@@ -1,0 +1,120 @@
+{
+  "type": "View",
+  "id": "cg_route6_root",
+  "orientation": "vertical",
+  "width": "matchParent",
+  "height": "wrapContent",
+  "child": [
+    {
+      "type": "Collection",
+      "id": "cg_route_spell",
+      "width": 200,
+      "height": 200,
+      "background": "#DDDDDD",
+      "items": "@{spellRows}",
+      "sections": [
+        {
+          "cell": "conformance_cell"
+        },
+        {
+          "header": "conformance_cell"
+        },
+        {
+          "cell": "conformance_cell"
+        }
+      ],
+      "cellIdProperty": "key"
+    },
+    {
+      "type": "Collection",
+      "id": "cg_route_class_dup",
+      "width": 200,
+      "height": 320,
+      "background": "#DDDDDD",
+      "items": "@{classDupRows}",
+      "cellClasses": [
+        "conformance_cell"
+      ],
+      "cellIdProperty": "key"
+    }
+  ],
+  "data": [
+    {
+      "name": "spellRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "s0",
+                "key": "a"
+              },
+              {
+                "title": "s1",
+                "key": "2:x"
+              },
+              {
+                "title": "s2",
+                "key": "b"
+              }
+            ]
+          },
+          {
+            "header": {
+              "title": "H1"
+            }
+          },
+          {
+            "cells": [
+              {
+                "title": "t0",
+                "key": "x"
+              },
+              {
+                "title": "t1",
+                "key": "y"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "classDupRows",
+      "class": "CollectionDataSource",
+      "defaultValue": {
+        "sections": [
+          {
+            "cells": [
+              {
+                "title": "u0",
+                "key": "k"
+              },
+              {
+                "title": "u1",
+                "key": "2:x"
+              },
+              {
+                "title": "u2",
+                "key": "k"
+              }
+            ]
+          },
+          {
+            "cells": [
+              {
+                "title": "v0",
+                "key": "x"
+              },
+              {
+                "title": "v1",
+                "key": "k"
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ]
+}

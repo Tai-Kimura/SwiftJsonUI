@@ -1,0 +1,458 @@
+//
+//  TextViewConverter.swift
+//  SwiftJsonUI
+//
+//  Dynamic mode equivalent of textview_converter.rb
+//  Creates TextViewWithPlaceholder matching tool-generated code exactly.
+//
+//  Modifier order (matches textview_converter.rb):
+//    1. TextViewWithPlaceholder(...) creation
+//       - text binding, hint, hintAttributes (hintColor, hintFont, hintFontSize, hintLineHeightMultiple)
+//       - hideOnFocused, fontSize, fontColor, font, backgroundColor, cornerRadius
+//       - containerInset (paddings used as containerInset), flexible, minHeight, maxHeight
+//    2. onTextChange (called from the text binding's setter)
+//    3. flexible: frame(minHeight/maxHeight) OR apply_frame_constraints + apply_frame_size
+//    4. .overlay (border)
+//    5. apply_margins
+//    6. .opacity / .hidden
+//    7. accessibilityIdentifier
+//
+
+import SwiftUI
+#if DEBUG
+
+public struct TextViewConverter {
+
+    /// Convert DynamicComponent to SwiftUI TextViewWithPlaceholder
+    /// Matches textview_converter.rb convert method exactly
+    public static func convert(
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> AnyView {
+        let declaredText = component.string(TextViewAttributes.self, \.text)
+        let resolvedBinding = DynamicBindingHelper.string(declaredText, data: data)
+
+        // A two-way binding in the data: the view model's text.
+        // A view with onTextChange keeps its pending-edit state
+        // (UserEditGeneration) in a view of its own; one without has none.
+        let drawn: (SwiftUI.Binding<String>) -> AnyView = { text in
+            UserEditBinding.declares(component)
+                ? AnyView(UserEditScope { generation in
+                    convertBody(component: component, data: data, textBinding: text, generation: generation)
+                })
+                : convertBody(component: component, data: data, textBinding: text, generation: UserEditGeneration())
+        }
+
+        if let bound: SwiftUI.Binding<String> = DynamicBindingHelper.twoWay(declaredText, data: data) {
+            return drawn(bound)
+        }
+
+        // Literal, absent, or a plain value under @{var}: local editing state
+        // seeded from it — a native text view is inherently stateful on every
+        // other JsonUI runtime, so a `.constant` SwiftUI editor would wrongly
+        // reject edits here. A plain value was handed that `.constant` (ticket
+        // sjui-dynamic-plain-bound-controls-do-not-follow-the-view-model); a
+        // new value from the view model replaces the edit.
+        return AnyView(
+            DynamicLocalState(initial: resolvedBinding.wrappedValue) { binding in
+                drawn(binding)
+            }
+        )
+    }
+
+    private static func convertBody(
+        component: DynamicComponent,
+        data: [String: Any],
+        textBinding: SwiftUI.Binding<String>,
+        generation: UserEditGeneration
+    ) -> AnyView {
+        // Its handlers' viewId: the id, else the drawn type and the position
+        // (LayoutPath.viewId — `textEditor` for every id-less one before).
+        let id = LayoutPath.viewId(of: component)
+
+        // --- 1. Build TextViewWithPlaceholder ---
+
+        // hint (placeholder) - hint takes priority, fallback to placeholder
+        let hint: String? = {
+            if let h = component.hint ?? component.placeholder {
+                if let propName = DynamicEventHelper.extractPropertyName(from: h) {
+                    if let binding = data[propName] as? SwiftUI.Binding<String> {
+                        return binding.wrappedValue
+                    }
+                    if let value = data[propName] as? String {
+                        return value
+                    }
+                }
+                return h.dynamicLocalized()
+            }
+            return nil
+        }()
+
+        // hintColor - from hintAttributes or individual property.
+        //
+        // `hintColor` is declared `string|binding`, so the read has to go
+        // through `resolveColor` — the run-4 `?.value` sweep's idiom. Handing
+        // `rawRepresentation` to the data-less `getColor` asks for a colour
+        // literally named "@{boundHintColor}", which fails and falls through
+        // to the grey default: the bound face rendered the same picture as
+        // no declaration at all while the static face worked
+        // (TextView/hintColor__binding, ios inert / android + web active).
+        let hintColor: Color = {
+            if let hintAttrs = component.hintAttributes?.value as? [String: Any] {
+                if let fc = hintAttrs["fontColor"] as? String ?? hintAttrs["color"] as? String {
+                    return DynamicHelpers.getColor(fc, data: data) ?? Color.gray.opacity(0.6)
+                }
+            }
+            let attrs = component.typedAttributes(TextViewAttributes.self)
+            if let hc = DynamicHelpers.resolveColor(attrs.hintColor, data: data) {
+                return hc
+            }
+            return Color.gray.opacity(0.6)
+        }()
+
+        // hintFont - from hintAttributes or individual property
+        let hintFont: String? = {
+            if let hintAttrs = component.hintAttributes?.value as? [String: Any] {
+                if let f = hintAttrs["font"] as? String { return f }
+            }
+            return component.hintFont
+        }()
+
+        // hintFontSize - from hintAttributes or individual property
+        let hintFontSize: CGFloat? = {
+            if let hintAttrs = component.hintAttributes?.value as? [String: Any] {
+                if let fs = hintAttrs["fontSize"] as? CGFloat { return fs }
+                if let fs = hintAttrs["fontSize"] as? Double { return CGFloat(fs) }
+                if let fs = hintAttrs["fontSize"] as? Int { return CGFloat(fs) }
+            }
+            return component.hintFontSize
+        }()
+
+        // hintLineHeightMultiple - from hintAttributes or individual property
+        let hintLineHeightMultiple: CGFloat? = {
+            if let hintAttrs = component.hintAttributes?.value as? [String: Any] {
+                if let lhm = hintAttrs["lineHeightMultiple"] as? CGFloat { return lhm }
+                if let lhm = hintAttrs["lineHeightMultiple"] as? Double { return CGFloat(lhm) }
+            }
+            return component.hintLineHeightMultiple
+        }()
+
+        // hideOnFocused
+        let hideOnFocused = component.hideOnFocused ?? true
+
+        // fontSize
+        let fontSize = DynamicHelpers.resolveNumber(
+            component.typedAttributes(TextViewAttributes.self).fontSize,
+            legacy: nil, data: data
+        ) ?? 16
+
+        // fontColor — same `string|binding` declaration, same resolution.
+        // No fixture covers TextView/fontColor__binding today (reported to D),
+        // so this half was carrying the identical defect unmeasured.
+        let fontColor: Color = {
+            if let fc = DynamicHelpers.resolveColor(
+                component.typedAttributes(TextViewAttributes.self).fontColor, data: data
+            ) {
+                return fc
+            }
+            return .primary
+        }()
+
+        // font / fontFamily (fontName)
+        //
+        // `fontFamily` is the SPECIFIC spelling for a family and wins over
+        // `font`, which carries either a family or a weight keyword — exactly
+        // the precedence textview_converter.rb:146 emits
+        // (`@component['fontFamily'] || @component['font']`). Dynamic read
+        // only `font`, so a declared family was inert on this path while
+        // codegen honoured it (TextView/fontFamily__{static,binding}).
+        //
+        // `string(_:_:)` returns the layout spelling, so a bound font arrives
+        // as the literal "@{expr}" and would be looked up as a family of that
+        // name. Resolve it first — the same step CheckboxConverter takes for
+        // its own `font`. `interpolate` leaves a static family untouched, and
+        // `.map` keeps nil nil (processText answers "" for nil, which would
+        // become an empty font name).
+        let fontName = (component.string(TextViewAttributes.self, \.fontFamily)
+            ?? component.string(TextViewAttributes.self, \.font))
+            .map { DynamicHelpers.processText($0, data: data) }
+
+        // backgroundColor — third colour on this converter reading the raw
+        // spelling; same `string|binding` declaration, same resolution.
+        let backgroundColor: Color = {
+            if let bg = DynamicHelpers.resolveColor(
+                component.typedAttributes(CommonAttributes.self).background, data: data
+            ) {
+                return bg
+            }
+            return Color(UIColor.systemBackground)
+        }()
+
+        // cornerRadius
+        let cornerRadius = component.number(CommonAttributes.self, \.cornerRadius, data: data) ?? 0
+
+        // containerInset (paddings used as containerInset for TextView).
+        // `edgeInset` is the UIKit spelling of the same content inset — the
+        // Text converter already reads it, so a TextView carrying it must not
+        // silently drop it (coverage: TextView.edgeInset was declared and read
+        // by nobody on ios/web).
+        let containerInset: EdgeInsets = {
+            if let ei = component.edgeInset {
+                if let insets = DynamicDecodingHelper.edgeInsetsFromAnyCodable(ei) {
+                    return insets
+                }
+            }
+            if let ci = component.containerInset {
+                switch ci.count {
+                case 1:
+                    return EdgeInsets(top: ci[0], leading: ci[0], bottom: ci[0], trailing: ci[0])
+                case 2:
+                    return EdgeInsets(top: ci[0], leading: ci[1], bottom: ci[0], trailing: ci[1])
+                case 4:
+                    return EdgeInsets(top: ci[0], leading: ci[1], bottom: ci[2], trailing: ci[3])
+                default:
+                    return EdgeInsets(top: 8, leading: 5, bottom: 8, trailing: 5)
+                }
+            }
+            // Fallback: use paddings as containerInset
+            let padding = DynamicHelpers.getPadding(from: component, data: data)
+            if padding.top != 0 || padding.leading != 0 || padding.bottom != 0 || padding.trailing != 0 {
+                return padding
+            }
+            return EdgeInsets(top: 8, leading: 5, bottom: 8, trailing: 5)
+        }()
+
+        // flexible
+        let flexible = component.flexible ?? false
+
+        // minHeight / maxHeight. Under flexible the declared height is the
+        // GROWTH FLOOR (canonical textView.flexibleHeight, shared/core/
+        // attribute_semantics.json): min = minHeight ?? height — the view
+        // grows past it and never shrinks below it (android is the
+        // reference; matchParent/.infinity and wrapContent/nil don't
+        // participate).
+        let declaredHeight = component.declaredHeight.flatMap { $0.isFinite ? $0 : nil }
+        let resolvedMinHeight = component.number(CommonAttributes.self, \.minHeight, data: data)
+        let minHeight = flexible
+            ? (resolvedMinHeight ?? declaredHeight)
+            : resolvedMinHeight
+        let maxHeight = component.number(CommonAttributes.self, \.maxHeight, data: data)
+
+        let editorText = UserEditBinding.text(textBinding, generation: generation, component: component, id: id, data: data)
+        var result = AnyView(
+            TextViewWithPlaceholder(
+                text: editorText,
+                hint: hint,
+                hintColor: hintColor,
+                hintFont: hintFont,
+                hintFontSize: hintFontSize,
+                hintLineHeightMultiple: hintLineHeightMultiple,
+                hideOnFocused: hideOnFocused,
+                fontSize: fontSize,
+                fontColor: fontColor,
+                fontName: fontName,
+                backgroundColor: backgroundColor,
+                cornerRadius: cornerRadius,
+                containerInset: containerInset,
+                flexible: flexible,
+                minHeight: minHeight,
+                maxHeight: maxHeight,
+                // On the TextEditor itself, not around the hint
+                // (LeafAccessibilityIdentifier.swift). An invisible view
+                // takes none, as applyAccessibilityId had it.
+                accessibilityIdentifier: component.visibilitySpelling() == "invisible" ? nil : component.id,
+                // `autoFocus`: the field takes the focus when it appears, as
+                // sjui codegen sets its isFocused binding on appear.
+                autoFocus: component.typedAttributes(TextViewAttributes.self).autoFocus == true
+            )
+        )
+
+        // --- 1.5 .truncationMode (lineBreakMode) ---
+        // Same truncation vocabulary as Label; the codegen face attaches
+        // `.truncationMode(...)` to the closed call and the environment
+        // reaches the placeholder Text. Nothing here read it, so a Head/
+        // Middle mode truncated at the tail on the dynamic path only
+        // (TextView_lineBreakMode__head/middle parity d=23/12, run
+        // 31202080745). Clip folds to .tail, matching the codegen arm.
+        switch component.enumString(TextViewAttributes.self, \.lineBreakMode) {
+        case "Head": result = AnyView(result.truncationMode(.head))
+        case "Middle": result = AnyView(result.truncationMode(.middle))
+        case "Tail", "Clip": result = AnyView(result.truncationMode(.tail))
+        default: break
+        }
+
+        // --- 1.55 .submitLabel (returnKeyType) ---
+        // Codegen attaches `.submitLabel(...)` to the closed call when
+        // returnKeyType is declared, and nothing when it is not; nothing here
+        // read it, so a declared key was the system's on this path only.
+        // TextView's own table (textview_converter.rb
+        // return_key_to_submit_label), not TextField's.
+        if let returnKey = component.enumString(TextViewAttributes.self, \.returnKeyType) {
+            result = AnyView(result.submitLabel(submitLabel(fromReturnKeyType: returnKey)))
+        }
+
+        // --- 1.6 .keyboardType (input, then keyboardType) ---
+        // Both spellings were declared, both emitted by codegen
+        // (textview_converter.rb lines 267-270 for `input`, and
+        // apply_editable_and_keyboard for `keyboardType`), and NEITHER was
+        // read here — the same half-implemented shape as `editable` below,
+        // which that step's own comment already describes.
+        //
+        // ORDER IS THE EMITTER'S, NOT A PREFERENCE. Codegen appends `input`
+        // first and `keyboardType` second to the same :component_specific
+        // bag, so the emitted chain ends with `keyboardType` and the outer
+        // modifier is the one SwiftUI honours. Applying them in this order
+        // reproduces that: when a layout declares both, `keyboardType` wins.
+        if let raw = component.enumString(TextViewAttributes.self, \.input) {
+            result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw, in: TextViewAttributes.Input.declaredSpellings)))
+        }
+        // ⚠️ `keyboardType` IS A DIFFERENT VOCABULARY FROM `input`, and its
+        // assignments are not the ones `input` uses — `number` lands on
+        // `.decimalPad` here and on `.numberPad` there, `numeric` on
+        // `.phonePad` here and on `.numberPad` there. That reads like a
+        // defect and is NOT corrected here: this table is transcribed from
+        // textview_converter.rb#keyboard_type_to_swiftui, which is what the
+        // other face does, and "fixing" one face alone would replace a shared
+        // oddity with a real divergence. Three declared spellings (`search`,
+        // `text`, `numbersAndPunctuation`) have no row THERE either, so they
+        // fall through to no modifier here too — deliberately reproducing a
+        // gap rather than closing it on one side.
+        if let raw = component.enumString(TextViewAttributes.self, \.keyboardType),
+           let resolved = Self.keyboardType(fromKeyboardTypeSpelling: raw) {
+            result = AnyView(result.keyboardType(resolved))
+        }
+
+        // --- 2. onTextChange ---
+        // Called from the text binding's setter (`editorText` above), for
+        // bound AND local-state text: the user's edits only. It was
+        // `.onChange(of: textBinding.wrappedValue)`, which also fired for a
+        // view model's updateData and the test runner's initialState (ticket
+        // sjui-ontextchange-fires-on-programmatic-data-change).
+
+        // --- 3. Frame modifiers ---
+        if flexible {
+            // flexible is about the height. The declared width still applies:
+            // without it a 200-wide flexible TextView took the whole 402 of
+            // its parent, where Android and web drew 200 (frame-parity,
+            // 2026-10-05, TextView/flexible__true). sjui codegen:
+            // textview_converter.rb, same branch.
+            if let width = component.declaredWidth {
+                if width == .infinity {
+                    result = AnyView(result.frame(maxWidth: .infinity))
+                } else if width.isFinite && width >= 0 {
+                    result = AnyView(result.frame(width: width))
+                }
+            }
+            // For flexible TextViews, apply minHeight/maxHeight as frame
+            if let minH = minHeight, let maxH = maxHeight {
+                result = AnyView(result.frame(minHeight: minH, maxHeight: maxH))
+            } else if let minH = minHeight {
+                result = AnyView(result.frame(minHeight: minH))
+            } else if let maxH = maxHeight {
+                result = AnyView(result.frame(maxHeight: maxH))
+            }
+        } else {
+            // paddings is used as containerInset, so skip external padding
+            // Normal frame application
+            result = DynamicModifierHelper.applyFrameConstraints(result, component: component, data: data)
+            result = DynamicModifierHelper.applyFrameSize(result, component: component, data: data)
+        }
+
+        // --- 4. .overlay (border) ---
+        // Note: background and cornerRadius are handled internally by TextViewWithPlaceholder
+        result = DynamicModifierHelper.applyBorder(result, component: component, data: data)
+
+        // shadow — the standard order's place, after the border (standardOrder:
+        // border, shadow). This chain does not run applyStandardModifiers, where
+        // the shadow stage lives, so a declared shadow never drew here while
+        // codegen drew it (ticket 2026-11-07-declared-binding-slots-and-dynamic-shadow).
+        result = DynamicModifierHelper.applyShadow(result, component: component, data: data)
+
+        // --- 5. apply_margins ---
+        // The frames gate's measuring element, inside the margins (applyConformanceFrame).
+        result = DynamicModifierHelper.applyConformanceFrame(result, component: component)
+        // The offset, at the standard order's place (standardOrder: conformance
+        // frame, offset, margins). This chain does not run
+        // applyStandardModifiers, and until 10.29.7 it had no offset stage, so
+        // offsetX / offsetY moved nothing here while codegen and Android moved
+        // the view (ticket sjui-dynamic-offsetx-is-not-applied-to-label-button-
+        // and-textview).
+        result = DynamicModifierHelper.applyOffset(result, component: component, data: data)
+        result = DynamicModifierHelper.applyMargins(result, component: component, data: data)
+
+        // --- 6. .opacity / .hidden ---
+        result = DynamicModifierHelper.applyOpacity(result, component: component, data: data)
+        result = DynamicModifierHelper.applyHidden(result, component: component, data: data)
+
+        // userInteractionEnabled (the standard chain's
+        // hitTesting stage, which this hand-built chain did not run)
+        result = DynamicModifierHelper.applyHitTesting(result, component: component, data: data)
+
+        // tintColor — the accent of the operable parts (a link's colour, the
+        // cursor, a control's accent), never the text colour (jsonui-cli
+        // 1.9.0). This chain does not run applyStandardModifiers, where the
+        // tint stage lives, so it was never drawn here.
+        result = DynamicModifierHelper.applyTint(result, component: component, data: data)
+
+        // --- 7. accessibilityIdentifier ---
+        // On the TextEditor, inside TextViewWithPlaceholder: a bare one here
+        // would reach the hint too.
+
+        // --- 8. .disabled (editable / enabled) ---
+        // TextField applies this as its final step; TextView never did, so a
+        // declared `enabled` (literal or bound) gated nothing here while
+        // codegen, Compose and web all gate input.
+        //
+        // `editable: false` is the second way to say read-only and was read by
+        // nobody here. textview_converter.rb#apply_editable_and_keyboard
+        // OR-combines the two into one `.disabled`, so either disables.
+        if component.typedAttributes(TextViewAttributes.self).editable == false {
+            result = AnyView(result.disabled(true))
+        }
+        result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)
+
+        return result
+    }
+
+    /// textview_converter.rb#return_key_to_submit_label: Continue / Join /
+    /// Route are TextField's words and fall to `.return` here, as there.
+    static func submitLabel(fromReturnKeyType value: String) -> SubmitLabel {
+        switch value {
+        case "Done": return .done
+        case "Go": return .go
+        case "Next": return .next
+        case "Search": return .search
+        case "Send": return .send
+        default: return .return
+        }
+    }
+
+    /// `keyboardType` -> `UIKeyboardType`, transcribed from
+    /// textview_converter.rb#keyboard_type_to_swiftui.
+    ///
+    /// Local to TextView because it is local there: `keyboardType` is
+    /// declared on TextView only, while `input` is shared and lives in
+    /// DynamicHelpers. Returning nil means "no row" — the emitter guards with
+    /// `if resolved`, so an unmatched spelling emits no modifier at all
+    /// rather than an explicit `.default`, and the two are different (the
+    /// system default can differ from `.default` in a nested context).
+    ///
+    /// The Ruby normalises with `downcase.gsub(/[^a-z]/, '')`, which is why
+    /// `webURL`, `URL` and `namePhonePad` all arrive here stripped; the same
+    /// normalisation is applied so the declared spellings match.
+    static func keyboardType(fromKeyboardTypeSpelling value: String) -> UIKeyboardType? {
+        switch DeclaredSpelling.lowered(value, in: TextViewAttributes.KeyboardType.declaredSpellings)?.filter({ $0.isLetter && $0.isASCII }) {
+        case "default": return .default
+        case "number", "numberpad", "decimal", "decimalpad": return .decimalPad
+        case "numeric", "phone", "phonepad": return .phonePad
+        case "email", "emailaddress": return .emailAddress
+        case "url", "weburl": return .URL
+        case "alphabet", "asciicapable": return .asciiCapable
+        case "namephonepad": return .namePhonePad
+        case "twitter": return .twitter
+        case "websearch": return .webSearch
+        default: return nil
+        }
+    }
+}
+#endif // DEBUG

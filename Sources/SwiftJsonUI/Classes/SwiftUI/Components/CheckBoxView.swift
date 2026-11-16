@@ -1,0 +1,206 @@
+import SwiftUI
+
+/// CheckBoxView - A customizable checkbox component for SwiftUI Static mode
+/// Supports custom icons, labels, and two-way binding
+public struct CheckBoxView: View {
+    /// Draws again when the colour mode changes: its images are the mode's own pictures (ThemedImage).
+    @ObservedObject private var jsonUITheme = SwiftJsonUIConfiguration.shared
+    private var isOn: SwiftUI.Binding<Bool>
+    let label: String?
+    let icon: String?
+    let selectedIcon: String?
+    let iconSize: CGFloat
+    let iconColor: Color?
+    let spacing: CGFloat
+    let fontSize: CGFloat?
+    let fontWeight: Font.Weight?
+    let fontColor: Color?
+    let checkedColor: Color
+    let uncheckedColor: Color
+    let isEnabled: Bool
+    let onValueChanged: ((Bool) -> Void)?
+
+    public init(
+        isOn: SwiftUI.Binding<Bool>,
+        label: String? = nil,
+        icon: String? = nil,
+        selectedIcon: String? = nil,
+        iconSize: CGFloat = 24,
+        iconColor: Color? = nil,
+        spacing: CGFloat = 8,
+        fontSize: CGFloat? = nil,
+        fontWeight: Font.Weight? = nil,
+        fontColor: Color? = nil,
+        checkedColor: Color = .blue,
+        uncheckedColor: Color = .gray,
+        isEnabled: Bool = true,
+        onValueChanged: ((Bool) -> Void)? = nil
+    ) {
+        self.isOn = isOn
+        self.label = label
+        self.icon = icon
+        self.selectedIcon = selectedIcon
+        self.iconSize = iconSize
+        self.iconColor = iconColor
+        self.spacing = spacing
+        self.fontSize = fontSize
+        self.fontWeight = fontWeight
+        self.fontColor = fontColor
+        self.checkedColor = checkedColor
+        self.uncheckedColor = uncheckedColor
+        self.isEnabled = isEnabled
+        self.onValueChanged = onValueChanged
+    }
+
+    /// Convenience initializer with string fontWeight
+    public init(
+        isOn: SwiftUI.Binding<Bool>,
+        label: String? = nil,
+        icon: String? = nil,
+        selectedIcon: String? = nil,
+        iconSize: CGFloat = 24,
+        iconColor: Color? = nil,
+        spacing: CGFloat = 8,
+        fontSize: CGFloat? = nil,
+        fontWeight: String,
+        fontColor: Color? = nil,
+        checkedColor: Color = .blue,
+        uncheckedColor: Color = .gray,
+        isEnabled: Bool = true,
+        onValueChanged: ((Bool) -> Void)? = nil
+    ) {
+        self.init(
+            isOn: isOn,
+            label: label,
+            icon: icon,
+            selectedIcon: selectedIcon,
+            iconSize: iconSize,
+            iconColor: iconColor,
+            spacing: spacing,
+            fontSize: fontSize,
+            fontWeight: Font.Weight.from(string: fontWeight),
+            fontColor: fontColor,
+            checkedColor: checkedColor,
+            uncheckedColor: uncheckedColor,
+            isEnabled: isEnabled,
+            onValueChanged: onValueChanged
+        )
+    }
+
+    public var body: some View {
+        HStack(spacing: spacing) {
+            // Checkbox icon
+            checkboxIcon
+
+            // Label text if provided
+            if let label = label, !label.isEmpty {
+                labelView(text: label)
+            }
+        }
+        // Whole row is tappable (label included), not just the icon
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard isEnabled else { return }
+            isOn.wrappedValue.toggle()
+            onValueChanged?(isOn.wrappedValue)
+        }
+        .opacity(isEnabled ? 1.0 : 0.5)
+        // One accessibility element for the row whose label is the checkbox
+        // text — otherwise the SF Symbol image leaks its symbol name
+        // ("Square") as the element label.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label ?? "")
+        // A checked box reads "selected" — the state was only in the glyph,
+        // so VoiceOver read a checked and an unchecked box the same (ticket
+        // sjui-radio-checkbox-selected-state-not-read). Unchecked adds
+        // nothing, as the accessibilitySelected attribute's false does.
+        .accessibilityAddTraits(isOn.wrappedValue ? [.isButton, .isSelected] : .isButton)
+    }
+
+    @ViewBuilder
+    private var checkboxIcon: some View {
+        if let customIcon = isOn.wrappedValue ? selectedIcon : icon,
+           !customIcon.isEmpty {
+            // Custom icon provided. A tint only reaches an asset rendered as a
+            // template, so iconColor decides the rendering mode as well —
+            // applying .foregroundColor to an original-mode asset does nothing.
+            if let iconColor = iconColor {
+                Image(jsonUIAsset: customIcon)
+                    .renderingMode(.template)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: iconSize, height: iconSize)
+                    .foregroundColor(iconColor)
+            } else {
+                Image(jsonUIAsset: customIcon)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: iconSize, height: iconSize)
+            }
+        } else {
+            // System checkbox icons. iconColor is one tint for both states, so
+            // it wins over the checked/unchecked pair when given.
+            Image(systemName: isOn.wrappedValue ? "checkmark.square.fill" : "square")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: iconSize, height: iconSize)
+                .foregroundColor(iconColor ?? (isOn.wrappedValue ? checkedColor : uncheckedColor))
+        }
+    }
+
+    @ViewBuilder
+    private func labelView(text: String) -> some View {
+        let baseText = Text(text)
+
+        if let fontSize = fontSize {
+            // Through sjuiFont: the app's fontProvider and the text size rule (2026-11-13).
+            baseText
+                .sjuiFont(FontSpec(weight: fontWeight, size: fontSize))
+                .foregroundColor(fontColor ?? .primary)
+        } else {
+            // No fontSize: the rule still holds the text when the CheckBox declares fontScaling / maxFontScale.
+            baseText
+                .sjuiDeclaredFont(weight: fontWeight)
+                .foregroundColor(fontColor ?? .primary)
+        }
+    }
+}
+
+// MARK: - Preview
+#if DEBUG
+struct CheckBoxView_Previews: PreviewProvider {
+    static var previews: some View {
+        VStack(spacing: 20) {
+            // Default checkbox
+            CheckBoxView(
+                isOn: .constant(false),
+                label: "Unchecked"
+            )
+
+            // Checked checkbox
+            CheckBoxView(
+                isOn: .constant(true),
+                label: "Checked"
+            )
+
+            // Disabled checkbox
+            CheckBoxView(
+                isOn: .constant(true),
+                label: "Disabled",
+                isEnabled: false
+            )
+
+            // Styled checkbox
+            CheckBoxView(
+                isOn: .constant(true),
+                label: "Styled",
+                fontSize: 18,
+                fontWeight: .bold,
+                fontColor: .blue,
+                checkedColor: .green
+            )
+        }
+        .padding()
+    }
+}
+#endif

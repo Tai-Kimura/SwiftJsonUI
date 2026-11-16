@@ -1,0 +1,186 @@
+//
+//  WeightedStackContainer.swift
+//  SwiftJsonUI
+//
+//  Dynamic mode equivalent of view_converter.rb WeightedStack handling.
+//  Creates WeightedHStack/WeightedVStack matching tool-generated code exactly.
+//
+
+import SwiftUI
+#if DEBUG
+
+
+// MARK: - Weighted Stack Container
+public struct WeightedStackContainer: View {
+    let orientation: String
+    let children: [DynamicComponent]
+    let component: DynamicComponent
+    let data: [String: Any]
+    let viewId: String?
+    /// Weight given to a child that declares none. `distribution: fillEqually`
+    /// is exactly "every child the same size regardless of content" (canon:
+    /// attribute_semantics.json semantics.distribution.perValueMapping —
+    /// "equal frames on each child" on swiftui), which is equal weights, so
+    /// the size half routes through this container rather than growing a
+    /// second sizing implementation. Zero for every other caller.
+    let implicitWeight: CGFloat
+
+    public init(
+        orientation: String,
+        children: [DynamicComponent],
+        component: DynamicComponent,
+        data: [String: Any],
+        viewId: String? = nil,
+        implicitWeight: CGFloat = 0
+    ) {
+        self.orientation = orientation
+        self.children = children
+        self.component = component
+        self.data = data
+        self.viewId = viewId
+        self.implicitWeight = implicitWeight
+    }
+
+    /// `explicitChildSizeWins`: an explicit main-axis size beats distribution's
+    /// size half (the size topic's explicit > bounds > fill order), so a child
+    /// that declares one keeps it and does not take the implicit weight.
+    private func implicitWeight(for child: DynamicComponent, horizontal: Bool) -> CGFloat {
+        guard implicitWeight > 0 else { return 0 }
+        let declared = horizontal ? child.declaredWidth : child.declaredHeight
+        return declared == nil ? implicitWeight : 0
+    }
+
+    // Build children array with weights for horizontal orientation
+    private func buildHorizontalChildren() -> [(view: AnyView, weight: CGFloat)] {
+        children.map { child in
+            // weight / widthWeight are number|binding — resolve `@{binding}` from data.
+            let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
+            let widthWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).widthWeight, legacy: nil, data: data) ?? 0
+            let weight = max(CGFloat(max(weightValue, widthWeightValue)),
+                             implicitWeight(for: child, horizontal: true))
+
+            var childData = data
+            if weight > 0 {
+                childData["__isWeightedChild"] = true
+                childData["__weightedParentOrientation"] = "horizontal"
+            }
+
+            let builtView = AnyView(
+                DynamicComponentBuilder(
+                    component: child,
+                    data: childData,
+                    viewId: viewId,
+                    isWeightedChild: weight > 0,
+                    parentOrientation: "horizontal"
+                )
+            )
+            // weight==0 AND width is wrapContent → fixedSize to shrink to intrinsic width
+            let needsFixedSize = weight == 0 && child.declaredWidth == nil
+            let childView = needsFixedSize
+                ? AnyView(builtView.fixedSize(horizontal: true, vertical: false))
+                : builtView
+            return (view: childView, weight: weight)
+        }
+    }
+
+    // Build children array with weights for vertical orientation
+    private func buildVerticalChildren() -> [(view: AnyView, weight: CGFloat)] {
+        children.map { child in
+            // weight / heightWeight are number|binding — resolve `@{binding}` from data.
+            let weightValue = DynamicHelpers.resolveWeight(from: child, data: data) ?? 0
+            let heightWeightValue = DynamicHelpers.resolveNumber(child.typedAttributes(CommonAttributes.self).heightWeight, legacy: nil, data: data) ?? 0
+            let weight = max(CGFloat(max(weightValue, heightWeightValue)),
+                             implicitWeight(for: child, horizontal: false))
+
+            var childData = data
+            if weight > 0 {
+                childData["__isWeightedChild"] = true
+                childData["__weightedParentOrientation"] = "vertical"
+            }
+
+            let builtView = AnyView(
+                DynamicComponentBuilder(
+                    component: child,
+                    data: childData,
+                    viewId: viewId,
+                    isWeightedChild: weight > 0,
+                    parentOrientation: "vertical"
+                )
+            )
+            // weight==0 AND height is wrapContent → fixedSize to shrink to intrinsic height
+            let needsFixedSize = weight == 0 && child.declaredHeight == nil
+            let childView = needsFixedSize
+                ? AnyView(builtView.fixedSize(horizontal: false, vertical: true))
+                : builtView
+            return (view: childView, weight: weight)
+        }
+    }
+
+    public var body: some View {
+        let spacingValue = component.number(ViewAttributes.self, \.spacing, data: data) ?? 0
+
+        // Route through the public WeightedHStack/WeightedVStack so the simple
+        // HStack/VStack path (used when weights are uniform) can give Text the
+        // natural width negotiation it needs to wrap. The Layout-protocol path
+        // proposes width:nil for cross-axis height measurement, which makes
+        // Text report its single-line height and suppresses wrapping — matching
+        // the tool-generated code fixes this by delegating to the same wrapper.
+        if orientation == "horizontal" {
+            let builtChildren = buildHorizontalChildren()
+            // The flag is about THIS container's cross axis, not its
+            // children's: view_converter.rb sets it from
+            // `@component['height'] == 'matchParent'`. Reading the children
+            // instead answered a different question — a matchParent stack
+            // holding fixed-height children came out false and the stack
+            // fixedSize'd itself to their natural height.
+            let hasMatchParentHeight = component.heightRaw == "matchParent"
+                || component.declaredHeight == .infinity || component.declaredHeight == -1
+            WeightedHStack(
+                alignment: getVerticalAlignment(),
+                spacing: spacingValue,
+                children: builtChildren,
+                hasMatchParentCrossAxis: hasMatchParentHeight
+            )
+        } else {
+            let builtChildren = buildVerticalChildren()
+            WeightedVStack(
+                alignment: getHorizontalAlignment(),
+                spacing: spacingValue,
+                children: builtChildren
+            )
+        }
+    }
+
+    /// Extract horizontal gravity component (matches Ruby extract_horizontal_from_gravity)
+    private func extractHorizontalFromGravity(_ gravity: [String]?) -> String {
+        GravityAxes.horizontal(gravity)
+    }
+
+    /// Extract vertical gravity component (matches Ruby extract_vertical_from_gravity)
+    private func extractVerticalFromGravity(_ gravity: [String]?) -> String {
+        GravityAxes.vertical(gravity)
+    }
+
+    private func getVerticalAlignment() -> VerticalAlignment {
+        let v = extractVerticalFromGravity(component.gravity)
+        switch v {
+        case "bottom": return .bottom
+        case "center": return .center
+        default: return .top
+        }
+    }
+
+    private func getHorizontalAlignment() -> HorizontalAlignment {
+        let h = extractHorizontalFromGravity(component.gravity)
+        switch h {
+        case "right": return .trailing
+        case "center": return .center
+        default: return .leading
+        }
+    }
+}
+// MARK: - Force re-evaluation when data dictionary changes
+extension WeightedStackContainer: Equatable {
+    public static func == (lhs: WeightedStackContainer, rhs: WeightedStackContainer) -> Bool { false }
+}
+#endif // DEBUG
