@@ -17,9 +17,10 @@ import UIKit
 public struct SegmentConverter {
 
     public static func convert(
-        component: DynamicComponent,
+        component declared: DynamicComponent,
         data: [String: Any]
     ) -> AnyView {
+        let component = withoutCorner(declared)
         let attrs = component.typedAttributes(SegmentAttributes.self)
 
         // Selection binding. `selectedTabIndex` is a declared alias of
@@ -116,6 +117,32 @@ public struct SegmentConverter {
 
         return result
     }
+    /// `component` without its cornerRadius, a size class's included. A Segment reads none (the
+    /// requester's ruling 2026-11-16, jsonui-cli ticket rjui-selectbox-default-corner-overrides-
+    /// declared): its track and selected fill are the segmented control's capsules on every
+    /// platform. The standard chain's `.cornerRadius` left the capsule as it was but clipped a
+    /// declared background into a rounded rectangle, and shaped the border's stroke; decoded
+    /// again without it (as DynamicComponentBuilder draws a type synonym), neither is applied.
+    static func withoutCorner(_ component: DynamicComponent) -> DynamicComponent {
+        var raw = component.rawData
+        var changed = raw.removeValue(forKey: "cornerRadius") != nil
+        if var responsive = raw["responsive"] as? [String: Any] {
+            for (key, value) in responsive {
+                guard var overrides = value as? [String: Any],
+                      overrides.removeValue(forKey: "cornerRadius") != nil else { continue }
+                responsive[key] = overrides
+                changed = true
+            }
+            raw["responsive"] = responsive
+        }
+        guard changed,
+              let json = try? JSONSerialization.data(withJSONObject: raw, options: []) else { return component }
+        let decoder = JSONDecoder()
+        JsonUINormalization.apply(to: decoder, normalized: component.isNormalized)
+        guard let decoded = try? decoder.decode(DynamicComponent.self, from: json) else { return component }
+        return component.interactionStoppedAround ? decoded.markedStopped() : decoded
+    }
+
     /// The handler a `valueChange` names: a binding as written (`@{h}` — the
     /// attribute is declared "string", so the binding and the bare name are
     /// both its spellings; the binding was refused as "onValueChange's" and,

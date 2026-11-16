@@ -575,7 +575,24 @@ public struct DynamicModifierHelper {
 
     // MARK: - 6. Corner Radius
 
+    /// Whether `component` is drawn in a capsule of its own, which its border, its declared fill and
+    /// so its shadow follow instead of a cornerRadius rectangle: a Segment (the orchestrator's
+    /// decision 2026-11-16, under the requester's ruling that a Segment reads no cornerRadius;
+    /// segment_converter.rb `outline_shape`).
+    static func drawnInACapsule(_ component: DynamicComponent) -> Bool {
+        component.type == "Segment"
+    }
+
+    /// The fills a capsule clips (the background stage's attributes; base_view_converter.rb
+    /// OUTLINED_FILLS).
+    static let outlinedFills = ["background", "backgroundColor", "gradient", "disabledBackground",
+                                "tapBackground", "highlightBackground"]
+
     public static func applyCornerRadius(_ view: AnyView, component: DynamicComponent, data: [String: Any] = [:]) -> AnyView {
+        if drawnInACapsule(component) {
+            guard outlinedFills.contains(where: { component.rawData[$0] != nil }) else { return view }
+            return AnyView(view.clipShape(Capsule()))
+        }
         // cornerRadius is number|binding — resolve a `@{binding}` from data
         // (the legacy typed slot is nil for the binding spelling).
         let common = component.typedAttributes(CommonAttributes.self)
@@ -613,6 +630,9 @@ public struct DynamicModifierHelper {
         let style = honorsBorderStyle
             ? strokeStyle(common.borderStyle, borderWidth: borderWidth)
             : StrokeStyle(lineWidth: borderWidth)
+        if drawnInACapsule(component) {
+            return AnyView(view.overlay(Capsule().stroke(borderColor, style: style)))
+        }
         return AnyView(view.overlay(
             RoundedRectangle(cornerRadius: radius)
                 .stroke(borderColor, style: style)
