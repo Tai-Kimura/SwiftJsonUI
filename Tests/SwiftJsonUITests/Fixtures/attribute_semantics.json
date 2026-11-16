@@ -527,6 +527,19 @@
           "web": "inert"
         }
       }
+    },
+    "segmentShape": {
+      "attributes": [
+        "common.cornerRadius"
+      ],
+      "shape": "A Segment's track and its selected fill are capsules on every platform, whatever cornerRadius is declared: a Segment reads no cornerRadius.",
+      "ruling": "2026-11-16 requester's ruling, ticket rjui-selectbox-default-corner-overrides-declared, option (a): match iOS. Measured on the iOS 26.2 simulator (SwiftJsonUI 10.43.0, Dynamic): common/cornerRadius_on_Segment with 4, 0, 8 and 100 drew the same capsule track and capsule fill — the native segmented control's shape, which the declaration does not reach. Compose had taken the declaration as the track's corner and the fill's (minus the 2 dp inset) since 2.5.44, and the web as the track's corner beside a fixed rounded-lg (8px) track and rounded-md (6px) fill. Both now draw the capsule and ignore the declaration, as iOS does; the web's undeclared track, rounded-lg, became a capsule too. Out of this ruling: the web Segment is 44 high where iOS and Android are 31.",
+      "observable": {
+        "common/cornerRadius_on_Segment__4": "uniformly-inert",
+        "common/cornerRadius_on_Segment__0": "uniformly-inert",
+        "common/cornerRadius_on_Segment__100": "uniformly-inert",
+        "common/cornerRadius_on_Segment__static": "uniformly-inert"
+      }
     }
   }
 }

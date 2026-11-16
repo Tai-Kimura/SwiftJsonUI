@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.44 # jsonui-cli v2.5.44: default corner radius, Segment track, NetworkImage retry rules
+      JSONUI_CLI_MANIFEST_REF: v2.5.45 # jsonui-cli v2.5.45: Segment reads no cornerRadius (segmentShape)
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
