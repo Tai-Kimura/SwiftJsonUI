@@ -223,14 +223,16 @@ final class NetworkImageLoader: ObservableObject {
     private func handle(_ event: NetworkImageLoadEvent) {
         onLoadEvent?(event)
         switch event {
-        case .finished(let source): finish(source)
+        case .finished(let source): finish(source, image: load?.image)
         case .failed: fail()
         default: break
         }
     }
 
-    private func finish(_ source: NetworkImageSource) {
-        guard let urlString = currentUrl, let image = SwiftUIImageCache.shared.get(urlString) else {
+    /// The load's own image is shown; the memory cache is only the shortcut
+    /// for the next frame of the URL, and may have let it go already.
+    private func finish(_ source: NetworkImageSource, image: UIImage?) {
+        guard currentUrl != nil, let image else {
             fail()
             return
         }

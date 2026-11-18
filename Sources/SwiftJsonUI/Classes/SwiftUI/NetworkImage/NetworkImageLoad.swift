@@ -13,6 +13,7 @@
 
 import Foundation
 import QuartzCore
+import UIKit
 
 /// Where a shown image came from.
 public enum NetworkImageSource: String, Sendable {
@@ -93,6 +94,13 @@ public final class NetworkImageLoad {
     /// `CACurrentMediaTime()` when the last body bytes arrived.
     public private(set) var lastByteAt: CFTimeInterval?
     public private(set) var source: NetworkImageSource?
+    /// The decoded image, set when the load finishes. A frame shows this one,
+    /// never the memory cache's copy: the cache may have let it go already
+    /// (an image larger than its byte budget is never kept, and one near the
+    /// budget can go before the frame looks), which drew the error image for
+    /// an image that was read (ticket
+    /// sjui-networkimage-finish-fails-when-cache-evicts-the-image).
+    public private(set) var image: UIImage?
     /// The level a renderer is showing now, written by the renderer: a frame
     /// that joins the load later starts its renderer from it.
     public var displayLevel: CGFloat = 0
@@ -117,6 +125,12 @@ public final class NetworkImageLoad {
         return NetworkImageObservation { [weak self] in
             MainActor.assumeIsolated { _ = self?.observers.removeValue(forKey: id) }
         }
+    }
+
+    /// Moves the load to finished with `image` and tells the observers (main thread).
+    func deliverFinished(_ image: UIImage, source: NetworkImageSource) {
+        self.image = image
+        deliver(.finished(source: source))
     }
 
     /// Moves the load and tells the observers (main thread).

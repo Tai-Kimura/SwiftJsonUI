@@ -569,6 +569,40 @@ final class NetworkImageLoadTests: XCTestCase {
         views.forEach { $0.takeOff() }
     }
 
+    /// A read image is shown even when the memory cache does not hold it: an
+    /// image larger than the cache's byte budget is never kept, and one near
+    /// the budget can go before the frame looks. The frame used to look the
+    /// image up in the cache after the load finished and drew the error image
+    /// when it was gone (ticket
+    /// sjui-networkimage-finish-fails-when-cache-evicts-the-image). A budget
+    /// of one byte keeps nothing, so every look-up misses.
+    func testAReadImageTheCacheDidNotKeepIsShown() throws {
+        let saved = SwiftUIImageCache.shared.totalCostLimit
+        SwiftUIImageCache.shared.totalCostLimit = 1
+        defer { SwiftUIImageCache.shared.totalCostLimit = saved }
+        SlowImageProtocol.chunks = 2
+        SlowImageProtocol.gap = 0.01
+
+        // Two URLs at once, two frames of one of them, and a file:// image.
+        let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("nwload-\(UUID().uuidString).png")
+        try SlowImageProtocol.png.write(to: fileURL)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        let first = freshURL("a"), second = freshURL("b")
+        let urls = [first, first, second, fileURL.absoluteString]
+        let loaders = urls.map { _ in NetworkImageLoader() }
+        var states = Array(repeating: [String](), count: urls.count)
+        for (i, (loader, url)) in zip(loaders, urls).enumerated() {
+            loader.onLoadStateChange = { states[i].append($0) }
+            loader.loadIfNeeded(url: url, headers: [:])
+        }
+        spin(until: { loaders.allSatisfy { $0.face == .image || $0.face == .failed } })
+        XCTAssertEqual(loaders.map(\.face), [.image, .image, .image, .image])
+        XCTAssertEqual(states, Array(repeating: ["loading", "loaded"], count: urls.count))
+        XCTAssertNil(SwiftUIImageCache.shared.get(first), "the cache kept nothing")
+        XCTAssertFalse(SwiftUIImageCache.shared.isRecentlyFailed(first))
+        XCTAssertEqual(SlowImageProtocol.requests.count, 2, "one read a URL")
+    }
+
     func testTheCacheCountsDecodedBytes() {
         let image = UIImage(data: SlowImageProtocol.png)!
         XCTAssertEqual(SwiftUIImageCache.decodedBytes(image), image.cgImage!.bytesPerRow * image.cgImage!.height)

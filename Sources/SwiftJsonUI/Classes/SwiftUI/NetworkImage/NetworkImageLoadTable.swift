@@ -145,7 +145,7 @@ public final class NetworkImageLoadTable {
                     let prepared = await image.byPreparingForDisplay() ?? image
                     if Task.isCancelled { relay.send(.cancelled); return }
                     SwiftUIImageCache.shared.set(urlString, image: prepared)
-                    relay.send(.finished(source: source))
+                    relay.finish(prepared, source: source)
                     return
                 }
                 // A 2xx body that is not an image is the same the next
@@ -316,6 +316,14 @@ final class EventRelay: @unchecked Sendable {
         let load = self.load
         DispatchQueue.main.async {
             MainActor.assumeIsolated { load.deliver(event) }
+        }
+    }
+
+    /// Tells the load it finished, handing over the image itself.
+    func finish(_ image: UIImage, source: NetworkImageSource) {
+        let load = self.load
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated { load.deliverFinished(image, source: source) }
         }
     }
 
