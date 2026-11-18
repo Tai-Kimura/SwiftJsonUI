@@ -129,10 +129,10 @@ public struct DynamicModifierHelper {
             // the middle of a fixed width (the SSoT's Label.textAlign, 4f
             // ruling 2026-09-27; frame_helper.rb's Label branches).
             if fixedWidth != nil && fixedHeight != nil,
-               let alignment = frameAlignment(for: component, bothAxes: true) {
+               let alignment = frameAlignment(for: component, bothAxes: true, data: data) {
                 result = AnyView(result.frame(width: fixedWidth, height: fixedHeight, alignment: alignment))
             } else if fixedWidth != nil, fixedHeight == nil, isTextComponent,
-                      let alignment = frameAlignment(for: component, bothAxes: false) {
+                      let alignment = frameAlignment(for: component, bothAxes: false, data: data) {
                 // Fixed width + wrapContent height on a Label: the text at
                 // the Label rule's horizontal (textAlign, else gravity's
                 // horizontal part, else start) — frame_helper.rb's width-only
@@ -142,7 +142,7 @@ public struct DynamicModifierHelper {
                 // A Label of a fixed height: its text at the vertical its
                 // gravity names (labelVertical); centre is SwiftUI's own.
                 result = AnyView(result.frame(height: fixedHeight, alignment: Alignment(horizontal: .center, vertical: labelVertical(component))))
-            } else if !isTextComponent, let alignment = frameAlignment(for: component, bothAxes: true) {
+            } else if !isTextComponent, let alignment = frameAlignment(for: component, bothAxes: true, data: data) {
                 // ONE fixed axis on a container (or a node with a declared
                 // gravity): the content smaller than it at top | start
                 // (gravityDefaults), as Compose and the web put it — the
@@ -180,13 +180,13 @@ public struct DynamicModifierHelper {
         ) ?? .infinity
 
         if isMatchParentWidth && isMatchParentHeight {
-            if let alignment = frameAlignment(for: component, bothAxes: true) {
+            if let alignment = frameAlignment(for: component, bothAxes: true, data: data) {
                 result = AnyView(result.frame(maxWidth: fillMaxWidth, maxHeight: fillMaxHeight, alignment: alignment))
             } else {
                 result = AnyView(result.frame(maxWidth: fillMaxWidth, maxHeight: fillMaxHeight))
             }
         } else if isMatchParentWidth {
-            if let alignment = frameAlignment(for: component, bothAxes: false) {
+            if let alignment = frameAlignment(for: component, bothAxes: false, data: data) {
                 result = AnyView(result.frame(maxWidth: fillMaxWidth, alignment: alignment))
             } else {
                 result = AnyView(result.frame(maxWidth: fillMaxWidth))
@@ -195,7 +195,7 @@ public struct DynamicModifierHelper {
             // Filling the height alone: the content at top | start, as the
             // single fixed axis above.
             let isText = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
-            if !isText, let alignment = frameAlignment(for: component, bothAxes: true) {
+            if !isText, let alignment = frameAlignment(for: component, bothAxes: true, data: data) {
                 result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: alignment))
             } else if isText, labelVertical(component) != .center {
                 result = AnyView(result.frame(maxHeight: fillMaxHeight, alignment: Alignment(horizontal: .center, vertical: labelVertical(component))))
@@ -313,7 +313,7 @@ public struct DynamicModifierHelper {
     /// applyFrameConstraints).
     static func constraintFrameAlignment(_ component: DynamicComponent, data: [String: Any]) -> Alignment? {
         if component.gravity?.isEmpty == false {
-            return frameAlignment(for: component, bothAxes: true)
+            return frameAlignment(for: component, bothAxes: true, data: data)
         }
         let common = component.typedAttributes(CommonAttributes.self)
         let flags = [common.centerHorizontal, common.centerInParent, common.alignLeft, common.alignRight,
@@ -321,7 +321,7 @@ public struct DynamicModifierHelper {
         if flags.contains(where: { DynamicHelpers.resolveBool($0, legacy: nil, data: data) == true }) {
             return .center
         }
-        return frameAlignment(for: component, bothAxes: true)
+        return frameAlignment(for: component, bothAxes: true, data: data)
     }
 
     /// Where a Label's text sits across its frame: textAlign's position,
@@ -331,6 +331,15 @@ public struct DynamicModifierHelper {
     /// label_horizontal, the codegen half). Until SwiftJsonUI 10.29.0 a
     /// Label's gravity did not place its text across a frame wider than it.
     public static func labelHorizontal(_ component: DynamicComponent, data: [String: Any] = [:]) -> HorizontalAlignment {
+        // A selected Label whose highlightAttributes declare a textAlign:
+        // that one, as the highlight's lines already take it
+        // (TextHighlightAttributes.textAlignment). Through SwiftJsonUI 10.45.1
+        // only the lines did, so one line of a selected Label with a
+        // highlight's Center stayed at the start of a fixed width, where
+        // Android and web centre it.
+        if let highlight = highlightHorizontal(component, data: data) {
+            return highlight
+        }
         // Each by its declared spelling (DeclaredSpelling), as sjui's
         // label_horizontal reads them (EnumSpelling.lowered): a textAlign in
         // no declared spelling is the start; a gravity part in none names
@@ -348,6 +357,22 @@ public struct DynamicModifierHelper {
         if parts.contains("center") || parts.contains("centerhorizontal") { return .center }
         if parts.contains("right") { return .trailing }
         return .leading
+    }
+
+    /// The horizontal a selected Label's highlightAttributes.textAlign names
+    /// (Left / Center / Right), else nil — not selected, no highlight, or no
+    /// textAlign in a declared spelling.
+    static func highlightHorizontal(_ component: DynamicComponent, data: [String: Any]) -> HorizontalAlignment? {
+        guard component.type.map({ TypeSynonyms.drawnType($0).lowercased() == "label" }) == true else { return nil }
+        let attrs = component.typedAttributes(LabelAttributes.self)
+        guard let align = attrs.highlightAttributes?["textAlign"] as? String,
+              DynamicHelpers.resolveBool(attrs.selected, legacy: nil, data: data) == true else { return nil }
+        switch DeclaredSpelling.lowered(align, in: LabelAttributes.HighlightAttributes.TextAlign.declaredSpellings) {
+        case "left": return .leading
+        case "center": return .center
+        case "right": return .trailing
+        default: return nil
+        }
     }
 
     /// The gravity parts in a declared spelling, lowercased; a part in none
@@ -1824,14 +1849,14 @@ public struct DynamicModifierHelper {
     /// Determine frame alignment for matchParent dimensions.
     /// For Label/Text: based on textAlign (leading/center/trailing)
     /// For other components: based on gravity
-    private static func frameAlignment(for component: DynamicComponent, bothAxes: Bool) -> Alignment? {
+    private static func frameAlignment(for component: DynamicComponent, bothAxes: Bool, data: [String: Any]) -> Alignment? {
         let isTextComponent = component.type.map { TypeSynonyms.drawnType($0).lowercased() == "label" } ?? false
 
         if isTextComponent {
             // Match frame_helper.rb: Label/Text use textAlign across, and on
             // both axes the Label's vertical rule (labelVertical) down — until
             // SwiftUI 10.29.0 it was always the top.
-            let horizontal = labelHorizontal(component)
+            let horizontal = labelHorizontal(component, data: data)
             return bothAxes ? Alignment(horizontal: horizontal, vertical: labelVertical(component)) : Alignment(horizontal: horizontal, vertical: .center)
         }
 

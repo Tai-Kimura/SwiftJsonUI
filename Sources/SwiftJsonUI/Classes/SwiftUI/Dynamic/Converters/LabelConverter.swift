@@ -108,12 +108,14 @@ public struct LabelConverter {
             if let lines = resolvedLines {
                 return lines == 0 ? nil : lines
             }
-            if component.autoShrink == true {
-                return 1
-            }
+            // autoShrink adds no line limit: it shrinks only until the text
+            // fits its box (attribute_semantics autoShrink, web canon), so a
+            // wrapContent height wraps and a bounded one shrinks its lines.
+            // Through SwiftJsonUI 10.45.1 it forced one line, where Android and
+            // web wrap.
             return nil  // nil means no lineLimit specified
         }()
-        let hasLineLimit = resolvedLines != nil || component.autoShrink == true
+        let hasLineLimit = resolvedLines != nil
 
         // textAlignment
         // The lines follow the Label rule (textAlign, else gravity's
