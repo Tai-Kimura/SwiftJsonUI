@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: v2.5.47 # jsonui-cli v2.5.47: a Segment with no width or wrapContent is as wide as its labels (segmentWidth)
+      JSONUI_CLI_MANIFEST_REF: 3e91f5eeef461b5b78ab4a89203e37f1f00428d1 # jsonui-cli integrate/2.5.57 (re-pinned to v2.5.57 in the version commit): attribute_semantics networkImage.loadStates
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
