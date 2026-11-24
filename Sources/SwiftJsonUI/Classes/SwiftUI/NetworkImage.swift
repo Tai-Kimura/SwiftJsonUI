@@ -196,11 +196,14 @@ final class NetworkImageLoader: ObservableObject {
         }
 
         // A URL that failed a moment ago is not read again by itself (30 s);
-        // a tap on the failed image is (retry).
+        // a tap on the failed image is (retry). It still says "loading" and
+        // then "failed", as a read does: only a memory hit says one state
+        // alone (attribute_semantics networkImage.loadStates).
         if SwiftUIImageCache.shared.isRecentlyFailed(urlString) {
             errorFade = .none
             isLoading = false
             hasFailed = true
+            report("loading")
             report("failed")
             return
         }

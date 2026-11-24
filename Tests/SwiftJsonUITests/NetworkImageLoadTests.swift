@@ -194,6 +194,7 @@ final class NetworkImageLoadTests: XCTestCase {
         loader.loadIfNeeded(url: urlString, headers: [:])
         spin(until: { load.isDone && states.last == "failed" })
         observation.cancel()
+        print("LOADSTATES 404 | states=\(states.joined(separator: ","))")
         XCTAssertEqual(events, ["requesting", "failed"])
         XCTAssertEqual(states, ["loading", "failed"])
         XCTAssertNil(load.respondedAt)
@@ -457,6 +458,30 @@ final class NetworkImageLoadTests: XCTestCase {
         XCTAssertEqual(loader.face, .image)
     }
 
+    /// A URL that failed a moment ago is not read again by a new frame (30 s),
+    /// and that frame still says "loading" and then "failed": only a memory hit
+    /// says one state alone (attribute_semantics networkImage.loadStates).
+    func testAFrameOfAURLThatFailedAMomentAgoSaysLoadingThenFailedWithoutARead() {
+        NetworkImageLoadTable.retryStepNanoseconds = 10_000_000
+        SlowImageProtocol.statuses = [404]
+        let urlString = freshURL("memo")
+        let first = NetworkImageLoader()
+        var firstStates: [String] = []
+        first.onLoadStateChange = { firstStates.append($0) }
+        first.loadIfNeeded(url: urlString, headers: [:])
+        spin(until: { firstStates.last == "failed" })
+        XCTAssertEqual(firstStates, ["loading", "failed"])
+        XCTAssertTrue(SwiftUIImageCache.shared.isRecentlyFailed(urlString))
+        let second = NetworkImageLoader()
+        var states: [String] = []
+        second.onLoadStateChange = { states.append($0) }
+        second.loadIfNeeded(url: urlString, headers: [:])
+        print("LOADSTATES memo second frame | states=\(states.joined(separator: ",")) | requests=\(SlowImageProtocol.requests.count)")
+        XCTAssertTrue(second.hasFailed)
+        XCTAssertEqual(states, ["loading", "failed"])
+        XCTAssertEqual(SlowImageProtocol.requests.count, 1, "the URL is not read again")
+    }
+
     func testAnImageTheMemoryCacheHoldsIsLoadedAloneWithNoRenderer() {
         let urlString = freshURL()
         SwiftUIImageCache.shared.set(urlString, image: UIImage(data: SlowImageProtocol.png)!)
@@ -467,6 +492,7 @@ final class NetworkImageLoadTests: XCTestCase {
         loader.onLoadStateChange = { states.append($0) }
         loader.onLoadEvent = { events.append(self.name($0)) }
         loader.loadIfNeeded(url: urlString, headers: [:])
+        print("LOADSTATES memory hit | states=\(states.joined(separator: ","))")
         XCTAssertNotNil(loader.loadedImage, "drawn from the first frame")
         XCTAssertFalse(loader.hostActive, "no layer view")
         XCTAssertEqual(states, ["loaded"])
