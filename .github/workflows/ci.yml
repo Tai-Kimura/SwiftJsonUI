@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 41b1cba9301c8cb07f268cf48216eada387ed9b1 # jsonui-cli integrate/2.5.57 (re-pinned to v2.5.57 in the version commit): attribute_semantics networkImage.loadStates
+      JSONUI_CLI_MANIFEST_REF: 658079d7537711b904dd5784214f371e10ed81aa # jsonui-cli v2.5.57 (= 658079d75): attribute_semantics networkImage.loadStates
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
