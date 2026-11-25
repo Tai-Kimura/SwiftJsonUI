@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     env:
-      JSONUI_CLI_MANIFEST_REF: 076480f489dc4c5878c36dbe9cdfa755c6da0e37 # jsonui-cli 076480f48 (2.5.61 branch): TextField / TextView keyboard and length attributes take a binding
+      JSONUI_CLI_MANIFEST_REF: 8e331ec07186d7f0fc10243d01e31e0688a18719 # jsonui-cli v2.5.61 (= 8e331ec07): TextField / TextView keyboard and length attributes take a binding
     steps:
       - uses: actions/checkout@v4
       - name: Verify sha256 against pinned manifest
