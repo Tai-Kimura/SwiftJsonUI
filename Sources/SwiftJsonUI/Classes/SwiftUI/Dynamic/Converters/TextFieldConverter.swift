@@ -99,7 +99,7 @@ public struct TextFieldConverter {
                 legacy: nil,
                 data: data
             ) { return secure }
-            return DeclaredSpelling.lowered(component.input, in: TextFieldAttributes.Input.declaredSpellings) == "password"
+            return DeclaredSpelling.lowered(inputSpelling(component, data: data), in: TextFieldAttributes.Input.declaredSpellings) == "password"
         }()
 
         // Field construction shared by the bound and local-state paths
@@ -107,7 +107,12 @@ public struct TextFieldConverter {
             // onTextChange is called from this binding's setter — the user's
             // edits (typing, the clear button) — and not for a change of the
             // value from elsewhere (UserEditBinding.swift).
-            let binding = UserEditBinding.text(source, generation: generation, component: component, id: id, data: data)
+            // maxLength outside the user-edit binding, so onTextChange is
+            // handed the edit as the field keeps it.
+            let binding = limitingLength(
+                UserEditBinding.text(source, generation: generation, component: component, id: id, data: data),
+                component: component, data: data
+            )
             var built: AnyView
             // Use FocusableTextField when component has an id (for focus chain support)
             if let fieldId = component.id {
@@ -307,8 +312,8 @@ public struct TextFieldConverter {
                 text: text,
                 fieldId: fieldId,
                 isSecure: isSecure,
-                keyboardType: DynamicHelpers.keyboardType(forInput: component.input),
-                submitLabel: component.returnKeyType.map { getSubmitLabel(from: $0) },
+                keyboardType: DynamicHelpers.keyboardType(forInput: inputSpelling(component, data: data)),
+                submitLabel: component.enumString(TextFieldAttributes.self, \.returnKeyType, data: data).map { getSubmitLabel(from: $0) },
                 textAlignment: DynamicHelpers.getTextAlignment(from: component),
                 nextFocusId: nextFocusId,
                 onSubmitAction: submitAction(component: component, data: data),
@@ -353,6 +358,9 @@ public struct TextFieldConverter {
 
         // --- 5. textFieldStyle ---
         result = applyTextFieldStyle(result, component: component)
+
+        // --- autocapitalizationType / autocorrectionType ---
+        result = applyTextInputTraits(result, component: component, data: data)
 
         // --- 9. disabled ---
         // applyDisabled covers the bound form too; the literal-only check
@@ -465,7 +473,7 @@ public struct TextFieldConverter {
         result = applyTextFieldStyle(result, component: component)
 
         // --- 6. keyboardType ---
-        let keyboardType = DynamicHelpers.keyboardType(forInput: component.input)
+        let keyboardType = DynamicHelpers.keyboardType(forInput: inputSpelling(component, data: data))
         if keyboardType != .default {
             result = AnyView(result.keyboardType(keyboardType))
         }
@@ -476,9 +484,12 @@ public struct TextFieldConverter {
         }
 
         // --- 8. submitLabel ---
-        if let returnKeyType = component.returnKeyType {
+        if let returnKeyType = component.enumString(TextFieldAttributes.self, \.returnKeyType, data: data) {
             result = AnyView(result.submitLabel(getSubmitLabel(from: returnKeyType)))
         }
+
+        // --- autocapitalizationType / autocorrectionType ---
+        result = applyTextInputTraits(result, component: component, data: data)
 
         // --- 9. disabled ---
         // applyDisabled covers the bound form too; the literal-only check
@@ -623,6 +634,96 @@ public struct TextFieldConverter {
         case "Join": return .join
         case "Route": return .route
         default: return .done
+        }
+    }
+
+    /// `input` as written, or the data's value when it is bound (jsonui-cli
+    /// 2.5.61). A binding that does not resolve reads as no `input`.
+    static func inputSpelling(_ component: DynamicComponent, data: [String: Any]) -> String? {
+        component.enumString(TextFieldAttributes.self, \.input, data: data)
+    }
+
+    /// `maxLength`, written or bound, as a limit: nil for no limit — absent,
+    /// 0, negative or an unresolved binding (attribute_definitions: 0 or nil
+    /// is no limit). Internal so the read has a unit test.
+    static func maxLengthLimit(_ component: DynamicComponent, data: [String: Any]) -> Int? {
+        guard let limit = DynamicHelpers.resolveNumber(
+            component.typedAttributes(TextFieldAttributes.self).maxLength, legacy: nil, data: data
+        ) else { return nil }
+        let count = Int(limit)
+        return count > 0 ? count : nil
+    }
+
+    /// The field's binding with `maxLength` applied to each edit: a longer
+    /// edit is cut to the limit when it is written. A limit that shrinks
+    /// below the current text cuts it on the next edit, not by itself — the
+    /// declared behaviour, and the codegen's (an `.onChange` of the text).
+    static func limitingLength(
+        _ binding: SwiftUI.Binding<String>,
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> SwiftUI.Binding<String> {
+        guard let limit = maxLengthLimit(component, data: data) else { return binding }
+        return SwiftUI.Binding(
+            get: { binding.wrappedValue },
+            set: { newValue in
+                binding.wrappedValue = newValue.count > limit ? String(newValue.prefix(limit)) : newValue
+            }
+        )
+    }
+
+    /// `autocapitalizationType` and `autocorrectionType`, written or bound,
+    /// in textfield_converter.rb's spelling of them (apply_text_input_traits):
+    /// an unknown value and `default` apply nothing, as codegen emits nothing.
+    /// Neither was read on this path before 2.5.61, written or bound.
+    private static func applyTextInputTraits(
+        _ view: AnyView,
+        component: DynamicComponent,
+        data: [String: Any]
+    ) -> AnyView {
+        var result = view
+        if let cap = autocapitalization(
+            component.enumString(TextFieldAttributes.self, \.autocapitalizationType, data: data)
+        ) {
+            result = AnyView(result.textInputAutocapitalization(cap))
+        }
+        if let disabled = autocorrectionDisabled(
+            component.enumString(TextFieldAttributes.self, \.autocorrectionType, data: data)
+        ) {
+            result = AnyView(result.autocorrectionDisabled(disabled))
+        }
+        return result
+    }
+
+    static func autocapitalization(_ spelling: String?) -> TextInputAutocapitalization? {
+        switch autocapitalizationName(spelling) {
+        case "never": return .never
+        case "words": return .words
+        case "sentences": return .sentences
+        case "characters": return .characters
+        default: return nil
+        }
+    }
+
+    /// The SwiftUI member a spelling names, by name (testable: the type is
+    /// not Equatable).
+    static func autocapitalizationName(_ spelling: String?) -> String? {
+        switch DeclaredSpelling.lowered(spelling, in: TextFieldAttributes.AutocapitalizationType.declaredSpellings) {
+        case "none": return "never"
+        case "words": return "words"
+        case "sentences": return "sentences"
+        case "allcharacters", "characters": return "characters"
+        default: return nil
+        }
+    }
+
+    /// true to turn correction off, false to turn it on, nil for `default`
+    /// (the platform decides) and for a value it does not know.
+    static func autocorrectionDisabled(_ spelling: String?) -> Bool? {
+        switch DeclaredSpelling.lowered(spelling, in: TextFieldAttributes.AutocorrectionType.declaredSpellings) {
+        case "no", "off", "false": return true
+        case "yes", "on", "true": return false
+        default: return nil
         }
     }
 

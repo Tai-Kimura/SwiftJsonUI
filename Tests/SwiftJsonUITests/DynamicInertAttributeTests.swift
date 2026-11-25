@@ -456,7 +456,7 @@ final class DynamicInertAttributeTests: XCTestCase {
         let c = try component("""
         { "type": "TextView", "id": "t", "editable": false }
         """)
-        XCTAssertEqual(c.typedAttributes(TextViewAttributes.self).editable, false)
+        XCTAssertEqual(c.typedAttributes(TextViewAttributes.self).editable?.value, false)
     }
 
     /// On a determinate ProgressView "stopped" is progress == 0.

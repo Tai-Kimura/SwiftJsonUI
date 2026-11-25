@@ -222,11 +222,11 @@ public struct EditTextAttributes {
     /// Focuses the field when the screen appears (the keyboard opens): iOS SwiftUI sets the field's @FocusState on appear, Android Compose requests focus with a FocusRequester, web draws autoFocus.
     public let autoFocus: Bool?
 
-    /// Auto-capitalization type. UIKit's vocabulary, honoured on every platform (.textInputAutocapitalization / KeyboardCapitalization / the HTML autocapitalize attribute). `characters` is an accepted alias spelling of allCharacters.
-    public let autocapitalizationType: AttrEnum<AutocapitalizationType>?
+    /// Auto-capitalization type. UIKit's vocabulary, honoured on every platform (.textInputAutocapitalization / KeyboardCapitalization / the HTML autocapitalize attribute). `characters` is an accepted alias spelling of allCharacters. Binding supported ("@{name}"): the bound value is one of the enum strings above and is read every time it changes; a value the face does not know falls back exactly as the same literal would.
+    public let autocapitalizationType: AttrValue<AttrEnum<AutocapitalizationType>>?
 
-    /// Auto-correction type. UIKit's vocabulary; `on`/`true` and `off`/`false` are accepted alias spellings of yes/no. `default` means "leave it to the platform" — web deliberately emits nothing for it.
-    public let autocorrectionType: AttrEnum<AutocorrectionType>?
+    /// Auto-correction type. UIKit's vocabulary; `on`/`true` and `off`/`false` are accepted alias spellings of yes/no. `default` means "leave it to the platform" — web deliberately emits nothing for it. Binding supported ("@{name}"): the bound value is one of the enum strings above and is read every time it changes; a value the face does not know falls back exactly as the same literal would.
+    public let autocorrectionType: AttrValue<AttrEnum<AutocorrectionType>>?
 
     /// Border style
     public let borderStyle: AttrEnum<BorderStyle>?
@@ -246,8 +246,8 @@ public struct EditTextAttributes {
     /// Text of the input accessory toolbar's Done button. UIKit only (see accessoryBackground).
     public let doneText: String?
 
-    /// false draws the input readOnly (rjui text_field_converter).
-    public let editable: Bool?
+    /// false draws the input readOnly (rjui text_field_converter). Binding supported ("@{name}").
+    public let editable: AttrValue<Bool>?
 
     /// Field padding
     public let fieldPadding: Double?
@@ -294,8 +294,8 @@ public struct EditTextAttributes {
     /// Placeholder line height multiplier. Declared from the implementation, which already read it: sjui textfield_converter.rb:153 and textview_converter.rb:93,117 (EditText/Input follow via _alias_of) (plan 51-E).
     public let hintLineHeightMultiple: Double?
 
-    /// Input type (includes 'allphabet' typo for backward compatibility). Not every face can express every value, and the degradations are declared here so that an implementer does not rediscover them one at a time. Android, codegen: all four of the values added in 1.8.8x land natively (Compose 1.12 KeyboardType.Date / Time / DateTime / DecimalSigned - note the order: Signed is a suffix in Compose, so the member is DecimalSigned, modifier last, while the value declared here is signedDecimal, modifier first. Each reads as a typo of the other. The plan for this work named the member SignedDecimal, which does not exist, and this description repeated it until 2026-09-14. Both spellings therefore appear in this text on purpose, here and in the four vendored tables that copy it, so grepping for SignedDecimal finds hits that are the correction rather than the defect - the hit count is not a measure of whether this was fixed). Android, dynamic: the runtime renderer has no case for any of the four - DynamicTextFieldComponent and DynamicTextViewComponent both fall to `else -> KeyboardType.Text` - so they degrade to plain text there. The two Android faces differ, and 'Android supports it' is true only of the generated one. The floor is codegen's alone: the generated Kotlin NAMES the member, so Compose below 1.12 would be a COMPILE error there rather than a degradation - ui-text 1.11 has ten KeyboardType members and none of these four, and 1.12.0 is the first with Date, Time, DateTime and DecimalSigned. Dynamic needs nothing new, because it never names them: it falls to KeyboardType.Text, which 1.11 already has. As of 1.8.80 the Compose emitter carries that floor, and it is DECLARED rather than detected: a project that declares nothing keeps the real members, and a project that sets compose_version below 1.12.0 in kjui.config.json gets these four - and only these four - degraded to KeyboardType.Text, on TextView as well as TextField because both read one table. Nothing is detected, because this generator never sees the consumer's dependency graph; a project on an older Compose that declares nothing therefore still gets a build failure rather than a silent keyboard change, which is the failure a reader can act on. The comparison is Gem::Version and never String, because '1.9.0' sorts ABOVE '1.12.0' as text and that is the direction that ships the build failure. web, TextField: date, time and datetime are not inputmode values; they change the element type to date, time and datetime-local, which is the path SelectBox's datepicker already takes. web, TextView: a textarea has no type attribute at all, so those three degrade to plain text there and the declared value cannot be honoured. web, inputmode: signedDecimal has no inputmode of its own and must share decimal with the decimal value above, so on web the two are INDISTINGUISHABLE. web, type: number and decimal already collapse to type=number, and signedDecimal joins them. iOS: UIKeyboardType has no member for the date family, so they fall back to .default, and signedDecimal to .numbersAndPunctuation.
-    public let input: AttrEnum<Input>?
+    /// Input type (includes 'allphabet' typo for backward compatibility). Not every face can express every value, and the degradations are declared here so that an implementer does not rediscover them one at a time. Android, codegen: all four of the values added in 1.8.8x land natively (Compose 1.12 KeyboardType.Date / Time / DateTime / DecimalSigned - note the order: Signed is a suffix in Compose, so the member is DecimalSigned, modifier last, while the value declared here is signedDecimal, modifier first. Each reads as a typo of the other. The plan for this work named the member SignedDecimal, which does not exist, and this description repeated it until 2026-09-14. Both spellings therefore appear in this text on purpose, here and in the four vendored tables that copy it, so grepping for SignedDecimal finds hits that are the correction rather than the defect - the hit count is not a measure of whether this was fixed). Android, dynamic: the runtime renderer has no case for any of the four - DynamicTextFieldComponent and DynamicTextViewComponent both fall to `else -> KeyboardType.Text` - so they degrade to plain text there. The two Android faces differ, and 'Android supports it' is true only of the generated one. The floor is codegen's alone: the generated Kotlin NAMES the member, so Compose below 1.12 would be a COMPILE error there rather than a degradation - ui-text 1.11 has ten KeyboardType members and none of these four, and 1.12.0 is the first with Date, Time, DateTime and DecimalSigned. Dynamic needs nothing new, because it never names them: it falls to KeyboardType.Text, which 1.11 already has. As of 1.8.80 the Compose emitter carries that floor, and it is DECLARED rather than detected: a project that declares nothing keeps the real members, and a project that sets compose_version below 1.12.0 in kjui.config.json gets these four - and only these four - degraded to KeyboardType.Text, on TextView as well as TextField because both read one table. Nothing is detected, because this generator never sees the consumer's dependency graph; a project on an older Compose that declares nothing therefore still gets a build failure rather than a silent keyboard change, which is the failure a reader can act on. The comparison is Gem::Version and never String, because '1.9.0' sorts ABOVE '1.12.0' as text and that is the direction that ships the build failure. web, TextField: date, time and datetime are not inputmode values; they change the element type to date, time and datetime-local, which is the path SelectBox's datepicker already takes. web, TextView: a textarea has no type attribute at all, so those three degrade to plain text there and the declared value cannot be honoured. web, inputmode: signedDecimal has no inputmode of its own and must share decimal with the decimal value above, so on web the two are INDISTINGUISHABLE. web, type: number and decimal already collapse to type=number, and signedDecimal joins them. iOS: UIKeyboardType has no member for the date family, so they fall back to .default, and signedDecimal to .numbersAndPunctuation. Binding supported ("@{name}"): the bound value is one of the enum strings above and is read every time it changes; a value the face does not know falls back exactly as the same literal would.
+    public let input: AttrValue<AttrEnum<Input>>?
 
     /// Input type for Android (Android-only; `input` is the cross-platform attribute). Both the JsonUI spellings and the raw android:inputType names the frozen XML mapper passed through are accepted; the latter normalize to the former.
     public let inputType: AttrEnum<InputType>?
@@ -309,8 +309,8 @@ public struct EditTextAttributes {
     /// The largest size this component's text is drawn at, as a multiple of its declared fontSize (>= 1): drawn <= fontSize x maxFontScale on every face. Only with fontScaling (declared or the app default) true; absent: no cap beyond the OS one. iOS rounds it down to a Dynamic Type step (the largest step whose .body ratio is at most it); Android caps after its non-linear conversion; the web draws min(rem, px x maxFontScale).
     public let maxFontScale: Double?
 
-    /// Maximum input length
-    public let maxLength: Double?
+    /// Maximum input length. Binding supported ("@{name}", an Int): 0 or nil means no limit. The limit applies to the next edit - a value that shrinks below the current text does not cut the text by itself; the text is cut when it is next edited (iOS, Android). web: the browser's own maxlength stops further input and never cuts a value, so a longer text stays until it is deleted.
+    public let maxLength: AttrValue<Double>?
 
     /// The input's form name attribute (rjui text_field_converter).
     public let name: String?
@@ -369,8 +369,8 @@ public struct EditTextAttributes {
     /// Required field validation
     public let required: Bool?
 
-    /// Return key type
-    public let returnKeyType: AttrEnum<ReturnKeyType>?
+    /// Return key type. Binding supported ("@{name}"): the bound value is one of the enum strings above and is read every time it changes; a value the face does not know falls back exactly as the same literal would.
+    public let returnKeyType: AttrValue<AttrEnum<ReturnKeyType>>?
 
     /// Right view configuration
     public let rightView: [String: Any]?
@@ -409,15 +409,15 @@ public struct EditTextAttributes {
         self.accessoryTextColor = AttrCoerce.string(AttrCoerce.lookup(json, "accessoryTextColor"))
         self.applyLiquidGlass = AttrCoerce.boolean(AttrCoerce.lookup(json, "applyLiquidGlass"))
         self.autoFocus = AttrCoerce.boolean(AttrCoerce.lookup(json, "autoFocus"))
-        self.autocapitalizationType = Self.parseAutocapitalizationType(AttrCoerce.lookup(json, "autocapitalizationType"))
-        self.autocorrectionType = Self.parseAutocorrectionType(AttrCoerce.lookup(json, "autocorrectionType"))
+        self.autocapitalizationType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "autocapitalizationType"), { Self.parseAutocapitalizationType($0) })
+        self.autocorrectionType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "autocorrectionType"), { Self.parseAutocorrectionType($0) })
         self.borderStyle = Self.parseBorderStyle(AttrCoerce.lookup(json, "borderStyle"))
         self.caretAttributes = AttrCoerce.object(AttrCoerce.lookup(json, "caretAttributes"))
         self.clearButtonMode = AttrCoerce.string(AttrCoerce.lookup(json, "clearButtonMode"))
         self.contentType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "contentType"), { Self.parseContentType($0) })
         self.disabledBackground = AttrCoerce.string(AttrCoerce.lookup(json, "disabledBackground"))
         self.doneText = AttrCoerce.string(AttrCoerce.lookup(json, "doneText"))
-        self.editable = AttrCoerce.boolean(AttrCoerce.lookup(json, "editable"))
+        self.editable = AttrCoerce.attrValue(AttrCoerce.lookup(json, "editable"), AttrCoerce.boolean)
         self.fieldPadding = AttrCoerce.number(AttrCoerce.lookup(json, "fieldPadding"))
         self.font = AttrCoerce.attrValue(AttrCoerce.lookup(json, "font"), AttrCoerce.string)
         self.fontColor = AttrCoerce.attrValue(AttrCoerce.lookup(json, "fontColor"), AttrCoerce.string)
@@ -433,12 +433,12 @@ public struct EditTextAttributes {
         self.hintFont = AttrCoerce.string(AttrCoerce.lookup(json, "hintFont"))
         self.hintFontSize = AttrCoerce.number(AttrCoerce.lookup(json, "hintFontSize"))
         self.hintLineHeightMultiple = AttrCoerce.number(AttrCoerce.lookup(json, "hintLineHeightMultiple"))
-        self.input = Self.parseInput(AttrCoerce.lookup(json, "input"))
+        self.input = AttrCoerce.attrValue(AttrCoerce.lookup(json, "input"), { Self.parseInput($0) })
         self.inputType = Self.parseInputType(AttrCoerce.lookup(json, "inputType"))
         self.leftView = AttrCoerce.object(AttrCoerce.lookup(json, "leftView"))
         self.leftViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "leftViewMode"))
         self.maxFontScale = AttrCoerce.number(AttrCoerce.lookup(json, "maxFontScale"))
-        self.maxLength = AttrCoerce.number(AttrCoerce.lookup(json, "maxLength"))
+        self.maxLength = AttrCoerce.attrValue(AttrCoerce.lookup(json, "maxLength"), AttrCoerce.number)
         self.name = AttrCoerce.string(AttrCoerce.lookup(json, "name"))
         self.nextFocus = AttrCoerce.string(AttrCoerce.lookup(json, "nextFocus"))
         self.onBeginEditing = AttrCoerce.string(AttrCoerce.lookup(json, "onBeginEditing"))
@@ -458,7 +458,7 @@ public struct EditTextAttributes {
         self.pattern = AttrCoerce.string(AttrCoerce.lookup(json, "pattern"))
         self.placeholder = AttrCoerce.string(AttrCoerce.lookup(json, "placeholder"))
         self.required = AttrCoerce.boolean(AttrCoerce.lookup(json, "required"))
-        self.returnKeyType = Self.parseReturnKeyType(AttrCoerce.lookup(json, "returnKeyType"))
+        self.returnKeyType = AttrCoerce.attrValue(AttrCoerce.lookup(json, "returnKeyType"), { Self.parseReturnKeyType($0) })
         self.rightView = AttrCoerce.object(AttrCoerce.lookup(json, "rightView"))
         self.rightViewMode = AttrCoerce.string(AttrCoerce.lookup(json, "rightViewMode"))
         self.secure = AttrCoerce.attrValue(AttrCoerce.lookup(json, "secure"), AttrCoerce.boolean)

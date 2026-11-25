@@ -287,7 +287,7 @@ public struct TextViewConverter {
         // read it, so a declared key was the system's on this path only.
         // TextView's own table (textview_converter.rb
         // return_key_to_submit_label), not TextField's.
-        if let returnKey = component.enumString(TextViewAttributes.self, \.returnKeyType) {
+        if let returnKey = component.enumString(TextViewAttributes.self, \.returnKeyType, data: data) {
             result = AnyView(result.submitLabel(submitLabel(fromReturnKeyType: returnKey)))
         }
 
@@ -303,7 +303,7 @@ public struct TextViewConverter {
         // bag, so the emitted chain ends with `keyboardType` and the outer
         // modifier is the one SwiftUI honours. Applying them in this order
         // reproduces that: when a layout declares both, `keyboardType` wins.
-        if let raw = component.enumString(TextViewAttributes.self, \.input) {
+        if let raw = component.enumString(TextViewAttributes.self, \.input, data: data) {
             result = AnyView(result.keyboardType(DynamicHelpers.keyboardType(forInput: raw, in: TextViewAttributes.Input.declaredSpellings)))
         }
         // ⚠️ `keyboardType` IS A DIFFERENT VOCABULARY FROM `input`, and its
@@ -317,7 +317,7 @@ public struct TextViewConverter {
         // `text`, `numbersAndPunctuation`) have no row THERE either, so they
         // fall through to no modifier here too — deliberately reproducing a
         // gap rather than closing it on one side.
-        if let raw = component.enumString(TextViewAttributes.self, \.keyboardType),
+        if let raw = component.enumString(TextViewAttributes.self, \.keyboardType, data: data),
            let resolved = Self.keyboardType(fromKeyboardTypeSpelling: raw) {
             result = AnyView(result.keyboardType(resolved))
         }
@@ -406,7 +406,10 @@ public struct TextViewConverter {
         // `editable: false` is the second way to say read-only and was read by
         // nobody here. textview_converter.rb#apply_editable_and_keyboard
         // OR-combines the two into one `.disabled`, so either disables.
-        if component.typedAttributes(TextViewAttributes.self).editable == false {
+        // Bound since jsonui-cli 2.5.61: the data's value, read as written.
+        if DynamicHelpers.resolveBool(
+            component.typedAttributes(TextViewAttributes.self).editable, legacy: nil, data: data
+        ) == false {
             result = AnyView(result.disabled(true))
         }
         result = DynamicModifierHelper.applyDisabled(result, component: component, data: data)

@@ -146,9 +146,10 @@ public struct DynamicComponent: Decodable {
     let flexible: Bool?
     let containerInset: [CGFloat]?
     let hideOnFocused: Bool?
-    let returnKeyType: String?  // Return key type for TextField
+    // returnKeyType / input: read through TextFieldAttributes (enumString,
+    // binding included) since jsonui-cli 2.5.61 — a String slot here read
+    // "@{x}" as the spelling and drew the default keyboard.
     let borderStyle: String?  // Border style for TextField
-    let input: String?  // Keyboard type for TextField
     let action: String?
     let iconOn: String?
     let iconOff: String?
@@ -235,7 +236,7 @@ public struct DynamicComponent: Decodable {
         case orientation, direction, distribution, systemIcon, placeholder, renderingMode
         case headers, data
         case hint, hintFont, hintFontSize, hintLineHeightMultiple, fieldPadding, flexible, containerInset, hideOnFocused
-        case returnKeyType, borderStyle, input
+        case borderStyle
         case action, iconOn, iconOff, iconColor, iconPosition
         case minValue, maxValue, indicatorStyle
         case tabs, onTabChange
@@ -445,9 +446,7 @@ public struct DynamicComponent: Decodable {
             containerInset = nil
         }
         hideOnFocused = try container.decodeIfPresent(Bool.self, forKey: .hideOnFocused)
-        returnKeyType = try container.decodeIfPresent(String.self, forKey: .returnKeyType)
         borderStyle = try container.decodeIfPresent(String.self, forKey: .borderStyle)
-        input = try container.decodeIfPresent(String.self, forKey: .input)
         action = try container.decodeIfPresent(String.self, forKey: .action)
         iconOn = try container.decodeIfPresent(String.self, forKey: .iconOn)
         iconOff = try container.decodeIfPresent(String.self, forKey: .iconOff)

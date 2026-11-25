@@ -76,7 +76,7 @@ final class DynamicComponentTests: XCTestCase {
         XCTAssertEqual(
             component.typedAttributes(TextFieldAttributes.self).secure?.value, true
         )
-        XCTAssertEqual(component.returnKeyType, "done")
+        XCTAssertEqual(component.enumString(TextFieldAttributes.self, \.returnKeyType), "done")
     }
 
     func testDecodeImage() throws {
